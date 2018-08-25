@@ -1,0 +1,15 @@
+{
+  "files.exclude": {
+    ".git": true,
+    "node_modules": true,
+    "out": true
+  },
+  "editor.insertSpaces": false,
+  "editor.tabSize": 2,
+  "[json]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2
+  },
+  "editor.formatOnSave": true,
+  "prettier.printWidth": 100
+}

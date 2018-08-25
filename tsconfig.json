@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es2015",
+    "lib": [ "es2015" ],
+    "module": "commonjs",
+    "outDir": "out",
+    "importHelpers": true,
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "removeComments": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/main.ts",
+  ]
+}
+  

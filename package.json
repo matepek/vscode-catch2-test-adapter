@@ -1,0 +1,108 @@
+{
+  "name": "vscode-catch2-test-adapter",
+  "displayName": "Catch2 Test Explorer for Visual Studio Code",
+  "description": "Run your Catch2 tests in the Sidebar of Visual Studio Code",
+  "icon": "icon.png",
+  "author": "Mate Pek",
+  "publisher": "matepek",
+  "version": "0.1.0",
+  "license": "Unlicense",
+  "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matepek/vscode-catch2-test-adapter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/matepek/vscode-catch2-test-adapter/issues"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "catch2",
+    "test",
+    "testing",
+    "unit test",
+    "c++"
+  ],
+  "main": "out/main.js",
+  "scripts": {
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "reinstall": "rimraf node_modules package-lock.json && npm install",
+    "clean": "rimraf out vscode-google-test-adapter-*.vsix",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "rebuild": "npm run clean && npm run build",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "extensionDependencies": [
+    "hbenl.vscode-test-explorer"
+  ],
+  "dependencies": {
+    "entities": "^1.1.1",
+    "tslib": "^1.9.3",
+    "vscode-test-adapter-api": "^1.0.1",
+    "xml2js": "^0.4.19"
+  },
+  "devDependencies": {
+    "@types/xml2js": "^0.4.2",
+    "@types/xml-parser": "^1.2.29",
+    "@types/entities": "^1.1.0",
+    "typescript": "^2.8.3",
+    "vsce": "^1.40.0",
+    "vscode": "^1.1.17"
+  },
+  "engines": {
+    "vscode": "^1.23.0"
+  },
+  "activationEvents": [
+    "onView:test-explorer"
+  ],
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Configuration for the Catch2 Test Explorer extension",
+      "properties": {
+        "catch2TestExplorer.executables": {
+          "description": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting.",
+          "type": [
+            "string",
+            "array",
+            "object"
+          ],
+          "default": [
+            {
+              "name": "workspace dir: ",
+              "path": ".",
+              "regex": "(t|T)est",
+              "workerPool": 1,
+              "workingDirectory": "."
+            }
+          ],
+          "scope": "resource"
+        },
+        "catch2TestExplorer.globalWorkerPool": {
+          "description": "The glob describing the location of your test executable (relative to the workspace folder)",
+          "type": "number",
+          "default": 4,
+          "scope": "resource"
+        },
+        "catch2TestExplorer.globalEnvironmentVariables": {
+          "description": "Environment variables to be set when running the tests",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "scope": "resource"
+        },
+        "catch2TestExplorer.globalWorkingDirectory": {
+          "description": "The working directory where mocha is run (relative to the workspace folder)",
+          "type": "string",
+          "scope": "resource"
+        }
+      }
+    }
+  }
+}
