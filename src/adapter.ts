@@ -146,7 +146,6 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
             fs.watchFile(exe.abs, (curr, prev) => {
               console.log(`the current mtime is: ${curr.mtime}`);
               console.log(`the previous mtime was: ${prev.mtime}`);
-              //itt a gond mert suite be van capturelve
               this.testsEmitter.fire(<TestLoadStartedEvent>{ type: "started" });
               this.loadSuite(exe, suite).then(() => {
                 this.testsEmitter.fire(<TestLoadFinishedEvent>{
