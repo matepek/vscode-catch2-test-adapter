@@ -2,7 +2,7 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the public
 // domain. The author hereby disclaims copyright to this source code.
 
-import { ExecFileOptions, execFile } from "child_process";
+import { execFile } from "child_process";
 import * as path from "path";
 import * as vscode from "vscode";
 import * as fs from "fs";
@@ -27,9 +27,9 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly autorunEmitter = new vscode.EventEmitter<void>();
 
   private readonly watchedFiles: Set<string> = new Set();
-  private readonly runningTasks: Set<Catch2.TestTask> = new Set();
+  private isRunning: number = 0;
 
-  private readonly allTests: Catch2.ExtendedTestSuiteInfo;
+  private allTests: Catch2.C2TestSuiteInfo;
   private readonly disposables: Array<vscode.Disposable> = new Array();
   //todo: logging
 
@@ -58,7 +58,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
         }
       })
     );
-    this.allTests = this.makeSuite("AllTests", new Catch2.TestTaskPool(1, undefined));
+    this.allTests = new Catch2.C2TestSuiteInfo("AllTests", undefined, this, new Catch2.TaskPool(1));
   }
 
   dispose() {
@@ -82,27 +82,10 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     return this.autorunEmitter.event;
   }
 
-  findSuiteOrTest(
-    allTests: Catch2.ExtendedTestSuiteInfo,
-    byId: string
-  ): Catch2.ExtendedTestSuiteInfo | Catch2.ExtendedTestInfo | undefined {
-    let search: Function = (
-      t: Catch2.ExtendedTestSuiteInfo | Catch2.ExtendedTestInfo
-    ): Catch2.ExtendedTestSuiteInfo | Catch2.ExtendedTestInfo | undefined => {
-      if (t.id === byId) return t;
-      if (t.type == "test") return undefined;
-      for (let i = 0; i < (<Catch2.ExtendedTestSuiteInfo>t).children.length; ++i) {
-        let tt = search((<Catch2.ExtendedTestSuiteInfo>t).children[i]);
-        if (tt != undefined) return tt;
-      }
-      return undefined;
-    };
-    return search(allTests);
-  }
-
   loadSuite(
     exe: ExecutableConfig,
-    oldSuite: Catch2.ExtendedTestSuiteInfo | undefined
+    parentSuite: Catch2.C2TestSuiteInfo,
+    oldSuite: Catch2.C2TestSuiteInfo | undefined
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       try {
@@ -110,45 +93,49 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
           exe.abs,
           ["--list-test-names-only"],
           (error: Error | null, stdout: string, stderr: string) => {
-            const suite = this.makeSuite(
+            const suite = new Catch2.C2TestSuiteInfo(
               exe.name,
-              new Catch2.TestTaskPool(exe.workerPool, this.allTests.taskPool)
+              parentSuite,
+              this,
+              new Catch2.TaskPool(exe.workerPool)
             );
+
             if (oldSuite !== undefined) {
-              const index = this.allTests.children.findIndex(val => val.id == oldSuite.id);
+              const index = parentSuite.children.findIndex(val => val.id == oldSuite.id);
               if (index !== -1) {
-                this.allTests.children[index] = suite;
+                parentSuite.children[index] = suite;
               } else {
                 console.error("It should contains");
               }
             } else {
-              this.allTests.children.push(suite);
+              parentSuite.children.push(suite);
             }
+
             let lines = stdout.split(/[\n\r]+/);
             for (var line of lines) {
               if (line.trim().length > 0) {
                 suite.children.push(
-                  this.makeTest(
-                    line.trim(),
-                    exe.abs, //https://github.com/catchorg/Catch2/issues/1327
+                  new Catch2.C2TestInfo(
+                    line.trimRight(),
+                    this,
+                    suite,
+                    exe.abs,
                     [line.replace(",", "\\,").trim(), "--reporter", "xml"],
-                    { cwd: exe.workingDirectory, env: exe.environmentVariables },
-                    suite.taskPool
+                    { cwd: exe.workingDirectory, env: exe.environmentVariables }
                   )
                 );
               }
             }
+
             if (!this.watchedFiles.has(exe.abs)) {
               this.watchedFiles.add(exe.abs);
             } else {
               fs.unwatchFile(exe.abs);
             }
             fs.watchFile(exe.abs, (curr, prev) => {
-              console.log(`the current mtime is: ${curr.mtime}`);
-              console.log(`the previous mtime was: ${prev.mtime}`);
-              this.testsEmitter.fire(<TestLoadStartedEvent>{ type: "started" });
-              this.loadSuite(exe, suite).then(() => {
-                this.testsEmitter.fire(<TestLoadFinishedEvent>{
+              this.testsEmitter.fire({ type: "started" });
+              this.loadSuite(exe, parentSuite, suite).then(() => {
+                this.testsEmitter.fire({
                   type: "finished",
                   suite: this.allTests
                 });
@@ -167,7 +154,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   load(): Promise<void> {
     this.cancel();
 
-    this.testsEmitter.fire(<TestLoadStartedEvent>{ type: "started" });
+    this.testsEmitter.fire({ type: "started" });
 
     this.watchedFiles.forEach(file => {
       fs.unwatchFile(file);
@@ -176,58 +163,62 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
     const config = this.getConfiguration();
     const execs = this.getExecutables(config);
-    while (this.allTests.children.shift() !== undefined);
 
     if (execs == undefined) {
-      this.testsEmitter.fire(<TestLoadFinishedEvent>{ type: "finished", suite: undefined });
+      this.testsEmitter.fire({ type: "finished", suite: undefined });
       return Promise.resolve();
     }
 
-    this.allTests.taskPool = new Catch2.TestTaskPool(this.getGlobalWorkerPool(config), undefined);
+    const allTests = new Catch2.C2TestSuiteInfo(
+      "AllTests",
+      undefined,
+      this,
+      new Catch2.TaskPool(this.getGlobalWorkerPool(config))
+    );
 
     let testListReaders = Promise.resolve();
 
     execs.forEach(exe => {
       testListReaders = testListReaders.then(() => {
-        return this.loadSuite(exe, undefined);
+        return this.loadSuite(exe, allTests, undefined);
       });
     });
 
     return testListReaders.then(() => {
-      this.testsEmitter.fire(<TestLoadFinishedEvent>{
+      this.allTests = allTests;
+      this.testsEmitter.fire({
         type: "finished",
-        suite: this.allTests
+        suite: allTests
       });
     });
   }
 
   run(tests: string[]): Promise<void> {
-    if (tests.length != 1) {
-      // when can we get more than 1 id?
-      throw Error("Unexpected 1.");
-    }
-    const taskPromises: Promise<void>[] = [];
-    if (this.runningTasks.size == 0) {
-      this.testStatesEmitter.fire(<TestRunStartedEvent>{ type: "started", tests: tests });
+    const runners: Promise<void>[] = [];
+    if (this.isRunning == 0) {
+      this.testStatesEmitter.fire({ type: "started", tests: tests });
       tests.forEach(testId => {
-        const id = this.findSuiteOrTest(this.allTests, testId);
-        if (id === undefined) {
-          throw Error();
+        const info = this.findSuiteOrTest(this.allTests, testId);
+        if (info === undefined) {
+          console.error("Shouldn't be here");
+        } else {
+          const always = () => {
+            this.isRunning -= 1;
+          };
+          runners.push(info.test().then(always, always));
+          this.isRunning += 1;
         }
-        const task = new Catch2.TestTask(this, id);
-        this.runningTasks.add(task);
-        const always = () => {
-          this.runningTasks.delete(task);
-        };
-        taskPromises.push(task.getPromise().then(always, always));
       });
 
+      this.isRunning += 1;
       const always = () => {
-        this.testStatesEmitter.fire(<TestRunFinishedEvent>{ type: "finished" });
+        this.testStatesEmitter.fire({ type: "finished" });
+        this.isRunning -= 1;
       };
-      return Promise.all(taskPromises).then(always, always);
+
+      return Promise.all(runners).then(always, always);
     }
-    throw Error("Catch2 Test Adapter: Test(s) are currently running. Wait.");
+    throw Error("Catch2 Test Adapter: Test(s) are currently running.");
   }
 
   async debug(tests: string[]): Promise<void> {
@@ -235,40 +226,25 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   cancel(): void {
-    this.runningTasks.forEach(task => {
-      task.cancel();
-    });
+    this.allTests.cancel();
   }
 
-  private makeSuite(
-    suite_name: string,
-    taskPool: Catch2.TestTaskPool
-  ): Catch2.ExtendedTestSuiteInfo {
-    return {
-      type: "suite",
-      id: this.generateUniqueId(),
-      label: suite_name,
-      children: [],
-      taskPool: taskPool
+  private findSuiteOrTest(
+    suite: Catch2.C2TestSuiteInfo,
+    byId: string
+  ): Catch2.C2TestSuiteInfo | Catch2.C2TestInfo | undefined {
+    let search: Function = (
+      t: Catch2.C2TestSuiteInfo | Catch2.C2TestInfo
+    ): Catch2.C2TestSuiteInfo | Catch2.C2TestInfo | undefined => {
+      if (t.id === byId) return t;
+      if (t.type == "test") return undefined;
+      for (let i = 0; i < (<Catch2.C2TestSuiteInfo>t).children.length; ++i) {
+        let tt = search((<Catch2.C2TestSuiteInfo>t).children[i]);
+        if (tt != undefined) return tt;
+      }
+      return undefined;
     };
-  }
-
-  private makeTest(
-    test_name: string,
-    execPath: string,
-    execParams: string[],
-    execOptions: ExecFileOptions,
-    taskPool: Catch2.TestTaskPool
-  ): Catch2.ExtendedTestInfo {
-    return {
-      type: "test",
-      id: this.generateUniqueId(),
-      label: test_name,
-      execPath: execPath,
-      execParams: execParams,
-      execOptions: execOptions,
-      taskPool: taskPool
-    };
+    return search(suite);
   }
 
   private getConfiguration(): vscode.WorkspaceConfiguration {
@@ -417,7 +393,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
   private static uidCounter: number = 0;
 
-  private generateUniqueId(): string {
+  generateUniqueId(): string {
     return (++Catch2TestAdapter.uidCounter).toString();
   }
 }
