@@ -74,10 +74,13 @@
           "default": [
             {
               "name": "workspace dir: ",
-              "path": ".",
+              "path": null,
               "regex": "(t|T)est",
               "workerPool": 1,
-              "workingDirectory": "."
+              "workingDirectory": ".",
+              "environmentVariables": {
+                "ENV1": "valueofENV1"
+              }
             }
           ],
           "scope": "resource"
@@ -89,7 +92,7 @@
           "scope": "resource"
         },
         "catch2TestExplorer.globalEnvironmentVariables": {
-          "description": "Environment variables to be set when running the tests",
+          "description": "Environment variables to be set when running the tests. (Resolves: ${workspaceFolder})",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -98,7 +101,7 @@
           "scope": "resource"
         },
         "catch2TestExplorer.globalWorkingDirectory": {
-          "description": "The working directory where mocha is run (relative to the workspace folder)",
+          "description": "The working directory where mocha is run (relative to the workspace folder). (Resolves: ${workspaceFolder})",
           "type": "string",
           "scope": "resource"
         }

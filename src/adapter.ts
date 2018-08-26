@@ -90,7 +90,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     return new Promise<void>((resolve, reject) => {
       try {
         execFile(
-          exe.abs,
+          exe.path,
           ["--list-test-names-only"],
           (error: Error | null, stdout: string, stderr: string) => {
             const suite = new Catch2.C2TestSuiteInfo(
@@ -119,7 +119,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
                     line.trimRight(),
                     this,
                     suite,
-                    exe.abs,
+                    exe.path,
                     [line.replace(",", "\\,").trim(), "--reporter", "xml"],
                     { cwd: exe.workingDirectory, env: exe.environmentVariables }
                   )
@@ -127,15 +127,15 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
               }
             }
 
-            let watcher = this.watchers.get(exe.abs);
+            let watcher = this.watchers.get(exe.path);
 
             if (watcher === undefined) {
-              watcher = fs.watch(exe.abs);
-              this.watchers.set(exe.abs, watcher);
+              watcher = fs.watch(exe.path);
+              this.watchers.set(exe.path, watcher);
               watcher.once("error", (error: Error) => {
                 this.testsEmitter.fire({ type: "started" });
                 watcher!.close();
-                this.watchers.delete(exe.abs);
+                this.watchers.delete(exe.path);
                 parentSuite.removeChild(suite);
                 this.testsEmitter.fire({
                   type: "finished",
@@ -148,9 +148,9 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
               this.testsEmitter.fire({ type: "started" });
               new Promise<void>(r => setTimeout(r, 100)).then(() => {
                 if (eventType == "rename") {
-                  if (!fs.existsSync(exe.abs)) {
+                  if (!fs.existsSync(exe.path)) {
                     watcher!.close();
-                    this.watchers.delete(exe.abs);
+                    this.watchers.delete(exe.path);
                     parentSuite.removeChild(suite);
                     this.testsEmitter.fire({
                       type: "finished",
@@ -160,7 +160,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
                   }
                   // this trick was necessary to get the events
                   // symptom: on mac after compilation rename is arriving
-                  this.watchers.set(exe.abs, fs.watch(exe.abs));
+                  this.watchers.set(exe.path, fs.watch(exe.path));
                 }
                 this.loadSuite(exe, parentSuite, suite).then(() => {
                   this.testsEmitter.fire({
@@ -295,7 +295,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       if (val === undefined || val === null) {
         delete resultEnv.prop;
       } else {
-        resultEnv[prop] = String(val);
+        resultEnv[prop] = this.resolveVariables(String(val));
       }
     }
 
@@ -303,14 +303,12 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   private getGlobalWorkerPool(config: vscode.WorkspaceConfiguration): number {
-    let pool = config.get<number>("globalWorkerPool", 4);
-    pool = pool < 0 ? 9999 : pool;
-    return pool;
+    return config.get<number>("globalWorkerPool", 4);
   }
 
   private getGlobalWorkingDirectory(config: vscode.WorkspaceConfiguration): string {
     const dirname = this.workspaceFolder.uri.fsPath;
-    const cwd = config.get<string>("globalWorkingDirectory", dirname);
+    const cwd = this.resolveVariables(config.get<string>("globalWorkingDirectory", dirname));
     if (path.isAbsolute(cwd)) {
       return cwd;
     } else {
@@ -329,35 +327,49 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       if (val === undefined || val === null) {
         delete resultEnv.prop;
       } else {
-        resultEnv[prop] = String(val);
+        resultEnv[prop] = this.resolveVariables(String(val));
       }
     }
 
     return resultEnv;
   }
 
+  private resolveVariables(value: any): any {
+    if (typeof value == "string") {
+      return value.replace("${workspaceFolder}", this.workspaceFolder.uri.fsPath);
+    } else if (Array.isArray(value)) {
+      return (<any[]>value).map((v: any) => this.resolveVariables(v));
+    }
+    return value;
+  }
+
   private getExecutables(config: vscode.WorkspaceConfiguration): ExecutableConfig[] {
     const globalWorkingDirectory = this.getGlobalWorkingDirectory(config);
+
     let executables: ExecutableConfig[] = [];
+
     const configExecs:
+      | undefined
       | string
+      | string[]
       | { [prop: string]: any }
-      | { [prop: string]: any }[]
-      | undefined = config.get("executables");
+      | { [prop: string]: any }[] = config.get("executables");
+
     const fullPath = (p: string): string => {
       return path.isAbsolute(p) ? p : this.resolveRelPath(p);
     };
+
     const addObject = (o: Object): void => {
       const name: string = o.hasOwnProperty("name") ? (<any>o)["name"] : (<any>o)["path"];
-      if (!o.hasOwnProperty("path")) {
-        throw Error("'path' is a requireds property.");
+      if (!o.hasOwnProperty("path") || (<any>o)["path"] === null) {
+        console.warn(Error("'path' is a requireds property."));
+        return;
       }
-      const p: string = fullPath((<any>o)["path"]);
+      const p: string = fullPath(this.resolveVariables((<any>o)["path"]));
       const regex: string = o.hasOwnProperty("regex") ? (<any>o)["regex"] : "";
-      let pool: number = o.hasOwnProperty("workerPool") ? Number((<any>o)["workerPool"]) : 1;
-      pool = pool < 0 ? 9999 : pool;
+      const pool: number = o.hasOwnProperty("workerPool") ? Number((<any>o)["workerPool"]) : 1;
       const cwd: string = o.hasOwnProperty("workingDirectory")
-        ? fullPath((<any>o)["workingDirectory"])
+        ? fullPath(this.resolveVariables((<any>o)["workingDirectory"]))
         : globalWorkingDirectory;
       const env: { [prop: string]: any } = o.hasOwnProperty("environmentVariables")
         ? this.getGlobalAndLocalEnvironmentVariables(config, (<any>o)["environmentVariables"])
@@ -384,23 +396,35 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
         executables.push(new ExecutableConfig(name, p, regex, pool, cwd, env));
       }
     };
+
     if (typeof configExecs === "string") {
+      if (configExecs.length == 0) return [];
       executables.push(
-        new ExecutableConfig(configExecs, fullPath(configExecs), "", 1, globalWorkingDirectory, [])
+        new ExecutableConfig(
+          configExecs,
+          fullPath(this.resolveVariables(configExecs)),
+          "",
+          1,
+          globalWorkingDirectory,
+          []
+        )
       );
-    } else if (configExecs instanceof Array) {
+    } else if (Array.isArray(configExecs)) {
       for (var i = 0; i < configExecs.length; ++i) {
-        if (typeof configExecs[i] === "string") {
-          executables.push(
-            new ExecutableConfig(
-              configExecs[i].toString(),
-              fullPath(configExecs[i].toString()),
-              "",
-              1,
-              globalWorkingDirectory,
-              []
-            )
-          );
+        if (typeof configExecs[i] == "string") {
+          const configExecsStr = String(configExecs[i]);
+          if (configExecsStr.length > 0) {
+            executables.push(
+              new ExecutableConfig(
+                this.resolveVariables(configExecsStr),
+                fullPath(this.resolveVariables(configExecsStr)),
+                "",
+                1,
+                globalWorkingDirectory,
+                []
+              )
+            );
+          }
         } else {
           addObject(configExecs[i]);
         }
@@ -408,7 +432,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     } else if (configExecs instanceof Object) {
       addObject(configExecs);
     } else {
-      throw "Catch2 congig error: wrong type: executables";
+      throw "Catch2 config error: wrong type: executables";
     }
 
     executables.sort((a: ExecutableConfig, b: ExecutableConfig) => {
@@ -432,7 +456,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 class ExecutableConfig {
   constructor(
     public readonly name: string,
-    public readonly abs: string,
+    public readonly path: string,
     public readonly regex: string,
     public readonly workerPool: number,
     public readonly workingDirectory: string,
