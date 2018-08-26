@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fixes some issues related to test auto-reloading after compilation.
+
+## [0.1.1] - 2018-08-25
+
+### Changed
+
 - Nothing really, just refactoring.
 
 ## [0.1.0] - 2018-08-25

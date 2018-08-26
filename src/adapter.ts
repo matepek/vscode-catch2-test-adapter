@@ -26,7 +26,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   >();
   private readonly autorunEmitter = new vscode.EventEmitter<void>();
 
-  private readonly watchedFiles: Set<string> = new Set();
+  private readonly watchers: Map<string, fs.FSWatcher> = new Map();
   private isRunning: number = 0;
 
   private allTests: Catch2.C2TestSuiteInfo;
@@ -127,20 +127,50 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
               }
             }
 
-            if (!this.watchedFiles.has(exe.abs)) {
-              this.watchedFiles.add(exe.abs);
-            } else {
-              fs.unwatchFile(exe.abs);
-            }
-            fs.watchFile(exe.abs, (curr, prev) => {
-              this.testsEmitter.fire({ type: "started" });
-              this.loadSuite(exe, parentSuite, suite).then(() => {
+            let watcher = this.watchers.get(exe.abs);
+
+            if (watcher === undefined) {
+              watcher = fs.watch(exe.abs);
+              this.watchers.set(exe.abs, watcher);
+              watcher.once("error", (error: Error) => {
+                this.testsEmitter.fire({ type: "started" });
+                watcher!.close();
+                this.watchers.delete(exe.abs);
+                parentSuite.removeChild(suite);
                 this.testsEmitter.fire({
                   type: "finished",
                   suite: this.allTests
                 });
               });
+            }
+
+            watcher.once("change", (eventType: string, filename: string) => {
+              this.testsEmitter.fire({ type: "started" });
+              new Promise<void>(r => setTimeout(r, 100)).then(() => {
+                if (eventType == "rename") {
+                  if (!fs.existsSync(exe.abs)) {
+                    watcher!.close();
+                    this.watchers.delete(exe.abs);
+                    parentSuite.removeChild(suite);
+                    this.testsEmitter.fire({
+                      type: "finished",
+                      suite: this.allTests
+                    });
+                    return;
+                  }
+                  // this trick was necessary to get the events
+                  // symptom: on mac after compilation rename is arriving
+                  this.watchers.set(exe.abs, fs.watch(exe.abs));
+                }
+                this.loadSuite(exe, parentSuite, suite).then(() => {
+                  this.testsEmitter.fire({
+                    type: "finished",
+                    suite: this.allTests
+                  });
+                });
+              });
             });
+
             resolve();
           }
         );
@@ -156,10 +186,10 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
     this.testsEmitter.fire({ type: "started" });
 
-    this.watchedFiles.forEach(file => {
-      fs.unwatchFile(file);
+    this.watchers.forEach((value, key) => {
+      value.close();
     });
-    this.watchedFiles.clear();
+    this.watchers.clear();
 
     const config = this.getConfiguration();
     const execs = this.getExecutables(config);
@@ -211,6 +241,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       });
 
       this.isRunning += 1;
+
       const always = () => {
         this.testStatesEmitter.fire({ type: "finished" });
         this.isRunning -= 1;
