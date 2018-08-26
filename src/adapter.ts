@@ -31,7 +31,6 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
   private allTests: Catch2.C2TestSuiteInfo;
   private readonly disposables: Array<vscode.Disposable> = new Array();
-  //todo: logging
 
   constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
     this.disposables.push(
@@ -253,7 +252,46 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   async debug(tests: string[]): Promise<void> {
-    throw new Error("Method not implemented.");
+    if (this.isRunning > 0) {
+      throw "Catch2: Tests are currently running.";
+    }
+
+    console.assert(tests.length === 1);
+    const info = this.findSuiteOrTest(this.allTests, tests[0]);
+    console.assert(info !== undefined);
+
+    if (info instanceof Catch2.C2TestSuiteInfo) {
+      throw "Can't choose a group, only a single test";
+    }
+
+    const testInfo = <Catch2.C2TestInfo>info;
+    return vscode.debug
+      .startDebugging(this.workspaceFolder, {
+        name: "Catch2: " + testInfo.label,
+        type: "cppdbg",
+        request: "launch",
+        program: testInfo.execPath,
+        args: [],
+        stopAtEntry: false,
+        cwd: testInfo.execOptions.cwd!,
+        environment: [],
+        externalConsole: true,
+        MIMode: "lldb"
+      })
+      .then(() => {
+        return Promise.resolve();
+      });
+
+    // "name": "(lldb) Launch",
+    //   "type": "cppdbg",
+    //     "request": "launch",
+    //       "program": "${workspaceFolder}/test4",
+    //         "args": [],
+    //           "stopAtEntry": false,
+    //             "cwd": "${workspaceFolder}",
+    //               "environment": [],
+    //                 "externalConsole": true,
+    //                   "MIMode": "lldb"
   }
 
   cancel(): void {

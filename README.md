@@ -80,9 +80,8 @@ The default working directory in case of it is not provided by the object's `wor
 
 ## TODOs
 
-- Refactor code
 - Better Catch2 xml parser (just a bit)
-- Logging
+- Logger
 
 ## Contribution
 

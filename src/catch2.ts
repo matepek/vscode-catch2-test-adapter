@@ -100,9 +100,9 @@ export class C2TestInfo implements TestInfo {
     public label: string,
     private readonly adapter: Catch2TestAdapter,
     private readonly parent: C2TestSuiteInfo,
-    private readonly execPath: string,
-    private readonly execParams: Array<string>,
-    private readonly execOptions: ExecFileOptions
+    readonly execPath: string,
+    readonly execParams: Array<string>,
+    readonly execOptions: ExecFileOptions
   ) {
     this.id = adapter.generateUniqueId();
   }
