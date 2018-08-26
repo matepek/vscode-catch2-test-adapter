@@ -264,34 +264,50 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       throw "Can't choose a group, only a single test";
     }
 
-    const testInfo = <Catch2.C2TestInfo>info;
-    return vscode.debug
-      .startDebugging(this.workspaceFolder, {
-        name: "Catch2: " + testInfo.label,
-        type: "cppdbg",
-        request: "launch",
-        program: testInfo.execPath,
-        args: [],
-        stopAtEntry: false,
-        cwd: testInfo.execOptions.cwd!,
-        environment: [],
-        externalConsole: true,
-        MIMode: "lldb"
-      })
-      .then(() => {
-        return Promise.resolve();
-      });
+    this.isRunning += 1;
+    this.testStatesEmitter.fire({ type: "started", tests: tests });
 
-    // "name": "(lldb) Launch",
-    //   "type": "cppdbg",
-    //     "request": "launch",
-    //       "program": "${workspaceFolder}/test4",
-    //         "args": [],
-    //           "stopAtEntry": false,
-    //             "cwd": "${workspaceFolder}",
-    //               "environment": [],
-    //                 "externalConsole": true,
-    //                   "MIMode": "lldb"
+    const testInfo = <Catch2.C2TestInfo>info;
+
+    const debugSessionStarted = await vscode.debug.startDebugging(this.workspaceFolder, {
+      name: "Catch2: " + testInfo.label,
+      type: "cppdbg",
+      request: "launch",
+      program: testInfo.execPath,
+      args: [],
+      stopAtEntry: false,
+      cwd: testInfo.execOptions.cwd!,
+      environment: [],
+      externalConsole: true,
+      MIMode: "lldb"
+    });
+
+    if (!debugSessionStarted) {
+      console.error("Failed starting the debug session - aborting");
+      this.cancel();
+      return;
+    }
+
+    const currentSession = vscode.debug.activeDebugSession;
+    if (!currentSession) {
+      console.error("No active debug session - aborting");
+      this.cancel();
+      return;
+    }
+
+    const always = () => {
+      this.testStatesEmitter.fire({ type: "finished" });
+      this.isRunning -= 1;
+    };
+
+    await new Promise<void>((resolve, reject) => {
+      const subscription = vscode.debug.onDidTerminateDebugSession(session => {
+        if (currentSession != session) return;
+        console.info("Debug session ended");
+        resolve();
+        subscription.dispose();
+      });
+    }).then(always, always);
   }
 
   cancel(): void {
