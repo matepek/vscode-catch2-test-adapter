@@ -3,148 +3,160 @@
 // domain. The author hereby disclaims copyright to this source code.
 
 import { ChildProcess, ExecFileOptions, execFile } from "child_process";
-import {
-  TestDecoration,
-  TestEvent,
-  TestInfo,
-  TestSuiteInfo,
-  TestSuiteEvent
-} from "vscode-test-adapter-api";
+import { TestDecoration, TestEvent, TestInfo, TestSuiteInfo } from "vscode-test-adapter-api";
 import { Catch2TestAdapter } from "./adapter";
 import * as xml2js from "xml2js";
 import * as path from "path";
 
-export class TestTaskPool {
+export class C2TestSuiteInfo implements TestSuiteInfo {
+  readonly type: "suite" = "suite";
+  readonly id: string;
+  file?: string;
+  line?: number;
+  children: (C2TestSuiteInfo | C2TestInfo)[] = [];
+
   constructor(
-    private availableSlot: number,
-    private readonly parentPool: TestTaskPool | undefined
-  ) {}
+    public readonly label: string,
+    private readonly parent: C2TestSuiteInfo | undefined,
+    private readonly adapter: Catch2TestAdapter,
+    private readonly taskPool: TaskPool
+  ) {
+    this.id = adapter.generateUniqueId();
+  }
 
-  acquire(): boolean {
-    if (this.availableSlot == 0) return false;
-    this.availableSlot -= 1;
+  cancel(): void {
+    this.children.forEach(child => {
+      child.cancel();
+    });
+  }
 
-    if (this.parentPool !== undefined) {
-      if (this.parentPool.acquire()) {
+  acquireSlot(): boolean {
+    const isAcquired = this.taskPool.acquire();
+    if (!isAcquired) return false;
+    if (this.parent != undefined) {
+      if (this.parent.acquireSlot()) {
         return true;
       } else {
-        this.availableSlot += 1;
+        this.taskPool.release();
         return false;
       }
+    } else {
+      return true;
     }
-    return true;
   }
 
-  release(): void {
-    if (this.parentPool !== undefined) {
-      this.parentPool.release();
-    }
-    this.availableSlot += 1;
+  releaseSlot(): void {
+    this.taskPool.release();
+    if (this.parent != undefined) this.parent.releaseSlot();
+  }
+
+  test(): Promise<void> {
+    this.adapter.testStatesEmitter.fire({
+      type: "suite",
+      suite: this,
+      state: "running"
+    });
+
+    let ps: Promise<void>[] = [];
+    this.children.forEach(child => {
+      ps.push(child.test());
+    });
+
+    return Promise.all(ps).then(
+      () => {
+        this.adapter.testStatesEmitter.fire({
+          type: "suite",
+          suite: this,
+          state: "completed"
+        });
+      },
+      (err: Error) => {
+        console.error("Serious error.", err);
+      }
+    );
   }
 }
 
-export interface TaskInfo {
-  taskPool: TestTaskPool;
-}
+export class C2TestInfo implements TestInfo {
+  readonly type: "test" = "test";
+  readonly id: string;
+  file?: string = undefined;
+  line?: number = undefined;
+  skipped?: boolean = false;
 
-export interface ExtendedTestSuiteInfo extends TestSuiteInfo, TaskInfo {}
-
-export interface ExtendedTestInfo extends TestInfo, TaskInfo {
-  execPath: string;
-  execParams: Array<string>;
-  execOptions: ExecFileOptions;
-}
-
-export class TestTask {
   private isKill: boolean = false;
   private proc: ChildProcess | undefined = undefined;
-  private children: TestTask[] = [];
-  private readonly promise: Promise<void>;
+  private rejectTest: (e: Error) => void = e => {};
 
   constructor(
+    public label: string,
     private readonly adapter: Catch2TestAdapter,
-    private readonly info: TestSuiteInfo | TestInfo
+    private readonly parent: C2TestSuiteInfo,
+    private readonly execPath: string,
+    private readonly execParams: Array<string>,
+    private readonly execOptions: ExecFileOptions
   ) {
-    if (info.type == "suite") {
-      adapter.testStatesEmitter.fire(<TestSuiteEvent>{
-        type: "suite",
-        suite: info,
-        state: "running"
-      });
-
-      let ps: Promise<void>[] = [];
-      info.children.forEach(child => {
-        const task = new TestTask(adapter, child);
-        this.children.push(task);
-        ps.push(task.getPromise());
-      });
-
-      this.promise = Promise.all(ps).then(
-        () => {
-          adapter.testStatesEmitter.fire(<TestSuiteEvent>{
-            type: "suite",
-            suite: info,
-            state: "completed"
-          });
-        },
-        (err: Error) => {
-          console.error("Serious error.", err);
-        }
-      );
-    } else {
-      this.adapter.testStatesEmitter.fire(<TestEvent>{
-        type: "test",
-        test: info,
-        state: "running"
-      });
-
-      this.promise = this.test().then(
-        () => {},
-        (err: Error) => {
-          console.error("Serious error.", err);
-        }
-      );
-    }
-  }
-
-  getPromise(): Promise<void> {
-    return this.promise;
+    this.id = adapter.generateUniqueId();
   }
 
   cancel(): void {
     this.isKill = true;
-    this.children.forEach(child => {
-      child.cancel();
-    });
-    if (this.proc) {
+    this.rejectTest(Error(this.label + " was killed."));
+
+    if (this.proc != undefined) {
       this.proc.kill();
+      this.proc = undefined;
     }
   }
 
-  private test(): Promise<void> {
-    const catch2Info = <ExtendedTestInfo>this.info;
-    if (!catch2Info.taskPool.acquire()) {
-      return new Promise<void>(r => setTimeout(r, 64)).then(() => {
-        return this.test();
+  test(): Promise<void> {
+    this.isKill = false;
+
+    return this.runTest();
+  }
+
+  private runTest(): Promise<void> {
+    if (this.isKill) return Promise.reject(Error("Test was killed."));
+
+    if (!this.parent.acquireSlot()) {
+      return new Promise<Error>(resolve => {
+        // cancel can call it
+        this.rejectTest = resolve;
+        setTimeout((e: Error) => {
+          resolve();
+        }, 64);
+      }).then(() => {
+        return this.runTest();
       });
     }
 
     return new Promise<TestEvent>((resolve, reject) => {
+      // cancel can call it
+      this.rejectTest = reject;
+
       if (this.isKill) {
-        reject(Error(this.info.label + " was killed."));
+        reject(Error(this.label + " was killed."));
+        return;
       }
 
+      this.adapter.testStatesEmitter.fire({
+        type: "test",
+        test: this,
+        state: "running"
+      });
+
       this.proc = execFile(
-        catch2Info.execPath,
-        catch2Info.execParams,
-        catch2Info.execOptions,
+        this.execPath,
+        this.execParams,
+        this.execOptions,
         (error: Error | null, stdout: string, stderr: string) => {
+          // error code means test failure
+          if (this.isKill) {
+            reject(Error(this.label + " was killed."));
+            return;
+          }
           try {
-            // error code means test failure
-
-            let parser = new xml2js.Parser();
-
-            parser.parseString(stdout, (err: any, result: any) => {
+            new xml2js.Parser().parseString(stdout, (err: any, result: any) => {
               if (err) {
                 console.error("Something is wrong.", err);
                 reject(err);
@@ -155,31 +167,29 @@ export class TestTask {
             });
           } catch (e) {
             reject(e);
-          } finally {
-            this.proc = undefined;
           }
         }
       );
     }).then(
-      testEvent => {
+      (testEvent: TestEvent) => {
+        this.proc = undefined;
+        this.parent.releaseSlot();
         this.adapter.testStatesEmitter.fire(testEvent);
-        catch2Info.taskPool.release();
       },
       (err: Error) => {
-        this.adapter.testStatesEmitter.fire(<TestEvent>{
+        this.proc = undefined;
+        this.parent.releaseSlot();
+        this.adapter.testStatesEmitter.fire({
           type: "test",
-          test: catch2Info,
+          test: this,
           state: "failed",
           message: err.toString()
         });
-        catch2Info.taskPool.release();
       }
     );
   }
 
   private processXml(result: any): TestEvent {
-    const catch2Info = <ExtendedTestInfo>this.info;
-
     if (result.Catch.Group.length != 1) {
       // this code expects 1, because it runs tests 1 by 1
       console.error("Something is wrong.", result);
@@ -196,21 +206,21 @@ export class TestTask {
 
     if (
       testCase.$.hasOwnProperty("description") &&
-      catch2Info.label.indexOf(testCase.$.description) == -1
+      this.label.indexOf(testCase.$.description) == -1
     ) {
-      catch2Info.label += " | " + testCase.$.description;
+      this.label += " | " + testCase.$.description;
     }
 
     if (
-      (catch2Info.file == undefined || catch2Info.line == undefined) &&
+      (this.file == undefined || this.line == undefined) &&
       testCase.$.hasOwnProperty("filename") &&
       testCase.$.hasOwnProperty("line")
     ) {
-      const filePath = catch2Info.execOptions.cwd
-        ? path.resolve(catch2Info.execOptions.cwd, testCase.$.filename)
+      const filePath = this.execOptions.cwd
+        ? path.resolve(this.execOptions.cwd, testCase.$.filename)
         : testCase.$.filename;
-      catch2Info.file = filePath;
-      catch2Info.line = Number(testCase.$.line) - 1 /*It looks Catch2 works like this.*/;
+      this.file = filePath;
+      this.line = Number(testCase.$.line) - 1 /*It looks Catch2 works like this.*/;
     }
 
     try {
@@ -220,7 +230,7 @@ export class TestTask {
       [message, decorations, success] = this.processXmlTagTestCaseInner(testCase, "");
       const testEvent: TestEvent = {
         type: "test",
-        test: catch2Info,
+        test: this,
         state: success ? "passed" : "failed",
         message: message.length ? message : undefined,
         decorations: decorations.length ? decorations : undefined
@@ -231,7 +241,10 @@ export class TestTask {
     }
   }
 
-  processXmlTagTestCaseInner(testCase: any, title: string): [string, TestDecoration[], boolean] {
+  private processXmlTagTestCaseInner(
+    testCase: any,
+    title: string
+  ): [string, TestDecoration[], boolean] {
     title = testCase.$.name + "(line: " + testCase.$.line + ")";
     let message = "";
     let decorations: TestDecoration[] = [];
@@ -271,7 +284,7 @@ export class TestTask {
     return [message, decorations, success];
   }
 
-  processXmlTagExpressionInner(expr: any, title: string): [string, TestDecoration[]] {
+  private processXmlTagExpressionInner(expr: any, title: string): [string, TestDecoration[]] {
     let message = "";
     let decorations: TestDecoration[] = [];
 
@@ -289,7 +302,7 @@ export class TestTask {
     return [message, decorations];
   }
 
-  processXmlTagSectionInner(section: any, title: string): [string, TestDecoration[]] {
+  private processXmlTagSectionInner(section: any, title: string): [string, TestDecoration[]] {
     title += " | " + section.$.name + "(line: " + section.$.line + ")";
     let message = "";
     let decorations: TestDecoration[] = [];
@@ -322,5 +335,19 @@ export class TestTask {
     }
 
     return [message, decorations];
+  }
+}
+
+export class TaskPool {
+  constructor(private availableSlot: number) {}
+
+  acquire(): boolean {
+    if (this.availableSlot == 0) return false;
+    this.availableSlot -= 1;
+    return true;
+  }
+
+  release(): void {
+    this.availableSlot += 1;
   }
 }
