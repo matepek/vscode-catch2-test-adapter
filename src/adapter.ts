@@ -28,6 +28,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
   private readonly watchers: Map<string, fs.FSWatcher> = new Map();
   private isRunning: number = 0;
+  private isDebugging: boolean = false;
 
   private allTests: Catch2.C2TestSuiteInfo;
   private readonly disposables: Array<vscode.Disposable> = new Array();
@@ -128,46 +129,34 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
             let watcher = this.watchers.get(exe.path);
 
-            if (watcher === undefined) {
-              watcher = fs.watch(exe.path);
-              this.watchers.set(exe.path, watcher);
-              watcher.once("error", (error: Error) => {
-                this.testsEmitter.fire({ type: "started" });
+            if (watcher != undefined) {
+              watcher.close();
+            }
+
+            watcher = fs.watch(exe.path);
+            this.watchers.set(exe.path, watcher);
+
+            watcher.on("change", (eventType: string, filename: string) => {
+              if (!fs.existsSync(exe.path)) {
                 watcher!.close();
                 this.watchers.delete(exe.path);
+                this.testsEmitter.fire({ type: "started" });
                 parentSuite.removeChild(suite);
                 this.testsEmitter.fire({
                   type: "finished",
                   suite: this.allTests
                 });
-              });
-            }
-
-            watcher.once("change", (eventType: string, filename: string) => {
-              this.testsEmitter.fire({ type: "started" });
-              new Promise<void>(r => setTimeout(r, 100)).then(() => {
-                if (eventType == "rename") {
-                  if (!fs.existsSync(exe.path)) {
-                    watcher!.close();
-                    this.watchers.delete(exe.path);
-                    parentSuite.removeChild(suite);
-                    this.testsEmitter.fire({
-                      type: "finished",
-                      suite: this.allTests
-                    });
-                    return;
-                  }
-                  // this trick was necessary to get the events
-                  // symptom: on mac after compilation rename is arriving
-                  this.watchers.set(exe.path, fs.watch(exe.path));
-                }
+              } else if (this.isDebugging) {
+                // change event can arrive during debug session on osx (why?)
+              } else {
+                this.testsEmitter.fire({ type: "started" });
                 this.loadSuite(exe, parentSuite, suite).then(() => {
                   this.testsEmitter.fire({
                     type: "finished",
                     suite: this.allTests
                   });
                 });
-              });
+              }
             });
 
             resolve();
@@ -223,6 +212,10 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   run(tests: string[]): Promise<void> {
+    if (this.isDebugging) {
+      throw "Catch2: Test is currently being debugged.";
+    }
+
     const runners: Promise<void>[] = [];
     if (this.isRunning == 0) {
       this.testStatesEmitter.fire({ type: "started", tests: tests });
@@ -248,12 +241,16 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
       return Promise.all(runners).then(always, always);
     }
-    throw Error("Catch2 Test Adapter: Test(s) are currently running.");
+    throw Error("Catch2 Test Adapter: Test(s) are currently being run.");
   }
 
   async debug(tests: string[]): Promise<void> {
+    if (this.isDebugging) {
+      throw "Catch2: Test is currently being debugged.";
+    }
+
     if (this.isRunning > 0) {
-      throw "Catch2: Tests are currently running.";
+      throw "Catch2: Test(s) are currently being run.";
     }
 
     console.assert(tests.length === 1);
@@ -261,11 +258,10 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     console.assert(info !== undefined);
 
     if (info instanceof Catch2.C2TestSuiteInfo) {
-      throw "Can't choose a group, only a single test";
+      throw "Can't choose a group, only a single test.";
     }
 
-    this.isRunning += 1;
-    this.testStatesEmitter.fire({ type: "started", tests: tests });
+    this.isDebugging = true;
 
     const testInfo = <Catch2.C2TestInfo>info;
 
@@ -278,7 +274,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       stopAtEntry: false,
       cwd: testInfo.execOptions.cwd!,
       environment: [],
-      externalConsole: true,
+      externalConsole: false,
       MIMode: "lldb"
     });
 
@@ -296,8 +292,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     }
 
     const always = () => {
-      this.testStatesEmitter.fire({ type: "finished" });
-      this.isRunning -= 1;
+      this.isDebugging = false;
     };
 
     await new Promise<void>((resolve, reject) => {
