@@ -34,6 +34,9 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly disposables: Array<vscode.Disposable> = new Array();
 
   private isEnabledSourceDecoration = true;
+  private readonly variableResolvedPair: [string, string][] = [
+    ["${workspaceFolder}", this.workspaceFolder.uri.fsPath]
+  ];
 
   getIsEnabledSourceDecoration(): boolean {
     return this.isEnabledSourceDecoration;
@@ -282,33 +285,78 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       throw "Can't choose a group, only a single test.";
     }
 
-    this.isDebugging = true;
-
     const testInfo = <Catch2.C2TestInfo>info;
 
-    const debugSessionStarted = await vscode.debug.startDebugging(this.workspaceFolder, {
-      name: "Catch2: " + testInfo.label,
-      type: "cppdbg",
-      request: "launch",
-      program: testInfo.execPath,
-      args: [],
-      stopAtEntry: false,
-      cwd: testInfo.execOptions.cwd!,
-      environment: [],
-      externalConsole: false,
-      MIMode: "lldb"
-    });
+    // {
+    //   name: "Catch2: " + testInfo.label, //!
+    //     type: "cppdbg", //!
+    //       request: "launch", //!
+    //         program: testInfo.execPath,
+    //           //env:{},
+    //           //args: [],
+    //           stopAtEntry: false,
+    //             cwd: testInfo.execOptions.cwd! ,
+    //               //environment: [],
+    //               externalConsole: false,
+    //                 MIMode: "lldb"
+    // }
+
+    const getDebugConfiguration = (): vscode.DebugConfiguration => {
+      const debug: vscode.DebugConfiguration = {
+        name: "Catch2: " + testInfo.label,
+        request: "launch",
+        type: ""
+      };
+
+      const template = this.getDebugConfigurationTemplate(this.getConfiguration());
+      const resolveDebugVariables = this.variableResolvedPair.concat([
+        ["${exec}", testInfo.execPath],
+        ["${args}", testInfo.execParams],
+        ["${cwd}", testInfo.execOptions.cwd!],
+        ["${env}", testInfo.execOptions.env!]
+      ]);
+
+      if (template !== null) {
+        for (const prop in template) {
+          const val = template[prop];
+          if (val !== undefined && val !== null) {
+            debug[prop] = this.resolveVariables(val, resolveDebugVariables);
+          }
+        }
+      }
+
+      // TODO autodetect
+      // const launchPath = path.join(this.workspaceFolder.uri.fsPath, ".vscode", "launch.json");
+
+      // if (fs.existsSync(launchPath)) {
+      //   const content: string = fs.readFileSync(launchPath, "utf-8");
+      //   const parsed = JSON.parse(content.replace(/\/\/[^\n]+/g, ""));
+
+      //   if (!debug.hasOwnProperty("type") && parsed.hasOwnProperty("type")) {
+      //     debug.type = parsed.type;
+      //   }
+      // }
+      return debug;
+    };
+    const debugConfig = getDebugConfiguration();
+
+    this.isDebugging = true;
+
+    const debugSessionStarted = await vscode.debug.startDebugging(
+      this.workspaceFolder,
+      debugConfig
+    );
 
     if (!debugSessionStarted) {
       console.error("Failed starting the debug session - aborting");
-      this.cancel();
+      this.isDebugging = false;
       return;
     }
 
     const currentSession = vscode.debug.activeDebugSession;
     if (!currentSession) {
       console.error("No active debug session - aborting");
-      this.cancel();
+      this.isDebugging = false;
       return;
     }
 
@@ -352,6 +400,26 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     return vscode.workspace.getConfiguration("catch2TestExplorer", this.workspaceFolder.uri);
   }
 
+  private getDebugConfigurationTemplate(
+    config: vscode.WorkspaceConfiguration
+  ): { [prop: string]: string } | null {
+    const o = config.get<any>("debugConfigurationTemplate", null);
+
+    if (o === null) return null;
+
+    const result: { [prop: string]: string } = {};
+
+    for (const prop in o) {
+      const val = o[prop];
+      if (val === undefined || val === null) {
+        delete result.prop;
+      } else {
+        result[prop] = this.resolveVariables(String(val), this.variableResolvedPair);
+      }
+    }
+    return result;
+  }
+
   private getGlobalAndDefaultEnvironmentVariables(
     config: vscode.WorkspaceConfiguration
   ): { [prop: string]: string | undefined } {
@@ -365,7 +433,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       if (val === undefined || val === null) {
         delete resultEnv.prop;
       } else {
-        resultEnv[prop] = this.resolveVariables(String(val));
+        resultEnv[prop] = this.resolveVariables(String(val), this.variableResolvedPair);
       }
     }
 
@@ -374,7 +442,10 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
   private getDefaultCwd(config: vscode.WorkspaceConfiguration): string {
     const dirname = this.workspaceFolder.uri.fsPath;
-    const cwd = this.resolveVariables(config.get<string>("defaultCwd", dirname));
+    const cwd = this.resolveVariables(
+      config.get<string>("defaultCwd", dirname),
+      this.variableResolvedPair
+    );
     if (path.isAbsolute(cwd)) {
       return cwd;
     } else {
@@ -401,7 +472,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       if (val === undefined || val === null) {
         delete resultEnv.prop;
       } else {
-        resultEnv[prop] = this.resolveVariables(String(val));
+        resultEnv[prop] = this.resolveVariables(String(val), this.variableResolvedPair);
       }
     }
 
@@ -434,13 +505,15 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
         console.warn(Error("'path' is a requireds property."));
         return;
       }
-      const p: string = fullPath(this.resolveVariables((<any>o)["path"]));
+      const p: string = fullPath(
+        this.resolveVariables((<any>o)["path"], this.variableResolvedPair)
+      );
       const regex: string = o.hasOwnProperty("regex") ? (<any>o)["regex"] : "";
       const pool: number = o.hasOwnProperty("workerMaxNumber")
         ? Number((<any>o)["workerMaxNumber"])
         : this.getDefaultWorkerMaxNumberPerFile(config);
       const cwd: string = o.hasOwnProperty("cwd")
-        ? fullPath(this.resolveVariables((<any>o)["cwd"]))
+        ? fullPath(this.resolveVariables((<any>o)["cwd"], this.variableResolvedPair))
         : globalWorkingDirectory;
       const env: { [prop: string]: any } = o.hasOwnProperty("env")
         ? this.getGlobalAndCurrentEnvironmentVariables(config, (<any>o)["env"])
@@ -473,7 +546,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       executables.push(
         new ExecutableConfig(
           configExecs,
-          fullPath(this.resolveVariables(configExecs)),
+          fullPath(this.resolveVariables(configExecs, this.variableResolvedPair)),
           "",
           1,
           globalWorkingDirectory,
@@ -487,8 +560,8 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
           if (configExecsStr.length > 0) {
             executables.push(
               new ExecutableConfig(
-                this.resolveVariables(configExecsStr),
-                fullPath(this.resolveVariables(configExecsStr)),
+                this.resolveVariables(configExecsStr, this.variableResolvedPair),
+                fullPath(this.resolveVariables(configExecsStr, this.variableResolvedPair)),
                 "",
                 1,
                 globalWorkingDirectory,
@@ -512,11 +585,23 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     return executables;
   }
 
-  private resolveVariables(value: any): any {
+  private resolveVariables(value: any, varValue: [string, any][]): any {
     if (typeof value == "string") {
-      return value.replace("${workspaceFolder}", this.workspaceFolder.uri.fsPath);
+      for (let i = 0; i < varValue.length; ++i) {
+        if (value!.indexOf(varValue[i][0]) != -1 && typeof varValue[i][1] != "string") {
+          return varValue[i][1];
+        }
+        value = value.replace(varValue[i][0], varValue[i][1]);
+      }
+      return value;
     } else if (Array.isArray(value)) {
-      return (<any[]>value).map((v: any) => this.resolveVariables(v));
+      return (<any[]>value).map((v: any) => this.resolveVariables(v, varValue));
+    } else if (typeof value == "object") {
+      const newValue: any = {};
+      for (const prop in value) {
+        newValue[prop] = this.resolveVariables(value[prop], varValue);
+      }
+      return newValue;
     }
     return value;
   }

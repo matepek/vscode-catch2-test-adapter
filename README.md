@@ -21,14 +21,14 @@ This adapter not supports everything.
 
 This can be string, an array of strings, an array of objects or an array of strings and objects.
 
-| Property          | Description                                                                                                                                                                                                                           |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`            | The name of the test suite (optional)                                                                                                                                                                                                 |
-| `path`            | A relative (to workspace) or an absolute directory- or file-path. (required) If it is a directory, the matching children will be added (see `regex`).                                                                                 |
-| `regex`           | If `path` is a directory all matching children will be added (if there is no error).                                                                                                                                                  |
-| `workerMaxNumber` | This number limits the parallel execution of tests for the current group/file. If `path` is a directory, every valid child has this value. If it isn't provided and `defaultWorkerMaxNumberPerFile` provided, then that will be used. |
-| `cwd`             | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used.                                                                                                            |
-| `env`             | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used.                                                                                                                    |
+| Property          | Description                                                                                                                                                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `name`            | (optional) The name of the test suite                                                                                                                                                                                                            |
+| `path`            | (requierd) A relative (to workspace) or an absolute directory- or file-path. (required) If it is a directory, the matching children will be added (see `regex`).                                                                                 |
+| `regex`           | (optional) If `path` is a directory all matching children will be added (if there is no error).                                                                                                                                                  |
+| `workerMaxNumber` | (optional) This number limits the parallel execution of tests for the current group/file. If `path` is a directory, every valid child has this value. If it isn't provided and `defaultWorkerMaxNumberPerFile` provided, then that will be used. |
+| `cwd`             | (optional) The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used.                                                                                                            |
+| `env`             | (optional) Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used.                                                                                                                    |
 
 Examples:
 

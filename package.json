@@ -116,6 +116,15 @@
           "type": "boolean",
           "default": true,
           "scope": "resource"
+        },
+        "catch2TestExplorer.debugConfigurationTemplate": {
+          "description": "(experimental) Set the necessary debug configuraitons.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "default": true,
+          "scope": "resource"
         }
       }
     }
