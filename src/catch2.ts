@@ -231,7 +231,10 @@ export class C2TestInfo implements TestInfo {
         test: this,
         state: success ? "passed" : "failed",
         message: message.length ? message : undefined,
-        decorations: decorations.length ? decorations : undefined
+        decorations:
+          this.adapter.getIsEnabledSourceDecoration() && decorations.length
+            ? decorations
+            : undefined
       };
       return testEvent;
     } catch (e) {

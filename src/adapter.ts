@@ -33,24 +33,34 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   private allTests: Catch2.C2TestSuiteInfo;
   private readonly disposables: Array<vscode.Disposable> = new Array();
 
+  private isEnabledSourceDecoration = true;
+
+  getIsEnabledSourceDecoration(): boolean {
+    return this.isEnabledSourceDecoration;
+  }
+
   constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration(configChange => {
         if (
           configChange.affectsConfiguration(
+            "catch2TestExplorer.defaultEnv",
+            this.workspaceFolder.uri
+          ) ||
+          configChange.affectsConfiguration(
+            "catch2TestExplorer.defaultCwd",
+            this.workspaceFolder.uri
+          ) ||
+          configChange.affectsConfiguration(
+            "catch2TestExplorer.defaultWorkerMaxNumberPerFile",
+            this.workspaceFolder.uri
+          ) ||
+          configChange.affectsConfiguration(
+            "catch2TestExplorer.globalWorkerMaxNumber",
+            this.workspaceFolder.uri
+          ) ||
+          configChange.affectsConfiguration(
             "catch2TestExplorer.executables",
-            this.workspaceFolder.uri
-          ) ||
-          configChange.affectsConfiguration(
-            "catch2TestExplorer.globalWorkerPool",
-            this.workspaceFolder.uri
-          ) ||
-          configChange.affectsConfiguration(
-            "catch2TestExplorer.globalEnvironmentVariables",
-            this.workspaceFolder.uri
-          ) ||
-          configChange.affectsConfiguration(
-            "catch2TestExplorer.globalWorkingDirectory",
             this.workspaceFolder.uri
           )
         ) {
@@ -58,6 +68,20 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
         }
       })
     );
+
+    this.disposables.push(
+      vscode.workspace.onDidChangeConfiguration(configChange => {
+        if (
+          configChange.affectsConfiguration(
+            "catch2TestExplorer.enableSourceDecoration",
+            this.workspaceFolder.uri
+          )
+        ) {
+          this.isEnabledSourceDecoration = this.getEnableSourceDecoration(this.getConfiguration());
+        }
+      })
+    );
+
     this.allTests = new Catch2.C2TestSuiteInfo("AllTests", undefined, this, new Catch2.TaskPool(1));
   }
 
@@ -97,7 +121,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
               exe.name,
               parentSuite,
               this,
-              new Catch2.TaskPool(exe.workerPool)
+              new Catch2.TaskPool(exe.workerMaxNumber)
             );
 
             if (oldSuite !== undefined) {
@@ -121,7 +145,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
                     suite,
                     exe.path,
                     [line.replace(",", "\\,").trim(), "--reporter", "xml"],
-                    { cwd: exe.workingDirectory, env: exe.environmentVariables }
+                    { cwd: exe.cwd, env: exe.env }
                   )
                 );
               }
@@ -191,7 +215,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       "AllTests",
       undefined,
       this,
-      new Catch2.TaskPool(this.getGlobalWorkerPool(config))
+      new Catch2.TaskPool(this.getGlobalWorkerMaxNumber(config))
     );
 
     let testListReaders = Promise.resolve();
@@ -204,10 +228,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
     return testListReaders.then(() => {
       this.allTests = allTests;
-      this.testsEmitter.fire({
-        type: "finished",
-        suite: allTests
-      });
+      this.testsEmitter.fire({ type: "finished", suite: allTests });
     });
   }
 
@@ -331,11 +352,11 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     return vscode.workspace.getConfiguration("catch2TestExplorer", this.workspaceFolder.uri);
   }
 
-  private getGlobalEnvironmentVariables(
+  private getGlobalAndDefaultEnvironmentVariables(
     config: vscode.WorkspaceConfiguration
   ): { [prop: string]: string | undefined } {
     const processEnv = process.env;
-    const configEnv: { [prop: string]: any } = config.get("globalEnvironmentVariables") || {};
+    const configEnv: { [prop: string]: any } = config.get("defaultEnv") || {};
 
     const resultEnv = { ...processEnv };
 
@@ -351,13 +372,9 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     return resultEnv;
   }
 
-  private getGlobalWorkerPool(config: vscode.WorkspaceConfiguration): number {
-    return config.get<number>("globalWorkerPool", 4);
-  }
-
-  private getGlobalWorkingDirectory(config: vscode.WorkspaceConfiguration): string {
+  private getDefaultCwd(config: vscode.WorkspaceConfiguration): string {
     const dirname = this.workspaceFolder.uri.fsPath;
-    const cwd = this.resolveVariables(config.get<string>("globalWorkingDirectory", dirname));
+    const cwd = this.resolveVariables(config.get<string>("defaultCwd", dirname));
     if (path.isAbsolute(cwd)) {
       return cwd;
     } else {
@@ -365,11 +382,19 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     }
   }
 
-  private getGlobalAndLocalEnvironmentVariables(
+  private getDefaultWorkerMaxNumberPerFile(config: vscode.WorkspaceConfiguration): number {
+    return config.get<number>("defaultWorkerMaxNumberPerFile", 1);
+  }
+  private getGlobalWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
+    return config.get<number>("globalWorkerMaxNumber", 4);
+  }
+
+  private getGlobalAndCurrentEnvironmentVariables(
     config: vscode.WorkspaceConfiguration,
     configEnv: { [prop: string]: any }
   ): { [prop: string]: any } {
-    let resultEnv = this.getGlobalEnvironmentVariables(config);
+    const processEnv = process.env;
+    const resultEnv = { ...processEnv };
 
     for (const prop in configEnv) {
       const val = configEnv[prop];
@@ -383,17 +408,12 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     return resultEnv;
   }
 
-  private resolveVariables(value: any): any {
-    if (typeof value == "string") {
-      return value.replace("${workspaceFolder}", this.workspaceFolder.uri.fsPath);
-    } else if (Array.isArray(value)) {
-      return (<any[]>value).map((v: any) => this.resolveVariables(v));
-    }
-    return value;
+  private getEnableSourceDecoration(config: vscode.WorkspaceConfiguration): boolean {
+    return config.get<boolean>("enableSourceDecoration", true);
   }
 
   private getExecutables(config: vscode.WorkspaceConfiguration): ExecutableConfig[] {
-    const globalWorkingDirectory = this.getGlobalWorkingDirectory(config);
+    const globalWorkingDirectory = this.getDefaultCwd(config);
 
     let executables: ExecutableConfig[] = [];
 
@@ -416,13 +436,15 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       }
       const p: string = fullPath(this.resolveVariables((<any>o)["path"]));
       const regex: string = o.hasOwnProperty("regex") ? (<any>o)["regex"] : "";
-      const pool: number = o.hasOwnProperty("workerPool") ? Number((<any>o)["workerPool"]) : 1;
-      const cwd: string = o.hasOwnProperty("workingDirectory")
-        ? fullPath(this.resolveVariables((<any>o)["workingDirectory"]))
+      const pool: number = o.hasOwnProperty("workerMaxNumber")
+        ? Number((<any>o)["workerMaxNumber"])
+        : this.getDefaultWorkerMaxNumberPerFile(config);
+      const cwd: string = o.hasOwnProperty("cwd")
+        ? fullPath(this.resolveVariables((<any>o)["cwd"]))
         : globalWorkingDirectory;
-      const env: { [prop: string]: any } = o.hasOwnProperty("environmentVariables")
-        ? this.getGlobalAndLocalEnvironmentVariables(config, (<any>o)["environmentVariables"])
-        : {};
+      const env: { [prop: string]: any } = o.hasOwnProperty("env")
+        ? this.getGlobalAndCurrentEnvironmentVariables(config, (<any>o)["env"])
+        : this.getGlobalAndDefaultEnvironmentVariables(config);
 
       if (regex.length > 0) {
         const stat = fs.statSync(p);
@@ -490,7 +512,16 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     return executables;
   }
 
-  resolveRelPath(relPath: string): string {
+  private resolveVariables(value: any): any {
+    if (typeof value == "string") {
+      return value.replace("${workspaceFolder}", this.workspaceFolder.uri.fsPath);
+    } else if (Array.isArray(value)) {
+      return (<any[]>value).map((v: any) => this.resolveVariables(v));
+    }
+    return value;
+  }
+
+  private resolveRelPath(relPath: string): string {
     const dirname = this.workspaceFolder.uri.fsPath;
     return path.resolve(dirname, relPath);
   }
@@ -507,8 +538,8 @@ class ExecutableConfig {
     public readonly name: string,
     public readonly path: string,
     public readonly regex: string,
-    public readonly workerPool: number,
-    public readonly workingDirectory: string,
-    public readonly environmentVariables: { [prop: string]: any }
+    public readonly workerMaxNumber: number,
+    public readonly cwd: string,
+    public readonly env: { [prop: string]: any }
   ) {}
 }

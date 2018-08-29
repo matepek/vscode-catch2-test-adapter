@@ -29,9 +29,9 @@ Examples:
 	"name": "workspace dir: ", //optional
 	"path": "dir/test.exe",
 	"regex": "(t|T)est", //optional
-	"workerPool": 1, //optional
-	"workingDirectory": ".", //optional
-	"environmentVariables": {} //optional
+	"workerMaxNumber": 1, //optional
+	"cwd": ".", //optional
+	"env": {} //optional
 }
 ```
 
@@ -41,16 +41,16 @@ Examples:
 		"name": "Test1 suite", //optional
 		"path": "dir/test.exe",
 		"regex": "(t|T)est", //optional, it has only meaning if path is a directory
-		"workerPool": 1, //optional
-		"workingDirectory": ".", //optional
-		"environmentVariables": {} //optional
+		"workerMaxNumber": 1, //optional
+		"cwd": ".", //optional
+		"env": {} //optional
 	},
 	{
 		"path": "dir2",
 		"regex": "(t|T)est", //optional, now it is used to search for tests under dir2
-		"workerPool": 1, //optional
-		"workingDirectory": ".", //optional
-		"environmentVariables": {} //optional
+		"workerMaxNumber": 1, //optional
+		"cwd": ".", //optional
+		"env": {} //optional
 	}
 ]
 ```
@@ -58,21 +58,29 @@ Examples:
 - `name`: The name of the test suite (optional)
 - `path`: A relative (to workspace) or an absolute directory- or file-path. (required) If it is a directory, the matching children will be added (see `regex`).
 - `regex`: If `path` is a directory all matching children will be added (if there is no error).
-- `workerPool`: This number limits the number of the parallel running of the executable. If `path` is a directory, every valid child has this value.
-- `workingDirectory`: The working directory while the tests are running.
-- `environmentVariables`: Environment variables for the executable.
+- `workerMaxNumber`: This number limits the parallel execution of tests for the current group/file. If `path` is a directory, every valid child has this value. If it isn't provided and `defaultWorkerMaxNumberPerFile` provided, then that will be used.
+- `cwd`: The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used.
+- `env`: Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used.
 
-### `catch2TestExplorer.globalWorkerPool`
+### `catch2TestExplorer.defaultEnv`
 
-This number limits the number of the parallel running of ALL executables.
+Default environment variables to be set when running the tests, if it isn't provided in 'executables'. (Resolves: ${workspaceFolder})
 
-### `catch2TestExplorer.globalEnvironmentVariables`
+### `catch2TestExplorer.defaultCwd`
 
-Environment variables for ALL executable.
+The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in 'executables'. (Resolves: ${workspaceFolder})
 
-### `catch2TestExplorer.globalWorkingDirectory`
+### `catch2TestExplorer.defaultWorkerMaxNumberPerFile`
 
-The default working directory in case of it is not provided by the object's `workingDirectory` property.
+The variable maximize the number of the parallel test execution per file, if it isn't provided in 'executables'.
+
+### `catch2TestExplorer.globalWorkerMaxNumber`
+
+The variable maximize the number of the parallel test execution.
+
+### `catch2TestExplorer.enableSourceDecoration`
+
+Sets the source code decorations: Errored lines will be highlited.
 
 ## License
 
