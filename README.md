@@ -8,11 +8,28 @@ This adapter not supports everything.
 
 ## Configuration
 
-### `catch2TestExplorer.executables`:
+| Property                                           | Description                                                                                                                                                                  |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `catch2TestExplorer.executables`                   | The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. Details: [below](#catch2TestExplorer.executables) |
+| `catch2TestExplorer.defaultEnv`                    | Default environment variables to be set when running the tests, if it isn't provided in 'executables'. (Resolves: ${workspaceFolder})                                        |
+| `catch2TestExplorer.defaultCwd`                    | The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in 'executables'. (Resolves: ${workspaceFolder})        |
+| `catch2TestExplorer.defaultWorkerMaxNumberPerFile` | The variable maximize the number of the parallel test execution per file, if it isn't provided in 'executables'.                                                             |
+| `catch2TestExplorer.globalWorkerMaxNumber`         | The variable maximize the number of the parallel test execution.                                                                                                             |
+| `catch2TestExplorer.enableSourceDecoration`        | Sets the source code decorations: Errored lines will be highlited.                                                                                                           |
+| `catch2TestExplorer.debugConfigurationTemplate`    | (experimental) Set the necessary debug configuraitons and the debug button will work. Details: [below](#catch2TestExplorer.debugConfigurationTemplate)                       |
 
-The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting.
+### catch2TestExplorer.executables
 
 This can be string, an array of strings, an array of objects or an array of strings and objects.
+
+| Property          | Description                                                                                                                                                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `name`            | (optional) The name of the test suite                                                                                                                                                                                                            |
+| `path`            | (requierd) A relative (to workspace) or an absolute directory- or file-path. (required) If it is a directory, the matching children will be added (see `regex`).                                                                                 |
+| `regex`           | (optional) If `path` is a directory all matching children will be added (if there is no error).                                                                                                                                                  |
+| `workerMaxNumber` | (optional) This number limits the parallel execution of tests for the current group/file. If `path` is a directory, every valid child has this value. If it isn't provided and `defaultWorkerMaxNumberPerFile` provided, then that will be used. |
+| `cwd`             | (optional) The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used.                                                                                                            |
+| `env`             | (optional) Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used.                                                                                                                    |
 
 Examples:
 
@@ -26,53 +43,66 @@ Examples:
 
 ```json
 "catch2TestExplorer.executables": {
-	"name": "workspace dir: ", //optional
+	"name": "workspace dir: ",
 	"path": "dir/test.exe",
-	"regex": "(t|T)est", //optional
-	"workerPool": 1, //optional
-	"workingDirectory": ".", //optional
-	"environmentVariables": {} //optional
+	"regex": "(t|T)est",
+	"workerMaxNumber": 1,
+	"cwd": ".",
+	"env": {}
 }
 ```
 
 ```json
 "catch2TestExplorer.executables": [
 	{
-		"name": "Test1 suite", //optional
+		"name": "Test1 suite",
 		"path": "dir/test.exe",
-		"regex": "(t|T)est", //optional, it has only meaning if path is a directory
-		"workerPool": 1, //optional
-		"workingDirectory": ".", //optional
-		"environmentVariables": {} //optional
+		"regex": "(t|T)est",
+		"workerMaxNumber": 1,
+		"cwd": ".",
+		"env": {}
 	},
 	{
 		"path": "dir2",
-		"regex": "(t|T)est", //optional, now it is used to search for tests under dir2
-		"workerPool": 1, //optional
-		"workingDirectory": ".", //optional
-		"environmentVariables": {} //optional
+		"regex": "(t|T)est",
+		"workerMaxNumber": 1,
+		"cwd": ".",
+		"env": {}
 	}
 ]
 ```
 
-- `name`: The name of the test suite (optional)
-- `path`: A relative (to workspace) or an absolute directory- or file-path. (required) If it is a directory, the matching children will be added (see `regex`).
-- `regex`: If `path` is a directory all matching children will be added (if there is no error).
-- `workerPool`: This number limits the number of the parallel running of the executable. If `path` is a directory, every valid child has this value.
-- `workingDirectory`: The working directory while the tests are running.
-- `environmentVariables`: Environment variables for the executable.
+### catch2TestExplorer.debugConfigurationTemplate
 
-### `catch2TestExplorer.globalWorkerPool`
+For help, see: [here](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations)
 
-This number limits the number of the parallel running of ALL executables.
+Usable variables:
 
-### `catch2TestExplorer.globalEnvironmentVariables`
+| Variable name | Value meaning                                       | Type                    |
+| ------------- | --------------------------------------------------- | ----------------------- |
+| `${label}`    | The name of the test. Same as in the Test Explorer. | string                  |
+| `${exec}`     | The path of the executable.                         | string                  |
+| `${args}`     | The arguments for the executable.                   | string[]                |
+| `${cwd}`      | The current working directory for execution.        | string                  |
+| `${envObj}`   | The environment variables as object properties.     | { [prop: string]: any } |
 
-Environment variables for ALL executable.
+These variables will be substituted when a DebugConfiguration is created.
 
-### `catch2TestExplorer.globalWorkingDirectory`
+`name` and `request` are prefilled, so it is not necessary to set them.
 
-The default working directory in case of it is not provided by the object's `workingDirectory` property.
+Example:
+
+```json
+{
+  "type": "cppdbg",
+  "MIMode": "lldb",
+  "program": "${exec}",
+  "args": "${args}",
+  "cwd": "${cwd}",
+  "env": "${envObj}",
+  "externalConsole": false
+}
+```
 
 ## License
 
@@ -80,9 +110,8 @@ The default working directory in case of it is not provided by the object's `wor
 
 ## TODOs
 
-- Refactor code
 - Better Catch2 xml parser (just a bit)
-- Logging
+- Logger
 
 ## Contribution
 

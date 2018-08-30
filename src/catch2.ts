@@ -50,6 +50,15 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     if (this.parent != undefined) this.parent.releaseSlot();
   }
 
+  removeChild(child: C2TestSuiteInfo): boolean {
+    const i = this.children.findIndex(val => val.id == child.id);
+    if (i != -1) {
+      this.children.splice(i, 1);
+      return true;
+    }
+    return false;
+  }
+
   test(): Promise<void> {
     this.adapter.testStatesEmitter.fire({
       type: "suite",
@@ -86,22 +95,20 @@ export class C2TestInfo implements TestInfo {
 
   private isKill: boolean = false;
   private proc: ChildProcess | undefined = undefined;
-  private rejectTest: (e: Error) => void = e => {};
 
   constructor(
     public label: string,
     private readonly adapter: Catch2TestAdapter,
     private readonly parent: C2TestSuiteInfo,
-    private readonly execPath: string,
-    private readonly execParams: Array<string>,
-    private readonly execOptions: ExecFileOptions
+    readonly execPath: string,
+    readonly execParams: Array<string>,
+    readonly execOptions: ExecFileOptions
   ) {
     this.id = adapter.generateUniqueId();
   }
 
   cancel(): void {
     this.isKill = true;
-    this.rejectTest(Error(this.label + " was killed."));
 
     if (this.proc != undefined) {
       this.proc.kill();
@@ -119,21 +126,12 @@ export class C2TestInfo implements TestInfo {
     if (this.isKill) return Promise.reject(Error("Test was killed."));
 
     if (!this.parent.acquireSlot()) {
-      return new Promise<Error>(resolve => {
-        // cancel can call it
-        this.rejectTest = resolve;
-        setTimeout((e: Error) => {
-          resolve();
-        }, 64);
-      }).then(() => {
+      return new Promise<void>(resolve => setTimeout(resolve, 64)).then(() => {
         return this.runTest();
       });
     }
 
     return new Promise<TestEvent>((resolve, reject) => {
-      // cancel can call it
-      this.rejectTest = reject;
-
       if (this.isKill) {
         reject(Error(this.label + " was killed."));
         return;
@@ -233,7 +231,10 @@ export class C2TestInfo implements TestInfo {
         test: this,
         state: success ? "passed" : "failed",
         message: message.length ? message : undefined,
-        decorations: decorations.length ? decorations : undefined
+        decorations:
+          this.adapter.getIsEnabledSourceDecoration() && decorations.length
+            ? decorations
+            : undefined
       };
       return testEvent;
     } catch (e) {
@@ -339,15 +340,21 @@ export class C2TestInfo implements TestInfo {
 }
 
 export class TaskPool {
+  /**
+   *
+   * @param availableSlot The available slot number. If -1 (negative) means no limit, acquire will always return true.
+   */
   constructor(private availableSlot: number) {}
 
   acquire(): boolean {
+    if (this.availableSlot < 0) return true;
     if (this.availableSlot == 0) return false;
     this.availableSlot -= 1;
     return true;
   }
 
   release(): void {
+    if (this.availableSlot < 0) return;
     this.availableSlot += 1;
   }
 }

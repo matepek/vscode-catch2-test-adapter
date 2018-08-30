@@ -5,7 +5,7 @@
   "icon": "icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -74,22 +74,19 @@
           "default": [
             {
               "name": "workspace dir: ",
-              "path": ".",
+              "path": null,
               "regex": "(t|T)est",
-              "workerPool": 1,
-              "workingDirectory": "."
+              "workerMaxNumber": 1,
+              "cwd": ".",
+              "env": {
+                "ExampleENV1": "ExampleValueofENV1"
+              }
             }
           ],
           "scope": "resource"
         },
-        "catch2TestExplorer.globalWorkerPool": {
-          "description": "The glob describing the location of your test executable (relative to the workspace folder)",
-          "type": "number",
-          "default": 4,
-          "scope": "resource"
-        },
-        "catch2TestExplorer.globalEnvironmentVariables": {
-          "description": "Environment variables to be set when running the tests",
+        "catch2TestExplorer.defaultEnv": {
+          "description": "Default environment variables to be set when running the tests, if it isn't provided in 'executables'. (Resolves: ${workspaceFolder})",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -97,9 +94,36 @@
           "default": {},
           "scope": "resource"
         },
-        "catch2TestExplorer.globalWorkingDirectory": {
-          "description": "The working directory where mocha is run (relative to the workspace folder)",
+        "catch2TestExplorer.defaultCwd": {
+          "description": "The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in 'executables'.  (Resolves: ${workspaceFolder})",
           "type": "string",
+          "scope": "resource"
+        },
+        "catch2TestExplorer.defaultWorkerMaxNumberPerFile": {
+          "description": "The variable maximize the number of the parallel test execution per file, if it isn't provided in 'executables'.",
+          "type": "number",
+          "default": 4,
+          "scope": "resource"
+        },
+        "catch2TestExplorer.globalWorkerMaxNumber": {
+          "description": "The variable maximize the number of the parallel test execution.",
+          "type": "number",
+          "default": 4,
+          "scope": "resource"
+        },
+        "catch2TestExplorer.enableSourceDecoration": {
+          "description": "Sets the source code decorations: Errored lines will be highlited.",
+          "type": "boolean",
+          "default": true,
+          "scope": "resource"
+        },
+        "catch2TestExplorer.debugConfigurationTemplate": {
+          "description": "(experimental) Set the necessary debug configuraitons and the debug button will work.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "default": true,
           "scope": "resource"
         }
       }
