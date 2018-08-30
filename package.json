@@ -76,6 +76,7 @@
               "name": "${dirname} : ${name}",
               "path": "build",
               "regex": "(t|T)est",
+              "recursiveRegex": false,
               "workerMaxNumber": 1,
               "cwd": "${absDirname}",
               "env": {

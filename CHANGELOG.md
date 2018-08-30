@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.1] - 2018-08-30
 
+### Added
+
+- `recursiveRegex` flag has been added.
+
 ### Changed
 
 - Fixed debugConfigurationTemplate config default value.
