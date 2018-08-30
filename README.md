@@ -24,11 +24,11 @@ This can be string, an array of strings, an array of objects or an array of stri
 
 | Property          | Description                                                                                                                                                                                                                                      |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `name`            | (optional) The name of the test suite                                                                                                                                                                                                            |
+| `name`            | (optional) The name of the test suite. Can contains `${dirname}`, `${absDirname}`, `${name}` if `regex` is provided.                                                                                                                             |
 | `path`            | (requierd) A relative (to workspace) or an absolute directory- or file-path. (required) If it is a directory, the matching children will be added (see `regex`).                                                                                 |
 | `regex`           | (optional) If `path` is a directory all matching children will be added (if there is no error).                                                                                                                                                  |
 | `workerMaxNumber` | (optional) This number limits the parallel execution of tests for the current group/file. If `path` is a directory, every valid child has this value. If it isn't provided and `defaultWorkerMaxNumberPerFile` provided, then that will be used. |
-| `cwd`             | (optional) The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used.                                                                                                            |
+| `cwd`             | (optional) The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains `${dirname}` and `${absDirname}` if `regex` is provided.                                      |
 | `env`             | (optional) Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used.                                                                                                                    |
 
 Examples:
@@ -43,8 +43,8 @@ Examples:
 
 ```json
 "catch2TestExplorer.executables": {
-	"name": "workspace dir: ",
-	"path": "dir/test.exe",
+	"name": "${dirname} : ${name}",
+	"path": "./build",
 	"regex": "(t|T)est",
 	"workerMaxNumber": 1,
 	"cwd": ".",

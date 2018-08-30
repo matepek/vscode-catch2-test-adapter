@@ -479,7 +479,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     };
 
     const addObject = (o: Object): void => {
-      const name: string = o.hasOwnProperty("name") ? (<any>o)["name"] : (<any>o)["path"];
+      const name: string = o.hasOwnProperty("name") ? (<any>o)["name"] : "${dirname} : ${name}";
       if (!o.hasOwnProperty("path") || (<any>o)["path"] === null) {
         console.warn(Error("'path' is a requireds property."));
         return;
@@ -491,9 +491,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       const pool: number = o.hasOwnProperty("workerMaxNumber")
         ? Number((<any>o)["workerMaxNumber"])
         : this.getDefaultWorkerMaxNumberPerFile(config);
-      const cwd: string = o.hasOwnProperty("cwd")
-        ? fullPath(this.resolveVariables((<any>o)["cwd"], this.variableResolvedPair))
-        : globalWorkingDirectory;
+      const cwd: string = o.hasOwnProperty("cwd") ? (<any>o)["cwd"] : globalWorkingDirectory;
       const env: { [prop: string]: any } = o.hasOwnProperty("env")
         ? this.getGlobalAndCurrentEnvironmentVariables(config, (<any>o)["env"])
         : this.getGlobalAndDefaultEnvironmentVariables(config);
@@ -505,8 +503,31 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
           children.forEach(child => {
             const childPath = path.resolve(p, child);
             if (child.match(regex) && fs.statSync(childPath).isFile()) {
+              let resolvedName = name + " : " + child;
+              let resolvedCwd = cwd;
+              try {
+                resolvedName = this.resolveVariables(name, [
+                  ["${absDirname}", p],
+                  ["${dirname}", path.relative(this.workspaceFolder.uri.fsPath, p)],
+                  ["${name}", child]
+                ]);
+                resolvedCwd = this.resolveVariables(
+                  cwd,
+                  this.variableResolvedPair.concat([
+                    ["${absDirname}", p],
+                    ["${dirname}", path.relative(this.workspaceFolder.uri.fsPath, p)]
+                  ])
+                );
+              } catch (e) {}
               executables.push(
-                new ExecutableConfig(name + "(" + child + ")", childPath, regex, pool, cwd, env)
+                new ExecutableConfig(
+                  resolvedName,
+                  childPath,
+                  regex,
+                  pool,
+                  fullPath(resolvedCwd),
+                  env
+                )
               );
             }
           });
