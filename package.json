@@ -5,7 +5,7 @@
   "icon": "icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -73,11 +73,12 @@
           ],
           "default": [
             {
-              "name": "workspace dir: ",
-              "path": null,
+              "name": "${dirname} : ${name}",
+              "path": "build",
               "regex": "(t|T)est",
+              "recursiveRegex": false,
               "workerMaxNumber": 1,
-              "cwd": ".",
+              "cwd": "${absDirname}",
               "env": {
                 "ExampleENV1": "ExampleValueofENV1"
               }
@@ -123,7 +124,15 @@
             "object",
             "null"
           ],
-          "default": true,
+          "default": {
+            "type": "cppdbg",
+            "program": "${exec}",
+            "args": "${args}",
+            "cwd": "${cwd}",
+            "env": "${envObj}",
+            "stopAtEntry": false,
+            "externalConsole": true
+          },
           "scope": "resource"
         }
       }

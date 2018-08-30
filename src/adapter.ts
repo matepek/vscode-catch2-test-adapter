@@ -207,12 +207,6 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     this.watchers.clear();
 
     const config = this.getConfiguration();
-    const execs = this.getExecutables(config);
-
-    if (execs == undefined) {
-      this.testsEmitter.fire({ type: "finished", suite: undefined });
-      return Promise.resolve();
-    }
 
     const allTests = new Catch2.C2TestSuiteInfo(
       "AllTests",
@@ -221,18 +215,24 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       new Catch2.TaskPool(this.getGlobalWorkerMaxNumber(config))
     );
 
-    let testListReaders = Promise.resolve();
+    const executables = this.getExecutables(config);
 
-    execs.forEach(exe => {
-      testListReaders = testListReaders.then(() => {
-        return this.loadSuite(exe, allTests, undefined);
+    return executables
+      .then((execs: ExecutableConfig[]) => {
+        let testListReaders = Promise.resolve();
+
+        execs.forEach(exe => {
+          testListReaders = testListReaders.then(() => {
+            return this.loadSuite(exe, allTests, undefined);
+          });
+        });
+
+        return testListReaders;
+      })
+      .then(() => {
+        this.allTests = allTests;
+        this.testsEmitter.fire({ type: "finished", suite: allTests });
       });
-    });
-
-    return testListReaders.then(() => {
-      this.allTests = allTests;
-      this.testsEmitter.fire({ type: "finished", suite: allTests });
-    });
   }
 
   cancel(): void {
@@ -462,7 +462,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     return config.get<boolean>("enableSourceDecoration", true);
   }
 
-  private getExecutables(config: vscode.WorkspaceConfiguration): ExecutableConfig[] {
+  private getExecutables(config: vscode.WorkspaceConfiguration): Promise<ExecutableConfig[]> {
     const globalWorkingDirectory = this.getDefaultCwd(config);
 
     let executables: ExecutableConfig[] = [];
@@ -479,7 +479,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     };
 
     const addObject = (o: Object): void => {
-      const name: string = o.hasOwnProperty("name") ? (<any>o)["name"] : (<any>o)["path"];
+      const name: string = o.hasOwnProperty("name") ? (<any>o)["name"] : "${dirname} : ${name}";
       if (!o.hasOwnProperty("path") || (<any>o)["path"] === null) {
         console.warn(Error("'path' is a requireds property."));
         return;
@@ -491,25 +491,56 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       const pool: number = o.hasOwnProperty("workerMaxNumber")
         ? Number((<any>o)["workerMaxNumber"])
         : this.getDefaultWorkerMaxNumberPerFile(config);
-      const cwd: string = o.hasOwnProperty("cwd")
-        ? fullPath(this.resolveVariables((<any>o)["cwd"], this.variableResolvedPair))
-        : globalWorkingDirectory;
+      const cwd: string = o.hasOwnProperty("cwd") ? (<any>o)["cwd"] : globalWorkingDirectory;
       const env: { [prop: string]: any } = o.hasOwnProperty("env")
         ? this.getGlobalAndCurrentEnvironmentVariables(config, (<any>o)["env"])
         : this.getGlobalAndDefaultEnvironmentVariables(config);
+      const regexRecursive: boolean = o.hasOwnProperty("recursiveRegex")
+        ? (<any>o)["recursiveRegex"]
+        : false;
 
       if (regex.length > 0) {
-        const stat = fs.statSync(p);
-        if (stat.isDirectory()) {
-          const children = fs.readdirSync(p, "utf8");
+        const recursiveAdd = (directory: string): void => {
+          const children = fs.readdirSync(directory, "utf8");
           children.forEach(child => {
-            const childPath = path.resolve(p, child);
-            if (child.match(regex) && fs.statSync(childPath).isFile()) {
+            const childPath = path.resolve(directory, child);
+            const childStat = fs.statSync(childPath);
+            if (childPath.match(regex) && childStat.isFile()) {
+              let resolvedName = name + " : " + child;
+              let resolvedCwd = cwd;
+              try {
+                resolvedName = this.resolveVariables(name, [
+                  ["${absDirname}", p],
+                  ["${dirname}", path.relative(this.workspaceFolder.uri.fsPath, p)],
+                  ["${name}", child]
+                ]);
+                resolvedCwd = this.resolveVariables(
+                  cwd,
+                  this.variableResolvedPair.concat([
+                    ["${absDirname}", p],
+                    ["${dirname}", path.relative(this.workspaceFolder.uri.fsPath, p)]
+                  ])
+                );
+              } catch (e) {}
               executables.push(
-                new ExecutableConfig(name + "(" + child + ")", childPath, regex, pool, cwd, env)
+                new ExecutableConfig(
+                  resolvedName,
+                  childPath,
+                  regex,
+                  pool,
+                  fullPath(resolvedCwd),
+                  env
+                )
               );
+            } else if (childStat.isDirectory() && regexRecursive) {
+              recursiveAdd(childPath);
             }
           });
+        };
+
+        const stat = fs.statSync(p);
+        if (stat.isDirectory()) {
+          recursiveAdd(p);
         } else if (stat.isFile()) {
           executables.push(new ExecutableConfig(name, p, regex, pool, cwd, env));
         } else {
@@ -521,7 +552,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     };
 
     if (typeof configExecs === "string") {
-      if (configExecs.length == 0) return [];
+      if (configExecs.length == 0) return Promise.resolve([]);
       executables.push(
         new ExecutableConfig(
           configExecs,
@@ -561,7 +592,42 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     executables.sort((a: ExecutableConfig, b: ExecutableConfig) => {
       return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
     });
-    return executables;
+    return this.filterVerifiedCatch2TestExecutables(executables);
+  }
+
+  private verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
+    return new Promise<boolean>((resolve, reject) => {
+      try {
+        execFile(path, ["--help"], (error: Error | null, stdout: string, stderr: string) => {
+          if (stdout.indexOf("Catch v2.") != -1) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        });
+      } catch (e) {
+        resolve(false);
+      }
+    });
+  }
+
+  private filterVerifiedCatch2TestExecutables(
+    executables: ExecutableConfig[]
+  ): Promise<ExecutableConfig[]> {
+    const verified: ExecutableConfig[] = [];
+    const promises: Promise<void>[] = [];
+
+    executables.forEach(exec => {
+      promises.push(
+        this.verifyIsCatch2TestExecutable(exec.path).then((isCatc2: boolean) => {
+          if (isCatc2) verified.push(exec);
+        })
+      );
+    });
+
+    return Promise.all(promises).then(() => {
+      return verified;
+    });
   }
 
   private resolveVariables(value: any, varValue: [string, any][]): any {
