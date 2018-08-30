@@ -118,7 +118,7 @@
           "scope": "resource"
         },
         "catch2TestExplorer.debugConfigurationTemplate": {
-          "description": "(experimental) Set the necessary debug configuraitons.",
+          "description": "(experimental) Set the necessary debug configuraitons and the debug button will work.",
           "type": [
             "object",
             "null"

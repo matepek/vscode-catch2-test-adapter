@@ -235,6 +235,10 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     });
   }
 
+  cancel(): void {
+    this.allTests.cancel();
+  }
+
   run(tests: string[]): Promise<void> {
     if (this.isDebugging) {
       throw "Catch2: Test is currently being debugged.";
@@ -287,20 +291,6 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
     const testInfo = <Catch2.C2TestInfo>info;
 
-    // {
-    //   name: "Catch2: " + testInfo.label, //!
-    //     type: "cppdbg", //!
-    //       request: "launch", //!
-    //         program: testInfo.execPath,
-    //           //env:{},
-    //           //args: [],
-    //           stopAtEntry: false,
-    //             cwd: testInfo.execOptions.cwd! ,
-    //               //environment: [],
-    //               externalConsole: false,
-    //                 MIMode: "lldb"
-    // }
-
     const getDebugConfiguration = (): vscode.DebugConfiguration => {
       const debug: vscode.DebugConfiguration = {
         name: "Catch2: " + testInfo.label,
@@ -310,10 +300,11 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
       const template = this.getDebugConfigurationTemplate(this.getConfiguration());
       const resolveDebugVariables = this.variableResolvedPair.concat([
+        ["${label}", testInfo.label],
         ["${exec}", testInfo.execPath],
-        ["${args}", testInfo.execParams],
+        ["${args}", testInfo.execParams.slice(0, 1).concat("--reporter", "console")],
         ["${cwd}", testInfo.execOptions.cwd!],
-        ["${env}", testInfo.execOptions.env!]
+        ["${envObj}", testInfo.execOptions.env!]
       ]);
 
       if (template !== null) {
@@ -323,21 +314,13 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
             debug[prop] = this.resolveVariables(val, resolveDebugVariables);
           }
         }
+
+        return debug;
       }
 
-      // TODO autodetect
-      // const launchPath = path.join(this.workspaceFolder.uri.fsPath, ".vscode", "launch.json");
-
-      // if (fs.existsSync(launchPath)) {
-      //   const content: string = fs.readFileSync(launchPath, "utf-8");
-      //   const parsed = JSON.parse(content.replace(/\/\/[^\n]+/g, ""));
-
-      //   if (!debug.hasOwnProperty("type") && parsed.hasOwnProperty("type")) {
-      //     debug.type = parsed.type;
-      //   }
-      // }
-      return debug;
+      throw "Catch2: For debug 'debugConfigurationTemplate' should be set.";
     };
+
     const debugConfig = getDebugConfiguration();
 
     this.isDebugging = true;
@@ -372,10 +355,6 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
         subscription.dispose();
       });
     }).then(always, always);
-  }
-
-  cancel(): void {
-    this.allTests.cancel();
   }
 
   private findSuiteOrTest(
@@ -588,7 +567,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   private resolveVariables(value: any, varValue: [string, any][]): any {
     if (typeof value == "string") {
       for (let i = 0; i < varValue.length; ++i) {
-        if (value!.indexOf(varValue[i][0]) != -1 && typeof varValue[i][1] != "string") {
+        if (value === varValue[i][0] && typeof varValue[i][1] != "string") {
           return varValue[i][1];
         }
         value = value.replace(varValue[i][0], varValue[i][1]);

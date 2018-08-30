@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0] - 2018-08-29
 
+### Added
+
+- Debug button works now if `debugConfigurationTemplate` is properly set.
+
 ### Changed
 
 - IMPORTANT!!! Config variable names has been changed. Check the updated documentation: README.md
