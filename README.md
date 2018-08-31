@@ -1,4 +1,4 @@
-# Catch2 Test Explorer
+# Catch2 Test Explorer for Visual Studio Code
 
 This extension allows you to run your [Catch2 tests](https://github.com/catchorg/Catch2) using the
 [Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
