@@ -5,7 +5,7 @@
   "icon": "icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -46,12 +46,12 @@
     "xml2js": "^0.4.19"
   },
   "devDependencies": {
-    "@types/xml2js": "^0.4.2",
-    "@types/xml-parser": "^1.2.29",
     "@types/entities": "^1.1.0",
-    "typescript": "^2.8.3",
-    "vsce": "^1.40.0",
-    "vscode": "^1.1.17"
+    "@types/xml-parser": "^1.2.29",
+    "@types/xml2js": "^0.4.3",
+    "typescript": "^2.9.2",
+    "vsce": "^1.47.0",
+    "vscode": "^1.1.21"
   },
   "engines": {
     "vscode": "^1.23.0"
@@ -119,7 +119,7 @@
           "scope": "resource"
         },
         "catch2TestExplorer.debugConfigurationTemplate": {
-          "description": "(experimental) Set the necessary debug configuraitons and the debug button will work.",
+          "description": "Set the necessary debug configuraitons and the debug button will work.",
           "type": [
             "object",
             "null"
