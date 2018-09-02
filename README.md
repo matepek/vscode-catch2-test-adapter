@@ -58,7 +58,6 @@ Examples:
 	{
 		"name": "Test1 suite",
 		"path": "dir/test.exe",
-		"regex": "(t|T)est",
 		"workerMaxNumber": 1,
 		"cwd": ".",
 		"env": {}
@@ -67,6 +66,7 @@ Examples:
 	{
 		"path": "dir2",
 		"regex": "(t|T)est",
+		"recursiveRegex": false,
 		"workerMaxNumber": 1,
 		"cwd": ".",
 		"env": {}
