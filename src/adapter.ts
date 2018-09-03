@@ -51,6 +51,10 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       vscode.workspace.onDidChangeConfiguration(configChange => {
         if (
           configChange.affectsConfiguration(
+            "catch2TestExplorer.defaultGroupFileLevelRun",
+            this.workspaceFolder.uri
+          ) ||
+          configChange.affectsConfiguration(
             "catch2TestExplorer.defaultEnv",
             this.workspaceFolder.uri
           ) ||
@@ -127,6 +131,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
             const suite = parentSuite.createChildSuite(
               exe.name,
               exe.workerMaxNumber,
+              this.getDefaultGroupFileLevelRun(this.getConfiguration()),
               exe.path,
               { cwd: exe.cwd, env: exe.env },
               oldSuite
@@ -350,6 +355,10 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     return result;
   }
 
+  private getDefaultGroupFileLevelRun(config: vscode.WorkspaceConfiguration): boolean {
+    return config.get<boolean>("defaultGroupFileLevelRun", false);
+  }
+
   private getGlobalAndDefaultEnvironmentVariables(
     config: vscode.WorkspaceConfiguration
   ): { [prop: string]: string | undefined } {
@@ -386,6 +395,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   private getDefaultWorkerMaxNumberPerFile(config: vscode.WorkspaceConfiguration): number {
     return config.get<number>("defaultWorkerMaxNumberPerFile", 1);
   }
+
   private getGlobalWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
     return config.get<number>("globalWorkerMaxNumber", 4);
   }

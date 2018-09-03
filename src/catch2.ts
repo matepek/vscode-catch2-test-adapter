@@ -31,18 +31,18 @@ export class C2InfoBase {
     this.id = adapter.generateUniqueId();
   }
 
-  protected run(runningEvent: TestSuiteEvent | TestEvent): Promise<object> {
+  protected run(startEvents: (TestSuiteEvent | TestEvent)[]): Promise<object> {
     this.isKill = false;
 
-    return this.runInner(runningEvent);
+    return this.runInner(startEvents);
   }
 
-  private runInner(runningEvent: TestSuiteEvent | TestEvent): Promise<object> {
+  private runInner(runningEvents: (TestSuiteEvent | TestEvent)[]): Promise<object> {
     if (this.isKill) return Promise.reject(Error("Test was killed."));
 
     if (!this.acquireSlot()) {
       return new Promise<void>(resolve => setTimeout(resolve, 64)).then(() => {
-        return this.runInner(runningEvent);
+        return this.runInner(runningEvents);
       });
     }
 
@@ -52,7 +52,9 @@ export class C2InfoBase {
         return;
       }
 
-      this.adapter.testStatesEmitter.fire(runningEvent);
+      runningEvents.forEach(ev => {
+        this.adapter.testStatesEmitter.fire(ev);
+      });
 
       this.proc = execFile(
         this.execPath,
@@ -131,6 +133,7 @@ export class C2TestSuiteInfoBase extends C2InfoBase {
   constructor(
     adapter: Catch2TestAdapter,
     taskPools: TaskPool[],
+    protected readonly groupFileLevelRun: boolean,
     execPath: string,
     execParams: Array<string>,
     execOptions: ExecFileOptions
@@ -141,6 +144,7 @@ export class C2TestSuiteInfoBase extends C2InfoBase {
   createChildSuite(
     label: string,
     workerMaxNumber: number,
+    groupFileLevelRun: boolean,
     execPath: string,
     execOptions: ExecFileOptions,
     replace: C2TestSuiteInfo | undefined
@@ -149,6 +153,7 @@ export class C2TestSuiteInfoBase extends C2InfoBase {
       label,
       this.adapter,
       [...this.taskPools, new TaskPool(workerMaxNumber)],
+      groupFileLevelRun,
       execPath,
       execOptions
     );
@@ -218,7 +223,7 @@ export class C2AllTestSuiteInfo extends C2TestSuiteInfoBase implements TestSuite
   readonly label: string = "AllTests";
 
   constructor(adapter: Catch2TestAdapter, globalWorkerMaxNumber: number) {
-    super(adapter, [new TaskPool(globalWorkerMaxNumber)], "", [], {});
+    super(adapter, [new TaskPool(globalWorkerMaxNumber)], false, "", [], {});
   }
 
   test(tests: string[]): Promise<void> {
@@ -263,10 +268,11 @@ export class C2TestSuiteInfo extends C2TestSuiteInfoBase implements TestSuiteInf
     public readonly label: string,
     adapter: Catch2TestAdapter,
     taskPools: TaskPool[],
+    groupFileLevelRun: boolean,
     execPath: string,
     execOptions: ExecFileOptions
   ) {
-    super(adapter, taskPools, execPath, ["--reporter", "xml"], execOptions);
+    super(adapter, taskPools, groupFileLevelRun, execPath, ["--reporter", "xml"], execOptions);
   }
 
   createChildTest(label: string, file: string, line: number): C2TestInfo {
@@ -290,7 +296,7 @@ export class C2TestSuiteInfo extends C2TestSuiteInfoBase implements TestSuiteInf
   }
 
   test(tests: Set<string>): Promise<void> {
-    const runningEvent: TestSuiteEvent = {
+    const startEvent: TestSuiteEvent = {
       type: "suite",
       suite: this,
       state: "running"
@@ -298,8 +304,17 @@ export class C2TestSuiteInfo extends C2TestSuiteInfoBase implements TestSuiteInf
 
     const hasId = tests.delete(this.id);
 
-    if (false /*grouping*/ && hasId) {
-      return this.run(runningEvent) //TODO events
+    if (this.groupFileLevelRun && hasId) {
+      const childEvents: (TestSuiteEvent | TestEvent)[] = [];
+      this.children.forEach(child => {
+        tests.delete(child.id);
+        if (child.type == "suite") {
+          childEvents.push({ type: child.type, suite: child, state: "running" });
+        } else {
+          childEvents.push({ type: child.type, test: child, state: "running" });
+        }
+      });
+      return this.run([startEvent, ...childEvents])
         .then((groupInner: object) => {
           this.processXmlTagGroupInner(groupInner);
         })
@@ -325,7 +340,7 @@ export class C2TestSuiteInfo extends C2TestSuiteInfoBase implements TestSuiteInf
       return Promise.resolve();
     }
 
-    this.adapter.testStatesEmitter.fire(runningEvent);
+    this.adapter.testStatesEmitter.fire(startEvent);
 
     const ps: Promise<void>[] = [];
 
@@ -358,9 +373,16 @@ export class C2TestSuiteInfo extends C2TestSuiteInfoBase implements TestSuiteInf
       throw Error("Serious error.");
     }
 
-    for (let i = 0; i < testCases[0].TestCase; ++i) {
+    for (let i = 0; i < testCases[0].TestCase.length; ++i) {
       const testCase = testCases[0].TestCase[i];
-      testCase;
+      const name = testCase.$.name.trimRight();
+      const child = this.children.find((v: C2TestSuiteInfo | C2TestInfo) => {
+        return v.label == name;
+      });
+      if (child != undefined && child.type == "test") {
+        const ev = (<C2TestInfo>child).processXmlTagTestCase(testCase);
+        this.adapter.testStatesEmitter.fire(ev);
+      }
     }
   }
 }
@@ -390,11 +412,13 @@ export class C2TestInfo extends C2InfoBase implements TestInfo {
     if (!tests.has(this.id)) return Promise.resolve();
     tests.delete(this.id);
 
-    return this.run({
-      type: "test",
-      test: this,
-      state: "running"
-    })
+    return this.run([
+      <TestEvent>{
+        type: "test",
+        test: this,
+        state: "running"
+      }
+    ])
       .then((groupInner: object) => {
         const testEvent = this.processXmlTagGroupInner(groupInner);
         this.adapter.testStatesEmitter.fire(testEvent);
