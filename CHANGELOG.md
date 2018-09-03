@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Project structure was refactored.
+- Navigate to source now works before running the tests too. (Except on Windows. Probably that is not the problem of this extension.)
 
 ## [0.2.3] - 2018-09-02
 

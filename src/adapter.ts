@@ -16,7 +16,7 @@ import {
   TestRunFinishedEvent
 } from "vscode-test-adapter-api";
 import * as util from "vscode-test-adapter-util";
-import * as Catch2 from "./catch2";
+import { C2AllTestSuiteInfo, C2TestInfo, C2TestSuiteInfo, C2TestSuiteInfoBase } from "./Catch2";
 
 export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly testsEmitter = new vscode.EventEmitter<
@@ -31,7 +31,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   private isRunning: number = 0;
   private isDebugging: boolean = false;
 
-  private allTests: Catch2.C2AllTestSuiteInfo;
+  private allTests: C2AllTestSuiteInfo;
   private readonly disposables: Array<vscode.Disposable> = new Array();
 
   private isEnabledSourceDecoration = true;
@@ -89,7 +89,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       })
     );
 
-    this.allTests = new Catch2.C2AllTestSuiteInfo(this, 1);
+    this.allTests = new C2AllTestSuiteInfo(this, 1);
   }
 
   dispose() {
@@ -115,8 +115,8 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
   loadSuite(
     exe: ExecutableConfig,
-    parentSuite: Catch2.C2TestSuiteInfoBase,
-    oldSuite: Catch2.C2TestSuiteInfo | undefined
+    parentSuite: C2TestSuiteInfoBase,
+    oldSuite: C2TestSuiteInfo | undefined
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       try {
@@ -124,30 +124,20 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
           exe.path,
           ["--verbosity", "high", "--list-test-names-only"],
           (error: Error | null, stdout: string, stderr: string) => {
-            const suite = this.allTests.createChildSuite(
+            const suite = parentSuite.createChildSuite(
               exe.name,
               exe.workerMaxNumber,
               exe.path,
-              [],
-              { cwd: exe.cwd, env: exe.env }
+              { cwd: exe.cwd, env: exe.env },
+              oldSuite
             );
-
-            if (oldSuite !== undefined) {
-              const index = parentSuite.children.findIndex(val => val.id == oldSuite.id);
-              if (index !== -1) {
-                parentSuite.children[index] = suite;
-              } else {
-                console.error("It should contains");
-              }
-            } else {
-              parentSuite.children.push(suite);
-            }
 
             let lines = stdout.split(/[\n\r]+/);
             for (var line of lines) {
               const match = line.match(/^([^@]+)@([^\(]+)\(([0-9]+)\)$/);
               if (match && match.length > 0) {
-                suite.createChildTest(match[1].trim(), match[2], Number(match[3]));
+                const filePath = exe.cwd ? path.resolve(exe.cwd, match[2]) : match[2];
+                suite.createChildTest(match[1].trim(), filePath, Number(match[3]));
               }
             }
 
@@ -205,7 +195,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
     const config = this.getConfiguration();
 
-    const allTests = new Catch2.C2AllTestSuiteInfo(this, this.getGlobalWorkerMaxNumber(config));
+    const allTests = new C2AllTestSuiteInfo(this, this.getGlobalWorkerMaxNumber(config));
 
     const executables = this.getExecutables(config);
 
@@ -257,14 +247,14 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     }
 
     console.assert(tests.length === 1);
-    const info = this.allTests.findById(tests[0]);
+    const info = this.allTests.findChildById(tests[0]);
     console.assert(info !== undefined);
 
-    if (!(info instanceof Catch2.C2TestInfo)) {
+    if (!(info instanceof C2TestInfo)) {
       throw "Can't choose a group, only a single test.";
     }
 
-    const testInfo = <Catch2.C2TestInfo>info;
+    const testInfo = <C2TestInfo>info;
 
     const getDebugConfiguration = (): vscode.DebugConfiguration => {
       const debug: vscode.DebugConfiguration = {
@@ -275,13 +265,13 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
       const template = this.getDebugConfigurationTemplate(this.getConfiguration());
       let resolveDebugVariables: [string, any][] = this.variableResolvedPair;
-      resolveDebugVariables = resolveDebugVariables.concat(
+      resolveDebugVariables = resolveDebugVariables.concat([
         ["${label}", testInfo.label],
         ["${exec}", testInfo.execPath],
         ["${args}", testInfo.execParams.slice(0, 1).concat("--reporter", "console")],
         ["${cwd}", testInfo.execOptions.cwd!],
         ["${envObj}", testInfo.execOptions.env!]
-      );
+      ]);
 
       if (template !== null) {
         for (const prop in template) {
@@ -292,6 +282,9 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
         }
 
         return debug;
+      } else {
+        //lets try to recognise existing extensions
+        vscode.extensions.getExtension("");
       }
 
       throw "Catch2: For debug 'debugConfigurationTemplate' should be set.";
@@ -580,8 +573,8 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
     executables.forEach(exec => {
       promises.push(
-        this.verifyIsCatch2TestExecutable(exec.path).then((isCatc2: boolean) => {
-          if (isCatc2) verified.push(exec);
+        this.verifyIsCatch2TestExecutable(exec.path).then((isCatch2: boolean) => {
+          if (isCatch2) verified.push(exec);
         })
       );
     });

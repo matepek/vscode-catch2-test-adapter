@@ -8,7 +8,9 @@ import {
   TestSuiteEvent,
   TestEvent,
   TestInfo,
-  TestSuiteInfo
+  TestSuiteInfo,
+  TestRunStartedEvent,
+  TestRunFinishedEvent
 } from "vscode-test-adapter-api";
 import { Catch2TestAdapter } from "./adapter";
 import { TaskPool } from "./TaskPool";
@@ -68,7 +70,13 @@ export class C2InfoBase {
                 console.error("Something is wrong.", err);
                 reject(err);
               } else {
-                resolve(result);
+                if (result.Catch.Group.length != 1) {
+                  // this code expects 1
+                  console.error("Something is wrong.", result);
+                  throw Error("Serious error.");
+                }
+                const testCasesArray: object[] = result.Catch.Group;
+                resolve(testCasesArray);
               }
             });
           } catch (e) {
@@ -134,19 +142,27 @@ export class C2TestSuiteInfoBase extends C2InfoBase {
     label: string,
     workerMaxNumber: number,
     execPath: string,
-    execParams: Array<string>,
-    execOptions: ExecFileOptions
+    execOptions: ExecFileOptions,
+    replace: C2TestSuiteInfo | undefined
   ): C2TestSuiteInfo {
     const suite = new C2TestSuiteInfo(
       label,
       this.adapter,
       [...this.taskPools, new TaskPool(workerMaxNumber)],
       execPath,
-      execParams,
       execOptions
     );
 
-    this.children.push(suite);
+    if (replace != undefined) {
+      const index = this.children.findIndex(val => val.id == replace.id);
+      if (index !== -1) {
+        this.children[index] = suite;
+      } else {
+        this.adapter.log.error("Replace is given, but not found.");
+      }
+    } else {
+      this.children.push(suite);
+    }
 
     return suite;
   }
@@ -160,17 +176,41 @@ export class C2TestSuiteInfoBase extends C2InfoBase {
     return false;
   }
 
-  getChildIds(ids: string[]): string[] {
-    let childs: string[] = [];
-    this.children.forEach(child => {
-      const index = ids.indexOf(child.id);
-      if (index != -1) {
-        childs.push(child.id);
-        ids.slice(index, 1);
+  hasAtLeastOneChild(ids: Set<string>): boolean {
+    if (ids.size == 0) return false;
+    for (let i = 0; i < this.children.length; ++i) {
+      const child = this.children[i];
+      if (ids.has(child.id)) {
+        return true;
       } else if (child.type == "suite") {
-        childs = childs.concat(child.getChildIds(ids));
+        if (child.hasAtLeastOneChild(ids)) return true;
       }
-    });
+    }
+    return false;
+  }
+
+  findChildById(id: string): C2TestSuiteInfo | C2TestInfo | undefined {
+    const recursiveSearch = (
+      child: C2TestSuiteInfo | C2TestInfo
+    ): C2TestSuiteInfo | C2TestInfo | undefined => {
+      if (child.id == id) {
+        return child;
+      } else if (child.type == "suite") {
+        const suite: C2TestSuiteInfo = child;
+        for (let i = 0; i < suite.children.length; ++i) {
+          const r = recursiveSearch(suite.children[i]);
+          if (r != undefined) return r;
+        }
+      }
+      return undefined;
+    };
+
+    for (let i = 0; i < this.children.length; ++i) {
+      const r = recursiveSearch(this.children[i]);
+      if (r) return r;
+    }
+
+    return undefined;
   }
 }
 
@@ -181,40 +221,34 @@ export class C2AllTestSuiteInfo extends C2TestSuiteInfoBase implements TestSuite
     super(adapter, [new TaskPool(globalWorkerMaxNumber)], "", [], {});
   }
 
-  findById(byId: string): TestSuiteInfo | C2TestInfo | undefined {
-    let search: Function = (
-      t: C2TestSuiteInfo | C2TestInfo
-    ): C2TestSuiteInfo | C2TestInfo | undefined => {
-      if (t.id === byId) return t;
-      if (t.type == "test") return undefined;
-      for (let i = 0; i < (<C2TestSuiteInfo>t).children.length; ++i) {
-        let tt = search((<C2TestSuiteInfo>t).children[i]);
-        if (tt != undefined) return tt;
-      }
-      return undefined;
-    };
-    return search(this);
-  }
-
   test(tests: string[]): Promise<void> {
-    this.adapter.testStatesEmitter.fire({ type: "started", tests: tests });
+    this.adapter.testStatesEmitter.fire(<TestRunStartedEvent>{ type: "started", tests: tests });
 
-    let subTests: string[] = [];
-    if (tests.indexOf(this.id) != -1) {
+    // everybody should remove what they use from it.
+    // and put their children into if they are in it
+    const testSet = new Set(tests);
+
+    if (testSet.has(this.id)) {
       this.children.forEach(child => {
-        subTests.push(child.id);
+        testSet.add(child.id);
       });
-    } else {
-      subTests = tests;
     }
 
     const ps: Promise<void>[] = [];
     this.children.forEach(child => {
-      ps.push(child.test(subTests));
+      if (child.type == "suite") {
+        ps.push(child.test(testSet));
+      } else {
+        this.adapter.log.error("AllTest contains type==test. Should not!");
+      }
     });
 
+    if (testSet.size > 0) {
+      this.adapter.log.error("Some tests have remained.");
+    }
+
     const always = () => {
-      this.adapter.testStatesEmitter.fire({ type: "finished" });
+      this.adapter.testStatesEmitter.fire(<TestRunFinishedEvent>{ type: "finished" });
     };
 
     return Promise.all(ps).then(always, always);
@@ -222,15 +256,17 @@ export class C2AllTestSuiteInfo extends C2TestSuiteInfoBase implements TestSuite
 }
 
 export class C2TestSuiteInfo extends C2TestSuiteInfoBase implements TestSuiteInfo {
+  file?: string = undefined;
+  line?: number = undefined;
+
   constructor(
     public readonly label: string,
     adapter: Catch2TestAdapter,
     taskPools: TaskPool[],
     execPath: string,
-    execParams: Array<string>,
     execOptions: ExecFileOptions
   ) {
-    super(adapter, taskPools, execPath, execParams, execOptions);
+    super(adapter, taskPools, execPath, ["--reporter", "xml"], execOptions);
   }
 
   createChildTest(label: string, file: string, line: number): C2TestInfo {
@@ -241,30 +277,60 @@ export class C2TestSuiteInfo extends C2TestSuiteInfoBase implements TestSuiteInf
       this.adapter,
       this.taskPools,
       this.execPath,
-      this.execParams,
       this.execOptions
     );
+
+    if (this.children.length == 0) {
+      this.file = file;
+      this.line = 1;
+    }
     this.children.push(test);
+
     return test;
   }
 
-  test(tests: string[]): Promise<void> {
-    this.adapter.testStatesEmitter.fire({
+  test(tests: Set<string>): Promise<void> {
+    const runningEvent: TestSuiteEvent = {
       type: "suite",
       suite: this,
       state: "running"
-    });
+    };
 
-    const subTests: string[] = [];
-    if (tests.indexOf(this.id) != -1) {
+    const hasId = tests.delete(this.id);
+
+    if (false /*grouping*/ && hasId) {
+      return this.run(runningEvent) //TODO events
+        .then((groupInner: object) => {
+          this.processXmlTagGroupInner(groupInner);
+        })
+        .catch((err: Error) => {
+          this.adapter.log.error(err.message);
+        })
+        .then(() => {
+          this.adapter.testStatesEmitter.fire({
+            type: "suite",
+            suite: this,
+            state: "completed"
+          });
+        });
+    }
+
+    if (hasId) {
       this.children.forEach(child => {
-        subTests.push(child.id);
+        tests.add(child.id);
       });
     }
 
+    if (!this.hasAtLeastOneChild(tests)) {
+      return Promise.resolve();
+    }
+
+    this.adapter.testStatesEmitter.fire(runningEvent);
+
     const ps: Promise<void>[] = [];
+
     this.children.forEach(child => {
-      ps.push(child.test(subTests));
+      ps.push(child.test(tests));
     });
 
     return Promise.all(ps).then(
@@ -285,6 +351,18 @@ export class C2TestSuiteInfo extends C2TestSuiteInfoBase implements TestSuiteInf
       }
     );
   }
+
+  private processXmlTagGroupInner(testCases: any): void {
+    if (testCases.length != 1) {
+      this.adapter.log.error("this code expects 1." + testCases.toString());
+      throw Error("Serious error.");
+    }
+
+    for (let i = 0; i < testCases[0].TestCase; ++i) {
+      const testCase = testCases[0].TestCase[i];
+      testCase;
+    }
+  }
 }
 
 export class C2TestInfo extends C2InfoBase implements TestInfo {
@@ -297,26 +375,28 @@ export class C2TestInfo extends C2InfoBase implements TestInfo {
     adapter: Catch2TestAdapter,
     taskPools: TaskPool[],
     execPath: string,
-    execParams: Array<string>,
     execOptions: ExecFileOptions
   ) {
     super(
       adapter,
       taskPools,
       execPath,
-      [label.replace(",", "\\,"), "--reporter", "xml", ...execParams],
+      [label.replace(",", "\\,") /*',' has special meaning */, "--reporter", "xml"],
       execOptions
     );
   }
 
-  test(tests: string[]): Promise<void> {
+  test(tests: Set<string>): Promise<void> {
+    if (!tests.has(this.id)) return Promise.resolve();
+    tests.delete(this.id);
+
     return this.run({
       type: "test",
       test: this,
       state: "running"
     })
-      .then((xml: object) => {
-        const testEvent = this.processXml(xml);
+      .then((groupInner: object) => {
+        const testEvent = this.processXmlTagGroupInner(groupInner);
         this.adapter.testStatesEmitter.fire(testEvent);
       })
       .catch((err: Error) => {
@@ -329,22 +409,23 @@ export class C2TestInfo extends C2InfoBase implements TestInfo {
       });
   }
 
-  private processXml(res: object): TestEvent {
-    const result: any = res; //TODO
-    if (result.Catch.Group.length != 1) {
-      // this code expects 1, because it runs tests 1 by 1
-      console.error("Something is wrong.", result);
+  private processXmlTagGroupInner(testCases: any): TestEvent {
+    if (testCases.length != 1) {
+      this.adapter.log.error("this code expects 1." + testCases.toString());
       throw Error("Serious error.");
     }
 
-    if (result.Catch.Group[0].TestCase.length != 1) {
-      // this code expects 1, because it runs tests 1 by 1
-      console.error("Something is wrong.", result);
+    if (testCases[0].TestCase.length != 1) {
+      this.adapter.log.error("this code expects 1." + testCases.toString());
       throw Error("Serious error.");
     }
 
-    const testCase = result.Catch.Group[0].TestCase[0];
+    const testCase = testCases[0].TestCase[0];
 
+    return this.processXmlTagTestCase(testCase);
+  }
+
+  processXmlTagTestCase(testCase: any): TestEvent {
     if (
       testCase.$.hasOwnProperty("description") &&
       this.label.indexOf(testCase.$.description) == -1

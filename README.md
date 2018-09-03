@@ -110,6 +110,10 @@ Example:
 
 [The Unlicense](https://choosealicense.com/licenses/unlicense/)
 
+## Known issues
+
+- On windows the navigate to source button isn't working. I assume it is a framework bug.
+
 ## TODOs
 
 - Better Catch2 xml parser (just a bit)
