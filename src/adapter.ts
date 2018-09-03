@@ -15,7 +15,8 @@ import {
   TestRunStartedEvent,
   TestRunFinishedEvent
 } from "vscode-test-adapter-api";
-import * as Catch2 from "./catch2";
+import * as util from "vscode-test-adapter-util";
+import { C2AllTestSuiteInfo, C2TestInfo, C2TestSuiteInfo, C2TestSuiteInfoBase } from "./Catch2";
 
 export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly testsEmitter = new vscode.EventEmitter<
@@ -30,7 +31,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   private isRunning: number = 0;
   private isDebugging: boolean = false;
 
-  private allTests: Catch2.C2TestSuiteInfo;
+  private allTests: C2AllTestSuiteInfo;
   private readonly disposables: Array<vscode.Disposable> = new Array();
 
   private isEnabledSourceDecoration = true;
@@ -42,10 +43,17 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     return this.isEnabledSourceDecoration;
   }
 
-  constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
+  constructor(
+    public readonly workspaceFolder: vscode.WorkspaceFolder,
+    public readonly log: util.Log
+  ) {
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration(configChange => {
         if (
+          configChange.affectsConfiguration(
+            "catch2TestExplorer.defaultGroupFileLevelRun",
+            this.workspaceFolder.uri
+          ) ||
           configChange.affectsConfiguration(
             "catch2TestExplorer.defaultEnv",
             this.workspaceFolder.uri
@@ -85,7 +93,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       })
     );
 
-    this.allTests = new Catch2.C2TestSuiteInfo("AllTests", undefined, this, new Catch2.TaskPool(1));
+    this.allTests = new C2AllTestSuiteInfo(this, 1);
   }
 
   dispose() {
@@ -111,46 +119,30 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
   loadSuite(
     exe: ExecutableConfig,
-    parentSuite: Catch2.C2TestSuiteInfo,
-    oldSuite: Catch2.C2TestSuiteInfo | undefined
+    parentSuite: C2TestSuiteInfoBase,
+    oldSuite: C2TestSuiteInfo | undefined
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       try {
         execFile(
           exe.path,
-          ["--list-test-names-only"],
+          ["--verbosity", "high", "--list-test-names-only"],
           (error: Error | null, stdout: string, stderr: string) => {
-            const suite = new Catch2.C2TestSuiteInfo(
+            const suite = parentSuite.createChildSuite(
               exe.name,
-              parentSuite,
-              this,
-              new Catch2.TaskPool(exe.workerMaxNumber)
+              exe.workerMaxNumber,
+              this.getDefaultGroupFileLevelRun(this.getConfiguration()),
+              exe.path,
+              { cwd: exe.cwd, env: exe.env },
+              oldSuite
             );
-
-            if (oldSuite !== undefined) {
-              const index = parentSuite.children.findIndex(val => val.id == oldSuite.id);
-              if (index !== -1) {
-                parentSuite.children[index] = suite;
-              } else {
-                console.error("It should contains");
-              }
-            } else {
-              parentSuite.children.push(suite);
-            }
 
             let lines = stdout.split(/[\n\r]+/);
             for (var line of lines) {
-              if (line.trim().length > 0) {
-                suite.children.push(
-                  new Catch2.C2TestInfo(
-                    line.trimRight(),
-                    this,
-                    suite,
-                    exe.path,
-                    [line.replace(",", "\\,").trim(), "--reporter", "xml"],
-                    { cwd: exe.cwd, env: exe.env }
-                  )
-                );
+              const match = line.match(/^([^@]+)@([^\(]+)\(([0-9]+)\)$/);
+              if (match && match.length > 0) {
+                const filePath = exe.cwd ? path.resolve(exe.cwd, match[2]) : match[2];
+                suite.createChildTest(match[1].trim(), filePath, Number(match[3]));
               }
             }
 
@@ -208,12 +200,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
     const config = this.getConfiguration();
 
-    const allTests = new Catch2.C2TestSuiteInfo(
-      "AllTests",
-      undefined,
-      this,
-      new Catch2.TaskPool(this.getGlobalWorkerMaxNumber(config))
-    );
+    const allTests = new C2AllTestSuiteInfo(this, this.getGlobalWorkerMaxNumber(config));
 
     const executables = this.getExecutables(config);
 
@@ -244,31 +231,14 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       throw "Catch2: Test is currently being debugged.";
     }
 
-    const runners: Promise<void>[] = [];
     if (this.isRunning == 0) {
-      this.testStatesEmitter.fire({ type: "started", tests: tests });
-      tests.forEach(testId => {
-        const info = this.findSuiteOrTest(this.allTests, testId);
-        if (info === undefined) {
-          console.error("Shouldn't be here");
-        } else {
-          const always = () => {
-            this.isRunning -= 1;
-          };
-          runners.push(info.test().then(always, always));
-          this.isRunning += 1;
-        }
-      });
-
       this.isRunning += 1;
-
       const always = () => {
-        this.testStatesEmitter.fire({ type: "finished" });
         this.isRunning -= 1;
       };
-
-      return Promise.all(runners).then(always, always);
+      return this.allTests.test(tests).then(always, always);
     }
+
     throw Error("Catch2 Test Adapter: Test(s) are currently being run.");
   }
 
@@ -282,14 +252,14 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     }
 
     console.assert(tests.length === 1);
-    const info = this.findSuiteOrTest(this.allTests, tests[0]);
+    const info = this.allTests.findChildById(tests[0]);
     console.assert(info !== undefined);
 
-    if (info instanceof Catch2.C2TestSuiteInfo) {
+    if (!(info instanceof C2TestInfo)) {
       throw "Can't choose a group, only a single test.";
     }
 
-    const testInfo = <Catch2.C2TestInfo>info;
+    const testInfo = <C2TestInfo>info;
 
     const getDebugConfiguration = (): vscode.DebugConfiguration => {
       const debug: vscode.DebugConfiguration = {
@@ -299,7 +269,8 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       };
 
       const template = this.getDebugConfigurationTemplate(this.getConfiguration());
-      const resolveDebugVariables = this.variableResolvedPair.concat([
+      let resolveDebugVariables: [string, any][] = this.variableResolvedPair;
+      resolveDebugVariables = resolveDebugVariables.concat([
         ["${label}", testInfo.label],
         ["${exec}", testInfo.execPath],
         ["${args}", testInfo.execParams.slice(0, 1).concat("--reporter", "console")],
@@ -316,6 +287,9 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
         }
 
         return debug;
+      } else {
+        //lets try to recognise existing extensions
+        vscode.extensions.getExtension("");
       }
 
       throw "Catch2: For debug 'debugConfigurationTemplate' should be set.";
@@ -357,24 +331,6 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
     }).then(always, always);
   }
 
-  private findSuiteOrTest(
-    suite: Catch2.C2TestSuiteInfo,
-    byId: string
-  ): Catch2.C2TestSuiteInfo | Catch2.C2TestInfo | undefined {
-    let search: Function = (
-      t: Catch2.C2TestSuiteInfo | Catch2.C2TestInfo
-    ): Catch2.C2TestSuiteInfo | Catch2.C2TestInfo | undefined => {
-      if (t.id === byId) return t;
-      if (t.type == "test") return undefined;
-      for (let i = 0; i < (<Catch2.C2TestSuiteInfo>t).children.length; ++i) {
-        let tt = search((<Catch2.C2TestSuiteInfo>t).children[i]);
-        if (tt != undefined) return tt;
-      }
-      return undefined;
-    };
-    return search(suite);
-  }
-
   private getConfiguration(): vscode.WorkspaceConfiguration {
     return vscode.workspace.getConfiguration("catch2TestExplorer", this.workspaceFolder.uri);
   }
@@ -397,6 +353,10 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
       }
     }
     return result;
+  }
+
+  private getDefaultGroupFileLevelRun(config: vscode.WorkspaceConfiguration): boolean {
+    return config.get<boolean>("defaultGroupFileLevelRun", false);
   }
 
   private getGlobalAndDefaultEnvironmentVariables(
@@ -435,6 +395,7 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
   private getDefaultWorkerMaxNumberPerFile(config: vscode.WorkspaceConfiguration): number {
     return config.get<number>("defaultWorkerMaxNumberPerFile", 1);
   }
+
   private getGlobalWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
     return config.get<number>("globalWorkerMaxNumber", 4);
   }
@@ -537,14 +498,17 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
             }
           });
         };
-
-        const stat = fs.statSync(p);
-        if (stat.isDirectory()) {
-          recursiveAdd(p);
-        } else if (stat.isFile()) {
-          executables.push(new ExecutableConfig(name, p, regex, pool, cwd, env));
-        } else {
-          // do nothing
+        try {
+          const stat = fs.statSync(p);
+          if (stat.isDirectory()) {
+            recursiveAdd(p);
+          } else if (stat.isFile()) {
+            executables.push(new ExecutableConfig(name, p, regex, pool, cwd, env));
+          } else {
+            // do nothing
+          }
+        } catch (e) {
+          this.log.error(e.message);
         }
       } else {
         executables.push(new ExecutableConfig(name, p, regex, pool, cwd, env));
@@ -619,8 +583,8 @@ export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
 
     executables.forEach(exec => {
       promises.push(
-        this.verifyIsCatch2TestExecutable(exec.path).then((isCatc2: boolean) => {
-          if (isCatc2) verified.push(exec);
+        this.verifyIsCatch2TestExecutable(exec.path).then((isCatch2: boolean) => {
+          if (isCatch2) verified.push(exec);
         })
       );
     });

@@ -3,108 +3,100 @@
 // domain. The author hereby disclaims copyright to this source code.
 
 import { ChildProcess, ExecFileOptions, execFile } from "child_process";
-import { TestDecoration, TestEvent, TestInfo, TestSuiteInfo } from "vscode-test-adapter-api";
+import {
+  TestDecoration,
+  TestSuiteEvent,
+  TestEvent,
+  TestInfo,
+  TestSuiteInfo,
+  TestRunStartedEvent,
+  TestRunFinishedEvent
+} from "vscode-test-adapter-api";
 import { Catch2TestAdapter } from "./adapter";
+import { TaskPool } from "./TaskPool";
 import * as xml2js from "xml2js";
-import * as path from "path";
 
-export class C2TestSuiteInfo implements TestSuiteInfo {
-  readonly type: "suite" = "suite";
+export class C2InfoBase {
   readonly id: string;
-  file?: string;
-  line?: number;
-  children: (C2TestSuiteInfo | C2TestInfo)[] = [];
-
-  constructor(
-    public readonly label: string,
-    private readonly parent: C2TestSuiteInfo | undefined,
-    private readonly adapter: Catch2TestAdapter,
-    private readonly taskPool: TaskPool
-  ) {
-    this.id = adapter.generateUniqueId();
-  }
-
-  cancel(): void {
-    this.children.forEach(child => {
-      child.cancel();
-    });
-  }
-
-  acquireSlot(): boolean {
-    const isAcquired = this.taskPool.acquire();
-    if (!isAcquired) return false;
-    if (this.parent != undefined) {
-      if (this.parent.acquireSlot()) {
-        return true;
-      } else {
-        this.taskPool.release();
-        return false;
-      }
-    } else {
-      return true;
-    }
-  }
-
-  releaseSlot(): void {
-    this.taskPool.release();
-    if (this.parent != undefined) this.parent.releaseSlot();
-  }
-
-  removeChild(child: C2TestSuiteInfo): boolean {
-    const i = this.children.findIndex(val => val.id == child.id);
-    if (i != -1) {
-      this.children.splice(i, 1);
-      return true;
-    }
-    return false;
-  }
-
-  test(): Promise<void> {
-    this.adapter.testStatesEmitter.fire({
-      type: "suite",
-      suite: this,
-      state: "running"
-    });
-
-    let ps: Promise<void>[] = [];
-    this.children.forEach(child => {
-      ps.push(child.test());
-    });
-
-    return Promise.all(ps).then(
-      () => {
-        this.adapter.testStatesEmitter.fire({
-          type: "suite",
-          suite: this,
-          state: "completed"
-        });
-      },
-      (err: Error) => {
-        console.error("Serious error.", err);
-      }
-    );
-  }
-}
-
-export class C2TestInfo implements TestInfo {
-  readonly type: "test" = "test";
-  readonly id: string;
-  file?: string = undefined;
-  line?: number = undefined;
-  skipped?: boolean = false;
-
   private isKill: boolean = false;
   private proc: ChildProcess | undefined = undefined;
 
   constructor(
-    public label: string,
-    private readonly adapter: Catch2TestAdapter,
-    private readonly parent: C2TestSuiteInfo,
-    readonly execPath: string,
-    readonly execParams: Array<string>,
-    readonly execOptions: ExecFileOptions
+    protected readonly adapter: Catch2TestAdapter,
+    protected readonly taskPools: TaskPool[],
+    public readonly execPath: string,
+    public readonly execParams: Array<string>,
+    public readonly execOptions: ExecFileOptions
   ) {
     this.id = adapter.generateUniqueId();
+  }
+
+  protected run(startEvents: (TestSuiteEvent | TestEvent)[]): Promise<object> {
+    this.isKill = false;
+
+    return this.runInner(startEvents);
+  }
+
+  private runInner(runningEvents: (TestSuiteEvent | TestEvent)[]): Promise<object> {
+    if (this.isKill) return Promise.reject(Error("Test was killed."));
+
+    if (!this.acquireSlot()) {
+      return new Promise<void>(resolve => setTimeout(resolve, 64)).then(() => {
+        return this.runInner(runningEvents);
+      });
+    }
+
+    return new Promise<object>((resolve, reject) => {
+      if (this.isKill) {
+        reject(Error("Test was killed."));
+        return;
+      }
+
+      runningEvents.forEach(ev => {
+        this.adapter.testStatesEmitter.fire(ev);
+      });
+
+      this.proc = execFile(
+        this.execPath,
+        this.execParams,
+        this.execOptions,
+        (error: Error | null, stdout: string, stderr: string) => {
+          // error code means test failure
+          if (this.isKill) {
+            reject(Error("Test was killed."));
+            return;
+          }
+          try {
+            new xml2js.Parser().parseString(stdout, (err: any, result: any) => {
+              if (err) {
+                console.error("Something is wrong.", err);
+                reject(err);
+              } else {
+                if (result.Catch.Group.length != 1) {
+                  // this code expects 1
+                  console.error("Something is wrong.", result);
+                  throw Error("Serious error.");
+                }
+                const testCasesArray: object[] = result.Catch.Group;
+                resolve(testCasesArray);
+              }
+            });
+          } catch (e) {
+            reject(e);
+          }
+        }
+      );
+    })
+      .then((result: object) => {
+        this.proc = undefined;
+        this.releaseSlot();
+        return result;
+      })
+      .catch((err: Error) => {
+        this.proc = undefined;
+        this.releaseSlot();
+        throw err;
+      });
   }
 
   cancel(): void {
@@ -116,109 +108,353 @@ export class C2TestInfo implements TestInfo {
     }
   }
 
-  test(): Promise<void> {
-    this.isKill = false;
+  acquireSlot(): boolean {
+    let i: number = 0;
+    while (i < this.taskPools.length && this.taskPools[i].acquire()) ++i;
 
-    return this.runTest();
+    if (i == this.taskPools.length) return true;
+
+    while (--i >= 0) this.taskPools[i].release(); // rollback
+
+    return false;
   }
 
-  private runTest(): Promise<void> {
-    if (this.isKill) return Promise.reject(Error("Test was killed."));
+  releaseSlot(): void {
+    let i: number = this.taskPools.length;
 
-    if (!this.parent.acquireSlot()) {
-      return new Promise<void>(resolve => setTimeout(resolve, 64)).then(() => {
-        return this.runTest();
+    while (--i >= 0) this.taskPools[i].release();
+  }
+}
+
+export class C2TestSuiteInfoBase extends C2InfoBase {
+  readonly type: "suite" = "suite";
+  readonly children: (C2TestSuiteInfo | C2TestInfo)[] = [];
+
+  constructor(
+    adapter: Catch2TestAdapter,
+    taskPools: TaskPool[],
+    protected readonly groupFileLevelRun: boolean,
+    execPath: string,
+    execParams: Array<string>,
+    execOptions: ExecFileOptions
+  ) {
+    super(adapter, taskPools, execPath, execParams, execOptions);
+  }
+
+  createChildSuite(
+    label: string,
+    workerMaxNumber: number,
+    groupFileLevelRun: boolean,
+    execPath: string,
+    execOptions: ExecFileOptions,
+    replace: C2TestSuiteInfo | undefined
+  ): C2TestSuiteInfo {
+    const suite = new C2TestSuiteInfo(
+      label,
+      this.adapter,
+      [...this.taskPools, new TaskPool(workerMaxNumber)],
+      groupFileLevelRun,
+      execPath,
+      execOptions
+    );
+
+    if (replace != undefined) {
+      const index = this.children.findIndex(val => val.id == replace.id);
+      if (index !== -1) {
+        this.children[index] = suite;
+      } else {
+        this.adapter.log.error("Replace is given, but not found.");
+      }
+    } else {
+      this.children.push(suite);
+    }
+
+    return suite;
+  }
+
+  removeChild(child: C2TestSuiteInfo): boolean {
+    const i = this.children.findIndex(val => val.id == child.id);
+    if (i != -1) {
+      this.children.splice(i, 1);
+      return true;
+    }
+    return false;
+  }
+
+  hasAtLeastOneChild(ids: Set<string>): boolean {
+    if (ids.size == 0) return false;
+    for (let i = 0; i < this.children.length; ++i) {
+      const child = this.children[i];
+      if (ids.has(child.id)) {
+        return true;
+      } else if (child.type == "suite") {
+        if (child.hasAtLeastOneChild(ids)) return true;
+      }
+    }
+    return false;
+  }
+
+  findChildById(id: string): C2TestSuiteInfo | C2TestInfo | undefined {
+    const recursiveSearch = (
+      child: C2TestSuiteInfo | C2TestInfo
+    ): C2TestSuiteInfo | C2TestInfo | undefined => {
+      if (child.id == id) {
+        return child;
+      } else if (child.type == "suite") {
+        const suite: C2TestSuiteInfo = child;
+        for (let i = 0; i < suite.children.length; ++i) {
+          const r = recursiveSearch(suite.children[i]);
+          if (r != undefined) return r;
+        }
+      }
+      return undefined;
+    };
+
+    for (let i = 0; i < this.children.length; ++i) {
+      const r = recursiveSearch(this.children[i]);
+      if (r) return r;
+    }
+
+    return undefined;
+  }
+}
+
+export class C2AllTestSuiteInfo extends C2TestSuiteInfoBase implements TestSuiteInfo {
+  readonly label: string = "AllTests";
+
+  constructor(adapter: Catch2TestAdapter, globalWorkerMaxNumber: number) {
+    super(adapter, [new TaskPool(globalWorkerMaxNumber)], false, "", [], {});
+  }
+
+  test(tests: string[]): Promise<void> {
+    this.adapter.testStatesEmitter.fire(<TestRunStartedEvent>{ type: "started", tests: tests });
+
+    // everybody should remove what they use from it.
+    // and put their children into if they are in it
+    const testSet = new Set(tests);
+
+    if (testSet.has(this.id)) {
+      this.children.forEach(child => {
+        testSet.add(child.id);
       });
     }
 
-    return new Promise<TestEvent>((resolve, reject) => {
-      if (this.isKill) {
-        reject(Error(this.label + " was killed."));
-        return;
+    const ps: Promise<void>[] = [];
+    this.children.forEach(child => {
+      if (child.type == "suite") {
+        ps.push(child.test(testSet));
+      } else {
+        this.adapter.log.error("AllTest contains type==test. Should not!");
       }
+    });
 
-      this.adapter.testStatesEmitter.fire({
+    if (testSet.size > 0) {
+      this.adapter.log.error("Some tests have remained.");
+    }
+
+    const always = () => {
+      this.adapter.testStatesEmitter.fire(<TestRunFinishedEvent>{ type: "finished" });
+    };
+
+    return Promise.all(ps).then(always, always);
+  }
+}
+
+export class C2TestSuiteInfo extends C2TestSuiteInfoBase implements TestSuiteInfo {
+  file?: string = undefined;
+  line?: number = undefined;
+
+  constructor(
+    public readonly label: string,
+    adapter: Catch2TestAdapter,
+    taskPools: TaskPool[],
+    groupFileLevelRun: boolean,
+    execPath: string,
+    execOptions: ExecFileOptions
+  ) {
+    super(adapter, taskPools, groupFileLevelRun, execPath, ["--reporter", "xml"], execOptions);
+  }
+
+  createChildTest(label: string, file: string, line: number): C2TestInfo {
+    const test = new C2TestInfo(
+      label,
+      file,
+      line,
+      this.adapter,
+      this.taskPools,
+      this.execPath,
+      this.execOptions
+    );
+
+    if (this.children.length == 0) {
+      this.file = file;
+      this.line = 1;
+    }
+    this.children.push(test);
+
+    return test;
+  }
+
+  test(tests: Set<string>): Promise<void> {
+    const startEvent: TestSuiteEvent = {
+      type: "suite",
+      suite: this,
+      state: "running"
+    };
+
+    const hasId = tests.delete(this.id);
+
+    if (this.groupFileLevelRun && hasId) {
+      const childEvents: (TestSuiteEvent | TestEvent)[] = [];
+      this.children.forEach(child => {
+        tests.delete(child.id);
+        if (child.type == "suite") {
+          childEvents.push({ type: child.type, suite: child, state: "running" });
+        } else {
+          childEvents.push({ type: child.type, test: child, state: "running" });
+        }
+      });
+      return this.run([startEvent, ...childEvents])
+        .then((groupInner: object) => {
+          this.processXmlTagGroupInner(groupInner);
+        })
+        .catch((err: Error) => {
+          this.adapter.log.error(err.message);
+        })
+        .then(() => {
+          this.adapter.testStatesEmitter.fire({
+            type: "suite",
+            suite: this,
+            state: "completed"
+          });
+        });
+    }
+
+    if (hasId) {
+      this.children.forEach(child => {
+        tests.add(child.id);
+      });
+    }
+
+    if (!this.hasAtLeastOneChild(tests)) {
+      return Promise.resolve();
+    }
+
+    this.adapter.testStatesEmitter.fire(startEvent);
+
+    const ps: Promise<void>[] = [];
+
+    this.children.forEach(child => {
+      ps.push(child.test(tests));
+    });
+
+    return Promise.all(ps).then(
+      () => {
+        this.adapter.testStatesEmitter.fire({
+          type: "suite",
+          suite: this,
+          state: "completed"
+        });
+      },
+      (err: Error) => {
+        this.adapter.testStatesEmitter.fire({
+          type: "suite",
+          suite: this,
+          state: "completed"
+        });
+        this.adapter.log.error(err.message);
+      }
+    );
+  }
+
+  private processXmlTagGroupInner(testCases: any): void {
+    if (testCases.length != 1) {
+      this.adapter.log.error("this code expects 1." + testCases.toString());
+      throw Error("Serious error.");
+    }
+
+    for (let i = 0; i < testCases[0].TestCase.length; ++i) {
+      const testCase = testCases[0].TestCase[i];
+      const name = testCase.$.name.trimRight();
+      const child = this.children.find((v: C2TestSuiteInfo | C2TestInfo) => {
+        return v.label == name;
+      });
+      if (child != undefined && child.type == "test") {
+        const ev = (<C2TestInfo>child).processXmlTagTestCase(testCase);
+        this.adapter.testStatesEmitter.fire(ev);
+      }
+    }
+  }
+}
+
+export class C2TestInfo extends C2InfoBase implements TestInfo {
+  readonly type: "test" = "test";
+
+  constructor(
+    public label: string,
+    public readonly file: string,
+    public readonly line: number,
+    adapter: Catch2TestAdapter,
+    taskPools: TaskPool[],
+    execPath: string,
+    execOptions: ExecFileOptions
+  ) {
+    super(
+      adapter,
+      taskPools,
+      execPath,
+      [label.replace(",", "\\,") /*',' has special meaning */, "--reporter", "xml"],
+      execOptions
+    );
+  }
+
+  test(tests: Set<string>): Promise<void> {
+    if (!tests.has(this.id)) return Promise.resolve();
+    tests.delete(this.id);
+
+    return this.run([
+      <TestEvent>{
         type: "test",
         test: this,
         state: "running"
-      });
-
-      this.proc = execFile(
-        this.execPath,
-        this.execParams,
-        this.execOptions,
-        (error: Error | null, stdout: string, stderr: string) => {
-          // error code means test failure
-          if (this.isKill) {
-            reject(Error(this.label + " was killed."));
-            return;
-          }
-          try {
-            new xml2js.Parser().parseString(stdout, (err: any, result: any) => {
-              if (err) {
-                console.error("Something is wrong.", err);
-                reject(err);
-              } else {
-                const testEvent = this.processXml(result);
-                resolve(testEvent);
-              }
-            });
-          } catch (e) {
-            reject(e);
-          }
-        }
-      );
-    }).then(
-      (testEvent: TestEvent) => {
-        this.proc = undefined;
-        this.parent.releaseSlot();
+      }
+    ])
+      .then((groupInner: object) => {
+        const testEvent = this.processXmlTagGroupInner(groupInner);
         this.adapter.testStatesEmitter.fire(testEvent);
-      },
-      (err: Error) => {
-        this.proc = undefined;
-        this.parent.releaseSlot();
+      })
+      .catch((err: Error) => {
         this.adapter.testStatesEmitter.fire({
           type: "test",
           test: this,
           state: "failed",
           message: err.toString()
         });
-      }
-    );
+      });
   }
 
-  private processXml(result: any): TestEvent {
-    if (result.Catch.Group.length != 1) {
-      // this code expects 1, because it runs tests 1 by 1
-      console.error("Something is wrong.", result);
+  private processXmlTagGroupInner(testCases: any): TestEvent {
+    if (testCases.length != 1) {
+      this.adapter.log.error("this code expects 1." + testCases.toString());
       throw Error("Serious error.");
     }
 
-    if (result.Catch.Group[0].TestCase.length != 1) {
-      // this code expects 1, because it runs tests 1 by 1
-      console.error("Something is wrong.", result);
+    if (testCases[0].TestCase.length != 1) {
+      this.adapter.log.error("this code expects 1." + testCases.toString());
       throw Error("Serious error.");
     }
 
-    const testCase = result.Catch.Group[0].TestCase[0];
+    const testCase = testCases[0].TestCase[0];
 
+    return this.processXmlTagTestCase(testCase);
+  }
+
+  processXmlTagTestCase(testCase: any): TestEvent {
     if (
       testCase.$.hasOwnProperty("description") &&
       this.label.indexOf(testCase.$.description) == -1
     ) {
       this.label += " | " + testCase.$.description;
-    }
-
-    if (
-      (this.file == undefined || this.line == undefined) &&
-      testCase.$.hasOwnProperty("filename") &&
-      testCase.$.hasOwnProperty("line")
-    ) {
-      const filePath = this.execOptions.cwd
-        ? path.resolve(this.execOptions.cwd, testCase.$.filename)
-        : testCase.$.filename;
-      this.file = filePath;
-      this.line = Number(testCase.$.line) - 1 /*It looks Catch2 works like this.*/;
     }
 
     try {
@@ -336,25 +572,5 @@ export class C2TestInfo implements TestInfo {
     }
 
     return [message, decorations];
-  }
-}
-
-export class TaskPool {
-  /**
-   *
-   * @param availableSlot The available slot number. If -1 (negative) means no limit, acquire will always return true.
-   */
-  constructor(private availableSlot: number) {}
-
-  acquire(): boolean {
-    if (this.availableSlot < 0) return true;
-    if (this.availableSlot == 0) return false;
-    this.availableSlot -= 1;
-    return true;
-  }
-
-  release(): void {
-    if (this.availableSlot < 0) return;
-    this.availableSlot += 1;
   }
 }
