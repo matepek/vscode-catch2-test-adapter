@@ -62,10 +62,11 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo {
     const suite = new C2TestSuiteInfo(
         label, this.adapter, [this.taskPool], execPath, execOptions);
 
-    this.children.push(suite);
-    this.children.sort((a: C2TestSuiteInfo, b: C2TestSuiteInfo): number => {
-      return a.label.trim().localeCompare(b.label.trim());
+    let i = this.children.findIndex((v: C2TestSuiteInfo) => {
+      return suite.label.trim().localeCompare(v.label.trim()) < 0;
     });
+    if (i == -1) i = this.children.length;
+    this.children.splice(i, 0, suite);
 
     return suite;
   }
