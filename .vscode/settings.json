@@ -10,7 +10,7 @@
     "editor.insertSpaces": true,
     "editor.tabSize": 2
   },
-  "editor.formatOnSave": true,
   "prettier.printWidth": 100,
-  "prettier.jsxBracketSameLine": true
+  "prettier.jsxBracketSameLine": true,
+  "editor.formatOnSave": true
 }
