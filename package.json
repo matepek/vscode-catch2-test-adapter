@@ -5,7 +5,7 @@
   "icon": "icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -87,12 +87,6 @@
           ],
           "scope": "resource"
         },
-        "catch2TestExplorer.defaultGroupFileLevelRun": {
-          "description": "If it is true and a 'file group' or all-tests testing was started, the tests would run as part of the singe test executable. Feedback is worse (reports arrive grouped by file), but could be handy if loading the executable requires a lot of time.",
-          "type": "boolean",
-          "default": false,
-          "scope": "resource"
-        },
         "catch2TestExplorer.defaultEnv": {
           "description": "Default environment variables to be set when running the tests, if it isn't provided in 'executables'. (Resolves: ${workspaceFolder})",
           "type": "object",
@@ -105,12 +99,6 @@
         "catch2TestExplorer.defaultCwd": {
           "description": "The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in 'executables'.  (Resolves: ${workspaceFolder})",
           "type": "string",
-          "scope": "resource"
-        },
-        "catch2TestExplorer.defaultWorkerMaxNumberPerFile": {
-          "description": "The variable maximize the number of the parallel test execution per file, if it isn't provided in 'executables'.",
-          "type": "number",
-          "default": 4,
           "scope": "resource"
         },
         "catch2TestExplorer.globalWorkerMaxNumber": {
