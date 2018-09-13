@@ -5,7 +5,7 @@
   "icon": "icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
