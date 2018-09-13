@@ -9,17 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.1] - 2018-09-13
 
+### Changed
+
+- Loads of bugs ave been fixed. (Typically platform related ones.).
+
 ## [1.0.0] - 2018-09-12
 
-## Added
+### Added
+
 - Skipped tests are recognised.
 - `catch2TestExplorer.workerMaxNumber`, see Changed section.
-- Tricky test names (with spaces in it)  are handeld.
+- Tricky test names (with spaces in it) are handeld.
 
-## Changed
+### Changed
+
 - Just global worker limitation exists from now so, it was renamed `catch2TestExplorer.globalWorkerMaxNumber` => `catch2TestExplorer.workerMaxNumber`
 
-## Removed
+### Removed
+
 - `catch2TestExplorer.defaultGroupFileLevelRun` was removed. Now just group file level run exists.
 - Thats why `catch2TestExplorer.defaultWorkerMaxNumberPerFile` was unnecesary too, removed.
 - And also `catch2TestExplorer.executables`'s `workerMaxNumber` was removed.
