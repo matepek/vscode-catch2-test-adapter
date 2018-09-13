@@ -8,9 +8,6 @@ import * as xml2js from "xml2js";
 import { C2TestSuiteInfo } from "./C2TestSuiteInfo";
 import { generateUniqueId } from "./IdGenerator";
 
-////////////////////
-////////////////////
-
 export class C2TestInfo implements TestInfo {
   readonly type: "test" = "test";
   readonly id: string;

@@ -14,7 +14,7 @@ import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
 import {C2TestInfo} from './C2TestInfo';
 import {C2TestSuiteInfo} from './C2TestSuiteInfo';
 
-export class Catch2TestAdapter implements TestAdapter, vscode.Disposable {
+export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly testsEmitter =
       new vscode.EventEmitter<TestLoadStartedEvent|TestLoadFinishedEvent>();
   readonly testStatesEmitter =

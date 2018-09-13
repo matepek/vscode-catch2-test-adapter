@@ -118,7 +118,9 @@ Example:
   - `--durations <yes/no>`
   - `--rng-seed <'time'|number>`
 
-- Sections
+- Sections: Once in the future.
+- Grouping by tags.
+- Tests
 
 ## Contribution
 

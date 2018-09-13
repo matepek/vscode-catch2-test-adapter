@@ -5,12 +5,11 @@
 import {SpawnOptions} from 'child_process';
 import {TestRunFinishedEvent, TestRunStartedEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
 
-import {Catch2TestAdapter} from './adapter';
+import {C2TestAdapter} from './C2TestAdapter';
 import {C2TestInfo} from './C2TestInfo';
 import {C2TestSuiteInfo} from './C2TestSuiteInfo';
 import {generateUniqueId} from './IdGenerator';
 import {TaskPool} from './TaskPool';
-
 
 export class C2AllTestSuiteInfo implements TestSuiteInfo {
   readonly type: 'suite' = 'suite';
@@ -19,7 +18,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo {
   readonly children: C2TestSuiteInfo[] = [];
   private readonly taskPool: TaskPool;
 
-  constructor(private readonly adapter: Catch2TestAdapter, slotCount: number) {
+  constructor(private readonly adapter: C2TestAdapter, slotCount: number) {
     this.id = generateUniqueId();
     this.taskPool = new TaskPool(slotCount);
   }

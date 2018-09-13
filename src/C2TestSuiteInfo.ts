@@ -2,37 +2,42 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import {ChildProcess, spawn, SpawnOptions} from 'child_process';
-import {TestEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
+import { ChildProcess, spawn, SpawnOptions } from "child_process";
+import { TestEvent, TestSuiteEvent, TestSuiteInfo } from "vscode-test-adapter-api";
 
-import {Catch2TestAdapter} from './adapter';
-import {C2TestInfo} from './C2TestInfo';
-import {generateUniqueId} from './IdGenerator';
-import {TaskPool} from './TaskPool';
+import { C2TestAdapter } from "./C2TestAdapter";
+import { C2TestInfo } from "./C2TestInfo";
+import { generateUniqueId } from "./IdGenerator";
+import { TaskPool } from "./TaskPool";
 
 export class C2TestSuiteInfo implements TestSuiteInfo {
-  readonly type: 'suite' = 'suite';
+  readonly type: "suite" = "suite";
   readonly id: string;
   children: C2TestInfo[] = [];
   file?: string = undefined;
   line?: number = undefined;
 
   private isKill: boolean = false;
-  private proc: ChildProcess|undefined = undefined;
+  private proc: ChildProcess | undefined = undefined;
 
   constructor(
-      public readonly label: string,
-      private readonly adapter: Catch2TestAdapter,
-      private readonly taskPools: TaskPool[], public readonly execPath: string,
-      public readonly execOptions: SpawnOptions) {
+    public readonly label: string,
+    private readonly adapter: C2TestAdapter,
+    private readonly taskPools: TaskPool[],
+    public readonly execPath: string,
+    public readonly execOptions: SpawnOptions
+  ) {
     this.id = generateUniqueId();
   }
 
   createChildTest(
-      testName: string, description: string, tags: string[], file: string,
-      line: number): C2TestInfo {
-    const test =
-        new C2TestInfo(testName, description, tags, file, line - 1, this);
+    testName: string,
+    description: string,
+    tags: string[],
+    file: string,
+    line: number
+  ): C2TestInfo {
+    const test = new C2TestInfo(testName, description, tags, file, line - 1, this);
 
     if (this.children.length == 0) {
       this.file = file;
@@ -57,7 +62,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
     if (i == this.taskPools.length) return true;
 
-    while (--i >= 0) this.taskPools[i].release();  // rollback
+    while (--i >= 0) this.taskPools[i].release(); // rollback
 
     return false;
   }
@@ -86,7 +91,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         tests.delete(c.id);
       });
 
-      return this.runInner('all');
+      return this.runInner("all");
     } else {
       let childrenToRun: C2TestInfo[] = [];
 
@@ -100,8 +105,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     }
   }
 
-  private runInner(childrenToRun: C2TestInfo[]|'all'): Promise<void> {
-    if (this.isKill) return Promise.reject(Error('Test was killed.'));
+  private runInner(childrenToRun: C2TestInfo[] | "all"): Promise<void> {
+    if (this.isKill) return Promise.reject(Error("Test was killed."));
 
     if (!this.acquireSlot()) {
       return new Promise<void>(resolve => setTimeout(resolve, 64)).then(() => {
@@ -110,13 +115,13 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     }
 
     const execParams: string[] = [];
-    if (childrenToRun != 'all') {
+    if (childrenToRun != "all") {
       let testNames: string[] = [];
       childrenToRun.forEach(c => {
         /*',' has special meaning */
         testNames.push(c.getEscapedTestName());
       });
-      execParams.push(testNames.join(','));
+      execParams.push(testNames.join(","));
     } else {
       this.children.forEach(c => {
         if (c.skipped) {
@@ -125,36 +130,38 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         }
       });
     }
-    execParams.push('--reporter');
-    execParams.push('xml');
+    execParams.push("--reporter");
+    execParams.push("xml");
 
-    this.adapter.testStatesEmitter.fire(
-        <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
+    this.adapter.testStatesEmitter.fire(<TestSuiteEvent>{
+      type: "suite",
+      suite: this,
+      state: "running"
+    });
 
     this.proc = spawn(this.execPath, execParams, this.execOptions);
-    let resolver: Function|undefined = undefined;
+    let resolver: Function | undefined = undefined;
     const p = new Promise<void>((resolve, reject) => {
       resolver = resolve;
     });
 
     const data = new class {
-      buffer: string = '';
-      currentChild: C2TestInfo|undefined = undefined;
+      buffer: string = "";
+      currentChild: C2TestInfo | undefined = undefined;
       inTestCase: boolean = false;
-    }
+    }();
 
-    const processChunk = (chunk: string, isEnd: boolean) => {
+    const processChunk = (chunk: string) => {
       data.buffer = data.buffer + chunk;
       do {
         if (!data.inTestCase) {
           const testCaseTag = '<TestCase name="';
           const b = data.buffer.indexOf(testCaseTag);
           if (b == -1) return;
-          const ee = data.buffer.indexOf('>', b + testCaseTag.length + 1);
+          const ee = data.buffer.indexOf(">", b + testCaseTag.length + 1);
           if (ee == -1) return;
           const e = data.buffer.indexOf('"', b + testCaseTag.length + 1);
-          const name = data.buffer.substring(b + testCaseTag.length, e)
-                           .replace('&lt;', '<');
+          const name = data.buffer.substring(b + testCaseTag.length, e).replace("&lt;", "<");
 
           data.inTestCase = true;
 
@@ -166,25 +173,24 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
             const ev = data.currentChild.getStartEvent();
             this.adapter.testStatesEmitter.fire(ev);
           } else {
-            this.adapter.log.error('Tescase not found in children: ' + name);
+            this.adapter.log.error("Tescase not found in children: " + name);
           }
 
           data.buffer = data.buffer.substr(b);
         } else {
-          const endTestCase = '</TestCase>';
+          const endTestCase = "</TestCase>";
           const b = data.buffer.indexOf(endTestCase);
           if (b == -1) return;
 
           if (data.currentChild != undefined) {
             try {
               const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
-                  data.buffer.substring(0, b + endTestCase.length));
-              if (!this.adapter.getIsEnabledSourceDecoration())
-                ev.decorations = undefined;
+                data.buffer.substring(0, b + endTestCase.length)
+              );
+              if (!this.adapter.getIsEnabledSourceDecoration()) ev.decorations = undefined;
               this.adapter.testStatesEmitter.fire(ev);
             } catch (e) {
-              this.adapter.log.error(
-                  'Parsing and processing test: ' + data.currentChild.label);
+              this.adapter.log.error("Parsing and processing test: " + data.currentChild.label);
             }
           }
 
@@ -195,31 +201,30 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       } while (data.buffer.length > 0);
     };
 
-    this.proc.stdout.on('data', (chunk: Uint8Array) => {
+    this.proc.stdout.on("data", (chunk: Uint8Array) => {
       const xml = chunk.toLocaleString();
-      processChunk(xml, false);
+      processChunk(xml);
     });
 
-    this.proc.stdout.on('end', () => {
-      processChunk('', true);
-    });
-
-    this.proc.on('close', (code: number) => {
+    this.proc.on("close", (code: number) => {
       if (resolver != undefined) resolver();
     });
 
     return p
-        .then(() => {
-          this.releaseSlot();
-          this.proc = undefined;
-        })
-        .catch((err: Error) => {
-          this.releaseSlot();
-          this.adapter.log.error(err.message);
-        })
-        .then(() => {
-          this.adapter.testStatesEmitter.fire(
-              <TestSuiteEvent>{type: 'suite', suite: this, state: 'completed'});
+      .then(() => {
+        this.releaseSlot();
+        this.proc = undefined;
+      })
+      .catch((err: Error) => {
+        this.releaseSlot();
+        this.adapter.log.error(err.message);
+      })
+      .then(() => {
+        this.adapter.testStatesEmitter.fire(<TestSuiteEvent>{
+          type: "suite",
+          suite: this,
+          state: "completed"
         });
+      });
   }
 }
