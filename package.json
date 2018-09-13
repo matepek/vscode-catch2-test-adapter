@@ -5,7 +5,7 @@
   "icon": "icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -101,7 +101,7 @@
           "type": "string",
           "scope": "resource"
         },
-        "catch2TestExplorer.globalWorkerMaxNumber": {
+        "catch2TestExplorer.workerMaxNumber": {
           "description": "The variable maximize the number of the parallel test execution.",
           "type": "number",
           "default": 4,
