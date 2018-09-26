@@ -5,14 +5,12 @@
 import {execFile} from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import {promisify} from 'util';
 import * as vscode from 'vscode';
 import {TestAdapter, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent} from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
 
 import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
 import {C2TestInfo} from './C2TestInfo';
-import {C2TestSuiteInfo} from './C2TestSuiteInfo';
 
 export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly testsEmitter =
@@ -89,71 +87,6 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return this.autorunEmitter.event;
   }
 
-  private reloadSuiteChildren(suite: C2TestSuiteInfo): Promise<void> {
-    return promisify(fs.exists)(suite.execPath).then((exists: boolean) => {
-      if (!exists)
-        throw Error('reloadSuiteChildren: Should exists: ' + suite.execPath);
-
-      return new Promise<void>((resolve, reject) => {
-        execFile(
-            suite.execPath,
-            [
-              '[.],*', '--verbosity', 'high', '--list-tests', '--use-colour',
-              'no'
-            ],
-            (error: Error|null, stdout: string, stderr: string) => {
-              suite.removeChildren();
-
-              let lines = stdout.split(/\r?\n/);
-
-              if (lines.length == 0) this.log.error('Empty test list.');
-
-              while (lines[lines.length - 1].length == 0) lines.pop();
-
-              let i = 1;
-              while (i < lines.length - 1) {
-                if (lines[i][0] != ' ')
-                  this.log.error(
-                      'Wrong test list output format: ' + lines.toString());
-
-                const testName = lines[i++].substr(2);
-
-                let filePath = '';
-                let line = 0;
-                {
-                  const fileLine = lines[i++].substr(4);
-                  const match =
-                      fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
-                  if (match && match.length == 5) {
-                    filePath = match[1] ? match[1] : match[3];
-                    if (suite.execOptions.cwd)
-                      filePath = path.resolve(suite.execOptions.cwd, filePath);
-                    line = Number(match[2] ? match[2] : match[4]);
-                  }
-                }
-
-                let description = lines[i++].substr(4);
-                if (description.startsWith('(NO DESCRIPTION)'))
-                  description = '';
-
-                let tags: string[] = [];
-                if (lines[i].length > 6 && lines[i][6] === '[') {
-                  tags = lines[i].trim().split(']');
-                  tags.pop();
-                  for (let j = 0; j < tags.length; ++j) tags[j] += ']';
-                  ++i;
-                }
-
-                suite.createChildTest(
-                    testName, description, tags, filePath, line);
-              }
-
-              resolve();
-            });
-      });
-    });
-  }
-
   private loadSuite(exe: ExecutableConfig): Promise<void> {
     const suite = this.allTests.createChildSuite(
         exe.name, exe.path, {cwd: exe.cwd, env: exe.env});
@@ -166,6 +99,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
     watcher = fs.watch(suite.execPath);
     this.watchers.set(suite.execPath, watcher);
+    const allTests = this.allTests;  // alltest may has changed
 
     watcher.on('change', (eventType: string, filename: string) => {
       // need some time here:
@@ -174,7 +108,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
           watcher!.close();
           this.watchers.delete(suite.execPath);
           this.testsEmitter.fire({type: 'started'});
-          this.allTests.removeChild(suite);
+          allTests.removeChild(suite);
           this.testsEmitter.fire({type: 'finished', suite: this.allTests});
         } else if (!fs.existsSync(suite.execPath)) {
           setTimeout(
@@ -182,7 +116,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
               [remainingIteration - 1, Math.max(delay * 2, 2000)]);
         } else {
           this.testsEmitter.fire({type: 'started'});
-          this.reloadSuiteChildren(suite).then(() => {
+          suite.reloadChildren().then(() => {
             this.testsEmitter.fire({type: 'finished', suite: this.allTests});
           });
         }
@@ -194,7 +128,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       }
     });
 
-    return this.reloadSuiteChildren(suite);
+    return suite.reloadChildren();
   }
 
   load(): Promise<void> {

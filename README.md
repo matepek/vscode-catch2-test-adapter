@@ -111,14 +111,12 @@ Example:
 
 ## TODOs
 
-- Better Catch2 xml parser (just a bit)
-- [Catch command line options](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#specifying-which-tests-to-run) such as:
+- Implement more [Catch command line options](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#specifying-which-tests-to-run), such as:
 
   - `--nothrow`
   - `--durations <yes/no>`
   - `--rng-seed <'time'|number>`
 
-- Sections: Once in the future.
 - Grouping by tags.
 - Tests
 
