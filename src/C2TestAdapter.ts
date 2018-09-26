@@ -228,6 +228,10 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         })
         .then(() => {
           this.testsEmitter.fire({type: 'finished', suite: this.allTests});
+        })
+        .catch((err: Error) => {
+          this.testsEmitter.fire(
+              {type: 'finished', suite: undefined, errorMessage: err.message});
         });
   }
 
