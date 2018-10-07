@@ -93,6 +93,11 @@ export class C2TestInfo implements TestInfo {
       success = true;
     }
 
+    if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
+      message += 'Duration: ' + testCase.OverallResult[0].$.durationInSeconds +
+          ' second(s)\n';
+    }
+
     if (testCase.hasOwnProperty('Expression')) {
       for (let j = 0; j < testCase.Expression.length; ++j) {
         try {
