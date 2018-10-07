@@ -127,6 +127,14 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     execParams.push('xml');
     execParams.push('--durations')
     execParams.push('yes');
+    {
+      const rng = this.adapter.getRngSeed();
+      if (rng != undefined) {
+        execParams.push('--rng-seed')
+        execParams.push(rng.toString());
+      }
+    }
+
 
     this.adapter.testStatesEmitter.fire(
         <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});

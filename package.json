@@ -5,7 +5,7 @@
   "icon": "icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -99,6 +99,16 @@
         "catch2TestExplorer.defaultCwd": {
           "description": "The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in 'executables'.  (Resolves: ${workspaceFolder})",
           "type": "string",
+          "scope": "resource"
+        },
+        "catch2TestExplorer.defaultRngSeed": {
+          "description": "Specify a seed for the Random Number Generator. For details see: https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed",
+          "type": [
+            "string",
+            "number",
+            "null"
+          ],
+          "default": null,
           "scope": "resource"
         },
         "catch2TestExplorer.workerMaxNumber": {

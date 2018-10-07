@@ -28,11 +28,16 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly disposables: Array<vscode.Disposable> = new Array();
 
   private isEnabledSourceDecoration = true;
+  private rngSeedStr: string|number|undefined = undefined;
   private readonly variableResolvedPair: [string, string][] =
       [['${workspaceFolder}', this.workspaceFolder.uri.fsPath]];
 
   getIsEnabledSourceDecoration(): boolean {
     return this.isEnabledSourceDecoration;
+  }
+
+  getRngSeed(): string|number|undefined {
+    return this.rngSeedStr;
   }
 
   constructor(
@@ -60,6 +65,10 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                   this.workspaceFolder.uri)) {
             this.isEnabledSourceDecoration =
                 this.getEnableSourceDecoration(this.getConfiguration());
+          }
+          if (configChange.affectsConfiguration(
+                  'catch2TestExplorer.defaultCwd', this.workspaceFolder.uri)) {
+            this.rngSeedStr = this.getDefaultRngSeed(this.getConfiguration());
           }
         }));
 
@@ -220,7 +229,10 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       let resolveDebugVariables: [string, any][] = this.variableResolvedPair;
       resolveDebugVariables = resolveDebugVariables.concat([
         ['${label}', testInfo.label], ['${exec}', testInfo.parent.execPath],
-        ['${args}', [testInfo.getEscapedTestName(), '--reporter', 'console']],
+        [
+          '${args}',
+          [testInfo.getEscapedTestName(), '--reporter', 'console', '--break']
+        ],
         ['${cwd}', testInfo.parent.execOptions.cwd!],
         ['${envObj}', testInfo.parent.execOptions.env!]
       ]);
@@ -331,6 +343,11 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     } else {
       return this.resolveRelPath(cwd);
     }
+  }
+
+  private getDefaultRngSeed(config: vscode.WorkspaceConfiguration): string
+      |number|undefined {
+    return config.get<string|number|undefined>('defaultCwd', undefined);
   }
 
   private getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
