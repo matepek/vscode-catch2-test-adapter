@@ -49,10 +49,6 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     return test;
   }
 
-  removeChildren(): void {
-    this.children = [];
-  }
-
   acquireSlot(): boolean {
     let i: number = 0;
     while (i < this.taskPools.length && this.taskPools[i].acquire()) ++i;
@@ -235,7 +231,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
               'no'
             ],
             (error: Error|null, stdout: string, stderr: string) => {
-              this.removeChildren();
+              const oldChildren = this.children;
+              this.children = [];
 
               let lines = stdout.split(/\r?\n/);
 
@@ -277,8 +274,18 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
                   ++i;
                 }
 
-                this.createChildTest(
-                    testNameFull, description, tags, filePath, line);
+                const index = oldChildren.findIndex(
+                    (c: C2TestInfo): boolean => {return c.testNameFull ==
+                                                 testNameFull});
+                if (index != -1 &&
+                    oldChildren[index].label ==
+                        C2TestInfo.generateLabel(
+                            testNameFull, description, tags)) {
+                  this.children.push(oldChildren[index]);
+                } else {
+                  this.createChildTest(
+                      testNameFull, description, tags, filePath, line);
+                }
               }
 
               resolve();

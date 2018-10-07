@@ -24,9 +24,13 @@ export class C2TestInfo implements TestInfo {
       return v.startsWith('[.') || v == '[hide]';
     }) ||
         this.testNameFull.startsWith('./');
-    this.label =
-        this.testNameFull + (tags.length > 0 ? ' ' + tags.join('') : '');
+    this.label = C2TestInfo.generateLabel(this.testNameFull, description, tags);
     this.id = generateUniqueId();
+  }
+
+  static generateLabel(
+      testNameFull: string, description: string, tags: string[]): string {
+    return testNameFull + (tags.length > 0 ? ' ' + tags.join('') : '');
   }
 
   getEscapedTestName(): string {
