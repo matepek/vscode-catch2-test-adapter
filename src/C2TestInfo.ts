@@ -47,7 +47,8 @@ export class C2TestInfo implements TestInfo {
     return {type: 'test', test: this, state: 'skipped'};
   }
 
-  parseAndProcessTestCase(xmlStr: string): TestEvent {
+  parseAndProcessTestCase(xmlStr: string, rngSeed: number|undefined):
+      TestEvent {
     let res: any = undefined;
     new xml2js.Parser({explicitArray: true})
         .parseString(xmlStr, (err: any, result: any) => {
@@ -58,16 +59,23 @@ export class C2TestInfo implements TestInfo {
           }
         });
 
-    return this.processXmlTagTestCase(res.TestCase);
+    return this.processXmlTagTestCase(res.TestCase, rngSeed);
   }
 
-  private processXmlTagTestCase(testCase: any): TestEvent {
+  private processXmlTagTestCase(testCase: any, rngSeed: number|undefined):
+      TestEvent {
     try {
       let message = undefined;
       let decorations = undefined;
       let success = false;
       [message, decorations, success] =
           this.processXmlTagTestCaseInner(testCase, '');
+
+      if (rngSeed) {
+        message =
+            'Randomness seeded to: ' + rngSeed.toString() + '\n' + message;
+      }
+
       const testEvent: TestEvent = {
         type: 'test',
         test: this,

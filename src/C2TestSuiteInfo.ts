@@ -149,6 +149,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       buffer: string = '';
       currentChild: C2TestInfo|undefined = undefined;
       inTestCase: boolean = false;
+      beforeFirstTestCase: boolean = true;
+      rngSeed: number|undefined = undefined;
     }
     ();
 
@@ -156,15 +158,30 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       data.buffer = data.buffer + chunk;
       do {
         if (!data.inTestCase) {
-          const testCaseTag = '<TestCase name="';
-          const b = data.buffer.indexOf(testCaseTag);
+          const b = data.buffer.indexOf('<TestCase');
           if (b == -1) return;
-          const ee = data.buffer.indexOf('>', b + testCaseTag.length + 1);
-          if (ee == -1) return;
-          const e = data.buffer.indexOf('"', b + testCaseTag.length + 1);
-          const name = data.buffer.substring(b + testCaseTag.length, e)
-                           .replace('&lt;', '<');
 
+          const testCaseTagRe =
+              '<TestCase\\s+(?:[^>]+\\s+)?name="([^"]+)"(?:\\s+|\\s+[^>]+)?>';
+          const m = data.buffer.match(testCaseTagRe);
+          if (m != null && m.length != 2)
+            this.adapter.log.error('TestCase parsing error: ' + data.buffer);
+          if (m == null || m.length != 2) return;
+          const name = m[1].replace('&lt;', '<')
+                           .replace('&quot', '"')
+                           .replace('&apos', '\'')
+                           .replace('&lt', '<')
+                           .replace('&gt', '>')
+                           .replace('&amp', '&');
+
+          if (data.beforeFirstTestCase) {
+            const ri =
+                data.buffer.match('<Randomness\\s+seed="([0-9]+)"\\s*/?>');
+            if (ri != null && ri.length == 2) {
+              data.rngSeed = Number(ri[1]);
+            }
+          }
+          data.beforeFirstTestCase = false;
           data.inTestCase = true;
 
           data.currentChild = this.children.find((v: C2TestInfo) => {
@@ -187,7 +204,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           if (data.currentChild != undefined) {
             try {
               const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
-                  data.buffer.substring(0, b + endTestCase.length));
+                  data.buffer.substring(0, b + endTestCase.length),
+                  data.rngSeed);
               if (!this.adapter.getIsEnabledSourceDecoration())
                 ev.decorations = undefined;
               this.adapter.testStatesEmitter.fire(ev);
