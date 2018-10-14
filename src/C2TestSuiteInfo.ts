@@ -136,13 +136,10 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       }
     }
 
-    this.adapter.testStatesEmitter.fire(
-        <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
-
     this.proc = spawn(this.execPath, execParams, this.execOptions);
-    let resolver: Function|undefined = undefined;
+    let pResolver: Function|undefined = undefined;
     const p = new Promise<void>((resolve, reject) => {
-      resolver = resolve;
+      pResolver = resolve;
     });
 
     const data = new class {
@@ -229,8 +226,11 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     });
 
     this.proc.on('close', (code: number) => {
-      if (resolver != undefined) resolver();
+      if (pResolver != undefined) pResolver();
     });
+
+    this.adapter.testStatesEmitter.fire(
+        <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
 
     return p
         .then(() => {
