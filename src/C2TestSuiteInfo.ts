@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {promisify} from 'util';
 import {TestEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
+import * as xml2js from 'xml2js';
 
 import {C2TestAdapter} from './C2TestAdapter';
 import {C2TestInfo} from './C2TestInfo';
@@ -129,12 +130,11 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     execParams.push('yes');
     {
       const rng = this.adapter.getRngSeed();
-      if (rng != undefined) {
+      if (rng != null) {
         execParams.push('--rng-seed')
         execParams.push(rng.toString());
       }
     }
-
 
     this.adapter.testStatesEmitter.fire(
         <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
@@ -161,18 +161,19 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           const b = data.buffer.indexOf('<TestCase');
           if (b == -1) return;
 
-          const testCaseTagRe =
-              '<TestCase\\s+(?:[^>]+\\s+)?name="([^"]+)"(?:\\s+|\\s+[^>]+)?>';
+          const testCaseTagRe = '<TestCase(?:\\s+|\\s+[^>]+)?>';
           const m = data.buffer.match(testCaseTagRe);
-          if (m != null && m.length != 2)
-            this.adapter.log.error('TestCase parsing error: ' + data.buffer);
-          if (m == null || m.length != 2) return;
-          const name = m[1].replace('&lt;', '<')
-                           .replace('&quot', '"')
-                           .replace('&apos', '\'')
-                           .replace('&lt', '<')
-                           .replace('&gt', '>')
-                           .replace('&amp', '&');
+          if (m == null || m.length != 1) return;
+          let name: string = '';
+          new xml2js.Parser({explicitArray: true})
+              .parseString(m[0] + '</TestCase>', (err: any, result: any) => {
+                if (err) {
+                  this.adapter.log.error(err.toString());
+                  throw err;
+                } else {
+                  name = result.TestCase.$.name;
+                }
+              });
 
           if (data.beforeFirstTestCase) {
             const ri =
