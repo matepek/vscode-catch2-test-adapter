@@ -116,7 +116,6 @@ Example:
 
   - `--nothrow`
 
-- Grouping by tags.
 - Tests
 
 ## Contribution

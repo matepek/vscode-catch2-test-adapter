@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {promisify} from 'util';
 import {TestEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
+import * as xml2js from 'xml2js';
 
 import {C2TestAdapter} from './C2TestAdapter';
 import {C2TestInfo} from './C2TestInfo';
@@ -129,26 +130,24 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     execParams.push('yes');
     {
       const rng = this.adapter.getRngSeed();
-      if (rng != undefined) {
+      if (rng != null) {
         execParams.push('--rng-seed')
         execParams.push(rng.toString());
       }
     }
 
-
-    this.adapter.testStatesEmitter.fire(
-        <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
-
     this.proc = spawn(this.execPath, execParams, this.execOptions);
-    let resolver: Function|undefined = undefined;
+    let pResolver: Function|undefined = undefined;
     const p = new Promise<void>((resolve, reject) => {
-      resolver = resolve;
+      pResolver = resolve;
     });
 
     const data = new class {
       buffer: string = '';
       currentChild: C2TestInfo|undefined = undefined;
       inTestCase: boolean = false;
+      beforeFirstTestCase: boolean = true;
+      rngSeed: number|undefined = undefined;
     }
     ();
 
@@ -156,15 +155,31 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       data.buffer = data.buffer + chunk;
       do {
         if (!data.inTestCase) {
-          const testCaseTag = '<TestCase name="';
-          const b = data.buffer.indexOf(testCaseTag);
+          const b = data.buffer.indexOf('<TestCase');
           if (b == -1) return;
-          const ee = data.buffer.indexOf('>', b + testCaseTag.length + 1);
-          if (ee == -1) return;
-          const e = data.buffer.indexOf('"', b + testCaseTag.length + 1);
-          const name = data.buffer.substring(b + testCaseTag.length, e)
-                           .replace('&lt;', '<');
 
+          const testCaseTagRe = '<TestCase(?:\\s+|\\s+[^>]+)?>';
+          const m = data.buffer.match(testCaseTagRe);
+          if (m == null || m.length != 1) return;
+          let name: string = '';
+          new xml2js.Parser({explicitArray: true})
+              .parseString(m[0] + '</TestCase>', (err: any, result: any) => {
+                if (err) {
+                  this.adapter.log.error(err.toString());
+                  throw err;
+                } else {
+                  name = result.TestCase.$.name;
+                }
+              });
+
+          if (data.beforeFirstTestCase) {
+            const ri =
+                data.buffer.match('<Randomness\\s+seed="([0-9]+)"\\s*/?>');
+            if (ri != null && ri.length == 2) {
+              data.rngSeed = Number(ri[1]);
+            }
+          }
+          data.beforeFirstTestCase = false;
           data.inTestCase = true;
 
           data.currentChild = this.children.find((v: C2TestInfo) => {
@@ -187,7 +202,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           if (data.currentChild != undefined) {
             try {
               const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
-                  data.buffer.substring(0, b + endTestCase.length));
+                  data.buffer.substring(0, b + endTestCase.length),
+                  data.rngSeed);
               if (!this.adapter.getIsEnabledSourceDecoration())
                 ev.decorations = undefined;
               this.adapter.testStatesEmitter.fire(ev);
@@ -210,8 +226,11 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     });
 
     this.proc.on('close', (code: number) => {
-      if (resolver != undefined) resolver();
+      if (pResolver != undefined) pResolver();
     });
+
+    this.adapter.testStatesEmitter.fire(
+        <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
 
     return p
         .then(() => {

@@ -28,7 +28,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly disposables: Array<vscode.Disposable> = new Array();
 
   private isEnabledSourceDecoration = true;
-  private rngSeedStr: string|number|undefined = undefined;
+  private rngSeedStr: string|number|null = null;
   private readonly variableResolvedPair: [string, string][] =
       [['${workspaceFolder}', this.workspaceFolder.uri.fsPath]];
 
@@ -36,7 +36,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return this.isEnabledSourceDecoration;
   }
 
-  getRngSeed(): string|number|undefined {
+  getRngSeed(): string|number|null {
     return this.rngSeedStr;
   }
 
@@ -67,7 +67,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                 this.getEnableSourceDecoration(this.getConfiguration());
           }
           if (configChange.affectsConfiguration(
-                  'catch2TestExplorer.defaultCwd', this.workspaceFolder.uri)) {
+                  'catch2TestExplorer.defaultRngSeed',
+                  this.workspaceFolder.uri)) {
             this.rngSeedStr = this.getDefaultRngSeed(this.getConfiguration());
           }
         }));
@@ -151,6 +152,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this.watchers.clear();
 
     const config = this.getConfiguration();
+
+    this.rngSeedStr = this.getDefaultRngSeed(config);
 
     this.allTests =
         new C2AllTestSuiteInfo(this, this.getWorkerMaxNumber(config));
@@ -346,8 +349,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   private getDefaultRngSeed(config: vscode.WorkspaceConfiguration): string
-      |number|undefined {
-    return config.get<string|number|undefined>('defaultCwd', undefined);
+      |number|null {
+    return config.get<null|string|number>('defaultRngSeed', null);
   }
 
   private getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
