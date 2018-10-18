@@ -33,7 +33,7 @@ const dotVscodePath = path.join(workspaceFolderUri.path, '.vscode');
 
 describe('C2TestAdapter', function() {
   const config = vscode.workspace.getConfiguration(
-    'catch2TestExplorer', workspaceFolderUri);
+      'catch2TestExplorer', workspaceFolderUri);
 
   const disposable: vscode.Disposable[] = [];
 
