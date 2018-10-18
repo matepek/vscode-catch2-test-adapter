@@ -13,6 +13,7 @@ before_install:
 
 install:
   - npm install
+  - npm run compile
   #- npm run vscode:prepublish
 
 script:
