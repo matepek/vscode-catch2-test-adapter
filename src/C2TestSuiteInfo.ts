@@ -50,7 +50,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     return test;
   }
 
-  acquireSlot(): boolean {
+  private acquireSlot(): boolean {
     let i: number = 0;
     while (i < this.taskPools.length && this.taskPools[i].acquire()) ++i;
 
@@ -61,7 +61,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     return false;
   }
 
-  releaseSlot(): void {
+  private releaseSlot(): void {
     let i: number = this.taskPools.length;
 
     while (--i >= 0) this.taskPools[i].release();
@@ -108,6 +108,9 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       });
     }
 
+    this.adapter.testStatesEmitter.fire(
+        <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
+
     const execParams: string[] = [];
     if (childrenToRun != 'all') {
       let testNames: string[] = [];
@@ -138,8 +141,10 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
     this.proc = spawn(this.execPath, execParams, this.execOptions);
     let pResolver: Function|undefined = undefined;
+    let pRejecter: Function|undefined = undefined;
     const p = new Promise<void>((resolve, reject) => {
       pResolver = resolve;
+      pRejecter = reject;
     });
 
     const data = new class {
@@ -190,7 +195,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
             const ev = data.currentChild.getStartEvent();
             this.adapter.testStatesEmitter.fire(ev);
           } else {
-            this.adapter.log.error('Tescase not found in children: ' + name);
+            this.adapter.log.error('TestCase not found in children: ' + name);
           }
 
           data.buffer = data.buffer.substr(b);
@@ -226,11 +231,11 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     });
 
     this.proc.on('close', (code: number) => {
-      if (pResolver != undefined) pResolver();
+      if (data.inTestCase)
+        (pRejecter != undefined) && pRejecter();
+      else
+        (pResolver != undefined) && pResolver();
     });
-
-    this.adapter.testStatesEmitter.fire(
-        <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
 
     return p
         .then(() => {
