@@ -932,7 +932,32 @@ describe('C2TestAdapter', function() {
   // describe('executables:'
 
   describe('load:', function() {
-    // const cwd = path.join(process.cwd(), 'out', 'test');
+    const cwd = path.join(process.cwd(), 'out', 'test');
+
+    const suite1TestList = `Matching test cases:
+  s1t1
+    ../vscode-catch2-test-adapter/src/test/suite1.cpp:7
+    tag1
+  s1t2
+    ../vscode-catch2-test-adapter/src/test/suite1.cpp:13
+    tag1
+2 matching test cases
+  
+  `;
+
+    const suite2TestList = `Matching test cases:
+  s2t1
+    ../vscode-catch2-test-adapter/src/test/suite2.cpp:7
+    tag1
+  s2t2
+    ../vscode-catch2-test-adapter/src/test/suite2.cpp:13
+    tag1
+      [.]
+  s2t3
+    ../vscode-catch2-test-adapter/src/test/suite2.cpp:19
+    tag1
+3 matching test cases
+  `;
 
     const updateAndLoad = (value: any) => {
       return config.update('executables', value)
@@ -940,6 +965,7 @@ describe('C2TestAdapter', function() {
             const adapter = createAdapterAndSubscribe();
 
             const watchEvents: Map<string, EventEmitter> = new Map();
+            fsWatchStub.reset();
             fsWatchStub.callsFake((path: string) => {
               const ee = new EventEmitter();
               watchEvents.set(path, ee);
@@ -964,57 +990,47 @@ describe('C2TestAdapter', function() {
           });
     };
 
-    const fakeExecFileFunc =
-        (pathAndContent: Map<string, string|undefined>) => {
-          return (path: string, args: string[],
-                  cb: (err: any, stout: string, stderr: string) => void) => {
-            const res = pathAndContent.get(path);
-            if (res === undefined) {
-              cb(new Error('fake file not exists.'), '', '');
-            } else if (args.length == 1 && args[0] === '--help') {
-              cb(null, 'Catch v2.', '');
-            } else if (!deepEqual(args, [
-                         '[.],*', '--verbosity', 'high', '--list-tests',
-                         '--use-colour', 'no'
-                       ])) {
-              assert.ok(false, inspect([path, args]));
-            } else {
-              cb(null, res!, '');
-            };
-          };
+    function fakeExecFileFunc(pathAndContent: Map<string, string|undefined>) {
+      return function(
+          path: string, args: string[],
+          cb: (err: any, stout: string, stderr: string) => void) {
+        const res = pathAndContent.get(path);
+        if (res === undefined) {
+          cb(new Error('fake file not exists.'), '', '');
+        } else if (args.length == 1 && args[0] === '--help') {
+          cb(null, 'Catch v2.', '');
+        } else if (!deepEqual(args, [
+                     '[.],*', '--verbosity', 'high', '--list-tests',
+                     '--use-colour', 'no'
+                   ])) {
+          assert.ok(false, inspect([path, args]));
+        } else {
+          cb(null, res!, '');
         };
+      };
+    };
 
-    const fakeExistsFunc = (pathAndContent: Map<string, string|undefined>) => {
-      return (path: string, cb: (err: any, exists: boolean) => void) => {
+    function fakeExistsFunc(pathAndContent: Map<string, string|undefined>) {
+      return function(path: string, cb: (err: any, exists: boolean) => void) {
         cb(undefined, pathAndContent.has(path));
       };
     };
 
+    const fakeFs = (pathAndContent: Iterable<[string, string]>) => {
+      const map = new Map(pathAndContent);
+      execFileStub.reset();
+      execFileStub.callsFake(fakeExecFileFunc(map));
+      fsExistsStub.reset();
+      fsExistsStub.callsFake(fakeExistsFunc(map));
+    };
+
     it('"path1"', () => {
-      execFileStub.callsFake(
-          (path: string, args: string[],
-           cb: (err: any, stout: string, stderr: string) => void) => {
-            if (args.length == 1 && args[0] === '--help') {
-              cb(null, 'Catch v2.', '');
-            } else if (!deepEqual(args, [
-                         '[.],*', '--verbosity', 'high', '--list-tests',
-                         '--use-colour', 'no'
-                       ])) {
-              assert.ok(false, inspect([path, args]));
-            } else {
-              cb(null, 'alma', '');
-            }
-          });
+      this.timeout(99999);
+      fakeFs([[path.join(cwd, 'path1'), suite1TestList]]);
 
-      fsExistsStub.callsFake(
-          (path: string, cb: (err: any, exists: boolean) => void) => {
-            cb(undefined, true);
-          });
-
-      return updateAndLoad('path1').then(
-          (param) => {
-
-          });
+      return updateAndLoad('path1').then((param) => {
+        assert.equal(param.root.children.length, 1);
+      });
     });
   });
 });

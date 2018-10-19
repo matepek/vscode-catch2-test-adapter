@@ -284,7 +284,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
               if (lines.length == 0) this.adapter.log.error('Empty test list.');
 
-              while (lines[lines.length - 1].length == 0) lines.pop();
+              while (lines[lines.length - 1].trim().length == 0) lines.pop();
 
               let i = 1;
               while (i < lines.length - 1) {
