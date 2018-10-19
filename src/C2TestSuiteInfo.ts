@@ -256,8 +256,11 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
               message: 'Unexpected test error. (Is Catch2 crashed?)\n'
             });
           }
-          this.adapter.log.error(err.message);
           suiteFinally();
+          try {
+            this.adapter.log.error(err.message);
+          } catch (e) {
+          }
         });
   }
 

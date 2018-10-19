@@ -26,6 +26,7 @@ const logger =
     new Log('Catch2TestAdapter', workspaceFolder, 'Catch2TestAdapter');
 
 const spawnStub = sinon.stub(child_process, 'spawn');
+const execFileStub = sinon.stub(child_process, 'execFile');
 
 const dotVscodePath = path.join(workspaceFolderUri.path, '.vscode');
 
@@ -37,7 +38,7 @@ describe('C2TestAdapter', function() {
 
   const disposable: vscode.Disposable[] = [];
 
-  let adapter: myExtension.C2TestAdapter;
+  let adapter: myExtension.C2TestAdapter| undefined;
   let testsEvents: (TestLoadStartedEvent|TestLoadFinishedEvent)[];
   let testStatesEvents: (TestRunStartedEvent|TestRunFinishedEvent|
                          TestSuiteEvent|TestEvent)[];
@@ -64,6 +65,7 @@ describe('C2TestAdapter', function() {
     testStatesEvents = [];
 
     spawnStub.throws();
+    execFileStub.throws();
 
     disposable.push(
         adapter.tests((e: TestLoadStartedEvent|TestLoadFinishedEvent) => {
@@ -74,9 +76,11 @@ describe('C2TestAdapter', function() {
          TestEvent) => {
           testStatesEvents.push(e);
         }));
+    return adapter!;
   };
 
   beforeEach(() => {
+    adapter = undefined;
     fs.removeSync(dotVscodePath);
     return resetConfig();
   });
@@ -126,7 +130,7 @@ describe('C2TestAdapter', function() {
     });
 
     it('enableSourceDecoration', () => {
-      createAdapterAndSubscribe();
+      const adapter = createAdapterAndSubscribe();
       assert.deepEqual(testsEvents, []);
       return config.update('enableSourceDecoration', false).then(() => {
         assert.ok(!adapter.getIsEnabledSourceDecoration());
@@ -134,7 +138,7 @@ describe('C2TestAdapter', function() {
     });
 
     it('defaultRngSeed', () => {
-      createAdapterAndSubscribe();
+      const adapter = createAdapterAndSubscribe();
       assert.deepEqual(testsEvents, []);
       return config.update('defaultRngSeed', 987).then(() => {
         assert.equal(adapter.getRngSeed(), 987);
@@ -145,11 +149,13 @@ describe('C2TestAdapter', function() {
   // describe('example1'
 
   describe('adapter:', () => {
+    let adapter: myExtension.C2TestAdapter;
+
     beforeEach(() => {
-      createAdapterAndSubscribe();
+      adapter = createAdapterAndSubscribe();
     });
 
-    it('load: empty config', function() {
+    it('fill with empty config', function() {
       return adapter.load().then(() => {
         assert.equal(testsEvents.length, 2);
         assert.equal(testsEvents[0].type, 'started');
@@ -160,7 +166,7 @@ describe('C2TestAdapter', function() {
       });
     });
 
-    describe('load: example1', function() {
+    describe('fill with example1', function() {
       let tests: any;
 
       const randomnessXml = `<Randomness seed="2"/>`;
@@ -697,8 +703,8 @@ describe('C2TestAdapter', function() {
             .withArgs(
                 tests.s1.execPath,
                 [
-                  tests.s1t1.testNameFull, '--reporter', 'xml',
-                  '--durations', 'yes'
+                  tests.s1t1.testNameFull, '--reporter', 'xml', '--durations',
+                  'yes'
                 ],
                 tests.s1.execOptions)
             .returns(spawnEvent);
@@ -707,16 +713,14 @@ describe('C2TestAdapter', function() {
           assert.deepEqual(testStatesEvents, [
             {type: 'started', tests: [tests.s1t1.id]},
             {type: 'suite', state: 'running', suite: tests.s1},
-            {type: 'test', state:'running', test: tests.s1t1},
-
+            {type: 'test', state: 'running', test: tests.s1t1},
             {
               type: 'test',
               state: 'failed',
               test: tests.s1t1,
               message: 'Unexpected test error. (Is Catch2 crashed?)\n'
             },
-
-            //{type: 'suite', state: 'completed', suite: tests.s1},
+            {type: 'suite', state: 'completed', suite: tests.s1},
             {type: 'finished'},
           ]);
         });
@@ -827,7 +831,36 @@ describe('C2TestAdapter', function() {
       });
       // it('cancel: after run finished'
     });
-    // describe('load: example1'
+    // describe('fill with example1'
+
+    // describe('load', function() {
+    //   it('1', () => {
+    //     const stdout = new Stream.Readable();
+    //     const spawnEvent: any = new EventEmitter();
+    //     spawnEvent.stdout = stdout;
+    //     stdout.on('end', () => {
+    //       spawnEvent.emit('close', 1);
+    //     });
+    //     stdout.push('');
+    //     stdout.push(null);
+
+    //     execFileStub
+    //         .withArgs(
+    //             'exe.exe',
+    //             [
+    //             ]
+    //             )
+    //         .returns(spawnEvent);
+    //     config.update('executables', 'exe.exe').then(()=>{
+    //       const adapter = createAdapterAndSubscribe();
+          
+    //       return adapter.load();
+    //     }).then(()=>{
+    //       assert.equal(testsEvents.length, 2);
+    //     });
+    //   });
+    // });
+    // describe('fswatcher: suite1 deleted'
   });
   // describe('adapter:'
 });
@@ -836,7 +869,6 @@ describe('C2TestAdapter', function() {
 // fswatcher test aztan atiras vscode workspace watcherre
 // bonyolultabb teszteset parsoleasa de az mehet kulon fileba c2testinfo
 // mock getExecutables regex meg sima minden test
-// cancel test
 // ExecutableConfig
 // execOptions
 // writing xml
