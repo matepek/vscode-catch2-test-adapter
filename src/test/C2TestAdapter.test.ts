@@ -44,6 +44,7 @@ describe('C2TestAdapter', function() {
                          TestSuiteEvent|TestEvent)[];
 
   let spawnStub: any;
+  let execFileStub: any;
   let fsWatchStub: any;
   let fsExistsStub: any;
 
@@ -86,6 +87,9 @@ describe('C2TestAdapter', function() {
 
     spawnStub = sinonSandbox.stub(child_process, 'spawn');
     spawnStub.throws();
+
+    execFileStub = sinonSandbox.stub(child_process, 'execFile');
+    execFileStub.throws();
 
     fsWatchStub = sinonSandbox.stub(fs, 'watch');
     fsWatchStub.throws();
@@ -859,8 +863,7 @@ describe('C2TestAdapter', function() {
                 sinonSandbox.stub(adapter, 'verifyIsCatch2TestExecutable');
             verifyIsCatch2TestExecutable.returns(Promise.resolve(true));
 
-            const loadSuiteMock =
-                sinon.expectation.create('loadSuiteMock');
+            const loadSuiteMock = sinon.expectation.create('loadSuiteMock');
             loadSuiteMock.returns(Promise.resolve()).exactly(expected.length);
             sinonSandbox.replace(adapter, 'loadSuite', loadSuiteMock);
 
@@ -937,7 +940,6 @@ describe('C2TestAdapter', function() {
             const adapter = createAdapterAndSubscribe();
 
             const watchEvents: Map<string, EventEmitter> = new Map();
-            fsWatchStub.reset();
             fsWatchStub.callsFake((path: string) => {
               const ee = new EventEmitter();
               watchEvents.set(path, ee);
@@ -962,7 +964,53 @@ describe('C2TestAdapter', function() {
           });
     };
 
-    it('a', () => {
+    const fakeExecFileFunc =
+        (pathAndContent: Map<string, string|undefined>) => {
+          return (path: string, args: string[],
+                  cb: (err: any, stout: string, stderr: string) => void) => {
+            const res = pathAndContent.get(path);
+            if (res === undefined) {
+              cb(new Error('fake file not exists.'), '', '');
+            } else if (args.length == 1 && args[0] === '--help') {
+              cb(null, 'Catch v2.', '');
+            } else if (!deepEqual(args, [
+                         '[.],*', '--verbosity', 'high', '--list-tests',
+                         '--use-colour', 'no'
+                       ])) {
+              assert.ok(false, inspect([path, args]));
+            } else {
+              cb(null, res!, '');
+            };
+          };
+        };
+
+    const fakeExistsFunc = (pathAndContent: Map<string, string|undefined>) => {
+      return (path: string, cb: (err: any, exists: boolean) => void) => {
+        cb(undefined, pathAndContent.has(path));
+      };
+    };
+
+    it('"path1"', () => {
+      execFileStub.callsFake(
+          (path: string, args: string[],
+           cb: (err: any, stout: string, stderr: string) => void) => {
+            if (args.length == 1 && args[0] === '--help') {
+              cb(null, 'Catch v2.', '');
+            } else if (!deepEqual(args, [
+                         '[.],*', '--verbosity', 'high', '--list-tests',
+                         '--use-colour', 'no'
+                       ])) {
+              assert.ok(false, inspect([path, args]));
+            } else {
+              cb(null, 'alma', '');
+            }
+          });
+
+      fsExistsStub.callsFake(
+          (path: string, cb: (err: any, exists: boolean) => void) => {
+            cb(undefined, true);
+          });
+
       return updateAndLoad('path1').then(
           (param) => {
 
