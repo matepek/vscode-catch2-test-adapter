@@ -3,7 +3,8 @@ const child_process = require('child_process');
 const deepEqual = require('deep-equal');
 
 import * as path from 'path';
-import * as fs from 'fs-extra';
+import * as fs from 'fs';
+import * as fse from 'fs-extra';
 import * as assert from 'assert';
 import {EventEmitter} from 'events';
 import * as vscode from 'vscode';
@@ -25,10 +26,9 @@ const workspaceFolder =
 const logger =
     new Log('Catch2TestAdapter', workspaceFolder, 'Catch2TestAdapter');
 
-const spawnStub = sinon.stub(child_process, 'spawn');
-const execFileStub = sinon.stub(child_process, 'execFile');
-
 const dotVscodePath = path.join(workspaceFolderUri.path, '.vscode');
+
+const sinonSandbox = sinon.createSandbox();
 
 ///
 
@@ -38,13 +38,17 @@ describe('C2TestAdapter', function() {
 
   const disposable: vscode.Disposable[] = [];
 
-  let adapter: myExtension.C2TestAdapter| undefined;
+  let adapter: myExtension.C2TestAdapter|undefined;
   let testsEvents: (TestLoadStartedEvent|TestLoadFinishedEvent)[];
   let testStatesEvents: (TestRunStartedEvent|TestRunFinishedEvent|
                          TestSuiteEvent|TestEvent)[];
 
+  let spawnStub: any;
+  let fsWatchStub: any;
+  let fsExistsStub: any;
+
   const resetConfig = function(): Thenable<void> {
-    const packageJson = fs.readJSONSync(
+    const packageJson = fse.readJSONSync(
         path.join(workspaceFolderUri.path, '../..', 'package.json'));
     const properties: {[prop: string]: any}[] =
         packageJson['contributes']['configuration']['properties'];
@@ -64,9 +68,6 @@ describe('C2TestAdapter', function() {
     testsEvents = [];
     testStatesEvents = [];
 
-    spawnStub.throws();
-    execFileStub.throws();
-
     disposable.push(
         adapter.tests((e: TestLoadStartedEvent|TestLoadFinishedEvent) => {
           testsEvents.push(e);
@@ -81,20 +82,32 @@ describe('C2TestAdapter', function() {
 
   beforeEach(() => {
     adapter = undefined;
-    fs.removeSync(dotVscodePath);
+    fse.removeSync(dotVscodePath);
+
+    spawnStub = sinonSandbox.stub(child_process, 'spawn');
+    spawnStub.throws();
+
+    fsWatchStub = sinonSandbox.stub(fs, 'watch');
+    fsWatchStub.throws();
+
+    fsExistsStub = sinonSandbox.stub(fs, 'exists');
+    fsExistsStub.throws();
+
     return resetConfig();
   });
 
   afterEach(() => {
     while (disposable.length > 0) disposable.pop()!.dispose();
+    sinonSandbox.restore();
   });
 
   describe('detect config change', function() {
+    this.timeout(1000);
     const waitForReloadAndAssert = () => {
       const waitForReloadAndAssertInner =
           (tryCount: number = 20): Promise<void> => {
             if (testsEvents.length < 2)
-              return new Promise<void>(r => setTimeout(r, 20))
+              return new Promise<void>(r => setTimeout(r, 10))
                   .then(() => {waitForReloadAndAssertInner(tryCount - 1)});
             else {
               assert.equal(testsEvents.length, 2);
@@ -145,8 +158,7 @@ describe('C2TestAdapter', function() {
       });
     });
   });
-
-  // describe('example1'
+  // describe('detect config change'
 
   describe('adapter:', () => {
     let adapter: myExtension.C2TestAdapter;
@@ -832,37 +844,131 @@ describe('C2TestAdapter', function() {
       // it('cancel: after run finished'
     });
     // describe('fill with example1'
-
-    // describe('load', function() {
-    //   it('1', () => {
-    //     const stdout = new Stream.Readable();
-    //     const spawnEvent: any = new EventEmitter();
-    //     spawnEvent.stdout = stdout;
-    //     stdout.on('end', () => {
-    //       spawnEvent.emit('close', 1);
-    //     });
-    //     stdout.push('');
-    //     stdout.push(null);
-
-    //     execFileStub
-    //         .withArgs(
-    //             'exe.exe',
-    //             [
-    //             ]
-    //             )
-    //         .returns(spawnEvent);
-    //     config.update('executables', 'exe.exe').then(()=>{
-    //       const adapter = createAdapterAndSubscribe();
-          
-    //       return adapter.load();
-    //     }).then(()=>{
-    //       assert.equal(testsEvents.length, 2);
-    //     });
-    //   });
-    // });
-    // describe('fswatcher: suite1 deleted'
   });
   // describe('adapter:'
+
+  describe('executables:', function() {
+    const cwd = path.join(process.cwd(), 'out', 'test');
+
+    const updateAndVerify = (value: any, expected: any[]) => {
+      return config.update('executables', value)
+          .then(() => {
+            const adapter = createAdapterAndSubscribe();
+
+            const verifyIsCatch2TestExecutable =
+                sinonSandbox.stub(adapter, 'verifyIsCatch2TestExecutable');
+            verifyIsCatch2TestExecutable.returns(Promise.resolve(true));
+
+            const loadSuiteMock =
+                sinon.expectation.create('loadSuiteMock');
+            loadSuiteMock.returns(Promise.resolve()).exactly(expected.length);
+            sinonSandbox.replace(adapter, 'loadSuite', loadSuiteMock);
+
+            return adapter.load().then(() => {
+              return loadSuiteMock;
+            });
+          })
+          .then((loadSuiteMock) => {
+            assert.equal(testsEvents.length, 2);
+            loadSuiteMock.verify();
+            const calls = loadSuiteMock.getCalls();
+            const args = calls.map((call: any) => {
+              const arg = call.args[0];
+              const filteredKeys =
+                  Object.keys(arg.env).filter(k => k.startsWith('C2TEST'));
+              const newEnv: {[prop: string]: string} = {};
+              filteredKeys.forEach((k: string) => {
+                newEnv[k] = args.env[k];
+              })
+              arg.env = newEnv;
+              return arg;
+            });
+            assert.deepEqual(args, expected);
+          });
+    };
+
+    it('"exe1.exe"', () => {
+      return updateAndVerify('exe1.exe', [{
+                               name: 'exe1.exe',
+                               path: path.join(cwd, 'exe1.exe'),
+                               regex: '',
+                               cwd: cwd,
+                               env: []
+                             }]);
+    });
+
+    it('["exe1.exe", "exe2.exe"]', () => {
+      return updateAndVerify(['exe1.exe', 'exe2.exe'], [
+        {
+          name: 'exe1.exe',
+          path: path.join(cwd, 'exe1.exe'),
+          regex: '',
+          cwd: cwd,
+          env: []
+        },
+        {
+          name: 'exe2.exe',
+          path: path.join(cwd, 'exe2.exe'),
+          regex: '',
+          cwd: cwd,
+          env: []
+        }
+      ]);
+    });
+
+    it('{path: "path1"}', () => {
+      return updateAndVerify({path: 'path1'}, [{
+                               name: '${dirname} : ${name}',
+                               path: path.join(cwd, 'path1'),
+                               regex: '',
+                               cwd: cwd,
+                               env: []
+                             }]);
+    });
+  });
+  // describe('executables:'
+
+  describe('load:', function() {
+    // const cwd = path.join(process.cwd(), 'out', 'test');
+
+    const updateAndLoad = (value: any) => {
+      return config.update('executables', value)
+          .then(() => {
+            const adapter = createAdapterAndSubscribe();
+
+            const watchEvents: Map<string, EventEmitter> = new Map();
+            fsWatchStub.reset();
+            fsWatchStub.callsFake((path: string) => {
+              const ee = new EventEmitter();
+              watchEvents.set(path, ee);
+              return ee;
+            });
+
+            const verifyIsCatch2TestExecutable =
+                sinonSandbox.stub(adapter, 'verifyIsCatch2TestExecutable');
+            verifyIsCatch2TestExecutable.returns(Promise.resolve(true));
+
+            return adapter.load().then(() => {
+              return watchEvents;
+            });
+          })
+          .then((watchEvents) => {
+            assert.equal(testsEvents.length, 2);
+            assert.equal(testsEvents[1].type, 'finished');
+            assert.notEqual(
+                (<TestLoadFinishedEvent>testsEvents[1]).suite, undefined);
+            const root = (<TestLoadFinishedEvent>testsEvents[1]).suite!;
+            return {root: root, watchEvents: watchEvents};
+          });
+    };
+
+    it('a', () => {
+      return updateAndLoad('path1').then(
+          (param) => {
+
+          });
+    });
+  });
 });
 // describe('C2TestAdapter'
 

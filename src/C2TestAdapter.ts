@@ -97,7 +97,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return this.autorunEmitter.event;
   }
 
-  private loadSuite(exe: ExecutableConfig): Promise<void> {
+  loadSuite(exe: ExecutableConfig): Promise<void> {
     const suite = this.allTests.createChildSuite(
         exe.name, exe.path, {cwd: exe.cwd, env: exe.env});
 
@@ -106,39 +106,43 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     if (watcher != undefined) {
       watcher.close();
     }
+    try {
+      watcher = fs.watch(suite.execPath);
+      this.watchers.set(suite.execPath, watcher);
+      const allTests = this.allTests;  // alltest may has changed
 
-    watcher = fs.watch(suite.execPath);
-    this.watchers.set(suite.execPath, watcher);
-    const allTests = this.allTests;  // alltest may has changed
-
-    watcher.on('change', (eventType: string, filename: string) => {
-      // need some time here:
-      const waitAndThenTry = (remainingIteration: number, delay: number) => {
-        if (remainingIteration == 0) {
-          watcher!.close();
-          this.watchers.delete(suite.execPath);
-          this.testsEmitter.fire({type: 'started'});
-          allTests.removeChild(suite);
-          this.testsEmitter.fire({type: 'finished', suite: this.allTests});
-        } else if (!fs.existsSync(suite.execPath)) {
-          setTimeout(
-              waitAndThenTry, delay,
-              [remainingIteration - 1, Math.max(delay * 2, 2000)]);
-        } else {
-          this.testsEmitter.fire({type: 'started'});
-          suite.reloadChildren().then(() => {
+      watcher.on('change', (eventType: string, filename: string) => {
+        // need some time here:
+        const waitAndThenTry = (remainingIteration: number, delay: number) => {
+          if (remainingIteration == 0) {
+            watcher!.close();
+            this.watchers.delete(suite.execPath);
+            this.testsEmitter.fire({type: 'started'});
+            allTests.removeChild(suite);
             this.testsEmitter.fire({type: 'finished', suite: this.allTests});
-          });
+          } else if (!fs.existsSync(suite.execPath)) {
+            setTimeout(
+                waitAndThenTry, delay,
+                [remainingIteration - 1, Math.max(delay * 2, 2000)]);
+          } else {
+            this.testsEmitter.fire({type: 'started'});
+            suite.reloadChildren().then(() => {
+              this.testsEmitter.fire({type: 'finished', suite: this.allTests});
+            });
+          }
+        };
+
+        // change event can arrive during debug session on osx (why?)
+        if (!this.isDebugging) {
+          waitAndThenTry(10, 128);
         }
-      };
-
-      // change event can arrive during debug session on osx (why?)
-      if (!this.isDebugging) {
-        waitAndThenTry(10, 128);
-      }
+      });
+    } catch (e) {
+      this.log.warn('watcher couldn\'t watch: ' + suite.execPath);
+    }
+    return suite.reloadChildren().catch((e) => {
+      this.allTests.removeChild(suite);
     });
-
-    return suite.reloadChildren();
   }
 
   load(): Promise<void> {
@@ -172,13 +176,17 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
           return testListReaders;
         })
-        .then(() => {
-          this.testsEmitter.fire({type: 'finished', suite: this.allTests});
-        })
-        .catch((err: Error) => {
-          this.testsEmitter.fire(
-              {type: 'finished', suite: undefined, errorMessage: err.message});
-        });
+        .then(
+            () => {
+              this.testsEmitter.fire({type: 'finished', suite: this.allTests});
+            },
+            (err: Error) => {
+              this.testsEmitter.fire({
+                type: 'finished',
+                suite: undefined,
+                errorMessage: err.message
+              });
+            });
   }
 
   cancel(): void {
@@ -498,7 +506,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return this.filterVerifiedCatch2TestExecutables(executables);
   }
 
-  private verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
+  verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       try {
         execFile(
