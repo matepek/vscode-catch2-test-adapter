@@ -50,7 +50,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     return test;
   }
 
-  acquireSlot(): boolean {
+  private acquireSlot(): boolean {
     let i: number = 0;
     while (i < this.taskPools.length && this.taskPools[i].acquire()) ++i;
 
@@ -61,7 +61,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     return false;
   }
 
-  releaseSlot(): void {
+  private releaseSlot(): void {
     let i: number = this.taskPools.length;
 
     while (--i >= 0) this.taskPools[i].release();
@@ -108,6 +108,9 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       });
     }
 
+    this.adapter.testStatesEmitter.fire(
+        <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
+
     const execParams: string[] = [];
     if (childrenToRun != 'all') {
       let testNames: string[] = [];
@@ -138,23 +141,27 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
     this.proc = spawn(this.execPath, execParams, this.execOptions);
     let pResolver: Function|undefined = undefined;
+    let pRejecter: Function|undefined = undefined;
     const p = new Promise<void>((resolve, reject) => {
       pResolver = resolve;
+      pRejecter = reject;
     });
 
     const data = new class {
       buffer: string = '';
       currentChild: C2TestInfo|undefined = undefined;
-      inTestCase: boolean = false;
       beforeFirstTestCase: boolean = true;
       rngSeed: number|undefined = undefined;
+      inTestCase(): boolean {
+        return this.currentChild != undefined;
+      };
     }
     ();
 
     const processChunk = (chunk: string) => {
       data.buffer = data.buffer + chunk;
       do {
-        if (!data.inTestCase) {
+        if (!data.inTestCase()) {
           const b = data.buffer.indexOf('<TestCase');
           if (b == -1) return;
 
@@ -180,8 +187,6 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
             }
           }
           data.beforeFirstTestCase = false;
-          data.inTestCase = true;
-
           data.currentChild = this.children.find((v: C2TestInfo) => {
             return v.testNameTrimmed == name;
           });
@@ -190,7 +195,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
             const ev = data.currentChild.getStartEvent();
             this.adapter.testStatesEmitter.fire(ev);
           } else {
-            this.adapter.log.error('Tescase not found in children: ' + name);
+            this.adapter.log.error('TestCase not found in children: ' + name);
           }
 
           data.buffer = data.buffer.substr(b);
@@ -213,7 +218,6 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
             }
           }
 
-          data.inTestCase = false;
           data.currentChild = undefined;
           data.buffer = data.buffer.substr(b + endTestCase.length);
         }
@@ -226,24 +230,34 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     });
 
     this.proc.on('close', (code: number) => {
-      if (pResolver != undefined) pResolver();
+      if (data.inTestCase()) {
+        (pRejecter != undefined) && pRejecter();
+      } else {
+        (pResolver != undefined) && pResolver();
+      }
     });
 
-    this.adapter.testStatesEmitter.fire(
-        <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
-
+    const suiteFinally = () => {
+      this.proc = undefined;
+      this.releaseSlot();
+      this.adapter.testStatesEmitter.fire(
+          <TestSuiteEvent>{type: 'suite', suite: this, state: 'completed'});
+    };
     return p
         .then(() => {
-          this.releaseSlot();
-          this.proc = undefined;
+          suiteFinally();
         })
         .catch((err: Error) => {
-          this.releaseSlot();
+          if (data.inTestCase()) {
+            this.adapter.testStatesEmitter.fire({
+              type: 'test',
+              test: data.currentChild!,
+              state: 'failed',
+              message: 'Unexpected test error. (Is Catch2 crashed?)\n'
+            });
+          }
           this.adapter.log.error(err.message);
-        })
-        .then(() => {
-          this.adapter.testStatesEmitter.fire(
-              <TestSuiteEvent>{type: 'suite', suite: this, state: 'completed'});
+          suiteFinally();
         });
   }
 

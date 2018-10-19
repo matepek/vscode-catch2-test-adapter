@@ -1,5 +1,7 @@
 # Catch2 Test Explorer for Visual Studio Code
 
+[![Build Status](https://travis-ci.org/matepek/vscode-catch2-test-adapter.svg?branch=master)](https://travis-ci.org/matepek/vscode-catch2-test-adapter)
+
 This extension allows you to run your [Catch2 tests](https://github.com/catchorg/Catch2) using the
 [Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
 
