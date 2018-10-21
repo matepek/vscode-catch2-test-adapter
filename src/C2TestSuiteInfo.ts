@@ -2,7 +2,7 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import {ChildProcess, execFile, spawn, SpawnOptions} from 'child_process';
+import {ChildProcess, spawn, SpawnOptions} from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import {promisify} from 'util';
@@ -11,6 +11,7 @@ import * as xml2js from 'xml2js';
 
 import {C2TestAdapter} from './C2TestAdapter';
 import {C2TestInfo} from './C2TestInfo';
+import * as c2fs from './FsWrapper';
 import {generateUniqueId} from './IdGenerator';
 import {TaskPool} from './TaskPool';
 
@@ -269,74 +270,75 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       if (!exists)
         throw Error('reloadSuiteChildren: Should exists: ' + this.execPath);
 
-      return new Promise<void>((resolve, reject) => {
-        execFile(
-            this.execPath,
-            [
-              '[.],*', '--verbosity', 'high', '--list-tests', '--use-colour',
-              'no'
-            ],
-            (error: Error|null, stdout: string, stderr: string) => {
-              const oldChildren = this.children;
-              this.children = [];
+      return c2fs
+          .spawnAsync(
+              this.execPath,
+              [
+                '[.],*', '--verbosity', 'high', '--list-tests', '--use-colour',
+                'no'
+              ],
+              this.execOptions)
+          .then((r) => {
+            const oldChildren = this.children;
+            this.children = [];
 
-              let lines = stdout.split(/\r?\n/);
+            let lines = r.stdout.split(/\r?\n/);
 
-              if (lines.length == 0) this.adapter.log.error('Empty test list.');
+            if (lines.length == 0) this.adapter.log.error('Empty test list.');
 
-              while (lines[lines.length - 1].trim().length == 0) lines.pop();
+            while (lines[lines.length - 1].trim().length == 0) lines.pop();
 
-              let i = 1;
-              while (i < lines.length - 1) {
-                if (lines[i][0] != ' ')
-                  this.adapter.log.error(
-                      'Wrong test list output format: ' + lines.toString());
+            let i = 1;
+            while (i < lines.length - 1) {
+              if (lines[i][0] != ' ')
+                this.adapter.log.error(
+                    'Wrong test list output format: ' + lines.toString());
 
-                const testNameFull = lines[i++].substr(2);
+              const testNameFull = lines[i++].substr(2);
 
-                let filePath = '';
-                let line = 0;
-                {
-                  const fileLine = lines[i++].substr(4);
-                  const match =
-                      fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
-                  if (match && match.length == 5) {
-                    filePath = match[1] ? match[1] : match[3];
-                    if (this.execOptions.cwd)
-                      filePath = path.resolve(this.execOptions.cwd, filePath);
-                    line = Number(match[2] ? match[2] : match[4]);
+              let filePath = '';
+              let line = 0;
+              {
+                const fileLine = lines[i++].substr(4);
+                const match =
+                    fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
+                if (match && match.length == 5) {
+                  filePath = match[1] ? match[1] : match[3];
+                  filePath =
+                      path.resolve(path.dirname(this.execPath), filePath);
+                  if (!c2fs.existsSync(filePath) && this.execOptions.cwd) {
+                    const r = path.resolve(this.execOptions.cwd, filePath);
+                    if (c2fs.existsSync(r)) filePath = r;
                   }
-                }
-
-                let description = lines[i++].substr(4);
-                if (description.startsWith('(NO DESCRIPTION)'))
-                  description = '';
-
-                let tags: string[] = [];
-                if (lines[i].length > 6 && lines[i][6] === '[') {
-                  tags = lines[i].trim().split(']');
-                  tags.pop();
-                  for (let j = 0; j < tags.length; ++j) tags[j] += ']';
-                  ++i;
-                }
-
-                const index = oldChildren.findIndex(
-                    (c: C2TestInfo): boolean => {return c.testNameFull ==
-                                                 testNameFull});
-                if (index != -1 &&
-                    oldChildren[index].label ==
-                        C2TestInfo.generateLabel(
-                            testNameFull, description, tags)) {
-                  this.children.push(oldChildren[index]);
-                } else {
-                  this.createChildTest(
-                      testNameFull, description, tags, filePath, line);
+                  line = Number(match[2] ? match[2] : match[4]);
                 }
               }
 
-              resolve();
-            });
-      });
+              let description = lines[i++].substr(4);
+              if (description.startsWith('(NO DESCRIPTION)')) description = '';
+
+              let tags: string[] = [];
+              if (lines[i].length > 6 && lines[i][6] === '[') {
+                tags = lines[i].trim().split(']');
+                tags.pop();
+                for (let j = 0; j < tags.length; ++j) tags[j] += ']';
+                ++i;
+              }
+
+              const index = oldChildren.findIndex(
+                  (c: C2TestInfo): boolean => {return c.testNameFull ==
+                                               testNameFull});
+              if (index != -1 &&
+                  oldChildren[index].label ==
+                      C2TestInfo.generateLabel(
+                          testNameFull, description, tags)) {
+                this.children.push(oldChildren[index]);
+              } else {
+                this.createChildTest(
+                    testNameFull, description, tags, filePath, line);
+              }
+            }
+          });
     });
   }
 }

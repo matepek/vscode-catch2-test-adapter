@@ -2,7 +2,6 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import {execFile} from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -11,6 +10,7 @@ import * as util from 'vscode-test-adapter-util';
 
 import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
 import {C2TestInfo} from './C2TestInfo';
+import * as c2fs from './FsWrapper';
 
 export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly testsEmitter =
@@ -80,8 +80,6 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this.disposables.forEach(d => {
       d.dispose();
     });
-    while (this.disposables.shift() !== undefined)
-      ;
   }
 
   get testStates(): vscode.Event<TestRunStartedEvent|TestRunFinishedEvent|
@@ -424,10 +422,10 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
       if (regex.length > 0) {
         const recursiveAdd = (directory: string): void => {
-          const children = fs.readdirSync(directory, 'utf8');
+          const children = c2fs.readdirSync(directory);
           children.forEach(child => {
             const childPath = path.resolve(directory, child);
-            const childStat = fs.statSync(childPath);
+            const childStat = c2fs.statSync(childPath);
             if (childPath.match(regex) && childStat.isFile()) {
               let resolvedName = name + ' : ' + child;
               let resolvedCwd = cwd;
@@ -458,7 +456,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
           });
         };
         try {
-          const stat = fs.statSync(p);
+          const stat = c2fs.statSync(p);
           if (stat.isDirectory()) {
             recursiveAdd(p);
           } else if (stat.isFile()) {
@@ -507,20 +505,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      try {
-        execFile(
-            path, ['--help'],
-            (error: Error|null, stdout: string, stderr: string) => {
-              if (stdout.indexOf('Catch v2.') != -1) {
-                resolve(true);
-              } else {
-                resolve(false);
-              }
-            });
-      } catch (e) {
-        resolve(false);
-      }
+    return c2fs.spawnAsync(path, ['--help']).then((res) => {
+      return res.stdout.indexOf('Catch v2.') != -1;
     });
   }
 
