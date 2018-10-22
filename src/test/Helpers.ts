@@ -3,10 +3,12 @@ import {Stream} from 'stream';
 
 export class ChildProcessStub extends EventEmitter {
   readonly stdout = new Stream.Readable();
+  public closed: boolean = false;
 
   constructor(data?: string|Iterable<string>) {
     super();
     this.stdout.on('end', () => {
+      this.closed = true;
       this.emit('close', 1);
     });
     if (data != undefined) {
