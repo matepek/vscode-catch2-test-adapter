@@ -123,7 +123,6 @@ Example:
 
 - Implement more [Catch command line options](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#specifying-which-tests-to-run), such as:
   - `--nothrow`
-- Tests
 
 ## Contribution
 
