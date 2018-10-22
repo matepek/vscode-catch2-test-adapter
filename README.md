@@ -1,6 +1,11 @@
 # Catch2 Test Explorer for Visual Studio Code
 
 [![Build Status](https://travis-ci.org/matepek/vscode-catch2-test-adapter.svg?branch=master)](https://travis-ci.org/matepek/vscode-catch2-test-adapter)
+[![GitHub issues](https://img.shields.io/github/issues/matepek/vscode-catch2-test-adapter.svg)](https://github.com/matepek/vscode-catch2-test-adapter/issues)
+[![GitHub license](https://img.shields.io/github/license/matepek/vscode-catch2-test-adapter.svg)](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/LICENSE)
+[![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/d/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
+[![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
+
 
 This extension allows you to run your [Catch2 tests](https://github.com/catchorg/Catch2) using the
 [Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
@@ -19,6 +24,8 @@ This adapter doesn't support everything.
 | `catch2TestExplorer.workerMaxNumber`            | The variable maximize the number of the parallel test execution.                                                                                                             |
 | `catch2TestExplorer.enableSourceDecoration`     | Sets the source code decorations: Errored lines will be highlited.                                                                                                           |
 | `catch2TestExplorer.debugConfigurationTemplate` | Set the necessary debug configuraitons and the debug button will work. Details: [below](#catch2TestExplorer.debugConfigurationTemplate)                                      |
+| `testExplorer.onStart`													|	(This is part of the [dependency extension](https://github.com/hbenl/vscode-test-explorer#configuration)'s settings.)                                                        |
+| `testExplorer.onReload`													|	(This is part of the [dependency extension](https://github.com/hbenl/vscode-test-explorer#configuration)'s settings.)                                                        |
 
 ### catch2TestExplorer.executables
 
@@ -115,10 +122,7 @@ Example:
 ## TODOs
 
 - Implement more [Catch command line options](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#specifying-which-tests-to-run), such as:
-
   - `--nothrow`
-
-- Tests
 
 ## Contribution
 

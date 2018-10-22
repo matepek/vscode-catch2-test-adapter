@@ -2,7 +2,6 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import {execFile} from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -11,6 +10,7 @@ import * as util from 'vscode-test-adapter-util';
 
 import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
 import {C2TestInfo} from './C2TestInfo';
+import * as c2fs from './FsWrapper';
 
 export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly testsEmitter =
@@ -80,8 +80,6 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this.disposables.forEach(d => {
       d.dispose();
     });
-    while (this.disposables.shift() !== undefined)
-      ;
   }
 
   get testStates(): vscode.Event<TestRunStartedEvent|TestRunFinishedEvent|
@@ -97,7 +95,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return this.autorunEmitter.event;
   }
 
-  private loadSuite(exe: ExecutableConfig): Promise<void> {
+  loadSuite(exe: ExecutableConfig): Promise<void> {
     const suite = this.allTests.createChildSuite(
         exe.name, exe.path, {cwd: exe.cwd, env: exe.env});
 
@@ -106,39 +104,43 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     if (watcher != undefined) {
       watcher.close();
     }
+    try {
+      watcher = fs.watch(suite.execPath);
+      this.watchers.set(suite.execPath, watcher);
+      const allTests = this.allTests;  // alltest may has changed
 
-    watcher = fs.watch(suite.execPath);
-    this.watchers.set(suite.execPath, watcher);
-    const allTests = this.allTests;  // alltest may has changed
-
-    watcher.on('change', (eventType: string, filename: string) => {
-      // need some time here:
-      const waitAndThenTry = (remainingIteration: number, delay: number) => {
-        if (remainingIteration == 0) {
-          watcher!.close();
-          this.watchers.delete(suite.execPath);
-          this.testsEmitter.fire({type: 'started'});
-          allTests.removeChild(suite);
-          this.testsEmitter.fire({type: 'finished', suite: this.allTests});
-        } else if (!fs.existsSync(suite.execPath)) {
-          setTimeout(
-              waitAndThenTry, delay,
-              [remainingIteration - 1, Math.max(delay * 2, 2000)]);
-        } else {
-          this.testsEmitter.fire({type: 'started'});
-          suite.reloadChildren().then(() => {
+      watcher.on('change', (eventType: string, filename: string) => {
+        // need some time here:
+        const waitAndThenTry = (remainingIteration: number, delay: number) => {
+          if (remainingIteration == 0) {
+            watcher!.close();
+            this.watchers.delete(suite.execPath);
+            this.testsEmitter.fire({type: 'started'});
+            allTests.removeChild(suite);
             this.testsEmitter.fire({type: 'finished', suite: this.allTests});
-          });
+          } else if (!fs.existsSync(suite.execPath)) {
+            setTimeout(
+                waitAndThenTry, delay,
+                [remainingIteration - 1, Math.max(delay * 2, 2000)]);
+          } else {
+            this.testsEmitter.fire({type: 'started'});
+            suite.reloadChildren().then(() => {
+              this.testsEmitter.fire({type: 'finished', suite: this.allTests});
+            });
+          }
+        };
+
+        // change event can arrive during debug session on osx (why?)
+        if (!this.isDebugging) {
+          waitAndThenTry(10, 128);
         }
-      };
-
-      // change event can arrive during debug session on osx (why?)
-      if (!this.isDebugging) {
-        waitAndThenTry(10, 128);
-      }
+      });
+    } catch (e) {
+      this.log.warn('watcher couldn\'t watch: ' + suite.execPath);
+    }
+    return suite.reloadChildren().catch((e) => {
+      this.allTests.removeChild(suite);
     });
-
-    return suite.reloadChildren();
   }
 
   load(): Promise<void> {
@@ -172,13 +174,17 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
           return testListReaders;
         })
-        .then(() => {
-          this.testsEmitter.fire({type: 'finished', suite: this.allTests});
-        })
-        .catch((err: Error) => {
-          this.testsEmitter.fire(
-              {type: 'finished', suite: undefined, errorMessage: err.message});
-        });
+        .then(
+            () => {
+              this.testsEmitter.fire({type: 'finished', suite: this.allTests});
+            },
+            (err: Error) => {
+              this.testsEmitter.fire({
+                type: 'finished',
+                suite: undefined,
+                errorMessage: err.message
+              });
+            });
   }
 
   cancel(): void {
@@ -416,10 +422,10 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
       if (regex.length > 0) {
         const recursiveAdd = (directory: string): void => {
-          const children = fs.readdirSync(directory, 'utf8');
+          const children = c2fs.readdirSync(directory);
           children.forEach(child => {
             const childPath = path.resolve(directory, child);
-            const childStat = fs.statSync(childPath);
+            const childStat = c2fs.statSync(childPath);
             if (childPath.match(regex) && childStat.isFile()) {
               let resolvedName = name + ' : ' + child;
               let resolvedCwd = cwd;
@@ -450,7 +456,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
           });
         };
         try {
-          const stat = fs.statSync(p);
+          const stat = c2fs.statSync(p);
           if (stat.isDirectory()) {
             recursiveAdd(p);
           } else if (stat.isFile()) {
@@ -498,21 +504,9 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return this.filterVerifiedCatch2TestExecutables(executables);
   }
 
-  private verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      try {
-        execFile(
-            path, ['--help'],
-            (error: Error|null, stdout: string, stderr: string) => {
-              if (stdout.indexOf('Catch v2.') != -1) {
-                resolve(true);
-              } else {
-                resolve(false);
-              }
-            });
-      } catch (e) {
-        resolve(false);
-      }
+  verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
+    return c2fs.spawnAsync(path, ['--help']).then((res) => {
+      return res.stdout.indexOf('Catch v2.') != -1;
     });
   }
 

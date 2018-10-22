@@ -41,7 +41,7 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
-    "entities": "^1.1.1",
+    "entities": "^1.1.2",
     "tslib": "^1.9.3",
     "vscode-test-adapter-api": "^1.1.0",
     "vscode-test-adapter-util": "^0.5.0",
@@ -52,10 +52,12 @@
     "@types/xml-parser": "^1.2.29",
     "@types/xml2js": "^0.4.3",
     "@types/mocha": "^5.2.5",
+    "@types/chai": "^4.1.6",
     "@types/fs-extra": "^5.0.4",
     "fs-extra": "^7.0.0",
     "@types/deep-equal": "^1.0.1",
     "deep-equal": "^1.0.1",
+    "@types/sinon": "^5.0.5",
     "sinon": "^7.0.0",
     "typescript": "^2.9.2",
     "vsce": "^1.51.1",
