@@ -174,72 +174,97 @@ describe('C2TestAdapter', function() {
   describe('detect config change', function() {
     this.slow(150);
 
-    const waitForReloadAndAssert = (): Promise<void> => {
-      const waitForReloadAndAssertInner = (tryCount: number): Promise<void> => {
-        if (testsEvents.length < 2)
-          return new Promise<void>(r => setTimeout(r, 10))
-              .then(() => {waitForReloadAndAssertInner(tryCount - 1)});
-        else {
-          assert.equal(testsEvents.length, 2);
-          assert.equal(testsEvents[0].type, 'started');
-          assert.equal(testsEvents[1].type, 'finished');
-          const suite = (<TestLoadFinishedEvent>testsEvents[1]).suite;
-          assert.notEqual(suite, undefined);
-          assert.equal(suite!.children.length, 0);
-          return Promise.resolve();
-        }
-      };
-      return waitForReloadAndAssertInner(20);
-    };
+    let adapter: C2TestAdapter;
 
-    afterEach(() => {
+    before(() => {
+      adapter = createAdapterAndSubscribe();
+      assert.deepStrictEqual(testsEvents, []);
+    })
+
+    after(() => {
       disposeAdapterAndSubscribers();
       return resetConfig();
-    });
+    })
 
-    it('workerMaxNumber', () => {
-      createAdapterAndSubscribe();
-      assert.deepStrictEqual(testsEvents, []);
-      return getConfig()
-          .update('workerMaxNumber', 42)
-          .then(waitForReloadAndAssert);
-    });
+    describe('expectation to (re)load', function() {
+      afterEach(() => {
+        const waitForReloadAndAsser = (tryCount: number): Promise<void> => {
+          if (testsEvents.length < 2)
+            return new Promise<void>(r => setTimeout(r, 10))
+                .then(() => {waitForReloadAndAsser(tryCount - 1)});
+          else {
+            assert.equal(testsEvents.length, 2);
+            assert.equal(testsEvents[0].type, 'started');
+            assert.equal(testsEvents[1].type, 'finished');
+            const suite = (<TestLoadFinishedEvent>testsEvents[1]).suite;
+            assert.notEqual(suite, undefined);
+            assert.equal(suite!.children.length, 0);
 
-    it('defaultEnv', () => {
-      createAdapterAndSubscribe();
-      assert.deepStrictEqual(testsEvents, []);
-      return getConfig()
-          .update('defaultEnv', {'APPLE': 'apple'})
-          .then(waitForReloadAndAssert);
-    });
+            // cleanup
+            testsEvents.pop();
+            testsEvents.pop();
 
-    it('defaultCwd', () => {
-      createAdapterAndSubscribe();
-      assert.deepStrictEqual(testsEvents, []);
-      return getConfig()
-          .update('defaultCwd', 'apple/peach')
-          .then(waitForReloadAndAssert);
-    });
+            return Promise.resolve();
+          }
+        };
+        return waitForReloadAndAsser(20);
+      })
+
+      it('workerMaxNumber', () => {
+        return updateConfig('workerMaxNumber', 42);
+      })
+
+      it('defaultEnv', () => {
+        return updateConfig('defaultEnv', {'APPLE': 'apple'});
+      })
+
+      it('defaultCwd', () => {
+        return updateConfig('defaultCwd', 'apple/peach');
+      })
+    })
 
     it('enableSourceDecoration', () => {
-      const adapter = createAdapterAndSubscribe();
-      assert.deepStrictEqual(testsEvents, []);
-      return getConfig().update('enableSourceDecoration', false).then(() => {
+      return updateConfig('enableSourceDecoration', false).then(() => {
         assert.ok(!adapter.getIsEnabledSourceDecoration());
       });
-    });
+    })
 
     it('defaultRngSeed', () => {
-      const adapter = createAdapterAndSubscribe();
-      assert.deepStrictEqual(testsEvents, []);
-      return getConfig().update('defaultRngSeed', 987).then(() => {
+      return updateConfig('defaultRngSeed', 987).then(() => {
         assert.equal(adapter.getRngSeed(), 987);
       });
-    });
-  });
-  // describe('detect config change'
+    })
+  })
 
-  describe('adapter:', () => {
+  it('load with empty config', async function() {
+    const adapter = createAdapterAndSubscribe();
+    await adapter.load();
+    assert.equal(testsEvents.length, 2);
+    assert.equal(testsEvents[0].type, 'started');
+    assert.equal(testsEvents[1].type, 'finished');
+    const suite = (<TestLoadFinishedEvent>testsEvents[1]).suite;
+    assert.notEqual(suite, undefined);
+    assert.equal(suite!.children.length, 0);
+    disposeAdapterAndSubscribers();
+  })
+
+  describe('run example1', function() {
+    let tests: any;
+
+    before(() => {
+      for (let suite of example1.outputs) {
+        for (let scenario of suite[1]) {
+          spawnStub.withArgs(suite[0], scenario[0]).callsFake(() => {
+            return new ChildProcessStub(scenario[1]);
+          });
+        }
+      }
+    })
+
+    after(() => {
+      stubsResetToThrow();
+    });
+
     let adapter: C2TestAdapter;
 
     beforeEach(() => {
@@ -250,330 +275,46 @@ describe('C2TestAdapter', function() {
       disposeAdapterAndSubscribers();
     });
 
-    it('fill with empty config', function() {
-      return adapter.load().then(() => {
-        assert.equal(testsEvents.length, 2);
-        assert.equal(testsEvents[0].type, 'started');
-        assert.equal(testsEvents[1].type, 'finished');
-        const suite = (<TestLoadFinishedEvent>testsEvents[1]).suite;
-        assert.notEqual(suite, undefined);
-        assert.equal(suite!.children.length, 0);
-      });
-    });
+    beforeEach(() => {
+      return adapter.load()
+          .then(() => {
+            const root = (<TestLoadFinishedEvent>testsEvents[1]).suite;
+            assert.notEqual(undefined, root);
+            return root!;
+          })
+          .then((suite: TestSuiteInfo) => {
+            const root = <C2AllTestSuiteInfo>suite;
+            const s1 =
+                root.createChildSuite('s1', example1.suite1.execPath, {});
+            const s1t1 = s1.createChildTest(
+                's1t1', 'd', ['tag1'], example1.suite1.execPath, 1);
+            const s1t2 = s1.createChildTest(
+                's1t2', 'd', ['tag1'], example1.suite1.execPath, 2);
+            const s2 =
+                root.createChildSuite('s2', example1.suite2.execPath, {});
+            const s2t1 = s2.createChildTest(
+                's2t1', 'd', ['tag1'], example1.suite2.execPath, 1);
+            const s2t2 = s2.createChildTest(
+                's2t2', 'd', ['[.]'], example1.suite2.execPath, 2);
+            const s2t3 = s2.createChildTest(
+                's2t3', 'd', ['tag1'], example1.suite2.execPath, 3);
 
-    describe('example1', function() {
-      let tests: any;
+            tests = {
+              root: root,
+              s1: s1,
+              s1t1: s1t1,
+              s1t2: s1t2,
+              s2: s2,
+              s2t1: s2t1,
+              s2t2: s2t2,
+              s2t3: s2t3
+            }
+          });
+    })
 
-      before(() => {
-        for (let suite of example1.outputs) {
-          for (let scenario of suite[1]) {
-            spawnStub.withArgs(suite[0], scenario[0]).callsFake(() => {
-              return new ChildProcessStub(scenario[1]);
-            });
-          }
-        }
-      })
-
-      after(() => {
-        stubsResetToThrow();
-      });
-
-      beforeEach(() => {
-        return adapter.load()
-            .then(() => {
-              const root = (<TestLoadFinishedEvent>testsEvents[1]).suite;
-              assert.notEqual(undefined, root);
-              return root!;
-            })
-            .then((suite: TestSuiteInfo) => {
-              const root = <C2AllTestSuiteInfo>suite;
-              const s1 =
-                  root.createChildSuite('s1', example1.suite1.execPath, {});
-              const s1t1 = s1.createChildTest(
-                  's1t1', 'd', ['tag1'], example1.suite1.execPath, 1);
-              const s1t2 = s1.createChildTest(
-                  's1t2', 'd', ['tag1'], example1.suite1.execPath, 2);
-              const s2 =
-                  root.createChildSuite('s2', example1.suite2.execPath, {});
-              const s2t1 = s2.createChildTest(
-                  's2t1', 'd', ['tag1'], example1.suite2.execPath, 1);
-              const s2t2 = s2.createChildTest(
-                  's2t2', 'd', ['[.]'], example1.suite2.execPath, 2);
-              const s2t3 = s2.createChildTest(
-                  's2t3', 'd', ['tag1'], example1.suite2.execPath, 3);
-
-              tests = {
-                root: root,
-                s1: s1,
-                s1t1: s1t1,
-                s1t2: s1t2,
-                s2: s2,
-                s2t1: s2t1,
-                s2t2: s2t2,
-                s2t3: s2t3
-              }
-            });
-      })
-
-      it('run: 1 test (succ)', function() {
-        return adapter.run([tests.s1t1.id]).then(() => {
-          assert.deepStrictEqual(testStatesEvents, [
-            {type: 'started', tests: [tests.s1t1.id]},
-            {type: 'suite', state: 'running', suite: tests.s1},
-            {type: 'test', state: 'running', test: tests.s1t1},
-            {
-              type: 'test',
-              state: 'passed',
-              test: tests.s1t1,
-              decorations: undefined,
-              message: 'Duration: 0.000112 second(s)\n'
-            },
-            {type: 'suite', state: 'completed', suite: tests.s1},
-            {type: 'finished'},
-          ]);
-        });
-      })
-
-      it('run: 1 test (skipped)', function() {
-        return adapter.run([tests.s2t2.id]).then(() => {
-          assert.deepStrictEqual(testStatesEvents, [
-            {type: 'started', tests: [tests.s2t2.id]},
-            {type: 'suite', state: 'running', suite: tests.s2},
-            {type: 'test', state: 'running', test: tests.s2t2},
-            {
-              type: 'test',
-              state: 'passed',
-              test: tests.s2t2,
-              decorations: undefined,
-              message: 'Duration: 0.001294 second(s)\n'
-            },
-            {type: 'suite', state: 'completed', suite: tests.s2},
-            {type: 'finished'},
-          ]);
-        });
-      });
-      // it('run: 1 test (skipped)'
-
-      it('run: 1 test (fails)', function() {
-        return adapter.run([tests.s2t3.id]).then(() => {
-          assert.deepStrictEqual(testStatesEvents, [
-            {type: 'started', tests: [tests.s2t3.id]},
-            {type: 'suite', state: 'running', suite: tests.s2},
-            {type: 'test', state: 'running', test: tests.s2t3},
-            {
-              type: 'test',
-              state: 'failed',
-              test: tests.s2t3,
-              decorations: [{line: 20, message: 'Expanded: false'}],
-              message:
-                  'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
-            },
-            {type: 'suite', state: 'completed', suite: tests.s2},
-            {type: 'finished'},
-          ]);
-        });
-      });
-      // it('run: 1 test (fails)'
-
-      it('run: s2t3 with chunks', function() {
-        const withArgs = spawnStub.withArgs(
-            tests.s2.execPath, example1.suite2.t3.outputs[0][0]);
-        withArgs.onCall(withArgs.callCount)
-            .returns(new ChildProcessStub(example1.suite2.t3.outputs[0][1]));
-
-        return adapter.run([tests.s2t3.id]).then(() => {
-          assert.deepStrictEqual(testStatesEvents, [
-            {type: 'started', tests: [tests.s2t3.id]},
-            {type: 'suite', state: 'running', suite: tests.s2},
-            {type: 'test', state: 'running', test: tests.s2t3},
-            {
-              type: 'test',
-              state: 'failed',
-              test: tests.s2t3,
-              decorations: [{line: 20, message: 'Expanded: false'}],
-              message:
-                  'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
-            },
-            {type: 'suite', state: 'completed', suite: tests.s2},
-            {type: 'finished'},
-          ]);
-        });
-      });
-      // it('run: 1 test (fails) with chunks'
-
-      it('run: suite1 (1 succ 1 fails)', function() {
-        return adapter.run([tests.s1.id]).then(() => {
-          assert.deepStrictEqual(testStatesEvents, [
-            {type: 'started', tests: [tests.s1.id]},
-            {type: 'suite', state: 'running', suite: tests.s1},
-            {type: 'test', state: 'running', test: tests.s1t1},
-            {
-              type: 'test',
-              state: 'passed',
-              test: tests.s1t1,
-              decorations: undefined,
-              message: 'Duration: 0.000132 second(s)\n'
-            },
-            {type: 'test', state: 'running', test: tests.s1t2},
-            {
-              type: 'test',
-              state: 'failed',
-              test: tests.s1t2,
-              decorations: [{line: 14, message: 'Expanded: false'}],
-              message:
-                  'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
-            },
-            {type: 'suite', state: 'completed', suite: tests.s1},
-            {type: 'finished'},
-          ]);
-        });
-      });
-      // it('run: suite1 (1 succ 1 fails)'
-
-      it('run: root (at least 2 slots)', function() {
-        return adapter.run([tests.root.id]).then(() => {
-          assert.deepStrictEqual(
-              {type: 'started', tests: [tests.root.id]}, testStatesEvents[0]);
-          assert.deepStrictEqual(
-              {type: 'finished'},
-              testStatesEvents[testStatesEvents.length - 1]);
-
-          const s1running = {type: 'suite', state: 'running', suite: tests.s1};
-          const s1finished = {
-            type: 'suite',
-            state: 'completed',
-            suite: tests.s1
-          };
-          assert.ok(testStatesEvI(s1running) < testStatesEvI(s1finished));
-
-          const s2running = {type: 'suite', state: 'running', suite: tests.s2};
-          const s2finished = {
-            type: 'suite',
-            state: 'completed',
-            suite: tests.s2
-          };
-          assert.ok(testStatesEvI(s2running) < testStatesEvI(s2finished));
-
-          const s1t1running = {
-            type: 'test',
-            state: 'running',
-            test: tests.s1t1
-          };
-          assert.ok(testStatesEvI(s1running) < testStatesEvI(s1t1running));
-
-          const s1t1finished = {
-            type: 'test',
-            state: 'passed',
-            test: tests.s1t1,
-            decorations: undefined,
-            message: 'Duration: 0.000132 second(s)\n'
-          };
-          assert.ok(testStatesEvI(s1t1running) < testStatesEvI(s1t1finished));
-          assert.ok(testStatesEvI(s1t1finished) < testStatesEvI(s1finished));
-
-          const s1t2running = {
-            type: 'test',
-            state: 'running',
-            test: tests.s1t2
-          };
-          assert.ok(testStatesEvI(s1running) < testStatesEvI(s1t2running));
-
-          const s1t2finished = {
-            type: 'test',
-            state: 'failed',
-            test: tests.s1t2,
-            decorations: [{line: 14, message: 'Expanded: false'}],
-            message:
-                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
-          };
-          assert.ok(testStatesEvI(s1t2running) < testStatesEvI(s1t2finished));
-          assert.ok(testStatesEvI(s1t2finished) < testStatesEvI(s1finished));
-
-          const s2t1running = {
-            type: 'test',
-            state: 'running',
-            test: tests.s2t1
-          };
-          assert.ok(testStatesEvI(s2running) < testStatesEvI(s2t1running));
-
-          const s2t1finished = {
-            type: 'test',
-            state: 'passed',
-            test: tests.s2t1,
-            decorations: undefined,
-            message: 'Duration: 0.00037 second(s)\n'
-          };
-          assert.ok(testStatesEvI(s2t1running) < testStatesEvI(s2t1finished));
-          assert.ok(testStatesEvI(s2t1finished) < testStatesEvI(s2finished));
-
-          const s2t2running = {
-            type: 'test',
-            state: 'running',
-            test: tests.s2t2
-          };
-          assert.ok(testStatesEvI(s2running) < testStatesEvI(s2t2running));
-
-          const s2t2finished = {
-            type: 'test',
-            state: 'skipped',
-            test: tests.s2t2
-          };
-          assert.ok(testStatesEvI(s2t2running) < testStatesEvI(s2t2finished));
-          assert.ok(testStatesEvI(s2t2finished) < testStatesEvI(s2finished));
-
-          const s2t3running = {
-            type: 'test',
-            state: 'running',
-            test: tests.s2t3
-          };
-          assert.ok(testStatesEvI(s2running) < testStatesEvI(s2t3running));
-
-          const s2t3finished = {
-            type: 'test',
-            state: 'failed',
-            test: tests.s2t3,
-            decorations: [{line: 20, message: 'Expanded: false'}],
-            message:
-                'Duration: 0.000178 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
-          };
-          assert.ok(testStatesEvI(s2t3running) < testStatesEvI(s2t3finished));
-          assert.ok(testStatesEvI(s2t3finished) < testStatesEvI(s2finished));
-
-          assert.equal(testStatesEvents.length, 16, inspect(testStatesEvents));
-        });
-      })
-
-      it('run: wrong xml 1', async function() {
-        const m = example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');
-        assert.notEqual(m, undefined);
-        assert.notEqual(m!.input, undefined);
-        assert.notEqual(m!.index, undefined);
-        const part = m!.input!.substr(0, m!.index! + m![0].length);
-        const withArgs = spawnStub.withArgs(
-            tests.s1.execPath, example1.suite1.t1.outputs[0][0]);
-        withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(part));
-
-        await adapter.run([tests.s1t1.id]);
-
-        const expected = [
-          {type: 'started', tests: [tests.s1t1.id]},
-          {type: 'suite', state: 'running', suite: tests.s1},
-          {type: 'test', state: 'running', test: tests.s1t1},
-          {
-            type: 'test',
-            state: 'failed',
-            test: tests.s1t1,
-            message: 'Unexpected test error. (Is Catch2 crashed?)\n'
-          },
-          {type: 'suite', state: 'completed', suite: tests.s1},
-          {type: 'finished'},
-        ];
-        assert.deepStrictEqual(testStatesEvents, expected);
-
-        // this tests the sinon stubs too
-        await adapter.run([tests.s1t1.id]);
+    it('run: 1 test (succ)', function() {
+      return adapter.run([tests.s1t1.id]).then(() => {
         assert.deepStrictEqual(testStatesEvents, [
-          ...expected,
           {type: 'started', tests: [tests.s1t1.id]},
           {type: 'suite', state: 'running', suite: tests.s1},
           {type: 'test', state: 'running', test: tests.s1t1},
@@ -587,171 +328,298 @@ describe('C2TestAdapter', function() {
           {type: 'suite', state: 'completed', suite: tests.s1},
           {type: 'finished'},
         ]);
-      })
+      });
+    })
 
-      it('cancel: empty', function() {
+    it('run: 1 test (skipped)', function() {
+      return adapter.run([tests.s2t2.id]).then(() => {
+        assert.deepStrictEqual(testStatesEvents, [
+          {type: 'started', tests: [tests.s2t2.id]},
+          {type: 'suite', state: 'running', suite: tests.s2},
+          {type: 'test', state: 'running', test: tests.s2t2},
+          {
+            type: 'test',
+            state: 'passed',
+            test: tests.s2t2,
+            decorations: undefined,
+            message: 'Duration: 0.001294 second(s)\n'
+          },
+          {type: 'suite', state: 'completed', suite: tests.s2},
+          {type: 'finished'},
+        ]);
+      });
+    });
+    // it('run: 1 test (skipped)'
+
+    it('run: 1 test (fails)', function() {
+      return adapter.run([tests.s2t3.id]).then(() => {
+        assert.deepStrictEqual(testStatesEvents, [
+          {type: 'started', tests: [tests.s2t3.id]},
+          {type: 'suite', state: 'running', suite: tests.s2},
+          {type: 'test', state: 'running', test: tests.s2t3},
+          {
+            type: 'test',
+            state: 'failed',
+            test: tests.s2t3,
+            decorations: [{line: 20, message: 'Expanded: false'}],
+            message:
+                'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+          },
+          {type: 'suite', state: 'completed', suite: tests.s2},
+          {type: 'finished'},
+        ]);
+      });
+    });
+    // it('run: 1 test (fails)'
+
+    it('run: s2t3 with chunks', function() {
+      const withArgs = spawnStub.withArgs(
+          tests.s2.execPath, example1.suite2.t3.outputs[0][0]);
+      withArgs.onCall(withArgs.callCount)
+          .returns(new ChildProcessStub(example1.suite2.t3.outputs[0][1]));
+
+      return adapter.run([tests.s2t3.id]).then(() => {
+        assert.deepStrictEqual(testStatesEvents, [
+          {type: 'started', tests: [tests.s2t3.id]},
+          {type: 'suite', state: 'running', suite: tests.s2},
+          {type: 'test', state: 'running', test: tests.s2t3},
+          {
+            type: 'test',
+            state: 'failed',
+            test: tests.s2t3,
+            decorations: [{line: 20, message: 'Expanded: false'}],
+            message:
+                'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+          },
+          {type: 'suite', state: 'completed', suite: tests.s2},
+          {type: 'finished'},
+        ]);
+      });
+    });
+    // it('run: 1 test (fails) with chunks'
+
+    it('run: suite1 (1 succ 1 fails)', function() {
+      return adapter.run([tests.s1.id]).then(() => {
+        assert.deepStrictEqual(testStatesEvents, [
+          {type: 'started', tests: [tests.s1.id]},
+          {type: 'suite', state: 'running', suite: tests.s1},
+          {type: 'test', state: 'running', test: tests.s1t1},
+          {
+            type: 'test',
+            state: 'passed',
+            test: tests.s1t1,
+            decorations: undefined,
+            message: 'Duration: 0.000132 second(s)\n'
+          },
+          {type: 'test', state: 'running', test: tests.s1t2},
+          {
+            type: 'test',
+            state: 'failed',
+            test: tests.s1t2,
+            decorations: [{line: 14, message: 'Expanded: false'}],
+            message:
+                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+          },
+          {type: 'suite', state: 'completed', suite: tests.s1},
+          {type: 'finished'},
+        ]);
+      });
+    });
+    // it('run: suite1 (1 succ 1 fails)'
+
+    it('run: root (at least 2 slots)', function() {
+      return adapter.run([tests.root.id]).then(() => {
+        assert.deepStrictEqual(
+            {type: 'started', tests: [tests.root.id]}, testStatesEvents[0]);
+        assert.deepStrictEqual(
+            {type: 'finished'}, testStatesEvents[testStatesEvents.length - 1]);
+
+        const s1running = {type: 'suite', state: 'running', suite: tests.s1};
+        const s1finished = {type: 'suite', state: 'completed', suite: tests.s1};
+        assert.ok(testStatesEvI(s1running) < testStatesEvI(s1finished));
+
+        const s2running = {type: 'suite', state: 'running', suite: tests.s2};
+        const s2finished = {type: 'suite', state: 'completed', suite: tests.s2};
+        assert.ok(testStatesEvI(s2running) < testStatesEvI(s2finished));
+
+        const s1t1running = {type: 'test', state: 'running', test: tests.s1t1};
+        assert.ok(testStatesEvI(s1running) < testStatesEvI(s1t1running));
+
+        const s1t1finished = {
+          type: 'test',
+          state: 'passed',
+          test: tests.s1t1,
+          decorations: undefined,
+          message: 'Duration: 0.000132 second(s)\n'
+        };
+        assert.ok(testStatesEvI(s1t1running) < testStatesEvI(s1t1finished));
+        assert.ok(testStatesEvI(s1t1finished) < testStatesEvI(s1finished));
+
+        const s1t2running = {type: 'test', state: 'running', test: tests.s1t2};
+        assert.ok(testStatesEvI(s1running) < testStatesEvI(s1t2running));
+
+        const s1t2finished = {
+          type: 'test',
+          state: 'failed',
+          test: tests.s1t2,
+          decorations: [{line: 14, message: 'Expanded: false'}],
+          message:
+              'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+        };
+        assert.ok(testStatesEvI(s1t2running) < testStatesEvI(s1t2finished));
+        assert.ok(testStatesEvI(s1t2finished) < testStatesEvI(s1finished));
+
+        const s2t1running = {type: 'test', state: 'running', test: tests.s2t1};
+        assert.ok(testStatesEvI(s2running) < testStatesEvI(s2t1running));
+
+        const s2t1finished = {
+          type: 'test',
+          state: 'passed',
+          test: tests.s2t1,
+          decorations: undefined,
+          message: 'Duration: 0.00037 second(s)\n'
+        };
+        assert.ok(testStatesEvI(s2t1running) < testStatesEvI(s2t1finished));
+        assert.ok(testStatesEvI(s2t1finished) < testStatesEvI(s2finished));
+
+        const s2t2running = {type: 'test', state: 'running', test: tests.s2t2};
+        assert.ok(testStatesEvI(s2running) < testStatesEvI(s2t2running));
+
+        const s2t2finished = {type: 'test', state: 'skipped', test: tests.s2t2};
+        assert.ok(testStatesEvI(s2t2running) < testStatesEvI(s2t2finished));
+        assert.ok(testStatesEvI(s2t2finished) < testStatesEvI(s2finished));
+
+        const s2t3running = {type: 'test', state: 'running', test: tests.s2t3};
+        assert.ok(testStatesEvI(s2running) < testStatesEvI(s2t3running));
+
+        const s2t3finished = {
+          type: 'test',
+          state: 'failed',
+          test: tests.s2t3,
+          decorations: [{line: 20, message: 'Expanded: false'}],
+          message:
+              'Duration: 0.000178 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+        };
+        assert.ok(testStatesEvI(s2t3running) < testStatesEvI(s2t3finished));
+        assert.ok(testStatesEvI(s2t3finished) < testStatesEvI(s2finished));
+
+        assert.equal(testStatesEvents.length, 16, inspect(testStatesEvents));
+      });
+    })
+
+    it('run: wrong xml 1', async function() {
+      const m = example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');
+      assert.notEqual(m, undefined);
+      assert.notEqual(m!.input, undefined);
+      assert.notEqual(m!.index, undefined);
+      const part = m!.input!.substr(0, m!.index! + m![0].length);
+      const withArgs = spawnStub.withArgs(
+          tests.s1.execPath, example1.suite1.t1.outputs[0][0]);
+      withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(part));
+
+      await adapter.run([tests.s1t1.id]);
+
+      const expected = [
+        {type: 'started', tests: [tests.s1t1.id]},
+        {type: 'suite', state: 'running', suite: tests.s1},
+        {type: 'test', state: 'running', test: tests.s1t1},
+        {
+          type: 'test',
+          state: 'failed',
+          test: tests.s1t1,
+          message: 'Unexpected test error. (Is Catch2 crashed?)\n'
+        },
+        {type: 'suite', state: 'completed', suite: tests.s1},
+        {type: 'finished'},
+      ];
+      assert.deepStrictEqual(testStatesEvents, expected);
+
+      // this tests the sinon stubs too
+      await adapter.run([tests.s1t1.id]);
+      assert.deepStrictEqual(testStatesEvents, [
+        ...expected,
+        {type: 'started', tests: [tests.s1t1.id]},
+        {type: 'suite', state: 'running', suite: tests.s1},
+        {type: 'test', state: 'running', test: tests.s1t1},
+        {
+          type: 'test',
+          state: 'passed',
+          test: tests.s1t1,
+          decorations: undefined,
+          message: 'Duration: 0.000112 second(s)\n'
+        },
+        {type: 'suite', state: 'completed', suite: tests.s1},
+        {type: 'finished'},
+      ]);
+    })
+
+    it('cancel: empty', function() {
+      adapter.cancel();
+    })
+
+    it('cancel', function() {
+      const suite1Kill = sinon.spy();
+      const suite2Kill = sinon.spy();
+      {
+        const spawnEvent = new ChildProcessStub(example1.suite1.outputs[2][1]);
+        spawnEvent.kill = suite1Kill;
+        spawnStub
+            .withArgs(
+                tests.s1.execPath, ['--reporter', 'xml', '--durations', 'yes'],
+                tests.s1.execOptions)
+            .returns(spawnEvent);
+      }
+      {
+        const spawnEvent = new ChildProcessStub(example1.suite2.outputs[2][1]);
+        spawnEvent.kill = suite2Kill;
+        spawnStub
+            .withArgs(
+                tests.s2.execPath, ['--reporter', 'xml', '--durations', 'yes'],
+                tests.s2.execOptions)
+            .returns(spawnEvent);
+      }
+      const run = adapter.run([tests.root.id]);
+      adapter.cancel();
+      run.then(() => {
+        assert.deepStrictEqual(
+            testStatesEvents,
+            [{type: 'started', tests: [tests.root.id]}, {type: 'finished'}]);
+        assert.equal(suite1Kill.callCount, 1);
+        assert.equal(suite2Kill.callCount, 1);
+      });
+    })
+
+    it('cancel: after run finished', function() {
+      const suite1Kill = sinon.spy();
+      const suite2Kill = sinon.spy();
+      {
+        const spawnEvent = new ChildProcessStub(example1.suite1.outputs[2][1]);
+        spawnEvent.kill = suite1Kill;
+        spawnStub
+            .withArgs(
+                tests.s1.execPath, ['--reporter', 'xml', '--durations', 'yes'],
+                tests.s1.execOptions)
+            .returns(spawnEvent);
+      }
+      {
+        const spawnEvent = new ChildProcessStub(example1.suite2.outputs[2][1]);
+        spawnEvent.kill = suite2Kill;
+        spawnStub
+            .withArgs(
+                tests.s2.execPath, ['--reporter', 'xml', '--durations', 'yes'],
+                tests.s2.execOptions)
+            .returns(spawnEvent);
+      }
+      const run = adapter.run([tests.root.id]);
+      run.then(() => {
         adapter.cancel();
-      })
-
-      it('cancel', function() {
-        const suite1Kill = sinon.spy();
-        const suite2Kill = sinon.spy();
-        {
-          const spawnEvent =
-              new ChildProcessStub(example1.suite1.outputs[2][1]);
-          spawnEvent.kill = suite1Kill;
-          spawnStub
-              .withArgs(
-                  tests.s1.execPath,
-                  ['--reporter', 'xml', '--durations', 'yes'],
-                  tests.s1.execOptions)
-              .returns(spawnEvent);
-        }
-        {
-          const spawnEvent =
-              new ChildProcessStub(example1.suite2.outputs[2][1]);
-          spawnEvent.kill = suite2Kill;
-          spawnStub
-              .withArgs(
-                  tests.s2.execPath,
-                  ['--reporter', 'xml', '--durations', 'yes'],
-                  tests.s2.execOptions)
-              .returns(spawnEvent);
-        }
-        const run = adapter.run([tests.root.id]);
-        adapter.cancel();
-        run.then(() => {
-          assert.deepStrictEqual(
-              testStatesEvents,
-              [{type: 'started', tests: [tests.root.id]}, {type: 'finished'}]);
-          assert.equal(suite1Kill.callCount, 1);
-          assert.equal(suite2Kill.callCount, 1);
-        });
-      })
-
-      it('cancel: after run finished', function() {
-        const suite1Kill = sinon.spy();
-        const suite2Kill = sinon.spy();
-        {
-          const spawnEvent =
-              new ChildProcessStub(example1.suite1.outputs[2][1]);
-          spawnEvent.kill = suite1Kill;
-          spawnStub
-              .withArgs(
-                  tests.s1.execPath,
-                  ['--reporter', 'xml', '--durations', 'yes'],
-                  tests.s1.execOptions)
-              .returns(spawnEvent);
-        }
-        {
-          const spawnEvent =
-              new ChildProcessStub(example1.suite2.outputs[2][1]);
-          spawnEvent.kill = suite2Kill;
-          spawnStub
-              .withArgs(
-                  tests.s2.execPath,
-                  ['--reporter', 'xml', '--durations', 'yes'],
-                  tests.s2.execOptions)
-              .returns(spawnEvent);
-        }
-        const run = adapter.run([tests.root.id]);
-        run.then(() => {
-          adapter.cancel();
-          assert.equal(suite1Kill.callCount, 0);
-          assert.equal(suite2Kill.callCount, 0);
-        });
-      })
+        assert.equal(suite1Kill.callCount, 0);
+        assert.equal(suite2Kill.callCount, 0);
+      });
     })
   })
 
-  describe('executables:', function() {
-    this.slow(150);
-    const cwd = path.join(process.cwd(), 'out', 'test');
-
-    afterEach(() => {
-      disposeAdapterAndSubscribers();
-      stubsResetToThrow();
-      return resetConfig();
-    });
-
-    const updateAndVerify = (value: any, expected: any[]) => {
-      return getConfig()
-          .update('executables', value)
-          .then(() => {
-            const adapter = createAdapterAndSubscribe();
-
-            const verifyIsCatch2TestExecutable =
-                sinonSandbox.stub(adapter, 'verifyIsCatch2TestExecutable');
-            verifyIsCatch2TestExecutable.returns(Promise.resolve(true));
-
-            const loadSuiteMock = sinon.expectation.create('loadSuiteMock');
-            loadSuiteMock.exactly(expected.length).returns(Promise.resolve())
-            sinonSandbox.replace(adapter, 'loadSuite', loadSuiteMock);
-
-            return adapter.load().then(() => {
-              return loadSuiteMock;
-            });
-          })
-          .then((loadSuiteMock) => {
-            assert.equal(testsEvents.length, 2);
-            loadSuiteMock.verify();
-            const calls = loadSuiteMock.getCalls();
-            const args = calls.map((call: any) => {
-              const arg = call.args[0];
-              const filteredKeys =
-                  Object.keys(arg.env).filter(k => k.startsWith('C2TEST'));
-              const newEnv: {[prop: string]: string} = {};
-              filteredKeys.forEach((k: string) => {
-                newEnv[k] = arg.env[k];
-              })
-              arg.env = newEnv;
-              return arg;
-            });
-            assert.deepEqual(args, expected);
-          });
-    };
-
-    it('"exe1.exe"', () => {
-      return updateAndVerify('exe1.exe', [{
-                               name: 'exe1.exe',
-                               path: path.join(cwd, 'exe1.exe'),
-                               regex: '',
-                               cwd: cwd,
-                               env: {}
-                             }]);
-    });
-
-    it('["exe1.exe", "exe2.exe"]', () => {
-      return updateAndVerify(['exe1.exe', 'exe2.exe'], [
-        {
-          name: 'exe1.exe',
-          path: path.join(cwd, 'exe1.exe'),
-          regex: '',
-          cwd: cwd,
-          env: {}
-        },
-        {
-          name: 'exe2.exe',
-          path: path.join(cwd, 'exe2.exe'),
-          regex: '',
-          cwd: cwd,
-          env: {}
-        }
-      ]);
-    });
-
-    it('{path: "path1"}', () => {
-      return updateAndVerify({path: 'path1'}, [{
-                               name: '${dirname} : ${name}',
-                               path: path.join(cwd, 'path1'),
-                               regex: '',
-                               cwd: cwd,
-                               env: {}
-                             }]);
-    });
-  })
-
-  describe('load: example1', function() {
+  describe('load example1', function() {
     before(() => {
       for (let suite of example1.outputs) {
         for (let scenario of suite[1]) {
@@ -1242,16 +1110,16 @@ describe('C2TestAdapter', function() {
     context('executables=[{...}] and env={...}', function() {
       before(async () => {
         await updateConfig('executables', [{
-                              name: '${dirname}: ${name} (${absDirname})',
-                              path: '.',
-                              regex: 'execPath(1|2)',
-                              cwd: '${workspaceFolder}/cwd',
-                              env: {
-                                'C2LOCALTESTENV': 'c2localtestenv',
-                                'C2OVERRIDETESTENV': 'c2overridetestenv-l',
-                              }
-                            }]);
-        await updateConfig('defaultEnv',{
+                             name: '${dirname}: ${name} (${absDirname})',
+                             path: '.',
+                             regex: 'execPath(1|2)',
+                             cwd: '${workspaceFolder}/cwd',
+                             env: {
+                               'C2LOCALTESTENV': 'c2localtestenv',
+                               'C2OVERRIDETESTENV': 'c2overridetestenv-l',
+                             }
+                           }]);
+        await updateConfig('defaultEnv', {
           'C2GLOBALTESTENV': 'c2globaltestenv',
           'C2OVERRIDETESTENV': 'c2overridetestenv-g',
         });
@@ -1397,7 +1265,7 @@ describe('C2TestAdapter', function() {
             });
         await adapter.run([suite1.id]);
         assert.ok(called1);
-        
+
         let called2 = false;
         spawnStub
             .withArgs(
