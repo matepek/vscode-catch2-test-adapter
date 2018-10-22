@@ -1123,36 +1123,38 @@ describe('C2TestAdapter', function() {
         for (let t of testsForAdapterWithSuite1AndSuite2) it(t[0], t[1]);
 
         it('should get execution options', async function() {
-          spawnStub
-              .withArgs(
-                  example1.suite1.execPath, sinon.match.any, sinon.match.any)
-              .callsFake((p: string, args: string[], ops: any) => {
-                assert.equal(
-                    ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
-                assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
-                assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
-                assert.equal(ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-                return new ChildProcessStub(example1.suite1.outputs[2][1]);
-              });
+          {
+            const withArgs = spawnStub.withArgs(
+                example1.suite1.execPath, sinon.match.any, sinon.match.any);
+            withArgs.onCall(withArgs.callCount)
+                .callsFake((p: string, args: string[], ops: any) => {
+                  assert.equal(
+                      ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
+                  assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
+                  assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
+                  assert.equal(
+                      ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
+                  return new ChildProcessStub(example1.suite1.outputs[2][1]);
+                });
 
-          let spawnCallCount = spawnStub.callCount;
-          await adapter.run([suite1.id]);
-          assert.equal(spawnStub.callCount, ++spawnCallCount);
+            await adapter.run([suite1.id]);
+          }
+          {
+            const withArgs = spawnStub.withArgs(
+                example1.suite2.execPath, sinon.match.any, sinon.match.any);
+            withArgs.onCall(withArgs.callCount)
+                .callsFake((p: string, args: string[], ops: any) => {
+                  assert.equal(
+                      ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
+                  assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
+                  assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
+                  assert.equal(
+                      ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
+                  return new ChildProcessStub(example1.suite2.outputs[2][1]);
+                });
 
-          spawnStub
-              .withArgs(
-                  example1.suite2.execPath, sinon.match.any, sinon.match.any)
-              .callsFake((p: string, args: string[], ops: any) => {
-                assert.equal(
-                    ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
-                assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
-                assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
-                assert.equal(ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-                return new ChildProcessStub(example1.suite2.outputs[2][1]);
-              });
-
-          await adapter.run([suite2.id]);
-          assert.equal(spawnStub.callCount, ++spawnCallCount);
+            await adapter.run([suite2.id]);
+          }
         });
       })
     })
