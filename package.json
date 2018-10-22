@@ -2,7 +2,7 @@
   "name": "vscode-catch2-test-adapter",
   "displayName": "Catch2 Test Explorer",
   "description": "Run your Catch2 tests in the Sidebar of Visual Studio Code",
-  "icon": "icon.png",
+  "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
   "version": "1.1.3",
