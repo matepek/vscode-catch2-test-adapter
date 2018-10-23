@@ -9,9 +9,8 @@ export function spawnAsync(
     cmd: string, args?: string[],
     options?: cp.SpawnOptions): Promise<cp.SpawnSyncReturns<string>> {
   return new Promise((resolve) => {
-    const command = cp.spawn(cmd, args, options);
     const ret: cp.SpawnSyncReturns<string> = {
-      pid: command.pid,
+      pid: 0,
       output: [],
       stdout: '',
       stderr: '',
@@ -19,6 +18,8 @@ export function spawnAsync(
       signal: '',
       error: new Error()
     };
+    const command = cp.spawn(cmd, args, options);
+    ret.pid = command.pid;
     command.stdout.on('data', function(data) {
       ret.stdout += data;
       ret.output.push(data);

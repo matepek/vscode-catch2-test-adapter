@@ -4,6 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import {inspect} from 'util';
 import * as vscode from 'vscode';
 import {TestAdapter, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent} from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
@@ -128,10 +129,17 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                         Math.min(delay * 2, 2000));
                   } else {
                     this.testsEmitter.fire({type: 'started'});
-                    suite.reloadChildren().then(() => {
-                      this.testsEmitter.fire(
-                          {type: 'finished', suite: this.allTests});
-                    });
+                    suite.reloadChildren().then(
+                        () => {
+                          this.testsEmitter.fire(
+                              {type: 'finished', suite: this.allTests});
+                        },
+                        (err: any) => {
+                          this.log.warn(inspect(err));
+                          setTimeout(
+                              waitAndThenTry, delay, remainingIteration - 1,
+                              Math.min(delay * 2, 2000));
+                        });
                   }
                 }));
           }
@@ -145,7 +153,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     } catch (e) {
       this.log.warn('watcher couldn\'t watch: ' + suite.execPath);
     }
-    return suite.reloadChildren().catch((e) => {
+    return suite.reloadChildren().catch((err: any) => {
+      this.log.warn(inspect(err));
       this.allTests.removeChild(suite);
     });
   }
