@@ -114,12 +114,13 @@ describe('C2TestAdapter', function() {
     return adapter!;
   }
 
-  async function doAndWaitForReloadEvent(action: Function):
-      Promise<TestSuiteInfo> {
+  async function doAndWaitForReloadEvent(
+      action: Function, timeout: number = 1000): Promise<TestSuiteInfo> {
     const origCount = testsEvents.length;
     await action();
-    let tryCount: number = 5000;
-    while (testsEvents.length != origCount + 2 && --tryCount > 0)
+    const start = Date.now();
+    while (testsEvents.length != origCount + 2 &&
+           (Date.now() - start) < timeout)
       await promisify(setTimeout)(10);
     assert.equal(testsEvents.length, origCount + 2);
     const e = <TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]!;
@@ -1047,7 +1048,7 @@ describe('C2TestAdapter', function() {
                   }
                   assert.ok(suite1Watcher.emit(
                       'change', 'dummyEvent', example1.suite1.execPath));
-                });
+                }, 10000);
                 assert.deepStrictEqual(newRoot, root);
               }),
           new Mocha.Test(
@@ -1264,37 +1265,39 @@ describe('C2TestAdapter', function() {
           await updateConfig('executables', undefined);
         })
 
-    specify.skip(  // TODO
+    specify.only(
         'load executables=["execPath1", "execPath2Copy"] and delete second because of fswatcher event',
-        async function() {
-          this.slow(300);
-
+        async function(this: Mocha.Context) {
+          this.timeout(40000);
           const fullPath = path.join(workspaceFolderUri.path, 'execPath2Copy');
 
-          for (let o of example1.suite2.outputs)
-            spawnStub.withArgs(example1.suite2.outputs, o[0]).callsFake(() => {
-              return new ChildProcessStub(o[1]);
+          for (let scenario of example1.suite2.outputs) {
+            spawnStub.withArgs(fullPath, scenario[0]).callsFake(function() {
+              return new ChildProcessStub(scenario[1]);
             });
+          }
 
           c2fsStatStub.withArgs(fullPath).callsFake(
               (path: string,
                cb: (
-                   err: NodeJS.ErrnoException|null|any,
+                   err: NodeJS.ErrnoException|null,
                    stats: fs.Stats|undefined) => void) => {
-                cb({
-                  code: 'ENOENT',
-                  errno: -2,
-                  message: 'ENOENT',
-                  path: path,
-                  syscall: 'stat'
-                },
-                   undefined);
+                cb(null, <fs.Stats>{
+                  isFile() {
+                    return true;
+                  },
+                  isDirectory() {
+                    return false;
+                  }
+                });
               });
 
           fsWatchStub.withArgs(fullPath).callsFake((path: string) => {
-            return new class extends EventEmitter {
+            const e = new class extends EventEmitter {
               close() {}
             };
+            watchers.set(path, e);
+            return e;
           });
 
           await updateConfig('executables', ['execPath1', 'execPath2Copy'])
@@ -1302,13 +1305,43 @@ describe('C2TestAdapter', function() {
 
           await adapter.load();
 
-          // not finished
-          // const withArgs = spawnStub.withArgs(
-          //     example1.suite2.execPath, example1.suite2.outputs[1][0]);
-          // withArgs.onCall(withArgs.callCount).throws(
-          //     'dummy error for testing (should be handled)');
+          assert.equal(
+              (<TestLoadFinishedEvent>testsEvents[1]).suite.children.length, 2);
+          assert.ok(watchers.has(fullPath));
+          const watcher = watchers.get(fullPath)!;
+          const start = Date.now();
+
+          const newRoot = await doAndWaitForReloadEvent(async () => {
+            c2fsStatStub.withArgs(fullPath).callsFake(
+                (path: string,
+                 cb: (
+                     err: NodeJS.ErrnoException|null|any,
+                     stats: fs.Stats|undefined) => void) => {
+                  cb({
+                    code: 'ENOENT',
+                    errno: -2,
+                    message: 'ENOENT',
+                    path: path,
+                    syscall: 'stat'
+                  },
+                     undefined);
+                });
+            assert.ok(
+                watcher.emit('change', 'dummyEvent', example1.suite1.execPath));
+          }, 40000);
+
+          const elapsed = Date.now() - start;
+          assert.equal(newRoot.children.length, 1);
+          assert.ok(25000 < elapsed, inspect(elapsed));
+          assert.ok(elapsed < 35000, inspect(elapsed));
 
           // restore
+          for (let scenario of example1.suite2.outputs) {
+            spawnStub.withArgs(fullPath, scenario[0]).throws();
+          }
+          c2fsStatStub.withArgs(fullPath).throws();
+          fsWatchStub.withArgs(fullPath).throws();
+          disposeAdapterAndSubscribers();
           await updateConfig('executables', undefined);
         })
   })
