@@ -113,9 +113,10 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       const allTests = this.allTests;  // alltest may has changed
 
       watcher.on('change', (eventType: string, filename: string) => {
-        const x = (exists: boolean, remainingIteration: number, delay: number):
-            Promise<void> => {
-              if (remainingIteration <= 0) {
+        const x =
+            (exists: boolean, startTime: number, timeout: number,
+             delay: number): Promise<void> => {
+              if ((Date.now() - startTime) > timeout) {
                 watcher!.close();
                 this.watchers.delete(suite.execPath);
                 this.testsEmitter.fire({type: 'started'});
@@ -135,8 +136,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                           {type: 'finished', suite: this.allTests});
                       this.log.warn(inspect(err));
                       return x(
-                          false, remainingIteration - 1,
-                          Math.min(delay * 2, 2000));
+                          false, startTime, timeout, Math.min(delay * 2, 2000));
                     });
               }
               return promisify(setTimeout)(Math.min(delay * 2, 2000))
@@ -144,7 +144,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                     return c2fs.existsAsync(suite.execPath)
                         .then((exists: boolean) => {
                           return x(
-                              exists, remainingIteration - 1,
+                              exists, startTime, timeout,
                               Math.min(delay * 2, 2000));
                         });
                   });
@@ -152,7 +152,9 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
         // change event can arrive during debug session on osx (why?)
         if (!this.isDebugging) {
-          x(false, 10, 64);
+          // TODO filter multiple events and dont mess with 'load'
+          x(false, Date.now(),
+            this.getDefaultExecWatchTimeout(this.getConfiguration()), 64);
         }
       });
     } catch (e) {
@@ -378,6 +380,11 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private getDefaultRngSeed(config: vscode.WorkspaceConfiguration): string
       |number|null {
     return config.get<null|string|number>('defaultRngSeed', null);
+  }
+
+  private getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration):
+      number {
+    return config.get<number>('defaultExecWatchTimeout', 10000);
   }
 
   private getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {

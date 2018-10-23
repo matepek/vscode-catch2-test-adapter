@@ -286,8 +286,6 @@ describe('C2TestAdapter', function() {
     })
 
     describe('load', function() {
-      this.enableTimeouts(false);  // TODO
-
       const uniqueIdC = new Set<string>();
       let adapter: TestAdapter;
 
@@ -1265,10 +1263,13 @@ describe('C2TestAdapter', function() {
           await updateConfig('executables', undefined);
         })
 
-    specify.only(
+    specify(
         'load executables=["execPath1", "execPath2Copy"] and delete second because of fswatcher event',
         async function(this: Mocha.Context) {
-          this.timeout(40000);
+          const watchTimeout = 5000;
+          await updateConfig('defaultExecWatchTimeout', watchTimeout);
+          this.timeout(watchTimeout+ 2500/* because of 'delay' */);
+          this.slow(watchTimeout+ 2500/* because of 'delay' */);
           const fullPath = path.join(workspaceFolderUri.path, 'execPath2Copy');
 
           for (let scenario of example1.suite2.outputs) {
@@ -1332,8 +1333,8 @@ describe('C2TestAdapter', function() {
 
           const elapsed = Date.now() - start;
           assert.equal(newRoot.children.length, 1);
-          assert.ok(25000 < elapsed, inspect(elapsed));
-          assert.ok(elapsed < 35000, inspect(elapsed));
+          assert.ok(watchTimeout < elapsed, inspect(elapsed));
+          assert.ok(elapsed < watchTimeout + 2400, inspect(elapsed));
 
           // restore
           for (let scenario of example1.suite2.outputs) {
@@ -1343,6 +1344,7 @@ describe('C2TestAdapter', function() {
           fsWatchStub.withArgs(fullPath).throws();
           disposeAdapterAndSubscribers();
           await updateConfig('executables', undefined);
+          await updateConfig('defaultExecWatchTimeout', undefined);
         })
   })
 })
