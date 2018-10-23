@@ -118,15 +118,22 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
             this.testsEmitter.fire({type: 'started'});
             allTests.removeChild(suite);
             this.testsEmitter.fire({type: 'finished', suite: this.allTests});
-          } else if (!fs.existsSync(suite.execPath)) {
-            setTimeout(
-                waitAndThenTry, delay,
-                [remainingIteration - 1, Math.max(delay * 2, 2000)]);
           } else {
-            this.testsEmitter.fire({type: 'started'});
-            suite.reloadChildren().then(() => {
-              this.testsEmitter.fire({type: 'finished', suite: this.allTests});
-            });
+            fs.exists(
+                suite.execPath,
+                <(exists: boolean) => void>((err: any, exists: boolean) => {
+                  if (!exists) {
+                    setTimeout(
+                        waitAndThenTry, delay, remainingIteration - 1,
+                        Math.min(delay * 2, 2000));
+                  } else {
+                    this.testsEmitter.fire({type: 'started'});
+                    suite.reloadChildren().then(() => {
+                      this.testsEmitter.fire(
+                          {type: 'finished', suite: this.allTests});
+                    });
+                  }
+                }));
           }
         };
 

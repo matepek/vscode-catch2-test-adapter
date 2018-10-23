@@ -14,7 +14,7 @@ import * as sinon from 'sinon';
 import {EventEmitter} from 'events';
 import {TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo, TestInfo, TestAdapter} from 'vscode-test-adapter-api';
 import {Log} from 'vscode-test-adapter-util';
-import {inspect} from 'util';
+import {inspect, promisify} from 'util';
 
 import {C2TestAdapter} from '../C2TestAdapter';
 import {example1} from './example1';
@@ -254,6 +254,8 @@ describe('C2TestAdapter', function() {
   })
 
   describe('load example1', function() {
+    const watchers: Map<string, EventEmitter> = new Map();
+
     before(function() {
       for (let suite of example1.outputs) {
         for (let scenario of suite[1]) {
@@ -280,7 +282,7 @@ describe('C2TestAdapter', function() {
           const ee = new class extends EventEmitter {
             close() {}
           };
-          watchEvents.set(path, ee);
+          watchers.set(path, ee);
           return ee;
         } else {
           throw Error('File not found?');
@@ -330,8 +332,11 @@ describe('C2TestAdapter', function() {
       stubsResetToThrow();
     })
 
+    afterEach(function() {
+      watchers.clear();
+    })
+
     const uniqueIdC = new Set<string>();
-    const watchEvents: Map<string, EventEmitter> = new Map();
     let adapter: TestAdapter;
 
     let root: TestSuiteInfo;
@@ -368,7 +373,6 @@ describe('C2TestAdapter', function() {
 
     afterEach(function() {
       uniqueIdC.clear();
-      watchEvents.clear();
       disposeAdapterAndSubscribers();
     });
 
@@ -560,9 +564,9 @@ describe('C2TestAdapter', function() {
 
         assert.equal(root.children[0].type, 'suite');
         assert.equal(root.children[1].type, 'suite');
-        suite1 = <TestSuiteInfo>root.children[0];
         assert.equal(example1.suite1.outputs.length, 4 + 2 * 2);
         assert.equal(example1.suite2.outputs.length, 4 + 2 * 3);
+        suite1 = <TestSuiteInfo>root.children[0];
         suite2 = <TestSuiteInfo>root.children[1];
         if (suite2.children.length == 2) {
           suite1 = <TestSuiteInfo>root.children[1];
@@ -1059,6 +1063,53 @@ describe('C2TestAdapter', function() {
                   assert.equal(spyKill1.callCount, 0);
                   assert.equal(spyKill2.callCount, 0);
                 });
+              }
+            ],
+            [
+              'reload because of fswatcher event',
+              async function(this: Mocha.Context) {
+                assert.equal(watchers.size, 2);
+                assert.ok(watchers.has(example1.suite1.execPath));
+                const suite1Watcher = watchers.get(example1.suite1.execPath)!;
+                assert.equal(testsEvents.length, 0);
+
+                const waitForReload = async(): Promise<TestSuiteInfo> => {
+                  let tryCount: number = 20;
+                  while (testsEvents.length != 2 && --tryCount > 0)
+                    await promisify(setTimeout)(20);
+                  assert.equal(testsEvents.length, 2);
+                  const e = <TestLoadFinishedEvent>testsEvents.pop()!;
+                  testsEvents.pop();
+                  assert.equal(e.type, 'finished');
+                  assert.ok(e.suite != undefined);
+                  return e.suite!;
+                };
+
+                const oldRootSuites = [...root.children];
+                const oldSuite1Tests = [...suite1.children];
+                suite1Watcher.emit(
+                    'change', 'dummyEvent', example1.suite1.execPath);
+                const newRoot = await waitForReload();
+
+                assert.deepStrictEqual(newRoot, root);
+              }
+            ],
+            [
+              'reload because of fswatcher event, file is deleted',
+              async function(this: Mocha.Context) {
+
+              }
+            ],
+            [
+              'reload because of fswatcher event, new test in file',
+              async function(this: Mocha.Context) {
+
+              }
+            ],
+            [
+              'reload because of fswatcher event, one test deleted from file',
+              async function(this: Mocha.Context) {
+
               }
             ],
           ];
