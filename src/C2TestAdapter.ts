@@ -405,7 +405,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return config.get<boolean>('enableSourceDecoration', true);
   }
 
-  private getExecutables(config: vscode.WorkspaceConfiguration):
+  private async getExecutables(config: vscode.WorkspaceConfiguration):
       Promise<ExecutableConfig[]> {
     const globalWorkingDirectory = this.getDefaultCwd(config);
 
@@ -418,7 +418,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       return path.isAbsolute(p) ? p : this.resolveRelPath(p);
     };
 
-    const addObject = (o: Object): void => {
+    const addObject = async(o: Object): Promise<void> => {
       const name: string =
           o.hasOwnProperty('name') ? (<any>o)['name'] : '${dirname} : ${name}';
       if (!o.hasOwnProperty('path') || (<any>o)['path'] === null) {
@@ -439,11 +439,12 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
           false;
 
       if (regex.length > 0) {
-        const recursiveAdd = (directory: string): void => {
+        const recursiveAdd = async(directory: string): Promise<void> => {
           const children = c2fs.readdirSync(directory);
-          children.forEach(child => {
+          for (let i = 0; i < children.length; ++i) {
+            const child = children[i];
             const childPath = path.resolve(directory, child);
-            const childStat = c2fs.statSync(childPath);
+            const childStat = await c2fs.statAsync(childPath);
             if (childPath.match(regex) && childStat.isFile()) {
               let resolvedName = name + ' : ' + child;
               let resolvedCwd = cwd;
@@ -469,14 +470,14 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
               executables.push(new ExecutableConfig(
                   resolvedName, childPath, regex, fullPath(resolvedCwd), env));
             } else if (childStat.isDirectory() && regexRecursive) {
-              recursiveAdd(childPath);
+              await recursiveAdd(childPath);
             }
-          });
+          }
         };
         try {
-          const stat = c2fs.statSync(p);
+          const stat = await c2fs.statAsync(p);
           if (stat.isDirectory()) {
-            recursiveAdd(p);
+            await recursiveAdd(p);
           } else if (stat.isFile()) {
             executables.push(new ExecutableConfig(name, p, regex, cwd, env));
           } else {
@@ -510,16 +511,16 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                 '', globalWorkingDirectory, []));
           }
         } else {
-          addObject(configExecs[i]);
+          await addObject(configExecs[i]);
         }
       }
     } else if (configExecs instanceof Object) {
-      addObject(configExecs);
+      await addObject(configExecs);
     } else {
       throw 'Catch2 config error: wrong type: executables';
     }
 
-    return this.filterVerifiedCatch2TestExecutables(executables);
+    return this.filterVerifiedCatch2TestExecutables(await executables);
   }
 
   verifyIsCatch2TestExecutable(path: string): Promise<boolean> {

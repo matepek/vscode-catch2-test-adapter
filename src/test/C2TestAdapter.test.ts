@@ -60,7 +60,6 @@ describe('C2TestAdapter', function() {
   let fsWatchStub: sinon.SinonStub;
   let c2fsStatStub: sinon.SinonStub;
   let c2fsReaddirSyncStub: sinon.SinonStub;
-  let c2fsStatSyncStub: sinon.SinonStub;
 
   function resetConfig(): Thenable<void> {
     const packageJson = fse.readJSONSync(
@@ -146,8 +145,6 @@ describe('C2TestAdapter', function() {
     c2fsStatStub.callThrough();
     c2fsReaddirSyncStub.reset();
     c2fsReaddirSyncStub.throws('Test isnt set properly error.');
-    c2fsStatSyncStub.reset();
-    c2fsStatSyncStub.throws('Test isnt set properly error.');
   }
 
   before(function() {
@@ -159,8 +156,6 @@ describe('C2TestAdapter', function() {
     c2fsStatStub = sinonSandbox.stub(fs, 'stat').named('fsStat');
     c2fsReaddirSyncStub =
         sinonSandbox.stub(c2fs, 'readdirSync').named('c2fsReaddirSyncStub');
-    c2fsStatSyncStub =
-        sinonSandbox.stub(c2fs, 'statSync').named('c2fsStatSyncStub');
 
     stubsResetToMyDefault();
 
@@ -278,29 +273,6 @@ describe('C2TestAdapter', function() {
 
       dirContent.forEach((v: string[], k: string) => {
         c2fsReaddirSyncStub.withArgs(k).returns(v);
-      });
-
-      c2fsStatSyncStub.callsFake((p: string) => {
-        if (dirContent.has(p))
-          return {
-            isFile() {
-              return false;
-            },
-            isDirectory() {
-              return true;
-            }
-          };
-        const pa = dirContent.get(path.dirname(p));
-        if (pa != undefined && pa.indexOf(path.basename(p)) != -1)
-          return {
-            isFile() {
-              return true;
-            },
-            isDirectory() {
-              return false;
-            }
-          };
-        throw Error(inspect(['c2fsStatSyncStub', p]));
       });
     })
 
@@ -1041,7 +1013,8 @@ describe('C2TestAdapter', function() {
               }),
           new Mocha.Test(
               'reload because of fswatcher event: touch',
-              async function() {
+              async function(this:Mocha.Context) {
+                this.slow(200);
                 const newRoot = await doAndWaitForReloadEvent(async () => {
                   suite1Watcher.emit(
                       'change', 'dummyEvent', example1.suite1.execPath);
@@ -1050,7 +1023,7 @@ describe('C2TestAdapter', function() {
               }),
           // new Mocha.Test(
           //     'reload because of fswatcher event: touch, retry 5 times',
-          //     async function() {
+          //     async function(this:Mocha.Context) {
           //       const newRoot = await doAndWaitForReloadEvent(async () => {
           //         const w = fsExistsStub.withArgs(example1.suite1.execPath);
           //         for (let cc = 0; cc < 3; cc++) {
@@ -1070,6 +1043,7 @@ describe('C2TestAdapter', function() {
           new Mocha.Test(
               'reload because of fswatcher event: test added',
               async function(this: Mocha.Context) {
+                this.slow(200);
                 const testListOutput =
                     example1.suite1.outputs[1][1].split('\n');
                 assert.equal(testListOutput.length, 10);
@@ -1112,6 +1086,7 @@ describe('C2TestAdapter', function() {
           new Mocha.Test(
               'reload because of fswatcher event: test deleted',
               async function(this: Mocha.Context) {
+                this.slow(200);
                 const testListOutput =
                     example1.suite1.outputs[1][1].split('\n');
                 assert.equal(testListOutput.length, 10);
@@ -1175,7 +1150,7 @@ describe('C2TestAdapter', function() {
                   t.clone());
             })
 
-        context.only('executables=[{<regex>}] and env={...}', function() {
+        context('executables=[{<regex>}] and env={...}', function() {
           before(async function() {
             await updateConfig('executables', [{
                                  name: '${dirname}: ${name} (${absDirname})',
@@ -1211,44 +1186,40 @@ describe('C2TestAdapter', function() {
           for (let t of testsForAdapterWithSuite1AndSuite2) this.addTest(
               t.clone());
 
-          // it('should get execution options', async function() {
-          //   {
-          //     const withArgs = spawnStub.withArgs(
-          //         example1.suite1.execPath, sinon.match.any,
-          //         sinon.match.any);
-          //     withArgs.onCall(withArgs.callCount)
-          //         .callsFake((p: string, args: string[], ops: any) => {
-          //           assert.equal(
-          //               ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
-          //           assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
-          //           assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
-          //           assert.equal(
-          //               ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-          //           return new
-          //           ChildProcessStub(example1.suite1.outputs[2][1]);
-          //         });
+          it('should get execution options', async function() {
+            {
+              const withArgs = spawnStub.withArgs(
+                  example1.suite1.execPath, sinon.match.any, sinon.match.any);
+              withArgs.onCall(withArgs.callCount)
+                  .callsFake((p: string, args: string[], ops: any) => {
+                    assert.equal(
+                        ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
+                    assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
+                    assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
+                    assert.equal(
+                        ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
+                    return new ChildProcessStub(example1.suite1.outputs[2][1]);
+                  });
 
-          //     await adapter.run([suite1.id]);
-          //   }
-          //   {
-          //     const withArgs = spawnStub.withArgs(
-          //         example1.suite2.execPath, sinon.match.any,
-          //         sinon.match.any);
-          //     withArgs.onCall(withArgs.callCount)
-          //         .callsFake((p: string, args: string[], ops: any) => {
-          //           assert.equal(
-          //               ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
-          //           assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
-          //           assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
-          //           assert.equal(
-          //               ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-          //           return new
-          //           ChildProcessStub(example1.suite2.outputs[2][1]);
-          //         });
+              await adapter.run([suite1.id]);
+            }
+            {
+              const withArgs = spawnStub.withArgs(
+                  example1.suite2.execPath, sinon.match.any, sinon.match.any);
+              withArgs.onCall(withArgs.callCount)
+                  .callsFake((p: string, args: string[], ops: any) => {
+                    assert.equal(
+                        ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
+                    assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
+                    assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
+                    assert.equal(
+                        ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
+                    return new ChildProcessStub(example1.suite2.outputs[2][1]);
+                  });
 
-          //     await adapter.run([suite2.id]);
-          //   }
-          // })
+              await adapter.run([suite2.id]);
+            }
+          })
         })
       })
     })
@@ -1283,7 +1254,7 @@ describe('C2TestAdapter', function() {
           await updateConfig('executables', undefined);
         })
 
-    specify.skip(
+    specify.skip(  // TODO
         'load executables=["execPath1", "execPath2Copy"] and delete second because of fswatcher event',
         async function() {
           this.slow(300);
@@ -1295,14 +1266,12 @@ describe('C2TestAdapter', function() {
               return new ChildProcessStub(o[1]);
             });
 
-          c2fsStatSyncStub.withArgs(fullPath).resolves({
-            isFile() {
-              return true;
-            },
-            isDirectory() {
-              return false;
-            }
-          });
+          c2fsStatStub.withArgs(fullPath).callsFake(
+            (path: string,
+             cb: (err: NodeJS.ErrnoException|undefined, stats: fs.Stats|undefined) =>
+                 void) => {
+              //TODO cb({code: 'ENOENT', errno: -1}, undefined);
+            });
 
           fsWatchStub.withArgs(fullPath).callsFake((path: string) => {
             return new class extends EventEmitter {

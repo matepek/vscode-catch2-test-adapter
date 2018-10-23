@@ -37,10 +37,6 @@ export function spawnAsync(
   })
 }
 
-export function statSync(path: string): fs.Stats {
-  return fs.statSync(path);
-}
-
 export type Stats = fs.Stats;
 
 export function statAsync(path: string): Promise<Stats> {
