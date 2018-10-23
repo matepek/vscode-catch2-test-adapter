@@ -2,9 +2,8 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import * as fs from 'fs';
 import * as path from 'path';
-import {inspect} from 'util';
+import {inspect, promisify} from 'util';
 import * as vscode from 'vscode';
 import {TestAdapter, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent} from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
@@ -21,7 +20,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                               TestSuiteEvent|TestEvent>();
   private readonly autorunEmitter = new vscode.EventEmitter<void>();
 
-  private readonly watchers: Map<string, fs.FSWatcher> = new Map();
+  private readonly watchers: Map<string, c2fs.FSWatcher> = new Map();
   private isRunning: number = 0;
   private isDebugging: boolean = false;
 
@@ -106,48 +105,51 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       watcher.close();
     }
     try {
-      watcher = fs.watch(suite.execPath);
+      watcher = c2fs.watch(suite.execPath);
       this.watchers.set(suite.execPath, watcher);
       const allTests = this.allTests;  // alltest may has changed
 
       watcher.on('change', (eventType: string, filename: string) => {
-        // need some time here:
-        const waitAndThenTry = (remainingIteration: number, delay: number) => {
-          if (remainingIteration == 0) {
-            watcher!.close();
-            this.watchers.delete(suite.execPath);
-            this.testsEmitter.fire({type: 'started'});
-            allTests.removeChild(suite);
-            this.testsEmitter.fire({type: 'finished', suite: this.allTests});
-          } else {
-            fs.exists(
-                suite.execPath,
-                <(exists: boolean) => void>((err: any, exists: boolean) => {
-                  if (!exists) {
-                    setTimeout(
-                        waitAndThenTry, delay, remainingIteration - 1,
-                        Math.min(delay * 2, 2000));
-                  } else {
-                    this.testsEmitter.fire({type: 'started'});
-                    suite.reloadChildren().then(
-                        () => {
-                          this.testsEmitter.fire(
-                              {type: 'finished', suite: this.allTests});
-                        },
-                        (err: any) => {
-                          this.log.warn(inspect(err));
-                          setTimeout(
-                              waitAndThenTry, delay, remainingIteration - 1,
+        const x = (exists: boolean, remainingIteration: number, delay: number):
+            Promise<void> => {
+              if (remainingIteration <= 0) {
+                watcher!.close();
+                this.watchers.delete(suite.execPath);
+                this.testsEmitter.fire({type: 'started'});
+                allTests.removeChild(suite);
+                this.testsEmitter.fire(
+                    {type: 'finished', suite: this.allTests});
+                return Promise.resolve();
+              } else if (exists) {
+                this.testsEmitter.fire({type: 'started'});
+                return suite.reloadChildren().then(
+                    () => {
+                      this.testsEmitter.fire(
+                          {type: 'finished', suite: this.allTests});
+                    },
+                    (err: any) => {
+                      this.testsEmitter.fire(
+                          {type: 'finished', suite: this.allTests});
+                      this.log.warn(inspect(err));
+                      return x(
+                          false, remainingIteration - 1,
+                          Math.min(delay * 2, 2000));
+                    });
+              }
+              return promisify(setTimeout)(Math.min(delay * 2, 2000))
+                  .then(() => {
+                    return c2fs.existsAsync(suite.execPath)
+                        .then((exists: boolean) => {
+                          return x(
+                              exists, remainingIteration - 1,
                               Math.min(delay * 2, 2000));
                         });
-                  }
-                }));
-          }
-        };
+                  });
+            };
 
         // change event can arrive during debug session on osx (why?)
         if (!this.isDebugging) {
-          waitAndThenTry(10, 128);
+          x(false, 10, 64);
         }
       });
     } catch (e) {

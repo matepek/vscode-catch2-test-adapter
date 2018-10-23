@@ -3,9 +3,7 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import {ChildProcess, spawn, SpawnOptions} from 'child_process';
-import * as fs from 'fs';
 import * as path from 'path';
-import {promisify} from 'util';
 import {TestEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
@@ -266,10 +264,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
   }
 
   reloadChildren(): Promise<void> {
-    return promisify(fs.exists)(this.execPath).then((exists: boolean) => {
-      if (!exists)
-        throw Error('reloadSuiteChildren: Should exists: ' + this.execPath);
-
+    return c2fs.existsAsync(this.execPath).then((exists: boolean) => {
+      if (!exists) throw new Error('Path not exists: ' + this.execPath);
       return c2fs
           .spawnAsync(
               this.execPath,

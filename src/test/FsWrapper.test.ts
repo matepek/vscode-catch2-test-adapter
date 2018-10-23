@@ -5,7 +5,7 @@ describe('FsWrapper.spawnAsync', function() {
   it('echoes', async function() {
     const r = await spawnAsync('echo', ['apple']);
     assert.equal(r.stdout, 'apple\n');
-    assert.equal(r.output.length, 1);
+    assert.equal(r.output.length, 2);
     assert.equal(r.output[0], 'apple\n');
     assert.equal(r.status, 0);
   })

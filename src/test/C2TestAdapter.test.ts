@@ -58,7 +58,7 @@ describe('C2TestAdapter', function() {
 
   let spawnStub: sinon.SinonStub;
   let fsWatchStub: sinon.SinonStub;
-  let fsExistsStub: sinon.SinonStub;
+  let c2fsStatStub: sinon.SinonStub;
   let c2fsReaddirSyncStub: sinon.SinonStub;
   let c2fsStatSyncStub: sinon.SinonStub;
 
@@ -142,28 +142,25 @@ describe('C2TestAdapter', function() {
     spawnStub.callThrough();
     fsWatchStub.reset();
     fsWatchStub.callThrough();
-    fsExistsStub.reset();
-    fsExistsStub.callThrough();
+    c2fsStatStub.reset();
+    c2fsStatStub.callThrough();
     c2fsReaddirSyncStub.reset();
-    c2fsReaddirSyncStub.callThrough();
+    c2fsReaddirSyncStub.throws('Test isnt set properly error.');
     c2fsStatSyncStub.reset();
-    c2fsStatSyncStub.callThrough();
+    c2fsStatSyncStub.throws('Test isnt set properly error.');
   }
 
   before(function() {
     fse.removeSync(dotVscodePath);
     adapter = undefined;
 
-    spawnStub = sinonSandbox.stub(child_process, 'spawn');
-    spawnStub.named('spawnStub');
-    fsWatchStub = sinonSandbox.stub(fs, 'watch');
-    fsWatchStub.named('fsWatchStub');
-    fsExistsStub = sinonSandbox.stub(fs, 'exists');
-    fsExistsStub.named('fsExistsStub');
-    c2fsReaddirSyncStub = sinonSandbox.stub(c2fs, 'readdirSync');
-    c2fsReaddirSyncStub.named('c2fsReaddirSyncStub');
-    c2fsStatSyncStub = sinonSandbox.stub(c2fs, 'statSync');
-    c2fsStatSyncStub.named('c2fsStatSyncStub');
+    spawnStub = sinonSandbox.stub(child_process, 'spawn').named('spawnStub');
+    fsWatchStub = sinonSandbox.stub(fs, 'watch').named('fsWatchStub');
+    c2fsStatStub = sinonSandbox.stub(fs, 'stat').named('fsStat');
+    c2fsReaddirSyncStub =
+        sinonSandbox.stub(c2fs, 'readdirSync').named('c2fsReaddirSyncStub');
+    c2fsStatSyncStub =
+        sinonSandbox.stub(c2fs, 'statSync').named('c2fsStatSyncStub');
 
     stubsResetToMyDefault();
 
@@ -244,10 +241,21 @@ describe('C2TestAdapter', function() {
             return new ChildProcessStub(scenario[1]);
           });
         }
-        fsExistsStub.withArgs(suite[0]).callsFake(function(
-            path: string, cb: (err: any, exists: boolean) => void) {
-          cb(undefined, true);
-        });
+
+        c2fsStatStub.withArgs(suite[0]).callsFake(
+            (path: string,
+             cb: (err: NodeJS.ErrnoException|undefined, stats: fs.Stats) =>
+                 void) => {
+              cb(undefined, <fs.Stats>{
+                isFile() {
+                  return true;
+                },
+                isDirectory() {
+                  return false;
+                }
+              });
+            });
+
         fsWatchStub.withArgs(suite[0]).callsFake((path: string) => {
           const e = new class extends EventEmitter {
             close() {}
@@ -305,7 +313,7 @@ describe('C2TestAdapter', function() {
     })
 
     describe('load', function() {
-      this.enableTimeouts(false); //TODO
+      this.enableTimeouts(false);  // TODO
 
       const uniqueIdC = new Set<string>();
       let adapter: TestAdapter;
@@ -531,7 +539,7 @@ describe('C2TestAdapter', function() {
         })
       })
 
-      context.only('suite1 and suite2 are used', function() {
+      context('suite1 and suite2 are used', function() {
         let suite1Watcher: EventEmitter;
 
         beforeEach(function() {
@@ -1200,43 +1208,43 @@ describe('C2TestAdapter', function() {
                 ['s2t1', 's2t2 [.]', 's2t3'], suite2, uniqueIdC);
           })
 
-          for (let t of testsForAdapterWithSuite1AndSuite2) this.addTest(
-              t.clone());
+          //for (let t of testsForAdapterWithSuite1AndSuite2) this.addTest(
+          //    t.clone());
 
-          it('should get execution options', async function() {
-            {
-              const withArgs = spawnStub.withArgs(
-                  example1.suite1.execPath, sinon.match.any, sinon.match.any);
-              withArgs.onCall(withArgs.callCount)
-                  .callsFake((p: string, args: string[], ops: any) => {
-                    assert.equal(
-                        ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
-                    assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
-                    assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
-                    assert.equal(
-                        ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-                    return new ChildProcessStub(example1.suite1.outputs[2][1]);
-                  });
+          // it('should get execution options', async function() {
+          //   {
+          //     const withArgs = spawnStub.withArgs(
+          //         example1.suite1.execPath, sinon.match.any, sinon.match.any);
+          //     withArgs.onCall(withArgs.callCount)
+          //         .callsFake((p: string, args: string[], ops: any) => {
+          //           assert.equal(
+          //               ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
+          //           assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
+          //           assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
+          //           assert.equal(
+          //               ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
+          //           return new ChildProcessStub(example1.suite1.outputs[2][1]);
+          //         });
 
-              await adapter.run([suite1.id]);
-            }
-            {
-              const withArgs = spawnStub.withArgs(
-                  example1.suite2.execPath, sinon.match.any, sinon.match.any);
-              withArgs.onCall(withArgs.callCount)
-                  .callsFake((p: string, args: string[], ops: any) => {
-                    assert.equal(
-                        ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
-                    assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
-                    assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
-                    assert.equal(
-                        ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-                    return new ChildProcessStub(example1.suite2.outputs[2][1]);
-                  });
+          //     await adapter.run([suite1.id]);
+          //   }
+          //   {
+          //     const withArgs = spawnStub.withArgs(
+          //         example1.suite2.execPath, sinon.match.any, sinon.match.any);
+          //     withArgs.onCall(withArgs.callCount)
+          //         .callsFake((p: string, args: string[], ops: any) => {
+          //           assert.equal(
+          //               ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
+          //           assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
+          //           assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
+          //           assert.equal(
+          //               ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
+          //           return new ChildProcessStub(example1.suite2.outputs[2][1]);
+          //         });
 
-              await adapter.run([suite2.id]);
-            }
-          })
+          //     await adapter.run([suite2.id]);
+          //   }
+          // })
         })
       })
     })
@@ -1283,9 +1291,13 @@ describe('C2TestAdapter', function() {
               return new ChildProcessStub(o[1]);
             });
 
-          fsExistsStub.withArgs(fullPath).callsFake(function(
-              path: string, cb: (err: any, exists: boolean) => void) {
-            cb(undefined, true);
+          c2fsStatSyncStub.withArgs(fullPath).resolves({
+            isFile() {
+              return true;
+            },
+            isDirectory() {
+              return false;
+            }
           });
 
           fsWatchStub.withArgs(fullPath).callsFake((path: string) => {
