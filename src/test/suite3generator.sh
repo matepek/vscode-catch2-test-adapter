@@ -2,7 +2,7 @@
 echo "" >x.txt
 
 echo -n "[['--help'], \`" >>x.txt; ./suite3 "[.],*" --verbosity high --help >>x.txt; echo "\`]," >>x.txt;
-echo -n "[['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'], \`" >>x.txt ./suite3 "[.],*" --verbosity high --list-tests --use-colour no >>x.txt; echo "\`]," >>x.txt ;
+echo -n "[['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'], \`" >>x.txt; ./suite3 "[.],*" --verbosity high --list-tests --use-colour no >>x.txt; echo "\`]," >>x.txt ;
 
 echo -n "[['--reporter', 'xml', '--durations', 'yes'], \`" >>x.txt; ./suite3 --reporter xml --durations yes >>x.txt; echo "\`]," >>x.txt ;
 echo -n "[['--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'], \`" >>x.txt; ./suite3 --reporter xml --durations yes --rng-seed 2 >>x.txt; echo "\`]," >>x.txt ;

@@ -1198,7 +1198,7 @@ describe('C2TestAdapter', function() {
           it('should get execution options', async function() {
             {
               const withArgs = spawnStub.withArgs(
-                  example1.suite1.execPath, sinon.match.any, sinon.match.any);
+                  example1.suite1.execPath, example1.suite1.outputs[2][0]);
               withArgs.onCall(withArgs.callCount)
                   .callsFake((p: string, args: string[], ops: any) => {
                     assert.equal(
@@ -1210,11 +1210,13 @@ describe('C2TestAdapter', function() {
                     return new ChildProcessStub(example1.suite1.outputs[2][1]);
                   });
 
+              const cc = withArgs.callCount;
               await adapter.run([suite1.id]);
+              assert.equal(withArgs.callCount, cc + 1)
             }
             {
               const withArgs = spawnStub.withArgs(
-                  example1.suite2.execPath, sinon.match.any, sinon.match.any);
+                  example1.suite2.execPath, example1.suite2.outputs[2][0]);
               withArgs.onCall(withArgs.callCount)
                   .callsFake((p: string, args: string[], ops: any) => {
                     assert.equal(
@@ -1225,12 +1227,73 @@ describe('C2TestAdapter', function() {
                         ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
                     return new ChildProcessStub(example1.suite2.outputs[2][1]);
                   });
-
+              const cc = withArgs.callCount;
               await adapter.run([suite2.id]);
+              assert.equal(withArgs.callCount, cc + 1)
             }
           })
         })
       })
+
+      context(
+          'executables=["execPath1", "execPath2", "execPath3"]',
+          async function() {
+            before(function() {
+              return updateConfig(
+                  'executables', ['execPath1', 'execPath2', 'execPath3']);
+            });
+
+            after(function() {
+              return updateConfig('executables', undefined);
+            });
+
+            it('run suite3 one-by-one', async function() {
+              this.slow(200);
+              assert.equal(root.children.length, 3);
+              assert.equal(root.children[0].type, 'suite');
+              const suite3 = <TestSuiteInfo>root.children[2];
+              assert.equal(suite3.children.length, 33);
+
+              spawnStub.withArgs(example1.suite3.execPath).throwsArg(1);
+
+              const runAndCheckEvents = async (test: TestInfo) => {
+                assert.equal(testStatesEvents.length, 0);
+
+                await adapter.run([test.id]);
+
+                assert.equal(testStatesEvents.length, 6, inspect(test));
+
+                assert.deepStrictEqual(
+                    {type: 'started', tests: [test.id]}, testStatesEvents[0]);
+                assert.deepStrictEqual(
+                    {type: 'suite', state: 'running', suite: suite3},
+                    testStatesEvents[1]);
+
+                assert.equal(testStatesEvents[2].type, 'test');
+                assert.equal((<TestEvent>testStatesEvents[2]).state, 'running');
+                assert.equal((<TestEvent>testStatesEvents[2]).test, test);
+
+                assert.equal(testStatesEvents[3].type, 'test');
+                assert.ok(
+                    (<TestEvent>testStatesEvents[3]).state == 'passed' ||
+                    (<TestEvent>testStatesEvents[3]).state == 'skipped' ||
+                    (<TestEvent>testStatesEvents[3]).state == 'failed');
+                assert.equal((<TestEvent>testStatesEvents[3]).test, test);
+
+                assert.deepStrictEqual(
+                    {type: 'suite', state: 'completed', suite: suite3},
+                    testStatesEvents[4]);
+                assert.deepStrictEqual({type: 'finished'}, testStatesEvents[5]);
+
+                while (testStatesEvents.length) testStatesEvents.pop();
+              };
+
+              for (let test of suite3.children) {
+                assert.equal(test.type, 'test');
+                await runAndCheckEvents(<TestInfo>test);
+              }
+            })
+          })
     })
 
     specify('load executables=<full path of execPath1>', async function() {
@@ -1268,8 +1331,8 @@ describe('C2TestAdapter', function() {
         async function(this: Mocha.Context) {
           const watchTimeout = 5000;
           await updateConfig('defaultExecWatchTimeout', watchTimeout);
-          this.timeout(watchTimeout+ 2500/* because of 'delay' */);
-          this.slow(watchTimeout+ 2500/* because of 'delay' */);
+          this.timeout(watchTimeout + 2500 /* because of 'delay' */);
+          this.slow(watchTimeout + 2500 /* because of 'delay' */);
           const fullPath = path.join(workspaceFolderUri.path, 'execPath2Copy');
 
           for (let scenario of example1.suite2.outputs) {
@@ -1307,7 +1370,9 @@ describe('C2TestAdapter', function() {
           await adapter.load();
 
           assert.equal(
-              (<TestLoadFinishedEvent>testsEvents[1]).suite.children.length, 2);
+              (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
+                  .suite!.children.length,
+              2);
           assert.ok(watchers.has(fullPath));
           const watcher = watchers.get(fullPath)!;
           const start = Date.now();

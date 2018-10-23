@@ -34,8 +34,11 @@ export class C2TestInfo implements TestInfo {
   }
 
   getEscapedTestName(): string {
-    let t = this.testNameFull.replace(',', '\\,').replace('[', '\\[');
-    if (t[0] == ' ') t = '*' + t.substr(1);
+    let t = this.testNameFull;
+    t = t.replace(/,/g, '\\,')
+    t = t.replace(/\[/g, '\\[');
+    t = t.replace(/\*/g, '\\*');
+    if (t.startsWith(' ')) t = '*' + t.substr(1);
     return t;
   }
 

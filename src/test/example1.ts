@@ -520,7 +520,109 @@ For more detailed usage please see the project docs
       ],
       [
         ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
-        ` ./suite3 [.],* --verbosity high --list-tests --use-colour no`
+        `Matching test cases:
+  test name,with,colon
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:8
+    tag1
+   test name with space 
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:14
+    (NO DESCRIPTION)
+  SECTION tree
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:20
+    (NO DESCRIPTION)
+  spec ! char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:36
+    (NO DESCRIPTION)
+  spec @ char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:37
+    (NO DESCRIPTION)
+  spec # char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:38
+    (NO DESCRIPTION)
+  spec $ char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:39
+    (NO DESCRIPTION)
+  spec % char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:40
+    (NO DESCRIPTION)
+  spec ^ char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:41
+    (NO DESCRIPTION)
+  spec & char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:42
+    (NO DESCRIPTION)
+  spec * char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:43
+    (NO DESCRIPTION)
+  spec (a) char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:44
+    (NO DESCRIPTION)
+  spec {a} char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:45
+    (NO DESCRIPTION)
+  spec [a] char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:46
+    (NO DESCRIPTION)
+  spec ; char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:47
+    (NO DESCRIPTION)
+  spec ' char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:48
+    (NO DESCRIPTION)
+  spec \\ char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:49
+    (NO DESCRIPTION)
+  spec , char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:50
+    (NO DESCRIPTION)
+  spec . char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:51
+    (NO DESCRIPTION)
+  spec / char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:52
+    (NO DESCRIPTION)
+  spec < char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:53
+    (NO DESCRIPTION)
+  spec > char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:54
+    (NO DESCRIPTION)
+  spec ? char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:55
+    (NO DESCRIPTION)
+  spec - char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:56
+    (NO DESCRIPTION)
+  spec = char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:57
+    (NO DESCRIPTION)
+  spec _ char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:58
+    (NO DESCRIPTION)
+  spec + char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:59
+    (NO DESCRIPTION)
+  spec ~ char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:60
+    (NO DESCRIPTION)
+  spec \` char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:61
+    (NO DESCRIPTION)
+  spec § char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:62
+    (NO DESCRIPTION)
+  spec ± char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:63
+    (NO DESCRIPTION)
+  spec " char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:64
+    (NO DESCRIPTION)
+  spec | char
+    ../vscode-catch2-test-adapter/src/test/suite3.cpp:65
+    (NO DESCRIPTION)
+34 matching test cases
+
+`
       ],
       [
         ['--reporter', 'xml', '--durations', 'yes'],
@@ -593,9 +695,6 @@ For more detailed usage please see the project docs
         <OverallResults successes="0" failures="0" expectedFailures="0" durationInSeconds="7.8e-05"/>
       </Section>
       <OverallResult success="false" durationInSeconds="0.00086"/>
-    </TestCase>
-    <TestCase name="name with * character" filename="../vscode-catch2-test-adapter/src/test/suite3.cpp" line="35">
-      <OverallResult success="true" durationInSeconds="2.5e-05"/>
     </TestCase>
     <TestCase name="spec ! char" filename="../vscode-catch2-test-adapter/src/test/suite3.cpp" line="36">
       <OverallResult success="true" durationInSeconds="2.2e-05"/>
@@ -766,9 +865,6 @@ For more detailed usage please see the project docs
       </Section>
       <OverallResult success="false" durationInSeconds="0.000889"/>
     </TestCase>
-    <TestCase name="name with * character" filename="../vscode-catch2-test-adapter/src/test/suite3.cpp" line="35">
-      <OverallResult success="true" durationInSeconds="2.9e-05"/>
-    </TestCase>
     <TestCase name="spec ! char" filename="../vscode-catch2-test-adapter/src/test/suite3.cpp" line="36">
       <OverallResult success="true" durationInSeconds="2.5e-05"/>
     </TestCase>
@@ -866,7 +962,7 @@ For more detailed usage please see the project docs
 `
       ],
       [
-        ['test name\,with\,colon', '--reporter', 'xml', '--durations', 'yes'],
+        ['test name\\,with\\,colon', '--reporter', 'xml', '--durations', 'yes'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Group name="suite3">
@@ -1064,7 +1160,7 @@ For more detailed usage please see the project docs
 `
       ],
       [
-        ['spec * char', '--reporter', 'xml', '--durations', 'yes'],
+        ['spec \\* char', '--reporter', 'xml', '--durations', 'yes'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Group name="suite3">
@@ -1106,7 +1202,7 @@ For more detailed usage please see the project docs
 `
       ],
       [
-        ['spec \[a] char', '--reporter', 'xml', '--durations', 'yes'],
+        ['spec \\[a] char', '--reporter', 'xml', '--durations', 'yes'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Group name="suite3">
@@ -1152,7 +1248,7 @@ For more detailed usage please see the project docs
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Group name="suite3">
-    <TestCase name="spec \ char" filename="../vscode-catch2-test-adapter/src/test/suite3.cpp" line="49">
+    <TestCase name="spec \\ char" filename="../vscode-catch2-test-adapter/src/test/suite3.cpp" line="49">
       <OverallResult success="true" durationInSeconds="7.3e-05"/>
     </TestCase>
     <OverallResults successes="0" failures="0" expectedFailures="0"/>
@@ -1162,7 +1258,7 @@ For more detailed usage please see the project docs
 `
       ],
       [
-        ['spec \, char', '--reporter', 'xml', '--durations', 'yes'],
+        ['spec \\, char', '--reporter', 'xml', '--durations', 'yes'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Group name="suite3">
@@ -1625,7 +1721,7 @@ For more detailed usage please see the project docs
       ],
       [
         [
-          'spec * char', '--reporter', 'xml', '--durations', 'yes',
+          'spec \\* char', '--reporter', 'xml', '--durations', 'yes',
           '--rng-seed', '2'
         ],
         `<?xml version="1.0" encoding="UTF-8"?>
@@ -1679,7 +1775,7 @@ For more detailed usage please see the project docs
       ],
       [
         [
-          'spec \[a] char', '--reporter', 'xml', '--durations', 'yes',
+          'spec \\[a] char', '--reporter', 'xml', '--durations', 'yes',
           '--rng-seed', '2'
         ],
         `<?xml version="1.0" encoding="UTF-8"?>
@@ -1733,7 +1829,7 @@ For more detailed usage please see the project docs
       ],
       [
         [
-          'spec \\ char', '--reporter', 'xml', '--durations', 'yes',
+          'spec \\\\ char', '--reporter', 'xml', '--durations', 'yes',
           '--rng-seed', '2'
         ],
         `<?xml version="1.0" encoding="UTF-8"?>
@@ -1751,7 +1847,7 @@ For more detailed usage please see the project docs
       ],
       [
         [
-          'spec \, char', '--reporter', 'xml', '--durations', 'yes',
+          'spec \\, char', '--reporter', 'xml', '--durations', 'yes',
           '--rng-seed', '2'
         ],
         `<?xml version="1.0" encoding="UTF-8"?>
