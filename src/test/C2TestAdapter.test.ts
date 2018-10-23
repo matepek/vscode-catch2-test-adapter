@@ -118,7 +118,7 @@ describe('C2TestAdapter', function() {
       Promise<TestSuiteInfo> {
     const origCount = testsEvents.length;
     await action();
-    let tryCount: number = 40;
+    let tryCount: number = 5000;
     while (testsEvents.length != origCount + 2 && --tryCount > 0)
       await promisify(setTimeout)(10);
     assert.equal(testsEvents.length, origCount + 2);
@@ -239,9 +239,9 @@ describe('C2TestAdapter', function() {
 
         c2fsStatStub.withArgs(suite[0]).callsFake(
             (path: string,
-             cb: (err: NodeJS.ErrnoException|undefined, stats: fs.Stats) =>
+             cb: (err: NodeJS.ErrnoException|null, stats: fs.Stats|undefined) =>
                  void) => {
-              cb(undefined, <fs.Stats>{
+              cb(null, <fs.Stats>{
                 isFile() {
                   return true;
                 },
@@ -1013,7 +1013,7 @@ describe('C2TestAdapter', function() {
               }),
           new Mocha.Test(
               'reload because of fswatcher event: touch',
-              async function(this:Mocha.Context) {
+              async function(this: Mocha.Context) {
                 this.slow(200);
                 const newRoot = await doAndWaitForReloadEvent(async () => {
                   suite1Watcher.emit(
@@ -1021,25 +1021,35 @@ describe('C2TestAdapter', function() {
                 });
                 assert.deepStrictEqual(newRoot, root);
               }),
-          // new Mocha.Test(
-          //     'reload because of fswatcher event: touch, retry 5 times',
-          //     async function(this:Mocha.Context) {
-          //       const newRoot = await doAndWaitForReloadEvent(async () => {
-          //         const w = fsExistsStub.withArgs(example1.suite1.execPath);
-          //         for (let cc = 0; cc < 3; cc++) {
-          //           w.onCall(w.callCount + cc)
-          //               .callsFake(function(
-          //                   path: string,
-          //                   cb: (err: any, exists: boolean) => void) {
-          //                 assert.equal(path, example1.suite1.execPath);
-          //                 cb(undefined, false);
-          //               });
-          //         }
-          //         assert.ok(suite1Watcher.emit(
-          //             'change', 'dummyEvent', example1.suite1.execPath));
-          //       });
-          //       assert.deepStrictEqual(newRoot, root);
-          //     }),
+          new Mocha.Test(
+              'reload because of fswatcher event: touch, retry 5 times',
+              async function(this: Mocha.Context) {
+                this.timeout(10000);
+                this.slow(6500);
+                const newRoot = await doAndWaitForReloadEvent(async () => {
+                  const w = c2fsStatStub.withArgs(example1.suite1.execPath);
+                  for (let cc = 0; cc < 5; cc++) {
+                    w.onCall(w.callCount + cc)
+                        .callsFake(
+                            (path: string,
+                             cb: (
+                                 err: NodeJS.ErrnoException|null|any,
+                                 stats: fs.Stats|undefined) => void) => {
+                              cb({
+                                code: 'ENOENT',
+                                errno: -2,
+                                message: 'ENOENT',
+                                path: path,
+                                syscall: 'stat'
+                              },
+                                 undefined);
+                            });
+                  }
+                  assert.ok(suite1Watcher.emit(
+                      'change', 'dummyEvent', example1.suite1.execPath));
+                });
+                assert.deepStrictEqual(newRoot, root);
+              }),
           new Mocha.Test(
               'reload because of fswatcher event: test added',
               async function(this: Mocha.Context) {
@@ -1267,11 +1277,19 @@ describe('C2TestAdapter', function() {
             });
 
           c2fsStatStub.withArgs(fullPath).callsFake(
-            (path: string,
-             cb: (err: NodeJS.ErrnoException|undefined, stats: fs.Stats|undefined) =>
-                 void) => {
-              //TODO cb({code: 'ENOENT', errno: -1}, undefined);
-            });
+              (path: string,
+               cb: (
+                   err: NodeJS.ErrnoException|null|any,
+                   stats: fs.Stats|undefined) => void) => {
+                cb({
+                  code: 'ENOENT',
+                  errno: -2,
+                  message: 'ENOENT',
+                  path: path,
+                  syscall: 'stat'
+                },
+                   undefined);
+              });
 
           fsWatchStub.withArgs(fullPath).callsFake((path: string) => {
             return new class extends EventEmitter {

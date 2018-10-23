@@ -80,6 +80,9 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this.disposables.forEach(d => {
       d.dispose();
     });
+    this.watchers.forEach((v) => {
+      v.close();
+    });
   }
 
   get testStates(): vscode.Event<TestRunStartedEvent|TestRunFinishedEvent|

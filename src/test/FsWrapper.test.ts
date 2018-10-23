@@ -1,5 +1,13 @@
 import * as assert from 'assert';
-import {spawnAsync} from '../FsWrapper';
+import * as path from 'path';
+import * as vscode from 'vscode';
+
+import {spawnAsync, statAsync} from '../FsWrapper';
+
+assert.notEqual(vscode.workspace.workspaceFolders, undefined);
+assert.equal(vscode.workspace.workspaceFolders!.length, 1);
+
+const workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
 
 describe('FsWrapper.spawnAsync', function() {
   it('echoes', async function() {
@@ -20,4 +28,23 @@ describe('FsWrapper.spawnAsync', function() {
       assert.equal(r.status, 0);
     }
   })
-});
+})
+
+describe('FsWrapper.statAsync', function() {
+  it('doesnt exists', async function() {
+    try {
+      await statAsync('notexists');
+      assert.ok(false);
+    } catch (e) {
+      assert.equal(e.code, 'ENOENT');
+      assert.equal(e.errno, -2);
+    }
+  })
+
+  it('exists', async function() {
+    const res = await statAsync(
+        path.join(workspaceFolderUri.path, 'FsWrapper.test.js'));
+    assert.ok(res.isFile());
+    assert.ok(!res.isDirectory());
+  })
+})

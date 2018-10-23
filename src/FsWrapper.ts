@@ -41,12 +41,13 @@ export type Stats = fs.Stats;
 
 export function statAsync(path: string): Promise<Stats> {
   return new Promise<Stats>((resolve, reject) => {
-    fs.stat(path, (err: NodeJS.ErrnoException, stats: fs.Stats) => {
-      if (err)
-        reject(err);
-      else
-        resolve(stats);
-    });
+    fs.stat(
+        path, (err: NodeJS.ErrnoException|null, stats: fs.Stats|undefined) => {
+          if (stats)
+            resolve(stats);
+          else
+            reject(err);
+        });
   });
 }
 
