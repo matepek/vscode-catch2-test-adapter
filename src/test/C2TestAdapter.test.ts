@@ -1175,7 +1175,7 @@ describe('C2TestAdapter', function() {
                   t.clone());
             })
 
-        context('executables=[{<regex>}] and env={...}', function() {
+        context.only('executables=[{<regex>}] and env={...}', function() {
           before(async function() {
             await updateConfig('executables', [{
                                  name: '${dirname}: ${name} (${absDirname})',
@@ -1208,13 +1208,14 @@ describe('C2TestAdapter', function() {
                 ['s2t1', 's2t2 [.]', 's2t3'], suite2, uniqueIdC);
           })
 
-          //for (let t of testsForAdapterWithSuite1AndSuite2) this.addTest(
-          //    t.clone());
+          for (let t of testsForAdapterWithSuite1AndSuite2) this.addTest(
+              t.clone());
 
           // it('should get execution options', async function() {
           //   {
           //     const withArgs = spawnStub.withArgs(
-          //         example1.suite1.execPath, sinon.match.any, sinon.match.any);
+          //         example1.suite1.execPath, sinon.match.any,
+          //         sinon.match.any);
           //     withArgs.onCall(withArgs.callCount)
           //         .callsFake((p: string, args: string[], ops: any) => {
           //           assert.equal(
@@ -1223,14 +1224,16 @@ describe('C2TestAdapter', function() {
           //           assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
           //           assert.equal(
           //               ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-          //           return new ChildProcessStub(example1.suite1.outputs[2][1]);
+          //           return new
+          //           ChildProcessStub(example1.suite1.outputs[2][1]);
           //         });
 
           //     await adapter.run([suite1.id]);
           //   }
           //   {
           //     const withArgs = spawnStub.withArgs(
-          //         example1.suite2.execPath, sinon.match.any, sinon.match.any);
+          //         example1.suite2.execPath, sinon.match.any,
+          //         sinon.match.any);
           //     withArgs.onCall(withArgs.callCount)
           //         .callsFake((p: string, args: string[], ops: any) => {
           //           assert.equal(
@@ -1239,7 +1242,8 @@ describe('C2TestAdapter', function() {
           //           assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
           //           assert.equal(
           //               ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-          //           return new ChildProcessStub(example1.suite2.outputs[2][1]);
+          //           return new
+          //           ChildProcessStub(example1.suite2.outputs[2][1]);
           //         });
 
           //     await adapter.run([suite2.id]);
