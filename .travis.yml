@@ -1,4 +1,7 @@
 sudo: false
+language: node_js
+node_js:
+  - "10"
 
 os:
   - osx
@@ -14,7 +17,6 @@ before_install:
 install:
   - npm install
   - npm run compile
-  #- npm run vscode:prepublish
 
 script:
   - npm test --silent

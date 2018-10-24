@@ -3,9 +3,7 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import {ChildProcess, spawn, SpawnOptions} from 'child_process';
-import * as fs from 'fs';
 import * as path from 'path';
-import {promisify} from 'util';
 import {TestEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
@@ -82,17 +80,19 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     this.proc = undefined;
 
     if (tests.delete(this.id)) {
-      this.children.forEach(c => {
+      for (let i = 0; i < this.children.length; i++) {
+        const c = this.children[i];
         tests.delete(c.id);
-      });
+      }
 
       return this.runInner('all');
     } else {
       let childrenToRun: C2TestInfo[] = [];
 
-      this.children.forEach(c => {
+      for (let i = 0; i < this.children.length; i++) {
+        const c = this.children[i];
         if (tests.delete(c.id)) childrenToRun.push(c);
-      });
+      }
 
       if (childrenToRun.length == 0) return Promise.resolve();
 
@@ -115,18 +115,20 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     const execParams: string[] = [];
     if (childrenToRun != 'all') {
       let testNames: string[] = [];
-      childrenToRun.forEach(c => {
+      for (let i = 0; i < childrenToRun.length; i++) {
+        const c = childrenToRun[i];
         /*',' has special meaning */
         testNames.push(c.getEscapedTestName());
-      });
+      }
       execParams.push(testNames.join(','));
     } else {
-      this.children.forEach(c => {
+      for (let i = 0; i < this.children.length; i++) {
+        const c = this.children[i];
         if (c.skipped) {
           this.adapter.testStatesEmitter.fire(c.getStartEvent());
           this.adapter.testStatesEmitter.fire(c.getSkippedEvent());
         }
-      });
+      }
     }
     execParams.push('--reporter');
     execParams.push('xml');
@@ -166,7 +168,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           const b = data.buffer.indexOf('<TestCase');
           if (b == -1) return;
 
-          const testCaseTagRe = '<TestCase(?:\\s+|\\s+[^>]+)?>';
+          const testCaseTagRe = '<TestCase(?:\\s+[^\n]+)?>';
           const m = data.buffer.match(testCaseTagRe);
           if (m == null || m.length != 1) return;
           let name: string = '';
@@ -266,10 +268,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
   }
 
   reloadChildren(): Promise<void> {
-    return promisify(fs.exists)(this.execPath).then((exists: boolean) => {
-      if (!exists)
-        throw Error('reloadSuiteChildren: Should exists: ' + this.execPath);
-
+    return c2fs.existsAsync(this.execPath).then((exists: boolean) => {
+      if (!exists) throw new Error('Path not exists: ' + this.execPath);
       return c2fs
           .spawnAsync(
               this.execPath,

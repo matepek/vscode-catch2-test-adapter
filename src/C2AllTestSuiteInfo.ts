@@ -91,9 +91,10 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo {
     }
 
     const ps: Promise<void>[] = [];
-    this.children.forEach(child => {
+    for (let i = 0; i < this.children.length; i++) {
+      const child = this.children[i];
       ps.push(child.run(testSet));
-    });
+    }
 
     if (testSet.size > 0) {
       this.adapter.log.error('Some tests have remained.');

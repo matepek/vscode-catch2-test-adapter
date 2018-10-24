@@ -2,10 +2,10 @@
   "name": "vscode-catch2-test-adapter",
   "displayName": "Catch2 Test Explorer",
   "description": "Run your Catch2 tests in the Sidebar of Visual Studio Code",
-  "icon": "icon.png",
+  "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -29,7 +29,7 @@
   "scripts": {
     "postinstall": "node ./node_modules/vscode/bin/install",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
-    "clean": "rimraf out vscode-google-test-adapter-*.vsix",
+    "clean": "rimraf out",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "rebuild": "npm run clean && npm run build",
@@ -118,6 +118,14 @@
             "null"
           ],
           "default": null,
+          "scope": "resource"
+        },
+        "catch2TestExplorer.defaultExecWatchTimeout": {
+          "description": "Test executables are being watched. In case of one compiles too much this variable can help with it.",
+          "type": [
+            "number"
+          ],
+          "default": 10000,
           "scope": "resource"
         },
         "catch2TestExplorer.workerMaxNumber": {

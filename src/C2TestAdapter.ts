@@ -2,8 +2,8 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import * as fs from 'fs';
 import * as path from 'path';
+import {inspect, promisify} from 'util';
 import * as vscode from 'vscode';
 import {TestAdapter, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent} from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
@@ -20,7 +20,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                               TestSuiteEvent|TestEvent>();
   private readonly autorunEmitter = new vscode.EventEmitter<void>();
 
-  private readonly watchers: Map<string, fs.FSWatcher> = new Map();
+  private readonly watchers: Map<string, c2fs.FSWatcher> = new Map();
   private isRunning: number = 0;
   private isDebugging: boolean = false;
 
@@ -80,6 +80,9 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this.disposables.forEach(d => {
       d.dispose();
     });
+    this.watchers.forEach((v) => {
+      v.close();
+    });
   }
 
   get testStates(): vscode.Event<TestRunStartedEvent|TestRunFinishedEvent|
@@ -105,40 +108,60 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       watcher.close();
     }
     try {
-      watcher = fs.watch(suite.execPath);
+      watcher = c2fs.watch(suite.execPath);
       this.watchers.set(suite.execPath, watcher);
       const allTests = this.allTests;  // alltest may has changed
 
       watcher.on('change', (eventType: string, filename: string) => {
-        // need some time here:
-        const waitAndThenTry = (remainingIteration: number, delay: number) => {
-          if (remainingIteration == 0) {
-            watcher!.close();
-            this.watchers.delete(suite.execPath);
-            this.testsEmitter.fire({type: 'started'});
-            allTests.removeChild(suite);
-            this.testsEmitter.fire({type: 'finished', suite: this.allTests});
-          } else if (!fs.existsSync(suite.execPath)) {
-            setTimeout(
-                waitAndThenTry, delay,
-                [remainingIteration - 1, Math.max(delay * 2, 2000)]);
-          } else {
-            this.testsEmitter.fire({type: 'started'});
-            suite.reloadChildren().then(() => {
-              this.testsEmitter.fire({type: 'finished', suite: this.allTests});
-            });
-          }
-        };
+        const x =
+            (exists: boolean, startTime: number, timeout: number,
+             delay: number): Promise<void> => {
+              if ((Date.now() - startTime) > timeout) {
+                watcher!.close();
+                this.watchers.delete(suite.execPath);
+                this.testsEmitter.fire({type: 'started'});
+                allTests.removeChild(suite);
+                this.testsEmitter.fire(
+                    {type: 'finished', suite: this.allTests});
+                return Promise.resolve();
+              } else if (exists) {
+                this.testsEmitter.fire({type: 'started'});
+                return suite.reloadChildren().then(
+                    () => {
+                      this.testsEmitter.fire(
+                          {type: 'finished', suite: this.allTests});
+                    },
+                    (err: any) => {
+                      this.testsEmitter.fire(
+                          {type: 'finished', suite: this.allTests});
+                      this.log.warn(inspect(err));
+                      return x(
+                          false, startTime, timeout, Math.min(delay * 2, 2000));
+                    });
+              }
+              return promisify(setTimeout)(Math.min(delay * 2, 2000))
+                  .then(() => {
+                    return c2fs.existsAsync(suite.execPath)
+                        .then((exists: boolean) => {
+                          return x(
+                              exists, startTime, timeout,
+                              Math.min(delay * 2, 2000));
+                        });
+                  });
+            };
 
         // change event can arrive during debug session on osx (why?)
         if (!this.isDebugging) {
-          waitAndThenTry(10, 128);
+          // TODO filter multiple events and dont mess with 'load'
+          x(false, Date.now(),
+            this.getDefaultExecWatchTimeout(this.getConfiguration()), 64);
         }
       });
     } catch (e) {
       this.log.warn('watcher couldn\'t watch: ' + suite.execPath);
     }
-    return suite.reloadChildren().catch((e) => {
+    return suite.reloadChildren().catch((err: any) => {
+      this.log.warn(inspect(err));
       this.allTests.removeChild(suite);
     });
   }
@@ -359,6 +382,11 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return config.get<null|string|number>('defaultRngSeed', null);
   }
 
+  private getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration):
+      number {
+    return config.get<number>('defaultExecWatchTimeout', 10000);
+  }
+
   private getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
     return config.get<number>('workerMaxNumber', 4);
   }
@@ -387,7 +415,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return config.get<boolean>('enableSourceDecoration', true);
   }
 
-  private getExecutables(config: vscode.WorkspaceConfiguration):
+  private async getExecutables(config: vscode.WorkspaceConfiguration):
       Promise<ExecutableConfig[]> {
     const globalWorkingDirectory = this.getDefaultCwd(config);
 
@@ -400,7 +428,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       return path.isAbsolute(p) ? p : this.resolveRelPath(p);
     };
 
-    const addObject = (o: Object): void => {
+    const addObject = async(o: Object): Promise<void> => {
       const name: string =
           o.hasOwnProperty('name') ? (<any>o)['name'] : '${dirname} : ${name}';
       if (!o.hasOwnProperty('path') || (<any>o)['path'] === null) {
@@ -421,11 +449,12 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
           false;
 
       if (regex.length > 0) {
-        const recursiveAdd = (directory: string): void => {
+        const recursiveAdd = async(directory: string): Promise<void> => {
           const children = c2fs.readdirSync(directory);
-          children.forEach(child => {
+          for (let i = 0; i < children.length; ++i) {
+            const child = children[i];
             const childPath = path.resolve(directory, child);
-            const childStat = c2fs.statSync(childPath);
+            const childStat = await c2fs.statAsync(childPath);
             if (childPath.match(regex) && childStat.isFile()) {
               let resolvedName = name + ' : ' + child;
               let resolvedCwd = cwd;
@@ -451,14 +480,14 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
               executables.push(new ExecutableConfig(
                   resolvedName, childPath, regex, fullPath(resolvedCwd), env));
             } else if (childStat.isDirectory() && regexRecursive) {
-              recursiveAdd(childPath);
+              await recursiveAdd(childPath);
             }
-          });
+          }
         };
         try {
-          const stat = c2fs.statSync(p);
+          const stat = await c2fs.statAsync(p);
           if (stat.isDirectory()) {
-            recursiveAdd(p);
+            await recursiveAdd(p);
           } else if (stat.isFile()) {
             executables.push(new ExecutableConfig(name, p, regex, cwd, env));
           } else {
@@ -492,16 +521,16 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                 '', globalWorkingDirectory, []));
           }
         } else {
-          addObject(configExecs[i]);
+          await addObject(configExecs[i]);
         }
       }
     } else if (configExecs instanceof Object) {
-      addObject(configExecs);
+      await addObject(configExecs);
     } else {
       throw 'Catch2 config error: wrong type: executables';
     }
 
-    return this.filterVerifiedCatch2TestExecutables(executables);
+    return this.filterVerifiedCatch2TestExecutables(await executables);
   }
 
   verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
