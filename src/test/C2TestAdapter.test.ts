@@ -1085,6 +1085,26 @@ describe('C2TestAdapter', function() {
                          suite1Watcher.sendChange();
                        });
                    assert.deepStrictEqual(newRoot, root);
+                   assert.deepStrictEqual(testsEvents, [
+                     {type: 'started'},
+                     {type: 'finished', suite: root},
+                   ]);
+                 })
+
+              it('reload because of fswatcher event: double touch(changed)',
+                 async function() {
+                   this.slow(200);
+                   const newRoot =
+                       await doAndWaitForReloadEvent(this, async () => {
+                         suite1Watcher.sendChange();
+                       });
+                   assert.deepStrictEqual(newRoot, root);
+                   assert.deepStrictEqual(testsEvents, [
+                     {type: 'started'},
+                     {type: 'finished', suite: root},
+                     {type: 'started'},
+                     {type: 'finished', suite: root},
+                   ]);
                  })
 
               it('reload because of fswatcher event: touch(delete,create)',
@@ -1096,6 +1116,29 @@ describe('C2TestAdapter', function() {
                          suite1Watcher.sendCreate();
                        });
                    assert.deepStrictEqual(newRoot, root);
+                   assert.deepStrictEqual(testsEvents, [
+                    {type: 'started'},
+                    {type: 'finished', suite: root},
+                  ]);
+                 })
+
+                 it('reload because of fswatcher event: double touch(delete,create)',
+                 async function() {
+                   this.slow(200);
+                   const newRoot =
+                       await doAndWaitForReloadEvent(this, async () => {
+                         suite1Watcher.sendDelete();
+                         suite1Watcher.sendCreate();
+                         suite1Watcher.sendDelete();
+                         suite1Watcher.sendCreate();
+                       });
+                   assert.deepStrictEqual(newRoot, root);
+                   assert.deepStrictEqual(testsEvents, [
+                    {type: 'started'},
+                    {type: 'finished', suite: root},
+                    {type: 'started'},
+                    {type: 'finished', suite: root},
+                  ]);
                  })
 
               it('reload because of fswatcher event: test added',
