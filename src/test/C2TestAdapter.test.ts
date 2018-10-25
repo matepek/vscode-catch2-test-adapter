@@ -39,20 +39,26 @@ const sinonSandbox = sinon.createSandbox();
 ///
 
 describe('C2TestAdapter', function() {
+  this.enableTimeouts(false);  // TODO
+
+  let testsEvents: (TestLoadStartedEvent|TestLoadFinishedEvent)[] = [];
+  let testStatesEvents: (TestRunStartedEvent|TestRunFinishedEvent|
+                         TestSuiteEvent|TestEvent)[] = [];
+
   function getConfig() {
     return vscode.workspace.getConfiguration(
         'catch2TestExplorer', workspaceFolderUri)
   };
 
-  function updateConfig(key: string, value: any) {
-    return getConfig().update(key, value)
+  async function updateConfig(key: string, value: any) {
+    let count = testsEvents.length;
+    await getConfig().update(key, value);
+    // cleanup
+    while (testsEvents.length < count--) testsEvents.pop();
   }
 
   let adapter: C2TestAdapter|undefined;
-  let testsEvents: (TestLoadStartedEvent|TestLoadFinishedEvent)[];
   let testsEventsConnection: vscode.Disposable|undefined;
-  let testStatesEvents: (TestRunStartedEvent|TestRunFinishedEvent|
-                         TestSuiteEvent|TestEvent)[];
   let testStatesEventsConnection: vscode.Disposable|undefined;
 
   let spawnStub: sinon.SinonStub;
@@ -97,7 +103,6 @@ describe('C2TestAdapter', function() {
   function createAdapterAndSubscribe() {
     adapter = new C2TestAdapter(workspaceFolder, logger);
 
-    testsEvents = [];
     testsEventsConnection =
         adapter.tests((e: TestLoadStartedEvent|TestLoadFinishedEvent) => {
           testsEvents.push(e);
@@ -129,12 +134,29 @@ describe('C2TestAdapter', function() {
     return e.suite!;
   }
 
-  function disposeAdapterAndSubscribers() {
+  function disposeAdapterAndSubscribers(check: boolean = true) {
     adapter && adapter.dispose();
     testsEventsConnection && testsEventsConnection.dispose();
     testStatesEventsConnection && testStatesEventsConnection.dispose();
-    testsEvents = [];
     testStatesEvents = [];
+    if (check) {
+      for (let i = 0; i < testsEvents.length; i++) {
+        assert.deepStrictEqual(
+            {type: 'started'}, testsEvents[i],
+            inspect({index: i, testsEvents: testsEvents}));
+        i++;
+        assert.ok(
+            i < testsEvents.length,
+            inspect({index: i, testsEvents: testsEvents}));
+        assert.equal(
+            testsEvents[i].type, 'finished',
+            inspect({index: i, testsEvents: testsEvents}));
+        assert.ok(
+            (<TestLoadFinishedEvent>testsEvents[i]).suite,
+            inspect({index: i, testsEvents: testsEvents}));
+      }
+    }
+    testsEvents = [];
   }
 
   function stubsResetToMyDefault() {
@@ -236,6 +258,34 @@ describe('C2TestAdapter', function() {
       return e;
     }
 
+    function handleStatExistsFile(
+        path: string,
+        cb: (err: NodeJS.ErrnoException|null, stats: fs.Stats|undefined) =>
+            void) {
+      cb(null, <fs.Stats>{
+        isFile() {
+          return true;
+        },
+        isDirectory() {
+          return false;
+        }
+      });
+    }
+
+    function handleStatNotExists(
+        path: string,
+        cb: (err: NodeJS.ErrnoException|null|any, stats: fs.Stats|undefined) =>
+            void) {
+      cb({
+        code: 'ENOENT',
+        errno: -2,
+        message: 'ENOENT',
+        path: path,
+        syscall: 'stat'
+      },
+         undefined);
+    };
+
     before(function() {
       for (let suite of example1.outputs) {
         for (let scenario of suite[1]) {
@@ -244,19 +294,7 @@ describe('C2TestAdapter', function() {
           });
         }
 
-        c2fsStatStub.withArgs(suite[0]).callsFake(
-            (path: string,
-             cb: (err: NodeJS.ErrnoException|null, stats: fs.Stats|undefined) =>
-                 void) => {
-              cb(null, <fs.Stats>{
-                isFile() {
-                  return true;
-                },
-                isDirectory() {
-                  return false;
-                }
-              });
-            });
+        c2fsStatStub.withArgs(suite[0]).callsFake(handleStatExistsFile);
 
         vsfsWatchStub.withArgs(suite[0], true, false, false)
             .callsFake(handleCreateWatcherCb);
@@ -268,8 +306,9 @@ describe('C2TestAdapter', function() {
         let children: string[] = [];
         if (dirContent.has(parent))
           children = dirContent.get(parent)!;
-        else
+        else {
           dirContent.set(parent, children);
+        }
         children.push(path.basename(p[0]));
       }
 
@@ -1288,12 +1327,17 @@ describe('C2TestAdapter', function() {
       this.slow(300);
       await updateConfig('executables', example1.suite1.execPath);
       adapter = createAdapterAndSubscribe();
+
       await adapter.load();
       assert.equal(testsEvents.length, 2);
       assert.equal(
           (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
               .suite!.children.length,
           1);
+      testsEvents.pop();
+      testsEvents.pop();
+
+      disposeAdapterAndSubscribers();
       await updateConfig('executables', undefined);
     })
 
@@ -1310,13 +1354,95 @@ describe('C2TestAdapter', function() {
               'dummy error for testing (should be handled)');
 
           await adapter.load();
+          testsEvents.pop();
+          testsEvents.pop();
 
+          disposeAdapterAndSubscribers();
           await updateConfig('executables', undefined);
         })
 
     specify(
-        'load executables=["execPath1", "execPath2Copy"]; delete second because of fswatcher event',
+        'load executables=["execPath1", "execPath2Copy"]; delete; sleep 3; create',
         async function(this: Mocha.Context) {
+          const watchTimeout = 5500;
+          await updateConfig('defaultExecWatchTimeout', watchTimeout);
+          this.timeout(watchTimeout + 2500 /* because of 'delay' */);
+          this.slow(watchTimeout + 2500 /* because of 'delay' */);
+          const execPath2CopyPath =
+              path.join(workspaceFolderUri.path, 'execPath2Copy');
+
+          for (let scenario of example1.suite2.outputs) {
+            spawnStub.withArgs(execPath2CopyPath, scenario[0])
+                .callsFake(function() {
+                  return new ChildProcessStub(scenario[1]);
+                });
+          }
+
+          c2fsStatStub.withArgs(execPath2CopyPath)
+              .callsFake(handleStatExistsFile);
+
+          vsfsWatchStub.withArgs(execPath2CopyPath, true, false, false)
+              .callsFake(handleCreateWatcherCb);
+
+          await updateConfig('executables', ['execPath1', 'execPath2Copy'])
+          adapter = createAdapterAndSubscribe();
+
+          await adapter.load();
+
+          assert.equal(
+              (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
+                  .suite!.children.length,
+              2);
+          testsEvents.pop();
+          testsEvents.pop();
+
+          assert.ok(watchers.has(execPath2CopyPath));
+          const watcher = watchers.get(execPath2CopyPath)!;
+
+          let start: number = 0;
+          const newRoot = await doAndWaitForReloadEvent(this, async () => {
+            c2fsStatStub.withArgs(execPath2CopyPath)
+                .callsFake(handleStatNotExists);
+            start = Date.now();
+            watcher.sendDelete();
+            setTimeout(() => {
+              assert.equal(testsEvents.length, 0);
+            }, 1500);
+            setTimeout(() => {
+              c2fsStatStub.withArgs(execPath2CopyPath)
+                  .callsFake(handleStatExistsFile);
+              watcher.sendCreate();
+            }, 3000);
+          }, 40000);
+          const elapsed = Date.now() - start;
+
+          assert.equal(testsEvents.length, 2);
+          testsEvents.pop();
+          testsEvents.pop();
+          for (let scenario of example1.suite2.outputs) {
+            spawnStub.withArgs(execPath2CopyPath, scenario[0]).callsFake(() => {
+              throw Error('restore');
+            });
+          }
+          c2fsStatStub.withArgs(execPath2CopyPath).callsFake(() => {
+            throw Error('restore');
+          });
+          vsfsWatchStub.withArgs(execPath2CopyPath, true, false, false)
+              .callsFake(() => {
+                throw Error('restore');
+              });
+          disposeAdapterAndSubscribers();
+          await updateConfig('executables', undefined);
+          await updateConfig('defaultExecWatchTimeout', undefined);
+
+          assert.equal(newRoot.children.length, 2);
+          assert.ok(3000 < elapsed, inspect(elapsed));
+          assert.ok(elapsed < watchTimeout + 2400, inspect(elapsed));
+        })
+
+    specify(
+        'load executables=["execPath1", "execPath2Copy"]; delete second',
+        async function() {
           const watchTimeout = 5000;
           await updateConfig('defaultExecWatchTimeout', watchTimeout);
           this.timeout(watchTimeout + 2500 /* because of 'delay' */);
@@ -1332,20 +1458,7 @@ describe('C2TestAdapter', function() {
           }
 
           c2fsStatStub.withArgs(execPath2CopyPath)
-              .callsFake(
-                  (path: string,
-                   cb: (
-                       err: NodeJS.ErrnoException|null,
-                       stats: fs.Stats|undefined) => void) => {
-                    cb(null, <fs.Stats>{
-                      isFile() {
-                        return true;
-                      },
-                      isDirectory() {
-                        return false;
-                      }
-                    });
-                  });
+              .callsFake(handleStatExistsFile);
 
           vsfsWatchStub.withArgs(execPath2CopyPath, true, false, false)
               .callsFake(handleCreateWatcherCb);
@@ -1359,45 +1472,41 @@ describe('C2TestAdapter', function() {
               (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
                   .suite!.children.length,
               2);
+          testsEvents.pop();
+          testsEvents.pop();
+
           assert.ok(watchers.has(execPath2CopyPath));
           const watcher = watchers.get(execPath2CopyPath)!;
-          let start: number = 0;
 
+          let start: number = 0;
           const newRoot = await doAndWaitForReloadEvent(this, async () => {
             c2fsStatStub.withArgs(execPath2CopyPath)
-                .callsFake(
-                    (path: string,
-                     cb: (
-                         err: NodeJS.ErrnoException|null|any,
-                         stats: fs.Stats|undefined) => void) => {
-                      cb({
-                        code: 'ENOENT',
-                        errno: -2,
-                        message: 'ENOENT',
-                        path: path,
-                        syscall: 'stat'
-                      },
-                         undefined);
-                    });
+                .callsFake(handleStatNotExists);
             start = Date.now();
             watcher.sendDelete();
           }, 40000);
-
           const elapsed = Date.now() - start;
-          assert.equal(newRoot.children.length, 1);
-          assert.ok(watchTimeout < elapsed, inspect(elapsed));
-          assert.ok(elapsed < watchTimeout + 2400, inspect(elapsed));
-
-          // restore
+          testsEvents.pop();
+          testsEvents.pop();
           for (let scenario of example1.suite2.outputs) {
-            spawnStub.withArgs(execPath2CopyPath, scenario[0]).throws();
+            spawnStub.withArgs(execPath2CopyPath, scenario[0]).callsFake(() => {
+              throw Error('restore');
+            });
           }
-          c2fsStatStub.withArgs(execPath2CopyPath).throws();
+          c2fsStatStub.withArgs(execPath2CopyPath).callsFake(() => {
+            throw Error('restore');
+          });
           vsfsWatchStub.withArgs(execPath2CopyPath, true, false, false)
-              .throws();
+              .callsFake(() => {
+                throw Error('restore');
+              });
           disposeAdapterAndSubscribers();
           await updateConfig('executables', undefined);
           await updateConfig('defaultExecWatchTimeout', undefined);
+
+          assert.equal(newRoot.children.length, 1);
+          assert.ok(watchTimeout < elapsed, inspect(elapsed));
+          assert.ok(elapsed < watchTimeout + 2400, inspect(elapsed));
         })
   })
 })

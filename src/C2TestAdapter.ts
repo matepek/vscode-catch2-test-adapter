@@ -160,7 +160,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
               this.getDefaultExecWatchTimeout(this.getConfiguration()), 64);
           }
         };
-        this.disposables.push(watcher.onDidChange(handler));  // TODO nem szep
+        this.disposables.push(watcher.onDidChange(handler));  // TODO not nice
         this.disposables.push(watcher.onDidDelete(handler));
       } catch (e) {
         this.log.warn('watcher couldn\'t watch: ' + suite.execPath);
@@ -194,11 +194,14 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         .then((execs: ExecutableConfig[]) => {
           let testListReaders = Promise.resolve();
 
-          execs.forEach(exe => {
+          for (let i = 0; i < execs.length; i++) {
             testListReaders = testListReaders.then(() => {
-              return this.loadSuite(exe);
-            });
-          });
+              return this.loadSuite(execs[i]).catch((err) => {
+                this.log.error(inspect(err));
+                debugger;
+              });
+            })
+          }
 
           return testListReaders;
         })
@@ -541,9 +544,14 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
-    return c2fs.spawnAsync(path, ['--help']).then((res) => {
-      return res.stdout.indexOf('Catch v2.') != -1;
-    });
+    return c2fs.spawnAsync(path, ['--help'])
+        .then((res) => {
+          return res.stdout.indexOf('Catch v2.') != -1;
+        })
+        .catch((e) => {
+          this.log.error(inspect(e));
+          return false;
+        });
   }
 
   private filterVerifiedCatch2TestExecutables(executables: ExecutableConfig[]):
