@@ -1,3 +1,7 @@
+//-----------------------------------------------------------------------------
+// vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
+// public domain. The author hereby disclaims copyright to this source code.
+
 import {EventEmitter} from 'events';
 import {Stream} from 'stream';
 import * as vscode from 'vscode';
