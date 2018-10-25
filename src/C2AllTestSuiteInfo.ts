@@ -16,11 +16,9 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo {
   readonly id: string;
   readonly label: string = 'AllTests';
   readonly children: C2TestSuiteInfo[] = [];
-  private readonly taskPool: TaskPool;
 
-  constructor(private readonly adapter: C2TestAdapter, slotCount: number) {
+  constructor(private readonly adapter: C2TestAdapter) {
     this.id = generateUniqueId();
-    this.taskPool = new TaskPool(slotCount);
   }
 
   removeChild(child: C2TestSuiteInfo): boolean {
@@ -58,8 +56,8 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo {
 
   createChildSuite(label: string, execPath: string, execOptions: SpawnOptions):
       C2TestSuiteInfo {
-    const suite = new C2TestSuiteInfo(
-        label, this.adapter, [this.taskPool], execPath, execOptions);
+    const suite =
+        new C2TestSuiteInfo(label, this.adapter, execPath, execOptions);
 
     let i = this.children.findIndex((v: C2TestSuiteInfo) => {
       return suite.label.trim().localeCompare(v.label.trim()) < 0;
@@ -76,9 +74,11 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo {
     });
   }
 
-  run(tests: string[]): Promise<void> {
+  run(tests: string[], workerMaxNumber: number): Promise<void> {
     this.adapter.testStatesEmitter.fire(
         <TestRunStartedEvent>{type: 'started', tests: tests});
+
+    const taskPool = new TaskPool(workerMaxNumber);
 
     // everybody should remove what they use from it.
     // and put their children into if they are in it
@@ -93,7 +93,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo {
     const ps: Promise<void>[] = [];
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i];
-      ps.push(child.run(testSet));
+      ps.push(child.run(testSet, taskPool));
     }
 
     if (testSet.size > 0) {

@@ -184,12 +184,6 @@ describe('C2TestAdapter', function() {
       return resetConfig();
     })
 
-    it('workerMaxNumber', function() {
-      return doAndWaitForReloadEvent(() => {
-        return updateConfig('workerMaxNumber', 42);
-      });
-    })
-
     it('defaultEnv', function() {
       return doAndWaitForReloadEvent(() => {
         return updateConfig('defaultEnv', {'APPLE': 'apple'});

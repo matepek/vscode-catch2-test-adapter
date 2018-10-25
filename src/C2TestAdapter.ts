@@ -54,9 +54,6 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
               configChange.affectsConfiguration(
                   'catch2TestExplorer.defaultCwd', this.workspaceFolder.uri) ||
               configChange.affectsConfiguration(
-                  'catch2TestExplorer.workerMaxNumber',
-                  this.workspaceFolder.uri) ||
-              configChange.affectsConfiguration(
                   'catch2TestExplorer.executables', this.workspaceFolder.uri)) {
             this.load();
           }
@@ -78,7 +75,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
           }
         }));
 
-    this.allTests = new C2AllTestSuiteInfo(this, 1);
+    this.allTests = new C2AllTestSuiteInfo(this);
   }
 
   dispose() {
@@ -185,8 +182,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
     this.rngSeedStr = this.getDefaultRngSeed(config);
 
-    this.allTests =
-        new C2AllTestSuiteInfo(this, this.getWorkerMaxNumber(config));
+    this.allTests = new C2AllTestSuiteInfo(this);
 
     const executables = this.getExecutables(config);
 
@@ -229,7 +225,9 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       const always = () => {
         this.isRunning -= 1;
       };
-      return this.allTests.run(tests).then(always, always);
+      return this.allTests
+          .run(tests, this.getWorkerMaxNumber(this.getConfiguration()))
+          .then(always, always);
     }
 
     throw Error('Catch2 Test Adapter: Test(s) are currently being run.');
