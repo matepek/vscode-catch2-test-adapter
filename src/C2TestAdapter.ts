@@ -43,6 +43,10 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   constructor(
       public readonly workspaceFolder: vscode.WorkspaceFolder,
       public readonly log: util.Log) {
+    this.disposables.push(this.testsEmitter);
+    this.disposables.push(this.testStatesEmitter);
+    this.disposables.push(this.autorunEmitter);
+
     this.disposables.push(
         vscode.workspace.onDidChangeConfiguration(configChange => {
           if (configChange.affectsConfiguration(
@@ -70,6 +74,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                   'catch2TestExplorer.defaultRngSeed',
                   this.workspaceFolder.uri)) {
             this.rngSeedStr = this.getDefaultRngSeed(this.getConfiguration());
+            this.autorunEmitter.fire();
           }
         }));
 
