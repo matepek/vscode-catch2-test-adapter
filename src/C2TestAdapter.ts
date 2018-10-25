@@ -20,7 +20,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                               TestSuiteEvent|TestEvent>();
   private readonly autorunEmitter = new vscode.EventEmitter<void>();
 
-  private readonly watchers: Map<string, c2fs.FSWatcher> = new Map();
+  private readonly watchers: Map<string, vscode.Disposable> = new Map();
   private isRunning: number = 0;
   private isDebugging: boolean = false;
 
@@ -83,7 +83,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       d.dispose();
     });
     this.watchers.forEach((v) => {
-      v.close();
+      v.dispose();
     });
   }
 
@@ -106,61 +106,65 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
     let watcher = this.watchers.get(suite.execPath);
 
-    if (watcher != undefined) {
-      watcher.close();
-    }
-    try {
-      watcher = c2fs.watch(suite.execPath);
-      this.watchers.set(suite.execPath, watcher);
-      const allTests = this.allTests;  // alltest may has changed
+    if (watcher === undefined &&
+        suite.execPath.startsWith(this.workspaceFolder.uri.path)) {
+      try {
+        const watcher = vscode.workspace.createFileSystemWatcher(
+            suite.execPath, true, false, false);
+        this.watchers.set(suite.execPath, watcher);
+        const allTests = this.allTests;  // alltest may has changed
 
-      watcher.on('change', (eventType: string, filename: string) => {
-        const x =
-            (exists: boolean, startTime: number, timeout: number,
-             delay: number): Promise<void> => {
-              if ((Date.now() - startTime) > timeout) {
-                watcher!.close();
-                this.watchers.delete(suite.execPath);
-                this.testsEmitter.fire({type: 'started'});
-                allTests.removeChild(suite);
-                this.testsEmitter.fire(
-                    {type: 'finished', suite: this.allTests});
-                return Promise.resolve();
-              } else if (exists) {
-                this.testsEmitter.fire({type: 'started'});
-                return suite.reloadChildren().then(
-                    () => {
-                      this.testsEmitter.fire(
-                          {type: 'finished', suite: this.allTests});
-                    },
-                    (err: any) => {
-                      this.testsEmitter.fire(
-                          {type: 'finished', suite: this.allTests});
-                      this.log.warn(inspect(err));
-                      return x(
-                          false, startTime, timeout, Math.min(delay * 2, 2000));
+        const handler = (uri: vscode.Uri) => {
+          const x =
+              (exists: boolean, startTime: number, timeout: number,
+               delay: number): Promise<void> => {
+                if ((Date.now() - startTime) > timeout) {
+                  watcher!.dispose();
+                  this.watchers.delete(suite.execPath);
+                  this.testsEmitter.fire({type: 'started'});
+                  allTests.removeChild(suite);
+                  this.testsEmitter.fire(
+                      {type: 'finished', suite: this.allTests});
+                  return Promise.resolve();
+                } else if (exists) {
+                  this.testsEmitter.fire({type: 'started'});
+                  return suite.reloadChildren().then(
+                      () => {
+                        this.testsEmitter.fire(
+                            {type: 'finished', suite: this.allTests});
+                      },
+                      (err: any) => {
+                        this.testsEmitter.fire(
+                            {type: 'finished', suite: this.allTests});
+                        this.log.warn(inspect(err));
+                        return x(
+                            false, startTime, timeout,
+                            Math.min(delay * 2, 2000));
+                      });
+                }
+                return promisify(setTimeout)(Math.min(delay * 2, 2000))
+                    .then(() => {
+                      return c2fs.existsAsync(suite.execPath)
+                          .then((exists: boolean) => {
+                            return x(
+                                exists, startTime, timeout,
+                                Math.min(delay * 2, 2000));
+                          });
                     });
-              }
-              return promisify(setTimeout)(Math.min(delay * 2, 2000))
-                  .then(() => {
-                    return c2fs.existsAsync(suite.execPath)
-                        .then((exists: boolean) => {
-                          return x(
-                              exists, startTime, timeout,
-                              Math.min(delay * 2, 2000));
-                        });
-                  });
-            };
+              };
 
-        // change event can arrive during debug session on osx (why?)
-        if (!this.isDebugging) {
-          // TODO filter multiple events and dont mess with 'load'
-          x(false, Date.now(),
-            this.getDefaultExecWatchTimeout(this.getConfiguration()), 64);
-        }
-      });
-    } catch (e) {
-      this.log.warn('watcher couldn\'t watch: ' + suite.execPath);
+          // change event can arrive during debug session on osx (why?)
+          if (!this.isDebugging) {
+            // TODO filter multiple events and dont mess with 'load'
+            x(false, Date.now(),
+              this.getDefaultExecWatchTimeout(this.getConfiguration()), 64);
+          }
+        };
+        this.disposables.push(watcher.onDidChange(handler));  // TODO nem szep
+        this.disposables.push(watcher.onDidDelete(handler));
+      } catch (e) {
+        this.log.warn('watcher couldn\'t watch: ' + suite.execPath);
+      }
     }
     return suite.reloadChildren().catch((err: any) => {
       this.log.warn(inspect(err));
@@ -174,7 +178,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this.testsEmitter.fire({type: 'started'});
 
     this.watchers.forEach((value, key) => {
-      value.close();
+      value.dispose();
     });
     this.watchers.clear();
 

@@ -61,17 +61,10 @@ export function existsAsync(path: string): Promise<boolean> {
       });
 }
 
-
 export function existsSync(path: string): boolean {
   return fs.existsSync(path);
 }
 
 export function readdirSync(path: string): string[] {
   return fs.readdirSync(path, 'utf8');
-}
-
-export type FSWatcher = fs.FSWatcher;
-
-export function watch(path: string): FSWatcher {
-  return fs.watch(path);
 }
