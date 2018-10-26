@@ -8,8 +8,6 @@ import {promisify} from 'util';
 import {QueueGraphNode} from '../QueueGraph';
 
 describe('QueueGraphNode', function() {
-  this.enableTimeouts(false);  // TODO
-
   async function waitFor(
       test: Mocha.Context, condition: Function, timeout: number = 1000) {
     const start = Date.now();

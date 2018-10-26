@@ -33,11 +33,33 @@ export class C2ExecutableInfo implements vscode.Disposable {
   }
 
   async load(): Promise<void> {
-    try {
-      if (this.pattern.startsWith(this._adapter.workspaceFolder.uri
-                                      .path)) {  // TODO ez az if nem a legjobb
+    const wsUri = this._adapter.workspaceFolder.uri;
+
+
+    const isAbsolute = path.isAbsolute(this.pattern);
+    const absPattern =
+        isAbsolute ? this.pattern : path.resolve(wsUri.fsPath, this.pattern);
+    const absPatternAsUri = vscode.Uri.file(absPattern);
+    const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
+    const isPartOfWs = !relativeToWs.startsWith('..');
+
+    let fileUris: vscode.Uri[] = [];
+
+    if (!isAbsolute || (isAbsolute && isPartOfWs)) {
+      let relativePattern: vscode.RelativePattern;
+      if (isAbsolute) {
+        relativePattern = new vscode.RelativePattern(
+            this._adapter.workspaceFolder, relativeToWs);
+      } else {
+        relativePattern = new vscode.RelativePattern(
+            this._adapter.workspaceFolder, this.pattern);
+      }
+      fileUris =
+          await vscode.workspace.findFiles(relativePattern, undefined, 1000);
+      try {
+        // abs path is required
         this._watcher = vscode.workspace.createFileSystemWatcher(
-            this.pattern, false, false, false);
+            relativePattern, false, false, false);
         this._disposables.push(this._watcher);
         this._disposables.push(
             this._watcher.onDidCreate(this._handleCreate, this));
@@ -45,34 +67,26 @@ export class C2ExecutableInfo implements vscode.Disposable {
             this._watcher.onDidChange(this._handleChange, this));
         this._disposables.push(
             this._watcher.onDidDelete(this._handleDelete, this));
+      } catch (e) {
+        this._adapter.log.error(inspect([e, this]));
       }
-    } catch (e) {
-      this._adapter.log.error(inspect([e, this]));
-    }
-
-    let fileUris;
-    try {
-      fileUris = await vscode.workspace.findFiles(this.pattern);
-    } catch (e) {
-      fileUris = [vscode.Uri.file(this.pattern)];
-      debugger;
+    } else {
+      fileUris.push(absPatternAsUri);
     }
 
     for (let i = 0; i < fileUris.length; i++) {
       const file = fileUris[i];
-      if (await this._verifyIsCatch2TestExecutable(file.path)) {
+      if (await this._verifyIsCatch2TestExecutable(file.fsPath)) {
         let resolvedName = this.name;
         let resolvedCwd = this.cwd;
         try {
+          const relPath = path.relative(wsUri.path, file.path);
           const varToValue: [string, string][] = [
-            ['${name}', file.path],
+            ['${absName}', file.path],
+            ['${relName}', relPath],
             ['${basename}', path.basename(file.path)],
             ['${absDirname}', path.dirname(file.path)],
-            [
-              '${relDirname}',
-              path.dirname(path.relative(
-                  this._adapter.workspaceFolder.uri.fsPath, file.path))
-            ],
+            ['${relDirname}', path.dirname(relPath)],
             ...this._adapter.variableToValue,
           ];
           resolvedName = resolveVariables(this.name, varToValue);
@@ -84,7 +98,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
         const suite = this._allTests.createChildSuite(
             resolvedName, file.path, {cwd: resolvedCwd, env: this.env});
 
-        this._executables.set(file.path, suite);
+        this._executables.set(file.fsPath, suite);
       }
     }
 
@@ -96,19 +110,19 @@ export class C2ExecutableInfo implements vscode.Disposable {
   }
 
   private _handleEverything(uri: vscode.Uri) {
-    let suite = this._executables.get(uri.path);
+    let suite = this._executables.get(uri.fsPath);
 
     if (suite == undefined) {
       suite = this._allTests.createChildSuite(
-          this.name, this.pattern, {cwd: this.cwd, env: this.env});
-      this._executables.set(uri.path, suite);
+          this.name, uri.fsPath, {cwd: this.cwd, env: this.env});
+      this._executables.set(uri.fsPath, suite);
     }
 
     const x =
         (exists: boolean, startTime: number, timeout: number,
          delay: number): Promise<void> => {
           if ((Date.now() - startTime) > timeout) {
-            this._executables.delete(uri.path);
+            this._executables.delete(uri.fsPath);
             this._adapter.testsEmitter.fire({type: 'started'});
             this._allTests.removeChild(suite!);
             this._adapter.testsEmitter.fire(
@@ -130,7 +144,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
                 });
           }
           return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
-            return c2fs.existsAsync(uri.path).then((exists: boolean) => {
+            return c2fs.existsAsync(uri.fsPath).then((exists: boolean) => {
               return x(exists, startTime, timeout, Math.min(delay * 2, 2000));
             });
           });
@@ -143,7 +157,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
   }
 
   private _handleCreate(uri: vscode.Uri) {
-    if (this._executables.has(uri.path)) {
+    if (this._executables.has(uri.fsPath)) {
       // we are fine: the delete event is still running until it's timeout
       return;
     }
@@ -175,7 +189,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
       if (suites.length > 1) {
         let i = 1;
         for (const suite of suites) {
-          suite.label = suite.origLabel + '(' + String(i++) + ')';
+          suite.label = String(i++) + ') ' + suite.origLabel;
         }
       }
     }

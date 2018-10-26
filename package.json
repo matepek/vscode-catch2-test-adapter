@@ -75,7 +75,7 @@
       "title": "Configuration for the Catch2 Test Explorer extension",
       "properties": {
         "catch2TestExplorer.executables": {
-          "description": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting.",
+          "description": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. (https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)",
           "type": [
             "string",
             "array",
@@ -83,8 +83,8 @@
           ],
           "default": [
             {
-              "name": "${relDirname} : ${name}",
-              "path": "build",
+              "name": "${basename} (${relDirname}/)",
+              "path": "{build|out}/**/*{test|Test|TEST}*",
               "regex": "(t|T)est",
               "recursiveRegex": false,
               "workerMaxNumber": 1,

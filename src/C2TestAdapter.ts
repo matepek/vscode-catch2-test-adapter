@@ -339,20 +339,20 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       return path.isAbsolute(p) ? p : this.resolveRelPath(p);
     };
 
-    const createFromObject = (o: Object): C2ExecutableInfo => {
-      const name: string = o.hasOwnProperty('name') ? (<any>o)['name'] :
-                                                      '${relDirname} : ${name}';
-      if (!o.hasOwnProperty('path') || (<any>o)['path'] === null) {
+    const createFromObject = (obj: Object): C2ExecutableInfo => {
+      const name: string = obj.hasOwnProperty('name') ?
+          (<any>obj)['name'] :
+          '${basename} (${relDirname}/)';
+      if (!obj.hasOwnProperty('path') || (<any>obj)['path'] === null) {
         console.warn(Error('\'path\' is a requireds property.'));
-        throw Error('Wrong object: ' + inspect(o));
+        throw Error('Wrong object: ' + inspect(obj));
       }
-      const p: string =
-          fullPath(resolveVariables((<any>o)['path'], this.variableToValue));
-      const cwd: string =
-          o.hasOwnProperty('cwd') ? (<any>o)['cwd'] : globalWorkingDirectory;
-      const env: {[prop: string]: any} = o.hasOwnProperty('env') ?
+      const p: string = (<any>obj)['path'];
+      const cwd: string = obj.hasOwnProperty('cwd') ? (<any>obj)['cwd'] :
+                                                      globalWorkingDirectory;
+      const env: {[prop: string]: any} = obj.hasOwnProperty('env') ?
           this.getGlobalAndCurrentEnvironmentVariables(
-              config, (<any>o)['env']) :
+              config, (<any>obj)['env']) :
           this.getGlobalAndDefaultEnvironmentVariables(config);
 
       return new C2ExecutableInfo(this, allTests, name, p, cwd, env);

@@ -262,12 +262,13 @@ describe(
         const watchers: Map<string, FileSystemWatcherStub> = new Map();
 
         function handleCreateWatcherCb(
-            path: string, ignoreCreateEvents: boolean,
+            p: vscode.RelativePattern, ignoreCreateEvents: boolean,
             ignoreChangeEvents: boolean, ignoreDeleteEvents: boolean) {
+          const pp = path.join(p.base, p.pattern);
           const e = new FileSystemWatcherStub(
-              vscode.Uri.file(path), ignoreCreateEvents, ignoreChangeEvents,
+              vscode.Uri.file(pp), ignoreCreateEvents, ignoreChangeEvents,
               ignoreDeleteEvents);
-          watchers.set(path, e);
+          watchers.set(pp, e);
           return e;
         }
 
@@ -298,7 +299,16 @@ describe(
             syscall: 'stat'
           },
              undefined);
-        };
+        }
+
+        function matchRelativePattern(p: string) {
+          return sinon.match((actual: vscode.RelativePattern) => {
+            const required = new vscode.RelativePattern(
+                workspaceFolder, path.relative(workspaceFolderUri.path, p));
+            return required.base == actual.base &&
+                required.pattern == actual.pattern;
+          });
+        }
 
         before(function() {
           for (let suite of example1.outputs) {
@@ -310,7 +320,8 @@ describe(
 
             c2fsStatStub.withArgs(suite[0]).callsFake(handleStatExistsFile);
 
-            vsfsWatchStub.withArgs(suite[0]).callsFake(handleCreateWatcherCb);
+            vsfsWatchStub.withArgs(matchRelativePattern(suite[0]))
+                .callsFake(handleCreateWatcherCb);
           }
 
           const dirContent: Map<string, vscode.Uri[]> = new Map();
@@ -327,9 +338,11 @@ describe(
 
           dirContent.forEach((v: vscode.Uri[], k: string) => {
             assert.equal(workspaceFolderUri.path, k);
-            vsFindFilesStub.withArgs(k).returns(v);
+            vsFindFilesStub.withArgs(matchRelativePattern(k)).returns(v);
             for (const p of v) {
-              vsFindFilesStub.withArgs(p.path).returns([p]);
+              vsFindFilesStub.withArgs(matchRelativePattern(p.path)).returns([
+                p
+              ]);
             }
           });
         })
@@ -1109,7 +1122,7 @@ describe(
                     return updateConfig('executables', undefined);
                   });
 
-                  let suite1Watcher;
+                  let suite1Watcher: FileSystemWatcherStub;
 
                   beforeEach(async function() {
                     assert.equal(watchers.size, 2);
@@ -1390,13 +1403,13 @@ describe(
                     }]);
 
                 vsfsWatchStub
-                    .withArgs(
-                        path.join(workspaceFolderUri.path, 'execPath{1,2}'))
+                    .withArgs(matchRelativePattern(
+                        path.join(workspaceFolderUri.path, 'execPath{1,2}')))
                     .callsFake(handleCreateWatcherCb);
 
                 vsFindFilesStub
-                    .withArgs(
-                        path.join(workspaceFolderUri.path, 'execPath{1,2}'))
+                    .withArgs(matchRelativePattern(
+                        path.join(workspaceFolderUri.path, 'execPath{1,2}')))
                     .returns([
                       vscode.Uri.file(example1.suite1.execPath),
                       vscode.Uri.file(example1.suite2.execPath),
@@ -1589,12 +1602,11 @@ describe(
               c2fsStatStub.withArgs(execPath2CopyPath)
                   .callsFake(handleStatExistsFile);
 
-              vsfsWatchStub.withArgs(execPath2CopyPath)
+              vsfsWatchStub.withArgs(matchRelativePattern(execPath2CopyPath))
                   .callsFake(handleCreateWatcherCb);
 
-              vsFindFilesStub.withArgs(execPath2CopyPath).returns([
-                vscode.Uri.file(execPath2CopyPath)
-              ]);
+              vsFindFilesStub.withArgs(matchRelativePattern(execPath2CopyPath))
+                  .returns([vscode.Uri.file(execPath2CopyPath)]);
 
               await updateConfig('executables', ['execPath1', 'execPath2Copy'])
               adapter = createAdapterAndSubscribe();
@@ -1640,12 +1652,14 @@ describe(
               c2fsStatStub.withArgs(execPath2CopyPath).callsFake(() => {
                 throw Error('restore');
               });
-              vsfsWatchStub.withArgs(execPath2CopyPath).callsFake(() => {
-                throw Error('restore');
-              });
-              vsFindFilesStub.withArgs(execPath2CopyPath).callsFake(() => {
-                throw Error('restore');
-              });
+              vsfsWatchStub.withArgs(matchRelativePattern(execPath2CopyPath))
+                  .callsFake(() => {
+                    throw Error('restore');
+                  });
+              vsFindFilesStub.withArgs(matchRelativePattern(execPath2CopyPath))
+                  .callsFake(() => {
+                    throw Error('restore');
+                  });
               disposeAdapterAndSubscribers();
               await updateConfig('executables', undefined);
               await updateConfig('defaultExecWatchTimeout', undefined);
@@ -1675,12 +1689,11 @@ describe(
               c2fsStatStub.withArgs(execPath2CopyPath)
                   .callsFake(handleStatExistsFile);
 
-              vsfsWatchStub.withArgs(execPath2CopyPath)
+              vsfsWatchStub.withArgs(matchRelativePattern(execPath2CopyPath))
                   .callsFake(handleCreateWatcherCb);
 
-              vsFindFilesStub.withArgs(execPath2CopyPath).returns([
-                vscode.Uri.file(execPath2CopyPath)
-              ]);
+              vsFindFilesStub.withArgs(matchRelativePattern(execPath2CopyPath))
+                  .returns([vscode.Uri.file(execPath2CopyPath)]);
 
               await updateConfig('executables', ['execPath1', 'execPath2Copy'])
               adapter = createAdapterAndSubscribe();
@@ -1716,12 +1729,14 @@ describe(
               c2fsStatStub.withArgs(execPath2CopyPath).callsFake(() => {
                 throw Error('restore');
               });
-              vsfsWatchStub.withArgs(execPath2CopyPath).callsFake(() => {
-                throw Error('restore');
-              });
-              vsFindFilesStub.withArgs(execPath2CopyPath).callsFake(() => {
-                throw Error('restore');
-              });
+              vsfsWatchStub.withArgs(matchRelativePattern(execPath2CopyPath))
+                  .callsFake(() => {
+                    throw Error('restore');
+                  });
+              vsFindFilesStub.withArgs(matchRelativePattern(execPath2CopyPath))
+                  .callsFake(() => {
+                    throw Error('restore');
+                  });
               disposeAdapterAndSubscribers();
               await updateConfig('executables', undefined);
               await updateConfig('defaultExecWatchTimeout', undefined);

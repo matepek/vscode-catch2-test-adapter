@@ -52,3 +52,13 @@ describe('FsWrapper.statAsync', function() {
     assert.ok(!res.isDirectory());
   })
 })
+
+describe('path', function() {
+  context('Uri', function() {
+    it('sould resolve', function() {
+      const a = vscode.Uri.file('/a/b/c');
+      const b = vscode.Uri.file('/a/b/c/d/e');
+      assert.equal(path.relative(a.fsPath, b.fsPath), path.normalize('d/e'));
+    })
+  })
+})
