@@ -64,7 +64,3 @@ export function existsAsync(path: string): Promise<boolean> {
 export function existsSync(path: string): boolean {
   return fs.existsSync(path);
 }
-
-export function readdirSync(path: string): string[] {
-  return fs.readdirSync(path, 'utf8');
-}

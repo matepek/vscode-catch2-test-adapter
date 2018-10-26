@@ -83,7 +83,7 @@
           ],
           "default": [
             {
-              "name": "${dirname} : ${name}",
+              "name": "${relDirname} : ${name}",
               "path": "build",
               "regex": "(t|T)est",
               "recursiveRegex": false,

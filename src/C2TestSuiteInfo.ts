@@ -16,6 +16,7 @@ import {TaskPool} from './TaskPool';
 export class C2TestSuiteInfo implements TestSuiteInfo {
   readonly type: 'suite' = 'suite';
   readonly id: string;
+  label: string;
   children: C2TestInfo[] = [];
   file?: string = undefined;
   line?: number = undefined;
@@ -24,9 +25,10 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
   private proc: ChildProcess|undefined = undefined;
 
   constructor(
-      public readonly label: string, private readonly adapter: C2TestAdapter,
-      public readonly execPath: string,
+      public readonly origLabel: string,
+      private readonly adapter: C2TestAdapter, public readonly execPath: string,
       public readonly execOptions: SpawnOptions) {
+    this.label = origLabel;
     this.id = generateUniqueId();
   }
 

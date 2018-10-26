@@ -3,22 +3,30 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import {SpawnOptions} from 'child_process';
+import {inspect} from 'util';
+import * as vscode from 'vscode';
 import {TestRunFinishedEvent, TestRunStartedEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
 
+import {C2ExecutableInfo} from './C2ExecutableInfo'
 import {C2TestAdapter} from './C2TestAdapter';
 import {C2TestInfo} from './C2TestInfo';
 import {C2TestSuiteInfo} from './C2TestSuiteInfo';
 import {generateUniqueId} from './IdGenerator';
 import {TaskPool} from './TaskPool';
 
-export class C2AllTestSuiteInfo implements TestSuiteInfo {
+export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly type: 'suite' = 'suite';
   readonly id: string;
   readonly label: string = 'AllTests';
   readonly children: C2TestSuiteInfo[] = [];
+  private readonly _executables: C2ExecutableInfo[] = [];
 
   constructor(private readonly adapter: C2TestAdapter) {
     this.id = generateUniqueId();
+  }
+
+  dispose() {
+    while (this._executables.length) this._executables.pop()!.dispose();
   }
 
   removeChild(child: C2TestSuiteInfo): boolean {
@@ -72,6 +80,18 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo {
     this.children.forEach(c => {
       c.cancel();
     });
+  }
+
+  async load(executables: C2ExecutableInfo[]) {
+    for (let i = 0; i < executables.length; i++) {
+      const executable = executables[i];
+      try {
+        await executable.load();
+        this._executables.push(executable);
+      } catch (e) {
+        this.adapter.log.error(inspect([e, i, executables]));
+      }
+    }
   }
 
   run(tests: string[], workerMaxNumber: number): Promise<void> {

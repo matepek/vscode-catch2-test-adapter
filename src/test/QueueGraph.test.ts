@@ -7,7 +7,7 @@ import {promisify} from 'util';
 
 import {QueueGraphNode} from '../QueueGraph';
 
-describe.only('QueueGraphNode', function() {
+describe('QueueGraphNode', function() {
   this.enableTimeouts(false);  // TODO
 
   async function waitFor(
@@ -58,38 +58,6 @@ describe.only('QueueGraphNode', function() {
     assert.ok(second);
   })
 
-  // it('promise practice 3', async function() {
-  //   let resolve: Function;
-  //   let second = false;
-  //   let p = new Promise<void>(r => {
-  //     resolve = r;
-  //   });
-  //   assert.ok(!second);
-
-  //   let third = false;
-  //   p = p.then(() => {
-  //     return new Promise<void>(() => {})
-  //         .then(() => {
-  //           second = true;
-  //         })
-  //         .then(() => {
-  //           third = true;
-  //         });
-  //   });
-  //   assert.ok(!second);
-
-  //   resolve!();
-  //   await waitFor(this, () => {
-  //     return second;
-  //   });
-  //   assert.ok(second);
-
-  //   await waitFor(this, () => {
-  //     return third;
-  //   });
-  //   assert.ok(third);
-  // })
-
   context('example 1', function() {
     /**
      *  node1 <___ node
@@ -100,6 +68,7 @@ describe.only('QueueGraphNode', function() {
     const nodeD = new QueueGraphNode('nodeD', [node1, node2]);
 
     it('add:depends before', async function() {
+      this.slow(150);
       let startD: Function;
       let hasRunDatOnce = false;
       nodeD.then(() => {

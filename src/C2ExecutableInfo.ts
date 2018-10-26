@@ -1,0 +1,194 @@
+//-----------------------------------------------------------------------------
+// vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
+// public domain. The author hereby disclaims copyright to this source code.
+
+import * as path from 'path';
+import {inspect, promisify} from 'util';
+import * as vscode from 'vscode';
+
+import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
+import {C2TestAdapter} from './C2TestAdapter';
+import {C2TestSuiteInfo} from './C2TestSuiteInfo';
+import * as c2fs from './FsWrapper';
+import {resolveVariables} from './Helpers';
+
+
+export class C2ExecutableInfo implements vscode.Disposable {
+  constructor(
+      private _adapter: C2TestAdapter,
+      private readonly _allTests: C2AllTestSuiteInfo,
+      public readonly name: string, public readonly pattern: string,
+      public readonly cwd: string, public readonly env: {[prop: string]: any}) {
+  }
+
+  private _disposables: vscode.Disposable[] = [];
+  private _watcher: vscode.FileSystemWatcher|undefined = undefined;
+
+  private readonly _executables: Map<string /** filePath */, C2TestSuiteInfo> =
+      new Map();
+
+  dispose() {
+    if (this._watcher) this._watcher.dispose();
+    while (this._disposables.length) this._disposables.pop()!.dispose();
+  }
+
+  async load(): Promise<void> {
+    try {
+      if (this.pattern.startsWith(this._adapter.workspaceFolder.uri
+                                      .path)) {  // TODO ez az if nem a legjobb
+        this._watcher = vscode.workspace.createFileSystemWatcher(
+            this.pattern, false, false, false);
+        this._disposables.push(this._watcher);
+        this._disposables.push(
+            this._watcher.onDidCreate(this._handleCreate, this));
+        this._disposables.push(
+            this._watcher.onDidChange(this._handleChange, this));
+        this._disposables.push(
+            this._watcher.onDidDelete(this._handleDelete, this));
+      }
+    } catch (e) {
+      this._adapter.log.error(inspect([e, this]));
+    }
+
+    let fileUris;
+    try {
+      fileUris = await vscode.workspace.findFiles(this.pattern);
+    } catch (e) {
+      fileUris = [vscode.Uri.file(this.pattern)];
+      debugger;
+    }
+
+    for (let i = 0; i < fileUris.length; i++) {
+      const file = fileUris[i];
+      if (await this._verifyIsCatch2TestExecutable(file.path)) {
+        let resolvedName = this.name;
+        let resolvedCwd = this.cwd;
+        try {
+          const varToValue: [string, string][] = [
+            ['${name}', file.path],
+            ['${basename}', path.basename(file.path)],
+            ['${absDirname}', path.dirname(file.path)],
+            [
+              '${relDirname}',
+              path.dirname(path.relative(
+                  this._adapter.workspaceFolder.uri.fsPath, file.path))
+            ],
+            ...this._adapter.variableToValue,
+          ];
+          resolvedName = resolveVariables(this.name, varToValue);
+          resolvedCwd = path.normalize(resolveVariables(this.cwd, varToValue));
+        } catch (e) {
+          this._adapter.log.error(inspect([e, this]));
+        }
+
+        const suite = this._allTests.createChildSuite(
+            resolvedName, file.path, {cwd: resolvedCwd, env: this.env});
+
+        this._executables.set(file.path, suite);
+      }
+    }
+
+    this._uniquifySuiteNames();
+
+    for (const suite of this._executables.values()) {
+      await suite.reloadChildren();
+    }
+  }
+
+  private _handleEverything(uri: vscode.Uri) {
+    let suite = this._executables.get(uri.path);
+
+    if (suite == undefined) {
+      suite = this._allTests.createChildSuite(
+          this.name, this.pattern, {cwd: this.cwd, env: this.env});
+      this._executables.set(uri.path, suite);
+    }
+
+    const x =
+        (exists: boolean, startTime: number, timeout: number,
+         delay: number): Promise<void> => {
+          if ((Date.now() - startTime) > timeout) {
+            this._executables.delete(uri.path);
+            this._adapter.testsEmitter.fire({type: 'started'});
+            this._allTests.removeChild(suite!);
+            this._adapter.testsEmitter.fire(
+                {type: 'finished', suite: this._allTests});
+            return Promise.resolve();
+          } else if (exists) {
+            this._adapter.testsEmitter.fire({type: 'started'});
+            return suite!.reloadChildren().then(
+                () => {
+                  this._adapter.testsEmitter.fire(
+                      {type: 'finished', suite: this._allTests});
+                },
+                (err: any) => {
+                  this._adapter.testsEmitter.fire(
+                      {type: 'finished', suite: this._allTests});
+                  this._adapter.log.warn(inspect(err));
+                  return x(
+                      false, startTime, timeout, Math.min(delay * 2, 2000));
+                });
+          }
+          return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
+            return c2fs.existsAsync(uri.path).then((exists: boolean) => {
+              return x(exists, startTime, timeout, Math.min(delay * 2, 2000));
+            });
+          });
+        };
+    // change event can arrive during debug session on osx (why?)
+    // if (!this.isDebugging) {
+    // TODO filter multiple events and dont mess with 'load'
+    x(false, Date.now(), this._adapter.getExecWatchTimeout(), 64);
+    //}
+  }
+
+  private _handleCreate(uri: vscode.Uri) {
+    if (this._executables.has(uri.path)) {
+      // we are fine: the delete event is still running until it's timeout
+      return;
+    }
+
+    return this._handleEverything(uri);
+  }
+
+  private _handleChange(uri: vscode.Uri) {
+    return this._handleEverything(uri);
+  }
+
+  private _handleDelete(uri: vscode.Uri) {
+    return this._handleEverything(uri);
+  }
+
+  private _uniquifySuiteNames() {
+    const uniqueNames: Map<string /* name */, [C2TestSuiteInfo]> = new Map();
+
+    for (const suite of this._executables.values()) {
+      const suites = uniqueNames.get(suite.origLabel);
+      if (suites) {
+        suites.push(suite);
+      } else {
+        uniqueNames.set(suite.origLabel, [suite]);
+      }
+    }
+
+    for (const suites of uniqueNames.values()) {
+      if (suites.length > 1) {
+        let i = 1;
+        for (const suite of suites) {
+          suite.label = suite.origLabel + '(' + String(i++) + ')';
+        }
+      }
+    }
+  }
+
+  private _verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
+    return c2fs.spawnAsync(path, ['--help'])
+        .then((res) => {
+          return res.stdout.indexOf('Catch v2.') != -1;
+        })
+        .catch((e) => {
+          this._adapter.log.error(inspect(e));
+          return false;
+        });
+  }
+}
