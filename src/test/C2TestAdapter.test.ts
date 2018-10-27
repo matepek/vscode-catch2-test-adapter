@@ -62,7 +62,7 @@ describe('C2TestAdapter', function() {
 
   let spawnStub: sinon.SinonStub;
   let vsfsWatchStub: sinon.SinonStub;
-  let c2fsStatStub: sinon.SinonStub;
+  let fsStatStub: sinon.SinonStub;
   let vsFindFilesStub: sinon.SinonStub;
 
   function resetConfig(): Thenable<void> {
@@ -173,8 +173,8 @@ describe('C2TestAdapter', function() {
     spawnStub.callThrough();
     vsfsWatchStub.reset();
     vsfsWatchStub.callThrough();
-    c2fsStatStub.reset();
-    c2fsStatStub.callThrough();
+    fsStatStub.reset();
+    fsStatStub.callThrough();
     vsFindFilesStub.reset();
     vsFindFilesStub.callThrough();
   }
@@ -187,7 +187,7 @@ describe('C2TestAdapter', function() {
     vsfsWatchStub =
         sinonSandbox.stub(vscode.workspace, 'createFileSystemWatcher')
             .named('vscode.createFileSystemWatcher');
-    c2fsStatStub = sinonSandbox.stub(fs, 'stat').named('fsStat');
+    fsStatStub = sinonSandbox.stub(fs, 'stat').named('fsStat');
     vsFindFilesStub = sinonSandbox.stub(vscode.workspace, 'findFiles')
                           .named('vsFindFilesStub');
 
@@ -314,7 +314,7 @@ describe('C2TestAdapter', function() {
           });
         }
 
-        c2fsStatStub.withArgs(suite[0]).callsFake(handleStatExistsFile);
+        fsStatStub.withArgs(suite[0]).callsFake(handleStatExistsFile);
 
         vsfsWatchStub.withArgs(matchRelativePattern(suite[0]))
             .callsFake(handleCreateWatcherCb);
@@ -1475,7 +1475,7 @@ describe('C2TestAdapter', function() {
                 });
           }
 
-          c2fsStatStub.withArgs(execPath2CopyPath)
+          fsStatStub.withArgs(execPath2CopyPath)
               .callsFake(handleStatExistsFile);
 
           vsfsWatchStub.withArgs(matchRelativePattern(execPath2CopyPath))
@@ -1501,7 +1501,7 @@ describe('C2TestAdapter', function() {
 
           let start: number = 0;
           const newRoot = await doAndWaitForReloadEvent(this, async () => {
-            c2fsStatStub.withArgs(execPath2CopyPath)
+            fsStatStub.withArgs(execPath2CopyPath)
                 .callsFake(handleStatNotExists);
             start = Date.now();
             watcher.sendDelete();
@@ -1509,7 +1509,7 @@ describe('C2TestAdapter', function() {
               assert.equal(testsEvents.length, 0);
             }, 1500);
             setTimeout(() => {
-              c2fsStatStub.withArgs(execPath2CopyPath)
+              fsStatStub.withArgs(execPath2CopyPath)
                   .callsFake(handleStatExistsFile);
               watcher.sendCreate();
             }, 3000);
@@ -1524,7 +1524,7 @@ describe('C2TestAdapter', function() {
               throw Error('restore');
             });
           }
-          c2fsStatStub.withArgs(execPath2CopyPath).callsFake(() => {
+          fsStatStub.withArgs(execPath2CopyPath).callsFake(() => {
             throw Error('restore');
           });
           vsfsWatchStub.withArgs(matchRelativePattern(execPath2CopyPath))
@@ -1561,7 +1561,7 @@ describe('C2TestAdapter', function() {
                 });
           }
 
-          c2fsStatStub.withArgs(execPath2CopyPath)
+          fsStatStub.withArgs(execPath2CopyPath)
               .callsFake(handleStatExistsFile);
 
           vsfsWatchStub.withArgs(matchRelativePattern(execPath2CopyPath))
@@ -1587,7 +1587,7 @@ describe('C2TestAdapter', function() {
 
           let start: number = 0;
           const newRoot = await doAndWaitForReloadEvent(this, async () => {
-            c2fsStatStub.withArgs(execPath2CopyPath)
+            fsStatStub.withArgs(execPath2CopyPath)
                 .callsFake(handleStatNotExists);
             start = Date.now();
             watcher.sendDelete();
@@ -1600,7 +1600,7 @@ describe('C2TestAdapter', function() {
               throw Error('restore');
             });
           }
-          c2fsStatStub.withArgs(execPath2CopyPath).callsFake(() => {
+          fsStatStub.withArgs(execPath2CopyPath).callsFake(() => {
             throw Error('restore');
           });
           vsfsWatchStub.withArgs(matchRelativePattern(execPath2CopyPath))
@@ -1684,7 +1684,7 @@ describe('C2TestAdapter', function() {
             return new ChildProcessStub(example1.suite2.t1.outputs[0][1]);
           });
 
-      c2fsStatStub.withArgs(execPath2CopyPath).callsFake(handleStatExistsFile);
+      fsStatStub.withArgs(execPath2CopyPath).callsFake(handleStatExistsFile);
 
       vsfsWatchStub.withArgs(matchRelativePattern(execPath2CopyPath))
           .callsFake(handleCreateWatcherCb);
@@ -1715,7 +1715,7 @@ describe('C2TestAdapter', function() {
           throw Error('restore');
         });
       }
-      c2fsStatStub.withArgs(execPath2CopyPath).callsFake(() => {
+      fsStatStub.withArgs(execPath2CopyPath).callsFake(() => {
         throw Error('restore');
       });
       vsfsWatchStub.withArgs(matchRelativePattern(execPath2CopyPath))

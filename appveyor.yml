@@ -4,13 +4,8 @@ platform:
 
 environment:
   matrix:
-    - nodejs_version: "8"
-    - nodejs_version: "11"
-
-matrix:
-  allow_failures:
-    - platform: x86
-      nodejs_version: "11"
+    - nodejs_version: LTS
+    - nodejs_version: Current
 
 install:
   - ps: Install-Product node $env:nodejs_version
