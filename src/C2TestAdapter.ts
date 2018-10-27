@@ -197,7 +197,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         vscode.extensions.getExtension('');
       }
 
-      throw 'Catch2: For debug \'debugConfigurationTemplate\' should be set.';
+      throw 'Catch2: For debug \'debugConfigTemplate\' should be set.';
     };
 
     const debugConfig = getDebugConfiguration();
@@ -241,7 +241,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
   private getDebugConfigurationTemplate(config: vscode.WorkspaceConfiguration):
       {[prop: string]: string}|null {
-    const o = config.get<any>('debugConfigurationTemplate', null);
+    const o = config.get<any>('debugConfigTemplate', null);
 
     if (o === null) return null;
 
@@ -295,7 +295,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration): number {
-    return config.get<number>('defaultExecWatchTimeout', 10000);
+    return config.get<number>('defaultWatchTimeoutSec', 10) * 1000;
   }
 
   private getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
@@ -339,23 +339,26 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       return path.isAbsolute(p) ? p : this.resolveRelPath(p);
     };
 
-    const createFromObject = (obj: Object): C2ExecutableInfo => {
-      const name: string = obj.hasOwnProperty('name') ?
-          (<any>obj)['name'] :
-          '${basename} (${relDirname}/)';
-      if (!obj.hasOwnProperty('path') || (<any>obj)['path'] === null) {
-        console.warn(Error('\'path\' is a requireds property.'));
-        throw Error('Wrong object: ' + inspect(obj));
-      }
-      const p: string = (<any>obj)['path'];
-      const cwd: string = obj.hasOwnProperty('cwd') ? (<any>obj)['cwd'] :
-                                                      globalWorkingDirectory;
+    const createFromObject = (obj: {[prop: string]: any}): C2ExecutableInfo => {
+      const name: string =
+          obj.hasOwnProperty('name') ? obj.name : '${relName} (${relDirname}/)';
+
+      let pattern: string = '';
+      if (obj.hasOwnProperty('pattern') && typeof obj.pattern == 'string')
+        pattern = obj.pattern;
+      else if (obj.hasOwnProperty('path') && typeof obj.path == 'string')
+        pattern = obj.path;
+      else
+        throw Error('Error: pattern or path property is required.');
+
+      const cwd: string =
+          obj.hasOwnProperty('cwd') ? obj.cwd : globalWorkingDirectory;
+
       const env: {[prop: string]: any} = obj.hasOwnProperty('env') ?
-          this.getGlobalAndCurrentEnvironmentVariables(
-              config, (<any>obj)['env']) :
+          this.getGlobalAndCurrentEnvironmentVariables(config, obj.env) :
           this.getGlobalAndDefaultEnvironmentVariables(config);
 
-      return new C2ExecutableInfo(this, allTests, name, p, cwd, env);
+      return new C2ExecutableInfo(this, allTests, name, pattern, cwd, env);
     };
 
     if (typeof configExecs === 'string') {

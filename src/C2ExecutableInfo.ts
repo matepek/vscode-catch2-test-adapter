@@ -37,8 +37,8 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
 
     const isAbsolute = path.isAbsolute(this.pattern);
-    const absPattern =
-        isAbsolute ? this.pattern : path.resolve(wsUri.fsPath, this.pattern);
+    const absPattern = isAbsolute ? path.normalize(this.pattern) :
+                                    path.resolve(wsUri.fsPath, this.pattern);
     const absPatternAsUri = vscode.Uri.file(absPattern);
     const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
     const isPartOfWs = !relativeToWs.startsWith('..');
@@ -77,28 +77,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
     for (let i = 0; i < fileUris.length; i++) {
       const file = fileUris[i];
       if (await this._verifyIsCatch2TestExecutable(file.fsPath)) {
-        let resolvedName = this.name;
-        let resolvedCwd = this.cwd;
-        try {
-          const relPath = path.relative(wsUri.path, file.path);
-          const varToValue: [string, string][] = [
-            ['${absName}', file.path],
-            ['${relName}', relPath],
-            ['${basename}', path.basename(file.path)],
-            ['${absDirname}', path.dirname(file.path)],
-            ['${relDirname}', path.dirname(relPath)],
-            ...this._adapter.variableToValue,
-          ];
-          resolvedName = resolveVariables(this.name, varToValue);
-          resolvedCwd = path.normalize(resolveVariables(this.cwd, varToValue));
-        } catch (e) {
-          this._adapter.log.error(inspect([e, this]));
-        }
-
-        const suite = this._allTests.createChildSuite(
-            resolvedName, file.path, {cwd: resolvedCwd, env: this.env});
-
-        this._executables.set(file.fsPath, suite);
+        this._addFile(file);
       }
     }
 
@@ -109,13 +88,43 @@ export class C2ExecutableInfo implements vscode.Disposable {
     }
   }
 
+  private _addFile(file: vscode.Uri) {
+    const wsUri = this._adapter.workspaceFolder.uri;
+
+    let resolvedName = this.name;
+    let resolvedCwd = this.cwd;
+    let resolvedEnv: {[prop: string]: string} = this.env;
+    try {
+      const relPath = path.relative(wsUri.path, file.path);
+      const varToValue: [string, string][] = [
+        ['${absName}', file.path],
+        ['${relName}', relPath],
+        ['${basename}', path.basename(file.path)],
+        ['${absDirname}', path.dirname(file.path)],
+        ['${relDirname}', path.dirname(relPath)],
+        ...this._adapter.variableToValue,
+      ];
+      resolvedName = resolveVariables(this.name, varToValue);
+      resolvedCwd = path.normalize(resolveVariables(this.cwd, varToValue));
+      resolvedEnv = resolveVariables(this.env, varToValue);
+    } catch (e) {
+      this._adapter.log.error(inspect([e, this]));
+    }
+
+    const suite = this._allTests.createChildSuite(
+        resolvedName, file.path, {cwd: resolvedCwd, env: resolvedEnv});
+
+    this._executables.set(file.fsPath, suite);
+
+    return suite;
+  }
+
   private _handleEverything(uri: vscode.Uri) {
     let suite = this._executables.get(uri.fsPath);
 
     if (suite == undefined) {
-      suite = this._allTests.createChildSuite(
-          this.name, uri.fsPath, {cwd: this.cwd, env: this.env});
-      this._executables.set(uri.fsPath, suite);
+      suite = this._addFile(uri);
+      this._uniquifySuiteNames();
     }
 
     const x =

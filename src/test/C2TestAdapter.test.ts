@@ -1585,10 +1585,10 @@ describe(
         specify(
             'load executables=["execPath1", "execPath2Copy"]; delete; sleep 3; create',
             async function(this: Mocha.Context) {
-              const watchTimeout = 5500;
-              await updateConfig('defaultExecWatchTimeout', watchTimeout);
-              this.timeout(watchTimeout + 2500 /* because of 'delay' */);
-              this.slow(watchTimeout + 2500 /* because of 'delay' */);
+              const watchTimeout = 6;
+              await updateConfig('defaultWatchTimeoutSec', watchTimeout);
+              this.timeout(watchTimeout * 1000 + 2500 /* because of 'delay' */);
+              this.slow(watchTimeout * 1000 + 2500 /* because of 'delay' */);
               const execPath2CopyPath =
                   path.join(workspaceFolderUri.path, 'execPath2Copy');
 
@@ -1662,19 +1662,19 @@ describe(
                   });
               disposeAdapterAndSubscribers();
               await updateConfig('executables', undefined);
-              await updateConfig('defaultExecWatchTimeout', undefined);
+              await updateConfig('defaultWatchTimeoutSec', undefined);
 
               assert.equal(newRoot.children.length, 2);
               assert.ok(3000 < elapsed, inspect(elapsed));
-              assert.ok(elapsed < watchTimeout + 2400, inspect(elapsed));
+              assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
             })
 
         specify(
             'load executables=["execPath1", "execPath2Copy"]; delete second',
             async function() {
-              const watchTimeout = 5000;
-              await updateConfig('defaultExecWatchTimeout', watchTimeout);
-              this.timeout(watchTimeout + 2500 /* because of 'delay' */);
+              const watchTimeout = 5;
+              await updateConfig('defaultWatchTimeoutSec', watchTimeout);
+              this.timeout(watchTimeout * 1000 + 2500 /* because of 'delay' */);
               this.slow(watchTimeout + 2500 /* because of 'delay' */);
               const execPath2CopyPath =
                   path.join(workspaceFolderUri.path, 'execPath2Copy');
@@ -1739,11 +1739,11 @@ describe(
                   });
               disposeAdapterAndSubscribers();
               await updateConfig('executables', undefined);
-              await updateConfig('defaultExecWatchTimeout', undefined);
+              await updateConfig('defaultWatchTimeoutSec', undefined);
 
               assert.equal(newRoot.children.length, 1);
-              assert.ok(watchTimeout < elapsed, inspect(elapsed));
-              assert.ok(elapsed < watchTimeout + 2400, inspect(elapsed));
+              assert.ok(watchTimeout * 1000 < elapsed, inspect(elapsed));
+              assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
             })
       })
     })

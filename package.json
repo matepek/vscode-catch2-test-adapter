@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -83,14 +83,11 @@
           ],
           "default": [
             {
-              "name": "${basename} (${relDirname}/)",
-              "path": "{build|out}/**/*{test|Test|TEST}*",
-              "regex": "(t|T)est",
-              "recursiveRegex": false,
-              "workerMaxNumber": 1,
+              "name": "${relName} (${relDirname}/)",
+              "path": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
               "cwd": "${absDirname}",
               "env": {
-                "ExampleENV1": "ExampleValueofENV1"
+                "ExampleENV1": "You can use variables here too, like ${absName}"
               }
             }
           ],
@@ -120,12 +117,12 @@
           "default": null,
           "scope": "resource"
         },
-        "catch2TestExplorer.defaultExecWatchTimeout": {
+        "catch2TestExplorer.defaultWatchTimeoutSec": {
           "description": "Test executables are being watched. In case of one compiles too much this variable can help with it.",
           "type": [
             "number"
           ],
-          "default": 10000,
+          "default": 10,
           "scope": "resource"
         },
         "catch2TestExplorer.workerMaxNumber": {
@@ -140,7 +137,7 @@
           "default": true,
           "scope": "resource"
         },
-        "catch2TestExplorer.debugConfigurationTemplate": {
+        "catch2TestExplorer.debugConfigTemplate": {
           "description": "Set the necessary debug configuraitons and the debug button will work.",
           "type": [
             "object",
