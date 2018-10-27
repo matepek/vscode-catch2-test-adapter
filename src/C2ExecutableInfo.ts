@@ -99,12 +99,18 @@ export class C2ExecutableInfo implements vscode.Disposable {
       const base3Filename = path.basename(base2Filename, ext3Filename);
 
       const varToValue: [string, string][] = [
-        ...this._adapter.variableToValue, ['${absPath}', file.path],
-        ['${relPath}', relPath], ['${absDirpath}', path.dirname(file.fsPath)],
-        ['${relDirpath}', path.dirname(relPath)], ['${filename}', filename],
-        ['${extFilename}', extFilename], ['${baseFilename}', baseFilename],
-        ['${ext2Filename}', ext2Filename], ['${base2Filename}', base2Filename],
-        ['${ext3Filename}', ext3Filename], ['${base3Filename}', base3Filename]
+        ...this._adapter.variableToValue,
+        ['${absPath}', file.fsPath],
+        ['${relPath}', relPath],
+        ['${absDirpath}', path.dirname(file.fsPath)],
+        ['${relDirpath}', path.dirname(relPath)],
+        ['${filename}', filename],
+        ['${extFilename}', extFilename],
+        ['${baseFilename}', baseFilename],
+        ['${ext2Filename}', ext2Filename],
+        ['${base2Filename}', base2Filename],
+        ['${ext3Filename}', ext3Filename],
+        ['${base3Filename}', base3Filename],
       ];
       resolvedName = resolveVariables(this.name, varToValue);
       resolvedCwd = path.normalize(resolveVariables(this.cwd, varToValue));
@@ -114,7 +120,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
     }
 
     const suite = this._allTests.createChildSuite(
-        resolvedName, file.path, {cwd: resolvedCwd, env: resolvedEnv});
+        resolvedName, file.fsPath, {cwd: resolvedCwd, env: resolvedEnv});
 
     this._executables.set(file.fsPath, suite);
 

@@ -83,11 +83,11 @@
           ],
           "default": [
             {
-              "name": "${relName} (${relDirname}/)",
+              "name": "${relPath} (${relDirpath}/)",
               "path": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
               "cwd": "${absDirname}",
               "env": {
-                "C2TESTEXECUTABLEPATH": "${absName}"
+                "C2TESTEXECUTABLEPATH": "${absPath}"
               }
             }
           ],
