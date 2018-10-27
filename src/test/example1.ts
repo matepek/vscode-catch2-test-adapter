@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {TestInfo, TestSuiteInfo} from 'vscode-test-adapter-api';
+import { TestInfo, TestSuiteInfo } from 'vscode-test-adapter-api';
 
 assert.notEqual(vscode.workspace.workspaceFolders, undefined);
 assert.equal(vscode.workspace.workspaceFolders!.length, 1);
@@ -10,7 +10,7 @@ const workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
 
 export const example1 = new class {
   readonly suite1 = new class {
-    readonly execPath = path.join(workspaceFolderUri.path, 'execPath1');
+    readonly execPath = vscode.Uri.file(path.join(workspaceFolderUri.path, 'execPath1')).fsPath;
 
     readonly t1 = new class {
       readonly fullTestName = 's1t1';
@@ -18,7 +18,7 @@ export const example1 = new class {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(
-            test.file, path.join(workspaceFolderUri.path, 'suite1.cpp'));
+          test.file, vscode.Uri.file(path.join(workspaceFolderUri.path, 'suite1.cpp')).fsPath);
         assert.equal(test.line, 7 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
         if (uniqeIdContainer != undefined) {
@@ -66,7 +66,7 @@ export const example1 = new class {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(
-            test.file, path.join(workspaceFolderUri.path, 'suite1.cpp'));
+          test.file, vscode.Uri.file(path.join(workspaceFolderUri.path, 'suite1.cpp')).fsPath);
         assert.equal(test.line, 13 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
         if (uniqeIdContainer != undefined) {
@@ -129,13 +129,13 @@ export const example1 = new class {
       [
         ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
         'Matching test cases:\n' +
-            '  s1t1\n' +
-            '    suite1.cpp:7\n' +
-            '    tag1\n' +
-            '  s1t2\n' +
-            '    suite1.cpp:13\n' +
-            '    tag1\n' +
-            '2 matching test cases\n\n'
+        '  s1t1\n' +
+        '    suite1.cpp:7\n' +
+        '    tag1\n' +
+        '  s1t2\n' +
+        '    suite1.cpp:13\n' +
+        '    tag1\n' +
+        '2 matching test cases\n\n'
       ],
       [
         ['--reporter', 'xml', '--durations', 'yes'],
@@ -191,19 +191,19 @@ export const example1 = new class {
     ];
 
     assert(
-        label: string, childLabels: string[], suite: TestSuiteInfo,
-        uniqeIdContainer?: Set<string>) {
+      label: string, childLabels: string[], suite: TestSuiteInfo,
+      uniqeIdContainer?: Set<string>) {
       assert.equal(suite.type, 'suite');
       assert.equal(suite.label, label);
       assert.equal(
-          suite.file, path.join(workspaceFolderUri.path, 'suite1.cpp'));
+        suite.file, vscode.Uri.file(path.join(workspaceFolderUri.path, 'suite1.cpp')).fsPath);
       assert.equal(suite.line, 0);
       assert.equal(suite.children.length, 2);
       assert.equal(childLabels.length, suite.children.length);
       this.t1.assert(
-          childLabels[0], <TestInfo>suite.children[0], uniqeIdContainer);
+        childLabels[0], <TestInfo>suite.children[0], uniqeIdContainer);
       this.t2.assert(
-          childLabels[1], <TestInfo>suite.children[1], uniqeIdContainer);
+        childLabels[1], <TestInfo>suite.children[1], uniqeIdContainer);
       if (uniqeIdContainer != undefined) {
         assert.ok(!uniqeIdContainer.has(suite.id));
         uniqeIdContainer.add(suite.id);
@@ -212,7 +212,7 @@ export const example1 = new class {
   };
 
   readonly suite2 = new class {
-    readonly execPath = path.join(workspaceFolderUri.path, 'execPath2');
+    readonly execPath = vscode.Uri.file(path.join(workspaceFolderUri.path, 'execPath2')).fsPath;
 
     readonly t1 = new class {
       readonly fullTestName = 's2t1';
@@ -220,7 +220,7 @@ export const example1 = new class {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(
-            test.file, path.join(workspaceFolderUri.path, 'suite2.cpp'));
+          test.file, vscode.Uri.file(path.join(workspaceFolderUri.path, 'suite2.cpp')).fsPath);
         assert.equal(test.line, 7 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
         if (uniqeIdContainer != undefined) {
@@ -268,7 +268,7 @@ export const example1 = new class {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(
-            test.file, path.join(workspaceFolderUri.path, 'suite2.cpp'));
+          test.file, vscode.Uri.file(path.join(workspaceFolderUri.path, 'suite2.cpp')).fsPath);
         assert.equal(test.line, 13 - 1);
         assert.ok(test.skipped === true);
         if (uniqeIdContainer != undefined) {
@@ -316,7 +316,7 @@ export const example1 = new class {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(
-            test.file, path.join(workspaceFolderUri.path, 'suite2.cpp'));
+          test.file, vscode.Uri.file(path.join(workspaceFolderUri.path, 'suite2.cpp')).fsPath);
         assert.equal(test.line, 19 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
         if (uniqeIdContainer != undefined) {
@@ -375,21 +375,21 @@ export const example1 = new class {
     };
 
     assert(
-        label: string, childLabels: string[], suite: TestSuiteInfo,
-        uniqeIdContainer?: Set<string>) {
+      label: string, childLabels: string[], suite: TestSuiteInfo,
+      uniqeIdContainer?: Set<string>) {
       assert.equal(suite.type, 'suite');
       assert.equal(suite.label, label);
       assert.equal(
-          suite.file, path.join(workspaceFolderUri.path, 'suite2.cpp'));
+        suite.file, vscode.Uri.file(path.join(workspaceFolderUri.path, 'suite2.cpp')).fsPath);
       assert.equal(suite.line, 0);
       assert.equal(suite.children.length, 3);
       assert.equal(childLabels.length, suite.children.length);
       this.t1.assert(
-          childLabels[0], <TestInfo>suite.children[0], uniqeIdContainer);
+        childLabels[0], <TestInfo>suite.children[0], uniqeIdContainer);
       this.t2.assert(
-          childLabels[1], <TestInfo>suite.children[1], uniqeIdContainer);
+        childLabels[1], <TestInfo>suite.children[1], uniqeIdContainer);
       this.t3.assert(
-          childLabels[2], <TestInfo>suite.children[2], uniqeIdContainer);
+        childLabels[2], <TestInfo>suite.children[2], uniqeIdContainer);
       if (uniqeIdContainer != undefined) {
         assert.ok(!uniqeIdContainer.has(suite.id));
         uniqeIdContainer.add(suite.id);
@@ -401,17 +401,17 @@ export const example1 = new class {
       [
         ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
         'Matching test cases:\n' +
-            '  s2t1\n' +
-            '    suite2.cpp:7\n' +
-            '    tag1\n' +
-            '  s2t2\n' +
-            '    suite2.cpp:13\n' +
-            '    tag1\n' +
-            '      [.]\n' +
-            '  s2t3\n' +
-            '    suite2.cpp:19\n' +
-            '    tag1\n' +
-            '3 matching test cases\n\n'
+        '  s2t1\n' +
+        '    suite2.cpp:7\n' +
+        '    tag1\n' +
+        '  s2t2\n' +
+        '    suite2.cpp:13\n' +
+        '    tag1\n' +
+        '      [.]\n' +
+        '  s2t3\n' +
+        '    suite2.cpp:19\n' +
+        '    tag1\n' +
+        '3 matching test cases\n\n'
       ],
       [
         ['--reporter', 'xml', '--durations', 'yes'],
@@ -467,7 +467,7 @@ export const example1 = new class {
   };
 
   readonly suite3 = new class {
-    readonly execPath = path.join(workspaceFolderUri.path, 'execPath3');
+    readonly execPath = vscode.Uri.file(path.join(workspaceFolderUri.path, 'execPath3')).fsPath;
 
     readonly outputs: [string[], string][] = [
 
