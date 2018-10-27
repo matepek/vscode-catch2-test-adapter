@@ -14,13 +14,14 @@ import * as sinon from 'sinon';
 import {TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo, TestInfo, TestAdapter} from 'vscode-test-adapter-api';
 import {Log} from 'vscode-test-adapter-util';
 import {inspect, promisify} from 'util';
+import { EOL } from 'os';
 
 import {C2TestAdapter} from '../C2TestAdapter';
 import {example1} from './example1';
 import {ChildProcessStub, FileSystemWatcherStub} from './Helpers';
 import * as Mocha from 'mocha';
 
-assert.notEqual(vscode.workspace.workspaceFolders, undefined);
+assert.notStrictEqual(vscode.workspace.workspaceFolders, undefined);
 assert.equal(vscode.workspace.workspaceFolders!.length, 1);
 
 const workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
@@ -38,8 +39,6 @@ const sinonSandbox = sinon.createSandbox();
 ///
 
 describe('C2TestAdapter', function() {
-  this.enableTimeouts(false);  // TODO
-
   let testsEvents: (TestLoadStartedEvent|TestLoadFinishedEvent)[] = [];
   let testStatesEvents: (TestRunStartedEvent|TestRunFinishedEvent|
                          TestSuiteEvent|TestEvent)[] = [];
@@ -91,7 +90,7 @@ describe('C2TestAdapter', function() {
                   o[o.type] === (<any>v)[v.type];
           return deepStrictEqual(o, v);
         });
-    assert.notEqual(
+    assert.notStrictEqual(
         i, -1,
         'testStatesEvI failed to find: ' + inspect(o) + '\n\nin\n\n' +
             inspect(testStatesEvents));
@@ -250,7 +249,7 @@ describe('C2TestAdapter', function() {
     assert.equal(testsEvents[0].type, 'started');
     assert.equal(testsEvents[1].type, 'finished');
     const suite = (<TestLoadFinishedEvent>testsEvents[1]).suite;
-    assert.notEqual(suite, undefined);
+    assert.notStrictEqual(suite, undefined);
     assert.equal(suite!.children.length, 0);
     disposeAdapterAndSubscribers();
   })
@@ -909,9 +908,9 @@ describe('C2TestAdapter', function() {
               async function() {
                 const m =
                     example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');
-                assert.notEqual(m, undefined);
-                assert.notEqual(m!.input, undefined);
-                assert.notEqual(m!.index, undefined);
+                assert.notStrictEqual(m, undefined);
+                assert.notStrictEqual(m!.input, undefined);
+                assert.notStrictEqual(m!.index, undefined);
                 const part = m!.input!.substr(0, m!.index! + m![0].length);
                 const withArgs = spawnStub.withArgs(
                     example1.suite1.execPath, example1.suite1.t1.outputs[0][0]);
@@ -1200,7 +1199,7 @@ describe('C2TestAdapter', function() {
                    example1.suite1.execPath, example1.suite1.outputs[1][0]);
                withArgs.onCall(withArgs.callCount)
                    .returns(new ChildProcessStub(
-                       testListOutput.join('\n')));  // TODO EOL
+                       testListOutput.join(EOL)));
 
                const oldRootChildren = [...root.children];
                const oldSuite1Children = [...suite1.children];
