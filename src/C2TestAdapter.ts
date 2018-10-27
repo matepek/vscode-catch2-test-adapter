@@ -337,10 +337,6 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     const configExecs:|undefined|string|string[]|{[prop: string]: any}|
         {[prop: string]: any}[] = config.get('executables');
 
-    const fullPath = (p: string): string => {
-      return path.isAbsolute(p) ? p : this.resolveRelPath(p);
-    };
-
     const createFromObject = (obj: {[prop: string]: any}): C2ExecutableInfo => {
       const name: string =
           obj.hasOwnProperty('name') ? obj.name : '${relName} (${relDirname}/)';
@@ -366,19 +362,16 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     if (typeof configExecs === 'string') {
       if (configExecs.length == 0) return [];
       executables.push(new C2ExecutableInfo(
-          this, allTests, configExecs,
-          fullPath(resolveVariables(configExecs, this.variableToValue)),
-          globalWorkingDirectory, {}));
+          this, allTests, configExecs, configExecs, globalWorkingDirectory,
+          {}));
     } else if (Array.isArray(configExecs)) {
       for (var i = 0; i < configExecs.length; ++i) {
         const configExe = configExecs[i];
         if (typeof configExe == 'string') {
           const configExecsName = String(configExe);
           if (configExecsName.length > 0) {
-            const resolvedName =
-                resolveVariables(configExecsName, this.variableToValue);
             executables.push(new C2ExecutableInfo(
-                this, allTests, resolvedName, fullPath(resolvedName),
+                this, allTests, configExecsName, configExecsName,
                 globalWorkingDirectory, {}));
           }
         } else {

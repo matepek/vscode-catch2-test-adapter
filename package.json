@@ -87,7 +87,7 @@
               "path": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
               "cwd": "${absDirname}",
               "env": {
-                "ExampleENV1": "You can use variables here too, like ${absName}"
+                "C2TESTEXECUTABLEPATH": "${absName}"
               }
             }
           ],
@@ -108,7 +108,7 @@
           "scope": "resource"
         },
         "catch2TestExplorer.defaultRngSeed": {
-          "description": "Specify a seed for the Random Number Generator. For details see: https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed",
+          "description": "Specify a seed for the Random Number Generator. (ex.: '<number>', '\"time\"') For details see: https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed",
           "type": [
             "string",
             "number",
@@ -118,7 +118,7 @@
           "scope": "resource"
         },
         "catch2TestExplorer.defaultWatchTimeoutSec": {
-          "description": "Test executables are being watched. In case of one compiles too much this variable can help with it.",
+          "description": "Test executables are being watched (only inside the workspace directory). In case of one compiles too much this variable can help with it.",
           "type": [
             "number"
           ],
@@ -128,23 +128,24 @@
         "catch2TestExplorer.workerMaxNumber": {
           "description": "The variable maximize the number of the parallel test execution.",
           "type": "number",
-          "default": 4,
+          "default": 1,
           "scope": "resource"
         },
         "catch2TestExplorer.enableSourceDecoration": {
-          "description": "Sets the source code decorations: Errored lines will be highlited.",
+          "description": "Sets the source code decorations: Errored lines will be highlighted.",
           "type": "boolean",
           "default": true,
           "scope": "resource"
         },
         "catch2TestExplorer.debugConfigTemplate": {
-          "description": "Set the necessary debug configuraitons and the debug button will work.",
+          "description": "Set the necessary debug configuraitons and then the debug button will work.",
           "type": [
             "object",
             "null"
           ],
           "default": {
             "type": "cppdbg",
+            "MIMode": "lldb",
             "program": "${exec}",
             "args": "${args}",
             "cwd": "${cwd}",

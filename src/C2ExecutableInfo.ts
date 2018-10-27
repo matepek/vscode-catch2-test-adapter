@@ -47,13 +47,8 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     if (!isAbsolute || (isAbsolute && isPartOfWs)) {
       let relativePattern: vscode.RelativePattern;
-      if (isAbsolute) {
-        relativePattern = new vscode.RelativePattern(
-            this._adapter.workspaceFolder, relativeToWs);
-      } else {
-        relativePattern = new vscode.RelativePattern(
-            this._adapter.workspaceFolder, this.pattern);
-      }
+      relativePattern = new vscode.RelativePattern(
+          this._adapter.workspaceFolder, relativeToWs);
       fileUris =
           await vscode.workspace.findFiles(relativePattern, undefined, 1000);
       try {
@@ -95,9 +90,9 @@ export class C2ExecutableInfo implements vscode.Disposable {
     let resolvedCwd = this.cwd;
     let resolvedEnv: {[prop: string]: string} = this.env;
     try {
-      const relPath = path.relative(wsUri.path, file.path);
+      const relPath = path.relative(wsUri.fsPath, file.fsPath);
 
-      const filename = path.basename(file.path);
+      const filename = path.basename(file.fsPath);
       const extFilename = path.extname(filename);
       const baseFilename = path.basename(filename, extFilename);
       const ext2Filename = path.extname(baseFilename);
@@ -109,7 +104,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
         ...this._adapter.variableToValue,
         ['${absPath}', file.path],
         ['${relPath}', relPath],
-        ['${absDirpath}', path.dirname(file.path)],
+        ['${absDirpath}', path.dirname(file.fsPath)],
         ['${relDirpath}', path.dirname(relPath)],
         ['${filename}', filename],
         ['${extFilename}', extFilename],

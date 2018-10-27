@@ -11,31 +11,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Lot of things new under the hood, but lets talk about the 'API' change.
 
-### Changed
+### Changed ⚠️
 
 - Renamed `defaultExecWatchTimeout` --> `defaultWatchTimeoutSec`.
+
   - Also the unit has changed from milisecond to **second**.
 
 - Renamed `debugConfigurationTemplate` --> `debugConfigTemplate`.
 - Renamed `path` property of `executables` --> `pattern`. (Technically `path` still can be used as an alias.)
-- Removed `regex` property of `executables`.
-- Removed `recursiveRegex` property of `executables`.
 
-- Changed behaviour of `path` property of `executables`. 
-  Now it can understand "VSCode patterns". ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options))
-	- These work for only path's inside the _workspace directory_. Paths outside of it can be used 
-    with absolute path or with relative to _working directory_ (ex.: `../build/test.exe`), but 
-    without patterns (and without file-watch).
+- Changed behaviour of `path` property of `executables`.
+  Now it can understand "VSCode patterns". ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)) - These work for only path's inside the _workspace directory_. Paths outside of it can be used
+  with absolute path or with relative to _working directory_ (ex.: `../build/test.exe`), but
+  without patterns (and without file-watch).
+
   - `*` to match one or more characters in a path segment
   - `?` to match on one character in a path segment
   - `**` to match any number of path segments, including none
   - `{}` to group conditions (e.g. {`**/*.html,**/*.txt`} matches all HTML and text files)
   - `[]` to declare a range of characters to match (e.g., `example.[0-9]` to match on example.0, example.1, …)
 
-- File system is watched through the previously mentioned pattern (only inside the _workspace directory_), and 
+- File system is watched through the previously mentioned pattern (only inside the _workspace directory_), and
   newly created executables will be added autamtically, deleted ones will be removed and changed ones will be refresed.
 
 - Variable substitution has been changed. (See [README.md] for details.)
+
+### Removed 🚫
+
+- Removed `regex` property of `executables`.
+- Removed `recursiveRegex` property of `executables`.
 
 ## [1.2.0] - 2018-10-24
 
