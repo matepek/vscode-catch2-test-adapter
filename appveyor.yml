@@ -1,10 +1,16 @@
+platform:
+  - x86
+  - x64
+
 environment:
   matrix:
     - nodejs_version: "8"
-      platform: x86
-      platform: x64
     - nodejs_version: "11"
-      platform: x64      
+
+matrix:
+  allow_failures:
+    - platform: x86
+      nodejs_version: "11"
 
 install:
   - ps: Install-Product node $env:nodejs_version
