@@ -1,0 +1,15 @@
+environment:
+  nodejs_version: "10"
+
+install:
+  - ps: Install-Product node $env:nodejs_version
+  - node --version
+  - npm --version
+  - npm install
+
+test_script:
+  - npm run compile
+  - npm test --silent
+
+# Don't actually build.
+build: off

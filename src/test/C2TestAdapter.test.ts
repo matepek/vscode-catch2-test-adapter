@@ -31,7 +31,7 @@ const workspaceFolder =
 const logger =
     new Log('Catch2TestAdapter', workspaceFolder, 'Catch2TestAdapter');
 
-const dotVscodePath = path.join(workspaceFolderUri.path, '.vscode');
+const dotVscodePath = path.join(workspaceFolderUri.fsPath, '.vscode');
 
 const sinonSandbox = sinon.createSandbox();
 
@@ -41,7 +41,7 @@ describe('C2TestAdapter', function() {
   this.enableTimeouts(false);  // TODO
 
   let testsEvents: (TestLoadStartedEvent|TestLoadFinishedEvent)[] = [];
-  let testStatesEvents: (|TestRunStartedEvent|TestRunFinishedEvent|
+  let testStatesEvents: (TestRunStartedEvent|TestRunFinishedEvent|
                          TestSuiteEvent|TestEvent)[] = [];
 
   function getConfig() {
@@ -67,7 +67,7 @@ describe('C2TestAdapter', function() {
 
   function resetConfig(): Thenable<void> {
     const packageJson = fse.readJSONSync(
-        path.join(workspaceFolderUri.path, '../..', 'package.json'));
+        path.join(workspaceFolderUri.fsPath, '../..', 'package.json'));
     const properties: {[prop: string]: any}[] =
         packageJson['contributes']['configuration']['properties'];
     let t: Thenable<void> = Promise.resolve();
@@ -87,9 +87,8 @@ describe('C2TestAdapter', function() {
          TestEvent) => {
           if (o.type == v.type)
             if (o.type == 'suite' || o.type == 'test')
-              return (
-                  o.state === (<TestSuiteEvent|TestEvent>v).state &&
-                  o[o.type] === (<any>v)[v.type]);
+              return o.state === (<TestSuiteEvent|TestEvent>v).state &&
+                  o[o.type] === (<any>v)[v.type];
           return deepStrictEqual(o, v);
         });
     assert.notEqual(
@@ -211,18 +210,18 @@ describe('C2TestAdapter', function() {
     before(function() {
       adapter = createAdapterAndSubscribe();
       assert.deepStrictEqual(testsEvents, []);
-    });
+    })
 
     after(function() {
       disposeAdapterAndSubscribers();
       return resetConfig();
-    });
+    })
 
     it('defaultEnv', function() {
       return doAndWaitForReloadEvent(this, () => {
-        return updateConfig('defaultEnv', {APPLE: 'apple'});
+        return updateConfig('defaultEnv', {'APPLE': 'apple'});
       });
-    });
+    })
 
     it('defaultCwd', function() {
       return doAndWaitForReloadEvent(this, () => {
@@ -240,8 +239,8 @@ describe('C2TestAdapter', function() {
       return updateConfig('defaultRngSeed', 987).then(function() {
         assert.equal(adapter.getRngSeed(), 987);
       });
-    });
-  });
+    })
+  })
 
   it('load with empty config', async function() {
     this.slow(500);
@@ -254,7 +253,7 @@ describe('C2TestAdapter', function() {
     assert.notEqual(suite, undefined);
     assert.equal(suite!.children.length, 0);
     disposeAdapterAndSubscribers();
-  });
+  })
 
   context('example1', function() {
     const watchers: Map<string, FileSystemWatcherStub> = new Map();
@@ -301,7 +300,7 @@ describe('C2TestAdapter', function() {
     function matchRelativePattern(p: string) {
       return sinon.match((actual: vscode.RelativePattern) => {
         const required = new vscode.RelativePattern(
-            workspaceFolder, path.relative(workspaceFolderUri.path, p));
+            workspaceFolder, path.relative(workspaceFolderUri.fsPath, p));
         return required.base == actual.base &&
             required.pattern == actual.pattern;
       });
@@ -323,7 +322,7 @@ describe('C2TestAdapter', function() {
 
       const dirContent: Map<string, vscode.Uri[]> = new Map();
       for (let p of example1.outputs) {
-        const parent = path.dirname(p[0]);
+        const parent = vscode.Uri.file(path.dirname(p[0])).fsPath;
         let children: vscode.Uri[] = [];
         if (dirContent.has(parent))
           children = dirContent.get(parent)!;
@@ -334,10 +333,10 @@ describe('C2TestAdapter', function() {
       }
 
       dirContent.forEach((v: vscode.Uri[], k: string) => {
-        assert.equal(workspaceFolderUri.path, k);
+        assert.equal(workspaceFolderUri.fsPath, k);
         vsFindFilesStub.withArgs(matchRelativePattern(k)).returns(v);
         for (const p of v) {
-          vsFindFilesStub.withArgs(matchRelativePattern(p.path)).returns([p]);
+          vsFindFilesStub.withArgs(matchRelativePattern(p.fsPath)).returns([p]);
         }
       });
     });
@@ -437,7 +436,8 @@ describe('C2TestAdapter', function() {
           const expected = [
             {type: 'started', tests: [s1t1.id]},
             {type: 'suite', state: 'running', suite: suite1},
-            {type: 'test', state: 'running', test: s1t1}, {
+            {type: 'test', state: 'running', test: s1t1},
+            {
               type: 'test',
               state: 'passed',
               test: s1t1,
@@ -445,7 +445,7 @@ describe('C2TestAdapter', function() {
               message: 'Duration: 0.000112 second(s)\n'
             },
             {type: 'suite', state: 'completed', suite: suite1},
-            {type: 'finished'}
+            {type: 'finished'},
           ];
           assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -458,14 +458,16 @@ describe('C2TestAdapter', function() {
           const expected = [
             {type: 'started', tests: [suite1.id]},
             {type: 'suite', state: 'running', suite: suite1},
-            {type: 'test', state: 'running', test: s1t1}, {
+            {type: 'test', state: 'running', test: s1t1},
+            {
               type: 'test',
               state: 'passed',
               test: s1t1,
               decorations: undefined,
               message: 'Duration: 0.000132 second(s)\n'
             },
-            {type: 'test', state: 'running', test: s1t2}, {
+            {type: 'test', state: 'running', test: s1t2},
+            {
               type: 'test',
               state: 'failed',
               test: s1t2,
@@ -474,7 +476,7 @@ describe('C2TestAdapter', function() {
                   'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
             },
             {type: 'suite', state: 'completed', suite: suite1},
-            {type: 'finished'}
+            {type: 'finished'},
           ];
           assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -487,14 +489,16 @@ describe('C2TestAdapter', function() {
           const expected = [
             {type: 'started', tests: [root.id]},
             {type: 'suite', state: 'running', suite: suite1},
-            {type: 'test', state: 'running', test: s1t1}, {
+            {type: 'test', state: 'running', test: s1t1},
+            {
               type: 'test',
               state: 'passed',
               test: s1t1,
               decorations: undefined,
               message: 'Duration: 0.000132 second(s)\n'
             },
-            {type: 'test', state: 'running', test: s1t2}, {
+            {type: 'test', state: 'running', test: s1t2},
+            {
               type: 'test',
               state: 'failed',
               test: s1t2,
@@ -503,7 +507,7 @@ describe('C2TestAdapter', function() {
                   'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
             },
             {type: 'suite', state: 'completed', suite: suite1},
-            {type: 'finished'}
+            {type: 'finished'},
           ];
           assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -571,9 +575,9 @@ describe('C2TestAdapter', function() {
             await adapter.run([s1t1.id]);
             assert.deepStrictEqual(
                 testStatesEvents, [...expected, ...expected]);
-          });
-        });
-      });
+          })
+        })
+      })
 
       context('suite1 and suite2 are used', function() {
         beforeEach(function() {
@@ -1195,7 +1199,8 @@ describe('C2TestAdapter', function() {
                const withArgs = spawnStub.withArgs(
                    example1.suite1.execPath, example1.suite1.outputs[1][0]);
                withArgs.onCall(withArgs.callCount)
-                   .returns(new ChildProcessStub(testListOutput.join('\n')));
+                   .returns(new ChildProcessStub(
+                       testListOutput.join('\n')));  // TODO EOL
 
                const oldRootChildren = [...root.children];
                const oldSuite1Children = [...suite1.children];
@@ -1280,19 +1285,19 @@ describe('C2TestAdapter', function() {
 
             vsfsWatchStub
                 .withArgs(matchRelativePattern(
-                    path.join(workspaceFolderUri.path, 'execPath{1,2}')))
+                    path.join(workspaceFolderUri.fsPath, 'execPath{1,2}')))
                 .callsFake(handleCreateWatcherCb);
 
             vsFindFilesStub
                 .withArgs(matchRelativePattern(
-                    path.join(workspaceFolderUri.path, 'execPath{1,2}')))
+                    path.join(workspaceFolderUri.fsPath, 'execPath{1,2}')))
                 .returns([
                   vscode.Uri.file(example1.suite1.execPath),
-                  vscode.Uri.file(example1.suite2.execPath)
+                  vscode.Uri.file(example1.suite2.execPath),
                 ]);
             await updateConfig('defaultEnv', {
-              C2GLOBALTESTENV: 'c2globaltestenv',
-              C2OVERRIDETESTENV: 'c2overridetestenv-g'
+              'C2GLOBALTESTENV': 'c2globaltestenv',
+              'C2OVERRIDETESTENV': 'c2overridetestenv-g',
             });
           });
 
@@ -1303,16 +1308,16 @@ describe('C2TestAdapter', function() {
 
           beforeEach(async function() {
             example1.suite1.assert(
-                './execPath1 (' + workspaceFolderUri.path + ')',
+                './execPath1 (' + workspaceFolderUri.fsPath + ')',
                 ['s1t1', 's1t2'], suite1, uniqueIdC);
 
             example1.suite2.assert(
-                './execPath2 (' + workspaceFolderUri.path + ')',
+                './execPath2 (' + workspaceFolderUri.fsPath + ')',
                 ['s2t1', 's2t2 [.]', 's2t3'], suite2, uniqueIdC);
-          });
+          })
 
-          for (let t of testsForAdapterWithSuite1AndSuite2)
-            this.addTest(t.clone());
+          for (let t of testsForAdapterWithSuite1AndSuite2) this.addTest(
+              t.clone());
 
           it('should get execution options', async function() {
             {
@@ -1321,7 +1326,7 @@ describe('C2TestAdapter', function() {
               withArgs.onCall(withArgs.callCount)
                   .callsFake((p: string, args: string[], ops: any) => {
                     assert.equal(
-                        ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
+                        ops.cwd, path.join(workspaceFolderUri.fsPath, 'cwd'));
                     assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
                     assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
                     assert.equal(
@@ -1339,7 +1344,7 @@ describe('C2TestAdapter', function() {
               withArgs.onCall(withArgs.callCount)
                   .callsFake((p: string, args: string[], ops: any) => {
                     assert.equal(
-                        ops.cwd, path.join(workspaceFolderUri.path, 'cwd'));
+                        ops.cwd, path.join(workspaceFolderUri.fsPath, 'cwd'));
                     assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
                     assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
                     assert.equal(
@@ -1411,9 +1416,9 @@ describe('C2TestAdapter', function() {
                 assert.equal(test.type, 'test');
                 await runAndCheckEvents(<TestInfo>test);
               }
-            });
-          });
-    });
+            })
+          })
+    })
 
     specify('load executables=<full path of execPath1>', async function() {
       this.slow(300);
@@ -1451,7 +1456,7 @@ describe('C2TestAdapter', function() {
 
           disposeAdapterAndSubscribers();
           await updateConfig('executables', undefined);
-        });
+        })
 
     specify(
         'load executables=["execPath1", "execPath2Copy"]; delete; sleep 3; create',
@@ -1461,7 +1466,7 @@ describe('C2TestAdapter', function() {
           this.timeout(watchTimeout * 1000 + 2500 /* because of 'delay' */);
           this.slow(watchTimeout * 1000 + 2500 /* because of 'delay' */);
           const execPath2CopyPath =
-              path.join(workspaceFolderUri.path, 'execPath2Copy');
+              path.join(workspaceFolderUri.fsPath, 'execPath2Copy');
 
           for (let scenario of example1.suite2.outputs) {
             spawnStub.withArgs(execPath2CopyPath, scenario[0])
@@ -1547,7 +1552,7 @@ describe('C2TestAdapter', function() {
           this.timeout(watchTimeout * 1000 + 2500 /* because of 'delay' */);
           this.slow(watchTimeout * 1000 + 2500 /* because of 'delay' */);
           const execPath2CopyPath =
-              path.join(workspaceFolderUri.path, 'execPath2Copy');
+              path.join(workspaceFolderUri.fsPath, 'execPath2Copy');
 
           for (let scenario of example1.suite2.outputs) {
             spawnStub.withArgs(execPath2CopyPath, scenario[0])
@@ -1613,7 +1618,7 @@ describe('C2TestAdapter', function() {
           assert.equal(newRoot.children.length, 1);
           assert.ok(watchTimeout * 1000 < elapsed, inspect(elapsed));
           assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
-        });
+        })
 
     specify('wrong executables format', async function() {
       this.slow(300);
@@ -1631,33 +1636,32 @@ describe('C2TestAdapter', function() {
 
       disposeAdapterAndSubscribers();
       await updateConfig('executables', undefined);
-    });
+    })
 
     specify('variable substitution with executables={...}', async function() {
       this.slow(300);
       const wsPath = workspaceFolderUri.fsPath;
-      const execPath2CopyRelPath = 'foo/bar/base.second.first';
-      const execPath2CopyPath = path.join(wsPath, execPath2CopyRelPath);
+      const execPath2CopyRelPath = path.normalize('foo/bar/base.second.first');
+      const execPath2CopyPath =
+          vscode.Uri.file(path.join(wsPath, execPath2CopyRelPath)).fsPath;
 
       const envArray: [string, string][] = [
-        ['${absPath}', execPath2CopyPath], ['${relPath}', execPath2CopyRelPath],
-        ['${absDirpath}', path.join(wsPath, 'foo/bar')],
-        ['${relDirpath}', 'foo/bar'], ['${filename}', 'base.second.first'],
-        ['${baseFilename}', 'base.second'], ['${extFilename}', '.first'],
-        ['${base2Filename}', 'base'], ['${ext2Filename}', '.second'],
-        ['${base3Filename}', 'base'], ['${ext3Filename}', ''],
-        ['${workspaceDirectory}', wsPath], ['${workspaceFolder}', wsPath]
+        ['${absPath}', execPath2CopyPath],
+        ['${relPath}', execPath2CopyRelPath],
+        ['${absDirpath}', path.join(wsPath, path.normalize('foo/bar'))],
+        ['${relDirpath}', path.normalize('foo/bar')],
+        ['${filename}', 'base.second.first'],
+        ['${baseFilename}', 'base.second'],
+        ['${extFilename}', '.first'],
+        ['${base2Filename}', 'base'],
+        ['${ext2Filename}', '.second'],
+        ['${base3Filename}', 'base'],
+        ['${ext3Filename}', ''],
+        ['${workspaceDirectory}', wsPath],
+        ['${workspaceFolder}', wsPath],
       ];
-      const envsStr = envArray
-                          .map(v => {
-                            return v[0];
-                          })
-                          .join(' , ');
-      const expectStr = envArray
-                            .map(v => {
-                              return v[1];
-                            })
-                            .join(' , ');
+      const envsStr = envArray.map(v => {return v[0]}).join(' , ');
+      const expectStr = envArray.map(v => {return v[1]}).join(' , ');
 
       await updateConfig('executables', {
         name: envsStr,
@@ -1724,6 +1728,6 @@ describe('C2TestAdapter', function() {
           });
       disposeAdapterAndSubscribers();
       await updateConfig('executables', undefined);
-    });
-  });
-});
+    })
+  })
+})
