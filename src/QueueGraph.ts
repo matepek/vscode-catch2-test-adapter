@@ -5,7 +5,7 @@
 export class QueueGraphNode {
   constructor(
       public readonly name?: string, depends: Iterable<QueueGraphNode> = [],
-      private readonly _handleError?: ((reason: any) => void)) {
+      private readonly _handleError?: ((reason: any) => any)) {
     this._depends = [...depends];
     // TODO check circular dependency
   }
@@ -18,20 +18,20 @@ export class QueueGraphNode {
     return this._count;
   }
 
-  then<T, T2 = never>(
-      task?: (() => T | PromiseLike<T>)|undefined|null,
-      taskErrorHandler?: ((reason: any) => T2 | PromiseLike<T2>)|undefined|
-      null): Promise<T> {
+  then<TResult1, TResult2 = never>(
+      task: (() => TResult1 | PromiseLike<TResult1>),
+      taskErrorHandler?: ((reason: any) => TResult2 | PromiseLike<TResult2>)|
+      undefined|null): Promise<TResult1|TResult2> {
     this._count++;
 
     const previous = this._queue;
     const current =
         Promise.all(this._depends.map(v => v._queue))
             .then(() => {
-              return previous;
+              return previous.then(task);
             })
-            .then(task, taskErrorHandler ? taskErrorHandler : this._handleError)
-            .then((value: T) => {
+            .catch(taskErrorHandler ? taskErrorHandler : this._handleError)
+            .then((value: TResult1|PromiseLike<TResult1>) => {
               this._count--;
               return value;
             });

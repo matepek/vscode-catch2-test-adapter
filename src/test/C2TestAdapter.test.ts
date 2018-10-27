@@ -1159,10 +1159,9 @@ describe('C2TestAdapter', function() {
                  return testsEvents.length >= 2;
                });
                await promisify(setTimeout)(100);
-               assert.deepStrictEqual(testsEvents, [
-                 {type: 'started'},
-                 {type: 'finished', suite: oldRoot}
-               ]);
+               assert.deepStrictEqual(
+                   testsEvents,
+                   [{type: 'started'}, {type: 'finished', suite: oldRoot}]);
                testsEvents.pop();
                testsEvents.pop();
              });
@@ -1179,10 +1178,9 @@ describe('C2TestAdapter', function() {
                  return testsEvents.length >= 2;
                });
                await promisify(setTimeout)(100);
-               assert.deepStrictEqual(testsEvents, [
-                     {type: 'started'},
-                     {type: 'finished', suite: oldRoot}
-                   ]);
+               assert.deepStrictEqual(
+                   testsEvents,
+                   [{type: 'started'}, {type: 'finished', suite: oldRoot}]);
                testsEvents.pop();
                testsEvents.pop();
              });

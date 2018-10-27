@@ -2,13 +2,14 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import * as assert from "assert";
-import { promisify } from "util";
+import * as assert from 'assert';
+import {promisify} from 'util';
 
-import { QueueGraphNode } from "../QueueGraph";
+import {QueueGraphNode} from '../QueueGraph';
 
-describe.only("QueueGraphNode", function() {
-  async function waitFor(test: Mocha.Context, condition: Function, timeout: number = 1000) {
+describe('QueueGraphNode', function() {
+  async function waitFor(
+      test: Mocha.Context, condition: Function, timeout: number = 1000) {
     const start = Date.now();
     let c = await condition();
     while (!c && (Date.now() - start < timeout || !test.enableTimeouts())) {
@@ -18,7 +19,7 @@ describe.only("QueueGraphNode", function() {
     return c;
   }
 
-  it("promise practice 1", async function() {
+  it('promise practice 1', async function() {
     let resolve: Function;
     let second = false;
     new Promise(r => {
@@ -35,7 +36,7 @@ describe.only("QueueGraphNode", function() {
     assert.ok(second);
   });
 
-  it("promise practice 2", async function() {
+  it('promise practice 2', async function() {
     let resolve: Function;
     let second = false;
     const p = new Promise(r => {
@@ -55,16 +56,16 @@ describe.only("QueueGraphNode", function() {
     assert.ok(second);
   });
 
-  context("example 1", function() {
+  context('example 1', function() {
     /**
      *  node1 <___ node
      *  node2 <___/
      */
-    const node1 = new QueueGraphNode("node1");
-    const node2 = new QueueGraphNode("node2");
-    const nodeD = new QueueGraphNode("nodeD", [node1, node2]);
+    const node1 = new QueueGraphNode('node1');
+    const node2 = new QueueGraphNode('node2');
+    const nodeD = new QueueGraphNode('nodeD', [node1, node2]);
 
-    it("add:depends before", async function() {
+    it('add:depends before', async function() {
       this.slow(150);
       let startD: Function;
       let hasRunDatOnce = false;
@@ -112,23 +113,17 @@ describe.only("QueueGraphNode", function() {
 
       await promisify(setTimeout)(20);
 
-      assert.ok(
-        await waitFor(this, async () => {
-          return hasRunDatOnce;
-        })
-      );
+      assert.ok(await waitFor(this, async () => {
+        return hasRunDatOnce;
+      }));
       assert.equal(nodeD.size, 1);
-      assert.ok(
-        await waitFor(this, async () => {
-          return hasRun1atOnce;
-        })
-      );
+      assert.ok(await waitFor(this, async () => {
+        return hasRun1atOnce;
+      }));
       assert.equal(node1.size, 2);
-      assert.ok(
-        await waitFor(this, async () => {
-          return hasRun2atOnce;
-        })
-      );
+      assert.ok(await waitFor(this, async () => {
+        return hasRun2atOnce;
+      }));
       assert.equal(node2.size, 2);
 
       let hasRunD2second = false;
@@ -148,11 +143,9 @@ describe.only("QueueGraphNode", function() {
 
       start1!();
       await promisify(setTimeout)(20);
-      assert.ok(
-        await waitFor(this, async () => {
-          return hasRun1afterStart;
-        })
-      );
+      assert.ok(await waitFor(this, async () => {
+        return hasRun1afterStart;
+      }));
       assert.equal(node1.size, 0);
       assert.equal(node2.size, 2);
       assert.equal(nodeD.size, 1);
@@ -161,18 +154,14 @@ describe.only("QueueGraphNode", function() {
 
       start2!();
       await promisify(setTimeout)(20);
-      assert.ok(
-        await waitFor(this, async () => {
-          return hasRun2afterStart;
-        })
-      );
+      assert.ok(await waitFor(this, async () => {
+        return hasRun2afterStart;
+      }));
       assert.equal(node2.size, 0);
 
-      assert.ok(
-        await waitFor(this, async () => {
-          return hasRunD2second;
-        })
-      );
+      assert.ok(await waitFor(this, async () => {
+        return hasRunD2second;
+      }));
       assert.equal(nodeD.size, 0);
     });
   });

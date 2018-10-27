@@ -12,6 +12,7 @@ import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
 import {C2ExecutableInfo} from './C2ExecutableInfo';
 import {C2TestInfo} from './C2TestInfo';
 import {resolveVariables} from './Helpers';
+import {QueueGraphNode} from './QueueGraph';
 
 export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   readonly testsEmitter =
@@ -23,13 +24,14 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
   readonly variableToValue: [string, string][] = [
     ['${workspaceDirectory}', this.workspaceFolder.uri.fsPath],
-    ['${workspaceFolder}', this.workspaceFolder.uri.fsPath],
+    ['${workspaceFolder}', this.workspaceFolder.uri.fsPath]
   ];
 
   private allTests: C2AllTestSuiteInfo;
-  private readonly disposables: Array<vscode.Disposable> = new Array();
-
   private isEnabledSourceDecoration = true;
+
+  readonly queue: QueueGraphNode = new QueueGraphNode();
+  private readonly disposables: Array<vscode.Disposable> = new Array();
 
   constructor(
       public readonly workspaceFolder: vscode.WorkspaceFolder,
@@ -102,7 +104,6 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
   private isDebugging: boolean = false;
   private isRunning: number = 0;
-
 
   async load(): Promise<void> {
     try {
