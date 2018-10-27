@@ -129,6 +129,9 @@ export class C2ExecutableInfo implements vscode.Disposable {
     return suite;
   }
 
+  private readonly _lastEventArrivedAt:
+      Map<string /* fsPath */, number /** Date.now */> = new Map();
+
   private _handleEverything(uri: vscode.Uri) {
     let suite = this._executables.get(uri.fsPath);
 
@@ -140,7 +143,13 @@ export class C2ExecutableInfo implements vscode.Disposable {
     const x =
         (exists: boolean, startTime: number, timeout: number,
          delay: number): Promise<void> => {
-          if ((Date.now() - startTime) > timeout) {
+          let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
+          if (lastEventArrivedAt === undefined) {
+            lastEventArrivedAt = Date.now();
+            this._lastEventArrivedAt.set(uri.fsPath, lastEventArrivedAt);
+            this._adapter.log.error('assert in ' + __filename);
+          }
+          if ((Date.now() - lastEventArrivedAt!) > timeout) {
             this._executables.delete(uri.fsPath);
             this._adapter.testsEmitter.fire({type: 'started'});
             this._allTests.removeChild(suite!);
