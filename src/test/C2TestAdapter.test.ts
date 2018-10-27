@@ -1393,7 +1393,7 @@ describe(
               before(async function() {
                 await updateConfig(
                     'executables', [{
-                      name: '${relDirname}/${basename} (${absDirname})',
+                      name: '${relDirpath}/${filename} (${absDirpath})',
                       path: 'execPath{1,2}',
                       cwd: '${workspaceFolder}/cwd',
                       env: {

@@ -54,11 +54,58 @@ describe('FsWrapper.statAsync', function() {
 })
 
 describe('path', function() {
-  context('Uri', function() {
+  describe('Uri', function() {
     it('sould resolve', function() {
       const a = vscode.Uri.file('/a/b/c');
       const b = vscode.Uri.file('/a/b/c/d/e');
       assert.equal(path.relative(a.fsPath, b.fsPath), path.normalize('d/e'));
+    })
+  })
+  describe('extname', function() {
+    it('extname', function() {
+      const filename = path.basename('bar/foo/base.ext2.ext1');
+      assert.equal(filename, 'base.ext2.ext1');
+
+      const extFilename = path.extname(filename);
+      assert.equal(extFilename, '.ext1');
+
+      const baseFilename = path.basename(filename, extFilename);
+      assert.equal(baseFilename, 'base.ext2');
+
+      const ext2Filename = path.extname(baseFilename);
+      assert.equal(ext2Filename, '.ext2');
+
+      const base2Filename = path.basename(baseFilename, ext2Filename);
+      assert.equal(base2Filename, 'base');
+
+      const ext3Filename = path.extname(base2Filename);
+      assert.equal(ext3Filename, '');
+
+      const base3Filename = path.basename(base2Filename, ext3Filename);
+      assert.equal(base3Filename, 'base');
+    })
+
+    it('.extname', function() {
+      const filename = path.basename('bar/foo/.base.ext2.ext1');
+      assert.equal(filename, '.base.ext2.ext1');
+
+      const extFilename = path.extname(filename);
+      assert.equal(extFilename, '.ext1');
+
+      const baseFilename = path.basename(filename, extFilename);
+      assert.equal(baseFilename, '.base.ext2');
+
+      const ext2Filename = path.extname(baseFilename);
+      assert.equal(ext2Filename, '.ext2');
+
+      const base2Filename = path.basename(baseFilename, ext2Filename);
+      assert.equal(base2Filename, '.base');
+
+      const ext3Filename = path.extname(base2Filename);
+      assert.equal(ext3Filename, '');
+
+      const base3Filename = path.basename(base2Filename, ext3Filename);
+      assert.equal(base3Filename, '.base');
     })
   })
 })

@@ -96,13 +96,28 @@ export class C2ExecutableInfo implements vscode.Disposable {
     let resolvedEnv: {[prop: string]: string} = this.env;
     try {
       const relPath = path.relative(wsUri.path, file.path);
+
+      const filename = path.basename(file.path);
+      const extFilename = path.extname(filename);
+      const baseFilename = path.basename(filename, extFilename);
+      const ext2Filename = path.extname(baseFilename);
+      const base2Filename = path.basename(baseFilename, ext2Filename);
+      const ext3Filename = path.extname(base2Filename);
+      const base3Filename = path.basename(base2Filename, ext3Filename);
+
       const varToValue: [string, string][] = [
-        ['${absName}', file.path],
-        ['${relName}', relPath],
-        ['${basename}', path.basename(file.path)],
-        ['${absDirname}', path.dirname(file.path)],
-        ['${relDirname}', path.dirname(relPath)],
         ...this._adapter.variableToValue,
+        ['${absPath}', file.path],
+        ['${relPath}', relPath],
+        ['${absDirpath}', path.dirname(file.path)],
+        ['${relDirpath}', path.dirname(relPath)],
+        ['${filename}', filename],
+        ['${extFilename}', extFilename],
+        ['${baseFilename}', baseFilename],
+        ['${ext2Filename}', ext2Filename],
+        ['${base2Filename}', base2Filename],
+        ['${ext3Filename}', ext3Filename],
+        ['${base3Filename}', base3Filename],
       ];
       resolvedName = resolveVariables(this.name, varToValue);
       resolvedCwd = path.normalize(resolveVariables(this.cwd, varToValue));

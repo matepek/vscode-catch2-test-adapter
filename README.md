@@ -44,21 +44,28 @@ This `catch2TestExplorer.executables` variable can be string, an array of string
 | Property         |            | Description                                                                                                                                                                                      |
 | ---------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `name`           | (optional) | The name of the test suite (file). Can contains variables.                                                                                                                                       |
-| `pattern`        | (requierd) | A relative pattern (to workspace) or an absolute file-path. ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test*`.         |
+| `pattern`        | (requierd) | A relative pattern (to workspace) or an absolute file-path. ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test[1-9]*`     |
 | `path`           | (alias)    | Alias of `pattern`.                                                                                                                                                                              |
 | `cwd`            | (optional) | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables.                                               |
 | `env`            | (optional) | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used.  Can contains variables.                                                                             |
 
-Variables:
+Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
 | Variable               | Description                                                                       |
 |----------------------- | --------------------------------------------------------------------------------- |
-| `${absName}`           | Absolute path of the test executable.                                             |
-| `${relName}`           | Relative path of the test executable to the workspace folder.                     |
-| `${basename}`          | Filename (Path withouth directories).                                             |
-| `${absDirname}`        | Absolute path of the test executable's parent directory.                          |
-| `${relDirname}`        | Relative path of the test executable's parent directory to the workspace folder.  |
-| `${workspaceFolder}`   | (You can only guess one.)                                                         |
+| `${absPath}`           | Absolute path of the test executable                                              |
+| `${relPath}`           | Relative path of the test executable to the workspace folder                      |
+| `${absDirpath}`        | Absolute path of the test executable's parent directory                           |
+| `${relDirpath}`        | Relative path of the test executable's parent directory to the workspace folder   |
+| `${filename}`          | Filename ( = Path withouth directories, "d/a.b.c" => "a.b.c")                     |
+| `${baseFilename}`      | Filename without extension ("d/a.b.c" => "a.b")                                   |
+| `${extFilename}`       | Filename extension. ("d/a.b.c" => ".c")                                           |
+| `${base2Filename}`     | Filename without extension ("d/a.b.c" => "a")                                     |
+| `${ext2Filename}`      | Filename's second level extension. ("d/a.b.c" => ".b")                            |
+| `${base3Filename}`     | Filename without extension ("d/a.b.c" => "a")                                     |
+| `${ext3Filename}`      | Filename's second level extension. ("d/a.b.c" => "")                              |
+| `${workspaceDirectoy}` | (You can only guess one.)                                                         |
+| `${workspaceFolder}`   | Alias of `${workspaceDirectoy}`                                                   |
 
 Examples:
 

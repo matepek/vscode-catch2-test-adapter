@@ -21,8 +21,10 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
                               TestSuiteEvent|TestEvent>();
   private readonly autorunEmitter = new vscode.EventEmitter<void>();
 
-  readonly variableToValue: [string, string][] =
-      [['${workspaceFolder}', this.workspaceFolder.uri.fsPath]];
+  readonly variableToValue: [string, string][] = [
+    ['${workspaceDirectory}', this.workspaceFolder.uri.fsPath],
+    ['${workspaceFolder}', this.workspaceFolder.uri.fsPath],
+  ];
 
   private allTests: C2AllTestSuiteInfo;
   private readonly disposables: Array<vscode.Disposable> = new Array();
