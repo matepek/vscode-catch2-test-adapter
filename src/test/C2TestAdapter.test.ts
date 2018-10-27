@@ -41,13 +41,13 @@ describe('C2TestAdapter', function() {
   this.enableTimeouts(false);  // TODO
 
   let testsEvents: (TestLoadStartedEvent|TestLoadFinishedEvent)[] = [];
-  let testStatesEvents: (TestRunStartedEvent|TestRunFinishedEvent|
+  let testStatesEvents: (|TestRunStartedEvent|TestRunFinishedEvent|
                          TestSuiteEvent|TestEvent)[] = [];
 
   function getConfig() {
     return vscode.workspace.getConfiguration(
-        'catch2TestExplorer', workspaceFolderUri)
-  };
+        'catch2TestExplorer', workspaceFolderUri);
+  }
 
   async function updateConfig(key: string, value: any) {
     let count = testsEvents.length;
@@ -73,7 +73,7 @@ describe('C2TestAdapter', function() {
     let t: Thenable<void> = Promise.resolve();
     Object.keys(properties).forEach(key => {
       assert.ok(key.startsWith('catch2TestExplorer.'));
-      const k = key.replace('catch2TestExplorer.', '')
+      const k = key.replace('catch2TestExplorer.', '');
       t = t.then(function() {
         return getConfig().update(k, undefined);
       });
@@ -87,8 +87,9 @@ describe('C2TestAdapter', function() {
          TestEvent) => {
           if (o.type == v.type)
             if (o.type == 'suite' || o.type == 'test')
-              return o.state === (<TestSuiteEvent|TestEvent>v).state &&
-                  o[o.type] === (<any>v)[v.type];
+              return (
+                  o.state === (<TestSuiteEvent|TestEvent>v).state &&
+                  o[o.type] === (<any>v)[v.type]);
           return deepStrictEqual(o, v);
         });
     assert.notEqual(
@@ -97,7 +98,7 @@ describe('C2TestAdapter', function() {
             inspect(testStatesEvents));
     assert.deepStrictEqual(testStatesEvents[i], o);
     return i;
-  };
+  }
 
   function createAdapterAndSubscribe() {
     adapter = new C2TestAdapter(workspaceFolder, logger);
@@ -123,7 +124,7 @@ describe('C2TestAdapter', function() {
     const start = Date.now();
     let c = await condition();
     while (!(c = await condition()) &&
-           ((Date.now() - start) < timeout || !test.enableTimeouts()))
+           (Date.now() - start < timeout || !test.enableTimeouts()))
       await promisify(setTimeout)(10);
     assert.ok(c);
   }
@@ -134,7 +135,7 @@ describe('C2TestAdapter', function() {
     const origCount = testsEvents.length;
     await action();
     await waitFor(test, () => {
-      return testsEvents.length == origCount + 2;
+      return testsEvents.length >= origCount + 2;
     }, timeout);
     assert.equal(testsEvents.length, origCount + 2);
     const e = <TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]!;
@@ -210,37 +211,37 @@ describe('C2TestAdapter', function() {
     before(function() {
       adapter = createAdapterAndSubscribe();
       assert.deepStrictEqual(testsEvents, []);
-    })
+    });
 
     after(function() {
       disposeAdapterAndSubscribers();
       return resetConfig();
-    })
+    });
 
     it('defaultEnv', function() {
       return doAndWaitForReloadEvent(this, () => {
-        return updateConfig('defaultEnv', {'APPLE': 'apple'});
+        return updateConfig('defaultEnv', {APPLE: 'apple'});
       });
-    })
+    });
 
     it('defaultCwd', function() {
       return doAndWaitForReloadEvent(this, () => {
         return updateConfig('defaultCwd', 'apple/peach');
       });
-    })
+    });
 
     it('enableSourceDecoration', function() {
       return updateConfig('enableSourceDecoration', false).then(function() {
         assert.ok(!adapter.getIsEnabledSourceDecoration());
       });
-    })
+    });
 
     it('defaultRngSeed', function() {
       return updateConfig('defaultRngSeed', 987).then(function() {
         assert.equal(adapter.getRngSeed(), 987);
       });
-    })
-  })
+    });
+  });
 
   it('load with empty config', async function() {
     this.slow(500);
@@ -253,7 +254,7 @@ describe('C2TestAdapter', function() {
     assert.notEqual(suite, undefined);
     assert.equal(suite!.children.length, 0);
     disposeAdapterAndSubscribers();
-  })
+  });
 
   context('example1', function() {
     const watchers: Map<string, FileSystemWatcherStub> = new Map();
@@ -339,15 +340,15 @@ describe('C2TestAdapter', function() {
           vsFindFilesStub.withArgs(matchRelativePattern(p.path)).returns([p]);
         }
       });
-    })
+    });
 
     after(function() {
       stubsResetToMyDefault();
-    })
+    });
 
     afterEach(function() {
       watchers.clear();
-    })
+    });
 
     describe('load', function() {
       const uniqueIdC = new Set<string>();
@@ -362,13 +363,13 @@ describe('C2TestAdapter', function() {
       let s2t2: TestInfo|any;
       let s2t3: TestInfo|any;
 
-      before(function(){
-        return updateConfig("workerMaxNumber", 4);
-      })
+      before(function() {
+        return updateConfig('workerMaxNumber', 4);
+      });
 
-      after(function(){
-        return updateConfig("workerMaxNumber", undefined);
-      })
+      after(function() {
+        return updateConfig('workerMaxNumber', undefined);
+      });
 
       beforeEach(async function() {
         adapter = createAdapterAndSubscribe();
@@ -426,8 +427,7 @@ describe('C2TestAdapter', function() {
           await adapter.run(['not existing id']);
 
           assert.deepStrictEqual(testStatesEvents, [
-            {type: 'started', tests: ['not existing id']},
-            {type: 'finished'},
+            {type: 'started', tests: ['not existing id']}, {type: 'finished'}
           ]);
         });
 
@@ -437,8 +437,7 @@ describe('C2TestAdapter', function() {
           const expected = [
             {type: 'started', tests: [s1t1.id]},
             {type: 'suite', state: 'running', suite: suite1},
-            {type: 'test', state: 'running', test: s1t1},
-            {
+            {type: 'test', state: 'running', test: s1t1}, {
               type: 'test',
               state: 'passed',
               test: s1t1,
@@ -446,7 +445,7 @@ describe('C2TestAdapter', function() {
               message: 'Duration: 0.000112 second(s)\n'
             },
             {type: 'suite', state: 'completed', suite: suite1},
-            {type: 'finished'},
+            {type: 'finished'}
           ];
           assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -459,16 +458,14 @@ describe('C2TestAdapter', function() {
           const expected = [
             {type: 'started', tests: [suite1.id]},
             {type: 'suite', state: 'running', suite: suite1},
-            {type: 'test', state: 'running', test: s1t1},
-            {
+            {type: 'test', state: 'running', test: s1t1}, {
               type: 'test',
               state: 'passed',
               test: s1t1,
               decorations: undefined,
               message: 'Duration: 0.000132 second(s)\n'
             },
-            {type: 'test', state: 'running', test: s1t2},
-            {
+            {type: 'test', state: 'running', test: s1t2}, {
               type: 'test',
               state: 'failed',
               test: s1t2,
@@ -477,7 +474,7 @@ describe('C2TestAdapter', function() {
                   'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
             },
             {type: 'suite', state: 'completed', suite: suite1},
-            {type: 'finished'},
+            {type: 'finished'}
           ];
           assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -490,16 +487,14 @@ describe('C2TestAdapter', function() {
           const expected = [
             {type: 'started', tests: [root.id]},
             {type: 'suite', state: 'running', suite: suite1},
-            {type: 'test', state: 'running', test: s1t1},
-            {
+            {type: 'test', state: 'running', test: s1t1}, {
               type: 'test',
               state: 'passed',
               test: s1t1,
               decorations: undefined,
               message: 'Duration: 0.000132 second(s)\n'
             },
-            {type: 'test', state: 'running', test: s1t2},
-            {
+            {type: 'test', state: 'running', test: s1t2}, {
               type: 'test',
               state: 'failed',
               test: s1t2,
@@ -508,7 +503,7 @@ describe('C2TestAdapter', function() {
                   'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
             },
             {type: 'suite', state: 'completed', suite: suite1},
-            {type: 'finished'},
+            {type: 'finished'}
           ];
           assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -529,8 +524,7 @@ describe('C2TestAdapter', function() {
           const expected = [
             {type: 'started', tests: [s1t1.id]},
             {type: 'suite', state: 'running', suite: suite1},
-            {type: 'test', state: 'running', test: s1t1},
-            {
+            {type: 'test', state: 'running', test: s1t1}, {
               type: 'test',
               state: 'passed',
               test: s1t1,
@@ -538,7 +532,7 @@ describe('C2TestAdapter', function() {
               message: 'Duration: 0.000112 second(s)\n'
             },
             {type: 'suite', state: 'completed', suite: suite1},
-            {type: 'finished'},
+            {type: 'finished'}
           ];
           assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -550,19 +544,18 @@ describe('C2TestAdapter', function() {
         context('with config: defaultRngSeed=2', function() {
           before(function() {
             return updateConfig('defaultRngSeed', 2);
-          })
+          });
 
           after(function() {
             return updateConfig('defaultRngSeed', undefined);
-          })
+          });
 
           it('should run s1t1 with success', async function() {
             await adapter.run([s1t1.id]);
             const expected = [
               {type: 'started', tests: [s1t1.id]},
               {type: 'suite', state: 'running', suite: suite1},
-              {type: 'test', state: 'running', test: s1t1},
-              {
+              {type: 'test', state: 'running', test: s1t1}, {
                 type: 'test',
                 state: 'passed',
                 test: s1t1,
@@ -571,16 +564,16 @@ describe('C2TestAdapter', function() {
                     'Randomness seeded to: 2\nDuration: 0.000327 second(s)\n'
               },
               {type: 'suite', state: 'completed', suite: suite1},
-              {type: 'finished'},
+              {type: 'finished'}
             ];
             assert.deepStrictEqual(testStatesEvents, expected);
 
             await adapter.run([s1t1.id]);
             assert.deepStrictEqual(
                 testStatesEvents, [...expected, ...expected]);
-          })
-        })
-      })
+          });
+        });
+      });
 
       context('suite1 and suite2 are used', function() {
         beforeEach(function() {
@@ -610,7 +603,7 @@ describe('C2TestAdapter', function() {
           s2t2 = <TestInfo>suite2.children[1];
           assert.equal(suite2.children[2].type, 'test');
           s2t3 = <TestInfo>suite2.children[2];
-        })
+        });
 
         const testsForAdapterWithSuite1AndSuite2: Mocha.Test[] = [
           new Mocha.Test(
@@ -773,7 +766,7 @@ describe('C2TestAdapter', function() {
 
                 assert.deepStrictEqual(testStatesEvents, [
                   {type: 'started', tests: ['not existing id']},
-                  {type: 'finished'},
+                  {type: 'finished'}
                 ]);
               }),
           new Mocha.Test(
@@ -783,8 +776,7 @@ describe('C2TestAdapter', function() {
                 const expected = [
                   {type: 'started', tests: [s1t1.id]},
                   {type: 'suite', state: 'running', suite: suite1},
-                  {type: 'test', state: 'running', test: s1t1},
-                  {
+                  {type: 'test', state: 'running', test: s1t1}, {
                     type: 'test',
                     state: 'passed',
                     test: s1t1,
@@ -792,7 +784,7 @@ describe('C2TestAdapter', function() {
                     message: 'Duration: 0.000112 second(s)\n'
                   },
                   {type: 'suite', state: 'completed', suite: suite1},
-                  {type: 'finished'},
+                  {type: 'finished'}
                 ];
                 assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -807,8 +799,7 @@ describe('C2TestAdapter', function() {
                 const expected = [
                   {type: 'started', tests: [s2t2.id]},
                   {type: 'suite', state: 'running', suite: suite2},
-                  {type: 'test', state: 'running', test: s2t2},
-                  {
+                  {type: 'test', state: 'running', test: s2t2}, {
                     type: 'test',
                     state: 'passed',
                     test: s2t2,
@@ -816,7 +807,7 @@ describe('C2TestAdapter', function() {
                     message: 'Duration: 0.001294 second(s)\n'
                   },
                   {type: 'suite', state: 'completed', suite: suite2},
-                  {type: 'finished'},
+                  {type: 'finished'}
                 ];
                 assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -831,8 +822,7 @@ describe('C2TestAdapter', function() {
                 const expected = [
                   {type: 'started', tests: [s2t3.id]},
                   {type: 'suite', state: 'running', suite: suite2},
-                  {type: 'test', state: 'running', test: s2t3},
-                  {
+                  {type: 'test', state: 'running', test: s2t3}, {
                     type: 'test',
                     state: 'failed',
                     test: s2t3,
@@ -841,7 +831,7 @@ describe('C2TestAdapter', function() {
                         'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
                   },
                   {type: 'suite', state: 'completed', suite: suite2},
-                  {type: 'finished'},
+                  {type: 'finished'}
                 ];
                 assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -862,8 +852,7 @@ describe('C2TestAdapter', function() {
                 const expected = [
                   {type: 'started', tests: [s2t3.id]},
                   {type: 'suite', state: 'running', suite: suite2},
-                  {type: 'test', state: 'running', test: s2t3},
-                  {
+                  {type: 'test', state: 'running', test: s2t3}, {
                     type: 'test',
                     state: 'failed',
                     test: s2t3,
@@ -872,7 +861,7 @@ describe('C2TestAdapter', function() {
                         'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
                   },
                   {type: 'suite', state: 'completed', suite: suite2},
-                  {type: 'finished'},
+                  {type: 'finished'}
                 ];
                 assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -887,16 +876,14 @@ describe('C2TestAdapter', function() {
                 const expected = [
                   {type: 'started', tests: [suite1.id]},
                   {type: 'suite', state: 'running', suite: suite1},
-                  {type: 'test', state: 'running', test: s1t1},
-                  {
+                  {type: 'test', state: 'running', test: s1t1}, {
                     type: 'test',
                     state: 'passed',
                     test: s1t1,
                     decorations: undefined,
                     message: 'Duration: 0.000132 second(s)\n'
                   },
-                  {type: 'test', state: 'running', test: s1t2},
-                  {
+                  {type: 'test', state: 'running', test: s1t2}, {
                     type: 'test',
                     state: 'failed',
                     test: s1t2,
@@ -905,7 +892,7 @@ describe('C2TestAdapter', function() {
                         'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
                   },
                   {type: 'suite', state: 'completed', suite: suite1},
-                  {type: 'finished'},
+                  {type: 'finished'}
                 ];
                 assert.deepStrictEqual(testStatesEvents, expected);
 
@@ -932,26 +919,23 @@ describe('C2TestAdapter', function() {
                 const expected = [
                   {type: 'started', tests: [s1t1.id]},
                   {type: 'suite', state: 'running', suite: suite1},
-                  {type: 'test', state: 'running', test: s1t1},
-                  {
+                  {type: 'test', state: 'running', test: s1t1}, {
                     type: 'test',
                     state: 'failed',
                     test: s1t1,
                     message: 'Unexpected test error. (Is Catch2 crashed?)\n'
                   },
                   {type: 'suite', state: 'completed', suite: suite1},
-                  {type: 'finished'},
+                  {type: 'finished'}
                 ];
                 assert.deepStrictEqual(testStatesEvents, expected);
 
                 // this tests the sinon stubs too
                 await adapter.run([s1t1.id]);
                 assert.deepStrictEqual(testStatesEvents, [
-                  ...expected,
-                  {type: 'started', tests: [s1t1.id]},
+                  ...expected, {type: 'started', tests: [s1t1.id]},
                   {type: 'suite', state: 'running', suite: suite1},
-                  {type: 'test', state: 'running', test: s1t1},
-                  {
+                  {type: 'test', state: 'running', test: s1t1}, {
                     type: 'test',
                     state: 'passed',
                     test: s1t1,
@@ -959,7 +943,7 @@ describe('C2TestAdapter', function() {
                     message: 'Duration: 0.000112 second(s)\n'
                   },
                   {type: 'suite', state: 'completed', suite: suite1},
-                  {type: 'finished'},
+                  {type: 'finished'}
                 ]);
               }),
           new Mocha.Test(
@@ -1075,7 +1059,7 @@ describe('C2TestAdapter', function() {
                   assert.equal(spyKill1.callCount, 0);
                   assert.equal(spyKill2.callCount, 0);
                 });
-              }),
+              })
         ];
 
         context('executables=["execPath1", "./execPath2"]', function() {
@@ -1099,10 +1083,10 @@ describe('C2TestAdapter', function() {
 
             example1.suite2.assert(
                 './execPath2', ['s2t1', 's2t2 [.]', 's2t3'], suite2, uniqueIdC);
-          })
+          });
 
-          for (let t of testsForAdapterWithSuite1AndSuite2) this.addTest(
-              t.clone());
+          for (let t of testsForAdapterWithSuite1AndSuite2)
+            this.addTest(t.clone());
 
           it('reload because of fswatcher event: touch(changed)',
              async function() {
@@ -1111,73 +1095,46 @@ describe('C2TestAdapter', function() {
                  suite1Watcher.sendChange();
                });
                assert.deepStrictEqual(newRoot, root);
-               assert.deepStrictEqual(testsEvents, [
-                 {type: 'started'},
-                 {type: 'finished', suite: root},
-               ]);
-             })
+               assert.deepStrictEqual(
+                   testsEvents,
+                   [{type: 'started'}, {type: 'finished', suite: root}]);
+             });
 
           it('reload because of fswatcher event: double touch(changed)',
              async function() {
-               this.slow(200);
+               this.slow(300);
                const oldRoot = root;
                suite1Watcher.sendChange();
                suite1Watcher.sendChange();
                await waitFor(this, async () => {
-                 return testsEvents.length >= 4;
+                 return testsEvents.length >= 2;
                });
-               assert.ok(
-                   deepStrictEqual(
-                       testsEvents,
-                       [
-                         {type: 'started'},
-                         {type: 'finished', suite: oldRoot},
-                         {type: 'started'},
-                         {type: 'finished', suite: oldRoot},
-                       ]) ||
-                   deepStrictEqual(testsEvents, [
-                     {type: 'started'},
-                     {type: 'started'},
-                     {type: 'finished', suite: oldRoot},
-                     {type: 'finished', suite: oldRoot},
-                   ]));
+               await promisify(setTimeout)(100);
+               assert.deepStrictEqual(
+                   testsEvents,
+                   [{type: 'started'}, {type: 'finished', suite: oldRoot}]);
                testsEvents.pop();
                testsEvents.pop();
-               testsEvents.pop();
-               testsEvents.pop();
-             })
+             });
 
           it('reload because of fswatcher event: double touch(changed) with delay',
              async function() {
-               this.slow(200);
+               this.slow(300);
                const oldRoot = root;
                suite1Watcher.sendChange();
                setTimeout(() => {
                  suite1Watcher.sendChange();
                }, 20);
                await waitFor(this, async () => {
-                 return testsEvents.length >= 4;
+                 return testsEvents.length >= 2;
                });
-               assert.ok(
-                   deepStrictEqual(
-                       testsEvents,
-                       [
-                         {type: 'started'},
-                         {type: 'finished', suite: oldRoot},
-                         {type: 'started'},
-                         {type: 'finished', suite: oldRoot},
-                       ]) ||
-                   deepStrictEqual(testsEvents, [
-                     {type: 'started'},
-                     {type: 'started'},
-                     {type: 'finished', suite: oldRoot},
-                     {type: 'finished', suite: oldRoot},
-                   ]));
+               await promisify(setTimeout)(100);
+               assert.deepStrictEqual(
+                   testsEvents,
+                   [{type: 'started'}, {type: 'finished', suite: oldRoot}]);
                testsEvents.pop();
                testsEvents.pop();
-               testsEvents.pop();
-               testsEvents.pop();
-             })
+             });
 
           it('reload because of fswatcher event: touch(delete,create)',
              async function() {
@@ -1187,73 +1144,48 @@ describe('C2TestAdapter', function() {
                  suite1Watcher.sendCreate();
                });
                assert.deepStrictEqual(newRoot, root);
-               assert.deepStrictEqual(testsEvents, [
-                 {type: 'started'},
-                 {type: 'finished', suite: root},
-               ]);
-             })
+               assert.deepStrictEqual(
+                   testsEvents,
+                   [{type: 'started'}, {type: 'finished', suite: root}]);
+             });
 
           it('reload because of fswatcher event: double touch(delete,create)',
              async function() {
-               this.slow(200);
+               this.slow(300);
                const oldRoot = root;
                suite1Watcher.sendChange();
                suite1Watcher.sendChange();
                await waitFor(this, async () => {
-                 return testsEvents.length >= 4;
+                 return testsEvents.length >= 2;
                });
-               assert.ok(
-                   deepStrictEqual(
-                       testsEvents,
-                       [
-                         {type: 'started'},
-                         {type: 'finished', suite: oldRoot},
-                         {type: 'started'},
-                         {type: 'finished', suite: oldRoot},
-                       ]) ||
-                   deepStrictEqual(testsEvents, [
-                     {type: 'started'},
-                     {type: 'started'},
-                     {type: 'finished', suite: oldRoot},
-                     {type: 'finished', suite: oldRoot},
-                   ]));
+               await promisify(setTimeout)(100);
+               assert.deepStrictEqual(testsEvents, [
+                 {type: 'started'},
+                 {type: 'finished', suite: oldRoot}
+               ]);
                testsEvents.pop();
                testsEvents.pop();
-               testsEvents.pop();
-               testsEvents.pop();
-             })
+             });
 
           it('reload because of fswatcher event: double touch(delete,create) with delay',
              async function() {
-               this.slow(200);
+               this.slow(300);
                const oldRoot = root;
                suite1Watcher.sendChange();
                setTimeout(() => {
                  suite1Watcher.sendChange();
                }, 20);
                await waitFor(this, async () => {
-                 return testsEvents.length >= 4;
+                 return testsEvents.length >= 2;
                });
-               assert.ok(
-                   deepStrictEqual(
-                       testsEvents,
-                       [
-                         {type: 'started'},
-                         {type: 'finished', suite: oldRoot},
-                         {type: 'started'},
-                         {type: 'finished', suite: oldRoot},
-                       ]) ||
-                   deepStrictEqual(testsEvents, [
+               await promisify(setTimeout)(100);
+               assert.deepStrictEqual(testsEvents, [
                      {type: 'started'},
-                     {type: 'started'},
-                     {type: 'finished', suite: oldRoot},
-                     {type: 'finished', suite: oldRoot},
-                   ]));
+                     {type: 'finished', suite: oldRoot}
+                   ]);
                testsEvents.pop();
                testsEvents.pop();
-               testsEvents.pop();
-               testsEvents.pop();
-             })
+             });
 
           it('reload because of fswatcher event: test added',
              async function(this: Mocha.Context) {
@@ -1295,7 +1227,7 @@ describe('C2TestAdapter', function() {
                for (let i = 0; i < suite2.children.length; i++) {
                  assert.equal(suite2.children[i], oldSuite2Children[i]);
                }
-             })
+             });
           it('reload because of fswatcher event: test deleted',
              async function(this: Mocha.Context) {
                this.slow(200);
@@ -1332,8 +1264,8 @@ describe('C2TestAdapter', function() {
                for (let i = 0; i < suite2.children.length; i++) {
                  assert.equal(suite2.children[i], oldSuite2Children[i]);
                }
-             })
-        })
+             });
+        });
 
         context('executables=[{<regex>}] and env={...}', function() {
           before(async function() {
@@ -1343,8 +1275,8 @@ describe('C2TestAdapter', function() {
                   path: 'execPath{1,2}',
                   cwd: '${workspaceFolder}/cwd',
                   env: {
-                    'C2LOCALTESTENV': 'c2localtestenv',
-                    'C2OVERRIDETESTENV': 'c2overridetestenv-l',
+                    C2LOCALTESTENV: 'c2localtestenv',
+                    C2OVERRIDETESTENV: 'c2overridetestenv-l'
                   }
                 }]);
 
@@ -1358,11 +1290,11 @@ describe('C2TestAdapter', function() {
                     path.join(workspaceFolderUri.path, 'execPath{1,2}')))
                 .returns([
                   vscode.Uri.file(example1.suite1.execPath),
-                  vscode.Uri.file(example1.suite2.execPath),
+                  vscode.Uri.file(example1.suite2.execPath)
                 ]);
             await updateConfig('defaultEnv', {
-              'C2GLOBALTESTENV': 'c2globaltestenv',
-              'C2OVERRIDETESTENV': 'c2overridetestenv-g',
+              C2GLOBALTESTENV: 'c2globaltestenv',
+              C2OVERRIDETESTENV: 'c2overridetestenv-g'
             });
           });
 
@@ -1379,10 +1311,10 @@ describe('C2TestAdapter', function() {
             example1.suite2.assert(
                 './execPath2 (' + workspaceFolderUri.path + ')',
                 ['s2t1', 's2t2 [.]', 's2t3'], suite2, uniqueIdC);
-          })
+          });
 
-          for (let t of testsForAdapterWithSuite1AndSuite2) this.addTest(
-              t.clone());
+          for (let t of testsForAdapterWithSuite1AndSuite2)
+            this.addTest(t.clone());
 
           it('should get execution options', async function() {
             {
@@ -1401,7 +1333,7 @@ describe('C2TestAdapter', function() {
 
               const cc = withArgs.callCount;
               await adapter.run([suite1.id]);
-              assert.equal(withArgs.callCount, cc + 1)
+              assert.equal(withArgs.callCount, cc + 1);
             }
             {
               const withArgs = spawnStub.withArgs(
@@ -1418,11 +1350,11 @@ describe('C2TestAdapter', function() {
                   });
               const cc = withArgs.callCount;
               await adapter.run([suite2.id]);
-              assert.equal(withArgs.callCount, cc + 1)
+              assert.equal(withArgs.callCount, cc + 1);
             }
-          })
-        })
-      })
+          });
+        });
+      });
 
       context(
           'executables=["execPath1", "execPath2", "execPath3"]',
@@ -1481,9 +1413,9 @@ describe('C2TestAdapter', function() {
                 assert.equal(test.type, 'test');
                 await runAndCheckEvents(<TestInfo>test);
               }
-            })
-          })
-    })
+            });
+          });
+    });
 
     specify('load executables=<full path of execPath1>', async function() {
       this.slow(300);
@@ -1501,13 +1433,13 @@ describe('C2TestAdapter', function() {
 
       disposeAdapterAndSubscribers();
       await updateConfig('executables', undefined);
-    })
+    });
 
     specify(
         'load executables=["execPath1", "execPath2"] with error',
         async function() {
           this.slow(300);
-          await updateConfig('executables', ['execPath1', 'execPath2'])
+          await updateConfig('executables', ['execPath1', 'execPath2']);
           adapter = createAdapterAndSubscribe();
 
           const withArgs = spawnStub.withArgs(
@@ -1521,7 +1453,7 @@ describe('C2TestAdapter', function() {
 
           disposeAdapterAndSubscribers();
           await updateConfig('executables', undefined);
-        })
+        });
 
     specify(
         'load executables=["execPath1", "execPath2Copy"]; delete; sleep 3; create',
@@ -1549,7 +1481,7 @@ describe('C2TestAdapter', function() {
           vsFindFilesStub.withArgs(matchRelativePattern(execPath2CopyPath))
               .returns([vscode.Uri.file(execPath2CopyPath)]);
 
-          await updateConfig('executables', ['execPath1', 'execPath2Copy'])
+          await updateConfig('executables', ['execPath1', 'execPath2Copy']);
           adapter = createAdapterAndSubscribe();
 
           await adapter.load();
@@ -1607,7 +1539,7 @@ describe('C2TestAdapter', function() {
           assert.equal(newRoot.children.length, 2);
           assert.ok(3000 < elapsed, inspect(elapsed));
           assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
-        })
+        });
 
     specify(
         'load executables=["execPath1", "execPath2Copy"]; delete second',
@@ -1615,7 +1547,7 @@ describe('C2TestAdapter', function() {
           const watchTimeout = 5;
           await updateConfig('defaultWatchTimeoutSec', watchTimeout);
           this.timeout(watchTimeout * 1000 + 2500 /* because of 'delay' */);
-          this.slow(watchTimeout* 1000 + 2500 /* because of 'delay' */);
+          this.slow(watchTimeout * 1000 + 2500 /* because of 'delay' */);
           const execPath2CopyPath =
               path.join(workspaceFolderUri.path, 'execPath2Copy');
 
@@ -1635,7 +1567,7 @@ describe('C2TestAdapter', function() {
           vsFindFilesStub.withArgs(matchRelativePattern(execPath2CopyPath))
               .returns([vscode.Uri.file(execPath2CopyPath)]);
 
-          await updateConfig('executables', ['execPath1', 'execPath2Copy'])
+          await updateConfig('executables', ['execPath1', 'execPath2Copy']);
           adapter = createAdapterAndSubscribe();
 
           await adapter.load();
@@ -1683,7 +1615,7 @@ describe('C2TestAdapter', function() {
           assert.equal(newRoot.children.length, 1);
           assert.ok(watchTimeout * 1000 < elapsed, inspect(elapsed));
           assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
-        })
+        });
 
     specify('wrong executables format', async function() {
       this.slow(300);
@@ -1701,31 +1633,33 @@ describe('C2TestAdapter', function() {
 
       disposeAdapterAndSubscribers();
       await updateConfig('executables', undefined);
-    })
+    });
 
     specify('variable substitution with executables={...}', async function() {
       this.slow(300);
-      const wsPath = workspaceFolderUri.fsPath
+      const wsPath = workspaceFolderUri.fsPath;
       const execPath2CopyRelPath = 'foo/bar/base.second.first';
       const execPath2CopyPath = path.join(wsPath, execPath2CopyRelPath);
 
       const envArray: [string, string][] = [
-        ['${absPath}', execPath2CopyPath],
-        ['${relPath}', execPath2CopyRelPath],
+        ['${absPath}', execPath2CopyPath], ['${relPath}', execPath2CopyRelPath],
         ['${absDirpath}', path.join(wsPath, 'foo/bar')],
-        ['${relDirpath}', 'foo/bar'],
-        ['${filename}', 'base.second.first'],
-        ['${baseFilename}', 'base.second'],
-        ['${extFilename}', '.first'],
-        ['${base2Filename}', 'base'],
-        ['${ext2Filename}', '.second'],
-        ['${base3Filename}', 'base'],
-        ['${ext3Filename}', ''],
-        ['${workspaceDirectory}', wsPath],
-        ['${workspaceFolder}', wsPath],
+        ['${relDirpath}', 'foo/bar'], ['${filename}', 'base.second.first'],
+        ['${baseFilename}', 'base.second'], ['${extFilename}', '.first'],
+        ['${base2Filename}', 'base'], ['${ext2Filename}', '.second'],
+        ['${base3Filename}', 'base'], ['${ext3Filename}', ''],
+        ['${workspaceDirectory}', wsPath], ['${workspaceFolder}', wsPath]
       ];
-      const envsStr = envArray.map(v => {return v[0]}).join(' , ');
-      const expectStr = envArray.map(v => {return v[1]}).join(' , ');
+      const envsStr = envArray
+                          .map(v => {
+                            return v[0];
+                          })
+                          .join(' , ');
+      const expectStr = envArray
+                            .map(v => {
+                              return v[1];
+                            })
+                            .join(' , ');
 
       await updateConfig('executables', {
         name: envsStr,
@@ -1792,6 +1726,6 @@ describe('C2TestAdapter', function() {
           });
       disposeAdapterAndSubscribers();
       await updateConfig('executables', undefined);
-    })
-  })
-})
+    });
+  });
+});
