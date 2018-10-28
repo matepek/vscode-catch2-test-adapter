@@ -25,14 +25,11 @@ script:
   - npm test --silent
 
 before_deploy:
-  - echo Whooho I will deploy on one day!
   - npm install
   - npm run compile
   - npm install vsce
-  - node ./node_modules/vsce/out/vsce --version || true
-  - npx vsce --version || true
-  - echo node ./node_modules/vsce/out/vsce package -o vscode-catch2-test-adapter.vsix
-  - echo test > vscode-catch2-test-adapter.vsix
+  - node ./node_modules/vsce/out/vsce --version
+  - node ./node_modules/vsce/out/vsce package -o vscode-catch2-test-adapter.vsix
   
 deploy:
   provider: releases
@@ -41,9 +38,11 @@ deploy:
   file: vscode-catch2-test-adapter.vsix
   skip_cleanup: true
   on:
+    os: osx
+    node_js: "8"
     repo: matepek/vscode-catch2-test-adapter
-    #tags: true //TODO this will be better condition
-    #branch: master
+    tags: true
+    #branch: master TODO
     branch: releasetest
 
 after_deploy:
