@@ -6,7 +6,7 @@
 
 import * as assert from 'assert';
 import * as cp from 'child_process';
-import * as fse from 'fs-extra';
+import * as fs from 'fs';
 import {inspect, promisify} from 'util';
 import * as vsce from 'vsce';
 
@@ -29,7 +29,7 @@ async function main() {
 
 async function updateChangelog() {
   console.log('Parsing CHANGELOG.md');
-  const changelogBuffer = await promisify(fse.readFile)('CHANGELOG.md');
+  const changelogBuffer = await promisify(fs.readFile)('CHANGELOG.md');
 
   const changelog = changelogBuffer.toString();
   // example:'## [0.1.0-beta] - 2018-04-12'
@@ -61,7 +61,7 @@ async function updateChangelog() {
 
   console.log('Updating CHANGELOG.md');
   // TODO
-  // await promisify(fse.writeFile)('CHANGELOG.md', changelogWithReleaseDate);
+  await promisify(fs.writeFile)('CHANGELOG.md', changelogWithReleaseDate);
 
   return {
     'version': match[1],
@@ -78,20 +78,27 @@ async function gitCommitAndTag(version: {[prop: string]: string|undefined}) {
   console.log('Creating signed tag and pushing to origin');
 
   // TODO
-  // await promisify(cp.exec)(
-  //     'git config --local user.name "matepek+vscode-catch2-test-adapter"');
-  // await promisify(cp.exec)(
-  //     'git config --local user.email
-  //     "matepek+vscode-catch2-test-adapter@gmail.com"');
+  await spawn(
+      'git', 'config', '--local', 'user.name',
+      'matepek/vscode-catch2-test-adapter bot');
+  await spawn(
+      'git', 'config', '--local', 'user.email',
+      'matepek+vscode-catch2-test-adapter@gmail.com');
+  // await spawn(
+  //    'git', 'config', '--global', 'user.signingkey', '107C10A2C50AA905');
 
-  await promisify(cp.exec)('git add -- CHANGELOG.md');
-  await promisify(cp.exec)(
-      'git commit -m "[Updated] Release info in CHANGELOG.md: ' + version.full +
-      '"');
+  await spawn('git', 'status');
+  await spawn('git', 'add', '--', 'CHANGELOG.md');
+  await spawn(
+      'git', 'commit', '-m',
+      '[Updated] Release info in CHANGELOG.md: ' + version.full, '--amend');
+
 
   const tagName = 'v' + version.version;
-  await promisify(cp.exec)('git tag -a ' + tagName);
-  // await promisify(cp.exec)('git push origin ' + tagName); TODO
+  await spawn(
+      'git', 'tag', '-a', tagName, '-u', '107C10A2C50AA905', '-m',
+      'Version v' + version.version);
+  await spawn('git push origin ' + tagName);  // TODO
 }
 
 async function publishPackage(version: {[prop: string]: string|undefined}) {
@@ -100,6 +107,17 @@ async function publishPackage(version: {[prop: string]: string|undefined}) {
   await vsce.createVSIX({'cwd': '.', 'packagePath': packagePath});
 
   // TODO
-  process.env['something'];
+  // console.log('Publishing vsce package');
+  // process.env['something'];
   // await vsce.publishVSIX(packagePath, {'pat': 'TODO'});
+}
+
+async function spawn(command: string, ...args: string[]) {
+  console.log('$ ' + command + ' "' + args.join('" "') + '"');
+  return new Promise((resolve, reject) => {
+    const c = cp.spawn(command, args, {stdio: 'inherit'});
+    c.on('exit', (code: number) => {
+      code == 0 ? resolve() : reject();
+    });
+  });
 }
