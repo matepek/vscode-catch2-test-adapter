@@ -44,9 +44,8 @@ export class C2ExecutableInfo implements vscode.Disposable {
     let fileUris: vscode.Uri[] = [];
 
     if (!isAbsolute || (isAbsolute && isPartOfWs)) {
-      let relativePattern: vscode.RelativePattern;
-      relativePattern = new vscode.RelativePattern(
-        this._adapter.workspaceFolder, relativeToWs);
+      const relativePattern = new vscode.RelativePattern(
+        this._adapter.workspaceFolder, this.pattern);
       fileUris =
         await vscode.workspace.findFiles(relativePattern, undefined, 1000);
       try {
@@ -120,7 +119,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
     }
 
     const suite = this._allTests.createChildSuite(
-        resolvedName, file.fsPath, {cwd: resolvedCwd, env: resolvedEnv});
+      resolvedName, file.fsPath, { cwd: resolvedCwd, env: resolvedEnv });
 
     this._executables.set(file.fsPath, suite);
 
@@ -128,8 +127,8 @@ export class C2ExecutableInfo implements vscode.Disposable {
   }
 
   private readonly _lastEventArrivedAt:
-      Map<string /* fsPath */, number /** Date.now */
-          > = new Map();
+    Map<string /* fsPath */, number /** Date.now */
+    > = new Map();
 
   private _handleEverything(uri: vscode.Uri) {
     let suite = this._executables.get(uri.fsPath);
@@ -148,44 +147,44 @@ export class C2ExecutableInfo implements vscode.Disposable {
     this._lastEventArrivedAt.set(uri.fsPath, Date.now());
 
     const x =
-        (exists: boolean, timeout: number, delay: number): Promise<void> => {
-          let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
-          if (lastEventArrivedAt === undefined) {
-            this._adapter.log.error('assert in ' + __filename);
-            debugger;
-            return Promise.resolve();
-          }
-          if (Date.now() - lastEventArrivedAt! > timeout) {
-            this._lastEventArrivedAt.delete(uri.fsPath);
-            this._executables.delete(uri.fsPath);
-            this._adapter.testsEmitter.fire({type: 'started'});
-            this._allTests.removeChild(suite!);
-            this._adapter.testsEmitter.fire(
-                {type: 'finished', suite: this._allTests});
-            return Promise.resolve();
-          } else if (exists) {
-            return this._adapter.queue.then(() => {
-              this._adapter.testsEmitter.fire({type: 'started'});
-              return suite!.reloadChildren().then(
-                  () => {
-                    this._adapter.testsEmitter.fire(
-                        {type: 'finished', suite: this._allTests});
-                    this._lastEventArrivedAt.delete(uri.fsPath);
-                  },
-                  (err: any) => {
-                    this._adapter.testsEmitter.fire(
-                        {type: 'finished', suite: this._allTests});
-                    this._adapter.log.warn(inspect(err));
-                    return x(false, timeout, Math.min(delay * 2, 2000));
-                  });
-            });
-          }
-          return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
-            return c2fs.existsAsync(uri.fsPath).then((exists: boolean) => {
-              return x(exists, timeout, Math.min(delay * 2, 2000));
-            });
+      (exists: boolean, timeout: number, delay: number): Promise<void> => {
+        let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
+        if (lastEventArrivedAt === undefined) {
+          this._adapter.log.error('assert in ' + __filename);
+          debugger;
+          return Promise.resolve();
+        }
+        if (Date.now() - lastEventArrivedAt! > timeout) {
+          this._lastEventArrivedAt.delete(uri.fsPath);
+          this._executables.delete(uri.fsPath);
+          this._adapter.testsEmitter.fire({ type: 'started' });
+          this._allTests.removeChild(suite!);
+          this._adapter.testsEmitter.fire(
+            { type: 'finished', suite: this._allTests });
+          return Promise.resolve();
+        } else if (exists) {
+          return this._adapter.queue.then(() => {
+            this._adapter.testsEmitter.fire({ type: 'started' });
+            return suite!.reloadChildren().then(
+              () => {
+                this._adapter.testsEmitter.fire(
+                  { type: 'finished', suite: this._allTests });
+                this._lastEventArrivedAt.delete(uri.fsPath);
+              },
+              (err: any) => {
+                this._adapter.testsEmitter.fire(
+                  { type: 'finished', suite: this._allTests });
+                this._adapter.log.warn(inspect(err));
+                return x(false, timeout, Math.min(delay * 2, 2000));
+              });
           });
-        };
+        }
+        return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
+          return c2fs.existsAsync(uri.fsPath).then((exists: boolean) => {
+            return x(exists, timeout, Math.min(delay * 2, 2000));
+          });
+        });
+      };
     // change event can arrive during debug session on osx (why?)
     // if (!this.isDebugging) {
     x(false, this._adapter.getExecWatchTimeout(), 64);
@@ -227,12 +226,12 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
   private _verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
     return c2fs.spawnAsync(path, ['--help'])
-        .then(res => {
-          return res.stdout.indexOf('Catch v2.') != -1;
-        })
-        .catch(e => {
-          this._adapter.log.error(inspect(e));
-          return false;
-        });
+      .then(res => {
+        return res.stdout.indexOf('Catch v2.') != -1;
+      })
+      .catch(e => {
+        this._adapter.log.error(inspect(e));
+        return false;
+      });
   }
 }
