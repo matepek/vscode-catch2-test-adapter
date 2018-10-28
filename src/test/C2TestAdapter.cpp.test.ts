@@ -31,7 +31,16 @@ function inCpp(relPath: string) {
   return vscode.Uri.file(path.join(cppUri.fsPath, relPath));
 }
 
+
 const isWin = process.platform === 'win32';
+
+async function removeDir(p: vscode.Uri) {
+  if (isWin) {
+    await promisify(cp.exec)('rd /s /q "' + p.fsPath + '"');
+  } else {
+    await promisify(cp.exec)('rm -r "' + p.fsPath + '"');
+  }
+}
 
 ///
 
@@ -66,7 +75,7 @@ describe('C2TestAdapter.cpp', function() {
         output.fsPath,
         source.fsPath,
       ].join('" "') + '"');
-      console.log('compiling finished' + output.fsPath);
+      console.log('compiled ' + output.fsPath);
     }
     assert.ok(await c2fs.existsAsync(output.fsPath));
   }
@@ -193,7 +202,7 @@ describe('C2TestAdapter.cpp', function() {
 
   context('example1', function() {
     afterEach(async function() {
-      await fse.remove(cppUri.fsPath);
+      await removeDir(cppUri);
     })
 
     it('shoud be found and run withouth error', async function() {
@@ -256,7 +265,7 @@ describe('C2TestAdapter.cpp', function() {
 
       await updateConfig('defaultWatchTimeoutSec', 1);
 
-      await fse.remove(inCpp('out/sub/suite2X.exe').fsPath);
+      await fse.unlink(inCpp('out/sub/suite2X.exe').fsPath);
 
       await waitFor(this, () => {
         return root.children.length == 2;
