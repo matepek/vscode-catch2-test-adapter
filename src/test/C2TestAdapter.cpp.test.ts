@@ -6,12 +6,12 @@ import * as assert from 'assert';
 import * as cp from 'child_process';
 import * as fse from 'fs-extra';
 import * as path from 'path';
-import { inspect, promisify } from 'util';
+import {inspect, promisify} from 'util';
 import * as vscode from 'vscode';
-import { TestAdapter, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
-import { Log } from 'vscode-test-adapter-util';
+import {TestAdapter, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
+import {Log} from 'vscode-test-adapter-util';
 
-import { C2TestAdapter } from '../C2TestAdapter';
+import {C2TestAdapter} from '../C2TestAdapter';
 import * as c2fs from '../FsWrapper';
 
 assert.notStrictEqual(vscode.workspace.workspaceFolders, undefined);
@@ -20,10 +20,10 @@ assert.equal(vscode.workspace.workspaceFolders!.length, 1);
 const workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
 
 const workspaceFolder =
-  vscode.workspace.getWorkspaceFolder(workspaceFolderUri)!;
+    vscode.workspace.getWorkspaceFolder(workspaceFolderUri)!;
 
 const logger =
-  new Log('Catch2TestAdapter', workspaceFolder, 'Catch2TestAdapter');
+    new Log('Catch2TestAdapter', workspaceFolder, 'Catch2TestAdapter');
 
 const cppUri = vscode.Uri.file(path.join(workspaceFolderUri.fsPath, 'cpp'));
 
@@ -35,11 +35,13 @@ const isWin = process.platform === 'win32';
 
 ///
 
-describe.skip('C2TestAdapter.cpp', function () {
-  this.enableTimeouts(false);//TODO
+// TODO skip
+describe.skip('C2TestAdapter.cpp', function() {
+  this.enableTimeouts(false);  // TODO
   async function compile(source: vscode.Uri, output: vscode.Uri) {
     if (isWin) {
-      assert.notStrictEqual(process.env['C2AVCVA'], undefined, inspect(process.env));
+      assert.notStrictEqual(
+          process.env['C2AVCVA'], undefined, inspect(process.env));
       const vcvarsall = vscode.Uri.file(process.env['C2AVCVA']!);
       const command = '"' + vcvarsall.fsPath + '" x86 && ' + [
         'cl.exe',
@@ -62,7 +64,7 @@ describe.skip('C2TestAdapter.cpp', function () {
     assert.ok(await c2fs.existsAsync(output.fsPath));
   }
 
-  before(async function () {
+  before(async function() {
     this.timeout(50000);
 
     await fse.remove(cppUri.fsPath);
@@ -70,18 +72,18 @@ describe.skip('C2TestAdapter.cpp', function () {
 
     if (!await c2fs.existsAsync(inCpp('../suite1.exe').fsPath))
       await compile(
-        inCpp('../../../src/test/cpp/suite1.cpp'), inCpp('../suite1.exe'));
+          inCpp('../../../src/test/cpp/suite1.cpp'), inCpp('../suite1.exe'));
 
     if (!await c2fs.existsAsync(inCpp('../suite2.exe').fsPath))
       await compile(
-        inCpp('../../../src/test/cpp/suite2.cpp'), inCpp('../suite2.exe'));
+          inCpp('../../../src/test/cpp/suite2.cpp'), inCpp('../suite2.exe'));
 
     if (!await c2fs.existsAsync(inCpp('../suite3.exe').fsPath))
       await compile(
-        inCpp('../../../src/test/cpp/suite3.cpp'), inCpp('../suite3.exe'));
+          inCpp('../../../src/test/cpp/suite3.cpp'), inCpp('../suite3.exe'));
   })
 
-  after(async function () {
+  after(async function() {
     await fse.remove(cppUri.fsPath);
     await fse.remove(inCpp('../suite1.exe').fsPath);
     await fse.remove(inCpp('../suite2.exe').fsPath);
@@ -89,45 +91,45 @@ describe.skip('C2TestAdapter.cpp', function () {
   })
 
   async function waitFor(
-    test: Mocha.Context, condition: Function,
-    timeout: number = 1000): Promise<void> {
+      test: Mocha.Context, condition: Function,
+      timeout: number = 1000): Promise<void> {
     const start = Date.now();
     let c;
     while (!(c = await condition()) &&
-      (Date.now() - start < timeout || !test.enableTimeouts()))
+           (Date.now() - start < timeout || !test.enableTimeouts()))
       await promisify(setTimeout)(10);
     assert.ok(c);
   }
 
   function copy(from: string, to: string) {
     return fse.copy(
-      vscode.Uri.file(path.join(cppUri.fsPath, from)).fsPath,
-      vscode.Uri.file(path.join(cppUri.fsPath, to)).fsPath);
+        vscode.Uri.file(path.join(cppUri.fsPath, from)).fsPath,
+        vscode.Uri.file(path.join(cppUri.fsPath, to)).fsPath);
   }
 
-  let adapter: C2TestAdapter | undefined;
-  let testsEventsConnection: vscode.Disposable | undefined;
-  let testStatesEventsConnection: vscode.Disposable | undefined;
-  let testsEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
-  let testStatesEvents: (TestRunStartedEvent | TestRunFinishedEvent |
-    TestSuiteEvent | TestEvent)[] = [];
+  let adapter: C2TestAdapter|undefined;
+  let testsEventsConnection: vscode.Disposable|undefined;
+  let testStatesEventsConnection: vscode.Disposable|undefined;
+  let testsEvents: (TestLoadStartedEvent|TestLoadFinishedEvent)[] = [];
+  let testStatesEvents: (TestRunStartedEvent|TestRunFinishedEvent|
+                         TestSuiteEvent|TestEvent)[] = [];
 
   function createAdapterAndSubscribe() {
     adapter = new C2TestAdapter(workspaceFolder, logger);
 
     testsEvents = [];
     testsEventsConnection =
-      adapter.tests((e: TestLoadStartedEvent | TestLoadFinishedEvent) => {
-        if (testsEvents.length % 2 == 1 && e.type == 'started') debugger;
-        testsEvents.push(e);
-      });
+        adapter.tests((e: TestLoadStartedEvent|TestLoadFinishedEvent) => {
+          if (testsEvents.length % 2 == 1 && e.type == 'started') debugger;
+          testsEvents.push(e);
+        });
 
     testStatesEvents = [];
     testStatesEventsConnection = adapter.testStates(
-      (e: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent |
-        TestEvent) => {
-        testStatesEvents.push(e);
-      });
+        (e: TestRunStartedEvent|TestRunFinishedEvent|TestSuiteEvent|
+         TestEvent) => {
+          testStatesEvents.push(e);
+        });
 
     return adapter!;
   }
@@ -137,7 +139,7 @@ describe.skip('C2TestAdapter.cpp', function () {
     await adapter.load();
     if (testsEvents.length != eventCount + 2) debugger;
     assert.strictEqual(
-      testsEvents.length, eventCount + 2, inspect(testsEvents));
+        testsEvents.length, eventCount + 2, inspect(testsEvents));
     const finished = testsEvents.pop()!;
     assert.strictEqual(finished.type, 'finished');
     assert.strictEqual(testsEvents.pop()!.type, 'started');
@@ -153,18 +155,18 @@ describe.skip('C2TestAdapter.cpp', function () {
     if (check) {
       for (let i = 0; i < testsEvents.length; i++) {
         assert.deepStrictEqual(
-          { type: 'started' }, testsEvents[i],
-          inspect({ index: i, testsEvents: testsEvents }));
+            {type: 'started'}, testsEvents[i],
+            inspect({index: i, testsEvents: testsEvents}));
         i++;
         assert.ok(
-          i < testsEvents.length,
-          inspect({ index: i, testsEvents: testsEvents }));
+            i < testsEvents.length,
+            inspect({index: i, testsEvents: testsEvents}));
         assert.equal(
-          testsEvents[i].type, 'finished',
-          inspect({ index: i, testsEvents: testsEvents }));
+            testsEvents[i].type, 'finished',
+            inspect({index: i, testsEvents: testsEvents}));
         assert.ok(
-          (<TestLoadFinishedEvent>testsEvents[i]).suite,
-          inspect({ index: i, testsEvents: testsEvents }));
+            (<TestLoadFinishedEvent>testsEvents[i]).suite,
+            inspect({index: i, testsEvents: testsEvents}));
       }
     }
     testsEvents = [];
@@ -172,7 +174,7 @@ describe.skip('C2TestAdapter.cpp', function () {
 
   function getConfig() {
     return vscode.workspace.getConfiguration(
-      'catch2TestExplorer', workspaceFolderUri);
+        'catch2TestExplorer', workspaceFolderUri);
   }
 
   async function updateConfig(key: string, value: any) {
@@ -182,18 +184,18 @@ describe.skip('C2TestAdapter.cpp', function () {
     while (testsEvents.length < count--) testsEvents.pop();
   }
 
-  context('example1', function () {
-    afterEach(async function () {
+  context('example1', function() {
+    afterEach(async function() {
       await fse.remove(cppUri.fsPath);
     })
 
-    it('shoud be found and run withouth error', async function () {
+    it('shoud be found and run withouth error', async function() {
       await updateConfig(
-        'executables', [{
-          'name': '${baseFilename}',
-          'pattern': 'cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*',
-          'cwd': '${workspaceFolder}/cpp',
-        }]);
+          'executables', [{
+            'name': '${baseFilename}',
+            'pattern': 'cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*',
+            'cwd': '${workspaceFolder}/cpp',
+          }]);
 
       await copy('../suite1.exe', 'out/suite1.exe');
       await copy('../suite2.exe', 'out/suite2.exe');
@@ -211,15 +213,15 @@ describe.skip('C2TestAdapter.cpp', function () {
       await updateConfig('executables', undefined);
     })
 
-    it('shoud be notified by watcher', async function () {
+    it('shoud be notified by watcher', async function() {
       this.timeout(10000);
       this.slow(3500);
       await updateConfig(
-        'executables', [{
-          'name': '${baseFilename}',
-          'pattern': 'cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*',
-          'cwd': '${workspaceFolder}/cpp',
-        }]);
+          'executables', [{
+            'name': '${baseFilename}',
+            'pattern': 'cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*',
+            'cwd': '${workspaceFolder}/cpp',
+          }]);
 
       adapter = createAdapterAndSubscribe();
       const root = await load(adapter);

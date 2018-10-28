@@ -3,24 +3,23 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import * as path from 'path';
-import { inspect } from 'util';
+import {inspect} from 'util';
 import * as vscode from 'vscode';
-import { TestAdapter, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent } from 'vscode-test-adapter-api';
+import {TestAdapter, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent} from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
 
-import { C2AllTestSuiteInfo } from './C2AllTestSuiteInfo';
-import { C2ExecutableInfo } from './C2ExecutableInfo';
-import { C2TestInfo } from './C2TestInfo';
-import { resolveVariables } from './Helpers';
-import { QueueGraphNode } from './QueueGraph';
-import { generateUniqueId } from './IdGenerator';
+import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
+import {C2ExecutableInfo} from './C2ExecutableInfo';
+import {C2TestInfo} from './C2TestInfo';
+import {resolveVariables} from './Helpers';
+import {QueueGraphNode} from './QueueGraph';
 
 export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   readonly testsEmitter =
-    new vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>();
+      new vscode.EventEmitter<TestLoadStartedEvent|TestLoadFinishedEvent>();
   readonly testStatesEmitter =
-    new vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent |
-      TestSuiteEvent | TestEvent>();
+      new vscode.EventEmitter<TestRunStartedEvent|TestRunFinishedEvent|
+                              TestSuiteEvent|TestEvent>();
   private readonly autorunEmitter = new vscode.EventEmitter<void>();
 
   readonly variableToValue: [string, string][] = [
@@ -35,38 +34,38 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly disposables: Array<vscode.Disposable> = new Array();
 
   constructor(
-    public readonly workspaceFolder: vscode.WorkspaceFolder,
-    public readonly log: util.Log) {
+      public readonly workspaceFolder: vscode.WorkspaceFolder,
+      public readonly log: util.Log) {
     this.disposables.push(this.testsEmitter);
     this.disposables.push(this.testStatesEmitter);
     this.disposables.push(this.autorunEmitter);
 
     this.disposables.push(
-      vscode.workspace.onDidChangeConfiguration(configChange => {
-        if (configChange.affectsConfiguration(
-          'catch2TestExplorer.defaultEnv', this.workspaceFolder.uri) ||
-          configChange.affectsConfiguration(
-            'catch2TestExplorer.defaultCwd', this.workspaceFolder.uri) ||
-          configChange.affectsConfiguration(
-            'catch2TestExplorer.executables', this.workspaceFolder.uri)) {
-          this.load();
-        }
-      }));
+        vscode.workspace.onDidChangeConfiguration(configChange => {
+          if (configChange.affectsConfiguration(
+                  'catch2TestExplorer.defaultEnv', this.workspaceFolder.uri) ||
+              configChange.affectsConfiguration(
+                  'catch2TestExplorer.defaultCwd', this.workspaceFolder.uri) ||
+              configChange.affectsConfiguration(
+                  'catch2TestExplorer.executables', this.workspaceFolder.uri)) {
+            this.load();
+          }
+        }));
 
     this.disposables.push(
-      vscode.workspace.onDidChangeConfiguration(configChange => {
-        if (configChange.affectsConfiguration(
-          'catch2TestExplorer.enableSourceDecoration',
-          this.workspaceFolder.uri)) {
-          this.isEnabledSourceDecoration =
-            this.getEnableSourceDecoration(this.getConfiguration());
-        }
-        if (configChange.affectsConfiguration(
-          'catch2TestExplorer.defaultRngSeed',
-          this.workspaceFolder.uri)) {
-          this.autorunEmitter.fire();
-        }
-      }));
+        vscode.workspace.onDidChangeConfiguration(configChange => {
+          if (configChange.affectsConfiguration(
+                  'catch2TestExplorer.enableSourceDecoration',
+                  this.workspaceFolder.uri)) {
+            this.isEnabledSourceDecoration =
+                this.getEnableSourceDecoration(this.getConfiguration());
+          }
+          if (configChange.affectsConfiguration(
+                  'catch2TestExplorer.defaultRngSeed',
+                  this.workspaceFolder.uri)) {
+            this.autorunEmitter.fire();
+          }
+        }));
 
     this.allTests = new C2AllTestSuiteInfo(this);
   }
@@ -78,12 +77,12 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this.allTests.dispose();
   }
 
-  get testStates(): vscode.Event<TestRunStartedEvent | TestRunFinishedEvent |
-    TestSuiteEvent | TestEvent> {
+  get testStates(): vscode.Event<TestRunStartedEvent|TestRunFinishedEvent|
+                                 TestSuiteEvent|TestEvent> {
     return this.testStatesEmitter.event;
   }
 
-  get tests(): vscode.Event<TestLoadStartedEvent | TestLoadFinishedEvent> {
+  get tests(): vscode.Event<TestLoadStartedEvent|TestLoadFinishedEvent> {
     return this.testsEmitter.event;
   }
 
@@ -95,7 +94,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return this.isEnabledSourceDecoration;
   }
 
-  getRngSeed(): string | number | null {
+  getRngSeed(): string|number|null {
     return this.getDefaultRngSeed(this.getConfiguration());
   }
 
@@ -113,16 +112,16 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       this.allTests.dispose();
       this.allTests = new C2AllTestSuiteInfo(this);
 
-      this.testsEmitter.fire(<TestLoadStartedEvent>{ type: 'started', uid: generateUniqueId(), allTests: this.allTests });
+      this.testsEmitter.fire(<TestLoadStartedEvent>{type: 'started'});
 
       const config = this.getConfiguration();
 
       await this.allTests.load(this.getExecutables(config, this.allTests));
 
-      this.testsEmitter.fire({ type: 'finished', suite: this.allTests });
+      this.testsEmitter.fire({type: 'finished', suite: this.allTests});
     } catch (e) {
       this.testsEmitter.fire(
-        { type: 'finished', suite: undefined, errorMessage: e.message });
+          {type: 'finished', suite: undefined, errorMessage: e.message});
     }
   }
 
@@ -141,8 +140,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         this.isRunning -= 1;
       };
       return this.allTests
-        .run(tests, this.getWorkerMaxNumber(this.getConfiguration()))
-        .then(always, always);
+          .run(tests, this.getWorkerMaxNumber(this.getConfiguration()))
+          .then(always, always);
     }
 
     throw Error('Catch2 Test Adapter: Test(s) are currently being run.');
@@ -175,7 +174,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       };
 
       const template =
-        this.getDebugConfigurationTemplate(this.getConfiguration());
+          this.getDebugConfigurationTemplate(this.getConfiguration());
       let resolveDebugVariables: [string, any][] = this.variableToValue;
       resolveDebugVariables = resolveDebugVariables.concat([
         ['${label}', testInfo.label], ['${exec}', testInfo.parent.execPath],
@@ -209,7 +208,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this.isDebugging = true;
 
     const debugSessionStarted =
-      await vscode.debug.startDebugging(this.workspaceFolder, debugConfig);
+        await vscode.debug.startDebugging(this.workspaceFolder, debugConfig);
 
     if (!debugSessionStarted) {
       console.error('Failed starting the debug session - aborting');
@@ -240,15 +239,16 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
   private getConfiguration(): vscode.WorkspaceConfiguration {
     return vscode.workspace.getConfiguration(
-      'catch2TestExplorer', this.workspaceFolder.uri);
+        'catch2TestExplorer', this.workspaceFolder.uri);
   }
 
-  private getDebugConfigurationTemplate(config: vscode.WorkspaceConfiguration): { [prop: string]: string } | null {
+  private getDebugConfigurationTemplate(config: vscode.WorkspaceConfiguration):
+      {[prop: string]: string}|null {
     const o = config.get<any>('debugConfigTemplate', null);
 
     if (o === null) return null;
 
-    const result: { [prop: string]: string } = {};
+    const result: {[prop: string]: string} = {};
 
     for (const prop in o) {
       const val = o[prop];
@@ -262,11 +262,12 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   private getGlobalAndDefaultEnvironmentVariables(
-    config: vscode.WorkspaceConfiguration): { [prop: string]: string | undefined } {
+      config: vscode.WorkspaceConfiguration):
+      {[prop: string]: string|undefined} {
     const processEnv = process.env;
-    const configEnv: { [prop: string]: any } = config.get('defaultEnv') || {};
+    const configEnv: {[prop: string]: any} = config.get('defaultEnv') || {};
 
-    const resultEnv = { ...processEnv };
+    const resultEnv = {...processEnv};
 
     for (const prop in configEnv) {
       const val = configEnv[prop];
@@ -283,7 +284,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private getDefaultCwd(config: vscode.WorkspaceConfiguration): string {
     const dirname = this.workspaceFolder.uri.fsPath;
     const cwd = resolveVariables(
-      config.get<string>('defaultCwd', dirname), this.variableToValue);
+        config.get<string>('defaultCwd', dirname), this.variableToValue);
     if (path.isAbsolute(cwd)) {
       return cwd;
     } else {
@@ -292,8 +293,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   private getDefaultRngSeed(config: vscode.WorkspaceConfiguration): string
-    | number | null {
-    return config.get<null | string | number>('defaultRngSeed', null);
+      |number|null {
+    return config.get<null|string|number>('defaultRngSeed', null);
   }
 
   getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration): number {
@@ -305,10 +306,10 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   private getGlobalAndCurrentEnvironmentVariables(
-    config: vscode.WorkspaceConfiguration,
-    configEnv: { [prop: string]: any }): { [prop: string]: any } {
+      config: vscode.WorkspaceConfiguration,
+      configEnv: {[prop: string]: any}): {[prop: string]: any} {
     const processEnv = process.env;
-    const resultEnv = { ...processEnv };
+    const resultEnv = {...processEnv};
 
     for (const prop in configEnv) {
       const val = configEnv[prop];
@@ -323,23 +324,23 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   private getEnableSourceDecoration(config: vscode.WorkspaceConfiguration):
-    boolean {
+      boolean {
     return config.get<boolean>('enableSourceDecoration', true);
   }
 
   private getExecutables(
-    config: vscode.WorkspaceConfiguration,
-    allTests: C2AllTestSuiteInfo): C2ExecutableInfo[] {
+      config: vscode.WorkspaceConfiguration,
+      allTests: C2AllTestSuiteInfo): C2ExecutableInfo[] {
     const globalWorkingDirectory = this.getDefaultCwd(config);
 
     let executables: C2ExecutableInfo[] = [];
 
-    const configExecs: |undefined | string | string[] | { [prop: string]: any } |
-      { [prop: string]: any }[] = config.get('executables');
+    const configExecs:|undefined|string|string[]|{[prop: string]: any}|
+        {[prop: string]: any}[] = config.get('executables');
 
-    const createFromObject = (obj: { [prop: string]: any }): C2ExecutableInfo => {
+    const createFromObject = (obj: {[prop: string]: any}): C2ExecutableInfo => {
       const name: string =
-        obj.hasOwnProperty('name') ? obj.name : '${relName} (${relDirname}/)';
+          obj.hasOwnProperty('name') ? obj.name : '${relName} (${relDirname}/)';
 
       let pattern: string = '';
       if (obj.hasOwnProperty('pattern') && typeof obj.pattern == 'string')
@@ -350,11 +351,11 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         throw Error('Error: pattern or path property is required.');
 
       const cwd: string =
-        obj.hasOwnProperty('cwd') ? obj.cwd : globalWorkingDirectory;
+          obj.hasOwnProperty('cwd') ? obj.cwd : globalWorkingDirectory;
 
-      const env: { [prop: string]: any } = obj.hasOwnProperty('env') ?
-        this.getGlobalAndCurrentEnvironmentVariables(config, obj.env) :
-        this.getGlobalAndDefaultEnvironmentVariables(config);
+      const env: {[prop: string]: any} = obj.hasOwnProperty('env') ?
+          this.getGlobalAndCurrentEnvironmentVariables(config, obj.env) :
+          this.getGlobalAndDefaultEnvironmentVariables(config);
 
       return new C2ExecutableInfo(this, allTests, name, pattern, cwd, env);
     };
@@ -362,8 +363,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     if (typeof configExecs === 'string') {
       if (configExecs.length == 0) return [];
       executables.push(new C2ExecutableInfo(
-        this, allTests, configExecs, configExecs, globalWorkingDirectory,
-        {}));
+          this, allTests, configExecs, configExecs, globalWorkingDirectory,
+          {}));
     } else if (Array.isArray(configExecs)) {
       for (var i = 0; i < configExecs.length; ++i) {
         const configExe = configExecs[i];
@@ -371,8 +372,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
           const configExecsName = String(configExe);
           if (configExecsName.length > 0) {
             executables.push(new C2ExecutableInfo(
-              this, allTests, configExecsName, configExecsName,
-              globalWorkingDirectory, {}));
+                this, allTests, configExecsName, configExecsName,
+                globalWorkingDirectory, {}));
           }
         } else {
           try {
