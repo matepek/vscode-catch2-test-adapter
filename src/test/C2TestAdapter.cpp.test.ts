@@ -38,10 +38,16 @@ const isWin = process.platform === 'win32';
 describe('C2TestAdapter.cpp', function() {
   async function compile(source: vscode.Uri, output: vscode.Uri) {
     if (isWin) {
-      assert.notStrictEqual(
-          process.env['C2AVCVA'], undefined, inspect(process.env));
-      const vcvarsall = vscode.Uri.file(process.env['C2AVCVA']!);
-      const command = '"' + vcvarsall.fsPath + '" x86 && ' + [
+      let vcvarsall: vscode.Uri|undefined;
+      if (process.env['C2AVCVA']) {
+        vcvarsall = vscode.Uri.file(process.env['C2AVCVA']!);
+      } else if (
+          process.env['APPVEYOR_BUILD_WORKER_IMAGE'] == 'Visual Studio 2017')
+        vcvarsall = vscode.Uri.file(
+            'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat');
+
+      assert.notStrictEqual(vcvarsall, undefined, inspect(process.env));
+      const command = '"' + vcvarsall!.fsPath + '" x86 && ' + [
         'cl.exe',
         '/EHsc',
         '/I"' + path.dirname(source.fsPath) + '"',
@@ -117,7 +123,8 @@ describe('C2TestAdapter.cpp', function() {
     testsEventsConnection =
         adapter.tests((e: TestLoadStartedEvent|TestLoadFinishedEvent) => {
           if (testsEvents.length % 2 == 1 && e.type == 'started') {
-            const i = 0;i;
+            const i = 0;
+            i;
           }
           testsEvents.push(e);
         });
@@ -135,7 +142,7 @@ describe('C2TestAdapter.cpp', function() {
   async function load(adapter: TestAdapter): Promise<TestSuiteInfo> {
     const eventCount = testsEvents.length;
     await adapter.load();
-    if (testsEvents.length != eventCount + 2) debugger; //TODO bug on win
+    if (testsEvents.length != eventCount + 2) debugger;  // TODO bug on win
     assert.strictEqual(
         testsEvents.length, eventCount + 2, inspect(testsEvents));
     const finished = testsEvents.pop()!;

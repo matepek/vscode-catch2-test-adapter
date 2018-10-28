@@ -9,7 +9,6 @@ environment:
   matrix:
     - nodejs_version: LTS
     - nodejs_version: Current
-    - C2AVCVA: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
 
 install:
   - ps: Install-Product node $env:nodejs_version
