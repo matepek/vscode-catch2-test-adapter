@@ -35,9 +35,7 @@ const isWin = process.platform === 'win32';
 
 ///
 
-// TODO skip
-describe.skip('C2TestAdapter.cpp', function() {
-  this.enableTimeouts(false);  // TODO
+describe('C2TestAdapter.cpp', function() {
   async function compile(source: vscode.Uri, output: vscode.Uri) {
     if (isWin) {
       assert.notStrictEqual(
@@ -85,9 +83,6 @@ describe.skip('C2TestAdapter.cpp', function() {
 
   after(async function() {
     await fse.remove(cppUri.fsPath);
-    await fse.remove(inCpp('../suite1.exe').fsPath);
-    await fse.remove(inCpp('../suite2.exe').fsPath);
-    await fse.remove(inCpp('../suite3.exe').fsPath);
   })
 
   async function waitFor(
@@ -190,6 +185,7 @@ describe.skip('C2TestAdapter.cpp', function() {
     })
 
     it('shoud be found and run withouth error', async function() {
+      this.slow(1500);
       await updateConfig(
           'executables', [{
             'name': '${baseFilename}',
@@ -207,15 +203,15 @@ describe.skip('C2TestAdapter.cpp', function() {
 
       const eventCount = testStatesEvents.length;
       await adapter.run([root.id]);
-      assert.strictEqual(testStatesEvents.length, eventCount + 24);
+      assert.strictEqual(testStatesEvents.length, eventCount + 86);
 
       disposeAdapterAndSubscribers();
       await updateConfig('executables', undefined);
     })
 
     it('shoud be notified by watcher', async function() {
-      this.timeout(10000);
-      this.slow(3500);
+      this.timeout(5000);
+      this.slow(4000);
       await updateConfig(
           'executables', [{
             'name': '${baseFilename}',
@@ -245,9 +241,9 @@ describe.skip('C2TestAdapter.cpp', function() {
         return root.children.length == 3;
       }, 2000);
 
-      await fse.remove(inCpp('out/sub/suite2X.exe').fsPath);
-
       await updateConfig('defaultWatchTimeoutSec', 1);
+
+      await fse.remove(inCpp('out/sub/suite2X.exe').fsPath);
 
       await waitFor(this, () => {
         return root.children.length == 2;

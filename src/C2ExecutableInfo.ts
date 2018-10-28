@@ -39,19 +39,20 @@ export class C2ExecutableInfo implements vscode.Disposable {
                                     path.resolve(wsUri.fsPath, this.pattern);
     const absPatternAsUri = vscode.Uri.file(absPattern);
     // const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
-    // const isPartOfWs = !relativeToWs.startsWith('..');  // TODO
+    // const isPartOfWs = !relativeToWs.startsWith('..');
+    // TODO, TODO patern backlash logging
 
     let fileUris: vscode.Uri[] = [];
 
     if (!isAbsolute) {
       const relativePattern = new vscode.RelativePattern(
-          this._adapter.workspaceFolder,
-          this.pattern);  // TODO pattern backslash
+          this._adapter.workspaceFolder, this.pattern);
 
-      fileUris =
-          await vscode.workspace.findFiles(relativePattern, undefined, 1000);
       try {
-        // abs path is required
+        fileUris =
+            await vscode.workspace.findFiles(relativePattern, undefined, 1000);
+
+        // abs path string or vscode.RelativePattern is required.
         this._watcher = vscode.workspace.createFileSystemWatcher(
             relativePattern, false, false, false);
         this._disposables.push(this._watcher);
