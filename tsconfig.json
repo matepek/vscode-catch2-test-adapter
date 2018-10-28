@@ -14,5 +14,5 @@
     "removeComments": true,
     "skipLibCheck": true
   },
-  "include": ["src/main.ts", "src/test/**/*.ts", "resources/*.ts"]
+  "include": ["src/main.ts", "src/repo_util/deploy.ts", "src/test/**/*.ts"]
 }

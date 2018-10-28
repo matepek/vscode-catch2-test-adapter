@@ -5,7 +5,7 @@
       "type": "node",
       "request": "launch",
       "name": "Deploy",
-      "program": "${workspaceFolder}/out/resources/deploy.js"
+      "program": "${workspaceFolder}/out/repo_util/deploy.js"
     },
     {
       "type": "extensionHost",

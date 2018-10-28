@@ -29,7 +29,7 @@ before_deploy:
   - npm install vsce
   - npm run compile
   - node ./node_modules/vsce/out/vsce --version
-  - node ./out/resources/deploy.js
+  - node ./out/repo_util/deploy.js
   
 deploy:
   provider: releases
@@ -39,7 +39,7 @@ deploy:
   file: vscode-catch2-test-adapter-*.vsix
   skip_cleanup: true
   on:
-    os: osx
+    condition: "$TRAVIS_OS_NAME = osx"
     node_js: "8"
     repo: matepek/vscode-catch2-test-adapter
     #branch: master TODO

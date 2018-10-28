@@ -21,6 +21,7 @@ const repoId = 'matepek-vscode-catch2-test-adapter';
 
 async function main() {
   const version = await updateChangelog();
+  await updatePackageJson(version);
   await gitCommitAndTag(version);
   await publishPackage(version)
 }
@@ -74,6 +75,32 @@ async function updateChangelog() {
   };
 }
 
+async function updatePackageJson(version: {[prop: string]: string|undefined}) {
+  console.log('Parsing package.json');
+  const packageJsonBuffer = await promisify(fs.readFile)('package.json');
+
+  const packageJson = packageJsonBuffer.toString();
+  // example:'## [0.1.0-beta] - 2018-04-12'
+  const re = new RegExp(/(['"]version['"]\s*:\s*['"])([^'"]*)(['"])/);
+
+  const match: RegExpMatchArray|null = packageJson.match(re);
+  assert.notStrictEqual(match, null);
+  if (match === null)
+    throw Error('Release error: Couldn\'t find version entry.');
+
+  assert.strictEqual(match.length, 4);
+  assert.notStrictEqual(match[1], undefined);
+  assert.notStrictEqual(match[2], undefined);
+  assert.notStrictEqual(match[3], undefined);
+
+  const packageJsonWithVer =
+      packageJson.substr(0, match.index! + match[1].length) + version.version +
+      packageJson.substr(match.index! + match[1].length + match[2].length);
+
+  console.log('Updating package.json');
+  await promisify(fs.writeFile)('package.json', packageJsonWithVer);
+}
+
 async function gitCommitAndTag(version: {[prop: string]: string|undefined}) {
   console.log('Creating signed tag and pushing to origin');
 
@@ -95,10 +122,8 @@ async function gitCommitAndTag(version: {[prop: string]: string|undefined}) {
 
 
   const tagName = 'v' + version.version;
-  await spawn(
-      'git', 'tag', '-a', tagName, '-u', '107C10A2C50AA905', '-m',
-      'Version v' + version.version);
-  await spawn('git push origin ' + tagName);  // TODO
+  await spawn('git', 'tag', '-a', tagName, '-m', 'Version v' + version.version);
+  await spawn('git', 'push', 'origin', '--tags');  // TODO
 }
 
 async function publishPackage(version: {[prop: string]: string|undefined}) {
@@ -117,7 +142,7 @@ async function spawn(command: string, ...args: string[]) {
   return new Promise((resolve, reject) => {
     const c = cp.spawn(command, args, {stdio: 'inherit'});
     c.on('exit', (code: number) => {
-      code == 0 ? resolve() : reject();
+      code == 0 ? resolve() : reject(new Error('Process exited with: ' + code));
     });
   });
 }
