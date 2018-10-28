@@ -3,25 +3,26 @@ sudo: false
 language: node_js
 
 node_js:
-- '8'
-- '11'
+  - "8"
+  - "11"
 
 os:
-- osx
-- linux
+  - osx
+  - linux
 
 before_install:
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
-      export CXX="g++-4.9" CC="gcc-4.9" DISPLAY=:99.0;
-      sh -e /etc/init.d/xvfb start;
-      sleep 3;
+    export CXX="g++-4.9" CC="gcc-4.9" DISPLAY=:99.0;
+    sh -e /etc/init.d/xvfb start;
+    sleep 3;
     fi
 
 install:
-- npm install
-- npm run compile
+  - npm install
+  - npm run compile
+
 script:
-- npm test --silent
+  - npm test --silent
 
 before_deploy:
   - echo Whooho I will deploy on one day!
