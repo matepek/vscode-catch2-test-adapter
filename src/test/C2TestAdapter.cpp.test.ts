@@ -56,6 +56,7 @@ describe('C2TestAdapter.cpp', function() {
       ].join(' ');
       await promisify(cp.exec)(command);
     } else {
+      console.log('compiling ' + source.fsPath);
       await promisify(cp.exec)('"' + [
         'c++',
         '-x',
@@ -65,6 +66,7 @@ describe('C2TestAdapter.cpp', function() {
         output.fsPath,
         source.fsPath,
       ].join('" "') + '"');
+      console.log('compiling finished' + output.fsPath);
     }
     assert.ok(await c2fs.existsAsync(output.fsPath));
   }
