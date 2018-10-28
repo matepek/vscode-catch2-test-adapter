@@ -26,24 +26,21 @@ script:
 
 before_deploy:
   - npm install
-  - npm run compile
   - npm install vsce
+  - npm run compile
   - node ./node_modules/vsce/out/vsce --version
-  - node ./node_modules/vsce/out/vsce package -o vscode-catch2-test-adapter.vsix
+  - node ./out/resources/deploy.js
   
 deploy:
   provider: releases
   api_key:
     secure: O5j1kUme6hcXrVUK7X3fKbMu77zVkAkVLfEV2pprVD7Qy7VX83oJmER4qVZHlq47IICmumspSlCAlSi2C8GjB6SGjqzX5+9InCQDn9haPuGP7G9iniGLVXXMpaqFYZeoj/YxGobOiO2GueajB2dqwGucc/WPIiXqPTHOkr6rhfEv8vGzo9mKEmQFS8OVnVu/nMCfON/14XcYn3gICUH5GqcHmyRrd5uiLJr0090G2XSzNDKXINLUFodTkHS+Ov0bKUtlob7Q6bf9+qxokSv1HThduczVT5gdAvhfe1OvnVmroJ3OdFyenyCOW4Nqb72NDWwcGyy1Sh7WiJEq/AgC8a3aRIe1yYKM/Y1iesupyC5rg1aG5OH7N7P6vU3p9wBMyECwCZ2zYH2kZG5tuv3ct1vDgwoFklv7l63VMN4oBs4uG+nt/CWbk30+U/GOwqni0Rnh5Qe+AeNToR0Ex+l1b6843inxg6XM4L/PF1Mcj4ClmxIXzXRWnhgSNljE5OUAreckNOYcSmNOvlVLE1cAYS0+g7x8FkUF2mz7s+AhNw4xKHfoweZ9yH18HpQtrAIHQ7l+NnadGy5i29EgNv5i3U7EFqvBzsvjjlvwRzDlvOzixYRkzjmav44VTYJCK35kA2VUHEAlmwjRnCzlcF6vg8DSc2oBoDfPeUkKC7w5mR4=
-  file: vscode-catch2-test-adapter.vsix
+  file_glob: true
+  file: vscode-catch2-test-adapter-*.vsix
   skip_cleanup: true
   on:
     os: osx
     node_js: "8"
     repo: matepek/vscode-catch2-test-adapter
-    tags: true
     #branch: master TODO
     branch: releasetest
-
-after_deploy:
-  - echo node ./node_modules/vsce/out/vsce publish --packagePath vscode-catch2-test-adapter.vsix --pat TODO
