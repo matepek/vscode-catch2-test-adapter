@@ -9,7 +9,7 @@ environment:
   matrix:
     - nodejs_version: LTS
     - nodejs_version: Current
-    - C2AVCVA: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat"
+    - C2AVCVA: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
 
 install:
   - ps: Install-Product node $env:nodejs_version
@@ -17,9 +17,8 @@ install:
   - npm --version
   - npm install
 
+build: off
+
 test_script:
   - npm run compile
   - npm test --silent
-
-# Don't actually build.
-build: off

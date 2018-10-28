@@ -38,10 +38,14 @@ export class C2ExecutableInfo implements vscode.Disposable {
     const absPattern = isAbsolute ? path.normalize(this.pattern) :
                                     path.resolve(wsUri.fsPath, this.pattern);
     const absPatternAsUri = vscode.Uri.file(absPattern);
-    // const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
-    // const isPartOfWs = !relativeToWs.startsWith('..');
-    // TODO, TODO patern backlash logging
+    const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
+    const isPartOfWs = !relativeToWs.startsWith('..');
 
+    if(isAbsolute && isPartOfWs)
+      this._adapter.log.info('Absolute path is used for workspace directory: ' + inspect([this]));
+    if(this.pattern.indexOf('\\') != -1)
+      this._adapter.log.warn('Pattern contains backslash character: ' + this.pattern);
+    
     let fileUris: vscode.Uri[] = [];
 
     if (!isAbsolute) {

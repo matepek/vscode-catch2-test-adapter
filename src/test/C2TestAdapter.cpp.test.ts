@@ -43,6 +43,7 @@ describe('C2TestAdapter.cpp', function() {
       const vcvarsall = vscode.Uri.file(process.env['C2AVCVA']!);
       const command = '"' + vcvarsall.fsPath + '" x86 && ' + [
         'cl.exe',
+        '/EHsc',
         '/I"' + path.dirname(source.fsPath) + '"',
         '/Fe"' + output.fsPath + '"',
         '"' + source.fsPath + '"',
@@ -115,7 +116,9 @@ describe('C2TestAdapter.cpp', function() {
     testsEvents = [];
     testsEventsConnection =
         adapter.tests((e: TestLoadStartedEvent|TestLoadFinishedEvent) => {
-          if (testsEvents.length % 2 == 1 && e.type == 'started') debugger;
+          if (testsEvents.length % 2 == 1 && e.type == 'started') {
+            const i = 0;i;
+          }
           testsEvents.push(e);
         });
 
@@ -132,7 +135,7 @@ describe('C2TestAdapter.cpp', function() {
   async function load(adapter: TestAdapter): Promise<TestSuiteInfo> {
     const eventCount = testsEvents.length;
     await adapter.load();
-    if (testsEvents.length != eventCount + 2) debugger;
+    if (testsEvents.length != eventCount + 2) debugger; //TODO bug on win
     assert.strictEqual(
         testsEvents.length, eventCount + 2, inspect(testsEvents));
     const finished = testsEvents.pop()!;
@@ -185,7 +188,8 @@ describe('C2TestAdapter.cpp', function() {
     })
 
     it('shoud be found and run withouth error', async function() {
-      this.slow(1500);
+      this.timeout(5000);
+      this.slow(2000);
       await updateConfig(
           'executables', [{
             'name': '${baseFilename}',
