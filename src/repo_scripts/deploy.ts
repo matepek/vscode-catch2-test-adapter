@@ -21,8 +21,6 @@ try {
 const repoId = 'matepek-vscode-catch2-test-adapter';
 
 async function main(argv: string[]) {
-  assert.strictEqual(argv.length, 1);
-  assert.ok(argv[0].length > 0);
   const version = await updateChangelog();
   await updatePackageJson(version);
   await gitCommitAndTag(version);
@@ -122,12 +120,12 @@ async function gitCommitAndTag(version: {[prop: string]: string|undefined}) {
   assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
   const branch = process.env['TRAVIS_BRANCH']!;
   await spawn('git', 'checkout', branch);
-  await spawn(
-      'git', 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
+  await spawn('git', 'add', '--', 'CHANGELOG.md', 'package.json');
   await spawn('git', 'status');
   await spawn(
       'git', 'commit', '-m',
-      '[Updated] Release info in CHANGELOG.md: ' + version.full);
+      '[Updated] Release info in CHANGELOG.md: ' + version.full +
+          ' [skip travis-ci]');
 
   const tagName = 'v' + version.version;
   await spawn('git', 'tag', '-a', tagName, '-m', 'Version v' + version.version);
@@ -144,10 +142,10 @@ async function publishPackage(version: {[prop: string]: string|undefined}) {
   const packagePath = './out/' + repoId + '-' + version.version + '.vsix';
   await vsce.createVSIX({'cwd': '.', 'packagePath': packagePath});
 
+  console.log('Publishing vsce package');
+  // assert.ok(process.env['VSCE_PAT'] != undefined);
   // TODO
-  // console.log('Publishing vsce package');
-  // process.env['something'];
-  // await vsce.publishVSIX(packagePath, {'pat': 'TODO'});
+  // await vsce.publishVSIX(packagePath, {'pat': process.env['VSCE_PAT']!});
 }
 
 async function spawn(command: string, ...args: string[]) {

@@ -29,12 +29,22 @@ install:
 # https://stackoverflow.com/questions/23277391/how-to-publish-to-github-pages-from-travis-ci
 
 script: # TODO releasetest->master
-  - npm test --silent && if [ "$TRAVIS_BRANCH" = "releasetest" ] && [ "$TRAVIS_OS_NAME" = "osx" ]; then 
-      npm install vsce
+  - npm test --silent 
+
+after_success:
+  - if [ "$TRAVIS_TAG" != "$TRAVIS_BRANCH" ] && [ "$TRAVIS_BRANCH" = "releasetest" ] && [ "$TRAVIS_OS_NAME" = "osx" ]; then 
+      npm install --no-save vsce;
       npm run compile;
       node ./node_modules/vsce/out/vsce --version;
-      node ./out/repo_scripts/deploy.js "${GITHUB_API_KEY}"; 
+      # update CHANGELOG.md, package.json; git commit; git tag; vsce package; vsce publish
+      node ./out/repo_scripts/deploy.js;
     fi
+
+before_deploy:
+  - npm install --no-save vsce;
+  - npm run compile;
+  - node ./node_modules/vsce/out/vsce --version;
+  - node ./node_modules/vsce/out/vsce package # for adding to github releases
 
 deploy:
   provider: releases
@@ -44,7 +54,7 @@ deploy:
   file: vscode-catch2-test-adapter-*.vsix
   skip_cleanup: true
   on:
-    condition: "$TRAVIS_OS_NAME = osxNEVER" #TODO osx
+    condition: "$TRAVIS_OS_NAME = osx" #TODO osx
     node_js: "8"
     repo: matepek/vscode-catch2-test-adapter
     #branch: master TODO
