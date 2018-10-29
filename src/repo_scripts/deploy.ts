@@ -12,7 +12,7 @@ import {inspect, promisify} from 'util';
 import * as vsce from 'vsce';
 
 try {
-  main(process.argv)
+  main(process.argv.slice(2))
 } catch (e) {
   console.log(inspect(e));
   process.exit(1);
