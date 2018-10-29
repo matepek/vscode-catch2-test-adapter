@@ -1,8 +1,9 @@
+//-----------------------------------------------------------------------------
+// vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
+// public domain. The author hereby disclaims copyright to this source code.
 
-// create vsix
-// check changelog with date
-
-// kell pull rqeuest checkhez changelog check
+// https://stackoverflow.com/questions/51925941/travis-ci-how-to-push-to-master-branch
+// https://stackoverflow.com/questions/23277391/how-to-publish-to-github-pages-from-travis-ci
 
 import * as assert from 'assert';
 import * as cp from 'child_process';
@@ -111,19 +112,29 @@ async function gitCommitAndTag(version: {[prop: string]: string|undefined}) {
   await spawn(
       'git', 'config', '--local', 'user.email',
       'matepek+vscode-catch2-test-adapter@gmail.com');
+  // TODO signing
   // await spawn(
   //    'git', 'config', '--global', 'user.signingkey', '107C10A2C50AA905');
 
   await spawn('git', 'status');
-  await spawn('git', 'add', '--', 'CHANGELOG.md');
+  assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
+  const branch = process.env['TRAVIS_BRANCH']!;
+  await spawn('git', 'checkout', branch);
+  await spawn(
+      'git', 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
+  await spawn('git', 'status');
   await spawn(
       'git', 'commit', '-m',
-      '[Updated] Release info in CHANGELOG.md: ' + version.full, '--amend');
-
+      '[Updated] Release info in CHANGELOG.md: ' + version.full);
 
   const tagName = 'v' + version.version;
   await spawn('git', 'tag', '-a', tagName, '-m', 'Version v' + version.version);
-  await spawn('git', 'push', 'origin', '--tags');  // TODO
+  assert.ok(process.env['GITHUB_API_KEY'] != undefined);
+  await spawn(
+      'git', 'push', '--follow-tags',
+      'https://matepek:' + process.env['GITHUB_API_KEY']! +
+          '@github.com/matepek/vscode-catch2-test-adapter.git',
+      branch + ':' + branch);
 }
 
 async function publishPackage(version: {[prop: string]: string|undefined}) {
@@ -139,7 +150,7 @@ async function publishPackage(version: {[prop: string]: string|undefined}) {
 
 async function spawn(command: string, ...args: string[]) {
   console.log('$ ' + command + ' "' + args.join('" "') + '"');
-  return new Promise((resolve, reject) => {
+  await new Promise((resolve, reject) => {
     const c = cp.spawn(command, args, {stdio: 'inherit'});
     c.on('exit', (code: number) => {
       code == 0 ? resolve() : reject(new Error('Process exited with: ' + code));
