@@ -35,6 +35,7 @@
     "rebuild": "npm run clean && npm run build",
     "package": "vsce package",
     "publish": "vsce publish",
+    "vscode:prepublish": "tsc",
     "test": "node ./node_modules/vscode/bin/test"
   },
   "extensionDependencies": [

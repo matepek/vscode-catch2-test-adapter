@@ -2,8 +2,9 @@ sudo: false
 
 env:
   global:
-    secure: GnwXBT/tIhfb7dCu2fYOjWxGJ9t9T16Oc36w+vgAPKJ43boDO3xWWUuqb6CL9yQpzH1ZO8M5+twwCt12B0RTeAqIfqKzfFq5V3v9/4DhXi8huUNB3Acv79GbFNSReXyfz+KXth7fA4zO35Rru+/reSXnJZDCrb7bMMN30z5Whe8CnqlINbHocI2UEcb+cjx6J8EGNzzR9OBZbpNdy2kGmq/5buzomZorneiNrI6ap6fZg97ljuwh4VATOqBBhkGWLYOlBVBVWs1Nc7JwwYrEloMp1mB3LxGtn1Ut1zjDPDX4SLOYujAcsuzWcOp0DAwtPi1oc4atnPmCNfPFCtYzCt4hXwSswQkYkJ0jD9jjZomkOSxbq47zTULisj1chGrZiMwJ295cZ7vjnh8FvN5e7KNd4AczUIMIxf0mYGAQYqCajMTTp3S4AzdVd6mXj8x0CJ1p0y1cFHCsK2BLuGbAANfR7oQNfTsChBMhi2uKxgVt0V+ndZ4y+JMTxBkvPoUrdm5ghkTvYdk4mEKDnvxAPmqsstJRaCBBnLNZtkLfrvQW4WB3Z9N0DnnV1z1j6DnceM4GkYOZekOjM8jm5ea/bpLlYm43vW8M5073nM3IfgS+DkZeysSnn0QTvUx96PPSlWCXypo1GVsbKyyKoGkFGhT7Y6FOKJqeMR3M2WHa928=
-
+    - secure: GnwXBT/tIhfb7dCu2fYOjWxGJ9t9T16Oc36w+vgAPKJ43boDO3xWWUuqb6CL9yQpzH1ZO8M5+twwCt12B0RTeAqIfqKzfFq5V3v9/4DhXi8huUNB3Acv79GbFNSReXyfz+KXth7fA4zO35Rru+/reSXnJZDCrb7bMMN30z5Whe8CnqlINbHocI2UEcb+cjx6J8EGNzzR9OBZbpNdy2kGmq/5buzomZorneiNrI6ap6fZg97ljuwh4VATOqBBhkGWLYOlBVBVWs1Nc7JwwYrEloMp1mB3LxGtn1Ut1zjDPDX4SLOYujAcsuzWcOp0DAwtPi1oc4atnPmCNfPFCtYzCt4hXwSswQkYkJ0jD9jjZomkOSxbq47zTULisj1chGrZiMwJ295cZ7vjnh8FvN5e7KNd4AczUIMIxf0mYGAQYqCajMTTp3S4AzdVd6mXj8x0CJ1p0y1cFHCsK2BLuGbAANfR7oQNfTsChBMhi2uKxgVt0V+ndZ4y+JMTxBkvPoUrdm5ghkTvYdk4mEKDnvxAPmqsstJRaCBBnLNZtkLfrvQW4WB3Z9N0DnnV1z1j6DnceM4GkYOZekOjM8jm5ea/bpLlYm43vW8M5073nM3IfgS+DkZeysSnn0QTvUx96PPSlWCXypo1GVsbKyyKoGkFGhT7Y6FOKJqeMR3M2WHa928=
+    - secure: K3woraK3efvVQXzn5xtOfAsimcbrXD1HzSNzDQX6gDZazvRN+vhQqNAD6fFg0JA4cSo7+BzQi2rIRqcDxaPjeWflgbhGhyFBc21xxOchIDVBGXhWhdbHuZ+KS7Qn4xQyzJPr6qRHIcPwlJW8c40q/AXqPkhiVgWJZNYNlpuCNNM+xqyM+FKz2jPmHt0mcyv6vcXMP0eeORu5UC2txMIY2Kcpf9xm486tUStB31mzb4zZzOHjYtr3iAkmp8DiypPWepTKm2Eg8dYiAhqaLqQtZjx5HayBGhAD0HQyuiMiHmzqkCJU0xTvSf+Ky3xOMGtb9WboTIotGeh6+8lIZMRrUQn1bFHF0rQ/Ge4aU9KhAmugd1ycppslU7BtHpasa9vgWV9CqGpIg8F8fihOE0ygEaOAwU41hoI9LisH5YHKNqtBOrfM6Pdm+urQC2hL5wA64nOxLTRZZkaDpFWdXN+etaiJ9bmlMrM8qTZ7dz+Rfrpora9DvuMSmm+RX+ETIb1tqtSS3tO7SVhufnqefRoRwBA8EBmhTRnmWyRVqhwQaqeYzVPWTi6s5Rt2uz3d/7h0NdTpEb2YHcd7V3TC9k+c2nALDFPP1LgFP6AScPVoAYmoDSovOwaxfO9LHPgNzikf50Sz5/zeSariib4iYKSFt/waJ6NU2FIvvP8qVlYO568=
+    
 language: node_js
 
 node_js:
@@ -28,23 +29,17 @@ install:
 # https://stackoverflow.com/questions/51925941/travis-ci-how-to-push-to-master-branch
 # https://stackoverflow.com/questions/23277391/how-to-publish-to-github-pages-from-travis-ci
 
-script: # TODO releasetest->master
-  - npm test --silent 
-
-after_success:
-  - if [ "$TRAVIS_TAG" != "$TRAVIS_BRANCH" ] && [ "$TRAVIS_BRANCH" = "releasetest" ] && [ "$TRAVIS_OS_NAME" = "osx" ]; then 
-      npm install --no-save vsce;
-      npm run compile;
-      node ./node_modules/vsce/out/vsce --version;
-      # update CHANGELOG.md, package.json; git commit; git tag; vsce package; vsce publish
-      node ./out/repo_scripts/deploy.js;
+script: 
+  - npm test --silent && if [ "$TRAVIS_TAG" != "$TRAVIS_BRANCH" ] && [ "$TRAVIS_BRANCH" = "master" ] && [ "$TRAVIS_OS_NAME" = "osx" ]; then 
+      node ./out/repo_scripts/deploy.js
     fi
 
 before_deploy:
+  - npm install --no-save;
   - npm install --no-save vsce;
-  - npm run compile;
   - node ./node_modules/vsce/out/vsce --version;
   - node ./node_modules/vsce/out/vsce package # for adding to github releases
+  - node ./node_modules/vsce/out/vsce publish -p $VSCE_PAT
 
 deploy:
   provider: releases
@@ -52,11 +47,9 @@ deploy:
     secure: O5j1kUme6hcXrVUK7X3fKbMu77zVkAkVLfEV2pprVD7Qy7VX83oJmER4qVZHlq47IICmumspSlCAlSi2C8GjB6SGjqzX5+9InCQDn9haPuGP7G9iniGLVXXMpaqFYZeoj/YxGobOiO2GueajB2dqwGucc/WPIiXqPTHOkr6rhfEv8vGzo9mKEmQFS8OVnVu/nMCfON/14XcYn3gICUH5GqcHmyRrd5uiLJr0090G2XSzNDKXINLUFodTkHS+Ov0bKUtlob7Q6bf9+qxokSv1HThduczVT5gdAvhfe1OvnVmroJ3OdFyenyCOW4Nqb72NDWwcGyy1Sh7WiJEq/AgC8a3aRIe1yYKM/Y1iesupyC5rg1aG5OH7N7P6vU3p9wBMyECwCZ2zYH2kZG5tuv3ct1vDgwoFklv7l63VMN4oBs4uG+nt/CWbk30+U/GOwqni0Rnh5Qe+AeNToR0Ex+l1b6843inxg6XM4L/PF1Mcj4ClmxIXzXRWnhgSNljE5OUAreckNOYcSmNOvlVLE1cAYS0+g7x8FkUF2mz7s+AhNw4xKHfoweZ9yH18HpQtrAIHQ7l+NnadGy5i29EgNv5i3U7EFqvBzsvjjlvwRzDlvOzixYRkzjmav44VTYJCK35kA2VUHEAlmwjRnCzlcF6vg8DSc2oBoDfPeUkKC7w5mR4=
   file_glob: true
   file: vscode-catch2-test-adapter-*.vsix
-  skip_cleanup: true
   on:
-    condition: "$TRAVIS_OS_NAME = osx" #TODO osx
+    condition: "$TRAVIS_OS_NAME = osx"
     node_js: "8"
     repo: matepek/vscode-catch2-test-adapter
-    #branch: master TODO
-    branch: releasetest
+    branch: master
     tags: true

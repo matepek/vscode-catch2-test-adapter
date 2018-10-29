@@ -9,7 +9,6 @@ import * as assert from 'assert';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import {inspect, promisify} from 'util';
-import * as vsce from 'vsce';
 
 try {
   main(process.argv.slice(2))
@@ -18,13 +17,10 @@ try {
   process.exit(1);
 }
 
-const repoId = 'matepek-vscode-catch2-test-adapter';
-
 async function main(argv: string[]) {
   const version = await updateChangelog();
   await updatePackageJson(version);
   await gitCommitAndTag(version);
-  await publishPackage(version)
 }
 
 ///
@@ -105,7 +101,6 @@ async function updatePackageJson(version: {[prop: string]: string|undefined}) {
 async function gitCommitAndTag(version: {[prop: string]: string|undefined}) {
   console.log('Creating signed tag and pushing to origin');
 
-  // TODO
   await spawn(
       'git', 'config', '--local', 'user.name',
       'matepek/vscode-catch2-test-adapter bot');
@@ -135,17 +130,6 @@ async function gitCommitAndTag(version: {[prop: string]: string|undefined}) {
       'https://matepek:' + process.env['GITHUB_API_KEY']! +
           '@github.com/matepek/vscode-catch2-test-adapter.git',
       branch + ':' + branch);
-}
-
-async function publishPackage(version: {[prop: string]: string|undefined}) {
-  console.log('Creating vsce package');
-  const packagePath = './out/' + repoId + '-' + version.version + '.vsix';
-  await vsce.createVSIX({'cwd': '.', 'packagePath': packagePath});
-
-  console.log('Publishing vsce package');
-  // assert.ok(process.env['VSCE_PAT'] != undefined);
-  // TODO
-  // await vsce.publishVSIX(packagePath, {'pat': process.env['VSCE_PAT']!});
 }
 
 async function spawn(command: string, ...args: string[]) {

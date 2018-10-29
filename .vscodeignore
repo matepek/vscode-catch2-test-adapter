@@ -1,6 +1,11 @@
+.appveyor.yml
+.travis.yml
+.github
 src/**
 **/*.map
 out/test/**
+out/repo_scripts
+resources/src
 package-lock.json
 tsconfig.json
 .vscode/**
