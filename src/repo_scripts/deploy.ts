@@ -12,7 +12,7 @@ import {inspect, promisify} from 'util';
 import * as vsce from 'vsce';
 
 try {
-  main()
+  main(process.argv)
 } catch (e) {
   console.log(inspect(e));
   process.exit(1);
@@ -20,7 +20,9 @@ try {
 
 const repoId = 'matepek-vscode-catch2-test-adapter';
 
-async function main() {
+async function main(argv: string[]) {
+  assert.strictEqual(argv.length, 1);
+  assert.ok(argv[0].length > 0);
   const version = await updateChangelog();
   await updatePackageJson(version);
   await gitCommitAndTag(version);
