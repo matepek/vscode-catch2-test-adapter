@@ -208,12 +208,13 @@ async function createGithubRelease(
            .post({
              url:
                  'https://api.github.com/repos/matepek/vscode-catch2-test-adapter/releases',
-             headers: {'User-Agent': 'matepek'}
+             headers: {'User-Agent': 'matepek'},
+             form: {
+               'tag_name': 'testtag2',  //'v' + info.version,
+               'target_commitish': 'development'
+             }
            })
-           .auth('matepek', key)
-           .json(JSON.stringify({
-             'tag_name': 'testtag'  //'v' + info.version,
-           })))
+           .auth('matepek', key))
           .toString());
 
   const uploadAssetRequest =
