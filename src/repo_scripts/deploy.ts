@@ -5,42 +5,31 @@
 // https://stackoverflow.com/questions/51925941/travis-ci-how-to-push-to-master-branch
 // https://stackoverflow.com/questions/23277391/how-to-publish-to-github-pages-from-travis-ci
 
-// TODO
-/*
-ez igy nagyon nem jo
-kell csinalni egy kommitot [skip travis] taggel
-ezt meg kell tagelni
-ehhez kell github releases apit hasznalva publisholni, travis relelases cucc
-mehet a kukaba, not good enough sign-elni kell publusholni kell mindezt csak
-masteren
-*/
-
 import * as assert from 'assert';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as request from 'request-promise';
+import * as request from 'request';
+import * as requestP from 'request-promise';
 import {inspect, promisify} from 'util';
 import * as vsce from 'vsce';
 
 
-const repoId = 'matepek-vscode-catch2-test-adapter';
-
+const githubOwnerId = 'matepek';
+const githubRepoId = 'vscode-catch2-test-adapter';
+const githubRepoFullId = githubOwnerId + '/' + githubRepoId;
+const githubDeploerMail = 'matepek+vscode-catch2-test-adapter@gmail.com';
+const vscodeExtensionId = githubOwnerId + '-' + githubRepoId;
 
 try {
-  process.env['GITHUB_API_KEY'] = 'a395a14cca36c15c2e62064895a3bb8d06720547';
-  createGithubRelease({version: '2.0.0'}, 'tmp');
-  main;
-  // main(process.argv.slice(2))
+  main(process.argv.slice(2))
 } catch (e) {
   console.log(inspect(e));
   process.exit(1);
 }
 
 async function main(argv: string[]) {
-  assert.strictEqual(
-      path.basename(path.dirname(process.cwd())), 'vscode-catch2-test-adapter');
-  assert.strictEqual(process.env['TRAVIS_BRANCH'], 'master');
+  assert.strictEqual(path.basename(process.cwd()), githubRepoId);
 
   const info = await updateChangelog();
   await updatePackageJson(info);
@@ -63,7 +52,6 @@ async function updateChangelog() {
       /## \[(([0-9]+)\.([0-9]+)\.([0-9]+)(?:|(?:-([^\]]+))))\](?: - (\S+))?/);
 
   const match: RegExpMatchArray|null = changelog.match(re);
-  assert.notStrictEqual(match, null);
   if (match === null)
     throw Error('Release error: Couldn\'t find version entry.');
 
@@ -86,17 +74,29 @@ async function updateChangelog() {
       changelog.substr(match.index! + match[0].length);
 
   console.log('Updating CHANGELOG.md');
-  // TODO
   await promisify(fs.writeFile)('CHANGELOG.md', changelogWithReleaseDate);
+
+  let changesMD = undefined;
+  try {
+    const changesStart = match.index! + match[0].length;
+    const prevReleaseMatch = changelog.substr(changesStart).match(re);
+    assert.ok(prevReleaseMatch != null);
+    assert.ok(prevReleaseMatch!.index != undefined);
+    assert.strictEqual(prevReleaseMatch!.length, 7);
+    changesMD = changelog.substr(changesStart, prevReleaseMatch!.index).trim();
+  } catch (e) {
+  }
 
   return {
     'version': match[1],
+    'vver': 'v' + match[1],
     'major': match[2],
     'minor': match[3],
     'patch': match[4],
     'label': match[5],
     'date': date,
-    'full': match[0].substr(3) + ' - ' + date
+    'full': match[0].substr(3).trim() + ' - ' + date,
+    'changes': changesMD
   };
 }
 
@@ -129,15 +129,11 @@ async function updatePackageJson(info: {[prop: string]: string|undefined}) {
 async function gitCommitAndTag(info: {[prop: string]: string|undefined}) {
   console.log('Creating commit and signed tag');
 
-  await spawn(
-      'git', 'config', '--local', 'user.name',
-      'matepek/vscode-catch2-test-adapter');
-  await spawn(
-      'git', 'config', '--local', 'user.email',
-      'matepek+vscode-catch2-test-adapter@gmail.com');
+  await spawn('git', 'config', '--local', 'user.name', 'deploy.js script');
+  await spawn('git', 'config', '--local', 'user.email', githubDeploerMail);
   // TODO signing
   // await spawn(
-  //    'git', 'config', '--global', 'user.signingkey', '107C10A2C50AA905');
+  //    'git', 'config', '--local', 'user.signingkey', '107C10A2C50AA905');
 
   await spawn('git', 'status');
   assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
@@ -147,34 +143,29 @@ async function gitCommitAndTag(info: {[prop: string]: string|undefined}) {
   // [skip travis-ci]: because we dont want to build the new commit it again
   await spawn(
       'git', 'commit', '-m',
-      '[Updated] Release info in CHANGELOG.md: ' + info.full +
-          ' [skip travis-ci]');
+      '[Updated] Release info in CHANGELOG.md: ' + info.full!, '-m',
+      '[skip travis-ci]');
 
-  // const logOutput = cp.execSync('git log -n 1', {encoding: 'utf8'});
-  // const match = logOutput.match(/^commit ([^ ]+)/);
-  // assert.ok(match != null);
-  // assert.strictEqual(match!.length, 2);
-  // info.commitHash = match![1];
-
-  const tagName = 'v' + info.version;
-  await spawn('git', 'tag', '-a', tagName, '-m', 'Version v' + info.version);
+  await spawn('git', 'tag', '-a', info.vver!, '-m', 'Version ' + info.vver!);
 }
 
 async function gitPush() {
   console.log('Pushing to origin');
 
+  assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
   const branch = process.env['TRAVIS_BRANCH']!;
   assert.ok(process.env['GITHUB_API_KEY'] != undefined);
   await spawn('git', 'checkout', branch);
   await spawn(
       'git', 'push', '--follow-tags',
-      'https://matepek:' + process.env['GITHUB_API_KEY']! +
-          '@github.com/matepek/vscode-catch2-test-adapter.git');
+      'https://' + githubOwnerId + ':' + process.env['GITHUB_API_KEY']! +
+          '@github.com/' + githubRepoFullId + '.git');
 }
 
 async function createPackage(version: {[prop: string]: string|undefined}) {
   console.log('Creating vsce package');
-  const packagePath = './out/' + repoId + '-' + version.version + '.vsix';
+  const packagePath =
+      './out/' + vscodeExtensionId + '-' + version.version + '.vsix';
   await vsce.createVSIX({'cwd': '.', 'packagePath': packagePath});
   return packagePath;
 }
@@ -188,49 +179,58 @@ async function publishPackage(packagePath: string) {
 
 async function createGithubRelease(
     info: {[prop: string]: string|undefined}, packagePath: string) {
-  console.log('Publishing to github releases');
-  assert.ok(process.env['GITHUB_API_KEY'] != undefined);
-  const key = process.env['GITHUB_API_KEY']!;
+  try {
+    console.log('Publishing to github releases');
+    assert.ok(process.env['GITHUB_API_KEY'] != undefined);
+    const key = process.env['GITHUB_API_KEY']!;
 
-  const latestRes = JSON.parse(
-      (await request
-           .get({
-             url:
-                 'https://api.github.com/repos/matepek/vscode-catch2-test-adapter/releases/latest',
-             headers: {'User-Agent': 'matepek'}
-           })
-           .auth('matepek', key))
-          .toString());
-  assert.notStrictEqual(latestRes.tag_name, 'v' + info.version);
+    const latestRes = await requestP.get({
+      url: 'https://api.github.com/repos/' + githubRepoFullId +
+          '/releases/latest',
+      headers: {'User-Agent': githubOwnerId + '-deploy.js'},
+      auth: {user: githubOwnerId, pass: key}
+    });
+    assert.notStrictEqual(latestRes.tag_name, info.vver);
 
-  const createReleaseRes = JSON.parse(
-      (await request
-           .post({
-             url:
-                 'https://api.github.com/repos/matepek/vscode-catch2-test-adapter/releases',
-             headers: {'User-Agent': 'matepek'},
-             form: {
-               'tag_name': 'testtag2',  //'v' + info.version,
-               'target_commitish': 'development'
-             }
-           })
-           .auth('matepek', key))
-          .toString());
+    const createReleaseRes = await requestP.post({
+      url: 'https://api.github.com/repos/' + githubRepoFullId + '/releases',
+      headers: {'User-Agent': githubOwnerId + '-deploy.js'},
+      json: {
+        'tag_name': info.vver,
+        'name': info.full,
+        'body': info.changesMD,
+      },
+      auth: {user: githubOwnerId, pass: key}
+    });
 
-  const uploadAssetRequest =
-      request
-          .post({
-            url: createReleaseRes.upload_url.replace(
-                '{?name,label}',
-                '?name=vscode-catch2-test-adapter-' + info.version + '.vsix'),
-            headers:
-                {'User-Agent': 'matepek', 'Content-Type': 'application/zip'}
-          })
-          .auth('matepek', key);
+    await new Promise((resolve, reject) => {
+      var stats = fs.statSync(packagePath);
+      const uploadAssetRequest = request.post({
+        url: createReleaseRes.upload_url.replace(
+            '{?name,label}',
+            '?name=' + vscodeExtensionId + '-' + info.version + '.vsix'),
+        headers: {
+          'User-Agent': githubOwnerId + '-deploy.js',
+          'Content-Type': 'application/zip',
+          'Content-Length': stats.size
+        },
+        auth: {user: githubOwnerId, pass: key}
+      });
 
-  fs.createReadStream(packagePath).pipe(uploadAssetRequest);
+      fs.createReadStream(packagePath).pipe(uploadAssetRequest);
 
-  uploadAssetRequest;
+      uploadAssetRequest.on('complete', (resp) => {
+        resolve(resp);
+      });
+      uploadAssetRequest.on('error', (e) => {
+        reject(e);
+      });
+    });
+
+  } catch (e) {
+    console.log(e.toString());
+    process.exit(-1);
+  }
 }
 
 async function spawn(command: string, ...args: string[]) {

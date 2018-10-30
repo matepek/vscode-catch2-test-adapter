@@ -197,7 +197,8 @@ describe('C2TestAdapter.cpp', function() {
     })
 
     it('shoud be found and run withouth error', async function() {
-      if (process.env['TRAVIS'] == 'true') this.skip();
+      if (process.env['TRAVIS'] == 'true')
+        this.skip();  // TODO something is wrong with it
 
       this.timeout(5000);
       this.slow(2000);
@@ -226,7 +227,7 @@ describe('C2TestAdapter.cpp', function() {
 
     it('shoud be notified by watcher', async function() {
       if (process.env['TRAVIS'] == 'true')
-        this.skip();  // TODO something is wrong wit it
+        this.skip();  // TODO something is wrong with it
 
       this.timeout(5000);
       this.slow(4000);
