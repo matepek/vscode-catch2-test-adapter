@@ -26,30 +26,19 @@ install:
   - npm install
   - npm run compile
 
-# https://stackoverflow.com/questions/51925941/travis-ci-how-to-push-to-master-branch
-# https://stackoverflow.com/questions/23277391/how-to-publish-to-github-pages-from-travis-ci
-
 script: 
-  - npm test --silent && if [ "$TRAVIS_TAG" != "$TRAVIS_BRANCH" ] && [ "$TRAVIS_BRANCH" = "master" ] && [ "$TRAVIS_OS_NAME" = "osx" ]; then 
-      node ./out/repo_scripts/deploy.js;
-    fi
+  - npm test --silent
 
 before_deploy:
-  - npm install --no-save;
-  - npm install --no-save vsce;
-  - node ./node_modules/vsce/out/vsce --version;
-  - node ./node_modules/vsce/out/vsce package # for adding to github releases
-  - node ./node_modules/vsce/out/vsce publish -p $VSCE_PAT
+  - npm install 
+  - npm run compile
 
 deploy:
-  provider: releases
-  api_key:
-    secure: O5j1kUme6hcXrVUK7X3fKbMu77zVkAkVLfEV2pprVD7Qy7VX83oJmER4qVZHlq47IICmumspSlCAlSi2C8GjB6SGjqzX5+9InCQDn9haPuGP7G9iniGLVXXMpaqFYZeoj/YxGobOiO2GueajB2dqwGucc/WPIiXqPTHOkr6rhfEv8vGzo9mKEmQFS8OVnVu/nMCfON/14XcYn3gICUH5GqcHmyRrd5uiLJr0090G2XSzNDKXINLUFodTkHS+Ov0bKUtlob7Q6bf9+qxokSv1HThduczVT5gdAvhfe1OvnVmroJ3OdFyenyCOW4Nqb72NDWwcGyy1Sh7WiJEq/AgC8a3aRIe1yYKM/Y1iesupyC5rg1aG5OH7N7P6vU3p9wBMyECwCZ2zYH2kZG5tuv3ct1vDgwoFklv7l63VMN4oBs4uG+nt/CWbk30+U/GOwqni0Rnh5Qe+AeNToR0Ex+l1b6843inxg6XM4L/PF1Mcj4ClmxIXzXRWnhgSNljE5OUAreckNOYcSmNOvlVLE1cAYS0+g7x8FkUF2mz7s+AhNw4xKHfoweZ9yH18HpQtrAIHQ7l+NnadGy5i29EgNv5i3U7EFqvBzsvjjlvwRzDlvOzixYRkzjmav44VTYJCK35kA2VUHEAlmwjRnCzlcF6vg8DSc2oBoDfPeUkKC7w5mR4=
-  file_glob: true
-  file: vscode-catch2-test-adapter-*.vsix
+  provider: script
+  script: node ./out/repo_scripts/deploy.js
   on:
     condition: "$TRAVIS_OS_NAME = osx"
     node_js: "8"
     repo: matepek/vscode-catch2-test-adapter
     branch: master
-    tags: true
+    tags: false
