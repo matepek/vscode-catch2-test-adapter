@@ -103,7 +103,7 @@ async function gitCommitAndTag(version: {[prop: string]: string|undefined}) {
 
   await spawn(
       'git', 'config', '--local', 'user.name',
-      'matepek/vscode-catch2-test-adapter bot');
+      'matepek/vscode-catch2-test-adapter');
   await spawn(
       'git', 'config', '--local', 'user.email',
       'matepek+vscode-catch2-test-adapter@gmail.com');
