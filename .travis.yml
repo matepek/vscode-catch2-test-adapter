@@ -31,7 +31,7 @@ install:
 
 script: 
   - npm test --silent && if [ "$TRAVIS_TAG" != "$TRAVIS_BRANCH" ] && [ "$TRAVIS_BRANCH" = "master" ] && [ "$TRAVIS_OS_NAME" = "osx" ]; then 
-      node ./out/repo_scripts/deploy.js
+      node ./out/repo_scripts/deploy.js;
     fi
 
 before_deploy:
