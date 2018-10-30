@@ -2,16 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "type": "node",
+      "request": "launch",
+      "name": "Deploy",
+      "program": "${workspaceFolder}/out/repo_scripts/deploy.js"
+    },
+    {
       "type": "extensionHost",
       "request": "launch",
       "name": "Catch2 adapter",
       "runtimeExecutable": "${execPath}",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/out"
-      ]
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+      "outFiles": ["${workspaceFolder}/out"],
+      "preLaunchTask": "npm: watch"
     },
     {
       "name": "Extension Tests",
@@ -24,10 +27,11 @@
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--extensionTestsPath=${workspaceFolder}/out/test"
       ],
-      "outFiles": [
-        "${workspaceFolder}/out/test/**/*.js"
-      ],
-      "preLaunchTask": "npm: watch"
+      "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
+      "preLaunchTask": "npm: watch",
+      "env": {
+        "C2AVCVA": "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat"
+      }
     }
   ]
 }

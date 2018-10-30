@@ -26,8 +26,12 @@ export function spawnAsync(
       ret.stdout += data;
       ret.output[0] = ret.stdout;
     });
+    command.on('error', function(err: Error) {
+      ret.error = err;
+    });
     command.on('close', function(code) {
       ret.status = code;
+      ret.error = new Error('code: ' + String(code));
       resolve(ret)
     });
     command.on('error', function(err) {
@@ -61,17 +65,6 @@ export function existsAsync(path: string): Promise<boolean> {
       });
 }
 
-
 export function existsSync(path: string): boolean {
   return fs.existsSync(path);
-}
-
-export function readdirSync(path: string): string[] {
-  return fs.readdirSync(path, 'utf8');
-}
-
-export type FSWatcher = fs.FSWatcher;
-
-export function watch(path: string): FSWatcher {
-  return fs.watch(path);
 }

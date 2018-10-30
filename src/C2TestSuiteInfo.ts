@@ -16,6 +16,7 @@ import {TaskPool} from './TaskPool';
 export class C2TestSuiteInfo implements TestSuiteInfo {
   readonly type: 'suite' = 'suite';
   readonly id: string;
+  label: string;
   children: C2TestInfo[] = [];
   file?: string = undefined;
   line?: number = undefined;
@@ -24,9 +25,10 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
   private proc: ChildProcess|undefined = undefined;
 
   constructor(
-      public readonly label: string, private readonly adapter: C2TestAdapter,
-      private readonly taskPools: TaskPool[], public readonly execPath: string,
+      public readonly origLabel: string,
+      private readonly adapter: C2TestAdapter, public readonly execPath: string,
       public readonly execOptions: SpawnOptions) {
+    this.label = origLabel;
     this.id = generateUniqueId();
   }
 
@@ -49,23 +51,6 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     return test;
   }
 
-  private acquireSlot(): boolean {
-    let i: number = 0;
-    while (i < this.taskPools.length && this.taskPools[i].acquire()) ++i;
-
-    if (i == this.taskPools.length) return true;
-
-    while (--i >= 0) this.taskPools[i].release();  // rollback
-
-    return false;
-  }
-
-  private releaseSlot(): void {
-    let i: number = this.taskPools.length;
-
-    while (--i >= 0) this.taskPools[i].release();
-  }
-
   cancel(): void {
     this.isKill = true;
 
@@ -75,7 +60,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     }
   }
 
-  run(tests: Set<string>): Promise<void> {
+  run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
     this.isKill = false;
     this.proc = undefined;
 
@@ -85,7 +70,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         tests.delete(c.id);
       }
 
-      return this.runInner('all');
+      return this.runInner('all', taskPool);
     } else {
       let childrenToRun: C2TestInfo[] = [];
 
@@ -96,16 +81,17 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
       if (childrenToRun.length == 0) return Promise.resolve();
 
-      return this.runInner(childrenToRun);
+      return this.runInner(childrenToRun, taskPool);
     }
   }
 
-  private runInner(childrenToRun: C2TestInfo[]|'all'): Promise<void> {
+  private runInner(childrenToRun: C2TestInfo[]|'all', taskPool: TaskPool):
+      Promise<void> {
     if (this.isKill) return Promise.reject(Error('Test was killed.'));
 
-    if (!this.acquireSlot()) {
+    if (!taskPool.acquire()) {
       return new Promise<void>(resolve => setTimeout(resolve, 64)).then(() => {
-        return this.runInner(childrenToRun);
+        return this.runInner(childrenToRun, taskPool);
       });
     }
 
@@ -242,7 +228,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
     const suiteFinally = () => {
       this.proc = undefined;
-      this.releaseSlot();
+      taskPool.release();
       this.adapter.testStatesEmitter.fire(
           <TestSuiteEvent>{type: 'suite', suite: this, state: 'completed'});
     };
