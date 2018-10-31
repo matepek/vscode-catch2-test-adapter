@@ -7,9 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.0.1]
+### Added
 
-Nothing really, just CI fixes.
+For development: Now, if there is 'something' in the [CHANGELOG](CHANGELOG.md) without date (ex.: "\[1.2.3]")
+and it is merged to the master, a deploy job will run it will:
+
+- Appends the `CHANGELOG.md`'s new version-line with the current UTC date: "\[1.2.3]" --> "\[1.2.3] - 2018-10-31".
+- Updates the version number in `package.json` according to the one in `CHANGELOG.md`.
+- Creates a commit about it.
+- Creates a tag too.
+- Creates a [`GitHub release`](releases) for the tag and uploads the generated `.vsix` file.
+- Publish the new version to [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter).
+
+Hopefully it works (partially tested only 🤞).
 
 ## [2.0.0] - 2018-10-30
 

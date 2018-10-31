@@ -144,7 +144,7 @@ describe('C2TestAdapter.cpp', function() {
   async function load(adapter: TestAdapter): Promise<TestSuiteInfo> {
     const eventCount = testsEvents.length;
     await adapter.load();
-    if (testsEvents.length != eventCount + 2) debugger;  // TODO bug on win
+    if (testsEvents.length != eventCount + 2) debugger;
     assert.strictEqual(
         testsEvents.length, eventCount + 2, inspect(testsEvents));
     const finished = testsEvents.pop()!;
@@ -198,7 +198,8 @@ describe('C2TestAdapter.cpp', function() {
 
     it('shoud be found and run withouth error', async function() {
       if (process.env['TRAVIS'] == 'true')
-        this.skip();  // TODO something is wrong with it
+        this.skip();  // TODO something is wrong with it on travis but works on
+                      // my mac
 
       this.timeout(5000);
       this.slow(2000);
@@ -227,7 +228,8 @@ describe('C2TestAdapter.cpp', function() {
 
     it('shoud be notified by watcher', async function() {
       if (process.env['TRAVIS'] == 'true')
-        this.skip();  // TODO something is wrong with it
+        this.skip();  // TODO something is wrong with it on travis but works on
+                      // my mac
 
       this.timeout(5000);
       this.slow(4000);

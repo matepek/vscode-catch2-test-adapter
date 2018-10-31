@@ -16,9 +16,6 @@ Update your settings! ([See changelog](CHANGELOG.md) or [configuration below](#C
 This extension allows you to run your [Catch2 tests](https://github.com/catchorg/Catch2) using the
 [Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
 
-**Note:** Catch2 is a nice and feature-rich C++ testig framework.
-This adapter doesn't support everything.
-
 ## Configuration
 
 | Property                                    | Description                                                                                                                                                                  |
@@ -40,13 +37,13 @@ This variable can be string, an array of strings, an array of objects or an arra
 
 If it is an object it can contains the following properties:
 
-| Property  |            | Description                                                                                                                                                                                  |
-| --------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`    | (optional) | The name of the test suite (file). Can contains variables.                                                                                                                                   |
-| `pattern` | (requierd) | A relative pattern (to workspace) or an absolute file-path. ⚠️__Avoid backslash!__ ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test[1-9]*` |
-| `path`    | (alias)    | Alias of `pattern`.                                                                                                                                                                          |
-| `cwd`     | (optional) | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables.                                           |
-| `env`     | (optional) | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables.                                                   |
+| Property  |            | Description                                                                                                                                                                                                         |
+| --------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`    | (optional) | The name of the test suite (file). Can contains variables.                                                                                                                                                          |
+| `pattern` | (requierd) | A relative pattern (to workspace) or an absolute file-path. ⚠️**Avoid backslash!** ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test[1-9]*` |
+| `path`    | (alias)    | Alias of `pattern`.                                                                                                                                                                                                 |
+| `cwd`     | (optional) | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables.                                                                  |
+| `env`     | (optional) | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables.                                                                          |
 
 Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
@@ -79,7 +76,7 @@ Examples:
 ```json
 "catch2TestExplorer.executables": {
 	"name": "${relName} (${relDirname}/)",
-	"path": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+	"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
 	"cwd": "${absDirname}",
 	"env": {
 		"ExampleENV1": "You can use variables here too, like ${absName}"
@@ -91,11 +88,11 @@ Examples:
 "catch2TestExplorer.executables": [
 	{
 		"name": "Test1 suite",
-		"path": "dir/test.exe"
+		"pattern": "dir/test.exe"
 	},
 	"singleTest.exe",
 	{
-		"path": "dir2",
+		"pattern": "dir2",
 		"regex": "{t,T}est",
 		"cwd": "out/tmp",
 		"env": {}
@@ -141,7 +138,7 @@ Example:
 
 ## Known issues
 
-- On windows the navigate to source button isn't working. I assume it is a framework bug.
+- (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
 
 ## TODOs
 
@@ -151,3 +148,7 @@ Example:
 ## Contribution
 
 Any contribution is welcome.
+
+- Create a pull request.
+- Report a bug.
+- Tell me about requested features.

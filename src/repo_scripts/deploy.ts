@@ -18,7 +18,7 @@ import * as vsce from 'vsce';
 const githubOwnerId = 'matepek';
 const githubRepoId = 'vscode-catch2-test-adapter';
 const githubRepoFullId = githubOwnerId + '/' + githubRepoId;
-const githubDeploerMail = 'matepek+vscode-catch2-test-adapter@gmail.com';
+const githubDeployerMail = 'matepek+vscode-catch2-test-adapter@gmail.com';
 const vscodeExtensionId = githubOwnerId + '-' + githubRepoId;
 
 try {
@@ -29,167 +29,204 @@ try {
 }
 
 async function main(argv: string[]) {
-  assert.strictEqual(path.basename(process.cwd()), githubRepoId);
+  try {
+    // pre-checks
+    assert.strictEqual(path.basename(process.cwd()), githubRepoId);
+    assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
+    assert.ok(process.env['GITHUB_API_KEY'] != undefined);
+    assert.ok(process.env['VSCE_PAT'] != undefined);
 
-  const info = await updateChangelog();
-  await updatePackageJson(info);
-  await gitCommitAndTag(info);
-  const packagePath = await createPackage(info);
-  await gitPush();
-  await createGithubRelease(info, packagePath);
-  await publishPackage(packagePath);
+    const info = await updateChangelog();
+    if (info != undefined) {
+      await updatePackageJson(info);
+      await gitCommitAndTag(info);
+      const packagePath = await createPackage(info);
+      await gitPush();
+      await createGithubRelease(info, packagePath);
+      await publishPackage(packagePath);
+    }
+  } catch (e) {
+    console.log(inspect(e));
+    process.exit(1);
+    throw 1;
+  }
 }
 
 ///
 
-async function updateChangelog() {
-  console.log('Parsing CHANGELOG.md');
-  const changelogBuffer = await promisify(fs.readFile)('CHANGELOG.md');
+interface Info {
+  version: string;
+  vver: string;
+  major: string;
+  minor: string;
+  patch: string;
+  label: string;
+  date: string;
+  full: string;
+}
 
-  const changelog = changelogBuffer.toString();
-  // example:'## [0.1.0-beta] - 2018-04-12'
-  const re = new RegExp(
-      /## \[(([0-9]+)\.([0-9]+)\.([0-9]+)(?:|(?:-([^\]]+))))\](?: - (\S+))?/);
-
-  const match: RegExpMatchArray|null = changelog.match(re);
-  if (match === null)
-    throw Error('Release error: Couldn\'t find version entry.');
-
-  assert.strictEqual(match.length, 7);
-
-  if (match[6] != undefined) {
-    throw Error(
-        'Release error: Most recent version has release date: ' + match[0] +
-        '\n  For deploy it should be a version without date.');
-  }
-
-  const now = new Date();
-  const month = now.getUTCMonth() + 1 < 10 ? '0' + now.getUTCMonth() + 1 :
-                                             now.getUTCMonth() + 1;
-  const day = now.getUTCDate() < 10 ? '0' + now.getUTCDate() : now.getUTCDate();
-  const date = now.getUTCFullYear() + '-' + month + '-' + day;
-
-  const changelogWithReleaseDate =
-      changelog.substr(0, match.index! + match[0].length) + ' - ' + date +
-      changelog.substr(match.index! + match[0].length);
-
-  console.log('Updating CHANGELOG.md');
-  await promisify(fs.writeFile)('CHANGELOG.md', changelogWithReleaseDate);
-
-  let changesMD = undefined;
+async function updateChangelog(): Promise<Info|undefined> {
   try {
-    const changesStart = match.index! + match[0].length;
-    const prevReleaseMatch = changelog.substr(changesStart).match(re);
-    assert.ok(prevReleaseMatch != null);
-    assert.ok(prevReleaseMatch!.index != undefined);
-    assert.strictEqual(prevReleaseMatch!.length, 7);
-    changesMD = changelog.substr(changesStart, prevReleaseMatch!.index).trim();
+    console.log('Parsing CHANGELOG.md');
+    const changelogBuffer = await promisify(fs.readFile)('CHANGELOG.md');
+
+    const changelog = changelogBuffer.toString();
+    // example:'## [0.1.0-beta] - 2018-04-12'
+    const re = new RegExp(
+        /## \[(([0-9]+)\.([0-9]+)\.([0-9]+)(?:|(?:-([^\]]+))))\](?: - (\S+))?/);
+
+    const match: RegExpMatchArray|null = changelog.match(re);
+    if (match === null)
+      throw Error('Release error: Couldn\'t find version entry.');
+
+    assert.strictEqual(match.length, 7);
+
+    if (match[6] != undefined) {
+      // we dont want to release it now
+      return undefined;
+    }
+
+    const now = new Date();
+    const month = now.getUTCMonth() + 1 < 10 ? '0' + now.getUTCMonth() + 1 :
+                                               now.getUTCMonth() + 1;
+    const day =
+        now.getUTCDate() < 10 ? '0' + now.getUTCDate() : now.getUTCDate();
+    const date = now.getUTCFullYear() + '-' + month + '-' + day;
+
+    const changelogWithReleaseDate =
+        changelog.substr(0, match.index! + match[0].length) + ' - ' + date +
+        changelog.substr(match.index! + match[0].length);
+
+    console.log('Updating CHANGELOG.md');
+    await promisify(fs.writeFile)('CHANGELOG.md', changelogWithReleaseDate);
+
+    return {
+      'version': match[1],
+      'vver': 'v' + match[1],
+      'major': match[2],
+      'minor': match[3],
+      'patch': match[4],
+      'label': match[5],
+      'date': date,
+      'full': match[0].substr(3).trim() + ' - ' + date
+    };
   } catch (e) {
+    console.log(inspect(e));
+    throw process.exit(1);
   }
-
-  return {
-    'version': match[1],
-    'vver': 'v' + match[1],
-    'major': match[2],
-    'minor': match[3],
-    'patch': match[4],
-    'label': match[5],
-    'date': date,
-    'full': match[0].substr(3).trim() + ' - ' + date,
-    'changes': changesMD
-  };
 }
 
-async function updatePackageJson(info: {[prop: string]: string|undefined}) {
-  console.log('Parsing package.json');
-  const packageJsonBuffer = await promisify(fs.readFile)('package.json');
+async function updatePackageJson(info: Info) {
+  try {
+    console.log('Parsing package.json');
+    const packageJsonBuffer = await promisify(fs.readFile)('package.json');
 
-  const packageJson = packageJsonBuffer.toString();
-  // example:'## [0.1.0-beta] - 2018-04-12'
-  const re = new RegExp(/(['"]version['"]\s*:\s*['"])([^'"]*)(['"])/);
+    const packageJson = packageJsonBuffer.toString();
+    // example:'"version": "1.2.3"'
+    const re = new RegExp(/(['"]version['"]\s*:\s*['"])([^'"]*)(['"])/);
 
-  const match: RegExpMatchArray|null = packageJson.match(re);
-  assert.notStrictEqual(match, null);
-  if (match === null)
-    throw Error('Release error: Couldn\'t find version entry.');
+    const match: RegExpMatchArray|null = packageJson.match(re);
+    assert.notStrictEqual(match, null);
+    if (match === null)
+      throw Error('Release error: Couldn\'t find version entry.');
 
-  assert.strictEqual(match.length, 4);
-  assert.notStrictEqual(match[1], undefined);
-  assert.notStrictEqual(match[2], undefined);
-  assert.notStrictEqual(match[3], undefined);
+    assert.strictEqual(match.length, 4);
+    assert.notStrictEqual(match[1], undefined);
+    assert.notStrictEqual(match[2], undefined);
+    assert.notStrictEqual(match[3], undefined);
 
-  const packageJsonWithVer =
-      packageJson.substr(0, match.index! + match[1].length) + info.version +
-      packageJson.substr(match.index! + match[1].length + match[2].length);
+    const packageJsonWithVer =
+        packageJson.substr(0, match.index! + match[1].length) + info.version +
+        packageJson.substr(match.index! + match[1].length + match[2].length);
 
-  console.log('Updating package.json');
-  await promisify(fs.writeFile)('package.json', packageJsonWithVer);
+    console.log('Updating package.json');
+    await promisify(fs.writeFile)('package.json', packageJsonWithVer);
+  } catch (e) {
+    console.log(inspect(e));
+    process.exit(1);
+  }
 }
 
-async function gitCommitAndTag(info: {[prop: string]: string|undefined}) {
-  console.log('Creating commit and signed tag');
+async function gitCommitAndTag(info: Info) {
+  try {
+    console.log('Creating commit and signed tag');
 
-  await spawn('git', 'config', '--local', 'user.name', 'deploy.js script');
-  await spawn('git', 'config', '--local', 'user.email', githubDeploerMail);
-  // TODO signing
-  // await spawn(
-  //    'git', 'config', '--local', 'user.signingkey', '107C10A2C50AA905');
+    await spawn('git', 'config', '--local', 'user.name', 'deploy.js script');
+    await spawn('git', 'config', '--local', 'user.email', githubDeployerMail);
 
-  await spawn('git', 'status');
-  assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
-  await spawn(
-      'git', 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
-  await spawn('git', 'status');
-  // [skip travis-ci]: because we dont want to build the new commit it again
-  await spawn(
-      'git', 'commit', '-m',
-      '[Updated] Release info in CHANGELOG.md: ' + info.full!, '-m',
-      '[skip travis-ci]');
+    await spawn('git', 'status');
+    await spawn(
+        'git', 'add', '--', 'CHANGELOG.md', 'package.json',
+        'package-lock.json');
+    await spawn('git', 'status');
+    // [skip travis-ci]: because we dont want to build the new commit it again
+    await spawn(
+        'git', 'commit', '-m',
+        '[Updated] Release info in CHANGELOG.md: ' + info.full!, '-m',
+        '[skip travis-ci]');
 
-  await spawn('git', 'tag', '-a', info.vver!, '-m', 'Version ' + info.vver!);
+    await spawn('git', 'tag', '-a', info.vver!, '-m', 'Version ' + info.vver!);
+  } catch (e) {
+    console.log(inspect(e));
+    process.exit(1);
+  }
 }
 
 async function gitPush() {
-  console.log('Pushing to origin');
+  try {
+    console.log('Pushing to origin');
 
-  assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
-  const branch = process.env['TRAVIS_BRANCH']!;
-  assert.ok(process.env['GITHUB_API_KEY'] != undefined);
-  await spawn('git', 'checkout', branch);
-  await spawn(
-      'git', 'push', '--follow-tags',
-      'https://' + githubOwnerId + ':' + process.env['GITHUB_API_KEY']! +
-          '@github.com/' + githubRepoFullId + '.git');
+    assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
+    const branch = process.env['TRAVIS_BRANCH']!;
+    assert.ok(process.env['GITHUB_API_KEY'] != undefined);
+    await spawn('git', 'checkout', branch);
+    await spawn(
+        'git', 'push', '--follow-tags',
+        'https://' + githubOwnerId + ':' + process.env['GITHUB_API_KEY']! +
+            '@github.com/' + githubRepoFullId + '.git');
+  } catch (e) {
+    console.log(inspect(e));
+    process.exit(1);
+  }
 }
 
-async function createPackage(version: {[prop: string]: string|undefined}) {
-  console.log('Creating vsce package');
-  const packagePath =
-      './out/' + vscodeExtensionId + '-' + version.version + '.vsix';
-  await vsce.createVSIX({'cwd': '.', 'packagePath': packagePath});
-  return packagePath;
+async function createPackage(info: Info) {
+  try {
+    console.log('Creating vsce package');
+    const packagePath =
+        './out/' + vscodeExtensionId + '-' + info.version + '.vsix';
+    await vsce.createVSIX({'cwd': '.', 'packagePath': packagePath});
+    return packagePath;
+  } catch (e) {
+    console.log(inspect(e));
+    throw process.exit(1);
+  }
 }
 
 async function publishPackage(packagePath: string) {
-  console.log('Publishing vsce package');
-  assert.ok(process.env['VSCE_PAT'] != undefined);
-  // TODO
-  // await vsce.publishVSIX(packagePath, {'pat': process.env['VSCE_PAT']!});
+  try {
+    console.log('Publishing vsce package');
+    assert.ok(process.env['VSCE_PAT'] != undefined);
+    await vsce.publishVSIX(packagePath, {'pat': process.env['VSCE_PAT']!});
+  } catch (e) {
+    console.log(inspect(e));
+    process.exit(1);
+  }
 }
 
-async function createGithubRelease(
-    info: {[prop: string]: string|undefined}, packagePath: string) {
+async function createGithubRelease(info: Info, packagePath: string) {
   try {
     console.log('Publishing to github releases');
     assert.ok(process.env['GITHUB_API_KEY'] != undefined);
     const key = process.env['GITHUB_API_KEY']!;
 
-    const latestRes = await requestP.get({
-      url: 'https://api.github.com/repos/' + githubRepoFullId +
-          '/releases/latest',
-      headers: {'User-Agent': githubOwnerId + '-deploy.js'},
-      auth: {user: githubOwnerId, pass: key}
-    });
+    const latestRes =
+        JSON.parse((await requestP.get({
+                     url: 'https://api.github.com/repos/' + githubRepoFullId +
+                         '/releases/latest',
+                     headers: {'User-Agent': githubOwnerId + '-deploy.js'},
+                     auth: {user: githubOwnerId, pass: key}
+                   })).toString());
     assert.notStrictEqual(latestRes.tag_name, info.vver);
 
     const createReleaseRes = await requestP.post({
@@ -198,7 +235,7 @@ async function createGithubRelease(
       json: {
         'tag_name': info.vver,
         'name': info.full,
-        'body': info.changesMD,
+        'body': 'See [CHANGELOG.md](CHANGELOG.md) for details.',
       },
       auth: {user: githubOwnerId, pass: key}
     });
@@ -226,19 +263,24 @@ async function createGithubRelease(
         reject(e);
       });
     });
-
   } catch (e) {
     console.log(e.toString());
-    process.exit(-1);
+    process.exit(1);
   }
 }
 
 async function spawn(command: string, ...args: string[]) {
-  console.log('$ ' + command + ' "' + args.join('" "') + '"');
-  await new Promise((resolve, reject) => {
-    const c = cp.spawn(command, args, {stdio: 'inherit'});
-    c.on('exit', (code: number) => {
-      code == 0 ? resolve() : reject(new Error('Process exited with: ' + code));
+  try {
+    console.log('$ ' + command + ' "' + args.join('" "') + '"');
+    await new Promise((resolve, reject) => {
+      const c = cp.spawn(command, args, {stdio: 'inherit'});
+      c.on('exit', (code: number) => {
+        code == 0 ? resolve() :
+                    reject(new Error('Process exited with: ' + code));
+      });
     });
-  });
+  } catch (e) {
+    console.log(inspect([e, command, args]));
+    process.exit(1);
+  }
 }
