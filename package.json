@@ -62,6 +62,7 @@
     "sinon": "^7.1.0",
     "typescript": "^2.9.2",
     "vscode": "^1.1.21",
+    "vsce": "^1.52.0",
     "request-promise": "4.2.2",
     "@types/request-promise": "4.1.42"
   },
