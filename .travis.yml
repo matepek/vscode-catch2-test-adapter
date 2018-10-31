@@ -2,8 +2,8 @@ sudo: false
 
 env:
   global:
-    - secure: GnwXBT/tIhfb7dCu2fYOjWxGJ9t9T16Oc36w+vgAPKJ43boDO3xWWUuqb6CL9yQpzH1ZO8M5+twwCt12B0RTeAqIfqKzfFq5V3v9/4DhXi8huUNB3Acv79GbFNSReXyfz+KXth7fA4zO35Rru+/reSXnJZDCrb7bMMN30z5Whe8CnqlINbHocI2UEcb+cjx6J8EGNzzR9OBZbpNdy2kGmq/5buzomZorneiNrI6ap6fZg97ljuwh4VATOqBBhkGWLYOlBVBVWs1Nc7JwwYrEloMp1mB3LxGtn1Ut1zjDPDX4SLOYujAcsuzWcOp0DAwtPi1oc4atnPmCNfPFCtYzCt4hXwSswQkYkJ0jD9jjZomkOSxbq47zTULisj1chGrZiMwJ295cZ7vjnh8FvN5e7KNd4AczUIMIxf0mYGAQYqCajMTTp3S4AzdVd6mXj8x0CJ1p0y1cFHCsK2BLuGbAANfR7oQNfTsChBMhi2uKxgVt0V+ndZ4y+JMTxBkvPoUrdm5ghkTvYdk4mEKDnvxAPmqsstJRaCBBnLNZtkLfrvQW4WB3Z9N0DnnV1z1j6DnceM4GkYOZekOjM8jm5ea/bpLlYm43vW8M5073nM3IfgS+DkZeysSnn0QTvUx96PPSlWCXypo1GVsbKyyKoGkFGhT7Y6FOKJqeMR3M2WHa928=
-    - secure: K3woraK3efvVQXzn5xtOfAsimcbrXD1HzSNzDQX6gDZazvRN+vhQqNAD6fFg0JA4cSo7+BzQi2rIRqcDxaPjeWflgbhGhyFBc21xxOchIDVBGXhWhdbHuZ+KS7Qn4xQyzJPr6qRHIcPwlJW8c40q/AXqPkhiVgWJZNYNlpuCNNM+xqyM+FKz2jPmHt0mcyv6vcXMP0eeORu5UC2txMIY2Kcpf9xm486tUStB31mzb4zZzOHjYtr3iAkmp8DiypPWepTKm2Eg8dYiAhqaLqQtZjx5HayBGhAD0HQyuiMiHmzqkCJU0xTvSf+Ky3xOMGtb9WboTIotGeh6+8lIZMRrUQn1bFHF0rQ/Ge4aU9KhAmugd1ycppslU7BtHpasa9vgWV9CqGpIg8F8fihOE0ygEaOAwU41hoI9LisH5YHKNqtBOrfM6Pdm+urQC2hL5wA64nOxLTRZZkaDpFWdXN+etaiJ9bmlMrM8qTZ7dz+Rfrpora9DvuMSmm+RX+ETIb1tqtSS3tO7SVhufnqefRoRwBA8EBmhTRnmWyRVqhwQaqeYzVPWTi6s5Rt2uz3d/7h0NdTpEb2YHcd7V3TC9k+c2nALDFPP1LgFP6AScPVoAYmoDSovOwaxfO9LHPgNzikf50Sz5/zeSariib4iYKSFt/waJ6NU2FIvvP8qVlYO568=
+    - secure: "wbBkk3ujOixgrplG1baLP6lgjFr6bw2eiOsNYAyfwU8SeSoc4qgp8bGttigHOTwnPfAreLMlnGkFdPF3f8v31AHj98mevHKNxvkeFiRjDc9bI3rEviFnbZMWbsw7svzTw3/D4K1xZuHc46IReOU8OJUaQaAP/VquZ8S0ZLDyUslBLZyhQNgVtp5VmOyHie/iI+KvkOVZfhun2wVa5LJgmJJPCFIcPGdlWTf77InxZohBM1rPBB16UE/gXkLUlrMjqnZWRem92cN+mqkU7xolzeeWKdzvbD6pD0swCS3xbiFfwy9pHgxfDDYdqbQIuFKoRIOeIcSuFm8LQv5kXvdRGLM/aiND34V5rETB+uK9HCh66uDY/lpTVTpY8DlddbTitpgq1on1LEeVPdgvA1MU3wkQD++lrDT4hdNTNCsUvdbocceSlqEmrKycRUJCI8Z9HTnkCTXCITNFEw0brYTgrHE2+KY7ul4CYc0Xu0dHmm6SBHvdU38HLi4MRR/78VVP9anrH1zVVKiLP95vdFrwrXBFGewYVVwv4QjFuwnQFDTCLEYUNctyOF3H8pTLLbY0DWMM1LVU6abHfb0tDYpRCffKJv4Wf9wOcTNCemtaGaxgOY6vcy1/SmpVHa9WQkfDMywZrolByEwflw0wP/yUVdDVfRt/JeAVh9m4EhiHTc4="
+    - secure: "KwwThYC5XnQXlt0r3mUfV91N9+4CujoCzrfb9eBhvfTQL0yRofx75saXWhh/HNC8fYsf/3cPV3iASKlUXCw2MjYw7w7pzmbeeszBRkMJQHdDFqaTmDY167vv88Mddd90quanM8EEdCpjvrLLzgGpxQGQzVRZ7z0SmxJIEF/I58aAmC8hZ++5V/zAlwnhCbvs8ppJB7zTf3Ug4rSVr1/q52CK5f0ZVwX1TqOlzHv7KFO7IZV5DWmYHsClvcJbraAtBUa0otNTzr6dIHq8K22MWBULHCvp2JziZ06F3jjfPk7yB0K8Ia8gy73n+rXyW8aikBpCCdhmAjHOOpB5VBM5I2/O1XYJY0rS4v6OoYUcw9rnbGY4tYh/k0We0cKgatbz43k6gYqO9bkjZMqZk/jqieQ8JKwfRQxd2SEd6tViuIzB1p3KqNDcG+0xAjgAMBy6LR8RSDbZJcPJ8Jv1WIB3xxL3m8REzIW3Fm1/hlJ+J1WzebK6D7Ypf0BOrRIU/XObDlpoFf2qdI9RgC/U4EULwUmGqEMd8W3moeU49QHx9MzIz4CEo03OODlP+dgDLmlVsjgP8+/ONUGJC/uqd8TvsNres5IS+/N8V2deLNxyyNvMV1DvbH1ogYnViM51Kn+Jq3bXqj39lYWYVkDk8SE9LR4/gmxwhmDQzuN+uwXi47o="
     
 language: node_js
 
@@ -29,16 +29,16 @@ install:
 script: 
   - npm test --silent
 
-#before_deploy:
-#  - npm install 
-#  - npm run compile
-#
-#deploy:
-#  provider: script
-#  script: node ./out/repo_scripts/deploy.js
-#  on:
-#    condition: "$TRAVIS_OS_NAME = osx"
-#    node_js: "8"
-#    repo: matepek/vscode-catch2-test-adapter
-#    branch: master
-#    tags: false
+before_deploy:
+  - npm install 
+  - npm run compile
+
+deploy:
+  provider: script
+  script: node ./out/repo_scripts/deploy.js
+  on:
+    condition: "$TRAVIS_OS_NAME = osx"
+    node_js: "8"
+    repo: matepek/vscode-catch2-test-adapter
+    branch: master
+    tags: false
