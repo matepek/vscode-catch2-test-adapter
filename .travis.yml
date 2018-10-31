@@ -35,7 +35,7 @@ before_deploy:
 
 deploy:
   provider: script
-  script: node ./out/repo_scripts/deploy.js
+  script: bash src/repo_scripts/deploy.sh
   on:
     condition: "$TRAVIS_OS_NAME = osx"
     node_js: "8"

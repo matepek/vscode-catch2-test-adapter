@@ -61,7 +61,6 @@
     "fs-extra": "^7.0.0",
     "sinon": "^7.1.0",
     "typescript": "^2.9.2",
-    "vsce": "^1.51.1",
     "vscode": "^1.1.21",
     "request-promise": "4.2.2",
     "@types/request-promise": "4.1.42"
