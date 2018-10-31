@@ -42,29 +42,28 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
+    "@types/entities": "^1.1.0",
     "entities": "^1.1.2",
     "tslib": "^1.9.3",
+    "typescript": "^2.9.2",
     "vscode-test-adapter-api": "^1.1.0",
     "vscode-test-adapter-util": "^0.5.0",
+    "vscode": "^1.1.21",
     "xml2js": "^0.4.19"
   },
   "devDependencies": {
     "@types/chai": "^4.1.6",
     "@types/deep-equal": "^1.0.1",
-    "@types/entities": "^1.1.0",
     "@types/fs-extra": "^5.0.4",
     "@types/mocha": "^5.2.5",
+    "@types/request-promise": "4.1.42",
     "@types/sinon": "^5.0.5",
-    "@types/xml-parser": "^1.2.29",
     "@types/xml2js": "^0.4.3",
     "deep-equal": "^1.0.1",
     "fs-extra": "^7.0.0",
-    "sinon": "^7.1.0",
-    "typescript": "^2.9.2",
-    "vscode": "^1.1.21",
-    "vsce": "^1.52.0",
     "request-promise": "4.2.2",
-    "@types/request-promise": "4.1.42"
+    "sinon": "^7.1.0",
+    "vsce": "^1.52.0"
   },
   "engines": {
     "vscode": "^1.23.0"
