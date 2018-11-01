@@ -92,8 +92,7 @@ Examples:
 	},
 	"singleTest.exe",
 	{
-		"pattern": "dir2",
-		"regex": "{t,T}est",
+		"pattern": "dir2/{t,T}est",
 		"cwd": "out/tmp",
 		"env": {}
 	}
