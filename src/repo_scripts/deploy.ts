@@ -30,6 +30,7 @@ try {
 
 async function main(argv: string[]) {
   try {
+    console.log('deploying');
     // pre-checks
     assert.strictEqual(path.basename(process.cwd()), githubRepoId);
     assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
@@ -45,6 +46,7 @@ async function main(argv: string[]) {
       await createGithubRelease(info, packagePath);
       await publishPackage(packagePath);
     }
+    console.log('deploying is finished');
   } catch (e) {
     console.log(inspect(e));
     process.exit(1);
@@ -83,6 +85,8 @@ async function updateChangelog(): Promise<Info|undefined> {
 
     if (match[6] != undefined) {
       // we dont want to release it now
+      console.log(
+          'CHANGELOG.md doesn\'t contain unreleased version entry (ex.: "## [1.2.3]" (without date)).');
       return undefined;
     }
 
