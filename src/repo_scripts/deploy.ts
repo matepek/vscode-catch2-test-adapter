@@ -46,6 +46,7 @@ async function main(argv: string[]) {
       await createGithubRelease(info, packagePath);
       await publishPackage(packagePath);
     }
+    { console.log('no deployment has happened.'); }
     console.log('deploying is finished');
   } catch (e) {
     console.log(inspect(e));

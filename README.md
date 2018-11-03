@@ -39,11 +39,11 @@ If it is an object it can contains the following properties:
 
 | Property  |            | Description                                                                                                                                                                                                         |
 | --------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`    | (optional) | The name of the test suite (file). Can contains variables.                                                                                                                                                          |
+| `name`    | (optional) | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                     |
 | `pattern` | (requierd) | A relative pattern (to workspace) or an absolute file-path. ⚠️**Avoid backslash!** ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test[1-9]*` |
 | `path`    | (alias)    | Alias of `pattern`.                                                                                                                                                                                                 |
-| `cwd`     | (optional) | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables.                                                                  |
-| `env`     | (optional) | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables.                                                                          |
+| `cwd`     | (optional) | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                             |
+| `env`     | (optional) | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                     |
 
 Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
