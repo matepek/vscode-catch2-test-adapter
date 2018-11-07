@@ -47,9 +47,13 @@ function main(argv: string[]): Promise<void> {
   console.log('deploying');
   // pre-checks
   assert.strictEqual(path.basename(process.cwd()), githubRepoId);
-  assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
   assert.ok(process.env['GITHUB_API_KEY'] != undefined);
   assert.ok(process.env['VSCE_PAT'] != undefined);
+
+  if (!process.env['TRAVIS_BRANCH']) {
+    console.log('not a branch, skipping deployment');
+    return Promise.resolve();
+  }
 
   return updateChangelog().then((info: Info|undefined) => {
     if (info != undefined) {
@@ -153,13 +157,12 @@ function updatePackageJson(info: Info) {
 }
 
 function gitCommitAndTag(info: Info) {
-  console.log('Creating commit and signed tag');
+  console.log('Creating commit and tag');
 
   return Promise.resolve()
       .then(() => {
-        assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
-        const branch = process.env['TRAVIS_BRANCH']!;
-        return spawn('git', 'checkout', branch);
+        assert.ok(process.env['TRAVIS_BRANCH']);
+        return spawn('git', 'checkout', process.env['TRAVIS_BRANCH']!);
       })
       .then(() => {
         return spawn(
@@ -182,12 +185,9 @@ function gitCommitAndTag(info: Info) {
         return spawn('git', 'status');
       })
       .then(() => {
-        // [skip travis-ci]: because we dont want to build the new commit it
-        // again
         return spawn(
             'git', 'commit', '-m',
-            '[Updated] Release info in CHANGELOG.md: ' + info.full!, '-m',
-            '[skip travis-ci]');
+            '[Updated] Release info in CHANGELOG.md: ' + info.full!);
       })
       .then(() => {
         return spawn(
