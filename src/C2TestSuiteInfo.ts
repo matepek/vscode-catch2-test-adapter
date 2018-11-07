@@ -148,7 +148,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
     const processChunk = (chunk: string) => {
       data.buffer = data.buffer + chunk;
-      let invariant = 9999;  // empiric value
+      let invariant = 9999;
       do {
         if (!data.inTestCase) {
           const b = data.buffer.indexOf('<TestCase');
