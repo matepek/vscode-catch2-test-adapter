@@ -98,16 +98,16 @@ describe('C2TestAdapter.cpp', function() {
     await fse.remove(cppUri.fsPath);
   })
 
-  // async function waitFor(
-  //     test: Mocha.Context, condition: Function,
-  //     timeout: number = 1000): Promise<void> {
-  //   const start = Date.now();
-  //   let c;
-  //   while (!(c = await condition()) &&
-  //          (Date.now() - start < timeout || !test.enableTimeouts()))
-  //     await promisify(setTimeout)(10);
-  //   assert.ok(c);
-  // }
+  async function waitFor(
+      test: Mocha.Context, condition: Function,
+      timeout: number = 1000): Promise<void> {
+    const start = Date.now();
+    let c;
+    while (!(c = await condition()) &&
+           (Date.now() - start < timeout || !test.enableTimeouts()))
+      await promisify(setTimeout)(10);
+    assert.ok(c);
+  }
 
   function copy(from: string, to: string) {
     return fse.copy(
@@ -210,16 +210,17 @@ describe('C2TestAdapter.cpp', function() {
             'cwd': '${workspaceFolder}/cpp',
           }]);
 
-      // await copy('../suite1.exe', 'out/suite1.exe');
+      await copy('../suite1.exe', 'out/suite1.exe');
       await copy('../suite2.exe', 'out/suite2.exe');
-      // await copy('../suite3.exe', 'out/suite3.exe');
+      await copy('../suite3.exe', 'out/suite3.exe');
 
       adapter = createAdapterAndSubscribe();
       const root = await load(adapter);
       assert.strictEqual(root.children.length, 1);
 
-      // const eventCount = testStatesEvents.length;
+      const eventCount = testStatesEvents.length;
       await adapter.run([root.id]);
+      console.log(eventCount);  // TODO
       // assert.strictEqual(
       //    testStatesEvents.length, eventCount + 86,
       //    inspect(testStatesEvents));
@@ -244,9 +245,9 @@ describe('C2TestAdapter.cpp', function() {
 
       await copy('../suite1.exe', 'out/suite1.exe');
 
-      // await waitFor(this, () => {
-      //   return root.children.length == 1;
-      // }, 2000);
+      await waitFor(this, () => {
+        return root.children.length == 1;
+      }, 2000);
 
       // await copy('../suite2.exe', 'out/sub/suite2X.exe');
 
