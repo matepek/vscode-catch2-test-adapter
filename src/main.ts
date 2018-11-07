@@ -1,11 +1,12 @@
-import * as vscode from "vscode";
-import { testExplorerExtensionId, TestHub } from "vscode-test-adapter-api";
-import { Log } from "vscode-test-adapter-util";
+import * as vscode from 'vscode';
+import {testExplorerExtensionId, TestHub} from 'vscode-test-adapter-api';
+import {Log} from 'vscode-test-adapter-util';
 
-import { C2TestAdapter } from "./C2TestAdapter";
+import {C2TestAdapter} from './C2TestAdapter';
 
 export async function activate(context: vscode.ExtensionContext) {
-  const testExplorerExtension = vscode.extensions.getExtension<TestHub>(testExplorerExtensionId);
+  const testExplorerExtension =
+      vscode.extensions.getExtension<TestHub>(testExplorerExtensionId);
 
   if (testExplorerExtension) {
     if (!testExplorerExtension.isActive) {
@@ -16,7 +17,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
     if (vscode.workspace.workspaceFolders) {
       for (const workspaceFolder of vscode.workspace.workspaceFolders) {
-        const log = new Log("Catch2TestAdapter", workspaceFolder, "Catch2TestAdapter");
+        const log = new Log(
+            'catch2TestExplorer', workspaceFolder, 'catch2TestExplorer');
         context.subscriptions.push(log);
         const adapter = new C2TestAdapter(workspaceFolder, log);
         registeredAdapters.set(workspaceFolder, adapter);
@@ -34,7 +36,8 @@ export async function activate(context: vscode.ExtensionContext) {
       }
 
       for (const workspaceFolder of event.added) {
-        const log = new Log("Catch2TestAdapter", workspaceFolder, "Catch2TestAdapter");
+        const log =
+            new Log('Catch2TestAdapter', workspaceFolder, 'Catch2TestAdapter');
         context.subscriptions.push(log);
         const adapter = new C2TestAdapter(workspaceFolder, log);
         registeredAdapters.set(workspaceFolder, adapter);

@@ -56,7 +56,6 @@ describe('C2TestAdapter.cpp', function() {
       ].join(' ');
       await promisify(cp.exec)(command);
     } else {
-      console.log('compiling ' + source.fsPath);
       await promisify(cp.exec)('"' + [
         'c++',
         '-x',
@@ -66,13 +65,18 @@ describe('C2TestAdapter.cpp', function() {
         output.fsPath,
         source.fsPath,
       ].join('" "') + '"');
-      console.log('compiled ' + output.fsPath);
+      await promisify(cp.exec)('"' + [
+        'chmod',
+        '+x',
+        output.fsPath,
+      ].join('" "') + '"');
     }
+    await promisify(setTimeout)(500);
     assert.ok(await c2fs.existsAsync(output.fsPath));
   }
 
   before(async function() {
-    this.timeout(50000);
+    this.timeout(82000);
 
     await fse.remove(cppUri.fsPath);
     await fse.mkdirp(cppUri.fsPath);
@@ -196,11 +200,8 @@ describe('C2TestAdapter.cpp', function() {
       await fse.remove(cppUri.fsPath);
     })
 
-    it('shoud be found and run withouth error', async function() {
-      if (process.env['TRAVIS'] == 'true')
-        this.skip();  // TODO something is wrong with it on travis but works on
-                      // my mac
-
+    it('should be found and run withouth error', async function() {
+      if (process.env['TRAVIS'] == 'true') this.skip();
       this.timeout(5000);
       this.slow(2000);
       await updateConfig(
@@ -220,17 +221,15 @@ describe('C2TestAdapter.cpp', function() {
 
       const eventCount = testStatesEvents.length;
       await adapter.run([root.id]);
-      assert.strictEqual(testStatesEvents.length, eventCount + 86);
+      assert.strictEqual(
+          testStatesEvents.length, eventCount + 86, inspect(testStatesEvents));
 
       disposeAdapterAndSubscribers();
       await updateConfig('executables', undefined);
     })
 
-    it('shoud be notified by watcher', async function() {
-      if (process.env['TRAVIS'] == 'true')
-        this.skip();  // TODO something is wrong with it on travis but works on
-                      // my mac
-
+    it('should be notified by watcher', async function() {
+      if (process.env['TRAVIS'] == 'true') this.skip();
       this.timeout(5000);
       this.slow(4000);
       await updateConfig(

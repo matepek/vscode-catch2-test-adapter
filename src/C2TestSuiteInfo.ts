@@ -4,6 +4,7 @@
 
 import {ChildProcess, spawn, SpawnOptions} from 'child_process';
 import * as path from 'path';
+import {inspect} from 'util';
 import {TestEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
@@ -138,25 +139,27 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
     const data = new class {
       buffer: string = '';
+      inTestCase: boolean = false;
       currentChild: C2TestInfo|undefined = undefined;
       beforeFirstTestCase: boolean = true;
       rngSeed: number|undefined = undefined;
-      inTestCase(): boolean {
-        return this.currentChild != undefined;
-      };
     }
     ();
 
     const processChunk = (chunk: string) => {
       data.buffer = data.buffer + chunk;
+      let invariant = 9999;
       do {
-        if (!data.inTestCase()) {
+        if (!data.inTestCase) {
           const b = data.buffer.indexOf('<TestCase');
           if (b == -1) return;
 
-          const testCaseTagRe = '<TestCase(?:\\s+[^\n]+)?>';
+          const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
           const m = data.buffer.match(testCaseTagRe);
           if (m == null || m.length != 1) return;
+
+          data.inTestCase = true;
+
           let name: string = '';
           new xml2js.Parser({explicitArray: true})
               .parseString(m[0] + '</TestCase>', (err: any, result: any) => {
@@ -170,17 +173,18 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
           if (data.beforeFirstTestCase) {
             const ri =
-                data.buffer.match('<Randomness\\s+seed="([0-9]+)"\\s*/?>');
+                data.buffer.match(/<Randomness\s+seed="([0-9]+)"\s*\/?>/);
             if (ri != null && ri.length == 2) {
               data.rngSeed = Number(ri[1]);
             }
           }
+
           data.beforeFirstTestCase = false;
           data.currentChild = this.children.find((v: C2TestInfo) => {
             return v.testNameTrimmed == name;
           });
 
-          if (data.currentChild != undefined) {
+          if (data.currentChild !== undefined) {
             const ev = data.currentChild.getStartEvent();
             this.adapter.testStatesEmitter.fire(ev);
           } else {
@@ -207,10 +211,16 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
             }
           }
 
+          data.inTestCase = false;
           data.currentChild = undefined;
           data.buffer = data.buffer.substr(b + endTestCase.length);
         }
-      } while (data.buffer.length > 0);
+      } while (data.buffer.length > 0 && --invariant > 0);
+      if (invariant == 0) {
+        const errMsg =
+            'Possible infinite loop with data:' + inspect([invariant, data]);
+        pRejecter && pRejecter(new Error(errMsg));
+      }
     };
 
     this.proc.stdout.on('data', (chunk: Uint8Array) => {
@@ -219,11 +229,10 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     });
 
     this.proc.on('close', (code: number) => {
-      if (data.inTestCase()) {
-        (pRejecter != undefined) && pRejecter();
-      } else {
-        (pResolver != undefined) && pResolver();
-      }
+      if (data.inTestCase)
+        pRejecter && pRejecter();
+      else
+        pResolver && pResolver();
     });
 
     const suiteFinally = () => {
@@ -232,12 +241,12 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       this.adapter.testStatesEmitter.fire(
           <TestSuiteEvent>{type: 'suite', suite: this, state: 'completed'});
     };
-    return p
-        .then(() => {
+    return p.then(
+        () => {
           suiteFinally();
-        })
-        .catch((err: Error) => {
-          if (data.inTestCase()) {
+        },
+        (err: Error) => {
+          if (data.inTestCase) {
             this.adapter.testStatesEmitter.fire({
               type: 'test',
               test: data.currentChild!,
