@@ -23,8 +23,12 @@ export class C2ExecutableInfo implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
   private _watcher: vscode.FileSystemWatcher|undefined = undefined;
 
-  private readonly _executables: Map<string /** filePath */, C2TestSuiteInfo> =
+  private readonly _executables: Map<string /*fsPath*/, C2TestSuiteInfo> =
       new Map();
+
+  private readonly _lastEventArrivedAt:
+      Map<string /*fsPath*/, number /*Date*/
+          > = new Map();
 
   dispose() {
     if (this._watcher) this._watcher.dispose();
@@ -33,24 +37,27 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
   async load(): Promise<void> {
     const wsUri = this._adapter.workspaceFolder.uri;
-
-    const isAbsolute = path.isAbsolute(this.pattern);
-    const absPattern = isAbsolute ? path.normalize(this.pattern) :
-                                    path.resolve(wsUri.fsPath, this.pattern);
+    const pattern =
+        this.pattern.startsWith('./') ? this.pattern.substr(2) : this.pattern;
+    const isAbsolute = path.isAbsolute(pattern);
+    const absPattern = isAbsolute ? path.normalize(pattern) :
+                                    path.resolve(wsUri.fsPath, pattern);
     const absPatternAsUri = vscode.Uri.file(absPattern);
     const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
     const isPartOfWs = !relativeToWs.startsWith('..');
 
-    if(isAbsolute && isPartOfWs)
-      this._adapter.log.info('Absolute path is used for workspace directory: ' + inspect([this]));
-    if(this.pattern.indexOf('\\') != -1)
-      this._adapter.log.warn('Pattern contains backslash character: ' + this.pattern);
-    
+    if (isAbsolute && isPartOfWs)
+      this._adapter.log.info(
+          'Absolute path is used for workspace directory: ' + inspect([this]));
+    if (this.pattern.indexOf('\\') != -1)
+      this._adapter.log.warn(
+          'Pattern contains backslash character: ' + this.pattern);
+
     let fileUris: vscode.Uri[] = [];
 
     if (!isAbsolute) {
-      const relativePattern = new vscode.RelativePattern(
-          this._adapter.workspaceFolder, this.pattern);
+      const relativePattern =
+          new vscode.RelativePattern(this._adapter.workspaceFolder, pattern);
 
       try {
         fileUris =
@@ -132,10 +139,6 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     return suite;
   }
-
-  private readonly _lastEventArrivedAt:
-      Map<string /* fsPath */, number /** Date.now */
-          > = new Map();
 
   private _handleEverything(uri: vscode.Uri) {
     let suite = this._executables.get(uri.fsPath);

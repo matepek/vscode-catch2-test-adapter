@@ -1437,10 +1437,10 @@ describe('C2TestAdapter', function() {
     });
 
     specify(
-        'load executables=["execPath1", "execPath2"] with error',
+        'load executables=["execPath1", "./execPath2"] with error',
         async function() {
           this.slow(300);
-          await updateConfig('executables', ['execPath1', 'execPath2']);
+          await updateConfig('executables', ['execPath1', './execPath2']);
           adapter = createAdapterAndSubscribe();
 
           const withArgs = spawnStub.withArgs(
