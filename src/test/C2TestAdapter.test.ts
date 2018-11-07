@@ -400,11 +400,11 @@ describe('C2TestAdapter', function() {
       context('executables="execPath1"', function() {
         before(function() {
           return updateConfig('executables', 'execPath1');
-        });
+        })
 
         after(function() {
           return updateConfig('executables', undefined);
-        });
+        })
 
         beforeEach(async function() {
           assert.deepStrictEqual(
@@ -419,7 +419,7 @@ describe('C2TestAdapter', function() {
           s1t1 = <TestInfo>suite1.children[0];
           assert.equal(suite1.children[1].type, 'test');
           s1t2 = <TestInfo>suite1.children[1];
-        });
+        })
 
         it('should run with not existing test id', async function() {
           await adapter.run(['not existing id']);
@@ -427,7 +427,7 @@ describe('C2TestAdapter', function() {
           assert.deepStrictEqual(testStatesEvents, [
             {type: 'started', tests: ['not existing id']}, {type: 'finished'}
           ]);
-        });
+        })
 
         it('should run s1t1 with success', async function() {
           assert.equal(getConfig().get<any>('executables'), 'execPath1');
@@ -450,7 +450,7 @@ describe('C2TestAdapter', function() {
 
           await adapter.run([s1t1.id]);
           assert.deepStrictEqual(testStatesEvents, [...expected, ...expected]);
-        });
+        })
 
         it('should run suite1', async function() {
           await adapter.run([suite1.id]);
@@ -481,7 +481,7 @@ describe('C2TestAdapter', function() {
 
           await adapter.run([suite1.id]);
           assert.deepStrictEqual(testStatesEvents, [...expected, ...expected]);
-        });
+        })
 
         it('should run all', async function() {
           await adapter.run([root.id]);
@@ -512,7 +512,7 @@ describe('C2TestAdapter', function() {
 
           await adapter.run([root.id]);
           assert.deepStrictEqual(testStatesEvents, [...expected, ...expected]);
-        });
+        })
 
         it('cancels without any problem', async function() {
           adapter.cancel();
@@ -542,7 +542,7 @@ describe('C2TestAdapter', function() {
           adapter.cancel();
           assert.deepStrictEqual(testsEvents, []);
           assert.deepStrictEqual(testStatesEvents, expected);
-        });
+        })
 
         context('with config: defaultRngSeed=2', function() {
           before(function() {
@@ -1188,49 +1188,48 @@ describe('C2TestAdapter', function() {
                testsEvents.pop();
              });
 
-          it('reload because of fswatcher event: test added',
-             async function(this: Mocha.Context) {
-               this.slow(200);
-               const testListOutput = example1.suite1.outputs[1][1].split('\n');
-               assert.equal(testListOutput.length, 10);
-               testListOutput.splice(
-                   1, 0, '  s1t0', '    suite1.cpp:6', '    tag1');
-               const withArgs = spawnStub.withArgs(
-                   example1.suite1.execPath, example1.suite1.outputs[1][0]);
-               withArgs.onCall(withArgs.callCount)
-                   .returns(new ChildProcessStub(testListOutput.join(EOL)));
+          it('reload because of fswatcher event: test added', async function() {
+            this.slow(200);
+            const testListOutput = example1.suite1.outputs[1][1].split('\n');
+            assert.equal(testListOutput.length, 10);
+            testListOutput.splice(
+                1, 0, '  s1t0', '    suite1.cpp:6', '    tag1');
+            const withArgs = spawnStub.withArgs(
+                example1.suite1.execPath, example1.suite1.outputs[1][0]);
+            withArgs.onCall(withArgs.callCount)
+                .returns(new ChildProcessStub(testListOutput.join(EOL)));
 
-               const oldRootChildren = [...root.children];
-               const oldSuite1Children = [...suite1.children];
-               const oldSuite2Children = [...suite2.children];
+            const oldRootChildren = [...root.children];
+            const oldSuite1Children = [...suite1.children];
+            const oldSuite2Children = [...suite2.children];
 
-               const newRoot = await doAndWaitForReloadEvent(this, async () => {
-                 suite1Watcher.sendDelete();
-                 suite1Watcher.sendCreate();
-               });
+            const newRoot = await doAndWaitForReloadEvent(this, async () => {
+              suite1Watcher.sendDelete();
+              suite1Watcher.sendCreate();
+            });
 
-               assert.equal(newRoot, root);
-               assert.equal(root.children.length, oldRootChildren.length);
-               for (let i = 0; i < oldRootChildren.length; i++) {
-                 assert.equal(root.children[i], oldRootChildren[i]);
-               }
+            assert.equal(newRoot, root);
+            assert.equal(root.children.length, oldRootChildren.length);
+            for (let i = 0; i < oldRootChildren.length; i++) {
+              assert.equal(root.children[i], oldRootChildren[i]);
+            }
 
-               assert.equal(
-                   suite1.children.length, oldSuite1Children.length + 1);
-               for (let i = 0; i < suite1.children.length; i++) {
-                 assert.equal(suite1.children[i + 1], oldSuite1Children[i]);
-               }
-               const newTest = suite1.children[0];
-               assert.ok(!uniqueIdC.has(newTest.id));
-               assert.equal(newTest.label, 's1t0');
+            assert.equal(suite1.children.length, oldSuite1Children.length + 1);
+            for (let i = 0; i < suite1.children.length; i++) {
+              assert.equal(suite1.children[i + 1], oldSuite1Children[i]);
+            }
+            const newTest = suite1.children[0];
+            assert.ok(!uniqueIdC.has(newTest.id));
+            assert.equal(newTest.label, 's1t0');
 
-               assert.equal(suite2.children.length, oldSuite2Children.length);
-               for (let i = 0; i < suite2.children.length; i++) {
-                 assert.equal(suite2.children[i], oldSuite2Children[i]);
-               }
-             });
+            assert.equal(suite2.children.length, oldSuite2Children.length);
+            for (let i = 0; i < suite2.children.length; i++) {
+              assert.equal(suite2.children[i], oldSuite2Children[i]);
+            }
+          })
+
           it('reload because of fswatcher event: test deleted',
-             async function(this: Mocha.Context) {
+             async function() {
                this.slow(200);
                const testListOutput = example1.suite1.outputs[1][1].split('\n');
                assert.equal(testListOutput.length, 10);
@@ -1265,8 +1264,34 @@ describe('C2TestAdapter', function() {
                for (let i = 0; i < suite2.children.length; i++) {
                  assert.equal(suite2.children[i], oldSuite2Children[i]);
                }
-             });
-        });
+             })
+
+          it('data arrives in pieces', async function() {
+            this.slow(200);
+            const testListOutput = example1.suite1.outputs[2][1].split('\n');
+            assert.equal(testListOutput.length, 21);
+            const newOutput: string[] = [
+              testListOutput[0] + EOL + testListOutput[1].substr(10) + EOL,
+              testListOutput[2].substr(10) + EOL,
+              testListOutput[3].substr(10) + EOL,
+              testListOutput
+                      .filter((v: string, i: number) => {
+                        return i > 3;
+                      })
+                      .map((v: string) => {
+                        return v.substr(10);
+                      })
+                      .join(EOL) +
+                  EOL + EOL,
+            ];
+            const withArgs = spawnStub.withArgs(
+                example1.suite1.execPath, example1.suite1.outputs[2][0]);
+            withArgs.onCall(withArgs.callCount)
+                .returns(new ChildProcessStub(newOutput));
+
+            await adapter.run([suite1.id]);
+          })
+        })
 
         context('executables=[{<regex>}] and env={...}', function() {
           before(async function() {
@@ -1353,9 +1378,9 @@ describe('C2TestAdapter', function() {
               await adapter.run([suite2.id]);
               assert.equal(withArgs.callCount, cc + 1);
             }
-          });
-        });
-      });
+          })
+        })
+      })
 
       context(
           'executables=["execPath1", "execPath2", "execPath3"]',
@@ -1418,6 +1443,42 @@ describe('C2TestAdapter', function() {
           })
     })
 
+    specify('arriving <TestCase> for missing TestInfo', async function() {
+      this.slow(200);
+
+      await updateConfig('executables', example1.suite1.execPath);
+
+      const testListOutput = example1.suite1.outputs[1][1].split('\n');
+      assert.equal(testListOutput.length, 10);
+      testListOutput.splice(1, 3);
+      const withArgs = spawnStub.withArgs(
+          example1.suite1.execPath, example1.suite1.outputs[1][0]);
+      withArgs.onCall(withArgs.callCount)
+          .returns(new ChildProcessStub(testListOutput.join('\n')));
+
+      adapter = createAdapterAndSubscribe();
+
+      await adapter.load();
+      assert.equal(testsEvents.length, 2);
+      assert.equal(
+          (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
+              .suite!.children.length,
+          1);
+      assert.equal(
+          (<TestSuiteInfo>(
+               <TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
+               .suite!.children[0])
+              .children.length,
+          1);
+
+      await adapter.run([
+        (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]).suite!.id
+      ]);
+
+      disposeAdapterAndSubscribers();
+      await updateConfig('executables', undefined);
+    })
+
     specify('load executables=<full path of execPath1>', async function() {
       this.slow(300);
       await updateConfig('executables', example1.suite1.execPath);
@@ -1434,7 +1495,7 @@ describe('C2TestAdapter', function() {
 
       disposeAdapterAndSubscribers();
       await updateConfig('executables', undefined);
-    });
+    })
 
     specify(
         'load executables=["execPath1", "./execPath2"] with error',

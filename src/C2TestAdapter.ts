@@ -75,6 +75,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       d.dispose();
     });
     this.allTests.dispose();
+    this.log.dispose();
   }
 
   get testStates(): vscode.Event<TestRunStartedEvent|TestRunFinishedEvent|
