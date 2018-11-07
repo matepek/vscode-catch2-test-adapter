@@ -18,7 +18,6 @@ import * as vsce from 'vsce';
 const githubOwnerId = 'matepek';
 const githubRepoId = 'vscode-catch2-test-adapter';
 const githubRepoFullId = githubOwnerId + '/' + githubRepoId;
-const githubDeployerMail = 'matepek+vscode-catch2-test-adapter@gmail.com';
 const vscodeExtensionId = githubOwnerId + '-' + githubRepoId;
 
 
@@ -158,12 +157,18 @@ function gitCommitAndTag(info: Info) {
 
   return Promise.resolve()
       .then(() => {
+        assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
+        const branch = process.env['TRAVIS_BRANCH']!;
+        return spawn('git', 'checkout', branch);
+      })
+      .then(() => {
         return spawn(
             'git', 'config', '--local', 'user.name', 'deploy.js script');
       })
       .then(() => {
-        return spawn(
-            'git', 'config', '--local', 'user.email', githubDeployerMail);
+        const deployerMail =
+            process.env['DEPLOYER_MAIL'] || 'deployer@deployer.de';
+        return spawn('git', 'config', '--local', 'user.email', deployerMail);
       })
       .then(() => {
         return spawn('git', 'status');
@@ -196,16 +201,11 @@ function gitCommitAndTag(info: Info) {
 function gitPush(info: Info) {
   console.log('Pushing to origin');
 
-  assert.ok(process.env['TRAVIS_BRANCH'] != undefined);
-  const branch = process.env['TRAVIS_BRANCH']!;
   assert.ok(process.env['GITHUB_API_KEY'] != undefined);
-  return spawn('git', 'checkout', branch)
-      .then(() => {
-        return spawn(
-            'git', 'push', '--follow-tags',
-            'https://' + githubOwnerId + ':' + process.env['GITHUB_API_KEY']! +
-                '@github.com/' + githubRepoFullId + '.git');
-      })
+  return spawn(
+             'git', 'push', '--follow-tags',
+             'https://' + githubOwnerId + ':' + process.env['GITHUB_API_KEY']! +
+                 '@github.com/' + githubRepoFullId + '.git')
       .then(() => {
         return info;
       });
