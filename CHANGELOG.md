@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1]
+
+### Fixed
+
+- A bug related to xml parsing.
+
 ### Added
 
 For development:
@@ -22,6 +28,10 @@ For development:
 > - Publish the new version to [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter).
 >
 > Hopefully it works (partially tested only 🤞).
+
+### Deprecated
+
+- `executables`'s `path`. Now it is mapped to `pattern`, so works, but it will be removed in the future.
 
 ## [2.0.0] - 2018-10-30
 

@@ -66,13 +66,19 @@ describe('C2TestAdapter.cpp', function() {
         output.fsPath,
         source.fsPath,
       ].join('" "') + '"');
+      await promisify(cp.exec)('"' + [
+        'chmod',
+        '+x',
+        output.fsPath,
+      ].join('" "') + '"');
       console.log('compiled ' + output.fsPath);
     }
+    await promisify(setTimeout)(500);
     assert.ok(await c2fs.existsAsync(output.fsPath));
   }
 
   before(async function() {
-    this.timeout(50000);
+    this.timeout(62000);
 
     await fse.remove(cppUri.fsPath);
     await fse.mkdirp(cppUri.fsPath);
@@ -88,6 +94,8 @@ describe('C2TestAdapter.cpp', function() {
     if (!await c2fs.existsAsync(inCpp('../suite3.exe').fsPath))
       await compile(
           inCpp('../../../src/test/cpp/suite3.cpp'), inCpp('../suite3.exe'));
+
+    return promisify(setTimeout)(2000);
   })
 
   after(async function() {
@@ -196,7 +204,7 @@ describe('C2TestAdapter.cpp', function() {
       await fse.remove(cppUri.fsPath);
     })
 
-    it('shoud be found and run withouth error', async function() {
+    it('should be found and run withouth error', async function() {
       this.timeout(5000);
       this.slow(2000);
       await updateConfig(
@@ -216,13 +224,14 @@ describe('C2TestAdapter.cpp', function() {
 
       const eventCount = testStatesEvents.length;
       await adapter.run([root.id]);
-      assert.strictEqual(testStatesEvents.length, eventCount + 86);
+      assert.strictEqual(
+          testStatesEvents.length, eventCount + 86, inspect(testStatesEvents));
 
       disposeAdapterAndSubscribers();
       await updateConfig('executables', undefined);
     })
 
-    it('shoud be notified by watcher', async function() {
+    it('should be notified by watcher', async function() {
       this.timeout(5000);
       this.slow(4000);
       await updateConfig(

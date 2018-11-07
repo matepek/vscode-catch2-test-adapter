@@ -1448,6 +1448,8 @@ describe('C2TestAdapter', function() {
 
       await updateConfig('executables', example1.suite1.execPath);
 
+      const adapter = createAdapterAndSubscribe();
+
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
       assert.equal(testListOutput.length, 10);
       testListOutput.splice(1, 3);
@@ -1456,7 +1458,6 @@ describe('C2TestAdapter', function() {
       withArgs.onCall(withArgs.callCount)
           .returns(new ChildProcessStub(testListOutput.join('\n')));
 
-      adapter = createAdapterAndSubscribe();
 
       await adapter.load();
       assert.equal(testsEvents.length, 2);
@@ -1469,7 +1470,7 @@ describe('C2TestAdapter', function() {
                <TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
                .suite!.children[0])
               .children.length,
-          1);
+          1, inspect([testListOutput, testsEvents]));
 
       await adapter.run([
         (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]).suite!.id
