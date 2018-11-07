@@ -197,10 +197,6 @@ describe('C2TestAdapter.cpp', function() {
     })
 
     it('shoud be found and run withouth error', async function() {
-      if (process.env['TRAVIS'] == 'true')
-        this.skip();  // TODO something is wrong with it on travis but works on
-                      // my mac
-
       this.timeout(5000);
       this.slow(2000);
       await updateConfig(
@@ -227,10 +223,6 @@ describe('C2TestAdapter.cpp', function() {
     })
 
     it('shoud be notified by watcher', async function() {
-      if (process.env['TRAVIS'] == 'true')
-        this.skip();  // TODO something is wrong with it on travis but works on
-                      // my mac
-
       this.timeout(5000);
       this.slow(4000);
       await updateConfig(
