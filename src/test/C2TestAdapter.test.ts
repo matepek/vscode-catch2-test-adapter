@@ -1322,7 +1322,7 @@ describe('C2TestAdapter', function() {
               'C2GLOBALTESTENV': 'c2globaltestenv',
               'C2OVERRIDETESTENV': 'c2overridetestenv-g',
             });
-          });
+          })
 
           after(async function() {
             await updateConfig('executables', undefined);
