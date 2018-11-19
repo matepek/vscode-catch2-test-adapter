@@ -1105,8 +1105,13 @@ describe('C2TestAdapter', function() {
           }
 
           assert.equal(suite1.children.length, oldSuite1Children.length + 1);
-          for (let i = 0; i < suite1.children.length; i++) {
-            assert.equal(suite1.children[i + 1], oldSuite1Children[i]);
+          for (let i = 0; i < oldSuite1Children.length; i++) {
+            const c1: TestInfo = suite1.children[i + 1];
+            const c2: TestInfo = oldSuite1Children[i];
+            assert.deepStrictEqual(
+                [c1.file, c1.id, c1.label, c1.line, c1.skipped, c1.type],
+                [c2.file, c2.id, c2.label, c2.line, c2.skipped, c2.type],
+                inspect(i));
           }
           const newTest = suite1.children[0];
           assert.ok(!uniqueIdC.has(newTest.id));
@@ -1145,7 +1150,11 @@ describe('C2TestAdapter', function() {
 
           assert.equal(suite1.children.length + 1, oldSuite1Children.length);
           for (let i = 0; i < suite1.children.length; i++) {
-            assert.equal(suite1.children[i], oldSuite1Children[i + 1]);
+            const c1: TestInfo = suite1.children[i];
+            const c2: TestInfo = oldSuite1Children[i + 1];
+            assert.deepStrictEqual(
+                [c1.file, c1.id, c1.label, c1.line, c1.skipped, c1.type],
+                [c2.file, c2.id, c2.label, c2.line, c2.skipped, c2.type]);
           }
 
           assert.equal(suite2.children.length, oldSuite2Children.length);

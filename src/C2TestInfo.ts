@@ -16,16 +16,21 @@ export class C2TestInfo implements TestInfo {
   readonly testNameTrimmed: string;
 
   constructor(
-      public readonly testNameFull: string, description: string, tags: string[],
-      public readonly file: string, public readonly line: number,
-      public readonly parent: C2TestSuiteInfo) {
+      id: string|undefined,
+      public readonly testNameFull: string,
+      description: string,
+      tags: string[],
+      public readonly file: string,
+      public readonly line: number,
+      public readonly parent: C2TestSuiteInfo,
+  ) {
     this.testNameTrimmed = this.testNameFull.trim();
     this.skipped = tags.some((v: string) => {
       return v.startsWith('[.') || v == '[hide]';
     }) ||
         this.testNameFull.startsWith('./');
     this.label = C2TestInfo.generateLabel(this.testNameFull, description, tags);
-    this.id = generateUniqueId();
+    this.id = id ? id : generateUniqueId();
   }
 
   static generateLabel(

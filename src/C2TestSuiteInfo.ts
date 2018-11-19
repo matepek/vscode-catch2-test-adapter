@@ -35,10 +35,10 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
   }
 
   createChildTest(
-      testName: string, description: string, tags: string[], file: string,
-      line: number): C2TestInfo {
+      id: string|undefined, testName: string, description: string,
+      tags: string[], file: string, line: number): C2TestInfo {
     const test =
-        new C2TestInfo(testName, description, tags, file, line - 1, this);
+        new C2TestInfo(id, testName, description, tags, file, line - 1, this);
 
     if (this.children.length == 0) {
       this.file = file;
@@ -327,10 +327,12 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
                   oldChildren[index].label ==
                       C2TestInfo.generateLabel(
                           testNameFull, description, tags)) {
-                this.children.push(oldChildren[index]);
+                this.createChildTest(
+                    oldChildren[index].id, testNameFull, description, tags,
+                    filePath, line);
               } else {
                 this.createChildTest(
-                    testNameFull, description, tags, filePath, line);
+                    undefined, testNameFull, description, tags, filePath, line);
               }
             }
           });
