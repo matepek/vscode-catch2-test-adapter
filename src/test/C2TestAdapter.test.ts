@@ -227,13 +227,19 @@ describe('C2TestAdapter', function() {
 
     it('enableSourceDecoration', function() {
       return updateConfig('enableSourceDecoration', false).then(function() {
-        assert.ok(!adapter.getIsEnabledSourceDecoration());
+        assert.ok(!(<any>adapter)._allTests.isEnabledSourceDecoration);
       });
     })
 
     it('defaultRngSeed', function() {
       return updateConfig('defaultRngSeed', 987).then(function() {
-        assert.equal(adapter.getRngSeed(), 987);
+        assert.equal((<any>adapter)._allTests.rngSeed, 987);
+      });
+    })
+
+    it('defaultWatchTimeoutSec', function() {
+      return updateConfig('defaultWatchTimeoutSec', 9876).then(function() {
+        assert.equal((<any>adapter)._allTests.execWatchTimeout, 9876000);
       });
     })
   })

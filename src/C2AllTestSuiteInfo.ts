@@ -5,10 +5,10 @@
 import {SpawnOptions} from 'child_process';
 import {inspect} from 'util';
 import * as vscode from 'vscode';
-import {TestRunFinishedEvent, TestRunStartedEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
+import {TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
+import * as util from 'vscode-test-adapter-util';
 
 import {C2ExecutableInfo} from './C2ExecutableInfo'
-import {C2TestAdapter} from './C2TestAdapter';
 import {C2TestInfo} from './C2TestInfo';
 import {C2TestSuiteInfo} from './C2TestSuiteInfo';
 import {generateUniqueId} from './IdGenerator';
@@ -21,7 +21,19 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly children: C2TestSuiteInfo[] = [];
   private readonly _executables: C2ExecutableInfo[] = [];
 
-  constructor(private readonly adapter: C2TestAdapter) {
+  constructor(
+      public readonly log: util.Log,
+      public readonly workspaceFolder: vscode.WorkspaceFolder,
+      public readonly testsEmitter:
+          vscode.EventEmitter<TestLoadStartedEvent|TestLoadFinishedEvent>,
+      public readonly testStatesEmitter:
+          vscode.EventEmitter<TestRunStartedEvent|TestRunFinishedEvent|
+                              TestSuiteEvent|TestEvent>,
+      public readonly variableToValue: [string, string][],
+      public isEnabledSourceDecoration: boolean,
+      public rngSeed: string|number|null,
+      public execWatchTimeout: number,
+  ) {
     this.id = generateUniqueId();
   }
 
@@ -64,8 +76,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
 
   createChildSuite(label: string, execPath: string, execOptions: SpawnOptions):
       C2TestSuiteInfo {
-    const suite =
-        new C2TestSuiteInfo(label, this.adapter, execPath, execOptions);
+    const suite = new C2TestSuiteInfo(label, this, execPath, execOptions);
 
     let i = this.children.findIndex((v: C2TestSuiteInfo) => {
       return suite.label.trim().localeCompare(v.label.trim()) < 0;
@@ -89,13 +100,13 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
         await executable.load();
         this._executables.push(executable);
       } catch (e) {
-        this.adapter.log.error(inspect([e, i, executables]));
+        this.log.error(inspect([e, i, executables]));
       }
     }
   }
 
   run(tests: string[], workerMaxNumber: number): Promise<void> {
-    this.adapter.testStatesEmitter.fire(
+    this.testStatesEmitter.fire(
         <TestRunStartedEvent>{type: 'started', tests: tests});
 
     const taskPool = new TaskPool(workerMaxNumber);
@@ -117,12 +128,11 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     }
 
     if (testSet.size > 0) {
-      this.adapter.log.error('Some tests have remained.');
+      this.log.error('Some tests have remained.');
     }
 
     const always = () => {
-      this.adapter.testStatesEmitter.fire(
-          <TestRunFinishedEvent>{type: 'finished'});
+      this.testStatesEmitter.fire(<TestRunFinishedEvent>{type: 'finished'});
     };
 
     return Promise.all(ps).then(always, always);

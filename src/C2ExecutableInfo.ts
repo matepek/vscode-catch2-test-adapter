@@ -7,18 +7,15 @@ import {inspect, promisify} from 'util';
 import * as vscode from 'vscode';
 
 import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
-import {C2TestAdapter} from './C2TestAdapter';
 import {C2TestSuiteInfo} from './C2TestSuiteInfo';
 import * as c2fs from './FsWrapper';
 import {resolveVariables} from './Helpers';
 
 export class C2ExecutableInfo implements vscode.Disposable {
   constructor(
-      private _adapter: C2TestAdapter,
-      private readonly _allTests: C2AllTestSuiteInfo,
-      public readonly name: string, public readonly pattern: string,
-      public readonly cwd: string, public readonly env: {[prop: string]: any}) {
-  }
+      private _allTest: C2AllTestSuiteInfo, public readonly name: string,
+      public readonly pattern: string, public readonly cwd: string,
+      public readonly env: {[prop: string]: any}) {}
 
   private _disposables: vscode.Disposable[] = [];
   private _watcher: vscode.FileSystemWatcher|undefined = undefined;
@@ -36,7 +33,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
   }
 
   async load(): Promise<void> {
-    const wsUri = this._adapter.workspaceFolder.uri;
+    const wsUri = this._allTest.workspaceFolder.uri;
     const pattern =
         this.pattern.startsWith('./') ? this.pattern.substr(2) : this.pattern;
     const isAbsolute = path.isAbsolute(pattern);
@@ -47,17 +44,17 @@ export class C2ExecutableInfo implements vscode.Disposable {
     const isPartOfWs = !relativeToWs.startsWith('..');
 
     if (isAbsolute && isPartOfWs)
-      this._adapter.log.info(
+      this._allTest.log.info(
           'Absolute path is used for workspace directory: ' + inspect([this]));
     if (this.pattern.indexOf('\\') != -1)
-      this._adapter.log.warn(
+      this._allTest.log.warn(
           'Pattern contains backslash character: ' + this.pattern);
 
     let fileUris: vscode.Uri[] = [];
 
     if (!isAbsolute) {
       const relativePattern =
-          new vscode.RelativePattern(this._adapter.workspaceFolder, pattern);
+          new vscode.RelativePattern(this._allTest.workspaceFolder, pattern);
 
       try {
         fileUris =
@@ -74,7 +71,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
         this._disposables.push(
             this._watcher.onDidDelete(this._handleDelete, this));
       } catch (e) {
-        this._adapter.log.error(inspect([e, this]));
+        this._allTest.log.error(inspect([e, this]));
       }
     } else {
       fileUris.push(absPatternAsUri);
@@ -83,19 +80,24 @@ export class C2ExecutableInfo implements vscode.Disposable {
     for (let i = 0; i < fileUris.length; i++) {
       const file = fileUris[i];
       if (await this._verifyIsCatch2TestExecutable(file.fsPath)) {
-        this._addFile(file);
+        const suite = this._addFile(file);
+        this._executables.set(file.fsPath, suite);
       }
     }
 
     this._uniquifySuiteNames();
 
     for (const suite of this._executables.values()) {
-      await suite.reloadChildren();
+      await suite.reloadChildren().catch((err: any) => {
+        this._allTest.log.error(
+            'Couldn\'t load suite: ' + inspect([err, suite]));
+        // we could remove it, but now the user still sees the dead leaf
+      });
     }
   }
 
   private _addFile(file: vscode.Uri) {
-    const wsUri = this._adapter.workspaceFolder.uri;
+    const wsUri = this._allTest.workspaceFolder.uri;
 
     let resolvedName = this.name;
     let resolvedCwd = this.cwd;
@@ -112,7 +114,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
       const base3Filename = path.basename(base2Filename, ext3Filename);
 
       const varToValue: [string, string][] = [
-        ...this._adapter.variableToValue,
+        ...this._allTest.variableToValue,
         ['${absPath}', file.fsPath],
         ['${relPath}', relPath],
         ['${absDirpath}', path.dirname(file.fsPath)],
@@ -129,13 +131,11 @@ export class C2ExecutableInfo implements vscode.Disposable {
       resolvedCwd = path.normalize(resolveVariables(this.cwd, varToValue));
       resolvedEnv = resolveVariables(this.env, varToValue);
     } catch (e) {
-      this._adapter.log.error(inspect([e, this]));
+      this._allTest.log.error(inspect([e, this]));
     }
 
-    const suite = this._allTests.createChildSuite(
+    const suite = this._allTest.createChildSuite(
         resolvedName, file.fsPath, {cwd: resolvedCwd, env: resolvedEnv});
-
-    this._executables.set(file.fsPath, suite);
 
     return suite;
   }
@@ -145,6 +145,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     if (suite == undefined) {
       suite = this._addFile(uri);
+      this._executables.set(uri.fsPath, suite);
       this._uniquifySuiteNames();
     }
 
@@ -160,31 +161,31 @@ export class C2ExecutableInfo implements vscode.Disposable {
         (exists: boolean, timeout: number, delay: number): Promise<void> => {
           let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
           if (lastEventArrivedAt === undefined) {
-            this._adapter.log.error('assert in ' + __filename);
+            this._allTest.log.error('assert in ' + __filename);
             debugger;
             return Promise.resolve();
           }
           if (Date.now() - lastEventArrivedAt! > timeout) {
             this._lastEventArrivedAt.delete(uri.fsPath);
             this._executables.delete(uri.fsPath);
-            this._adapter.testsEmitter.fire({type: 'started'});
-            this._allTests.removeChild(suite!);
-            this._adapter.testsEmitter.fire(
-                {type: 'finished', suite: this._allTests});
+            this._allTest.testsEmitter.fire({type: 'started'});
+            this._allTest.removeChild(suite!);
+            this._allTest.testsEmitter.fire(
+                {type: 'finished', suite: this._allTest});
             return Promise.resolve();
           } else if (exists) {
-            return this._adapter.queue.then(() => {
-              this._adapter.testsEmitter.fire({type: 'started'});
+            return Promise.resolve().then(() => {
+              this._allTest.testsEmitter.fire({type: 'started'});
               return suite!.reloadChildren().then(
                   () => {
-                    this._adapter.testsEmitter.fire(
-                        {type: 'finished', suite: this._allTests});
+                    this._allTest.testsEmitter.fire(
+                        {type: 'finished', suite: this._allTest});
                     this._lastEventArrivedAt.delete(uri.fsPath);
                   },
                   (err: any) => {
-                    this._adapter.testsEmitter.fire(
-                        {type: 'finished', suite: this._allTests});
-                    this._adapter.log.warn(inspect(err));
+                    this._allTest.testsEmitter.fire(
+                        {type: 'finished', suite: this._allTest});
+                    this._allTest.log.warn(inspect(err));
                     return x(false, timeout, Math.min(delay * 2, 2000));
                   });
             });
@@ -197,7 +198,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
         };
     // change event can arrive during debug session on osx (why?)
     // if (!this.isDebugging) {
-    x(false, this._adapter.getExecWatchTimeout(), 64);
+    x(false, this._allTest.execWatchTimeout, 64);
   }
 
   private _handleCreate(uri: vscode.Uri) {
@@ -213,7 +214,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
   }
 
   private _uniquifySuiteNames() {
-    const uniqueNames: Map<string /* name */, [C2TestSuiteInfo]> = new Map();
+    const uniqueNames: Map<string /* name */, C2TestSuiteInfo[]> = new Map();
 
     for (const suite of this._executables.values()) {
       const suites = uniqueNames.get(suite.origLabel);
@@ -240,7 +241,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
           return res.stdout.indexOf('Catch v2.') != -1;
         })
         .catch(e => {
-          this._adapter.log.error(inspect(e));
+          this._allTest.log.error(inspect(e));
           return false;
         });
   }
