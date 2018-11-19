@@ -48,7 +48,15 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       this.line = undefined;
     }
 
-    this.children.push(test);
+    let i = this.children.findIndex((v: C2TestInfo) => {
+      const f = test.file.trim().localeCompare(v.file.trim());
+      if (f != 0)
+        return f < 0;
+      else
+        return test.line < v.line;
+    });
+    if (i == -1) i = this.children.length;
+    this.children.splice(i, 0, test);
 
     return test;
   }
@@ -210,6 +218,10 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
               this.allTests.log.error(
                   'Parsing and processing test: ' + data.currentChild.label);
             }
+          } else {
+            // TODO: we found a test case but there is no existing test info for
+            // it. this could easyly happen.
+            this.allTests.log.info('<TestCase> found without TestInfo.');
           }
 
           data.inTestCase = false;

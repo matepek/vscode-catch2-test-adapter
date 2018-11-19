@@ -68,7 +68,7 @@ function main(argv: string[]): Promise<void> {
             console.log('deploying is finished');
           });
     } else {
-      console.log('no deployment has happened.');
+      console.log('No deployment has happened.');
       return Promise.resolve();
     }
   });
@@ -95,6 +95,7 @@ function updateChangelog(): Promise<Info|undefined> {
       // we dont want to release it now
       console.log(
           'CHANGELOG.md doesn\'t contain unreleased version entry (ex.: "## [1.2.3]" (without date)).');
+      console.log('(Last released version: ' + match[0] + ')');
       return Promise.resolve(undefined);
     }
 

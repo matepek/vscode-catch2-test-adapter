@@ -123,7 +123,7 @@ describe('C2TestAdapter', function() {
     let c = await condition();
     while (!(c = await condition()) &&
            (Date.now() - start < timeout || !test.enableTimeouts()))
-      await promisify(setTimeout)(10);
+      await promisify(setTimeout)(32);
     assert.ok(c);
   }
 
@@ -204,7 +204,7 @@ describe('C2TestAdapter', function() {
   })
 
   describe('detect config change', function() {
-    this.slow(200);
+    this.slow(300);
 
     let adapter: C2TestAdapter;
 
@@ -347,6 +347,8 @@ describe('C2TestAdapter', function() {
     })
 
     describe('load', function() {
+      this.slow(500);
+
       const uniqueIdC = new Set<string>();
       let adapter: TestAdapter;
 
@@ -571,8 +573,6 @@ describe('C2TestAdapter', function() {
       })
 
       context('executables=["execPath1", "execPath2"]', function() {
-        this.slow(300);
-
         let suite1Watcher: FileSystemWatcherStub;
 
         async function loadAdapterAndAssert() {
@@ -1264,8 +1264,6 @@ describe('C2TestAdapter', function() {
       context(
           'executables=["execPath1", "execPath2", "execPath3"]',
           async function() {
-            this.slow(300);
-
             beforeEach(function() {
               return updateConfig(
                   'executables', ['execPath1', 'execPath2', 'execPath3']);
@@ -1321,8 +1319,6 @@ describe('C2TestAdapter', function() {
     })
 
     specify('arriving <TestCase> for missing TestInfo', async function() {
-      this.slow(200);
-
       await updateConfig('executables', example1.suite1.execPath);
 
       const adapter = createAdapterAndSubscribe();
@@ -1338,24 +1334,22 @@ describe('C2TestAdapter', function() {
 
       await adapter.load();
       assert.equal(testsEvents.length, 2);
+      const suite1 =
+          (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]).suite!;
+      assert.equal(suite1.children.length, 1);
       assert.equal(
-          (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
-              .suite!.children.length,
-          1);
-      assert.equal(
-          (<TestSuiteInfo>(
-               <TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
-               .suite!.children[0])
-              .children.length,
-          1, inspect([testListOutput, testsEvents]));
+          (<TestSuiteInfo>suite1.children[0]).children.length, 1,
+          inspect([testListOutput, testsEvents]));
 
       await adapter.run([
         (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]).suite!.id
       ]);
+
+      // assert.equal(suite1.children.length, 2);
     })
 
     specify('load executables=<full path of execPath1>', async function() {
-      this.slow(300);
+      this.slow(500);
       await updateConfig('executables', example1.suite1.execPath);
       adapter = createAdapterAndSubscribe();
 
@@ -1372,7 +1366,7 @@ describe('C2TestAdapter', function() {
     specify(
         'load executables=["execPath1", "./execPath2"] with error',
         async function() {
-          this.slow(300);
+          this.slow(500);
           await updateConfig('executables', ['execPath1', './execPath2']);
           adapter = createAdapterAndSubscribe();
 
@@ -1511,7 +1505,7 @@ describe('C2TestAdapter', function() {
         })
 
     specify('wrong executables format', async function() {
-      this.slow(300);
+      this.slow(500);
       await updateConfig('executables', {name: ''});
 
       adapter = createAdapterAndSubscribe();
@@ -1526,7 +1520,7 @@ describe('C2TestAdapter', function() {
     })
 
     specify('variable substitution with executables={...}', async function() {
-      this.slow(300);
+      this.slow(500);
       const wsPath = workspaceFolderUri.fsPath;
       const execPath2CopyRelPath = path.normalize('foo/bar/base.second.first');
       const execPath2CopyPath =

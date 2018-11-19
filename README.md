@@ -12,7 +12,6 @@ Update your settings! ([See changelog](CHANGELOG.md) or [configuration below](#C
 [![GitHub license](https://img.shields.io/github/license/matepek/vscode-catch2-test-adapter.svg)](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/LICENSE)
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/d/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
-[![GitHub stars](https://img.shields.io/github/stars/badges/shields.svg?style=social&label=Stars)](https://github.com/matepek/vscode-catch2-test-adapter)
 
 This extension allows you to run your [Catch2 tests](https://github.com/catchorg/Catch2) using the
 [Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
@@ -102,7 +101,13 @@ Examples:
 
 ### catch2TestExplorer.debugConfigTemplate
 
-For help, see: [here](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations)
+If `catch2TestExplorer.debugConfigTemplate` value is `null` (default),
+it will look after `vadimcn.vscode-lldb` and `ms-vscode.cpptools` extensions.
+If it founds one of it, it will use it automatically.
+
+#### Or user can manually fill it
+
+See [here](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations) for details.
 
 Usable variables:
 
@@ -116,7 +121,7 @@ Usable variables:
 
 These variables will be substituted when a DebugConfiguration is created.
 
-`name` and `request` are prefilled, so it is not necessary to set them.
+Note that `name` and `request` are prefilled, so it is not necessary to set them.
 
 Example:
 
