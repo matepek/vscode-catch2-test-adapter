@@ -12,6 +12,7 @@ import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
 import {C2ExecutableInfo} from './C2ExecutableInfo';
 import {C2TestInfo} from './C2TestInfo';
 import {resolveVariables} from './Helpers';
+import {QueueGraphNode} from './QueueGraph';
 
 export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly _testsEmitter =
@@ -29,6 +30,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private _isDebugging: boolean = false;
   private _isRunning: number = 0;
 
+  private _allTasks = new QueueGraphNode();
   private _allTests: C2AllTestSuiteInfo;
   private readonly _disposables: vscode.Disposable[] = [];
 
@@ -78,7 +80,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
     const config = this._getConfiguration();
     this._allTests = new C2AllTestSuiteInfo(
-        this._log, this._workspaceFolder, this._testsEmitter,
+        this._allTasks, this._log, this._workspaceFolder, this._testsEmitter,
         this._testStatesEmitter, this._variableToValue,
         this._getEnableSourceDecoration(config),
         this._getDefaultRngSeed(config),
@@ -106,29 +108,37 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return this._autorunEmitter.event;
   }
 
-  async load(): Promise<void> {
-    try {
-      this.cancel();
-      const config = this._getConfiguration();
+  load(): Promise<void> {
+    this.cancel();
+    const config = this._getConfiguration();
 
-      this._allTests.dispose();
+    this._allTests.dispose();
+    this._allTasks = new QueueGraphNode();
 
-      this._allTests = new C2AllTestSuiteInfo(
-          this._log, this._workspaceFolder, this._testsEmitter,
-          this._testStatesEmitter, this._variableToValue,
-          this._getEnableSourceDecoration(config),
-          this._getDefaultRngSeed(config),
-          this._getDefaultExecWatchTimeout(config));
+    this._allTests = new C2AllTestSuiteInfo(
+        this._allTasks, this._log, this._workspaceFolder, this._testsEmitter,
+        this._testStatesEmitter, this._variableToValue,
+        this._getEnableSourceDecoration(config),
+        this._getDefaultRngSeed(config),
+        this._getDefaultExecWatchTimeout(config));
 
-      this._testsEmitter.fire(<TestLoadStartedEvent>{type: 'started'});
+    this._testsEmitter.fire(<TestLoadStartedEvent>{type: 'started'});
 
-      await this._allTests.load(this._getExecutables(config, this._allTests));
-
-      this._testsEmitter.fire({type: 'finished', suite: this._allTests});
-    } catch (e) {
-      this._testsEmitter.fire(
-          {type: 'finished', suite: undefined, errorMessage: e.message});
-    }
+    return this._allTasks.then(() => {
+      return this._allTests.load(this._getExecutables(config, this._allTests))
+          .then(
+              () => {
+                this._testsEmitter.fire(
+                    {type: 'finished', suite: this._allTests});
+              },
+              (e: any) => {
+                this._testsEmitter.fire({
+                  type: 'finished',
+                  suite: undefined,
+                  errorMessage: e.toString()
+                });
+              });
+    });
   }
 
   cancel(): void {
@@ -145,12 +155,14 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       const always = () => {
         this._isRunning -= 1;
       };
-      return this._allTests
-          .run(tests, this._getWorkerMaxNumber(this._getConfiguration()))
-          .then(always, always);
+      return this._allTasks.then(() => {
+        return this._allTests
+            .run(tests, this._getWorkerMaxNumber(this._getConfiguration()))
+            .then(always, always);
+      });
     }
 
-    throw Error('Catch2 Test Adapter: Test(s) are currently being run.');
+    throw Error('Catch2 Test Adapter: Test(s) are currently doing something.');
   }
 
   async debug(tests: string[]): Promise<void> {
@@ -244,14 +256,16 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       this._isDebugging = false;
     };
 
-    await new Promise<void>((resolve, reject) => {
-      const subscription = vscode.debug.onDidTerminateDebugSession(session => {
-        if (currentSession != session) return;
-        console.info('Debug session ended');
-        resolve();
-        subscription.dispose();
-      });
-    }).then(always, always);
+    return new Promise<void>((resolve) => {
+             const subscription =
+                 vscode.debug.onDidTerminateDebugSession(session => {
+                   if (currentSession != session) return;
+                   console.info('Debug session ended');
+                   resolve();
+                   subscription.dispose();
+                 });
+           })
+        .then(always, always);
   }
 
   private _getConfiguration(): vscode.WorkspaceConfiguration {

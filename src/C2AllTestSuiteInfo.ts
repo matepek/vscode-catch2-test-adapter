@@ -12,6 +12,7 @@ import {C2ExecutableInfo} from './C2ExecutableInfo'
 import {C2TestInfo} from './C2TestInfo';
 import {C2TestSuiteInfo} from './C2TestSuiteInfo';
 import {generateUniqueId} from './IdGenerator';
+import {QueueGraphNode} from './QueueGraph';
 import {TaskPool} from './TaskPool';
 
 export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
@@ -20,8 +21,10 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly label: string = 'AllTests';
   readonly children: C2TestSuiteInfo[] = [];
   private readonly _executables: C2ExecutableInfo[] = [];
+  private _isDisposed = false;
 
   constructor(
+      private readonly _allTasks: QueueGraphNode,
       public readonly log: util.Log,
       public readonly workspaceFolder: vscode.WorkspaceFolder,
       public readonly testsEmitter:
@@ -38,7 +41,27 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   dispose() {
+    this._isDisposed = true;
     while (this._executables.length) this._executables.pop()!.dispose();
+  }
+
+  sendLoadEvents(task: (() => Promise<void>)) {
+    return this._allTasks.then(() => {
+      if (this._isDisposed) {
+        return task();
+      } else {
+        this.testsEmitter.fire({type: 'started'});
+        return task().then(
+            () => {
+              this.testsEmitter.fire({type: 'finished', suite: this});
+            },
+            (reason: any) => {
+              this.testsEmitter.fire({type: 'finished', suite: this});
+              this.log.warn(inspect(reason));
+              throw reason;
+            });
+      }
+    });
   }
 
   removeChild(child: C2TestSuiteInfo): boolean {

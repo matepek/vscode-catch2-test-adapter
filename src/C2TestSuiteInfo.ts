@@ -219,8 +219,15 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
                   'Parsing and processing test: ' + data.currentChild.label);
             }
           } else {
-            // TODO: we found a test case but there is no existing test info for
-            // it. this could easyly happen.
+            this.allTests
+                .sendLoadEvents(() => {
+                  return this.reloadChildren();
+                })
+                .then(
+                    () => {
+                        // TODO send event states: find newChild and parseXml
+                    });
+
             this.allTests.log.info('<TestCase> found without TestInfo.');
           }
 

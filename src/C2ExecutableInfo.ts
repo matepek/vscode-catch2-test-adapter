@@ -52,10 +52,14 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     let fileUris: vscode.Uri[] = [];
 
-    if (!isAbsolute) {
-      const relativePattern =
-          new vscode.RelativePattern(this._allTest.workspaceFolder, pattern);
-
+    if (!isAbsolute || isPartOfWs) {
+      let relativePattern: vscode.RelativePattern;
+      if (isAbsolute)
+        relativePattern = new vscode.RelativePattern(
+            this._allTest.workspaceFolder, relativeToWs);
+      else
+        relativePattern =
+            new vscode.RelativePattern(this._allTest.workspaceFolder, pattern);
       try {
         fileUris =
             await vscode.workspace.findFiles(relativePattern, undefined, 1000);
@@ -150,12 +154,10 @@ export class C2ExecutableInfo implements vscode.Disposable {
     }
 
     const isRunning = this._lastEventArrivedAt.get(uri.fsPath) !== undefined;
-    if (isRunning) {
-      this._lastEventArrivedAt.set(uri.fsPath, Date.now());
-      return;
-    }
 
     this._lastEventArrivedAt.set(uri.fsPath, Date.now());
+
+    if (isRunning) return;
 
     const x =
         (exists: boolean, timeout: number, delay: number): Promise<void> => {
@@ -174,20 +176,11 @@ export class C2ExecutableInfo implements vscode.Disposable {
                 {type: 'finished', suite: this._allTest});
             return Promise.resolve();
           } else if (exists) {
-            return Promise.resolve().then(() => {
-              this._allTest.testsEmitter.fire({type: 'started'});
-              return suite!.reloadChildren().then(
-                  () => {
-                    this._allTest.testsEmitter.fire(
-                        {type: 'finished', suite: this._allTest});
-                    this._lastEventArrivedAt.delete(uri.fsPath);
-                  },
-                  (err: any) => {
-                    this._allTest.testsEmitter.fire(
-                        {type: 'finished', suite: this._allTest});
-                    this._allTest.log.warn(inspect(err));
-                    return x(false, timeout, Math.min(delay * 2, 2000));
-                  });
+            return this._allTest.sendLoadEvents(() => {
+              this._lastEventArrivedAt.delete(uri.fsPath);
+              return suite!.reloadChildren().catch(() => {
+                return x(false, timeout, Math.min(delay * 2, 2000));
+              });
             });
           }
           return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
@@ -197,7 +190,6 @@ export class C2ExecutableInfo implements vscode.Disposable {
           });
         };
     // change event can arrive during debug session on osx (why?)
-    // if (!this.isDebugging) {
     x(false, this._allTest.execWatchTimeout, 64);
   }
 
