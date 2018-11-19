@@ -182,14 +182,15 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       const template =
           this._getDebugConfigurationTemplate(this._getConfiguration());
       let resolveDebugVariables: [string, any][] = this._variableToValue;
+      const args =
+          [testInfo.getEscapedTestName(), '--reporter', 'console', '--break'];
+
       resolveDebugVariables = resolveDebugVariables.concat([
-        ['${label}', testInfo.label], ['${exec}', testInfo.parent.execPath],
-        [
-          '${args}',
-          [testInfo.getEscapedTestName(), '--reporter', 'console', '--break']
-        ],
+        ['${label}', testInfo.label],
+        ['${exec}', testInfo.parent.execPath],
+        ['${args}', args],
         ['${cwd}', testInfo.parent.execOptions.cwd!],
-        ['${envObj}', testInfo.parent.execOptions.env!]
+        ['${envObj}', testInfo.parent.execOptions.env!],
       ]);
 
       if (template !== null) {
@@ -199,11 +200,21 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
             debug[prop] = resolveVariables(val, resolveDebugVariables);
           }
         }
-
         return debug;
-      } else {
-        // lets try to recognise existing extensions
-        vscode.extensions.getExtension('');
+      } else if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
+        debug['type'] = 'lldb';
+        debug['program'] = testInfo.parent.execPath;
+        debug['args'] = args;
+        debug['cwd'] = testInfo.parent.execOptions.cwd!;
+        debug['env'] = testInfo.parent.execOptions.env!;
+        return debug;
+      } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
+        debug['type'] = 'cppvsdbg';
+        debug['program'] = testInfo.parent.execPath;
+        debug['args'] = args;
+        debug['cwd'] = testInfo.parent.execOptions.cwd!;
+        debug['environment'] = [testInfo.parent.execOptions.env!];
+        return debug;
       }
 
       throw 'Catch2: For debug \'debugConfigTemplate\' should be set.';

@@ -145,16 +145,7 @@
             "object",
             "null"
           ],
-          "default": {
-            "type": "cppdbg",
-            "MIMode": "lldb",
-            "program": "${exec}",
-            "args": "${args}",
-            "cwd": "${cwd}",
-            "env": "${envObj}",
-            "stopAtEntry": false,
-            "externalConsole": true
-          },
+          "default": null,
           "scope": "resource"
         }
       }
