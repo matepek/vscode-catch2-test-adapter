@@ -8,7 +8,7 @@ import {inspect} from 'util';
 import {TestEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
-import {C2TestAdapter} from './C2TestAdapter';
+import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
 import {C2TestInfo} from './C2TestInfo';
 import * as c2fs from './FsWrapper';
 import {generateUniqueId} from './IdGenerator';
@@ -27,17 +27,18 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
   constructor(
       public readonly origLabel: string,
-      private readonly adapter: C2TestAdapter, public readonly execPath: string,
+      private readonly allTests: C2AllTestSuiteInfo,
+      public readonly execPath: string,
       public readonly execOptions: SpawnOptions) {
     this.label = origLabel;
     this.id = generateUniqueId();
   }
 
   createChildTest(
-      testName: string, description: string, tags: string[], file: string,
-      line: number): C2TestInfo {
+      id: string|undefined, testName: string, description: string,
+      tags: string[], file: string, line: number): C2TestInfo {
     const test =
-        new C2TestInfo(testName, description, tags, file, line - 1, this);
+        new C2TestInfo(id, testName, description, tags, file, line - 1, this);
 
     if (this.children.length == 0) {
       this.file = file;
@@ -96,7 +97,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       });
     }
 
-    this.adapter.testStatesEmitter.fire(
+    this.allTests.testStatesEmitter.fire(
         <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
 
     const execParams: string[] = [];
@@ -112,8 +113,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       for (let i = 0; i < this.children.length; i++) {
         const c = this.children[i];
         if (c.skipped) {
-          this.adapter.testStatesEmitter.fire(c.getStartEvent());
-          this.adapter.testStatesEmitter.fire(c.getSkippedEvent());
+          this.allTests.testStatesEmitter.fire(c.getStartEvent());
+          this.allTests.testStatesEmitter.fire(c.getSkippedEvent());
         }
       }
     }
@@ -122,7 +123,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     execParams.push('--durations')
     execParams.push('yes');
     {
-      const rng = this.adapter.getRngSeed();
+      const rng = this.allTests.rngSeed;
       if (rng != null) {
         execParams.push('--rng-seed')
         execParams.push(rng.toString());
@@ -148,7 +149,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
     const processChunk = (chunk: string) => {
       data.buffer = data.buffer + chunk;
-      let invariant = 9999;
+      let invariant = 99999;
       do {
         if (!data.inTestCase) {
           const b = data.buffer.indexOf('<TestCase');
@@ -164,7 +165,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           new xml2js.Parser({explicitArray: true})
               .parseString(m[0] + '</TestCase>', (err: any, result: any) => {
                 if (err) {
-                  this.adapter.log.error(err.toString());
+                  this.allTests.log.error(err.toString());
                   throw err;
                 } else {
                   name = result.TestCase.$.name;
@@ -186,9 +187,9 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
           if (data.currentChild !== undefined) {
             const ev = data.currentChild.getStartEvent();
-            this.adapter.testStatesEmitter.fire(ev);
+            this.allTests.testStatesEmitter.fire(ev);
           } else {
-            this.adapter.log.error('TestCase not found in children: ' + name);
+            this.allTests.log.error('TestCase not found in children: ' + name);
           }
 
           data.buffer = data.buffer.substr(b);
@@ -202,11 +203,11 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
               const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
                   data.buffer.substring(0, b + endTestCase.length),
                   data.rngSeed);
-              if (!this.adapter.getIsEnabledSourceDecoration())
+              if (!this.allTests.isEnabledSourceDecoration)
                 ev.decorations = undefined;
-              this.adapter.testStatesEmitter.fire(ev);
+              this.allTests.testStatesEmitter.fire(ev);
             } catch (e) {
-              this.adapter.log.error(
+              this.allTests.log.error(
                   'Parsing and processing test: ' + data.currentChild.label);
             }
           }
@@ -238,7 +239,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     const suiteFinally = () => {
       this.proc = undefined;
       taskPool.release();
-      this.adapter.testStatesEmitter.fire(
+      this.allTests.testStatesEmitter.fire(
           <TestSuiteEvent>{type: 'suite', suite: this, state: 'completed'});
     };
     return p.then(
@@ -247,7 +248,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         },
         (err: Error) => {
           if (data.inTestCase) {
-            this.adapter.testStatesEmitter.fire({
+            this.allTests.testStatesEmitter.fire({
               type: 'test',
               test: data.currentChild!,
               state: 'failed',
@@ -256,7 +257,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           }
           suiteFinally();
           try {
-            this.adapter.log.error(err.message);
+            this.allTests.log.error(err.message);
           } catch (e) {
           }
         });
@@ -279,14 +280,14 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
             let lines = r.stdout.split(/\r?\n/);
 
-            if (lines.length == 0) this.adapter.log.error('Empty test list.');
+            if (lines.length == 0) this.allTests.log.error('Empty test list.');
 
             while (lines[lines.length - 1].trim().length == 0) lines.pop();
 
             let i = 1;
             while (i < lines.length - 1) {
               if (lines[i][0] != ' ')
-                this.adapter.log.error(
+                this.allTests.log.error(
                     'Wrong test list output format: ' + lines.toString());
 
               const testNameFull = lines[i++].substr(2);
@@ -321,16 +322,17 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
               }
 
               const index = oldChildren.findIndex(
-                  (c: C2TestInfo): boolean => {return c.testNameFull ==
-                                               testNameFull});
+                  (c: C2TestInfo) => {return c.testNameFull == testNameFull});
               if (index != -1 &&
                   oldChildren[index].label ==
                       C2TestInfo.generateLabel(
                           testNameFull, description, tags)) {
-                this.children.push(oldChildren[index]);
+                this.createChildTest(
+                    oldChildren[index].id, testNameFull, description, tags,
+                    filePath, line);
               } else {
                 this.createChildTest(
-                    testNameFull, description, tags, filePath, line);
+                    undefined, testNameFull, description, tags, filePath, line);
               }
             }
           });

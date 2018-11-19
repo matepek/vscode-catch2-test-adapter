@@ -78,9 +78,6 @@ describe('C2TestAdapter.cpp', function() {
   before(async function() {
     this.timeout(82000);
 
-    await fse.remove(cppUri.fsPath);
-    await fse.mkdirp(cppUri.fsPath);
-
     if (!await c2fs.existsAsync(inCpp('../suite1.exe').fsPath))
       await compile(
           inCpp('../../../src/test/cpp/suite1.cpp'), inCpp('../suite1.exe'));
@@ -92,6 +89,11 @@ describe('C2TestAdapter.cpp', function() {
     if (!await c2fs.existsAsync(inCpp('../suite3.exe').fsPath))
       await compile(
           inCpp('../../../src/test/cpp/suite3.cpp'), inCpp('../suite3.exe'));
+  })
+
+  beforeEach(async function() {
+    await fse.remove(cppUri.fsPath);
+    await fse.mkdirp(cppUri.fsPath);
   })
 
   after(async function() {

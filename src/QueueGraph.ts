@@ -25,16 +25,24 @@ export class QueueGraphNode {
     this._count++;
 
     const previous = this._queue;
-    const current =
-        Promise.all(this._depends.map(v => v._queue))
-            .then(() => {
-              return previous.then(task);
-            })
-            .catch(taskErrorHandler ? taskErrorHandler : this._handleError)
-            .then((value: TResult1|PromiseLike<TResult1>) => {
-              this._count--;
-              return value;
-            });
+    const current = Promise.all(this._depends.map(v => v._queue))
+                        .then(() => {
+                          return previous.then(task);
+                        })
+                        .then(
+                            (value: TResult1|PromiseLike<TResult1>) => {
+                              this._count--;
+                              return value;
+                            },
+                            (reason: any) => {
+                              this._count--;
+                              if (taskErrorHandler)
+                                return taskErrorHandler(reason);
+                              else if (this._handleError)
+                                return this._handleError(reason);
+                              else
+                                throw reason;
+                            });
 
     this._queue = current.then(() => {});
 
@@ -45,7 +53,7 @@ export class QueueGraphNode {
     for (const dep of depends) {
       this._depends.push(dep);
     }
-    // TODO check recursion
+    // TODO check circular dependency
   }
 
   private _count: number = 0;
