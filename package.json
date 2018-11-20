@@ -87,7 +87,7 @@
             {
               "name": "${relPath} (${relDirpath}/)",
               "path": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
-              "cwd": "${absDirname}",
+              "cwd": "${absDirpath}",
               "env": {
                 "C2TESTEXECUTABLEPATH": "${absPath}"
               }
@@ -143,6 +143,21 @@
           "description": "Set the necessary debug configuraitons and then the debug button will work.",
           "type": [
             "object",
+            "null"
+          ],
+          "default": null,
+          "scope": "resource"
+        },
+        "catch2TestExplorer.logpanel": {
+          "description": "Create a new output channel and write the log messages there.",
+          "type": "boolean",
+          "default": false,
+          "scope": "resource"
+        },
+        "catch2TestExplorer.logfile": {
+          "description": "Write the log message into the given file.",
+          "type": [
+            "string",
             "null"
           ],
           "default": null,

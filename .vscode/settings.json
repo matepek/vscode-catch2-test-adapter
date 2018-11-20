@@ -16,5 +16,5 @@
   "files.associations": {
     "*.txt": "cpp"
   },
-  "editor.formatOnSaveTimeout": 1750
+  "editor.formatOnSaveTimeout": 3000
 }

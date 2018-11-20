@@ -96,6 +96,12 @@ describe('C2TestAdapter.cpp', function() {
     await fse.mkdirp(cppUri.fsPath);
   })
 
+  afterEach(async function() {
+    disposeAdapterAndSubscribers();
+    await updateConfig('defaultWatchTimeoutSec', undefined);
+    await updateConfig('executables', undefined);
+  })
+
   after(async function() {
     await fse.remove(cppUri.fsPath);
   })
@@ -104,7 +110,7 @@ describe('C2TestAdapter.cpp', function() {
       test: Mocha.Context, condition: Function,
       timeout: number = 1000): Promise<void> {
     const start = Date.now();
-    let c;
+    let c: boolean;
     while (!(c = await condition()) &&
            (Date.now() - start < timeout || !test.enableTimeouts()))
       await promisify(setTimeout)(10);
@@ -198,10 +204,6 @@ describe('C2TestAdapter.cpp', function() {
   }
 
   context('example1', function() {
-    afterEach(async function() {
-      await fse.remove(cppUri.fsPath);
-    })
-
     it('should be found and run withouth error', async function() {
       if (process.env['TRAVIS'] == 'true') this.skip();
       this.timeout(5000);
@@ -225,9 +227,6 @@ describe('C2TestAdapter.cpp', function() {
       await adapter.run([root.id]);
       assert.strictEqual(
           testStatesEvents.length, eventCount + 86, inspect(testStatesEvents));
-
-      disposeAdapterAndSubscribers();
-      await updateConfig('executables', undefined);
     })
 
     it('should be notified by watcher', async function() {
@@ -274,10 +273,6 @@ describe('C2TestAdapter.cpp', function() {
       const eventCount = testStatesEvents.length;
       await adapter.run([root.id]);
       assert.strictEqual(testStatesEvents.length, eventCount + 16);
-
-      disposeAdapterAndSubscribers();
-      await updateConfig('defaultWatchTimeoutSec', undefined);
-      await updateConfig('executables', undefined);
     })
   })
 })
