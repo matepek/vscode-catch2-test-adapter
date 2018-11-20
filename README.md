@@ -77,7 +77,7 @@ Examples:
 "catch2TestExplorer.executables": {
 	"name": "${relName} (${relDirname}/)",
 	"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
-	"cwd": "${absDirname}",
+	"cwd": "${absDirpath}",
 	"env": {
 		"ExampleENV1": "You can use variables here too, like ${absName}"
 	}

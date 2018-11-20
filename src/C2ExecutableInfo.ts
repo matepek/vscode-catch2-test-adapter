@@ -132,7 +132,11 @@ export class C2ExecutableInfo implements vscode.Disposable {
         ['${base3Filename}', base3Filename],
       ];
       resolvedName = resolveVariables(this.name, varToValue);
+      if (resolvedName.match(/\$\{.*\}/))
+        this._allTest.log.warn('Possibly unresolved variable: ' + resolvedName);
       resolvedCwd = path.normalize(resolveVariables(this.cwd, varToValue));
+      if (resolvedCwd.match(/\$\{.*\}/))
+        this._allTest.log.warn('Possibly unresolved variable: ' + resolvedCwd);
       resolvedEnv = resolveVariables(this.env, varToValue);
     } catch (e) {
       this._allTest.log.error(inspect([e, this]));

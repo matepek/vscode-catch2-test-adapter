@@ -87,7 +87,7 @@
             {
               "name": "${relPath} (${relDirpath}/)",
               "path": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
-              "cwd": "${absDirname}",
+              "cwd": "${absDirpath}",
               "env": {
                 "C2TESTEXECUTABLEPATH": "${absPath}"
               }
