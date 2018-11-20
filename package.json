@@ -57,7 +57,8 @@
     "@types/fs-extra": "^5.0.4",
     "@types/mocha": "^5.2.5",
     "@types/request-promise": "4.1.42",
-    "@types/sinon": "5.0.5",
+    "@types/sinon": "^5.0.7",
+    "@types/node": "^10.12.9",
     "@types/xml2js": "^0.4.3",
     "deep-equal": "^1.0.1",
     "fs-extra": "^7.0.1",
@@ -146,6 +147,12 @@
             "null"
           ],
           "default": null,
+          "scope": "resource"
+        },
+        "catch2TestExplorer.debugBreakOnFailure": {
+          "description": "Debugger breaks on failure while debugging the test. This is a Catch2 parameter: --break",
+          "type": "boolean",
+          "default": true,
           "scope": "resource"
         },
         "catch2TestExplorer.logpanel": {

@@ -1,10 +1,4 @@
-## **Warning**: Version 2 has been released: **API has been changed**.
-
-Update your settings! ([See changelog](CHANGELOG.md) or [configuration below](#Configuration).)
-
----
-
-## Catch2 Test Explorer for Visual Studio Code
+# Catch2 Test Explorer for Visual Studio Code
 
 [![Build Status](https://travis-ci.org/matepek/vscode-catch2-test-adapter.svg?branch=master)](https://travis-ci.org/matepek/vscode-catch2-test-adapter)
 [![Build status](https://ci.appveyor.com/api/projects/status/p6uuyg21cwxcnlv9/branch/master?svg=true)](https://ci.appveyor.com/project/matepek/vscode-catch2-test-adapter/branch/master)
@@ -28,6 +22,7 @@ This extension allows you to run your [Catch2 tests](https://github.com/catchorg
 | `catch2TestExplorer.workerMaxNumber`        | The variable maximize the number of the parallel test execution.                                                                                                             |
 | `catch2TestExplorer.enableSourceDecoration` | Sets the source code decorations: Errored lines will be highlited.                                                                                                           |
 | `catch2TestExplorer.debugConfigTemplate`    | Set the necessary debug configuraitons and the debug button will work. Details: [below](#catch2TestExplorer.debugConfigTemplate)                                             |
+| `catch2TestExplorer.debugBreakOnFailure`    | Debugger breaks on failure while debugging the test. This is a Catch2 parameter: --break                                                                                     |
 | `testExplorer.onStart`                      | (This is part of the [dependency extension](https://github.com/hbenl/vscode-test-explorer#configuration)'s settings.)                                                        |
 | `testExplorer.onReload`                     | (This is part of the [dependency extension](https://github.com/hbenl/vscode-test-explorer#configuration)'s settings.)                                                        |
 
@@ -60,7 +55,7 @@ Variables which can be used in `name`, `cwd` and `env` of `executables`:
 | `${ext2Filename}`       | Filename's second level extension. ("d/a.b.c" => ".b")                          |
 | `${base3Filename}`      | Filename without extension ("d/a.b.c" => "a")                                   |
 | `${ext3Filename}`       | Filename's second level extension. ("d/a.b.c" => "")                            |
-| `${workspaceDirectory}` | (You can only guess one.)                                                       |
+| `${workspaceDirectory}` | (You can only guess once.)                                                      |
 | `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                |
 
 Examples:

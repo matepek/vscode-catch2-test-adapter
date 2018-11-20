@@ -206,7 +206,7 @@ describe('C2TestAdapter.cpp', function() {
   context('example1', function() {
     it('should be found and run withouth error', async function() {
       if (process.env['TRAVIS'] == 'true') this.skip();
-      this.timeout(5000);
+      this.timeout(8000);
       this.slow(2000);
       await updateConfig(
           'executables', [{
@@ -231,7 +231,7 @@ describe('C2TestAdapter.cpp', function() {
 
     it('should be notified by watcher', async function() {
       if (process.env['TRAVIS'] == 'true') this.skip();
-      this.timeout(5000);
+      this.timeout(8000);
       this.slow(4000);
       await updateConfig(
           'executables', [{
@@ -241,13 +241,21 @@ describe('C2TestAdapter.cpp', function() {
           }]);
 
       adapter = createAdapterAndSubscribe();
+      let autorunCounter = 0;
+      adapter.autorun(() => {
+        ++autorunCounter;
+      });
       const root = await load(adapter);
       assert.strictEqual(root.children.length, 0);
+      assert.strictEqual(autorunCounter, 0);
 
       await copy('../suite1.exe', 'out/suite1.exe');
 
       await waitFor(this, () => {
         return root.children.length == 1;
+      }, 2000);
+      await waitFor(this, () => {
+        return autorunCounter == 1;
       }, 2000);
 
       await copy('../suite2.exe', 'out/sub/suite2X.exe');
@@ -255,11 +263,17 @@ describe('C2TestAdapter.cpp', function() {
       await waitFor(this, () => {
         return root.children.length == 2;
       }, 2000);
+      await waitFor(this, () => {
+        return autorunCounter == 2;
+      }, 2000);
 
       await copy('../suite2.exe', 'out/sub/suite2.exe');
 
       await waitFor(this, () => {
         return root.children.length == 3;
+      }, 2000);
+      await waitFor(this, () => {
+        return autorunCounter == 3;
       }, 2000);
 
       await updateConfig('defaultWatchTimeoutSec', 1);
@@ -269,10 +283,12 @@ describe('C2TestAdapter.cpp', function() {
       await waitFor(this, () => {
         return root.children.length == 2;
       }, 3100);
+      assert.strictEqual(autorunCounter, 3);
 
       const eventCount = testStatesEvents.length;
       await adapter.run([root.id]);
       assert.strictEqual(testStatesEvents.length, eventCount + 16);
+      assert.strictEqual(autorunCounter, 3);
     })
   })
 })
