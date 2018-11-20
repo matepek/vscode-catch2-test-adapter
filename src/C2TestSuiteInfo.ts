@@ -5,7 +5,7 @@
 import {ChildProcess, spawn, SpawnOptions} from 'child_process';
 import * as path from 'path';
 import {inspect} from 'util';
-import {TestEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
+import {TestEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
@@ -105,8 +105,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       });
     }
 
-    this.allTests.testStatesEmitter.fire(
-        <TestSuiteEvent>{type: 'suite', suite: this, state: 'running'});
+    this.allTests.sendTestStateEvent(
+        {type: 'suite', suite: this, state: 'running'});
 
     const execParams: string[] = [];
     if (childrenToRun != 'all') {
@@ -121,8 +121,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       for (let i = 0; i < this.children.length; i++) {
         const c = this.children[i];
         if (c.skipped) {
-          this.allTests.testStatesEmitter.fire(c.getStartEvent());
-          this.allTests.testStatesEmitter.fire(c.getSkippedEvent());
+          this.allTests.sendTestStateEvent(c.getStartEvent());
+          this.allTests.sendTestStateEvent(c.getSkippedEvent());
         }
       }
     }
@@ -195,7 +195,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
           if (data.currentChild !== undefined) {
             const ev = data.currentChild.getStartEvent();
-            this.allTests.testStatesEmitter.fire(ev);
+            this.allTests.sendTestStateEvent(ev);
           } else {
             this.allTests.log.error('TestCase not found in children: ' + name);
           }
@@ -213,21 +213,16 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
                   data.rngSeed);
               if (!this.allTests.isEnabledSourceDecoration)
                 ev.decorations = undefined;
-              this.allTests.testStatesEmitter.fire(ev);
+              this.allTests.sendTestStateEvent(ev);
             } catch (e) {
               this.allTests.log.error(
                   'Parsing and processing test: ' + data.currentChild.label);
             }
           } else {
-            this.allTests
-                .sendLoadEvents(() => {
-                  return this.reloadChildren();
-                })
-                .then(
-                    () => {
-                        // TODO send event states: find newChild and parseXml
-                    });
-
+            this.allTests.sendLoadEvents(() => {
+              return this.reloadChildren();
+            });
+            //.then... // TODO send event state: find newChild and parseXml
             this.allTests.log.info('<TestCase> found without TestInfo.');
           }
 
@@ -258,8 +253,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     const suiteFinally = () => {
       this.proc = undefined;
       taskPool.release();
-      this.allTests.testStatesEmitter.fire(
-          <TestSuiteEvent>{type: 'suite', suite: this, state: 'completed'});
+      this.allTests.sendTestStateEvent(
+          {type: 'suite', suite: this, state: 'completed'});
     };
     return p.then(
         () => {
@@ -267,7 +262,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         },
         (err: Error) => {
           if (data.inTestCase) {
-            this.allTests.testStatesEmitter.fire({
+            this.allTests.sendTestStateEvent({
               type: 'test',
               test: data.currentChild!,
               state: 'failed',

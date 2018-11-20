@@ -60,7 +60,7 @@ Variables which can be used in `name`, `cwd` and `env` of `executables`:
 | `${ext2Filename}`       | Filename's second level extension. ("d/a.b.c" => ".b")                          |
 | `${base3Filename}`      | Filename without extension ("d/a.b.c" => "a")                                   |
 | `${ext3Filename}`       | Filename's second level extension. ("d/a.b.c" => "")                            |
-| `${workspaceDirectory}` | (You can only guess one.)                                                       |
+| `${workspaceDirectory}` | (You can only guess once.)                                                      |
 | `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                |
 
 Examples:

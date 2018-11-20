@@ -24,12 +24,13 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   private _isDisposed = false;
 
   constructor(
-      private readonly _allTasks: QueueGraphNode,
+      public readonly allTasks: QueueGraphNode,
       public readonly log: util.Log,
       public readonly workspaceFolder: vscode.WorkspaceFolder,
-      public readonly testsEmitter:
+      private readonly _loadFinishedEmitter: vscode.EventEmitter<void>,
+      private readonly _testsEmitter:
           vscode.EventEmitter<TestLoadStartedEvent|TestLoadFinishedEvent>,
-      public readonly testStatesEmitter:
+      private readonly _testStatesEmitter:
           vscode.EventEmitter<TestRunStartedEvent|TestRunFinishedEvent|
                               TestSuiteEvent|TestEvent>,
       public readonly variableToValue: [string, string][],
@@ -46,22 +47,26 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   sendLoadEvents(task: (() => Promise<void>)) {
-    return this._allTasks.then(() => {
+    return this.allTasks.then(() => {
       if (this._isDisposed) {
         return task();
       } else {
-        this.testsEmitter.fire({type: 'started'});
+        this._testsEmitter.fire({type: 'started'});
         return task().then(
             () => {
-              this.testsEmitter.fire({type: 'finished', suite: this});
+              this._loadFinishedEmitter.fire();
             },
             (reason: any) => {
-              this.testsEmitter.fire({type: 'finished', suite: this});
+              this._loadFinishedEmitter.fire();
               this.log.warn(inspect(reason));
               throw reason;
             });
       }
     });
+  }
+
+  sendTestStateEvent(ev: TestSuiteEvent|TestEvent) {
+    this._testStatesEmitter.fire(ev);
   }
 
   removeChild(child: C2TestSuiteInfo): boolean {
@@ -129,7 +134,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   run(tests: string[], workerMaxNumber: number): Promise<void> {
-    this.testStatesEmitter.fire(
+    this._testStatesEmitter.fire(
         <TestRunStartedEvent>{type: 'started', tests: tests});
 
     const taskPool = new TaskPool(workerMaxNumber);
@@ -155,7 +160,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     }
 
     const always = () => {
-      this.testStatesEmitter.fire(<TestRunFinishedEvent>{type: 'finished'});
+      this._testStatesEmitter.fire(<TestRunFinishedEvent>{type: 'finished'});
     };
 
     return Promise.all(ps).then(always, always);

@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.3] - 2018-11-20
 
-## Fixed
+### Fixed
 
-- It reload suite if it finds any new tests.
-- A bug in package.json. It couldn't load the tests.
+- It reloads suite if it finds any new tests.
+- A bug in package.json. It couldn't load the tests by default.
 
 ## [2.0.2] - 2018-11-19
 

@@ -1321,6 +1321,7 @@ describe('C2TestAdapter', function() {
     })
 
     specify('arriving <TestCase> for missing TestInfo', async function() {
+      this.slow(500);
       await updateConfig('executables', example1.suite1.execPath);
 
       const adapter = createAdapterAndSubscribe();
