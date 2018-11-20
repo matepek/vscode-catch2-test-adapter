@@ -185,7 +185,8 @@ describe('C2TestAdapter', function() {
     sinonSandbox.restore();
   })
 
-  beforeEach(function reset() {
+  beforeEach(function() {
+    this.timeout(6000);
     adapter = undefined;
 
     fse.removeSync(dotVscodePath);
@@ -203,7 +204,8 @@ describe('C2TestAdapter', function() {
     return resetConfig();
   })
 
-  afterEach(async function() {
+  afterEach(function() {
+    this.timeout(6000);
     disposeAdapterAndSubscribers();
   })
 
