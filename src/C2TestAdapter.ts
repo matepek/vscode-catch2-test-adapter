@@ -87,7 +87,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this._allTests = new C2AllTestSuiteInfo(
         this._allTasks, this._log, this._workspaceFolder,
         this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
-        this._variableToValue, this._getEnableSourceDecoration(config),
+        this._autorunEmitter, this._variableToValue,
+        this._getEnableSourceDecoration(config),
         this._getDefaultRngSeed(config),
         this._getDefaultExecWatchTimeout(config));
   }
@@ -123,7 +124,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this._allTests = new C2AllTestSuiteInfo(
         this._allTasks, this._log, this._workspaceFolder,
         this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
-        this._variableToValue, this._getEnableSourceDecoration(config),
+        this._autorunEmitter, this._variableToValue,
+        this._getEnableSourceDecoration(config),
         this._getDefaultRngSeed(config),
         this._getDefaultExecWatchTimeout(config));
 

@@ -1459,8 +1459,8 @@ describe('C2TestAdapter', function() {
         async function() {
           const watchTimeout = 5;
           await updateConfig('defaultWatchTimeoutSec', watchTimeout);
-          this.timeout(watchTimeout * 1000 + 5500 /* because of 'delay' */);
-          this.slow(watchTimeout * 1000 + 2500 /* because of 'delay' */);
+          this.timeout(watchTimeout * 1000 + 6500 /* because of 'delay' */);
+          this.slow(watchTimeout * 1000 + 3500 /* because of 'delay' */);
           const execPath2CopyPath =
               path.join(workspaceFolderUri.fsPath, 'execPath2Copy');
 
