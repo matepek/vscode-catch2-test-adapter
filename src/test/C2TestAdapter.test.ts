@@ -2,9 +2,9 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-const child_process = require('child_process');
 const deepStrictEqual = require('deep-equal');
 
+import * as child_process from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as fse from 'fs-extra';
@@ -58,11 +58,6 @@ describe('C2TestAdapter', function() {
   let adapter: C2TestAdapter|undefined;
   let testsEventsConnection: vscode.Disposable|undefined;
   let testStatesEventsConnection: vscode.Disposable|undefined;
-
-  let spawnStub: sinon.SinonStub;
-  let vsfsWatchStub: sinon.SinonStub;
-  let fsStatStub: sinon.SinonStub;
-  let vsFindFilesStub: sinon.SinonStub;
 
   function resetConfig(): Thenable<void> {
     const packageJson = fse.readJSONSync(
@@ -167,14 +162,23 @@ describe('C2TestAdapter', function() {
     testsEvents = [];
   }
 
+  let spawnStub: sinon.SinonStub<any[], any>;
+  let vsfsWatchStub: sinon.SinonStub<any[], any>;
+  let fsStatStub: sinon.SinonStub<any[], any>;
+  let vsFindFilesStub: sinon.SinonStub<
+      [vscode.GlobPattern | sinon.SinonMatcher], Thenable<vscode.Uri[]>>;
+
   before(function() {
-    spawnStub = sinonSandbox.stub(child_process, 'spawn').named('spawnStub');
+    spawnStub =
+        <any>sinonSandbox.stub(child_process, 'spawn').named('spawnStub');
     vsfsWatchStub =
-        sinonSandbox.stub(vscode.workspace, 'createFileSystemWatcher')
+        <any>sinonSandbox.stub(vscode.workspace, 'createFileSystemWatcher')
             .named('vscode.createFileSystemWatcher');
-    fsStatStub = sinonSandbox.stub(fs, 'stat').named('fsStat');
-    vsFindFilesStub = sinonSandbox.stub(vscode.workspace, 'findFiles')
-                          .named('vsFindFilesStub');
+    fsStatStub = <any>sinonSandbox.stub(fs, 'stat').named('fsStat');
+    vsFindFilesStub =
+        <sinon.SinonStub<[vscode.GlobPattern], Thenable<vscode.Uri[]>>>
+            sinonSandbox.stub(vscode.workspace, 'findFiles')
+                .named('vsFindFilesStub');
   })
 
   after(function() {
@@ -335,9 +339,11 @@ describe('C2TestAdapter', function() {
 
       dirContent.forEach((v: vscode.Uri[], k: string) => {
         assert.equal(workspaceFolderUri.fsPath, k);
-        vsFindFilesStub.withArgs(matchRelativePattern(k)).returns(v);
+        vsFindFilesStub.withArgs(matchRelativePattern(k)).resolves(v);
         for (const p of v) {
-          vsFindFilesStub.withArgs(matchRelativePattern(p.fsPath)).returns([p]);
+          vsFindFilesStub.withArgs(matchRelativePattern(p.fsPath)).resolves([
+            p
+          ]);
         }
       });
     })
@@ -905,12 +911,13 @@ describe('C2TestAdapter', function() {
           // since taskQueue/allTasks has benn added it works differently, so it
           // wont test anything really, but i dont want to delete it either
           await loadAdapterAndAssert();
-          let spyKill1: sinon.SinonSpy;
-          let spyKill2: sinon.SinonSpy;
+          let spyKill1: sinon.SinonSpy<never, void>;
+          let spyKill2: sinon.SinonSpy<never, void>;
           {
             const spawnEvent =
                 new ChildProcessStub(example1.suite1.outputs[2][1]);
-            spyKill1 = sinon.spy(spawnEvent, 'kill');
+            spyKill1 =
+                <sinon.SinonSpy<never, void>>sinon.spy(spawnEvent, 'kill');
             const withArgs = spawnStub.withArgs(
                 example1.suite1.execPath, example1.suite1.outputs[2][0]);
             withArgs.onCall(withArgs.callCount).returns(spawnEvent);
@@ -918,7 +925,8 @@ describe('C2TestAdapter', function() {
           {
             const spawnEvent =
                 new ChildProcessStub(example1.suite2.outputs[2][1]);
-            spyKill2 = sinon.spy(spawnEvent, 'kill');
+            spyKill2 =
+                <sinon.SinonSpy<never, void>>sinon.spy(spawnEvent, 'kill');
             const withArgs = spawnStub.withArgs(
                 example1.suite2.execPath, example1.suite2.outputs[2][0]);
             withArgs.onCall(withArgs.callCount).returns(spawnEvent);
@@ -958,12 +966,13 @@ describe('C2TestAdapter', function() {
 
         it('cancel after run finished', async function() {
           await loadAdapterAndAssert();
-          let spyKill1: sinon.SinonSpy;
-          let spyKill2: sinon.SinonSpy;
+          let spyKill1: sinon.SinonSpy<never, void>;
+          let spyKill2: sinon.SinonSpy<never, void>;
           {
             const spawnEvent =
                 new ChildProcessStub(example1.suite1.outputs[2][1]);
-            spyKill1 = sinon.spy(spawnEvent, 'kill');
+            spyKill1 =
+                <sinon.SinonSpy<never, void>>sinon.spy(spawnEvent, 'kill');
             const withArgs = spawnStub.withArgs(
                 example1.suite1.execPath, example1.suite1.outputs[2][0]);
             withArgs.onCall(withArgs.callCount).returns(spawnEvent);
@@ -971,7 +980,8 @@ describe('C2TestAdapter', function() {
           {
             const spawnEvent =
                 new ChildProcessStub(example1.suite2.outputs[2][1]);
-            spyKill2 = sinon.spy(spawnEvent, 'kill');
+            spyKill2 =
+                <sinon.SinonSpy<never, void>>sinon.spy(spawnEvent, 'kill');
             const withArgs = spawnStub.withArgs(
                 example1.suite2.execPath, example1.suite2.outputs[2][0]);
             withArgs.onCall(withArgs.callCount).returns(spawnEvent);
@@ -1217,7 +1227,7 @@ describe('C2TestAdapter', function() {
           vsFindFilesStub
               .withArgs(matchRelativePattern(
                   path.join(workspaceFolderUri.fsPath, 'execPath{1,2}')))
-              .returns([
+              .resolves([
                 vscode.Uri.file(example1.suite1.execPath),
                 vscode.Uri.file(example1.suite2.execPath),
               ]);
@@ -1411,7 +1421,7 @@ describe('C2TestAdapter', function() {
               .callsFake(handleCreateWatcherCb);
 
           vsFindFilesStub.withArgs(matchRelativePattern(execPath2CopyPath))
-              .returns([vscode.Uri.file(execPath2CopyPath)]);
+              .resolves([vscode.Uri.file(execPath2CopyPath)]);
 
           await updateConfig('executables', ['execPath1', 'execPath2Copy']);
           adapter = createAdapterAndSubscribe();
@@ -1478,7 +1488,7 @@ describe('C2TestAdapter', function() {
               .callsFake(handleCreateWatcherCb);
 
           vsFindFilesStub.withArgs(matchRelativePattern(execPath2CopyPath))
-              .returns([vscode.Uri.file(execPath2CopyPath)]);
+              .resolves([vscode.Uri.file(execPath2CopyPath)]);
 
           await updateConfig('executables', ['execPath1', 'execPath2Copy']);
           adapter = createAdapterAndSubscribe();
@@ -1578,7 +1588,7 @@ describe('C2TestAdapter', function() {
           .callsFake(handleCreateWatcherCb);
 
       vsFindFilesStub.withArgs(matchRelativePattern(execPath2CopyPath))
-          .returns([vscode.Uri.file(execPath2CopyPath)]);
+          .resolves([vscode.Uri.file(execPath2CopyPath)]);
 
       adapter = createAdapterAndSubscribe();
 
