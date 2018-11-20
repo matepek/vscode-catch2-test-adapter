@@ -153,7 +153,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   run(tests: string[]): Promise<void> {
     if (this._allTasks.size > 0) {
       this._log.info(__filename + 'run is busy');
-      throw 'Catch2 is busy. Try it again now or a slightly later.';
+      throw 'Catch2 is busy. Try it again a bit later.';
     }
 
     return this._allTasks.then(() => {
@@ -165,7 +165,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   debug(tests: string[]): Promise<void> {
     if (this._allTasks.size > 0) {
       this._log.info(__filename + 'debug is busy');
-      throw 'Catch2 is busy. Try it again now or a slightly later.';
+      throw 'Catch2 is busy. Try it again a bit later.';
     }
 
     this._log.info('Debug...');
@@ -190,11 +190,11 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         type: ''
       };
 
-      const template =
-          this._getDebugConfigurationTemplate(this._getConfiguration());
+      const config = this._getConfiguration();
+      const template = this._getDebugConfigurationTemplate(config);
       let resolveDebugVariables: [string, any][] = this._variableToValue;
-      const args =
-          [testInfo.getEscapedTestName(), '--reporter', 'console', '--break'];
+      const args = [testInfo.getEscapedTestName(), '--reporter', 'console'];
+      if (this._getDebugBreakOnFailure(config)) args.push('--break');
 
       resolveDebugVariables = resolveDebugVariables.concat([
         ['${label}', testInfo.label],
@@ -281,6 +281,11 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       }
     }
     return result;
+  }
+
+  private _getDebugBreakOnFailure(config: vscode.WorkspaceConfiguration):
+      boolean {
+    return config.get<boolean>('debugBreakOnFailure', true);
   }
 
   private _getGlobalAndDefaultEnvironmentVariables(

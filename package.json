@@ -148,6 +148,12 @@
           "default": null,
           "scope": "resource"
         },
+        "catch2TestExplorer.debugBreakOnFailure": {
+          "description": "Debugger breaks on failure while debugging the test. This is a Catch2 parameter: --break",
+          "type": "boolean",
+          "default": true,
+          "scope": "resource"
+        },
         "catch2TestExplorer.logpanel": {
           "description": "Create a new output channel and write the log messages there.",
           "type": "boolean",

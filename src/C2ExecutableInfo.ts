@@ -163,37 +163,36 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     if (isRunning) return;
 
-    const x =
-        (exists: boolean, timeout: number, delay: number): Promise<void> => {
-          let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
-          if (lastEventArrivedAt === undefined) {
-            this._allTest.log.error('assert in ' + __filename);
-            debugger;
-            return Promise.resolve();
-          }
-          if (Date.now() - lastEventArrivedAt! > timeout) {
-            return this._allTest.sendLoadEvents(() => {
-              this._lastEventArrivedAt.delete(uri.fsPath);
-              this._executables.delete(uri.fsPath);
-              this._allTest.removeChild(suite!);
-              return Promise.resolve();
-            });
-          } else if (exists) {
-            return this._allTest.sendLoadEvents(() => {
-              this._lastEventArrivedAt.delete(uri.fsPath);
-              return suite!.reloadChildren().catch(() => {
-                return x(false, timeout, Math.min(delay * 2, 2000));
-              });
-            });
-          }
-          return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
-            return c2fs.existsAsync(uri.fsPath).then((exists: boolean) => {
-              return x(exists, timeout, Math.min(delay * 2, 2000));
-            });
+    const x = (exists: boolean, delay: number): Promise<void> => {
+      let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
+      if (lastEventArrivedAt === undefined) {
+        this._allTest.log.error('assert in ' + __filename);
+        debugger;
+        return Promise.resolve();
+      }
+      if (Date.now() - lastEventArrivedAt! > this._allTest.execWatchTimeout) {
+        return this._allTest.sendLoadEvents(() => {
+          this._lastEventArrivedAt.delete(uri.fsPath);
+          this._executables.delete(uri.fsPath);
+          this._allTest.removeChild(suite!);
+          return Promise.resolve();
+        });
+      } else if (exists) {
+        return this._allTest.sendLoadEvents(() => {
+          this._lastEventArrivedAt.delete(uri.fsPath);
+          return suite!.reloadChildren().catch(() => {
+            return x(false, Math.min(delay * 2, 2000));
           });
-        };
+        });
+      }
+      return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
+        return c2fs.existsAsync(uri.fsPath).then((exists: boolean) => {
+          return x(exists, Math.min(delay * 2, 2000));
+        });
+      });
+    };
     // change event can arrive during debug session on osx (why?)
-    x(false, this._allTest.execWatchTimeout, 64);
+    x(false, 64);
   }
 
   private _handleCreate(uri: vscode.Uri) {

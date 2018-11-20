@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0]
+
+### Added
+
+- `catch2TestExplorer.debugBreakOnFailure` option. It is true by default.
+
+### Fixed
+
+Performance and stability improvements.
+
 ## [2.0.3] - 2018-11-20
 
 ### Fixed
