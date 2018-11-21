@@ -237,7 +237,16 @@ export class C2ExecutableInfo implements vscode.Disposable {
   private _verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
     return c2fs.spawnAsync(path, ['--help'])
         .then(res => {
-          return res.stdout.indexOf('Catch v2.') != -1;
+          const catch2 = res.stdout.match(/Catch (v2[^ ]*)/);
+          if (catch2 == undefined) {
+            this._allTests.log.info(
+                '_verifyIsCatch2TestExecutable: ' + path +
+                ': not a Catch2 executable');
+            return false;
+          }
+          this._allTests.log.info(
+              '_verifyIsCatch2TestExecutable: ' + path + ': ' + catch2[0]);
+          return true;
         })
         .catch(e => {
           this._allTests.log.error(inspect(e));

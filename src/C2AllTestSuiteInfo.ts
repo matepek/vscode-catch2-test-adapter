@@ -18,7 +18,7 @@ import {TaskPool} from './TaskPool';
 export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly type: 'suite' = 'suite';
   readonly id: string;
-  readonly label: string = 'AllTests';
+  readonly label: string = 'Catch2 Test Explorer (matepek)';
   readonly children: C2TestSuiteInfo[] = [];
   private readonly _executables: C2ExecutableInfo[] = [];
   private _isDisposed = false;

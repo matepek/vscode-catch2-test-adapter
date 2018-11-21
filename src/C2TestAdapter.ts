@@ -38,6 +38,11 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       private readonly _workspaceFolder: vscode.WorkspaceFolder,
       private readonly _log: util.Log,
   ) {
+    this._log.info(
+        'info: ' + inspect([
+          process.platform, process.version, process.versions, vscode.version
+        ]));
+
     this._disposables.push(this._testsEmitter);
     this._disposables.push(this._testStatesEmitter);
     this._disposables.push(this._autorunEmitter);

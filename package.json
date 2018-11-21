@@ -29,7 +29,7 @@
   "scripts": {
     "postinstall": "node ./node_modules/vscode/bin/install",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
-    "clean": "rimraf out",
+    "clean": "rimraf out node_modules vscode-catch2-test-adapter-*.vsix",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "rebuild": "npm run clean && npm run build",
