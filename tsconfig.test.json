@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.production.json",
+  "include": ["src/main.ts", "src/repo_scripts/*.ts", "src/test/**/*.ts"]
+}

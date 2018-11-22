@@ -24,6 +24,8 @@ before_install:
     fi
 
 install:
+  - npm install --production
+  - npm run compile-production
   - npm install
   - npm audit
   - npm run compile
