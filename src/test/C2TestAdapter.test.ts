@@ -186,7 +186,7 @@ describe('C2TestAdapter', function() {
   })
 
   beforeEach(function() {
-    this.timeout(6000);
+    this.timeout(5000);
     adapter = undefined;
 
     fse.removeSync(dotVscodePath);
@@ -205,7 +205,7 @@ describe('C2TestAdapter', function() {
   })
 
   afterEach(function() {
-    this.timeout(6000);
+    this.timeout(5000);
     disposeAdapterAndSubscribers();
   })
 
@@ -215,6 +215,7 @@ describe('C2TestAdapter', function() {
     let adapter: C2TestAdapter;
 
     beforeEach(function() {
+      this.timeout(5000);
       adapter = createAdapterAndSubscribe();
       assert.deepStrictEqual(testsEvents, []);
     })
@@ -314,6 +315,7 @@ describe('C2TestAdapter', function() {
     }
 
     beforeEach(function() {
+      this.timeout(5000);
       for (let suite of example1.outputs) {
         for (let scenario of suite[1]) {
           spawnStub.withArgs(suite[0], scenario[0]).callsFake(function() {
@@ -393,6 +395,7 @@ describe('C2TestAdapter', function() {
       }
 
       beforeEach(function() {
+        this.timeout(5000);
         return updateConfig('workerMaxNumber', 4);
       })
 
@@ -402,6 +405,7 @@ describe('C2TestAdapter', function() {
 
       context('executables="execPath1"', function() {
         beforeEach(function() {
+          this.timeout(5000);
           return updateConfig('executables', 'execPath1');
         })
 
@@ -551,6 +555,7 @@ describe('C2TestAdapter', function() {
 
         context('with config: defaultRngSeed=2', function() {
           beforeEach(function() {
+            this.timeout(5000);
             return updateConfig('defaultRngSeed', 2);
           })
 
@@ -624,6 +629,7 @@ describe('C2TestAdapter', function() {
         }
 
         beforeEach(function() {
+          this.timeout(5000);
           return updateConfig('executables', ['execPath1', 'execPath2']);
         })
 
@@ -1206,6 +1212,7 @@ describe('C2TestAdapter', function() {
 
       context('executables=[{<regex>}] and env={...}', function() {
         beforeEach(async function() {
+          this.timeout(5000);
           await updateConfig(
               'executables', [{
                 name: '${relDirpath}/${filename} (${absDirpath})',
@@ -1279,6 +1286,7 @@ describe('C2TestAdapter', function() {
           'executables=["execPath1", "execPath2", "execPath3"]',
           async function() {
             beforeEach(function() {
+              this.timeout(5000);
               return updateConfig(
                   'executables', ['execPath1', 'execPath2', 'execPath3']);
             })
