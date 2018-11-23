@@ -51,10 +51,10 @@ Variables which can be used in `name`, `cwd` and `env` of `executables`:
 | `${filename}`           | Filename ( = Path withouth directories, "d/a.b.c" => "a.b.c")                   |
 | `${baseFilename}`       | Filename without extension ("d/a.b.c" => "a.b")                                 |
 | `${extFilename}`        | Filename extension. ("d/a.b.c" => ".c")                                         |
-| `${base2Filename}`      | Filename without extension ("d/a.b.c" => "a")                                   |
+| `${base2Filename}`      | Filename without second extension ("d/a.b.c" => "a")                            |
 | `${ext2Filename}`       | Filename's second level extension. ("d/a.b.c" => ".b")                          |
-| `${base3Filename}`      | Filename without extension ("d/a.b.c" => "a")                                   |
-| `${ext3Filename}`       | Filename's second level extension. ("d/a.b.c" => "")                            |
+| `${base3Filename}`      | Filename without third extension ("d/a.b.c" => "a")                             |
+| `${ext3Filename}`       | Filename's third level extension. ("d/a.b.c" => "")                             |
 | `${workspaceDirectory}` | (You can only guess once.)                                                      |
 | `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                |
 
