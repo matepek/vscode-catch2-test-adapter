@@ -62,6 +62,9 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
   }
 
   cancel(): void {
+    this.allTests.log.info(
+        'canceled: ' + inspect([this.id, this.label, this.proc != undefined]));
+
     this.isKill = true;
 
     if (this.proc != undefined) {
@@ -139,6 +142,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     }
 
     this.proc = spawn(this.execPath, execParams, this.execOptions);
+    this.allTests.log.info(
+        'proc started: ' + inspect([this.execPath, execParams]));
     let pResolver: Function|undefined = undefined;
     let pRejecter: Function|undefined = undefined;
     const p = new Promise<void>((resolve, reject) => {
@@ -248,6 +253,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         pRejecter && pRejecter();
       else
         pResolver && pResolver();
+      this.allTests.log.info(
+          'proc finished: ' + inspect([this.execPath, execParams]));
     });
 
     const suiteFinally = () => {

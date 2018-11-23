@@ -33,6 +33,9 @@ install:
 script: 
   - npm test --silent
 
+after_failure:
+  - cat ./out/test/testlogs.txt
+
 before_deploy:
   - npm install 
   - npm audit

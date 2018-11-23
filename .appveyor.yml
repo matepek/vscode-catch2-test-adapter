@@ -24,3 +24,6 @@ build: off
 
 test_script:
   - npm test --silent
+
+on_failure:
+  - type .\out\test\testlogs.txt

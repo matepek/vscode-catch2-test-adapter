@@ -45,7 +45,8 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     if (isAbsolute && isPartOfWs)
       this._allTests.log.info(
-          'Absolute path is used for workspace directory: ' + inspect([this]));
+          'Absolute path is used for workspace directory: ' +
+          inspect(this, true, 0));
     if (this.pattern.indexOf('\\') != -1)
       this._allTests.log.warn(
           'Pattern contains backslash character: ' + this.pattern);

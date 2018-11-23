@@ -29,10 +29,9 @@ const workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
 const workspaceFolder =
     vscode.workspace.getWorkspaceFolder(workspaceFolderUri)!;
 
-const logger =
-    new Log('Catch2TestAdapter', workspaceFolder, 'Catch2TestAdapter');
-
 const dotVscodePath = path.join(workspaceFolderUri.fsPath, '.vscode');
+
+const logfilepath = path.join(workspaceFolderUri.fsPath, 'testlogs.txt');
 
 const sinonSandbox = sinon.createSandbox();
 
@@ -56,6 +55,8 @@ describe('C2TestAdapter', function() {
   }
 
   let adapter: C2TestAdapter|undefined;
+  let logger: Log;
+
   let testsEventsConnection: vscode.Disposable|undefined;
   let testStatesEventsConnection: vscode.Disposable|undefined;
 
@@ -68,6 +69,7 @@ describe('C2TestAdapter', function() {
     Object.keys(properties).forEach(key => {
       assert.ok(key.startsWith('catch2TestExplorer.'));
       const k = key.replace('catch2TestExplorer.', '');
+      if (k == 'logfile') return;
       t = t.then(function() {
         return getConfig().update(k, undefined);
       });
@@ -179,13 +181,15 @@ describe('C2TestAdapter', function() {
         <sinon.SinonStub<[vscode.GlobPattern], Thenable<vscode.Uri[]>>>
             sinonSandbox.stub(vscode.workspace, 'findFiles')
                 .named('vsFindFilesStub');
+
+    fse.remove(logfilepath);
   })
 
   after(function() {
     sinonSandbox.restore();
   })
 
-  beforeEach(function() {
+  beforeEach(async function() {
     this.timeout(5000);
     adapter = undefined;
 
@@ -201,12 +205,21 @@ describe('C2TestAdapter', function() {
     vsFindFilesStub.callThrough();
 
     // reset config can cause problem with fse.removeSync(dotVscodePath);
-    return resetConfig();
+    await resetConfig();
+
+    await updateConfig('logfile', logfilepath);
+    logger =
+        new Log('catch2TestExplorer', workspaceFolder, 'catch2TestExplorer');
+
+    logger.info(
+        'C2TestAdapter test running: ' +
+        (this.currentTest ? this.currentTest.titlePath() : 'unknown'));
   })
 
   afterEach(function() {
     this.timeout(5000);
     disposeAdapterAndSubscribers();
+    logger.dispose();
   })
 
   describe('detect config change', function() {
@@ -629,7 +642,7 @@ describe('C2TestAdapter', function() {
         }
 
         beforeEach(function() {
-          this.timeout(5000);
+          this.timeout(10000);
           return updateConfig('executables', ['execPath1', 'execPath2']);
         })
 

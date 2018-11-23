@@ -157,7 +157,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     }
 
     if (testSet.size > 0) {
-      this.log.error('Some tests have remained.');
+      this.log.error('Some tests have remained: ' + inspect(testSet));
     }
 
     const always = () => {
