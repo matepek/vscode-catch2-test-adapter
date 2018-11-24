@@ -5,7 +5,7 @@
 import {SpawnOptions} from 'child_process';
 import {inspect} from 'util';
 import * as vscode from 'vscode';
-import {TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
+import {TestEvent, TestInfo, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
 
 import {C2ExecutableInfo} from './C2ExecutableInfo'
@@ -30,7 +30,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
       private readonly _loadFinishedEmitter: vscode.EventEmitter<void>,
       private readonly _testsEmitter:
           vscode.EventEmitter<TestLoadStartedEvent|TestLoadFinishedEvent>,
-      private readonly _testStatesEmitter:
+      public readonly testStatesEmitter:
           vscode.EventEmitter<TestRunStartedEvent|TestRunFinishedEvent|
                               TestSuiteEvent|TestEvent>,
       public readonly autorunEmitter: vscode.EventEmitter<void>,
@@ -66,8 +66,22 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     });
   }
 
-  sendTestStateEvent(ev: TestSuiteEvent|TestEvent) {
-    this._testStatesEmitter.fire(ev);
+  sendTestSuiteStateEventsWithParent(events: (TestSuiteEvent|TestEvent)[]) {
+    this.allTasks.then(() => {
+      if (this._isDisposed) return;
+
+      const tests =
+          events.filter(ev => ev.type == 'test' && ev.state == 'running')
+              .map(ev => (<TestInfo>((<TestEvent>ev).test)).id);
+
+      this.testStatesEmitter.fire({type: 'started', tests: tests});
+
+      for (let i = 0; i < events.length; i++) {
+        this.testStatesEmitter.fire(events[i]);
+      }
+
+      this.testStatesEmitter.fire({type: 'finished'});
+    });
   }
 
   removeChild(child: C2TestSuiteInfo): boolean {
@@ -135,8 +149,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   run(tests: string[], workerMaxNumber: number): Promise<void> {
-    this._testStatesEmitter.fire(
-        <TestRunStartedEvent>{type: 'started', tests: tests});
+    this.testStatesEmitter.fire({type: 'started', tests: tests});
 
     const taskPool = new TaskPool(workerMaxNumber);
 
@@ -161,7 +174,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     }
 
     const always = () => {
-      this._testStatesEmitter.fire(<TestRunFinishedEvent>{type: 'finished'});
+      this.testStatesEmitter.fire({type: 'finished'});
     };
 
     return Promise.all(ps).then(always, always);

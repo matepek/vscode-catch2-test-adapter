@@ -1160,12 +1160,12 @@ describe('C2TestAdapter', function() {
           await loadAdapterAndAssert();
           const testListOutput = example1.suite1.outputs[1][1].split('\n');
           assert.equal(testListOutput.length, 10);
-          testListOutput.splice(1, 3);
+          testListOutput.splice(1, 6);
           spawnStub
               .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0])
               .returns(new ChildProcessStub(testListOutput.join(EOL)));
 
-          assert.deepEqual(suite1.children.length, 2);
+          assert.strictEqual(suite1.children.length, 2);
 
           await adapter.load();
 
@@ -1175,22 +1175,59 @@ describe('C2TestAdapter', function() {
           assert.equal(root.children.length, 2);
           suite1 = <TestSuiteInfo>root.children[0];
 
-          assert.deepEqual(suite1.children.length, 1);
+          assert.strictEqual(suite1.children.length, 0);
 
           spawnStub
               .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0])
               .returns(new ChildProcessStub(example1.suite1.outputs[1][1]));
 
+          const testLoadEventCount = testsEvents.length;
           await adapter.run([suite1.id]);
 
-          assert.deepEqual(testStatesEvents.length, 6);
+          const expected = [
+            {type: 'started', tests: [suite1.id]},
+            {type: 'suite', state: 'running', suite: suite1},
+            {type: 'suite', state: 'completed', suite: suite1},
+            {type: 'finished'}
+          ];
+          assert.deepStrictEqual(testStatesEvents, expected);
 
           await waitFor(this, function() {
-            return suite1.children.length == 2;
-          });
+            return suite1.children.length == 2 &&
+                testStatesEvents.length >= 4 + 8;
+          }, 2000);
 
-          assert.deepEqual(suite1.children.length, 2);
-          // assert.deepEqual(testStatesEvents.length, 6 + 6);
+          assert.strictEqual(testsEvents.length, testLoadEventCount + 2);
+          assert.strictEqual(suite1.children.length, 2);
+          s1t1 = suite1.children[0];
+          assert.strictEqual(s1t1.label, 's1t1');
+          s1t2 = suite1.children[1];
+          assert.strictEqual(s1t2.label, 's1t2');
+
+          assert.deepStrictEqual(testStatesEvents, [
+            ...expected,
+            {type: 'started', tests: [s1t1.id, s1t2.id]},
+            {type: 'suite', state: 'running', suite: suite1},
+            {type: 'test', state: 'running', test: s1t1},
+            {
+              type: 'test',
+              state: 'passed',
+              test: s1t1,
+              decorations: undefined,
+              message: 'Duration: 0.000132 second(s)\n'
+            },
+            {type: 'test', state: 'running', test: s1t2},
+            {
+              type: 'test',
+              state: 'failed',
+              test: s1t2,
+              decorations: [{line: 14, message: 'Expanded: false'}],
+              message:
+                  'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+            },
+            {type: 'suite', state: 'completed', suite: suite1},
+            {type: 'finished'},
+          ]);
         })
 
         it('reload because of fswatcher event: test deleted', async function() {

@@ -109,7 +109,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       });
     }
 
-    this.allTests.sendTestStateEvent(
+    this.allTests.testStatesEmitter.fire(
         {type: 'suite', suite: this, state: 'running'});
 
     const execParams: string[] = [];
@@ -125,8 +125,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       for (let i = 0; i < this.children.length; i++) {
         const c = this.children[i];
         if (c.skipped) {
-          this.allTests.sendTestStateEvent(c.getStartEvent());
-          this.allTests.sendTestStateEvent(c.getSkippedEvent());
+          this.allTests.testStatesEmitter.fire(c.getStartEvent());
+          this.allTests.testStatesEmitter.fire(c.getSkippedEvent());
         }
       }
     }
@@ -158,19 +158,19 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       currentChild: C2TestInfo|undefined = undefined;
       beforeFirstTestCase: boolean = true;
       rngSeed: number|undefined = undefined;
-      isReloadChildrenSent: boolean = false;
+      unporessedTestCases: string[] = [];
     }
     ();
 
     const processChunk = (chunk: string) => {
       data.buffer = data.buffer + chunk;
       let invariant = 99999;
+      const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
       do {
         if (!data.inTestCase) {
           const b = data.buffer.indexOf('<TestCase');
           if (b == -1) return;
 
-          const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
           const m = data.buffer.match(testCaseTagRe);
           if (m == null || m.length != 1) return;
 
@@ -202,7 +202,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
           if (data.currentChild !== undefined) {
             const ev = data.currentChild.getStartEvent();
-            this.allTests.sendTestStateEvent(ev);
+            this.allTests.testStatesEmitter.fire(ev);
           } else {
             this.allTests.log.error('TestCase not found in children: ' + name);
           }
@@ -213,34 +213,68 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           const b = data.buffer.indexOf(endTestCase);
           if (b == -1) return;
 
+          const testCaseXml = data.buffer.substring(0, b + endTestCase.length);
+
           if (data.currentChild != undefined) {
             try {
               const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
-                  data.buffer.substring(0, b + endTestCase.length),
-                  data.rngSeed);
+                  testCaseXml, data.rngSeed);
               if (!this.allTests.isEnabledSourceDecoration)
                 ev.decorations = undefined;
-              this.allTests.sendTestStateEvent(ev);
+              this.allTests.testStatesEmitter.fire(ev);
             } catch (e) {
               this.allTests.log.error(
-                  'Parsing and processing test: ' + data.currentChild.label);
+                  'parsing and processing test: ' + data.currentChild.label);
             }
           } else {
             this.allTests.log.info(
-                '<TestCase> found without TestInfo: ' +
-                inspect([this, data.buffer.substr(0, 20)], true, 1));
-            if (!data.isReloadChildrenSent) {
-              data.isReloadChildrenSent = true;
-              this.allTests.sendLoadEvents(() => {
-                return this.reloadChildren().catch(e => {
-                  this.allTests.log.error(
-                      'reload after new test found under running' + inspect(e) +
-                      ', ' + inspect(this, true, 0));
-                  // Suite possibly deleted: It is a dead suite.
-                });
-              });
+                '<TestCase> found without TestInfo: ' + inspect(this, true, 1) +
+                '; ' + testCaseXml);
+            if (data.unporessedTestCases.length == 0) {
+              this.allTests
+                  .sendLoadEvents(() => {
+                    return this.reloadChildren().catch(e => {
+                      this.allTests.log.error(
+                          'reload after new test found: ' + inspect(e));
+                      // Suite possibly deleted: It is a dead suite.
+                    });
+                  })
+                  .then(() => {
+                    const events: TestEvent[] = [];
+
+                    for (let i = 0; i < data.unporessedTestCases.length; i++) {
+                      const testCaseXml = data.unporessedTestCases[i];
+
+                      const m = testCaseXml.match(testCaseTagRe);
+                      if (m == null || m.length != 1) break;
+
+                      let name: string|undefined = undefined;
+                      new xml2js.Parser({explicitArray: true})
+                          .parseString(
+                              m[0] + '</TestCase>', (err: any, result: any) => {
+                                if (err) {
+                                  this.allTests.log.error(err.toString());
+                                } else {
+                                  name = result.TestCase.$.name;
+                                }
+                              });
+                      if (name === undefined) break;
+
+                      const currentChild =
+                          this.children.find((v: C2TestInfo) => {
+                            return v.testNameTrimmed == name;
+                          });
+                      if (currentChild === undefined) break;
+
+                      const ev = currentChild.parseAndProcessTestCase(
+                          testCaseXml, data.rngSeed);
+                      events.push(currentChild.getStartEvent());
+                      events.push(ev);
+                    }
+                    this._sendTestStateEventsWithParent(events);
+                  });
             }
-            //.then... // TODO send event state: find newChild and parseXml
+            data.unporessedTestCases.push(testCaseXml);
           }
 
           data.inTestCase = false;
@@ -272,7 +306,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           'proc finished: ' + inspect([this.execPath, execParams]));
       this.proc = undefined;
       taskPool.release();
-      this.allTests.sendTestStateEvent(
+      this.allTests.testStatesEmitter.fire(
           {type: 'suite', suite: this, state: 'completed'});
     };
     return p.then(
@@ -281,7 +315,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         },
         (err: Error) => {
           if (data.inTestCase) {
-            this.allTests.sendTestStateEvent({
+            this.allTests.testStatesEmitter.fire({
               type: 'test',
               test: data.currentChild!,
               state: 'failed',
@@ -388,5 +422,12 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
                 }
               });
         });
+  }
+
+  private _sendTestStateEventsWithParent(events: TestEvent[]) {
+    this.allTests.sendTestSuiteStateEventsWithParent([
+      {type: 'suite', suite: this, state: 'running'}, ...events,
+      {type: 'suite', suite: this, state: 'completed'}
+    ]);
   }
 }
