@@ -36,6 +36,21 @@ describe('FsWrapper.spawnAsync', function() {
       assert.equal(r.status, 0);
     }
   })
+
+  it('not existing', function() {
+    let hasErr = false;
+    return spawnAsync('notexisting.exe')
+        .then(
+            () => {
+              assert.ok(false);
+            },
+            (e: any) => {
+              hasErr = true;
+            })
+        .then(() => {
+          assert.ok(hasErr);
+        });
+  })
 })
 
 describe('FsWrapper.statAsync', function() {

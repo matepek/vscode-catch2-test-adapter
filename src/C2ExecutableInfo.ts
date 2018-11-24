@@ -84,21 +84,20 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     for (let i = 0; i < fileUris.length; i++) {
       const file = fileUris[i];
-      if (await this._verifyIsCatch2TestExecutable(file.fsPath)) {
-        const suite = this._addFile(file);
-        this._executables.set(file.fsPath, suite);
-      }
+      const suite = this._addFile(file);
+      this._executables.set(file.fsPath, suite);
+
+      await suite.reloadChildren().catch((reason: any) => {
+        this._allTests.log.warn(
+            'Couldn\'t load suite: ' + inspect([reason, suite]));
+        if (suite.catch2Version !== undefined)
+          this._allTests.log.error('but it was a Catch2 executable');
+
+        this._allTests.removeChild(suite);
+      });
     }
 
     this._uniquifySuiteNames();
-
-    for (const suite of this._executables.values()) {
-      await suite.reloadChildren().catch((err: any) => {
-        this._allTests.log.error(
-            'Couldn\'t load suite: ' + inspect([err, suite]));
-        // we could remove it, but now the user still sees the dead leaf
-      });
-    }
   }
 
   private _addFile(file: vscode.Uri) {
@@ -183,7 +182,10 @@ export class C2ExecutableInfo implements vscode.Disposable {
         return this._allTests
             .sendLoadEvents(() => {
               this._lastEventArrivedAt.delete(uri.fsPath);
-              return suite!.reloadChildren().catch(() => {
+              return suite!.reloadChildren().catch((reason: any) => {
+                this._allTests.log.error(
+                    'suite should exists, but there is some problem under reloading: ' +
+                    inspect([reason, uri]));
                 return x(false, Math.min(delay * 2, 2000));
               });
             })
@@ -233,25 +235,5 @@ export class C2ExecutableInfo implements vscode.Disposable {
         }
       }
     }
-  }
-
-  private _verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
-    return c2fs.spawnAsync(path, ['--help'])
-        .then(res => {
-          const catch2 = res.stdout.match(/Catch (v2[^ ]*)/);
-          if (catch2 == undefined) {
-            this._allTests.log.info(
-                '_verifyIsCatch2TestExecutable: ' + path +
-                ': not a Catch2 executable');
-            return false;
-          }
-          this._allTests.log.info(
-              '_verifyIsCatch2TestExecutable: ' + path + ': ' + catch2[0]);
-          return true;
-        })
-        .catch(e => {
-          this._allTests.log.error(inspect(e));
-          return false;
-        });
   }
 }

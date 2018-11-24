@@ -22,6 +22,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
   file?: string = undefined;
   line?: number = undefined;
 
+  catch2Version: [number, number, number]|undefined = undefined;
   private isKill: boolean = false;
   private proc: ChildProcess|undefined = undefined;
 
@@ -157,6 +158,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       currentChild: C2TestInfo|undefined = undefined;
       beforeFirstTestCase: boolean = true;
       rngSeed: number|undefined = undefined;
+      isReloadChildrenSent: boolean = false;
     }
     ();
 
@@ -224,11 +226,21 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
                   'Parsing and processing test: ' + data.currentChild.label);
             }
           } else {
-            this.allTests.sendLoadEvents(() => {
-              return this.reloadChildren();
-            });
+            this.allTests.log.info(
+                '<TestCase> found without TestInfo: ' +
+                inspect([this, data.buffer.substr(0, 20)], true, 1));
+            if (!data.isReloadChildrenSent) {
+              data.isReloadChildrenSent = true;
+              this.allTests.sendLoadEvents(() => {
+                return this.reloadChildren().catch(e => {
+                  this.allTests.log.error(
+                      'reload after new test found under running' + inspect(e) +
+                      ', ' + inspect(this, true, 0));
+                  // Suite possibly deleted: It is a dead suite.
+                });
+              });
+            }
             //.then... // TODO send event state: find newChild and parseXml
-            this.allTests.log.info('<TestCase> found without TestInfo.');
           }
 
           data.inTestCase = false;
@@ -285,78 +297,96 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
   }
 
   reloadChildren(): Promise<void> {
-    return c2fs.existsAsync(this.execPath).then((exists: boolean) => {
-      if (!exists) throw new Error('Path not exists: ' + this.execPath);
-      return c2fs
-          .spawnAsync(
-              this.execPath,
-              [
-                '[.],*', '--verbosity', 'high', '--list-tests', '--use-colour',
-                'no'
-              ],
-              this.execOptions)
-          .then((r) => {
-            const oldChildren = this.children;
-            this.children = [];
+    return c2fs.spawnAsync(this.execPath, ['--help'])
+        .then((res): [number, number, number] => {
+          const m = res.stdout.match(/Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/);
+          if (m == undefined || m.length != 4)
+            throw Error(
+                'reloadChildren: ' + path + ': not a Catch2 executable');
+          return [
+            Number(m[1].valueOf()), Number(m[2].valueOf()),
+            Number(m[3].valueOf())
+          ];
+        })
+        .then((catch2Version: [number, number, number]) => {
+          if (catch2Version[0] > 2 || catch2Version[0] < 2)
+            this.allTests.log.warn(
+                'Unsupported Cathc2 version: ' + inspect(catch2Version));
+          this.catch2Version = catch2Version;
+          return c2fs
+              .spawnAsync(
+                  this.execPath,
+                  [
+                    '[.],*', '--verbosity', 'high', '--list-tests',
+                    '--use-colour', 'no'
+                  ],
+                  this.execOptions)
+              .then((r) => {
+                const oldChildren = this.children;
+                this.children = [];
 
-            let lines = r.stdout.split(/\r?\n/);
+                let lines = r.stdout.split(/\r?\n/);
 
-            if (lines.length == 0) this.allTests.log.error('Empty test list.');
+                if (lines.length == 0)
+                  this.allTests.log.error('Empty test list.');
 
-            while (lines[lines.length - 1].trim().length == 0) lines.pop();
+                while (lines[lines.length - 1].trim().length == 0) lines.pop();
 
-            let i = 1;
-            while (i < lines.length - 1) {
-              if (lines[i][0] != ' ')
-                this.allTests.log.error(
-                    'Wrong test list output format: ' + lines.toString());
+                let i = 1;
+                while (i < lines.length - 1) {
+                  if (lines[i][0] != ' ')
+                    this.allTests.log.error(
+                        'Wrong test list output format: ' + lines.toString());
 
-              const testNameFull = lines[i++].substr(2);
+                  const testNameFull = lines[i++].substr(2);
 
-              let filePath = '';
-              let line = 0;
-              {
-                const fileLine = lines[i++].substr(4);
-                const match =
-                    fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
-                if (match && match.length == 5) {
-                  filePath = match[1] ? match[1] : match[3];
-                  filePath =
-                      path.resolve(path.dirname(this.execPath), filePath);
-                  if (!c2fs.existsSync(filePath) && this.execOptions.cwd) {
-                    const r = path.resolve(this.execOptions.cwd, filePath);
-                    if (c2fs.existsSync(r)) filePath = r;
+                  let filePath = '';
+                  let line = 0;
+                  {
+                    const fileLine = lines[i++].substr(4);
+                    const match =
+                        fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
+                    if (match && match.length == 5) {
+                      filePath = match[1] ? match[1] : match[3];
+                      filePath =
+                          path.resolve(path.dirname(this.execPath), filePath);
+                      if (!c2fs.existsSync(filePath) && this.execOptions.cwd) {
+                        const r = path.resolve(this.execOptions.cwd, filePath);
+                        if (c2fs.existsSync(r)) filePath = r;
+                      }
+                      line = Number(match[2] ? match[2] : match[4]);
+                    }
                   }
-                  line = Number(match[2] ? match[2] : match[4]);
+
+                  let description = lines[i++].substr(4);
+                  if (description.startsWith('(NO DESCRIPTION)'))
+                    description = '';
+
+                  let tags: string[] = [];
+                  if (lines[i].length > 6 && lines[i][6] === '[') {
+                    tags = lines[i].trim().split(']');
+                    tags.pop();
+                    for (let j = 0; j < tags.length; ++j) tags[j] += ']';
+                    ++i;
+                  }
+
+                  const index = oldChildren.findIndex(
+                      (c: C2TestInfo) => {return c.testNameFull ==
+                                          testNameFull});
+                  if (index != -1 &&
+                      oldChildren[index].label ==
+                          C2TestInfo.generateLabel(
+                              testNameFull, description, tags)) {
+                    this.createChildTest(
+                        oldChildren[index].id, testNameFull, description, tags,
+                        filePath, line);
+                  } else {
+                    this.createChildTest(
+                        undefined, testNameFull, description, tags, filePath,
+                        line);
+                  }
                 }
-              }
-
-              let description = lines[i++].substr(4);
-              if (description.startsWith('(NO DESCRIPTION)')) description = '';
-
-              let tags: string[] = [];
-              if (lines[i].length > 6 && lines[i][6] === '[') {
-                tags = lines[i].trim().split(']');
-                tags.pop();
-                for (let j = 0; j < tags.length; ++j) tags[j] += ']';
-                ++i;
-              }
-
-              const index = oldChildren.findIndex(
-                  (c: C2TestInfo) => {return c.testNameFull == testNameFull});
-              if (index != -1 &&
-                  oldChildren[index].label ==
-                      C2TestInfo.generateLabel(
-                          testNameFull, description, tags)) {
-                this.createChildTest(
-                    oldChildren[index].id, testNameFull, description, tags,
-                    filePath, line);
-              } else {
-                this.createChildTest(
-                    undefined, testNameFull, description, tags, filePath, line);
-              }
-            }
-          });
-    });
+              });
+        });
   }
 }

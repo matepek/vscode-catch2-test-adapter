@@ -207,7 +207,7 @@ describe('C2TestAdapter', function() {
     // reset config can cause problem with fse.removeSync(dotVscodePath);
     await resetConfig();
 
-    // await updateConfig('logfile', logfilepath);
+    // TODO await updateConfig('logfile', logfilepath);
     logger =
         new Log('catch2TestExplorer', workspaceFolder, 'catch2TestExplorer');
 
@@ -409,7 +409,7 @@ describe('C2TestAdapter', function() {
 
       beforeEach(function() {
         this.timeout(5000);
-        return updateConfig('workerMaxNumber', 4);
+        return updateConfig('workerMaxNumber', 3);
       })
 
       afterEach(function() {
@@ -1156,6 +1156,43 @@ describe('C2TestAdapter', function() {
           }
         })
 
+        it('reload because new test found under run', async function() {
+          await loadAdapterAndAssert();
+          const testListOutput = example1.suite1.outputs[1][1].split('\n');
+          assert.equal(testListOutput.length, 10);
+          testListOutput.splice(1, 3);
+          spawnStub
+              .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0])
+              .returns(new ChildProcessStub(testListOutput.join(EOL)));
+
+          assert.deepEqual(suite1.children.length, 2);
+
+          await adapter.load();
+
+          assert.equal(testsEvents.length, 2);
+          root = (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
+                     .suite!;
+          assert.equal(root.children.length, 2);
+          suite1 = <TestSuiteInfo>root.children[0];
+
+          assert.deepEqual(suite1.children.length, 1);
+
+          spawnStub
+              .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0])
+              .returns(new ChildProcessStub(example1.suite1.outputs[1][1]));
+
+          await adapter.run([suite1.id]);
+
+          assert.deepEqual(testStatesEvents.length, 6);
+
+          await waitFor(this, function() {
+            return suite1.children.length == 2;
+          });
+
+          assert.deepEqual(suite1.children.length, 2);
+          // assert.deepEqual(testStatesEvents.length, 6 + 6);
+        })
+
         it('reload because of fswatcher event: test deleted', async function() {
           await loadAdapterAndAssert();
           const testListOutput = example1.suite1.outputs[1][1].split('\n');
@@ -1416,6 +1453,11 @@ describe('C2TestAdapter', function() {
               'dummy error for testing (should be handled)');
 
           await adapter.load();
+          assert.equal(testsEvents.length, 2);
+          assert.equal(
+              (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
+                  .suite!.children.length,
+              1);
           testsEvents.pop();
           testsEvents.pop();
         })
