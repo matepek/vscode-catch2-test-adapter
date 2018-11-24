@@ -207,7 +207,9 @@ describe('C2TestAdapter', function() {
     // reset config can cause problem with fse.removeSync(dotVscodePath);
     await resetConfig();
 
-    await updateConfig('logfile', logfilepath);
+    // it doesn't work on travis linux
+    //await updateConfig('logfile', logfilepath);
+
     logger = new Log(
         'catch2TestExplorer', workspaceFolder, 'catch2TestExplorerTest');
 
