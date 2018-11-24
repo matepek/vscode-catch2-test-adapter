@@ -17,7 +17,8 @@ const workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
 
 describe('FsWrapper.spawnAsync', function() {
   it('echoes', async function() {
-    const opt: SpawnOptions = {shell: true};
+    const isWin = process.platform === 'win32';
+    const opt: SpawnOptions = isWin ? {shell: true} : {};
     const r = await spawnAsync('echo', ['apple'], opt);
     assert.equal(r.stdout, 'apple' + EOL);
     assert.equal(r.output.length, 2);

@@ -207,7 +207,7 @@ describe('C2TestAdapter', function() {
     // reset config can cause problem with fse.removeSync(dotVscodePath);
     await resetConfig();
 
-    await updateConfig('logfile', logfilepath);
+    // await updateConfig('logfile', logfilepath);
     logger =
         new Log('catch2TestExplorer', workspaceFolder, 'catch2TestExplorer');
 

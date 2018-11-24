@@ -253,11 +253,11 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         pRejecter && pRejecter();
       else
         pResolver && pResolver();
-      this.allTests.log.info(
-          'proc finished: ' + inspect([this.execPath, execParams]));
     });
 
     const suiteFinally = () => {
+      this.allTests.log.info(
+          'proc finished: ' + inspect([this.execPath, execParams]));
       this.proc = undefined;
       taskPool.release();
       this.allTests.sendTestStateEvent(
