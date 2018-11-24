@@ -23,8 +23,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
   line?: number = undefined;
 
   catch2Version: [number, number, number]|undefined = undefined;
-  private isKill: boolean = false;
-  private proc: ChildProcess|undefined = undefined;
+  private _isKill: boolean = false;
+  private _proc: ChildProcess|undefined = undefined;
 
   constructor(
       public readonly origLabel: string,
@@ -64,19 +64,19 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
   cancel(): void {
     this.allTests.log.info(
-        'canceled: ' + inspect([this.id, this.label, this.proc != undefined]));
+        'canceled: ' + inspect([this.id, this.label, this._proc != undefined]));
 
-    this.isKill = true;
+    this._isKill = true;
 
-    if (this.proc != undefined) {
-      this.proc.kill();
-      this.proc = undefined;
+    if (this._proc != undefined) {
+      this._proc.kill();
+      this._proc = undefined;
     }
   }
 
   run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
-    this.isKill = false;
-    this.proc = undefined;
+    this._isKill = false;
+    this._proc = undefined;
 
     if (tests.delete(this.id)) {
       for (let i = 0; i < this.children.length; i++) {
@@ -84,7 +84,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         tests.delete(c.id);
       }
 
-      return this.runInner('all', taskPool);
+      return this._runInner('all', taskPool);
     } else {
       let childrenToRun: C2TestInfo[] = [];
 
@@ -95,17 +95,17 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
       if (childrenToRun.length == 0) return Promise.resolve();
 
-      return this.runInner(childrenToRun, taskPool);
+      return this._runInner(childrenToRun, taskPool);
     }
   }
 
-  private runInner(childrenToRun: C2TestInfo[]|'all', taskPool: TaskPool):
+  private _runInner(childrenToRun: C2TestInfo[]|'all', taskPool: TaskPool):
       Promise<void> {
-    if (this.isKill) return Promise.reject(Error('Test was killed.'));
+    if (this._isKill) return Promise.reject(Error('Test was killed.'));
 
     if (!taskPool.acquire()) {
       return new Promise<void>(resolve => setTimeout(resolve, 64)).then(() => {
-        return this.runInner(childrenToRun, taskPool);
+        return this._runInner(childrenToRun, taskPool);
       });
     }
 
@@ -142,7 +142,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       }
     }
 
-    this.proc = spawn(this.execPath, execParams, this.execOptions);
+    this._proc = spawn(this.execPath, execParams, this.execOptions);
     this.allTests.log.info(
         'proc started: ' + inspect([this.execPath, execParams]));
     let pResolver: Function|undefined = undefined;
@@ -289,12 +289,12 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       }
     };
 
-    this.proc.stdout.on('data', (chunk: Uint8Array) => {
+    this._proc.stdout.on('data', (chunk: Uint8Array) => {
       const xml = chunk.toLocaleString();
       processChunk(xml);
     });
 
-    this.proc.on('close', (code: number) => {
+    this._proc.on('close', (code: number) => {
       if (data.inTestCase)
         pRejecter && pRejecter();
       else
@@ -304,7 +304,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     const suiteFinally = () => {
       this.allTests.log.info(
           'proc finished: ' + inspect([this.execPath, execParams]));
-      this.proc = undefined;
+      this._proc = undefined;
       taskPool.release();
       this.allTests.testStatesEmitter.fire(
           {type: 'suite', suite: this, state: 'completed'});
@@ -405,8 +405,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
                   }
 
                   const index = oldChildren.findIndex(
-                      (c: C2TestInfo) => {return c.testNameFull ==
-                                          testNameFull});
+                      c => c.testNameFull == testNameFull);
                   if (index != -1 &&
                       oldChildren[index].label ==
                           C2TestInfo.generateLabel(
@@ -426,8 +425,9 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
   private _sendTestStateEventsWithParent(events: TestEvent[]) {
     this.allTests.sendTestSuiteStateEventsWithParent([
-      {type: 'suite', suite: this, state: 'running'}, ...events,
-      {type: 'suite', suite: this, state: 'completed'}
+      {type: 'suite', suite: this, state: 'running'},
+      ...events,
+      {type: 'suite', suite: this, state: 'completed'},
     ]);
   }
 }
