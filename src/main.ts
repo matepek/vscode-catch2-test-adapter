@@ -18,7 +18,7 @@ export async function activate(context: vscode.ExtensionContext) {
     if (vscode.workspace.workspaceFolders) {
       for (const workspaceFolder of vscode.workspace.workspaceFolders) {
         const log = new Log(
-            'catch2TestExplorer', workspaceFolder, 'catch2TestExplorer');
+            'catch2TestExplorer', workspaceFolder, 'Catch2 Test Explorer');
         context.subscriptions.push(log);
         const adapter = new C2TestAdapter(workspaceFolder, log);
         registeredAdapters.set(workspaceFolder, adapter);

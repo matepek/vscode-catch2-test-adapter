@@ -86,6 +86,12 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
             this._allTests.execWatchTimeout =
                 this._getDefaultExecWatchTimeout(this._getConfiguration());
           }
+          if (configChange.affectsConfiguration(
+                  'catch2TestExplorer.defaultNoThrow',
+                  this._workspaceFolder.uri)) {
+            this._allTests.isNoThrow =
+                this._getDefaultNoThrow(this._getConfiguration());
+          }
         }));
 
     const config = this._getConfiguration();
@@ -95,7 +101,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         this._autorunEmitter, this._variableToValue,
         this._getEnableSourceDecoration(config),
         this._getDefaultRngSeed(config),
-        this._getDefaultExecWatchTimeout(config));
+        this._getDefaultExecWatchTimeout(config),
+        this._getDefaultNoThrow(config));
   }
 
   dispose() {
@@ -132,7 +139,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         this._autorunEmitter, this._variableToValue,
         this._getEnableSourceDecoration(config),
         this._getDefaultRngSeed(config),
-        this._getDefaultExecWatchTimeout(config));
+        this._getDefaultExecWatchTimeout(config),
+        this._getDefaultNoThrow(config));
 
     this._testsEmitter.fire(<TestLoadStartedEvent>{type: 'started'});
 
@@ -220,7 +228,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         }
         return debug;
       } else if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
-        debug['type'] = 'lldb';
+        debug['type'] = 'cppdbg';
+        debug['MIMode'] = 'lldb';
         debug['program'] = testInfo.parent.execPath;
         debug['args'] = args;
         debug['cwd'] = testInfo.parent.execOptions.cwd!;
@@ -228,10 +237,13 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         return debug;
       } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
         debug['type'] = 'cppvsdbg';
+        debug['linux'] = {type: 'cppdbg', MIMode: 'gdb'};
+        debug['osx'] = {type: 'cppdbg', MIMode: 'lldb'};
         debug['program'] = testInfo.parent.execPath;
         debug['args'] = args;
         debug['cwd'] = testInfo.parent.execOptions.cwd!;
-        debug['environment'] = [testInfo.parent.execOptions.env!];
+        // documentation says debug'environment' = [{...}] but that is not works
+        debug['env'] = testInfo.parent.execOptions.env!;
         return debug;
       }
 
@@ -241,29 +253,43 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     const debugConfig = getDebugConfiguration();
     this._log.info('Debug config: ' + inspect(debugConfig));
 
-    return this._allTasks.then(() => {
-      return vscode.debug.startDebugging(this._workspaceFolder, debugConfig)
-          .then((debugSessionStarted: boolean) => {
-            const currentSession = vscode.debug.activeDebugSession;
-
-            if (!debugSessionStarted || !currentSession) {
-              this._log.info('Failed starting the debug session - aborting');
-              return Promise.resolve();
-            }
-
-            this._log.info('debugSessionStarted');
-
-            return new Promise<void>((resolve) => {
-              const subscription =
-                  vscode.debug.onDidTerminateDebugSession(session => {
-                    if (currentSession != session) return;
-                    this._log.info('Debug session ended.');
-                    resolve();
-                    subscription.dispose();
-                  });
-            });
-          });
+    let resolveF: Function;
+    let rejectF: Function;
+    const ret = new Promise<void>((resolve, reject) => {
+      resolveF = resolve;
+      rejectF = reject;
     });
+    this._allTasks.then(
+        () => {
+          return vscode.debug.startDebugging(this._workspaceFolder, debugConfig)
+              .then((debugSessionStarted: boolean) => {
+                const currentSession = vscode.debug.activeDebugSession;
+
+                if (!debugSessionStarted || !currentSession) {
+                  return Promise.reject(
+                      'Failed starting the debug session - aborting: ' +
+                      inspect([debugSessionStarted, currentSession]));
+                }
+
+                this._log.info('debugSessionStarted');
+
+                return new Promise<void>((resolve) => {
+                  const subscription =
+                      vscode.debug.onDidTerminateDebugSession(session => {
+                        if (currentSession != session) return;
+                        this._log.info('Debug session ended.');
+                        resolve();
+                        resolveF();
+                        subscription.dispose();
+                      });
+                });
+              });
+        },
+        (reason: any) => {
+          this._log.error(inspect(reason));
+          rejectF(reason);
+        });
+    return ret;
   }
 
   private _getConfiguration(): vscode.WorkspaceConfiguration {
@@ -293,6 +319,10 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private _getDebugBreakOnFailure(config: vscode.WorkspaceConfiguration):
       boolean {
     return config.get<boolean>('debugBreakOnFailure', true);
+  }
+
+  private _getDefaultNoThrow(config: vscode.WorkspaceConfiguration): boolean {
+    return config.get<boolean>('defaultNoThrow', false);
   }
 
   private _getGlobalAndDefaultEnvironmentVariables(

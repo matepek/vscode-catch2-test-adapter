@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.1.1]
+## [2.2.0]
 
 Performance and stability improvements. Improved logging.
+
+### Added
+
+- `catch2TestExplorer.defaultNoThrow` option. Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow.
+
+### Fixed
+
+- debugger recognition. (ms-vscode.cpptools's documentation is incorrect)
 
 ## [2.1.0] - 2018-11-20
 

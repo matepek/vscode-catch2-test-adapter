@@ -153,6 +153,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
     let suite = this._executables.get(uri.fsPath);
 
     if (suite == undefined) {
+      this._allTests.log.info('new suite: ' + uri.fsPath);
       suite = this._addFile(uri);
       this._executables.set(uri.fsPath, suite);
       this._uniquifySuiteNames();
@@ -172,6 +173,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
         return Promise.resolve();
       }
       if (Date.now() - lastEventArrivedAt! > this._allTests.execWatchTimeout) {
+        this._allTests.log.info('refresh timeout: ' + uri.fsPath);
         return this._allTests.sendLoadEvents(() => {
           this._lastEventArrivedAt.delete(uri.fsPath);
           this._executables.delete(uri.fsPath);
@@ -204,14 +206,17 @@ export class C2ExecutableInfo implements vscode.Disposable {
   }
 
   private _handleCreate(uri: vscode.Uri) {
+    this._allTests.log.info('create event: ' + uri.fsPath);
     return this._handleEverything(uri);
   }
 
   private _handleChange(uri: vscode.Uri) {
+    this._allTests.log.info('change event: ' + uri.fsPath);
     return this._handleEverything(uri);
   }
 
   private _handleDelete(uri: vscode.Uri) {
+    this._allTests.log.info('delete event: ' + uri.fsPath);
     return this._handleEverything(uri);
   }
 

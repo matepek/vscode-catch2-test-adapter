@@ -24,8 +24,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   private _isDisposed = false;
 
   constructor(
-      public readonly allTasks: QueueGraphNode,
-      public readonly log: util.Log,
+      public readonly allTasks: QueueGraphNode, public readonly log: util.Log,
       public readonly workspaceFolder: vscode.WorkspaceFolder,
       private readonly _loadFinishedEmitter: vscode.EventEmitter<void>,
       private readonly _testsEmitter:
@@ -36,9 +35,8 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
       public readonly autorunEmitter: vscode.EventEmitter<void>,
       public readonly variableToValue: [string, string][],
       public isEnabledSourceDecoration: boolean,
-      public rngSeed: string|number|null,
-      public execWatchTimeout: number,
-  ) {
+      public rngSeed: string|number|null, public execWatchTimeout: number,
+      public isNoThrow: boolean) {
     this.id = generateUniqueId();
   }
 

@@ -134,6 +134,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     execParams.push('xml');
     execParams.push('--durations')
     execParams.push('yes');
+    if (this.allTests.isNoThrow) execParams.push('--nothrow');
     {
       const rng = this.allTests.rngSeed;
       if (rng != null) {

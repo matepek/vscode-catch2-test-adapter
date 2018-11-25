@@ -156,6 +156,12 @@
           "default": true,
           "scope": "resource"
         },
+        "catch2TestExplorer.defaultNoThrow": {
+          "description": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow",
+          "type": "boolean",
+          "default": false,
+          "scope": "resource"
+        },
         "catch2TestExplorer.logpanel": {
           "description": "Create a new output channel and write the log messages there.",
           "type": "boolean",

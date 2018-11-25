@@ -208,7 +208,7 @@ describe('C2TestAdapter', function() {
     await resetConfig();
 
     // it doesn't work on travis linux
-    //await updateConfig('logfile', logfilepath);
+    // await updateConfig('logfile', logfilepath);
 
     logger = new Log(
         'catch2TestExplorer', workspaceFolder, 'catch2TestExplorerTest');
@@ -262,6 +262,12 @@ describe('C2TestAdapter', function() {
     it('defaultWatchTimeoutSec', function() {
       return updateConfig('defaultWatchTimeoutSec', 9876).then(function() {
         assert.equal((<any>adapter)._allTests.execWatchTimeout, 9876000);
+      });
+    })
+
+    it('defaultNoThrow', function() {
+      return updateConfig('defaultNoThrow', true).then(function() {
+        assert.equal((<any>adapter)._allTests.isNoThrow, true);
       });
     })
   })

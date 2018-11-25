@@ -15,14 +15,15 @@ This extension allows you to run your [Catch2 tests](https://github.com/catchorg
 | Property                                    | Description                                                                                                                                                                  |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `catch2TestExplorer.executables`            | The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. Details: [below](#catch2TestExplorer.executables) |
-| `catch2TestExplorer.defaultEnv`             | Default environment variables to be set when running the tests, if it isn't provided in 'executables'. (Resolves: \${workspaceFolder})                                       |
 | `catch2TestExplorer.defaultCwd`             | The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in "executables". (Resolves: \${workspaceFolder})       |
-| `catch2TestExplorer.defaultRngSeed`         | Specify a seed for the Random Number Generator. For details see [Catch2 documentation](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed)         |
-| `catch2TestExplorer.defaultWatchTimeoutSec` | Test executables are being watched. In case of one compiles too much this variable can help with it. Unit: second.                                                           |
-| `catch2TestExplorer.workerMaxNumber`        | The variable maximize the number of the parallel test execution.                                                                                                             |
-| `catch2TestExplorer.enableSourceDecoration` | Sets the source code decorations: Errored lines will be highlited.                                                                                                           |
+| `catch2TestExplorer.defaultEnv`             | Default environment variables to be set when running the tests, if it isn't provided in 'executables'. (Resolves: \${workspaceFolder})                                       |
 | `catch2TestExplorer.debugConfigTemplate`    | Set the necessary debug configuraitons and the debug button will work. Details: [below](#catch2TestExplorer.debugConfigTemplate)                                             |
 | `catch2TestExplorer.debugBreakOnFailure`    | Debugger breaks on failure while debugging the test. This is a Catch2 parameter: --break                                                                                     |
+| `catch2TestExplorer.defaultNoThrow`         | Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow                                                       |
+| `catch2TestExplorer.defaultRngSeed`         | Specify a seed for the Random Number Generator. For details see [Catch2 documentation](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed)         |
+| `catch2TestExplorer.defaultWatchTimeoutSec` | Test executables are being watched. In case of one compiles too much this variable can help with it. Unit: second.                                                           |
+| `catch2TestExplorer.enableSourceDecoration` | Sets the source code decorations: Errored lines will be highlited.                                                                                                           |
+| `catch2TestExplorer.workerMaxNumber`        | The variable maximize the number of the parallel test execution.                                                                                                             |
 | `testExplorer.onStart`                      | (This is part of the [dependency extension](https://github.com/hbenl/vscode-test-explorer#configuration)'s settings.)                                                        |
 | `testExplorer.onReload`                     | (This is part of the [dependency extension](https://github.com/hbenl/vscode-test-explorer#configuration)'s settings.)                                                        |
 
@@ -142,9 +143,6 @@ Example:
 - (2018-11-17) Long (>80 character) filename, test-name or description can cause test-list parsing failures. Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 9999`
 
 ## TODOs
-
-- Implement more [Catch command line options](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#specifying-which-tests-to-run), such as:
-  - `--nothrow`
 
 ## Contribution
 
