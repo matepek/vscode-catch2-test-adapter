@@ -71,7 +71,7 @@ Examples:
 
 ```json
 "catch2TestExplorer.executables": {
-	"name": "${relName} (${relDirname}/)",
+	"name": "${relPath} (${relDirpath}/)",
 	"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
 	"cwd": "${absDirpath}",
 	"env": {
@@ -150,4 +150,4 @@ Any contribution is welcome.
 
 - Create a pull request.
 - Report a bug.
-- Tell me about requested features.
+- Tell me about your requested features.

@@ -404,8 +404,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         {[prop: string]: any}[] = config.get('executables');
 
     const createFromObject = (obj: {[prop: string]: any}): C2ExecutableInfo => {
-      const name: string =
-          obj.hasOwnProperty('name') ? obj.name : '${relName} (${relDirname}/)';
+      const name: string = obj.hasOwnProperty('name') ? obj.name : '${relPath}';
 
       let pattern: string = '';
       if (obj.hasOwnProperty('pattern') && typeof obj.pattern == 'string')
@@ -413,7 +412,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       else if (obj.hasOwnProperty('path') && typeof obj.path == 'string')
         pattern = obj.path;
       else
-        throw Error('Error: pattern or path property is required.');
+        throw Error('Error: pattern property is required.');
 
       const cwd: string =
           obj.hasOwnProperty('cwd') ? obj.cwd : globalWorkingDirectory;
