@@ -76,7 +76,6 @@ function main(argv: string[]): Promise<void> {
 
 ///
 
-
 function updateChangelog(): Promise<Info|undefined> {
   console.log('Parsing CHANGELOG.md');
   return promisify(fs.readFile)('CHANGELOG.md').then((changelogBuffer) => {

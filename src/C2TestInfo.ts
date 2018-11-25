@@ -67,17 +67,17 @@ export class C2TestInfo implements TestInfo {
           }
         });
 
-    return this.processXmlTagTestCase(res.TestCase, rngSeed);
+    return this._processXmlTagTestCase(res.TestCase, rngSeed);
   }
 
-  private processXmlTagTestCase(testCase: any, rngSeed: number|undefined):
+  private _processXmlTagTestCase(testCase: any, rngSeed: number|undefined):
       TestEvent {
     try {
       let message = undefined;
       let decorations = undefined;
       let success = false;
       [message, decorations, success] =
-          this.processXmlTagTestCaseInner(testCase, '');
+          this._processXmlTagTestCaseInner(testCase, '');
 
       if (rngSeed) {
         message =
@@ -98,7 +98,7 @@ export class C2TestInfo implements TestInfo {
     }
   }
 
-  private processXmlTagTestCaseInner(testCase: any, title: string):
+  private _processXmlTagTestCaseInner(testCase: any, title: string):
       [string, TestDecoration[], boolean] {
     title = testCase.$.name + '(line: ' + testCase.$.line + ')';
     let message = '';
@@ -120,7 +120,7 @@ export class C2TestInfo implements TestInfo {
           let messageL = undefined;
           let decorationsL = undefined;
           [messageL, decorationsL] =
-              this.processXmlTagExpressionInner(testCase.Expression[j], title);
+              this._processXmlTagExpressionInner(testCase.Expression[j], title);
           message += messageL;
           decorations = decorations.concat(decorationsL);
         } catch (error) {
@@ -134,7 +134,7 @@ export class C2TestInfo implements TestInfo {
           let messageL = undefined;
           let decorationsL = undefined;
           [messageL, decorationsL] =
-              this.processXmlTagSectionInner(testCase.Section[j], title);
+              this._processXmlTagSectionInner(testCase.Section[j], title);
           message += messageL;
           decorations = decorations.concat(decorationsL);
         } catch (error) {
@@ -145,7 +145,7 @@ export class C2TestInfo implements TestInfo {
     return [message, decorations, success];
   }
 
-  private processXmlTagExpressionInner(expr: any, title: string):
+  private _processXmlTagExpressionInner(expr: any, title: string):
       [string, TestDecoration[]] {
     let message = '';
     let decorations: TestDecoration[] = [];
@@ -167,7 +167,7 @@ export class C2TestInfo implements TestInfo {
     return [message, decorations];
   }
 
-  private processXmlTagSectionInner(section: any, title: string):
+  private _processXmlTagSectionInner(section: any, title: string):
       [string, TestDecoration[]] {
     title += ' | ' + section.$.name + '(line: ' + section.$.line + ')';
     let message = '';
@@ -179,7 +179,7 @@ export class C2TestInfo implements TestInfo {
           let messageL = undefined;
           let decorationsL = undefined;
           [messageL, decorationsL] =
-              this.processXmlTagExpressionInner(section.Expression[j], title);
+              this._processXmlTagExpressionInner(section.Expression[j], title);
           message += messageL;
           decorations = decorations.concat(decorationsL);
         } catch (error) {
@@ -193,7 +193,7 @@ export class C2TestInfo implements TestInfo {
           let messageL = undefined;
           let decorationsL = undefined;
           [messageL, decorationsL] =
-              this.processXmlTagSectionInner(section.Section[j], title);
+              this._processXmlTagSectionInner(section.Section[j], title);
           message += messageL;
           decorations = decorations.concat(decorationsL);
         } catch (error) {

@@ -14,10 +14,16 @@ install:
   - ps: Install-Product node $env:nodejs_version
   - node --version
   - npm --version
+  - npm install --production
+  - npm run compile-production
   - npm install
+  - npm audit
+  - npm run compile
 
 build: off
 
 test_script:
-  - npm run compile
   - npm test --silent
+
+on_failure:
+  - type .\out\test\testlogs.txt

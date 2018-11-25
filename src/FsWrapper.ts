@@ -10,7 +10,7 @@ export type SpawnReturns = cp.SpawnSyncReturns<string>;
 export function spawnAsync(
     cmd: string, args?: string[],
     options?: cp.SpawnOptions): Promise<SpawnReturns> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const ret: SpawnReturns = {
       pid: 0,
       output: ['', ''],
@@ -28,15 +28,12 @@ export function spawnAsync(
     });
     command.on('error', function(err: Error) {
       ret.error = err;
+      reject(ret);
     });
     command.on('close', function(code) {
       ret.status = code;
       ret.error = new Error('code: ' + String(code));
       resolve(ret)
-    });
-    command.on('error', function(err) {
-      ret.error = err;
-      resolve(ret);
     });
   })
 }

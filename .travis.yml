@@ -24,12 +24,17 @@ before_install:
     fi
 
 install:
+  - npm install --production
+  - npm run compile-production
   - npm install
   - npm audit
   - npm run compile
 
 script: 
   - npm test --silent
+
+after_failure:
+  - cat ./out/test/testlogs.txt
 
 before_deploy:
   - npm install 

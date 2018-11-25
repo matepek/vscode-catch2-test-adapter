@@ -29,10 +29,9 @@ const workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
 const workspaceFolder =
     vscode.workspace.getWorkspaceFolder(workspaceFolderUri)!;
 
-const logger =
-    new Log('Catch2TestAdapter', workspaceFolder, 'Catch2TestAdapter');
-
 const dotVscodePath = path.join(workspaceFolderUri.fsPath, '.vscode');
+
+const logfilepath = path.join(workspaceFolderUri.fsPath, 'testlogs.txt');
 
 const sinonSandbox = sinon.createSandbox();
 
@@ -56,6 +55,8 @@ describe('C2TestAdapter', function() {
   }
 
   let adapter: C2TestAdapter|undefined;
+  let logger: Log;
+
   let testsEventsConnection: vscode.Disposable|undefined;
   let testStatesEventsConnection: vscode.Disposable|undefined;
 
@@ -68,6 +69,7 @@ describe('C2TestAdapter', function() {
     Object.keys(properties).forEach(key => {
       assert.ok(key.startsWith('catch2TestExplorer.'));
       const k = key.replace('catch2TestExplorer.', '');
+      if (k == 'logfile') return;
       t = t.then(function() {
         return getConfig().update(k, undefined);
       });
@@ -179,14 +181,16 @@ describe('C2TestAdapter', function() {
         <sinon.SinonStub<[vscode.GlobPattern], Thenable<vscode.Uri[]>>>
             sinonSandbox.stub(vscode.workspace, 'findFiles')
                 .named('vsFindFilesStub');
+
+    fse.remove(logfilepath);
   })
 
   after(function() {
     sinonSandbox.restore();
   })
 
-  beforeEach(function() {
-    this.timeout(6000);
+  beforeEach(async function() {
+    this.timeout(5000);
     adapter = undefined;
 
     fse.removeSync(dotVscodePath);
@@ -201,12 +205,23 @@ describe('C2TestAdapter', function() {
     vsFindFilesStub.callThrough();
 
     // reset config can cause problem with fse.removeSync(dotVscodePath);
-    return resetConfig();
+    await resetConfig();
+
+    // it doesn't work on travis linux
+    // await updateConfig('logfile', logfilepath);
+
+    logger = new Log(
+        'catch2TestExplorer', workspaceFolder, 'catch2TestExplorerTest');
+
+    logger.info(
+        'C2TestAdapter test running: ' +
+        (this.currentTest ? this.currentTest.titlePath() : 'unknown'));
   })
 
   afterEach(function() {
-    this.timeout(6000);
+    this.timeout(5000);
     disposeAdapterAndSubscribers();
+    logger.dispose();
   })
 
   describe('detect config change', function() {
@@ -215,6 +230,7 @@ describe('C2TestAdapter', function() {
     let adapter: C2TestAdapter;
 
     beforeEach(function() {
+      this.timeout(5000);
       adapter = createAdapterAndSubscribe();
       assert.deepStrictEqual(testsEvents, []);
     })
@@ -246,6 +262,12 @@ describe('C2TestAdapter', function() {
     it('defaultWatchTimeoutSec', function() {
       return updateConfig('defaultWatchTimeoutSec', 9876).then(function() {
         assert.equal((<any>adapter)._allTests.execWatchTimeout, 9876000);
+      });
+    })
+
+    it('defaultNoThrow', function() {
+      return updateConfig('defaultNoThrow', true).then(function() {
+        assert.equal((<any>adapter)._allTests.isNoThrow, true);
       });
     })
   })
@@ -314,6 +336,7 @@ describe('C2TestAdapter', function() {
     }
 
     beforeEach(function() {
+      this.timeout(5000);
       for (let suite of example1.outputs) {
         for (let scenario of suite[1]) {
           spawnStub.withArgs(suite[0], scenario[0]).callsFake(function() {
@@ -393,7 +416,8 @@ describe('C2TestAdapter', function() {
       }
 
       beforeEach(function() {
-        return updateConfig('workerMaxNumber', 4);
+        this.timeout(5000);
+        return updateConfig('workerMaxNumber', 3);
       })
 
       afterEach(function() {
@@ -402,6 +426,7 @@ describe('C2TestAdapter', function() {
 
       context('executables="execPath1"', function() {
         beforeEach(function() {
+          this.timeout(5000);
           return updateConfig('executables', 'execPath1');
         })
 
@@ -551,6 +576,7 @@ describe('C2TestAdapter', function() {
 
         context('with config: defaultRngSeed=2', function() {
           beforeEach(function() {
+            this.timeout(5000);
             return updateConfig('defaultRngSeed', 2);
           })
 
@@ -624,6 +650,7 @@ describe('C2TestAdapter', function() {
         }
 
         beforeEach(function() {
+          this.timeout(10000);
           return updateConfig('executables', ['execPath1', 'execPath2']);
         })
 
@@ -1137,6 +1164,80 @@ describe('C2TestAdapter', function() {
           }
         })
 
+        it('reload because new test found under run', async function() {
+          await loadAdapterAndAssert();
+          const testListOutput = example1.suite1.outputs[1][1].split('\n');
+          assert.equal(testListOutput.length, 10);
+          testListOutput.splice(1, 6);
+          spawnStub
+              .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0])
+              .returns(new ChildProcessStub(testListOutput.join(EOL)));
+
+          assert.strictEqual(suite1.children.length, 2);
+
+          await adapter.load();
+
+          assert.equal(testsEvents.length, 2);
+          root = (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
+                     .suite!;
+          assert.equal(root.children.length, 2);
+          suite1 = <TestSuiteInfo>root.children[0];
+
+          assert.strictEqual(suite1.children.length, 0);
+
+          spawnStub
+              .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0])
+              .returns(new ChildProcessStub(example1.suite1.outputs[1][1]));
+
+          const testLoadEventCount = testsEvents.length;
+          await adapter.run([suite1.id]);
+
+          const expected = [
+            {type: 'started', tests: [suite1.id]},
+            {type: 'suite', state: 'running', suite: suite1},
+            {type: 'suite', state: 'completed', suite: suite1},
+            {type: 'finished'}
+          ];
+          assert.deepStrictEqual(testStatesEvents, expected);
+
+          await waitFor(this, function() {
+            return suite1.children.length == 2 &&
+                testStatesEvents.length >= 4 + 8;
+          }, 2000);
+
+          assert.strictEqual(testsEvents.length, testLoadEventCount + 2);
+          assert.strictEqual(suite1.children.length, 2);
+          s1t1 = suite1.children[0];
+          assert.strictEqual(s1t1.label, 's1t1');
+          s1t2 = suite1.children[1];
+          assert.strictEqual(s1t2.label, 's1t2');
+
+          assert.deepStrictEqual(testStatesEvents, [
+            ...expected,
+            {type: 'started', tests: [s1t1.id, s1t2.id]},
+            {type: 'suite', state: 'running', suite: suite1},
+            {type: 'test', state: 'running', test: s1t1},
+            {
+              type: 'test',
+              state: 'passed',
+              test: s1t1,
+              decorations: undefined,
+              message: 'Duration: 0.000132 second(s)\n'
+            },
+            {type: 'test', state: 'running', test: s1t2},
+            {
+              type: 'test',
+              state: 'failed',
+              test: s1t2,
+              decorations: [{line: 14, message: 'Expanded: false'}],
+              message:
+                  'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+            },
+            {type: 'suite', state: 'completed', suite: suite1},
+            {type: 'finished'},
+          ]);
+        })
+
         it('reload because of fswatcher event: test deleted', async function() {
           await loadAdapterAndAssert();
           const testListOutput = example1.suite1.outputs[1][1].split('\n');
@@ -1206,6 +1307,7 @@ describe('C2TestAdapter', function() {
 
       context('executables=[{<regex>}] and env={...}', function() {
         beforeEach(async function() {
+          this.timeout(5000);
           await updateConfig(
               'executables', [{
                 name: '${relDirpath}/${filename} (${absDirpath})',
@@ -1279,6 +1381,7 @@ describe('C2TestAdapter', function() {
           'executables=["execPath1", "execPath2", "execPath3"]',
           async function() {
             beforeEach(function() {
+              this.timeout(5000);
               return updateConfig(
                   'executables', ['execPath1', 'execPath2', 'execPath3']);
             })
@@ -1395,6 +1498,11 @@ describe('C2TestAdapter', function() {
               'dummy error for testing (should be handled)');
 
           await adapter.load();
+          assert.equal(testsEvents.length, 2);
+          assert.equal(
+              (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1])
+                  .suite!.children.length,
+              1);
           testsEvents.pop();
           testsEvents.pop();
         })

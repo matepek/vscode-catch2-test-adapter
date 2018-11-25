@@ -1,19 +1,14 @@
-.appveyor.yml
-.git/**/*
-.github/**/*
-.gitignore
-.prettierrc
-.travis.yml
-.vscode/**/*
-*.vsix
-**/*.map
-appveyor.yml
-out/repo_scripts/**/*
-out/test/**/*
-out/tests/**/*
-package-lock.json
-resources/src/**/*
-src/**/*
-tsconfig.base.json
-tsconfig.json
-tslint.json
+*
+*/**
+
+# https://code.visualstudio.com/docs/extensions/publish-extension#_advanced-usage : Development dependencies listed in devDependencies will be automatically ignored, you don't need to add them to the .vscodeignore file.
+!node_modules
+
+# filter out's subdirs
+!out/*
+
+!package.json
+!resources/icon.png
+!README.md
+!LICENSE
+!CHANGELOG.md

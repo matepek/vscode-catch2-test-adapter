@@ -45,7 +45,8 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     if (isAbsolute && isPartOfWs)
       this._allTests.log.info(
-          'Absolute path is used for workspace directory: ' + inspect([this]));
+          'Absolute path is used for workspace directory: ' +
+          inspect(this, true, 0));
     if (this.pattern.indexOf('\\') != -1)
       this._allTests.log.warn(
           'Pattern contains backslash character: ' + this.pattern);
@@ -83,21 +84,20 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     for (let i = 0; i < fileUris.length; i++) {
       const file = fileUris[i];
-      if (await this._verifyIsCatch2TestExecutable(file.fsPath)) {
-        const suite = this._addFile(file);
-        this._executables.set(file.fsPath, suite);
-      }
+      const suite = this._addFile(file);
+      this._executables.set(file.fsPath, suite);
+
+      await suite.reloadChildren().catch((reason: any) => {
+        this._allTests.log.warn(
+            'Couldn\'t load suite: ' + inspect([reason, suite]));
+        if (suite.catch2Version !== undefined)
+          this._allTests.log.error('but it was a Catch2 executable');
+
+        this._allTests.removeChild(suite);
+      });
     }
 
     this._uniquifySuiteNames();
-
-    for (const suite of this._executables.values()) {
-      await suite.reloadChildren().catch((err: any) => {
-        this._allTests.log.error(
-            'Couldn\'t load suite: ' + inspect([err, suite]));
-        // we could remove it, but now the user still sees the dead leaf
-      });
-    }
   }
 
   private _addFile(file: vscode.Uri) {
@@ -153,6 +153,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
     let suite = this._executables.get(uri.fsPath);
 
     if (suite == undefined) {
+      this._allTests.log.info('new suite: ' + uri.fsPath);
       suite = this._addFile(uri);
       this._executables.set(uri.fsPath, suite);
       this._uniquifySuiteNames();
@@ -172,6 +173,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
         return Promise.resolve();
       }
       if (Date.now() - lastEventArrivedAt! > this._allTests.execWatchTimeout) {
+        this._allTests.log.info('refresh timeout: ' + uri.fsPath);
         return this._allTests.sendLoadEvents(() => {
           this._lastEventArrivedAt.delete(uri.fsPath);
           this._executables.delete(uri.fsPath);
@@ -182,7 +184,10 @@ export class C2ExecutableInfo implements vscode.Disposable {
         return this._allTests
             .sendLoadEvents(() => {
               this._lastEventArrivedAt.delete(uri.fsPath);
-              return suite!.reloadChildren().catch(() => {
+              return suite!.reloadChildren().catch((reason: any) => {
+                this._allTests.log.error(
+                    'suite should exists, but there is some problem under reloading: ' +
+                    inspect([reason, uri]));
                 return x(false, Math.min(delay * 2, 2000));
               });
             })
@@ -201,14 +206,17 @@ export class C2ExecutableInfo implements vscode.Disposable {
   }
 
   private _handleCreate(uri: vscode.Uri) {
+    this._allTests.log.info('create event: ' + uri.fsPath);
     return this._handleEverything(uri);
   }
 
   private _handleChange(uri: vscode.Uri) {
+    this._allTests.log.info('change event: ' + uri.fsPath);
     return this._handleEverything(uri);
   }
 
   private _handleDelete(uri: vscode.Uri) {
+    this._allTests.log.info('delete event: ' + uri.fsPath);
     return this._handleEverything(uri);
   }
 
@@ -232,16 +240,5 @@ export class C2ExecutableInfo implements vscode.Disposable {
         }
       }
     }
-  }
-
-  private _verifyIsCatch2TestExecutable(path: string): Promise<boolean> {
-    return c2fs.spawnAsync(path, ['--help'])
-        .then(res => {
-          return res.stdout.indexOf('Catch v2.') != -1;
-        })
-        .catch(e => {
-          this._allTests.log.error(inspect(e));
-          return false;
-        });
   }
 }

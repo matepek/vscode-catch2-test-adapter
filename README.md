@@ -15,14 +15,15 @@ This extension allows you to run your [Catch2 tests](https://github.com/catchorg
 | Property                                    | Description                                                                                                                                                                  |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `catch2TestExplorer.executables`            | The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. Details: [below](#catch2TestExplorer.executables) |
-| `catch2TestExplorer.defaultEnv`             | Default environment variables to be set when running the tests, if it isn't provided in 'executables'. (Resolves: \${workspaceFolder})                                       |
 | `catch2TestExplorer.defaultCwd`             | The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in "executables". (Resolves: \${workspaceFolder})       |
-| `catch2TestExplorer.defaultRngSeed`         | Specify a seed for the Random Number Generator. For details see [Catch2 documentation](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed)         |
-| `catch2TestExplorer.defaultWatchTimeoutSec` | Test executables are being watched. In case of one compiles too much this variable can help with it. Unit: second.                                                           |
-| `catch2TestExplorer.workerMaxNumber`        | The variable maximize the number of the parallel test execution.                                                                                                             |
-| `catch2TestExplorer.enableSourceDecoration` | Sets the source code decorations: Errored lines will be highlited.                                                                                                           |
+| `catch2TestExplorer.defaultEnv`             | Default environment variables to be set when running the tests, if it isn't provided in 'executables'. (Resolves: \${workspaceFolder})                                       |
 | `catch2TestExplorer.debugConfigTemplate`    | Set the necessary debug configuraitons and the debug button will work. Details: [below](#catch2TestExplorer.debugConfigTemplate)                                             |
 | `catch2TestExplorer.debugBreakOnFailure`    | Debugger breaks on failure while debugging the test. This is a Catch2 parameter: --break                                                                                     |
+| `catch2TestExplorer.defaultNoThrow`         | Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow                                                       |
+| `catch2TestExplorer.defaultRngSeed`         | Specify a seed for the Random Number Generator. For details see [Catch2 documentation](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed)         |
+| `catch2TestExplorer.defaultWatchTimeoutSec` | Test executables are being watched. In case of one compiles too much this variable can help with it. Unit: second.                                                           |
+| `catch2TestExplorer.enableSourceDecoration` | Sets the source code decorations: Errored lines will be highlited.                                                                                                           |
+| `catch2TestExplorer.workerMaxNumber`        | The variable maximize the number of the parallel test execution.                                                                                                             |
 | `testExplorer.onStart`                      | (This is part of the [dependency extension](https://github.com/hbenl/vscode-test-explorer#configuration)'s settings.)                                                        |
 | `testExplorer.onReload`                     | (This is part of the [dependency extension](https://github.com/hbenl/vscode-test-explorer#configuration)'s settings.)                                                        |
 
@@ -48,13 +49,13 @@ Variables which can be used in `name`, `cwd` and `env` of `executables`:
 | `${relPath}`            | Relative path of the test executable to the workspace folder                    |
 | `${absDirpath}`         | Absolute path of the test executable's parent directory                         |
 | `${relDirpath}`         | Relative path of the test executable's parent directory to the workspace folder |
-| `${filename}`           | Filename ( = Path withouth directories, "d/a.b.c" => "a.b.c")                   |
+| `${filename}`           | Filename (Path withouth directories, "d/a.b.c" => "a.b.c")                      |
 | `${baseFilename}`       | Filename without extension ("d/a.b.c" => "a.b")                                 |
 | `${extFilename}`        | Filename extension. ("d/a.b.c" => ".c")                                         |
-| `${base2Filename}`      | Filename without extension ("d/a.b.c" => "a")                                   |
+| `${base2Filename}`      | Filename without second extension ("d/a.b.c" => "a")                            |
 | `${ext2Filename}`       | Filename's second level extension. ("d/a.b.c" => ".b")                          |
-| `${base3Filename}`      | Filename without extension ("d/a.b.c" => "a")                                   |
-| `${ext3Filename}`       | Filename's second level extension. ("d/a.b.c" => "")                            |
+| `${base3Filename}`      | Filename without third extension ("d/a.b.c" => "a")                             |
+| `${ext3Filename}`       | Filename's third level extension. ("d/a.b.c" => "")                             |
 | `${workspaceDirectory}` | (You can only guess once.)                                                      |
 | `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                |
 
@@ -142,9 +143,6 @@ Example:
 - (2018-11-17) Long (>80 character) filename, test-name or description can cause test-list parsing failures. Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 9999`
 
 ## TODOs
-
-- Implement more [Catch command line options](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#specifying-which-tests-to-run), such as:
-  - `--nothrow`
 
 ## Contribution
 
