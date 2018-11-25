@@ -21,21 +21,21 @@ export async function activate(context: vscode.ExtensionContext) {
         testExplorerExtension.exports.registerTestAdapter(adapter);
       }
     }
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeWorkspaceFolders(event => {
+          for (const workspaceFolder of event.removed) {
+            const adapter = registeredAdapters.get(workspaceFolder);
+            if (adapter) {
+              testExplorerExtension.exports.unregisterTestAdapter(adapter);
+              registeredAdapters.delete(workspaceFolder);
+            }
+          }
 
-    vscode.workspace.onDidChangeWorkspaceFolders(event => {
-      for (const workspaceFolder of event.removed) {
-        const adapter = registeredAdapters.get(workspaceFolder);
-        if (adapter) {
-          testExplorerExtension.exports.unregisterTestAdapter(adapter);
-          registeredAdapters.delete(workspaceFolder);
-        }
-      }
-
-      for (const workspaceFolder of event.added) {
-        const adapter = new C2TestAdapter(workspaceFolder);
-        registeredAdapters.set(workspaceFolder, adapter);
-        testExplorerExtension.exports.registerTestAdapter(adapter);
-      }
-    });
+          for (const workspaceFolder of event.added) {
+            const adapter = new C2TestAdapter(workspaceFolder);
+            registeredAdapters.set(workspaceFolder, adapter);
+            testExplorerExtension.exports.registerTestAdapter(adapter);
+          }
+        }));
   }
 }

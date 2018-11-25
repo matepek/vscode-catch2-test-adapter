@@ -112,12 +112,12 @@ describe('C2TestAdapter', function() {
   }
 
   async function waitFor(
-      test: Mocha.Context, condition: Function,
+      context: Mocha.Context, condition: Function,
       timeout: number = 1000): Promise<void> {
     const start = Date.now();
     let c = await condition();
     while (!(c = await condition()) &&
-           (Date.now() - start < timeout || !test.enableTimeouts()))
+           (Date.now() - start < timeout || !context.enableTimeouts()))
       await promisify(setTimeout)(32);
     assert.ok(c);
   }
@@ -137,8 +137,14 @@ describe('C2TestAdapter', function() {
     return e.suite!;
   }
 
-  function disposeAdapterAndSubscribers(check: boolean = true) {
-    adapter && adapter.dispose();
+  async function disposeAdapterAndSubscribers(
+      context: Mocha.Context, check: boolean = true) {
+    if (adapter) {
+      adapter.dispose();
+      await waitFor(context, () => {
+        return (<any>adapter)._allTasks._count == 0;
+      });
+    }
     testsEventsConnection && testsEventsConnection.dispose();
     testStatesEventsConnection && testStatesEventsConnection.dispose();
     testStatesEvents = [];
@@ -206,9 +212,9 @@ describe('C2TestAdapter', function() {
     await resetConfig();
   })
 
-  afterEach(function() {
+  afterEach(async function() {
     this.timeout(8000);
-    disposeAdapterAndSubscribers();
+    await disposeAdapterAndSubscribers(this);
   })
 
   describe('detect config change', function() {
@@ -1783,6 +1789,7 @@ describe('C2TestAdapter', function() {
     })
 
     specify('variable substitution with executables={...}', async function() {
+      this.timeout(8000);
       this.slow(500);
       const wsPath = workspaceFolderUri.fsPath;
       const execPath2CopyRelPath = path.normalize('foo/bar/base.second.first');
