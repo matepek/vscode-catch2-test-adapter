@@ -12,7 +12,6 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
 import {TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo, TestInfo, TestAdapter} from 'vscode-test-adapter-api';
-import {Log} from 'vscode-test-adapter-util';
 import {inspect, promisify} from 'util';
 import {EOL} from 'os';
 
@@ -55,7 +54,6 @@ describe('C2TestAdapter', function() {
   }
 
   let adapter: C2TestAdapter|undefined;
-  let logger: Log;
 
   let testsEventsConnection: vscode.Disposable|undefined;
   let testStatesEventsConnection: vscode.Disposable|undefined;
@@ -96,7 +94,7 @@ describe('C2TestAdapter', function() {
   }
 
   function createAdapterAndSubscribe() {
-    adapter = new C2TestAdapter(workspaceFolder, logger);
+    adapter = new C2TestAdapter(workspaceFolder);
 
     testsEventsConnection =
         adapter.tests((e: TestLoadStartedEvent|TestLoadFinishedEvent) => {
@@ -114,12 +112,12 @@ describe('C2TestAdapter', function() {
   }
 
   async function waitFor(
-      test: Mocha.Context, condition: Function,
+      context: Mocha.Context, condition: Function,
       timeout: number = 1000): Promise<void> {
     const start = Date.now();
     let c = await condition();
     while (!(c = await condition()) &&
-           (Date.now() - start < timeout || !test.enableTimeouts()))
+           (Date.now() - start < timeout || !context.enableTimeouts()))
       await promisify(setTimeout)(32);
     assert.ok(c);
   }
@@ -139,8 +137,14 @@ describe('C2TestAdapter', function() {
     return e.suite!;
   }
 
-  function disposeAdapterAndSubscribers(check: boolean = true) {
-    adapter && adapter.dispose();
+  async function disposeAdapterAndSubscribers(
+      context: Mocha.Context, check: boolean = true) {
+    if (adapter) {
+      adapter.dispose();
+      await waitFor(context, () => {
+        return (<any>adapter)._allTasks._count == 0;
+      });
+    }
     testsEventsConnection && testsEventsConnection.dispose();
     testStatesEventsConnection && testStatesEventsConnection.dispose();
     testStatesEvents = [];
@@ -190,7 +194,7 @@ describe('C2TestAdapter', function() {
   })
 
   beforeEach(async function() {
-    this.timeout(5000);
+    this.timeout(8000);
     adapter = undefined;
 
     fse.removeSync(dotVscodePath);
@@ -206,22 +210,11 @@ describe('C2TestAdapter', function() {
 
     // reset config can cause problem with fse.removeSync(dotVscodePath);
     await resetConfig();
-
-    // it doesn't work on travis linux
-    // await updateConfig('logfile', logfilepath);
-
-    logger = new Log(
-        'catch2TestExplorer', workspaceFolder, 'catch2TestExplorerTest');
-
-    logger.info(
-        'C2TestAdapter test running: ' +
-        (this.currentTest ? this.currentTest.titlePath() : 'unknown'));
   })
 
-  afterEach(function() {
-    this.timeout(5000);
-    disposeAdapterAndSubscribers();
-    logger.dispose();
+  afterEach(async function() {
+    this.timeout(8000);
+    await disposeAdapterAndSubscribers(this);
   })
 
   describe('detect config change', function() {
@@ -230,7 +223,7 @@ describe('C2TestAdapter', function() {
     let adapter: C2TestAdapter;
 
     beforeEach(function() {
-      this.timeout(5000);
+      this.timeout(8000);
       adapter = createAdapterAndSubscribe();
       assert.deepStrictEqual(testsEvents, []);
     })
@@ -336,7 +329,7 @@ describe('C2TestAdapter', function() {
     }
 
     beforeEach(function() {
-      this.timeout(5000);
+      this.timeout(8000);
       for (let suite of example1.outputs) {
         for (let scenario of suite[1]) {
           spawnStub.withArgs(suite[0], scenario[0]).callsFake(function() {
@@ -416,7 +409,7 @@ describe('C2TestAdapter', function() {
       }
 
       beforeEach(function() {
-        this.timeout(5000);
+        this.timeout(8000);
         return updateConfig('workerMaxNumber', 3);
       })
 
@@ -426,7 +419,7 @@ describe('C2TestAdapter', function() {
 
       context('executables="execPath1"', function() {
         beforeEach(function() {
-          this.timeout(5000);
+          this.timeout(8000);
           return updateConfig('executables', 'execPath1');
         })
 
@@ -576,7 +569,7 @@ describe('C2TestAdapter', function() {
 
         context('with config: defaultRngSeed=2', function() {
           beforeEach(function() {
-            this.timeout(5000);
+            this.timeout(8000);
             return updateConfig('defaultRngSeed', 2);
           })
 
@@ -936,7 +929,7 @@ describe('C2TestAdapter', function() {
           adapter.cancel();
         })
 
-        it('cancel', async function() {
+        it('cancels', async function() {
           // since taskQueue/allTasks has benn added it works differently, so it
           // wont test anything really, but i dont want to delete it either
           await loadAdapterAndAssert();
@@ -993,7 +986,7 @@ describe('C2TestAdapter', function() {
           assert.equal(testStatesEvents.length, 16, inspect(testStatesEvents));
         })
 
-        it('cancel after run finished', async function() {
+        it('cancels after run finished', async function() {
           await loadAdapterAndAssert();
           let spyKill1: sinon.SinonSpy<never, void>;
           let spyKill2: sinon.SinonSpy<never, void>;
@@ -1023,7 +1016,7 @@ describe('C2TestAdapter', function() {
           });
         })
 
-        it('reload because of fswatcher event: touch(changed)',
+        it('reloads because of fswatcher event: touch(changed)',
            async function() {
              await loadAdapterAndAssert();
              const newRoot = await doAndWaitForReloadEvent(this, async () => {
@@ -1035,7 +1028,7 @@ describe('C2TestAdapter', function() {
                  [{type: 'started'}, {type: 'finished', suite: root}]);
            });
 
-        it('reload because of fswatcher event: double touch(changed)',
+        it('reloads because of fswatcher event: double touch(changed)',
            async function() {
              await loadAdapterAndAssert();
              const oldRoot = root;
@@ -1052,7 +1045,7 @@ describe('C2TestAdapter', function() {
              testsEvents.pop();
            });
 
-        it('reload because of fswatcher event: double touch(changed) with delay',
+        it('reloads because of fswatcher event: double touch(changed) with delay',
            async function() {
              await loadAdapterAndAssert();
              const oldRoot = root;
@@ -1071,7 +1064,7 @@ describe('C2TestAdapter', function() {
              testsEvents.pop();
            });
 
-        it('reload because of fswatcher event: touch(delete,create)',
+        it('reloads because of fswatcher event: touch(delete,create)',
            async function() {
              await loadAdapterAndAssert();
              const newRoot = await doAndWaitForReloadEvent(this, async () => {
@@ -1084,7 +1077,7 @@ describe('C2TestAdapter', function() {
                  [{type: 'started'}, {type: 'finished', suite: root}]);
            });
 
-        it('reload because of fswatcher event: double touch(delete,create)',
+        it('reloads because of fswatcher event: double touch(delete,create)',
            async function() {
              await loadAdapterAndAssert();
              const oldRoot = root;
@@ -1101,7 +1094,7 @@ describe('C2TestAdapter', function() {
              testsEvents.pop();
            });
 
-        it('reload because of fswatcher event: double touch(delete,create) with delay',
+        it('reloads because of fswatcher event: double touch(delete,create) with delay',
            async function() {
              await loadAdapterAndAssert();
              const oldRoot = root;
@@ -1120,7 +1113,7 @@ describe('C2TestAdapter', function() {
              testsEvents.pop();
            });
 
-        it('reload because of fswatcher event: test added', async function() {
+        it('reloads because of fswatcher event: test added', async function() {
           await loadAdapterAndAssert();
           const testListOutput = example1.suite1.outputs[1][1].split('\n');
           assert.equal(testListOutput.length, 10);
@@ -1164,7 +1157,7 @@ describe('C2TestAdapter', function() {
           }
         })
 
-        it('reload because new test found under run', async function() {
+        it('reloads because new test found under run', async function() {
           await loadAdapterAndAssert();
           const testListOutput = example1.suite1.outputs[1][1].split('\n');
           assert.equal(testListOutput.length, 10);
@@ -1238,44 +1231,193 @@ describe('C2TestAdapter', function() {
           ]);
         })
 
-        it('reload because of fswatcher event: test deleted', async function() {
+        it('reloads because removed test found under running suite',
+           async function() {
+             await loadAdapterAndAssert();
+             const testListOutput = example1.suite1.outputs[1][1].split('\n');
+             assert.equal(testListOutput.length, 10);
+             testListOutput.splice(1, 3);
+             spawnStub
+                 .withArgs(
+                     example1.suite1.execPath, example1.suite1.outputs[1][0])
+                 .returns(new ChildProcessStub(testListOutput.join(EOL)));
+             const testOutput = example1.suite1.outputs[2][1].split('\n');
+             assert.equal(testOutput.length, 21);
+             testOutput.splice(3, 3);
+             spawnStub
+                 .withArgs(
+                     example1.suite1.execPath, example1.suite1.outputs[2][0])
+                 .returns(new ChildProcessStub(testOutput.join(EOL)));
+
+             assert.strictEqual(suite1.children.length, 2);
+
+             const testLoadEventCount = testsEvents.length;
+             await adapter.run([suite1.id]);
+
+             suite1.children.shift();
+             const expected = [
+               {type: 'started', tests: [suite1.id]},
+               {type: 'suite', state: 'running', suite: suite1},
+               {type: 'test', state: 'running', test: s1t2},
+               {
+                 type: 'test',
+                 state: 'failed',
+                 test: s1t2,
+                 decorations: [{line: 14, message: 'Expanded: false'}],
+                 message:
+                     'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+               },
+               {type: 'suite', state: 'completed', suite: suite1},
+               {type: 'finished'},
+             ];
+             assert.deepStrictEqual(testStatesEvents, expected);
+
+             await waitFor(this, function() {
+               return suite1.children.length == 1 &&
+                   testsEvents.length == testLoadEventCount + 2;
+             }, 2000);
+
+             assert.strictEqual(testsEvents.length, testLoadEventCount + 2);
+             assert.strictEqual(suite1.children.length, 1);
+           })
+
+        it('reloads because removed test found under running the removed one',
+           async function() {
+             await loadAdapterAndAssert();
+             const testListOutput = example1.suite1.outputs[1][1].split('\n');
+             assert.equal(testListOutput.length, 10);
+             testListOutput.splice(1, 3);
+             spawnStub
+                 .withArgs(
+                     example1.suite1.execPath, example1.suite1.outputs[1][0])
+                 .returns(new ChildProcessStub(testListOutput.join(EOL)));
+             const testOutput = example1.suite1.t1.outputs[0][1].split('\n');
+             assert.equal(testOutput.length, 10);
+             testOutput.splice(3, 3);
+             spawnStub
+                 .withArgs(
+                     example1.suite1.execPath, example1.suite1.t1.outputs[0][0])
+                 .returns(new ChildProcessStub(testOutput.join(EOL)));
+
+             assert.strictEqual(suite1.children.length, 2);
+
+             const testLoadEventCount = testsEvents.length;
+             await adapter.run([s1t1.id]);
+
+             suite1.children.shift();
+             const expected = [
+               {type: 'started', tests: [s1t1.id]},
+               {type: 'suite', state: 'running', suite: suite1},
+               {type: 'suite', state: 'completed', suite: suite1},
+               {type: 'finished'},
+             ];
+             assert.deepStrictEqual(testStatesEvents, expected);
+
+             await waitFor(this, function() {
+               return suite1.children.length == 1 &&
+                   testsEvents.length == testLoadEventCount + 2;
+             }, 2000);
+
+             assert.strictEqual(testsEvents.length, testLoadEventCount + 2);
+             assert.strictEqual(suite1.children.length, 1);
+           })
+
+        it('reloads because of fswatcher event: test deleted',
+           async function() {
+             await loadAdapterAndAssert();
+             const testListOutput = example1.suite1.outputs[1][1].split('\n');
+             assert.equal(testListOutput.length, 10);
+             testListOutput.splice(1, 3);
+             const withArgs = spawnStub.withArgs(
+                 example1.suite1.execPath, example1.suite1.outputs[1][0]);
+             withArgs.onCall(withArgs.callCount)
+                 .returns(new ChildProcessStub(testListOutput.join(EOL)));
+
+             const oldRootChildren = [...root.children];
+             const oldSuite1Children = [...suite1.children];
+             const oldSuite2Children = [...suite2.children];
+
+             const newRoot = await doAndWaitForReloadEvent(this, async () => {
+               suite1Watcher.sendDelete();
+               suite1Watcher.sendCreate();
+             });
+
+             assert.equal(newRoot, root);
+             assert.equal(root.children.length, oldRootChildren.length);
+             for (let i = 0; i < oldRootChildren.length; i++) {
+               assert.equal(root.children[i], oldRootChildren[i]);
+             }
+
+             assert.equal(suite1.children.length + 1, oldSuite1Children.length);
+             for (let i = 0; i < suite1.children.length; i++) {
+               const c1: TestInfo = suite1.children[i];
+               const c2: TestInfo = oldSuite1Children[i + 1];
+               assert.deepStrictEqual(
+                   [c1.file, c1.id, c1.label, c1.line, c1.skipped, c1.type],
+                   [c2.file, c2.id, c2.label, c2.line, c2.skipped, c2.type]);
+             }
+
+             assert.equal(suite2.children.length, oldSuite2Children.length);
+             for (let i = 0; i < suite2.children.length; i++) {
+               assert.equal(suite2.children[i], oldSuite2Children[i]);
+             }
+           })
+
+        it('reloads because test was renamed', async function() {
           await loadAdapterAndAssert();
-          const testListOutput = example1.suite1.outputs[1][1].split('\n');
-          assert.equal(testListOutput.length, 10);
-          testListOutput.splice(1, 3);
-          const withArgs = spawnStub.withArgs(
-              example1.suite1.execPath, example1.suite1.outputs[1][0]);
-          withArgs.onCall(withArgs.callCount)
-              .returns(new ChildProcessStub(testListOutput.join(EOL)));
+          assert.ok(example1.suite1.outputs[1][1].indexOf('s1t1') != -1);
+          const testListOutput =
+              example1.suite1.outputs[1][1].replace('s1t1', 's1-t1');
+          spawnStub
+              .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0])
+              .returns(new ChildProcessStub(testListOutput));
+          assert.ok(example1.suite1.outputs[2][1].indexOf('s1t1') != -1);
+          const testOutput =
+              example1.suite1.outputs[2][1].replace('s1t1', 's1-t1');
+          spawnStub
+              .withArgs(example1.suite1.execPath, example1.suite1.outputs[2][0])
+              .returns(new ChildProcessStub(testOutput));
 
-          const oldRootChildren = [...root.children];
-          const oldSuite1Children = [...suite1.children];
-          const oldSuite2Children = [...suite2.children];
+          assert.strictEqual(suite1.children.length, 2);
 
-          const newRoot = await doAndWaitForReloadEvent(this, async () => {
-            suite1Watcher.sendDelete();
-            suite1Watcher.sendCreate();
-          });
+          await adapter.run([suite1.id]);
 
-          assert.equal(newRoot, root);
-          assert.equal(root.children.length, oldRootChildren.length);
-          for (let i = 0; i < oldRootChildren.length; i++) {
-            assert.equal(root.children[i], oldRootChildren[i]);
-          }
+          await waitFor(this, function() {
+            return testStatesEvents.length >= 6 + 6 && testsEvents.length == 2;
+          }, 2000);
 
-          assert.equal(suite1.children.length + 1, oldSuite1Children.length);
-          for (let i = 0; i < suite1.children.length; i++) {
-            const c1: TestInfo = suite1.children[i];
-            const c2: TestInfo = oldSuite1Children[i + 1];
-            assert.deepStrictEqual(
-                [c1.file, c1.id, c1.label, c1.line, c1.skipped, c1.type],
-                [c2.file, c2.id, c2.label, c2.line, c2.skipped, c2.type]);
-          }
+          assert.strictEqual(suite1.children.length, 2);
+          assert.strictEqual(suite1.children[0].label, 's1-t1');
+          s1t1 = suite1.children[0];
 
-          assert.equal(suite2.children.length, oldSuite2Children.length);
-          for (let i = 0; i < suite2.children.length; i++) {
-            assert.equal(suite2.children[i], oldSuite2Children[i]);
-          }
+          const expected = [
+            {type: 'started', tests: [suite1.id]},
+            {type: 'suite', state: 'running', suite: suite1},
+            {type: 'test', state: 'running', test: s1t2},
+            {
+              type: 'test',
+              state: 'failed',
+              test: s1t2,
+              decorations: [{line: 14, message: 'Expanded: false'}],
+              message:
+                  'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+            },
+            {type: 'suite', state: 'completed', suite: suite1},
+            {type: 'finished'},
+            {type: 'started', tests: [s1t1.id]},
+            {type: 'suite', state: 'running', suite: suite1},
+            {type: 'test', state: 'running', test: s1t1},
+            {
+              type: 'test',
+              state: 'passed',
+              test: s1t1,
+              decorations: undefined,
+              message: 'Duration: 0.000132 second(s)\n'
+            },
+            {type: 'suite', state: 'completed', suite: suite1},
+            {type: 'finished'},
+          ];
+          assert.deepStrictEqual(testStatesEvents, expected);
         })
 
         it('data arrives in pieces', async function() {
@@ -1307,7 +1449,7 @@ describe('C2TestAdapter', function() {
 
       context('executables=[{<regex>}] and env={...}', function() {
         beforeEach(async function() {
-          this.timeout(5000);
+          this.timeout(8000);
           await updateConfig(
               'executables', [{
                 name: '${relDirpath}/${filename} (${absDirpath})',
@@ -1381,7 +1523,7 @@ describe('C2TestAdapter', function() {
           'executables=["execPath1", "execPath2", "execPath3"]',
           async function() {
             beforeEach(function() {
-              this.timeout(5000);
+              this.timeout(8000);
               return updateConfig(
                   'executables', ['execPath1', 'execPath2', 'execPath3']);
             })
@@ -1647,6 +1789,7 @@ describe('C2TestAdapter', function() {
     })
 
     specify('variable substitution with executables={...}', async function() {
+      this.timeout(8000);
       this.slow(500);
       const wsPath = workspaceFolderUri.fsPath;
       const execPath2CopyRelPath = path.normalize('foo/bar/base.second.first');

@@ -53,7 +53,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     let fileUris: vscode.Uri[] = [];
 
-    if (!isAbsolute || isPartOfWs) {
+    if (isPartOfWs) {
       let relativePattern: vscode.RelativePattern;
       if (isAbsolute)
         relativePattern = new vscode.RelativePattern(

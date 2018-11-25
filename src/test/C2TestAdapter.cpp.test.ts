@@ -9,7 +9,6 @@ import * as path from 'path';
 import {inspect, promisify} from 'util';
 import * as vscode from 'vscode';
 import {TestAdapter, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
-import {Log} from 'vscode-test-adapter-util';
 
 import {C2TestAdapter} from '../C2TestAdapter';
 import * as c2fs from '../FsWrapper';
@@ -21,9 +20,6 @@ const workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
 
 const workspaceFolder =
     vscode.workspace.getWorkspaceFolder(workspaceFolderUri)!;
-
-const logger =
-    new Log('Catch2TestAdapter', workspaceFolder, 'Catch2TestAdapter');
 
 const cppUri = vscode.Uri.file(path.join(workspaceFolderUri.fsPath, 'cpp'));
 
@@ -131,7 +127,7 @@ describe('C2TestAdapter.cpp', function() {
                          TestSuiteEvent|TestEvent)[] = [];
 
   function createAdapterAndSubscribe() {
-    adapter = new C2TestAdapter(workspaceFolder, logger);
+    adapter = new C2TestAdapter(workspaceFolder);
 
     testsEvents = [];
     testsEventsConnection =

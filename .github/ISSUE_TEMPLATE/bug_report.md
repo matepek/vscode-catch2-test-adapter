@@ -27,5 +27,9 @@ If applicable, add screenshots to help explain your problem.
 - Catch2 Version
 - OS Type and Version
 
+**Log**
+Attach log. (optional, Set: `catch2TestExplorer.logfile` and reproduce the bug.)
+_Warning_: Log probably contains file and test names too. Consider security conserns before attach!
+
 **Additional context**
 Add any other context about the problem here.

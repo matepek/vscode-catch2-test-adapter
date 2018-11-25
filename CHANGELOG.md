@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1]
+
+Stability improvements.
+
+### Fixed
+
+- relative patter/path outside of workspace didn't work
+- tests are added/removed if change detected under running tests
+
 ## [2.2.0] - 2018-11-25
 
 Performance and stability improvements. Improved logging.

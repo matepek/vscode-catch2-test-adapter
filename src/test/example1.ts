@@ -2156,7 +2156,7 @@ For more detailed usage please see the project docs
 
   assertWithoutChildren(root: TestSuiteInfo, uniqeIdContainer?: Set<string>) {
     assert.equal(root.type, 'suite');
-    assert.equal(root.label, 'Catch2 Test Explorer (matepek)');
+    assert.ok(root.label.endsWith(' - Catch2'), root.label);
     assert.equal(root.file, undefined);
     assert.equal(root.line, undefined);
     if (uniqeIdContainer != undefined) {
