@@ -185,11 +185,18 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       throw 'Catch2 is busy. Try it again a bit later.';
     }
 
-    this._log.info('Debug...');
+    this._log.info('Debugging');
 
-    console.assert(tests.length === 1);
+    if (tests.length !== 1) {
+      this._log.error('unsupported test count: ' + inspect(tests));
+      throw Error('Unsupported input. Contact');
+    }
     const info = this._allTests.findChildById(tests[0]);
-    console.assert(info !== undefined);
+    if (info === undefined) {
+      this._log.error(
+          'Not existing id: ' + inspect([tests, this._allTasks], true, 3));
+      throw Error('Not existing test id');
+    }
 
     if (!(info instanceof C2TestInfo)) {
       this._log.info(__filename + ' !(info instanceof C2TestInfo)');
@@ -204,24 +211,24 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       const debug: vscode.DebugConfiguration = {
         name: 'Catch2: ' + testInfo.label,
         request: 'launch',
-        type: ''
+        type: 'cppdbg',
       };
 
       const config = this._getConfiguration();
       const template = this._getDebugConfigurationTemplate(config);
-      let resolveDebugVariables: [string, any][] = this._variableToValue;
+
       const args = [testInfo.getEscapedTestName(), '--reporter', 'console'];
       if (this._getDebugBreakOnFailure(config)) args.push('--break');
 
-      resolveDebugVariables = resolveDebugVariables.concat([
-        ['${label}', testInfo.label],
-        ['${exec}', testInfo.parent.execPath],
-        ['${args}', args],
-        ['${cwd}', testInfo.parent.execOptions.cwd!],
-        ['${envObj}', testInfo.parent.execOptions.env!],
-      ]);
-
       if (template !== null) {
+        const resolveDebugVariables: [string, any][] = [
+          ...this._variableToValue,
+          ['${label}', testInfo.label],
+          ['${exec}', testInfo.parent.execPath],
+          ['${args}', args],
+          ['${cwd}', testInfo.parent.execOptions.cwd!],
+          ['${envObj}', testInfo.parent.execOptions.env!],
+        ];
         for (const prop in template) {
           const val = template[prop];
           if (val !== undefined && val !== null) {
@@ -327,26 +334,6 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return config.get<boolean>('defaultNoThrow', false);
   }
 
-  private _getGlobalAndDefaultEnvironmentVariables(
-      config: vscode.WorkspaceConfiguration):
-      {[prop: string]: string|undefined} {
-    const processEnv = process.env;
-    const configEnv: {[prop: string]: any} = config.get('defaultEnv') || {};
-
-    const resultEnv = {...processEnv};
-
-    for (const prop in configEnv) {
-      const val = configEnv[prop];
-      if (val === undefined || val === null) {
-        delete resultEnv.prop;
-      } else {
-        resultEnv[prop] = resolveVariables(String(val), this._variableToValue);
-      }
-    }
-
-    return resultEnv;
-  }
-
   private _getDefaultCwd(config: vscode.WorkspaceConfiguration): string {
     const dirname = this._workspaceFolder.uri.fsPath;
     const cwd = resolveVariables(
@@ -372,8 +359,27 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return config.get<number>('defaultWatchTimeoutSec', 10) * 1000;
   }
 
+  private _getGlobalAndDefaultEnvironmentVariables(
+      config: vscode.WorkspaceConfiguration):
+      {[prop: string]: string|undefined} {
+    const processEnv = process.env;
+    const configEnv: {[prop: string]: any} = config.get('defaultEnv') || {};
+
+    const resultEnv = {...processEnv};
+
+    for (const prop in configEnv) {
+      const val = configEnv[prop];
+      if (val === undefined || val === null) {
+        delete resultEnv.prop;
+      } else {
+        resultEnv[prop] = resolveVariables(String(val), this._variableToValue);
+      }
+    }
+
+    return resultEnv;
+  }
+
   private _getGlobalAndCurrentEnvironmentVariables(
-      config: vscode.WorkspaceConfiguration,
       configEnv: {[prop: string]: any}): {[prop: string]: any} {
     const processEnv = process.env;
     const resultEnv = {...processEnv};
@@ -420,7 +426,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
           obj.hasOwnProperty('cwd') ? obj.cwd : globalWorkingDirectory;
 
       const env: {[prop: string]: any} = obj.hasOwnProperty('env') ?
-          this._getGlobalAndCurrentEnvironmentVariables(config, obj.env) :
+          this._getGlobalAndCurrentEnvironmentVariables(obj.env) :
           this._getGlobalAndDefaultEnvironmentVariables(config);
 
       return new C2ExecutableInfo(allTests, name, pattern, cwd, env);
