@@ -12,7 +12,6 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
 import {TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo, TestInfo, TestAdapter} from 'vscode-test-adapter-api';
-import {Log} from 'vscode-test-adapter-util';
 import {inspect, promisify} from 'util';
 import {EOL} from 'os';
 
@@ -55,7 +54,6 @@ describe('C2TestAdapter', function() {
   }
 
   let adapter: C2TestAdapter|undefined;
-  let logger: Log;
 
   let testsEventsConnection: vscode.Disposable|undefined;
   let testStatesEventsConnection: vscode.Disposable|undefined;
@@ -96,7 +94,7 @@ describe('C2TestAdapter', function() {
   }
 
   function createAdapterAndSubscribe() {
-    adapter = new C2TestAdapter(workspaceFolder, logger);
+    adapter = new C2TestAdapter(workspaceFolder);
 
     testsEventsConnection =
         adapter.tests((e: TestLoadStartedEvent|TestLoadFinishedEvent) => {
@@ -206,22 +204,11 @@ describe('C2TestAdapter', function() {
 
     // reset config can cause problem with fse.removeSync(dotVscodePath);
     await resetConfig();
-
-    // it doesn't work on travis linux
-    // await updateConfig('logfile', logfilepath);
-
-    logger = new Log(
-        'catch2TestExplorer', workspaceFolder, 'catch2TestExplorerTest');
-
-    logger.info(
-        'C2TestAdapter test running: ' +
-        (this.currentTest ? this.currentTest.titlePath() : 'unknown'));
   })
 
   afterEach(function() {
     this.timeout(8000);
     disposeAdapterAndSubscribers();
-    logger.dispose();
   })
 
   describe('detect config change', function() {

@@ -2,6 +2,7 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
+import {throws} from 'assert';
 import * as path from 'path';
 import {inspect} from 'util';
 import * as vscode from 'vscode';
@@ -15,6 +16,7 @@ import {resolveVariables} from './Helpers';
 import {QueueGraphNode} from './QueueGraph';
 
 export class C2TestAdapter implements TestAdapter, vscode.Disposable {
+  private readonly _log: util.Log;
   private readonly _testsEmitter =
       new vscode.EventEmitter<TestLoadStartedEvent|TestLoadFinishedEvent>();
   private readonly _testStatesEmitter =
@@ -34,10 +36,11 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private _allTests: C2AllTestSuiteInfo;
   private readonly _disposables: vscode.Disposable[] = [];
 
-  constructor(
-      private readonly _workspaceFolder: vscode.WorkspaceFolder,
-      private readonly _log: util.Log,
-  ) {
+  constructor(private readonly _workspaceFolder: vscode.WorkspaceFolder) {
+    this._log = new util.Log(
+        'catch2TestExplorer', this._workspaceFolder, 'Catch2 Test Explorer');
+    this._disposables.push(this._log);
+
     this._log.info(
         'info: ' + inspect([
           process.platform, process.version, process.versions, vscode.version
