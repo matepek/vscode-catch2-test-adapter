@@ -49,7 +49,7 @@ Variables which can be used in `name`, `cwd` and `env` of `executables`:
 | `${relPath}`            | Relative path of the test executable to the workspace folder                    |
 | `${absDirpath}`         | Absolute path of the test executable's parent directory                         |
 | `${relDirpath}`         | Relative path of the test executable's parent directory to the workspace folder |
-| `${filename}`           | Filename ( = Path withouth directories, "d/a.b.c" => "a.b.c")                   |
+| `${filename}`           | Filename (Path withouth directories, "d/a.b.c" => "a.b.c")                      |
 | `${baseFilename}`       | Filename without extension ("d/a.b.c" => "a.b")                                 |
 | `${extFilename}`        | Filename extension. ("d/a.b.c" => ".c")                                         |
 | `${base2Filename}`      | Filename without second extension ("d/a.b.c" => "a")                            |
