@@ -113,7 +113,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         {type: 'suite', suite: this, state: 'running'});
 
     const execParams: string[] = [];
-    if (childrenToRun != 'all') {
+    if (childrenToRun !== 'all') {
       let testNames: string[] = [];
       for (let i = 0; i < childrenToRun.length; i++) {
         const c = childrenToRun[i];
@@ -160,13 +160,15 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       beforeFirstTestCase: boolean = true;
       rngSeed: number|undefined = undefined;
       unporessedTestCases: string[] = [];
+      processedTestCases: C2TestInfo[] = [];
     }
     ();
+
+    const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
 
     const processChunk = (chunk: string) => {
       data.buffer = data.buffer + chunk;
       let invariant = 99999;
-      const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
       do {
         if (!data.inTestCase) {
           const b = data.buffer.indexOf('<TestCase');
@@ -202,6 +204,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           });
 
           if (data.currentChild !== undefined) {
+            data.processedTestCases.push(data.currentChild);
             const ev = data.currentChild.getStartEvent();
             this.allTests.testStatesEmitter.fire(ev);
           } else {
@@ -231,50 +234,6 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
             this.allTests.log.info(
                 '<TestCase> found without TestInfo: ' + inspect(this, true, 1) +
                 '; ' + testCaseXml);
-            if (data.unporessedTestCases.length == 0) {
-              this.allTests
-                  .sendLoadEvents(() => {
-                    return this.reloadChildren().catch(e => {
-                      this.allTests.log.error(
-                          'reload after new test found: ' + inspect(e));
-                      // Suite possibly deleted: It is a dead suite.
-                    });
-                  })
-                  .then(() => {
-                    const events: TestEvent[] = [];
-
-                    for (let i = 0; i < data.unporessedTestCases.length; i++) {
-                      const testCaseXml = data.unporessedTestCases[i];
-
-                      const m = testCaseXml.match(testCaseTagRe);
-                      if (m == null || m.length != 1) break;
-
-                      let name: string|undefined = undefined;
-                      new xml2js.Parser({explicitArray: true})
-                          .parseString(
-                              m[0] + '</TestCase>', (err: any, result: any) => {
-                                if (err) {
-                                  this.allTests.log.error(err.toString());
-                                } else {
-                                  name = result.TestCase.$.name;
-                                }
-                              });
-                      if (name === undefined) break;
-
-                      const currentChild =
-                          this.children.find((v: C2TestInfo) => {
-                            return v.testNameTrimmed == name;
-                          });
-                      if (currentChild === undefined) break;
-
-                      const ev = currentChild.parseAndProcessTestCase(
-                          testCaseXml, data.rngSeed);
-                      events.push(currentChild.getStartEvent());
-                      events.push(ev);
-                    }
-                    this._sendTestStateEventsWithParent(events);
-                  });
-            }
             data.unporessedTestCases.push(testCaseXml);
           }
 
@@ -309,6 +268,55 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       taskPool.release();
       this.allTests.testStatesEmitter.fire(
           {type: 'suite', suite: this, state: 'completed'});
+
+      const isTestRemoved = (childrenToRun === 'all' &&
+                             this.children.filter(c => !c.skipped).length >
+                                 data.processedTestCases.length) ||
+          (childrenToRun !== 'all' && data.processedTestCases.length == 0);
+
+      if (data.unporessedTestCases.length > 0 || isTestRemoved) {
+        this.allTests
+            .sendLoadEvents(() => {
+              return this.reloadChildren().catch(e => {
+                this.allTests.log.error(
+                    'reloading-error after new test found: ' + inspect(e));
+                // Suite possibly deleted: It is a dead suite.
+              });
+            })
+            .then(() => {
+              const events: TestEvent[] = [];
+
+              for (let i = 0; i < data.unporessedTestCases.length; i++) {
+                const testCaseXml = data.unporessedTestCases[i];
+
+                const m = testCaseXml.match(testCaseTagRe);
+                if (m == null || m.length != 1) break;
+
+                let name: string|undefined = undefined;
+                new xml2js.Parser({explicitArray: true})
+                    .parseString(
+                        m[0] + '</TestCase>', (err: any, result: any) => {
+                          if (err) {
+                            this.allTests.log.error(err.toString());
+                          } else {
+                            name = result.TestCase.$.name;
+                          }
+                        });
+                if (name === undefined) break;
+
+                const currentChild = this.children.find((v: C2TestInfo) => {
+                  return v.testNameTrimmed == name;
+                });
+                if (currentChild === undefined) break;
+
+                const ev = currentChild.parseAndProcessTestCase(
+                    testCaseXml, data.rngSeed);
+                events.push(currentChild.getStartEvent());
+                events.push(ev);
+              }
+              events.length && this._sendTestStateEventsWithParent(events);
+            });
+      }
     };
     return p.then(
         () => {

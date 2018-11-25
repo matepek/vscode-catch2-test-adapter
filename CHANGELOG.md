@@ -14,6 +14,7 @@ Stability improvements.
 ### Fixed
 
 - relative patter/path outside of workspace didn't work
+- tests are added/removed if change detected under running tests
 
 ## [2.2.0] - 2018-11-25
 

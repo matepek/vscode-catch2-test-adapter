@@ -2,7 +2,6 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import {throws} from 'assert';
 import * as path from 'path';
 import {inspect} from 'util';
 import * as vscode from 'vscode';
@@ -171,7 +170,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   run(tests: string[]): Promise<void> {
     if (this._allTasks.size > 0) {
       this._log.info(__filename + 'run is busy');
-      throw 'Catch2 is busy. Try it again a bit later.';
+      // throw 'Catch2 is busy. Try it again a bit later.';
     }
 
     return this._allTasks.then(() => {
