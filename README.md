@@ -1,3 +1,9 @@
+## Note about "This extension was reported to be problematic." / "malicious"
+
+This extension uses `vscode` npm library which uses `event-stream` which has malicious version.
+([Details](https://github.com/matepek/vscode-catch2-test-adapter/issues/28))
+That's why this extension is/was blocked in the store.
+
 # Catch2 Test Explorer for Visual Studio Code
 
 [![Build Status](https://travis-ci.org/matepek/vscode-catch2-test-adapter.svg?branch=master)](https://travis-ci.org/matepek/vscode-catch2-test-adapter)
