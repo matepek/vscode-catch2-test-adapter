@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.3]
+
+Unnecessary codes and packages are removed from extension package.
+
+Also old releases will be removed from Github releases page,
+because of a [security issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/28)
+related to `vscode` package.
+
 ## [2.2.2] - 2018-11-28
 
 ### Security
