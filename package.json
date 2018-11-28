@@ -49,11 +49,11 @@
     "typescript": "^2.9.2",
     "vscode-test-adapter-api": "^1.1.0",
     "vscode-test-adapter-util": "^0.5.1",
-    "vscode": "^1.1.22",
     "@types/xml2js": "^0.4.3",
     "xml2js": "^0.4.19"
   },
   "devDependencies": {
+    "vscode": "^1.1.22",
     "@types/chai": "^4.1.7",
     "@types/deep-equal": "^1.0.1",
     "@types/fs-extra": "^5.0.4",
