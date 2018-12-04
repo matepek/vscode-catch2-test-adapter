@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.4]
+
+Updated README.md
+
 ## [2.2.3] - 2018-11-28
 
 Unnecessary codes and packages are removed from extension package.

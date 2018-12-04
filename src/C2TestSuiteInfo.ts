@@ -2,17 +2,17 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import {ChildProcess, spawn, SpawnOptions} from 'child_process';
+import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import * as path from 'path';
-import {inspect} from 'util';
-import {TestEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
+import { inspect } from 'util';
+import { TestEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
-import {C2AllTestSuiteInfo} from './C2AllTestSuiteInfo';
-import {C2TestInfo} from './C2TestInfo';
+import { C2AllTestSuiteInfo } from './C2AllTestSuiteInfo';
+import { C2TestInfo } from './C2TestInfo';
 import * as c2fs from './FsWrapper';
-import {generateUniqueId} from './IdGenerator';
-import {TaskPool} from './TaskPool';
+import { generateUniqueId } from './IdGenerator';
+import { TaskPool } from './TaskPool';
 
 export class C2TestSuiteInfo implements TestSuiteInfo {
   readonly type: 'suite' = 'suite';
@@ -22,24 +22,24 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
   file?: string = undefined;
   line?: number = undefined;
 
-  catch2Version: [number, number, number]|undefined = undefined;
+  catch2Version: [number, number, number] | undefined = undefined;
   private _isKill: boolean = false;
-  private _proc: ChildProcess|undefined = undefined;
+  private _proc: ChildProcess | undefined = undefined;
 
   constructor(
-      public readonly origLabel: string,
-      private readonly allTests: C2AllTestSuiteInfo,
-      public readonly execPath: string,
-      public readonly execOptions: SpawnOptions) {
+    public readonly origLabel: string,
+    private readonly allTests: C2AllTestSuiteInfo,
+    public readonly execPath: string,
+    public readonly execOptions: SpawnOptions) {
     this.label = origLabel;
     this.id = generateUniqueId();
   }
 
   createChildTest(
-      id: string|undefined, testName: string, description: string,
-      tags: string[], file: string, line: number): C2TestInfo {
+    id: string | undefined, testName: string, description: string,
+    tags: string[], file: string, line: number): C2TestInfo {
     const test =
-        new C2TestInfo(id, testName, description, tags, file, line - 1, this);
+      new C2TestInfo(id, testName, description, tags, file, line - 1, this);
 
     if (this.children.length == 0) {
       this.file = file;
@@ -64,7 +64,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
   cancel(): void {
     this.allTests.log.info(
-        'canceled: ' + inspect([this.id, this.label, this._proc != undefined]));
+      'canceled: ' + inspect([this.id, this.label, this._proc != undefined]));
 
     this._isKill = true;
 
@@ -99,8 +99,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     }
   }
 
-  private _runInner(childrenToRun: C2TestInfo[]|'all', taskPool: TaskPool):
-      Promise<void> {
+  private _runInner(childrenToRun: C2TestInfo[] | 'all', taskPool: TaskPool):
+    Promise<void> {
     if (this._isKill) return Promise.reject(Error('Test was killed.'));
 
     if (!taskPool.acquire()) {
@@ -110,14 +110,13 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     }
 
     this.allTests.testStatesEmitter.fire(
-        {type: 'suite', suite: this, state: 'running'});
+      { type: 'suite', suite: this, state: 'running' });
 
     const execParams: string[] = [];
     if (childrenToRun !== 'all') {
       let testNames: string[] = [];
       for (let i = 0; i < childrenToRun.length; i++) {
         const c = childrenToRun[i];
-        /*',' has special meaning */
         testNames.push(c.getEscapedTestName());
       }
       execParams.push(testNames.join(','));
@@ -145,9 +144,9 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
     this._proc = spawn(this.execPath, execParams, this.execOptions);
     this.allTests.log.info(
-        'proc started: ' + inspect([this.execPath, execParams]));
-    let pResolver: Function|undefined = undefined;
-    let pRejecter: Function|undefined = undefined;
+      'proc started: ' + inspect([this.execPath, execParams]));
+    let pResolver: Function | undefined = undefined;
+    let pRejecter: Function | undefined = undefined;
     const p = new Promise<void>((resolve, reject) => {
       pResolver = resolve;
       pRejecter = reject;
@@ -156,13 +155,13 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     const data = new class {
       buffer: string = '';
       inTestCase: boolean = false;
-      currentChild: C2TestInfo|undefined = undefined;
+      currentChild: C2TestInfo | undefined = undefined;
       beforeFirstTestCase: boolean = true;
-      rngSeed: number|undefined = undefined;
+      rngSeed: number | undefined = undefined;
       unporessedTestCases: string[] = [];
       processedTestCases: C2TestInfo[] = [];
     }
-    ();
+      ();
 
     const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
 
@@ -180,19 +179,19 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           data.inTestCase = true;
 
           let name: string = '';
-          new xml2js.Parser({explicitArray: true})
-              .parseString(m[0] + '</TestCase>', (err: any, result: any) => {
-                if (err) {
-                  this.allTests.log.error(err.toString());
-                  throw err;
-                } else {
-                  name = result.TestCase.$.name;
-                }
-              });
+          new xml2js.Parser({ explicitArray: true })
+            .parseString(m[0] + '</TestCase>', (err: any, result: any) => {
+              if (err) {
+                this.allTests.log.error(err.toString());
+                throw err;
+              } else {
+                name = result.TestCase.$.name;
+              }
+            });
 
           if (data.beforeFirstTestCase) {
             const ri =
-                data.buffer.match(/<Randomness\s+seed="([0-9]+)"\s*\/?>/);
+              data.buffer.match(/<Randomness\s+seed="([0-9]+)"\s*\/?>/);
             if (ri != null && ri.length == 2) {
               data.rngSeed = Number(ri[1]);
             }
@@ -222,18 +221,18 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           if (data.currentChild != undefined) {
             try {
               const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
-                  testCaseXml, data.rngSeed);
+                testCaseXml, data.rngSeed);
               if (!this.allTests.isEnabledSourceDecoration)
                 ev.decorations = undefined;
               this.allTests.testStatesEmitter.fire(ev);
             } catch (e) {
               this.allTests.log.error(
-                  'parsing and processing test: ' + data.currentChild.label);
+                'parsing and processing test: ' + data.currentChild.label);
             }
           } else {
             this.allTests.log.info(
-                '<TestCase> found without TestInfo: ' + inspect(this, true, 1) +
-                '; ' + testCaseXml);
+              '<TestCase> found without TestInfo: ' + inspect(this, true, 1) +
+              '; ' + testCaseXml);
             data.unporessedTestCases.push(testCaseXml);
           }
 
@@ -244,7 +243,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       } while (data.buffer.length > 0 && --invariant > 0);
       if (invariant == 0) {
         const errMsg =
-            'Possible infinite loop with data:' + inspect([invariant, data]);
+          'Possible infinite loop with data:' + inspect([invariant, data]);
         pRejecter && pRejecter(new Error(errMsg));
       }
     };
@@ -263,180 +262,166 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
     const suiteFinally = () => {
       this.allTests.log.info(
-          'proc finished: ' + inspect([this.execPath, execParams]));
+        'proc finished: ' + inspect([this.execPath, execParams]));
       this._proc = undefined;
       taskPool.release();
       this.allTests.testStatesEmitter.fire(
-          {type: 'suite', suite: this, state: 'completed'});
+        { type: 'suite', suite: this, state: 'completed' });
 
       const isTestRemoved = (childrenToRun === 'all' &&
-                             this.children.filter(c => !c.skipped).length >
-                                 data.processedTestCases.length) ||
-          (childrenToRun !== 'all' && data.processedTestCases.length == 0);
+        this.children.filter(c => !c.skipped).length >
+        data.processedTestCases.length) ||
+        (childrenToRun !== 'all' && data.processedTestCases.length == 0);
 
       if (data.unporessedTestCases.length > 0 || isTestRemoved) {
         this.allTests
-            .sendLoadEvents(() => {
-              return this.reloadChildren().catch(e => {
-                this.allTests.log.error(
-                    'reloading-error after new test found: ' + inspect(e));
-                // Suite possibly deleted: It is a dead suite.
-              });
-            })
-            .then(() => {
-              const events: TestEvent[] = [];
-
-              for (let i = 0; i < data.unporessedTestCases.length; i++) {
-                const testCaseXml = data.unporessedTestCases[i];
-
-                const m = testCaseXml.match(testCaseTagRe);
-                if (m == null || m.length != 1) break;
-
-                let name: string|undefined = undefined;
-                new xml2js.Parser({explicitArray: true})
-                    .parseString(
-                        m[0] + '</TestCase>', (err: any, result: any) => {
-                          if (err) {
-                            this.allTests.log.error(err.toString());
-                          } else {
-                            name = result.TestCase.$.name;
-                          }
-                        });
-                if (name === undefined) break;
-
-                const currentChild = this.children.find((v: C2TestInfo) => {
-                  return v.testNameTrimmed == name;
-                });
-                if (currentChild === undefined) break;
-
-                const ev = currentChild.parseAndProcessTestCase(
-                    testCaseXml, data.rngSeed);
-                events.push(currentChild.getStartEvent());
-                events.push(ev);
-              }
-              events.length && this._sendTestStateEventsWithParent(events);
+          .sendLoadEvents(() => {
+            return this.reloadChildren().catch(e => {
+              this.allTests.log.error(
+                'reloading-error: ' + inspect(e));
+              // Suite possibly deleted: It is a dead suite.
             });
+          })
+          .then(() => {
+            const events: TestEvent[] = [];
+
+            for (let i = 0; i < data.unporessedTestCases.length; i++) {
+              const testCaseXml = data.unporessedTestCases[i];
+
+              const m = testCaseXml.match(testCaseTagRe);
+              if (m == null || m.length != 1) break;
+
+              let name: string | undefined = undefined;
+              new xml2js.Parser({ explicitArray: true })
+                .parseString(
+                  m[0] + '</TestCase>', (err: any, result: any) => {
+                    if (err) {
+                      this.allTests.log.error(err.toString());
+                    } else {
+                      name = result.TestCase.$.name;
+                    }
+                  });
+              if (name === undefined) break;
+
+              const currentChild = this.children.find((v: C2TestInfo) => {
+                return v.testNameTrimmed == name;
+              });
+              if (currentChild === undefined) break;
+
+              const ev = currentChild.parseAndProcessTestCase(
+                testCaseXml, data.rngSeed);
+              events.push(currentChild.getStartEvent());
+              events.push(ev);
+            }
+            events.length && this._sendTestStateEventsWithParent(events);
+          });
       }
     };
     return p.then(
-        () => {
-          suiteFinally();
-        },
-        (err: Error) => {
-          if (data.inTestCase) {
-            this.allTests.testStatesEmitter.fire({
-              type: 'test',
-              test: data.currentChild!,
-              state: 'failed',
-              message: 'Unexpected test error. (Is Catch2 crashed?)\n'
-            });
-          }
-          suiteFinally();
-          try {
-            this.allTests.log.error(err.message);
-          } catch (e) {
-          }
-        });
+      () => {
+        suiteFinally();
+      },
+      (reason: any) => {
+        this.allTests.log.error(inspect(reason));
+        if (data.inTestCase) {
+          this.allTests.testStatesEmitter.fire({
+            type: 'test',
+            test: data.currentChild!,
+            state: 'failed',
+            message: 'Unexpected test error. (Is Catch2 crashed?)\n'
+          });
+        }
+        suiteFinally();
+      });
   }
 
   reloadChildren(): Promise<void> {
     return c2fs.spawnAsync(this.execPath, ['--help'])
-        .then((res): [number, number, number] => {
-          const m = res.stdout.match(/Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/);
-          if (m == undefined || m.length != 4)
-            throw Error(
-                'reloadChildren: ' + path + ': not a Catch2 executable');
-          return [
-            Number(m[1].valueOf()), Number(m[2].valueOf()),
-            Number(m[3].valueOf())
-          ];
-        })
-        .then((catch2Version: [number, number, number]) => {
-          if (catch2Version[0] > 2 || catch2Version[0] < 2)
-            this.allTests.log.warn(
-                'Unsupported Cathc2 version: ' + inspect(catch2Version));
-          this.catch2Version = catch2Version;
-          return c2fs
-              .spawnAsync(
-                  this.execPath,
-                  [
-                    '[.],*', '--verbosity', 'high', '--list-tests',
-                    '--use-colour', 'no'
-                  ],
-                  this.execOptions)
-              .then((r) => {
-                const oldChildren = this.children;
-                this.children = [];
+      .then((res): [number, number, number] => {
+        const m = res.stdout.match(/Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/);
+        if (m == undefined || m.length != 4)
+          throw Error(
+            'reloadChildren: ' + path + ': not a Catch2 executable');
+        return [
+          Number(m[1].valueOf()), Number(m[2].valueOf()),
+          Number(m[3].valueOf())
+        ];
+      })
+      .then((catch2Version: [number, number, number]) => {
+        if (catch2Version[0] > 2 || catch2Version[0] < 2)
+          this.allTests.log.warn(
+            'Unsupported Cathc2 version: ' + inspect(catch2Version));
+        this.catch2Version = catch2Version;
+        return c2fs
+          .spawnAsync(
+            this.execPath,
+            [
+              '[.],*', '--verbosity', 'high', '--list-tests',
+              '--use-colour', 'no'
+            ],
+            this.execOptions)
+          .then((r) => {
+            const oldChildren = this.children;
+            this.children = [];
 
-                let lines = r.stdout.split(/\r?\n/);
+            let lines = r.stdout.split(/\r?\n/);
 
-                if (lines.length == 0)
-                  this.allTests.log.error('Empty test list.');
+            if (lines.length == 0)
+              this.allTests.log.error('Empty test list.');
 
-                while (lines[lines.length - 1].trim().length == 0) lines.pop();
+            while (lines[lines.length - 1].trim().length == 0) lines.pop();
 
-                let i = 1;
-                while (i < lines.length - 1) {
-                  if (lines[i][0] != ' ')
-                    this.allTests.log.error(
-                        'Wrong test list output format: ' + lines.toString());
+            let i = 1;
+            while (i < lines.length - 1) {
+              if (lines[i][0] != ' ')
+                this.allTests.log.error(
+                  'Wrong test list output format: ' + lines.toString());
 
-                  const testNameFull = lines[i++].substr(2);
+              const testNameFull = lines[i++].substr(2);
 
-                  let filePath = '';
-                  let line = 0;
-                  {
-                    const fileLine = lines[i++].substr(4);
-                    const match =
-                        fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
-                    if (match && match.length == 5) {
-                      filePath = match[1] ? match[1] : match[3];
-                      filePath =
-                          path.resolve(path.dirname(this.execPath), filePath);
-                      if (!c2fs.existsSync(filePath) && this.execOptions.cwd) {
-                        const r = path.resolve(this.execOptions.cwd, filePath);
-                        if (c2fs.existsSync(r)) filePath = r;
-                      }
-                      line = Number(match[2] ? match[2] : match[4]);
-                    }
+              let filePath = '';
+              let line = 0;
+              {
+                const fileLine = lines[i++].substr(4);
+                const match =
+                  fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
+                if (match && match.length == 5) {
+                  filePath = match[1] ? match[1] : match[3];
+                  filePath =
+                    path.resolve(path.dirname(this.execPath), filePath);
+                  if (!c2fs.existsSync(filePath) && this.execOptions.cwd) {
+                    const r = path.resolve(this.execOptions.cwd, filePath);
+                    if (c2fs.existsSync(r)) filePath = r;
                   }
-
-                  let description = lines[i++].substr(4);
-                  if (description.startsWith('(NO DESCRIPTION)'))
-                    description = '';
-
-                  let tags: string[] = [];
-                  if (lines[i].length > 6 && lines[i][6] === '[') {
-                    tags = lines[i].trim().split(']');
-                    tags.pop();
-                    for (let j = 0; j < tags.length; ++j) tags[j] += ']';
-                    ++i;
-                  }
-
-                  const index = oldChildren.findIndex(
-                      c => c.testNameFull == testNameFull);
-                  if (index != -1 &&
-                      oldChildren[index].label ==
-                          C2TestInfo.generateLabel(
-                              testNameFull, description, tags)) {
-                    this.createChildTest(
-                        oldChildren[index].id, testNameFull, description, tags,
-                        filePath, line);
-                  } else {
-                    this.createChildTest(
-                        undefined, testNameFull, description, tags, filePath,
-                        line);
-                  }
+                  line = Number(match[2] ? match[2] : match[4]);
                 }
-              });
-        });
+              }
+
+              let description = lines[i++].substr(4);
+              if (description.startsWith('(NO DESCRIPTION)'))
+                description = '';
+
+              let tags: string[] = [];
+              if (lines[i].length > 6 && lines[i][6] === '[') {
+                tags = lines[i].trim().split(']');
+                tags.pop();
+                for (let j = 0; j < tags.length; ++j) tags[j] += ']';
+                ++i;
+              }
+
+              const index = oldChildren.findIndex(c => c.testNameFull == testNameFull);
+              this.createChildTest(index != -1 ? oldChildren[index].id : undefined,
+                testNameFull, description, tags, filePath, line);
+            }
+          });
+      });
   }
 
   private _sendTestStateEventsWithParent(events: TestEvent[]) {
     this.allTests.sendTestSuiteStateEventsWithParent([
-      {type: 'suite', suite: this, state: 'running'},
+      { type: 'suite', suite: this, state: 'running' },
       ...events,
-      {type: 'suite', suite: this, state: 'completed'},
+      { type: 'suite', suite: this, state: 'completed' },
     ]);
   }
 }

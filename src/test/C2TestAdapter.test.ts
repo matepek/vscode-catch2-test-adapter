@@ -112,7 +112,8 @@ describe('C2TestAdapter', function () {
 
   async function waitFor(
     context: Mocha.Context, condition: Function,
-    timeout: number = 1000): Promise<void> {
+    timeout?: number): Promise<void> {
+    if (timeout === undefined) timeout = context.timeout();
     const start = Date.now();
     let c = await condition();
     while (!(c = await condition()) &&
@@ -122,13 +123,12 @@ describe('C2TestAdapter', function () {
   }
 
   async function doAndWaitForReloadEvent(
-    test: Mocha.Context, action: Function,
-    timeout: number = 1000): Promise<TestSuiteInfo> {
+    context: Mocha.Context, action: Function): Promise<TestSuiteInfo> {
     const origCount = testsEvents.length;
     await action();
-    await waitFor(test, () => {
+    await waitFor(context, () => {
       return testsEvents.length >= origCount + 2;
-    }, timeout);
+    });
     assert.equal(testsEvents.length, origCount + 2);
     const e = <TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]!;
     assert.equal(e.type, 'finished');
@@ -213,6 +213,7 @@ describe('C2TestAdapter', function () {
   })
 
   describe('detect config change', function () {
+    this.timeout(5000);
     this.slow(300);
 
     let adapter: C2TestAdapter;
@@ -1699,7 +1700,7 @@ describe('C2TestAdapter', function () {
               .callsFake(handleStatExistsFile);
             watcher.sendCreate();
           }, 3000);
-        }, 40000);
+        });
         const elapsed = Date.now() - start;
 
         assert.equal(testsEvents.length, 2);
@@ -1758,7 +1759,7 @@ describe('C2TestAdapter', function () {
             .callsFake(handleStatNotExists);
           start = Date.now();
           watcher.sendDelete();
-        }, 40000);
+        });
         const elapsed = Date.now() - start;
         testsEvents.pop();
         testsEvents.pop();
@@ -1769,7 +1770,7 @@ describe('C2TestAdapter', function () {
       })
 
     specify('wrong executables format', async function () {
-      this.slow(500);
+      this.slow(5000);
       await updateConfig('executables', { name: '' });
 
       adapter = createAdapterAndSubscribe();
@@ -1822,13 +1823,13 @@ describe('C2TestAdapter', function () {
             return new ChildProcessStub(scenario[1]);
           });
       }
-      spawnStub.withArgs(execPath2CopyPath, example1.suite2.t1.outputs[0][0])
-        .callsFake(function (p: string, args: string[], ops: any) {
-          assert.equal(ops.cwd, expectStr);
-          assert.ok(ops.env.hasOwnProperty('C2TESTVARS'));
-          assert.equal(ops.env.C2TESTVARS, expectStr);
-          return new ChildProcessStub(example1.suite2.t1.outputs[0][1]);
-        });
+      const spawnWithArgs = spawnStub.withArgs(execPath2CopyPath, example1.suite2.t1.outputs[0][0]);
+      spawnWithArgs.callsFake(function (p: string, args: string[], ops: any) {
+        assert.equal(ops.cwd, expectStr);
+        assert.ok(ops.env.hasOwnProperty('C2TESTVARS'));
+        assert.equal(ops.env.C2TESTVARS, expectStr);
+        return new ChildProcessStub(example1.suite2.t1.outputs[0][1]);
+      });
 
       fsStatStub.withArgs(execPath2CopyPath).callsFake(handleStatExistsFile);
 
@@ -1854,7 +1855,9 @@ describe('C2TestAdapter', function () {
 
       assert.equal(suite.children.length, 3);
 
+      const callCount = spawnWithArgs.callCount;
       await adapter.run([suite.children[0].id]);
+      assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
     })
   })
 })
