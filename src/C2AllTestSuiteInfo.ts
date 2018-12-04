@@ -2,18 +2,18 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import {SpawnOptions} from 'child_process';
-import {inspect} from 'util';
+import { SpawnOptions } from 'child_process';
+import { inspect } from 'util';
 import * as vscode from 'vscode';
-import {TestEvent, TestInfo, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo} from 'vscode-test-adapter-api';
+import { TestEvent, TestInfo, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
 
-import {C2ExecutableInfo} from './C2ExecutableInfo'
-import {C2TestInfo} from './C2TestInfo';
-import {C2TestSuiteInfo} from './C2TestSuiteInfo';
-import {generateUniqueId} from './IdGenerator';
-import {QueueGraphNode} from './QueueGraph';
-import {TaskPool} from './TaskPool';
+import { C2ExecutableInfo } from './C2ExecutableInfo'
+import { C2TestInfo } from './C2TestInfo';
+import { C2TestSuiteInfo } from './C2TestSuiteInfo';
+import { generateUniqueId } from './IdGenerator';
+import { QueueGraphNode } from './QueueGraph';
+import { TaskPool } from './TaskPool';
 
 export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly type: 'suite' = 'suite';
@@ -24,21 +24,21 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   private _isDisposed = false;
 
   constructor(
-      public readonly allTasks: QueueGraphNode,
-      public readonly log: util.Log,
-      public readonly workspaceFolder: vscode.WorkspaceFolder,
-      private readonly _loadFinishedEmitter: vscode.EventEmitter<void>,
-      private readonly _testsEmitter:
-          vscode.EventEmitter<TestLoadStartedEvent|TestLoadFinishedEvent>,
-      public readonly testStatesEmitter:
-          vscode.EventEmitter<TestRunStartedEvent|TestRunFinishedEvent|
-                              TestSuiteEvent|TestEvent>,
-      public readonly autorunEmitter: vscode.EventEmitter<void>,
-      public readonly variableToValue: [string, string][],
-      public isEnabledSourceDecoration: boolean,
-      public rngSeed: string|number|null,
-      public execWatchTimeout: number,
-      public isNoThrow: boolean,
+    public readonly allTasks: QueueGraphNode,
+    public readonly log: util.Log,
+    public readonly workspaceFolder: vscode.WorkspaceFolder,
+    private readonly _loadFinishedEmitter: vscode.EventEmitter<void>,
+    private readonly _testsEmitter:
+      vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>,
+    public readonly testStatesEmitter:
+      vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent |
+      TestSuiteEvent | TestEvent>,
+    public readonly autorunEmitter: vscode.EventEmitter<void>,
+    public readonly variableToValue: [string, string][],
+    public isEnabledSourceDecoration: boolean,
+    public rngSeed: string | number | null,
+    public execWatchTimeout: number,
+    public isNoThrow: boolean,
   ) {
     this.label = workspaceFolder.name + ' - Catch2';
     this.id = generateUniqueId();
@@ -46,7 +46,9 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
 
   dispose() {
     this._isDisposed = true;
-    while (this._executables.length) this._executables.pop()!.dispose();
+    for (let i = 0; i < this._executables.length; i++) {
+      this._executables[i].dispose();
+    }
   }
 
   sendLoadEvents(task: (() => Promise<void>)) {
@@ -54,35 +56,35 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
       if (this._isDisposed) {
         return task();
       } else {
-        this._testsEmitter.fire({type: 'started'});
+        this._testsEmitter.fire({ type: 'started' });
         return task().then(
-            () => {
-              this._loadFinishedEmitter.fire();
-            },
-            (reason: any) => {
-              this._loadFinishedEmitter.fire();
-              this.log.warn(inspect(reason));
-              throw reason;
-            });
+          () => {
+            this._loadFinishedEmitter.fire();
+          },
+          (reason: any) => {
+            this._loadFinishedEmitter.fire();
+            this.log.warn(inspect(reason));
+            throw reason;
+          });
       }
     });
   }
 
-  sendTestSuiteStateEventsWithParent(events: (TestSuiteEvent|TestEvent)[]) {
+  sendTestSuiteStateEventsWithParent(events: (TestSuiteEvent | TestEvent)[]) {
     this.allTasks.then(() => {
       if (this._isDisposed) return;
 
       const tests =
-          events.filter(ev => ev.type == 'test' && ev.state == 'running')
-              .map(ev => (<TestInfo>((<TestEvent>ev).test)).id);
+        events.filter(ev => ev.type == 'test' && ev.state == 'running')
+          .map(ev => (<TestInfo>((<TestEvent>ev).test)).id);
 
-      this.testStatesEmitter.fire({type: 'started', tests: tests});
+      this.testStatesEmitter.fire({ type: 'started', tests: tests });
 
       for (let i = 0; i < events.length; i++) {
         this.testStatesEmitter.fire(events[i]);
       }
 
-      this.testStatesEmitter.fire({type: 'finished'});
+      this.testStatesEmitter.fire({ type: 'finished' });
     });
   }
 
@@ -95,21 +97,21 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     return false;
   }
 
-  findChildById(id: string): C2TestSuiteInfo|C2TestInfo|undefined {
+  findChildById(id: string): C2TestSuiteInfo | C2TestInfo | undefined {
     const recursiveSearch =
-        (child: C2TestSuiteInfo|C2TestInfo): C2TestSuiteInfo|C2TestInfo|
+      (child: C2TestSuiteInfo | C2TestInfo): C2TestSuiteInfo | C2TestInfo |
         undefined => {
-          if (child.id == id) {
-            return child;
-          } else if (child.type == 'suite') {
-            const suite: C2TestSuiteInfo = child;
-            for (let i = 0; i < suite.children.length; ++i) {
-              const r = recursiveSearch(suite.children[i]);
-              if (r != undefined) return r;
-            }
+        if (child.id == id) {
+          return child;
+        } else if (child.type == 'suite') {
+          const suite: C2TestSuiteInfo = child;
+          for (let i = 0; i < suite.children.length; ++i) {
+            const r = recursiveSearch(suite.children[i]);
+            if (r != undefined) return r;
           }
-          return undefined;
-        };
+        }
+        return undefined;
+      };
 
     for (let i = 0; i < this.children.length; ++i) {
       const r = recursiveSearch(this.children[i]);
@@ -120,7 +122,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   createChildSuite(label: string, execPath: string, execOptions: SpawnOptions):
-      C2TestSuiteInfo {
+    C2TestSuiteInfo {
     const suite = new C2TestSuiteInfo(label, this, execPath, execOptions);
 
     let i = this.children.findIndex((v: C2TestSuiteInfo) => {
@@ -151,7 +153,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   run(tests: string[], workerMaxNumber: number): Promise<void> {
-    this.testStatesEmitter.fire({type: 'started', tests: tests});
+    this.testStatesEmitter.fire({ type: 'started', tests: tests });
 
     const taskPool = new TaskPool(workerMaxNumber);
 
@@ -175,10 +177,12 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
       this.log.error('Some tests have remained: ' + inspect(testSet));
     }
 
-    const always = () => {
-      this.testStatesEmitter.fire({type: 'finished'});
-    };
-
-    return Promise.all(ps).then(always, always);
+    return Promise.all(ps).catch(e => {
+      this.testStatesEmitter.fire({ type: 'finished' });
+      this.log.warn(inspect([__filename, e]));
+      throw e;
+    }).then(() => {
+      this.testStatesEmitter.fire({ type: 'finished' });
+    });
   }
 }

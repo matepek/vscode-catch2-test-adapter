@@ -1,9 +1,3 @@
-## Note about "This extension was reported to be problematic." / "malicious"
-
-This extension uses `vscode` npm library which uses `event-stream` which has malicious version.
-([Details](https://github.com/matepek/vscode-catch2-test-adapter/issues/28))
-That's why this extension is/was blocked in the store.
-
 # Catch2 Test Explorer for Visual Studio Code
 
 [![Build Status](https://travis-ci.org/matepek/vscode-catch2-test-adapter.svg?branch=master)](https://travis-ci.org/matepek/vscode-catch2-test-adapter)
@@ -107,7 +101,7 @@ If `catch2TestExplorer.debugConfigTemplate` value is `null` (default),
 it will look after `vadimcn.vscode-lldb` and `ms-vscode.cpptools` extensions.
 If it founds one of it, it will use it automatically.
 
-#### Or user can manually fill it
+#### or user can manually fill it
 
 See [here](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations) for details.
 
