@@ -84,26 +84,26 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     for (let i = 0; i < fileUris.length; i++) {
       const file = fileUris[i];
-      const suite = this._addFile(file);
-      this._executables.set(file.fsPath, suite);
+      const suite = this._createSuiteByUri(file);
 
-      await suite.reloadChildren().catch((reason: any) => {
+      await suite.reloadChildren().then(() => {
+        this._executables.set(file.fsPath, suite);
+        this._allTests.insertChildSuite(suite);
+      }, (reason: any) => {
         this._allTests.log.warn(
           'Couldn\'t load suite: ' + inspect([reason, suite]));
         if (suite.catch2Version !== undefined)
           this._allTests.log.error('but it was a Catch2 executable');
-
-        this._allTests.removeChild(suite);
       });
     }
 
     this._uniquifySuiteNames();
   }
 
-  private _addFile(file: vscode.Uri) {
+  private _createSuiteByUri(file: vscode.Uri): C2TestSuiteInfo {
     const wsUri = this._allTests.workspaceFolder.uri;
 
-    let resolvedName = this.name;
+    let resolvedLabel = this.name;
     let resolvedCwd = this.cwd;
     let resolvedEnv: { [prop: string]: string } = this.env;
     try {
@@ -131,10 +131,10 @@ export class C2ExecutableInfo implements vscode.Disposable {
         ['${ext3Filename}', ext3Filename],
         ['${base3Filename}', base3Filename],
       ];
-      resolvedName = resolveVariables(this.name, varToValue);
-      if (resolvedName.match(/\$\{.*\}/))
+      resolvedLabel = resolveVariables(this.name, varToValue);
+      if (resolvedLabel.match(/\$\{.*\}/))
         this._allTests.log.warn(
-          'Possibly unresolved variable: ' + resolvedName);
+          'Possibly unresolved variable: ' + resolvedLabel);
       resolvedCwd = path.normalize(resolveVariables(this.cwd, varToValue));
       if (resolvedCwd.match(/\$\{.*\}/))
         this._allTests.log.warn('Possibly unresolved variable: ' + resolvedCwd);
@@ -143,27 +143,22 @@ export class C2ExecutableInfo implements vscode.Disposable {
       this._allTests.log.error(inspect([e, this]));
     }
 
-    const suite = this._allTests.createChildSuite(
-      resolvedName, file.fsPath, { cwd: resolvedCwd, env: resolvedEnv });
-
-    return suite;
+    return new C2TestSuiteInfo(resolvedLabel, this._allTests,
+      file.fsPath, { cwd: resolvedCwd, env: resolvedEnv });
   }
 
   private _handleEverything(uri: vscode.Uri) {
+    const isRunning = this._lastEventArrivedAt.get(uri.fsPath) !== undefined;
+    if (isRunning) return;
+
+    this._lastEventArrivedAt.set(uri.fsPath, Date.now());
+
     let suite = this._executables.get(uri.fsPath);
 
     if (suite == undefined) {
       this._allTests.log.info('new suite: ' + uri.fsPath);
-      suite = this._addFile(uri);
-      this._executables.set(uri.fsPath, suite);
-      this._uniquifySuiteNames();
+      suite = this._createSuiteByUri(uri);
     }
-
-    const isRunning = this._lastEventArrivedAt.get(uri.fsPath) !== undefined;
-
-    this._lastEventArrivedAt.set(uri.fsPath, Date.now());
-
-    if (isRunning) return;
 
     const x = (exists: boolean, delay: number): Promise<void> => {
       let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
@@ -171,35 +166,44 @@ export class C2ExecutableInfo implements vscode.Disposable {
         this._allTests.log.error('assert in ' + __filename);
         debugger;
         return Promise.resolve();
-      }
-      if (Date.now() - lastEventArrivedAt! > this._allTests.execWatchTimeout) {
+      } else if (Date.now() - lastEventArrivedAt! > this._allTests.execWatchTimeout) {
         this._allTests.log.info('refresh timeout: ' + uri.fsPath);
-        return this._allTests.sendLoadEvents(() => {
-          this._lastEventArrivedAt.delete(uri.fsPath);
-          this._executables.delete(uri.fsPath);
-          this._allTests.removeChild(suite!);
+        this._lastEventArrivedAt.delete(uri.fsPath);
+        if (this._allTests.hasSuite(suite!)) {
+          return this._allTests.sendLoadEvents(() => {
+            this._executables.delete(uri.fsPath);
+            this._allTests.removeChild(suite!);
+            return Promise.resolve();
+          });
+        } else {
           return Promise.resolve();
-        });
+        }
       } else if (exists) {
-        return this._allTests
-          .sendLoadEvents(() => {
+        // note: here we reload children outside start-finished event
+        // it seems ok now, but maybe it is a problem, if insertChildSuite == false
+        return suite!.reloadChildren().then(() => {
+          return this._allTests.sendLoadEvents(() => {
+            if (this._allTests.insertChildSuite(suite!)) {
+              this._executables.set(uri.fsPath, suite!);
+              this._uniquifySuiteNames();
+            }
             this._lastEventArrivedAt.delete(uri.fsPath);
-            return suite!.reloadChildren().catch((reason: any) => {
-              this._allTests.log.error(
-                'suite should exists, but there is some problem under reloading: ' +
-                inspect([reason, uri]));
-              return x(false, Math.min(delay * 2, 2000));
-            });
-          })
-          .then(() => {
+            return Promise.resolve();
+          }).then(() => {
             this._allTests.autorunEmitter.fire();
           });
-      }
-      return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
-        return c2fs.existsAsync(uri.fsPath).then((exists: boolean) => {
-          return x(exists, Math.min(delay * 2, 2000));
+        }, (reason: any) => {
+          this._allTests.log.warn(
+            'Problem under reloadChildren: ' + inspect([reason, uri.fsPath, suite]));
+          return x(false, Math.min(delay * 2, 2000));
         });
-      });
+      } else {
+        return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
+          return c2fs.existsAsync(uri.fsPath).then((exists: boolean) => {
+            return x(exists, Math.min(delay * 2, 2000));
+          });
+        });
+      }
     };
 
     x(false, 64);

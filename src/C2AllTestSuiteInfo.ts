@@ -2,7 +2,6 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { SpawnOptions } from 'child_process';
 import { inspect } from 'util';
 import * as vscode from 'vscode';
 import { TestEvent, TestInfo, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
@@ -63,7 +62,8 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
           },
           (reason: any) => {
             this._loadFinishedEmitter.fire();
-            this.log.warn(inspect(reason));
+            this.log.error(inspect(reason));
+            debugger;
             throw reason;
           });
       }
@@ -121,17 +121,20 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     return undefined;
   }
 
-  createChildSuite(label: string, execPath: string, execOptions: SpawnOptions):
-    C2TestSuiteInfo {
-    const suite = new C2TestSuiteInfo(label, this, execPath, execOptions);
+  hasSuite(suite: C2TestSuiteInfo): boolean {
+    return this.children.indexOf(suite) != -1;
+  }
+
+  insertChildSuite(suite: C2TestSuiteInfo): boolean {
+    if (this.children.indexOf(suite) != -1) return false;
 
     let i = this.children.findIndex((v: C2TestSuiteInfo) => {
       return suite.label.trim().localeCompare(v.label.trim()) < 0;
     });
+
     if (i == -1) i = this.children.length;
     this.children.splice(i, 0, suite);
-
-    return suite;
+    return true;
   }
 
   cancel(): void {

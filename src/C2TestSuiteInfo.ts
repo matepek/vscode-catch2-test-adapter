@@ -385,14 +385,31 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
                 const fileLine = lines[i++].substr(4);
                 const match =
                   fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
+
                 if (match && match.length == 5) {
-                  filePath = match[1] ? match[1] : match[3];
-                  filePath =
-                    path.resolve(path.dirname(this.execPath), filePath);
-                  if (!c2fs.existsSync(filePath) && this.execOptions.cwd) {
-                    const r = path.resolve(this.execOptions.cwd, filePath);
-                    if (c2fs.existsSync(r)) filePath = r;
+                  const matchedPath = match[1] ? match[1] : match[3];
+                  filePath = path.resolve(this.allTests.workspaceFolder.uri.fsPath, matchedPath);
+                  try {
+                    if (!c2fs.existsSync(filePath) && this.execOptions.cwd) {
+                      filePath = path.resolve(this.execOptions.cwd, matchedPath);
+                    }
+                    if (!c2fs.existsSync(filePath)) {
+                      let parent = path.dirname(this.execPath);
+                      filePath = path.resolve(parent, matchedPath);
+                      let parentParent = path.dirname(parent);
+                      while (!c2fs.existsSync(filePath) && parent != parentParent) {
+                        parent = parentParent;
+                        filePath = path.resolve(parent, matchedPath);
+                        parentParent = path.dirname(parent);
+                      }
+                    }
+                    if (!c2fs.existsSync(filePath)) {
+                      filePath = matchedPath;
+                    }
+                  } catch (e) {
+                    filePath = path.resolve(this.allTests.workspaceFolder.uri.fsPath, matchedPath);
                   }
+
                   line = Number(match[2] ? match[2] : match[4]);
                 }
               }
