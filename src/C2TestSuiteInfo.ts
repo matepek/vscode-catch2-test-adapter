@@ -158,7 +158,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       currentChild: C2TestInfo | undefined = undefined;
       beforeFirstTestCase: boolean = true;
       rngSeed: number | undefined = undefined;
-      unporessedTestCases: string[] = [];
+      unporessedXmlTestCases: string[] = [];
       processedTestCases: C2TestInfo[] = [];
     }
       ();
@@ -203,7 +203,6 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           });
 
           if (data.currentChild !== undefined) {
-            data.processedTestCases.push(data.currentChild);
             const ev = data.currentChild.getStartEvent();
             this.allTests.testStatesEmitter.fire(ev);
           } else {
@@ -218,13 +217,14 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
           const testCaseXml = data.buffer.substring(0, b + endTestCase.length);
 
-          if (data.currentChild != undefined) {
+          if (data.currentChild !== undefined) {
             try {
               const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
                 testCaseXml, data.rngSeed);
               if (!this.allTests.isEnabledSourceDecoration)
                 ev.decorations = undefined;
               this.allTests.testStatesEmitter.fire(ev);
+              data.processedTestCases.push(data.currentChild);
             } catch (e) {
               this.allTests.log.error(
                 'parsing and processing test: ' + data.currentChild.label);
@@ -233,7 +233,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
             this.allTests.log.info(
               '<TestCase> found without TestInfo: ' + inspect(this, true, 1) +
               '; ' + testCaseXml);
-            data.unporessedTestCases.push(testCaseXml);
+            data.unporessedXmlTestCases.push(testCaseXml);
           }
 
           data.inTestCase = false;
@@ -242,9 +242,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         }
       } while (data.buffer.length > 0 && --invariant > 0);
       if (invariant == 0) {
-        const errMsg =
-          'Possible infinite loop with data:' + inspect([invariant, data]);
-        pRejecter && pRejecter(new Error(errMsg));
+        this._proc && this._proc.kill();
+        pRejecter && pRejecter('Possible infinite loop of this extension');
       }
     };
 
@@ -253,85 +252,91 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       processChunk(xml);
     });
 
-    this._proc.on('close', (code: number) => {
-      if (data.inTestCase)
-        pRejecter && pRejecter();
+    this._proc.on('close', (code: number | null, signal: string | null) => {
+      if (code !== null && code !== undefined)
+        pResolver && pResolver(code);
+      if (signal !== null && signal !== undefined)
+        pRejecter && pRejecter(signal);
       else
-        pResolver && pResolver();
+        pRejecter && pRejecter('unknown');
     });
 
-    const suiteFinally = () => {
-      this.allTests.log.info(
-        'proc finished: ' + inspect([this.execPath, execParams]));
-      this._proc = undefined;
-      taskPool.release();
-      this.allTests.testStatesEmitter.fire(
-        { type: 'suite', suite: this, state: 'completed' });
-
-      const isTestRemoved = (childrenToRun === 'all' &&
-        this.children.filter(c => !c.skipped).length >
-        data.processedTestCases.length) ||
-        (childrenToRun !== 'all' && data.processedTestCases.length == 0);
-
-      if (data.unporessedTestCases.length > 0 || isTestRemoved) {
-        this.allTests
-          .sendLoadEvents(() => {
-            return this.reloadChildren().catch(e => {
-              this.allTests.log.error(
-                'reloading-error: ' + inspect(e));
-              // Suite possibly deleted: It is a dead suite.
-            });
-          })
-          .then(() => {
-            const events: TestEvent[] = [];
-
-            for (let i = 0; i < data.unporessedTestCases.length; i++) {
-              const testCaseXml = data.unporessedTestCases[i];
-
-              const m = testCaseXml.match(testCaseTagRe);
-              if (m == null || m.length != 1) break;
-
-              let name: string | undefined = undefined;
-              new xml2js.Parser({ explicitArray: true })
-                .parseString(
-                  m[0] + '</TestCase>', (err: any, result: any) => {
-                    if (err) {
-                      this.allTests.log.error(err.toString());
-                    } else {
-                      name = result.TestCase.$.name;
-                    }
-                  });
-              if (name === undefined) break;
-
-              const currentChild = this.children.find((v: C2TestInfo) => {
-                return v.testNameTrimmed == name;
-              });
-              if (currentChild === undefined) break;
-
-              const ev = currentChild.parseAndProcessTestCase(
-                testCaseXml, data.rngSeed);
-              events.push(currentChild.getStartEvent());
-              events.push(ev);
-            }
-            events.length && this._sendTestStateEventsWithParent(events);
-          });
-      }
-    };
-    return p.then(
-      () => {
-        suiteFinally();
-      },
+    return p.catch(
       (reason: any) => {
         this.allTests.log.error(inspect(reason));
+      }).then(() => {
         if (data.inTestCase) {
-          this.allTests.testStatesEmitter.fire({
-            type: 'test',
-            test: data.currentChild!,
-            state: 'failed',
-            message: 'Unexpected test error. (Is Catch2 crashed?)\n'
-          });
+          if (data.currentChild !== undefined) {
+            this.allTests.log.warn('data.currentChild !== undefined: ' + inspect(data));
+            this.allTests.testStatesEmitter.fire({
+              type: 'test',
+              test: data.currentChild!,
+              state: 'failed',
+              message: 'Unexpected test error. (Is Catch2 crashed?)\n'
+            });
+          } else {
+            this.allTests.log.warn('data.inTestCase: ' + inspect(data));
+          }
         }
-        suiteFinally();
+
+        this.allTests.log.info(
+          'proc finished: ' + inspect([this.execPath, execParams]));
+
+        this._proc = undefined;
+        taskPool.release();
+        this.allTests.testStatesEmitter.fire(
+          { type: 'suite', suite: this, state: 'completed' });
+
+        const isTestRemoved = (childrenToRun === 'all' &&
+          this.children.filter(c => !c.skipped).length >
+          data.processedTestCases.length) ||
+          (childrenToRun !== 'all' && data.processedTestCases.length == 0);
+
+        if (data.unporessedXmlTestCases.length > 0 || isTestRemoved) {
+          this.allTests
+            .sendLoadEvents(() => {
+              return this.reloadChildren().catch(e => {
+                this.allTests.log.error(
+                  'reloading-error: ' + inspect(e));
+                // Suite possibly deleted: It is a dead suite.
+              });
+            })
+            .then(() => {
+              // we have test results for the newly detected tests
+              // after reload we can set the results
+              const events: TestEvent[] = [];
+
+              for (let i = 0; i < data.unporessedXmlTestCases.length; i++) {
+                const testCaseXml = data.unporessedXmlTestCases[i];
+
+                const m = testCaseXml.match(testCaseTagRe);
+                if (m == null || m.length != 1) break;
+
+                let name: string | undefined = undefined;
+                new xml2js.Parser({ explicitArray: true })
+                  .parseString(
+                    m[0] + '</TestCase>', (err: any, result: any) => {
+                      if (err) {
+                        this.allTests.log.error(err.toString());
+                      } else {
+                        name = result.TestCase.$.name;
+                      }
+                    });
+                if (name === undefined) break;
+
+                const currentChild = this.children.find((v: C2TestInfo) => {
+                  return v.testNameTrimmed == name;
+                });
+                if (currentChild === undefined) break;
+
+                const ev = currentChild.parseAndProcessTestCase(
+                  testCaseXml, data.rngSeed);
+                events.push(currentChild.getStartEvent());
+                events.push(ev);
+              }
+              events.length && this._sendTestStateEventsWithParent(events);
+            });
+        }
       });
   }
 
