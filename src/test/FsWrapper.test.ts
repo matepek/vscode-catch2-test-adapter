@@ -128,9 +128,3 @@ describe('vscode.Uri', function () {
     assert.ok(vscode.Uri.file(__filename) != vscode.Uri.file(__filename));
   })
 })
-
-describe('path', function () {
-  it('join', function () {
-    assert.strictEqual(path.join('/a/b/c', '../d'), '/a/b/d');
-  })
-})
