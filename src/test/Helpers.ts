@@ -22,11 +22,11 @@ export class ChildProcessStub extends EventEmitter {
         this.emit('close', close, null);
     });
     if (data != undefined) {
-      if (typeof data != 'string') {
+      if (typeof data !== 'string') {
         for (let line of data) {
-          this.stdout.push(line);
+          this.write(line);
         }
-        this.stdout.push(null);
+        this.close();
       } else {
         this.writeAndClose(data);
       }
@@ -37,17 +37,25 @@ export class ChildProcessStub extends EventEmitter {
     this.stdout.emit('end');
   }
 
-  writeAndClose(data: string): void {
+  write(data: string): void {
     this.stdout.push(data);
+  }
+
+  close(): void {
     this.stdout.push(null);
+  }
+
+  writeAndClose(data: string): void {
+    this.write(data);
+    this.close();
   }
 
   writeLineByLineAndClose(data: string): void {
     const lines = data.split('\n');
     lines.forEach((l) => {
-      this.stdout.push(l);
+      this.write(l);
     });
-    this.stdout.push(null);
+    this.close();
   }
 };
 
