@@ -254,6 +254,12 @@ describe('C2TestAdapter', function () {
       });
     })
 
+    it('defaultRunningTimeoutSec', function () {
+      return updateConfig('defaultRunningTimeoutSec', 8765).then(function () {
+        assert.equal((<any>adapter)._allTests.execRunningTimeout, 8765000);
+      });
+    })
+
     it('defaultNoThrow', function () {
       return updateConfig('defaultNoThrow', true).then(function () {
         assert.equal((<any>adapter)._allTests.isNoThrow, true);
@@ -367,7 +373,7 @@ describe('C2TestAdapter', function () {
     })
 
     describe('load', function () {
-      this.slow(500);
+      this.slow(1000);
 
       const uniqueIdC = new Set<string>();
       let adapter: TestAdapter;
@@ -404,9 +410,9 @@ describe('C2TestAdapter', function () {
         assert.deepStrictEqual(testStatesEvents, []);
       }
 
-      beforeEach(function () {
+      beforeEach(async function () {
         this.timeout(8000);
-        return updateConfig('workerMaxNumber', 3);
+        await updateConfig('workerMaxNumber', 3);
       })
 
       afterEach(function () {
@@ -950,6 +956,49 @@ describe('C2TestAdapter', function () {
 
           // this tests the sinon stubs too
           await adapter.run([s1t1.id]);
+
+          assert.deepStrictEqual(testStatesEvents, [
+            ...expected, { type: 'started', tests: [s1t1.id] },
+            { type: 'suite', state: 'running', suite: suite1 },
+            { type: 'test', state: 'running', test: s1t1 }, {
+              type: 'test',
+              state: 'passed',
+              test: s1t1,
+              decorations: undefined,
+              message: 'Duration: 0.000112 second(s)\n'
+            },
+            { type: 'suite', state: 'completed', suite: suite1 },
+            { type: 'finished' }
+          ]);
+        })
+
+        it.only('should timeout', async function () {
+          await updateConfig('defaultRunningTimeoutSec', 2);
+          await loadAdapterAndAssert();
+          const withArgs = spawnStub.withArgs(
+            example1.suite1.execPath, example1.suite1.t1.outputs[0][0]);
+          const cp = new ChildProcessStub(undefined, 'SIGTERM');
+          cp.write('<?xml version="1.0" encoding="UTF-8"?><Catch name="suite1">'); // no close
+          withArgs.onCall(withArgs.callCount)
+            .returns(cp);
+
+          await adapter.run([s1t1.id]);
+          cp.close();
+
+          const expected = [
+            { type: 'started', tests: [s1t1.id] },
+            { type: 'suite', state: 'running', suite: suite1 },
+            { type: 'suite', state: 'completed', suite: suite1 },
+            { type: 'finished' }
+          ];
+          await waitFor(this, () => {
+            return testStatesEvents.length >= 4;
+          })
+          assert.deepStrictEqual(testStatesEvents, expected);
+
+          // this tests the sinon stubs too
+          await adapter.run([s1t1.id]);
+
           assert.deepStrictEqual(testStatesEvents, [
             ...expected, { type: 'started', tests: [s1t1.id] },
             { type: 'suite', state: 'running', suite: suite1 },

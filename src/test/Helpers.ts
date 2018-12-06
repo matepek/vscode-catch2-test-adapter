@@ -21,7 +21,7 @@ export class ChildProcessStub extends EventEmitter {
       else
         this.emit('close', close, null);
     });
-    if (data != undefined) {
+    if (data !== undefined) {
       if (typeof data !== 'string') {
         for (let line of data) {
           this.write(line);
@@ -34,7 +34,7 @@ export class ChildProcessStub extends EventEmitter {
   }
 
   kill() {
-    this.stdout.emit('end');
+    this.stdout.push(null);
   }
 
   write(data: string): void {

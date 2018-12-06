@@ -129,6 +129,15 @@
           "default": 10,
           "scope": "resource"
         },
+        "catch2TestExplorer.defaultRunningTimeoutSec": {
+          "description": "Test executable is running in a process. In case of an inifinite loop, it will run forever, unless this parameter is set.",
+          "type": [
+            "null",
+            "number"
+          ],
+          "default": null,
+          "scope": "resource"
+        },
         "catch2TestExplorer.workerMaxNumber": {
           "description": "The variable maximize the number of the parallel test execution.",
           "type": "number",
