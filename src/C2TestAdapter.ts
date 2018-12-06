@@ -176,6 +176,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return this._allTasks.then(() => {
       return this._allTests.run(
         tests, this._getWorkerMaxNumber(this._getConfiguration()));
+    }, (reason: any) => {
+      this._log.error(inspect(reason));
     });
   }
 
