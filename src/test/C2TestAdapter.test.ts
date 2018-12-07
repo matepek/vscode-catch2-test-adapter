@@ -210,6 +210,7 @@ describe('C2TestAdapter', function () {
   afterEach(async function () {
     this.timeout(8000);
     await disposeAdapterAndSubscribers(this);
+    return promisify(setTimeout)(1000);
   })
 
   describe('detect config change', function () {

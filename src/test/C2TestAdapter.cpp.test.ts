@@ -287,5 +287,27 @@ describe('C2TestAdapter.cpp', function () {
       assert.strictEqual(testStatesEvents.length, eventCount + 16);
       assert.strictEqual(autorunCounter, 0);
     })
+
+    it.skip('should be debugged', async function () {
+      if (process.env['TRAVIS'] == 'true') this.skip();
+      this.timeout(8000);
+      this.slow(2000);
+      await updateConfig(
+        'executables', [{
+          'name': '${baseFilename}',
+          'pattern': 'cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*',
+          'cwd': '${workspaceFolder}/cpp',
+        }]);
+
+      await copy('../suite1.exe', 'out/suite1.exe');
+
+      adapter = createAdapterAndSubscribe();
+      const root = await load(adapter);
+      assert.strictEqual(root.children.length, 1);
+      const suite = <TestSuiteInfo>root.children[0];
+      assert.ok(suite.children.length > 0);
+
+      await adapter.debug([suite.children[0].id]);
+    })
   })
 })
