@@ -176,6 +176,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     return this._allTasks.then(() => {
       return this._allTests.run(
         tests, this._getWorkerMaxNumber(this._getConfiguration()));
+    }, (reason: any) => {
+      this._log.error(inspect(reason));
     });
   }
 
@@ -208,55 +210,54 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this._log.info('testInfo: ' + inspect([testInfo, tests]));
 
     const getDebugConfiguration = (): vscode.DebugConfiguration => {
-      const debug: vscode.DebugConfiguration = {
-        name: 'Catch2: ' + testInfo.label,
-        request: 'launch',
-        type: 'cppdbg',
-      };
-
       const config = this._getConfiguration();
-      const template = this._getDebugConfigurationTemplate(config);
+
+      let template =
+        this._getDebugConfigurationTemplate(config);
+
+      if (template !== null) {
+        //skip
+      } else if (vscode.extensions.getExtension("vadimcn.vscode-lldb")) {
+        template = {
+          "type": "cppdbg",
+          "MIMode": "lldb",
+          "program": "${exec}",
+          "args": "${args}",
+          "cwd": "${cwd}",
+          "env": "${envObj}"
+        };
+      } else if (vscode.extensions.getExtension("ms-vscode.cpptools")) {
+        // documentation says debug"environment" = [{...}] but that is not works
+        template = {
+          "type": "cppvsdbg",
+          "linux": { "type": "cppdbg", "MIMode": "gdb" },
+          "osx": { "type": "cppdbg", "MIMode": "lldb" },
+          "program": "${exec}",
+          "args": "${args}",
+          "cwd": "${cwd}",
+          "env": "${envObj}"
+        };
+      } else {
+        throw 'Catch2: For debugging \'debugConfigTemplate\' should be set.';
+      }
+
+      if (template !== null && !template.hasOwnProperty('name'))
+        template = Object.assign({ 'name': "${label} (${suiteLabel})" }, template);
+      if (template !== null && !template.hasOwnProperty('request'))
+        template = Object.assign({ 'request': "launch" }, template);
 
       const args = [testInfo.getEscapedTestName(), '--reporter', 'console'];
       if (this._getDebugBreakOnFailure(config)) args.push('--break');
 
-      if (template !== null) {
-        const resolveDebugVariables: [string, any][] = [
-          ...this._variableToValue,
-          ['${label}', testInfo.label],
-          ['${exec}', testInfo.parent.execPath],
-          ['${args}', args],
-          ['${cwd}', testInfo.parent.execOptions.cwd!],
-          ['${envObj}', testInfo.parent.execOptions.env!],
-        ];
-        for (const prop in template) {
-          const val = template[prop];
-          if (val !== undefined && val !== null) {
-            debug[prop] = resolveVariables(val, resolveDebugVariables);
-          }
-        }
-        return debug;
-      } else if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
-        debug['type'] = 'cppdbg';
-        debug['MIMode'] = 'lldb';
-        debug['program'] = testInfo.parent.execPath;
-        debug['args'] = args;
-        debug['cwd'] = testInfo.parent.execOptions.cwd!;
-        debug['env'] = testInfo.parent.execOptions.env!;
-        return debug;
-      } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
-        debug['type'] = 'cppvsdbg';
-        debug['linux'] = { type: 'cppdbg', MIMode: 'gdb' };
-        debug['osx'] = { type: 'cppdbg', MIMode: 'lldb' };
-        debug['program'] = testInfo.parent.execPath;
-        debug['args'] = args;
-        debug['cwd'] = testInfo.parent.execOptions.cwd!;
-        // documentation says debug'environment' = [{...}] but that is not works
-        debug['env'] = testInfo.parent.execOptions.env!;
-        return debug;
-      }
-
-      throw 'Catch2: For debug \'debugConfigTemplate\' should be set.';
+      return resolveVariables(template, [
+        ...this._variableToValue,
+        ["${suiteLabel}", testInfo.parent.label],
+        ["${label}", testInfo.label],
+        ["${exec}", testInfo.parent.execPath],
+        ["${args}", args],
+        ["${cwd}", testInfo.parent.execOptions.cwd!],
+        ["${envObj}", testInfo.parent.execOptions.env!],
+      ]);
     };
 
     const debugConfig = getDebugConfiguration();
@@ -276,8 +277,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
             if (!debugSessionStarted || !currentSession) {
               return Promise.reject(
-                'Failed starting the debug session - aborting: ' +
-                inspect([debugSessionStarted, currentSession]));
+                'Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate"' +
+                inspect({ debugSessionStarted: debugSessionStarted, currentSession: currentSession }));
             }
 
             this._log.info('debugSessionStarted');
@@ -306,22 +307,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       'catch2TestExplorer', this._workspaceFolder.uri);
   }
 
-  private _getDebugConfigurationTemplate(config: vscode.WorkspaceConfiguration): { [prop: string]: string } | null {
-    const o = config.get<any>('debugConfigTemplate', null);
-
-    if (o === null) return null;
-
-    const result: { [prop: string]: string } = {};
-
-    for (const prop in o) {
-      const val = o[prop];
-      if (val === undefined || val === null) {
-        delete result.prop;
-      } else {
-        result[prop] = resolveVariables(String(val), this._variableToValue);
-      }
-    }
-    return result;
+  private _getDebugConfigurationTemplate(config: vscode.WorkspaceConfiguration) {
+    return config.get<object | null>('debugConfigTemplate', null);
   }
 
   private _getDebugBreakOnFailure(config: vscode.WorkspaceConfiguration):

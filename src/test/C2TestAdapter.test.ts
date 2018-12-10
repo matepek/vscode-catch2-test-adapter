@@ -210,6 +210,7 @@ describe('C2TestAdapter', function () {
   afterEach(async function () {
     this.timeout(8000);
     await disposeAdapterAndSubscribers(this);
+    return promisify(setTimeout)(1000);
   })
 
   describe('detect config change', function () {
@@ -875,7 +876,7 @@ describe('C2TestAdapter', function () {
           assert.deepStrictEqual(testStatesEvents, [...expected, ...expected]);
         })
 
-        it('should run with wrong xml', async function () {
+        it('should run with wrong xml with exit code', async function () {
           await loadAdapterAndAssert();
           const m = example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');
           assert.notStrictEqual(m, undefined);
@@ -886,6 +887,51 @@ describe('C2TestAdapter', function () {
             example1.suite1.execPath, example1.suite1.t1.outputs[0][0]);
           withArgs.onCall(withArgs.callCount)
             .returns(new ChildProcessStub(part));
+
+          await adapter.run([s1t1.id]);
+
+          const expected = [
+            { type: 'started', tests: [s1t1.id] },
+            { type: 'suite', state: 'running', suite: suite1 },
+            { type: 'test', state: 'running', test: s1t1 }, {
+              type: 'test',
+              state: 'failed',
+              test: s1t1,
+              message: 'Unexpected test error. (Is Catch2 crashed?)\n'
+            },
+            { type: 'suite', state: 'completed', suite: suite1 },
+            { type: 'finished' }
+          ];
+          assert.deepStrictEqual(testStatesEvents, expected);
+
+          // this tests the sinon stubs too
+          await adapter.run([s1t1.id]);
+          assert.deepStrictEqual(testStatesEvents, [
+            ...expected, { type: 'started', tests: [s1t1.id] },
+            { type: 'suite', state: 'running', suite: suite1 },
+            { type: 'test', state: 'running', test: s1t1 }, {
+              type: 'test',
+              state: 'passed',
+              test: s1t1,
+              decorations: undefined,
+              message: 'Duration: 0.000112 second(s)\n'
+            },
+            { type: 'suite', state: 'completed', suite: suite1 },
+            { type: 'finished' }
+          ]);
+        })
+
+        it('should run with wrong xml with signal', async function () {
+          await loadAdapterAndAssert();
+          const m = example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');
+          assert.notStrictEqual(m, undefined);
+          assert.notStrictEqual(m!.input, undefined);
+          assert.notStrictEqual(m!.index, undefined);
+          const part = m!.input!.substr(0, m!.index! + m![0].length);
+          const withArgs = spawnStub.withArgs(
+            example1.suite1.execPath, example1.suite1.t1.outputs[0][0]);
+          withArgs.onCall(withArgs.callCount)
+            .returns(new ChildProcessStub(part, 'SIGTERM'));
 
           await adapter.run([s1t1.id]);
 

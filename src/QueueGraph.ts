@@ -4,8 +4,8 @@
 
 export class QueueGraphNode {
   constructor(
-      public readonly name?: string, depends: Iterable<QueueGraphNode> = [],
-      private readonly _handleError?: ((reason: any) => any)) {
+    public readonly name?: string, depends: Iterable<QueueGraphNode> = [],
+    private readonly _handleError?: ((reason: any) => any)) {
     this._depends = [...depends];
     // TODO check circular dependency
   }
@@ -19,32 +19,30 @@ export class QueueGraphNode {
   }
 
   then<TResult1, TResult2 = never>(
-      task: (() => TResult1 | PromiseLike<TResult1>),
-      taskErrorHandler?: ((reason: any) => TResult2 | PromiseLike<TResult2>)|
-      undefined|null): Promise<TResult1|TResult2> {
+    task: (() => TResult1 | PromiseLike<TResult1>),
+    taskErrorHandler?: ((reason: any) => TResult2 | PromiseLike<TResult2>) |
+      undefined | null): Promise<TResult1 | TResult2> {
     this._count++;
 
     const previous = this._queue;
     const current = Promise.all(this._depends.map(v => v._queue))
-                        .then(() => {
-                          return previous.then(task);
-                        })
-                        .then(
-                            (value: TResult1|PromiseLike<TResult1>) => {
-                              this._count--;
-                              return value;
-                            },
-                            (reason: any) => {
-                              this._count--;
-                              if (taskErrorHandler)
-                                return taskErrorHandler(reason);
-                              else if (this._handleError)
-                                return this._handleError(reason);
-                              else
-                                throw reason;
-                            });
-
-    this._queue = current.then(() => {});
+      .then(() => {
+        return previous.then(task);
+      });
+    this._queue = current
+      .then(
+        (value: TResult1 | PromiseLike<TResult1>) => {
+          this._count--;
+        },
+        (reason: any) => {
+          this._count--;
+          if (taskErrorHandler)
+            return taskErrorHandler(reason);
+          else if (this._handleError)
+            return this._handleError(reason);
+          else
+            throw reason;
+        });
 
     return current;
   }

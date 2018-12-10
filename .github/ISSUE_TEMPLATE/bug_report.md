@@ -29,7 +29,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Log**
 Attach log. (optional, Set: `catch2TestExplorer.logfile` and reproduce the bug.)
-_Warning_: Log probably contains file and test names too. Consider security conserns before attach!
+_Warning_: Log probably contains file and test names too. Consider security concerns before you attach it!
 
 **Additional context**
 Add any other context about the problem here.

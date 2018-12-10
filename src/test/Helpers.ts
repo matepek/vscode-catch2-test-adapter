@@ -2,26 +2,31 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import {EventEmitter} from 'events';
-import {Stream} from 'stream';
+import { EventEmitter } from 'events';
+import { Stream } from 'stream';
 import * as vscode from 'vscode';
 
 export class ChildProcessStub extends EventEmitter {
   readonly stdout = new Stream.Readable();
   public closed: boolean = false;
 
-  constructor(data?: string|Iterable<string>) {
+  constructor(data?: string | Iterable<string>, close?: number | string) {
     super();
     this.stdout.on('end', () => {
       this.closed = true;
-      this.emit('close', 1);
+      if (close === undefined)
+        this.emit('close', 1, null);
+      else if (typeof close === 'string')
+        this.emit('close', null, close);
+      else
+        this.emit('close', close, null);
     });
     if (data != undefined) {
-      if (typeof data != 'string') {
+      if (typeof data !== 'string') {
         for (let line of data) {
-          this.stdout.push(line);
+          this.write(line);
         }
-        this.stdout.push(null);
+        this.close();
       } else {
         this.writeAndClose(data);
       }
@@ -32,26 +37,34 @@ export class ChildProcessStub extends EventEmitter {
     this.stdout.emit('end');
   }
 
-  writeAndClose(data: string): void {
+  write(data: string): void {
     this.stdout.push(data);
+  }
+
+  close(): void {
     this.stdout.push(null);
+  }
+
+  writeAndClose(data: string): void {
+    this.write(data);
+    this.close();
   }
 
   writeLineByLineAndClose(data: string): void {
     const lines = data.split('\n');
     lines.forEach((l) => {
-      this.stdout.push(l);
+      this.write(l);
     });
-    this.stdout.push(null);
+    this.close();
   }
 };
 
 export class FileSystemWatcherStub implements vscode.FileSystemWatcher {
   constructor(
-      private readonly path: vscode.Uri,
-      readonly ignoreCreateEvents: boolean = false,
-      readonly ignoreChangeEvents: boolean = false,
-      readonly ignoreDeleteEvents: boolean = false) {}
+    private readonly path: vscode.Uri,
+    readonly ignoreCreateEvents: boolean = false,
+    readonly ignoreChangeEvents: boolean = false,
+    readonly ignoreDeleteEvents: boolean = false) { }
 
   private readonly _onDidCreateEmitter = new vscode.EventEmitter<vscode.Uri>();
   private readonly _onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();

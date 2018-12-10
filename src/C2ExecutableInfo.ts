@@ -189,8 +189,6 @@ export class C2ExecutableInfo implements vscode.Disposable {
             }
             this._lastEventArrivedAt.delete(uri.fsPath);
             return Promise.resolve();
-          }).then(() => {
-            this._allTests.autorunEmitter.fire();
           });
         }, (reason: any) => {
           this._allTests.log.warn(

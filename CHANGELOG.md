@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.6]
+
+Stability improvements.
+
 ## [2.2.5] - 2018-12-04
 
 ### Fixed
@@ -58,10 +62,10 @@ Performance and stability improvements. Improved logging.
 ### Added
 
 - `catch2TestExplorer.debugBreakOnFailure` option. It is true by default.
-- 🤩 Change of test file (ex.:recompilation) triggers "**autorun**" feature.
+- Change of test file (ex.:recompilation) triggers "**autorun**" feature.
   (Right click on test/suite in text explorer -> Enable to enable autorun for the selected test/suite.)
   This basically means that the selected test/suite will run in case of any filesystem event related to the `executables` variable.
-  It can be really useful if one would like to run a test (or suite) automatically after recompiliation. 💙
+  It can be really useful if one would like to run a test (or suite) automatically after recompiliation.
 
 ### Fixed
 

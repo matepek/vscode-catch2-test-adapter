@@ -107,17 +107,18 @@ See [here](https://code.visualstudio.com/docs/editor/debugging#_launch-configura
 
 Usable variables:
 
-| Variable name | Value meaning                                       | Type                    |
-| ------------- | --------------------------------------------------- | ----------------------- |
-| `${label}`    | The name of the test. Same as in the Test Explorer. | string                  |
-| `${exec}`     | The path of the executable.                         | string                  |
-| `${args}`     | The arguments for the executable.                   | string[]                |
-| `${cwd}`      | The current working directory for execution.        | string                  |
-| `${envObj}`   | The environment variables as object properties.     | { [prop: string]: any } |
+| Variable name   | Value meaning                                                | Type                    |
+| --------------- | ------------------------------------------------------------ | ----------------------- |
+| `${label}`      | The name of the test. Same as in the Test Explorer.          | string                  |
+| `${suitelabel}` | The name of parent suite test. Same as in the Test Explorer. | string                  |
+| `${exec}`       | The path of the executable.                                  | string                  |
+| `${args}`       | The arguments for the executable.                            | string[]                |
+| `${cwd}`        | The current working directory for execution.                 | string                  |
+| `${envObj}`     | The environment variables as object properties.              | { [prop: string]: any } |
 
 These variables will be substituted when a DebugConfiguration is created.
 
-Note that `name` and `request` are prefilled, so it is not necessary to set them.
+Note that `name` and `request` are filled, if they are undefined, so it is not necessary to set them.
 
 Example:
 
