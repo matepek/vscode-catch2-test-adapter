@@ -360,8 +360,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           .spawnAsync(
             this.execPath,
             [
-              '[.],*', '--verbosity', 'high', '--list-tests',
-              '--use-colour', 'no'
+              "[.],*", "--verbosity", "high", "--list-tests",
+              "--use-colour", "no"
             ],
             this.execOptions)
           .then((catch2TestListOutput) => {
@@ -371,10 +371,10 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
               let lines = catch2TestListOutput.stdout.split(/\r?\n/);
 
-              if (lines.length == 0)
-                this.allTests.log.error('Empty test list.');
-
               while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
+
+              if (lines.length == 0)
+                throw Error('Wrong test list.');
 
               let i = 1;
               while (i < lines.length - 1) {
