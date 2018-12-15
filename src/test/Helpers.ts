@@ -7,7 +7,6 @@ import { Readable } from 'stream';
 import * as vscode from 'vscode';
 
 export class ChildProcessStub extends EventEmitter {
-  private _buffer: string = '';
   readonly stdout: Readable;
   public closed: boolean = false;
 
