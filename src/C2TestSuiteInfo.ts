@@ -28,7 +28,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
   constructor(
     public readonly origLabel: string,
-    private readonly allTests: C2AllTestSuiteInfo,
+    public readonly allTests: C2AllTestSuiteInfo,
     public readonly execPath: string,
     public readonly execOptions: SpawnOptions) {
     this.label = origLabel;

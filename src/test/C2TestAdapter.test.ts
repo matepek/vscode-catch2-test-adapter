@@ -490,7 +490,7 @@ describe('C2TestAdapter', function () {
               test: s1t2,
               decorations: [{ line: 14, message: 'Expanded: false' }],
               message:
-                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15)\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' },
@@ -522,7 +522,7 @@ describe('C2TestAdapter', function () {
               test: s1t2,
               decorations: [{ line: 14, message: 'Expanded: false' }],
               message:
-                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15)\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' },
@@ -696,7 +696,7 @@ describe('C2TestAdapter', function () {
             test: s1t2,
             decorations: [{ line: 14, message: 'Expanded: false' }],
             message:
-              'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+              'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15)\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
           };
           assert.ok(testStatesEvI(s1t2running) < testStatesEvI(s1t2finished));
           assert.ok(testStatesEvI(s1t2finished) < testStatesEvI(s1finished));
@@ -730,7 +730,7 @@ describe('C2TestAdapter', function () {
             test: s2t3,
             decorations: [{ line: 20, message: 'Expanded: false' }],
             message:
-              'Duration: 0.000178 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+              'Duration: 0.000178 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21)\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
           };
           assert.ok(testStatesEvI(s2t3running) < testStatesEvI(s2t3finished));
           assert.ok(testStatesEvI(s2t3finished) < testStatesEvI(s2finished));
@@ -807,7 +807,7 @@ describe('C2TestAdapter', function () {
               test: s2t3,
               decorations: [{ line: 20, message: 'Expanded: false' }],
               message:
-                'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21)\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
             },
             { type: 'suite', state: 'completed', suite: suite2 },
             { type: 'finished' }
@@ -835,7 +835,7 @@ describe('C2TestAdapter', function () {
               test: s2t3,
               decorations: [{ line: 20, message: 'Expanded: false' }],
               message:
-                'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21)\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
             },
             { type: 'suite', state: 'completed', suite: suite2 },
             { type: 'finished' }
@@ -865,7 +865,7 @@ describe('C2TestAdapter', function () {
               test: s1t2,
               decorations: [{ line: 14, message: 'Expanded: false' }],
               message:
-                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15)\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -1266,7 +1266,7 @@ describe('C2TestAdapter', function () {
               test: s1t2,
               decorations: [{ line: 14, message: 'Expanded: false' }],
               message:
-                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15)\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' },
@@ -1307,7 +1307,7 @@ describe('C2TestAdapter', function () {
                 test: s1t2,
                 decorations: [{ line: 14, message: 'Expanded: false' }],
                 message:
-                  'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                  'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15)\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
               },
               { type: 'suite', state: 'completed', suite: suite1 },
               { type: 'finished' },
@@ -1442,7 +1442,7 @@ describe('C2TestAdapter', function () {
               test: s1t2,
               decorations: [{ line: 14, message: 'Expanded: false' }],
               message:
-                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15)\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' },

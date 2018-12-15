@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.7]
+
+Better error handling and logging.
+
 ## [2.2.6] - 2018-12-10
 
 Stability improvements.
