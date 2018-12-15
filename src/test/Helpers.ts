@@ -3,15 +3,21 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import { EventEmitter } from 'events';
-import { Stream } from 'stream';
+import { Readable } from 'stream';
 import * as vscode from 'vscode';
 
 export class ChildProcessStub extends EventEmitter {
-  readonly stdout = new Stream.Readable();
+  private _buffer: string = '';
+  readonly stdout: Readable;
   public closed: boolean = false;
+
+  private _read() {
+    this.stdout.push(null);
+  }
 
   constructor(data?: string | Iterable<string>, close?: number | string) {
     super();
+    this.stdout = new Readable({ 'read': () => { this._read(); } });
     this.stdout.on('end', () => {
       this.closed = true;
       if (close === undefined)
@@ -21,7 +27,7 @@ export class ChildProcessStub extends EventEmitter {
       else
         this.emit('close', close, null);
     });
-    if (data != undefined) {
+    if (data !== undefined) {
       if (typeof data !== 'string') {
         for (let line of data) {
           this.write(line);
@@ -34,7 +40,7 @@ export class ChildProcessStub extends EventEmitter {
   }
 
   kill() {
-    this.stdout.emit('end');
+    this.stdout.push(null);
   }
 
   write(data: string): void {

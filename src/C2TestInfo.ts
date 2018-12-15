@@ -90,7 +90,7 @@ export class C2TestInfo implements TestInfo {
       this._processXmlTagTestCaseInner(testCase, '', testEvent);
 
       if (testEvent.message === '') testEvent.message = '';
-      if (testEvent.decorations.length == 0) testEvent.decorations = undefined;
+      if (testEvent.decorations!.length == 0) testEvent.decorations = undefined;
 
       return testEvent;
     } catch (e) {

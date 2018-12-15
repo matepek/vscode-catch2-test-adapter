@@ -37,6 +37,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     public isEnabledSourceDecoration: boolean,
     public rngSeed: string | number | null,
     public execWatchTimeout: number,
+    public execRunningTimeout: number,
     public isNoThrow: boolean,
   ) {
     this.label = workspaceFolder.name + ' - Catch2';

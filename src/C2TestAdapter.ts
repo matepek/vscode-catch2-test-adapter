@@ -89,6 +89,12 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
             this._getDefaultExecWatchTimeout(this._getConfiguration());
         }
         if (configChange.affectsConfiguration(
+          'catch2TestExplorer.defaultRunningTimeoutSec',
+          this._workspaceFolder.uri)) {
+          this._allTests.execRunningTimeout =
+            this._getDefaultExecRunningTimeout(this._getConfiguration());
+        }
+        if (configChange.affectsConfiguration(
           'catch2TestExplorer.defaultNoThrow',
           this._workspaceFolder.uri)) {
           this._allTests.isNoThrow =
@@ -104,6 +110,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
+      this._getDefaultExecRunningTimeout(config),
       this._getDefaultNoThrow(config));
   }
 
@@ -142,6 +149,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
+      this._getDefaultExecRunningTimeout(config),
       this._getDefaultNoThrow(config));
 
     this._testsEmitter.fire(<TestLoadStartedEvent>{ type: 'started' });
@@ -343,6 +351,11 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private _getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration):
     number {
     return config.get<number>('defaultWatchTimeoutSec', 10) * 1000;
+  }
+
+  private _getDefaultExecRunningTimeout(config: vscode.WorkspaceConfiguration):
+    number {
+    return config.get<number>('defaultRunningTimeoutSec', 0) * 1000;
   }
 
   private _getGlobalAndDefaultEnvironmentVariables(

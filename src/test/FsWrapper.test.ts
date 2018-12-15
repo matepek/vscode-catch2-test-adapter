@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { spawnAsync, statAsync } from '../FsWrapper';
+import { ChildProcessStub } from './Helpers';
 
 describe('FsWrapper.spawnAsync', function () {
   it('echoes', async function () {
@@ -126,5 +127,34 @@ describe('path', function () {
 describe('vscode.Uri', function () {
   it('!=', function () {
     assert.ok(vscode.Uri.file(__filename) != vscode.Uri.file(__filename));
+  })
+})
+
+describe('ChildProcessStub', function () {
+  it('should works', async function () {
+    const cp = new ChildProcessStub("alma");
+    let output: string = '';
+    cp.stdout.on('data', (d: string) => {
+      output += d;
+    });
+    await new Promise(resolve => {
+      cp.on('close', resolve);
+    }).then(() => {
+      assert.strictEqual(output, 'alma');
+    });
+  })
+
+  it.skip('should works2', async function () {
+    const cp = new ChildProcessStub();
+    let output: string = '';
+    cp.stdout.on('data', (d: string) => {
+      output += d;
+    });
+    cp.write('alma');
+    await new Promise(resolve => {
+      cp.on('close', resolve);
+    }).then(() => {
+      assert.strictEqual(output, 'alma');
+    });
   })
 })
