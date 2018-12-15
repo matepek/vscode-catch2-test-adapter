@@ -141,7 +141,7 @@ Example:
 ## Known issues
 
 - (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
-- (2018-11-17) Long (>80 character) filename, test-name or description can cause test-list parsing failures. Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 9999`
+- (2018-11-17) Long (>80 character) filename, test-name or description can cause test-list parsing failures. Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
 
 ## TODOs
 

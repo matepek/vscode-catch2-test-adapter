@@ -3,22 +3,20 @@ name: Bug report
 about: Create a report to help us improve
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**Before you file an issue, please check the [README.md](https://github.com/matepek/vscode-catch2-test-adapter#known-issues)'s known issues section.**
 
-**To Reproduce**
-Steps to reproduce the behavior:
+**Describe the bug** (A clear and concise description of what the bug is.)
+
+**To Reproduce** (Steps to reproduce the behavior:)
 
 1. Go to '...'
 2. Click on '....'
 3. Scroll down to '....'
 4. See error
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**Expected behavior** (A clear and concise description of what you expected to happen.)
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+**Screenshots** (If applicable, add screenshots to help explain your problem.)
 
 **Desktop (please complete the following information):**
 
@@ -27,9 +25,6 @@ If applicable, add screenshots to help explain your problem.
 - Catch2 Version
 - OS Type and Version
 
-**Log**
-Attach log. (optional, Set: `catch2TestExplorer.logfile` and reproduce the bug.)
-_Warning_: Log probably contains file and test names too. Consider security concerns before you attach it!
+**Log** (Attach log. (optional, Set: `catch2TestExplorer.logfile` and reproduce the bug.) _Warning_: Log probably contains file and test names too.)
 
-**Additional context**
-Add any other context about the problem here.
+**Additional context** Add any other context about the problem here.
