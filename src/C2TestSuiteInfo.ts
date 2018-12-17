@@ -253,6 +253,10 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       processChunk(xml);
     });
 
+    this._proc.on('error', (err: Error) => {
+      pRejecter && pRejecter(err);
+    });
+
     this._proc.on('close', (code: number | null, signal: string | null) => {
       data.process = undefined;
 
@@ -284,9 +288,9 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         this._proc && this._proc.kill();
         this._proc = undefined;
 
-        this.allTests.log.error(inspect([reason, this, data], true, 2));
+        this.allTests.log.warn(inspect([reason, this, data], true, 2));
         return reason;
-      }).then((codeOrReason: number | string) => {
+      }).then((codeOrReason: number | string | any) => {
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
             this.allTests.log.warn('data.currentChild !== undefined: ' + inspect(data));

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.1]
+
+### Fixed
+
+- a bug related to autorun [see](/issues/36)
+
 ## [2.3.0] - 2018-12-17
 
 Better error handling and logging.
@@ -14,7 +20,6 @@ Better error handling and logging.
 ### Added
 
 - `catch2TestExplorer.defaultRunningTimeoutSec` to prevent infinite loops
-
 
 ## [2.2.6] - 2018-12-10
 
