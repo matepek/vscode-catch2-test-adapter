@@ -8,15 +8,17 @@ import * as vscode from 'vscode';
 
 export class ChildProcessStub extends EventEmitter {
   readonly stdout: Readable;
+  readonly stderr: Readable;
   public closed: boolean = false;
 
   private _read() {
     //this.stdout.push(null);
   }
 
-  constructor(data?: string | Iterable<string>, close?: number | string) {
+  constructor(stdout?: string | Iterable<string>, close?: number | string, stderr?: string) {
     super();
     this.stdout = new Readable({ 'read': () => { this._read(); } });
+    this.stderr = new Readable({ 'read': () => { this._read(); } });
     this.stdout.on('end', () => {
       this.closed = true;
       if (close === undefined)
@@ -26,20 +28,25 @@ export class ChildProcessStub extends EventEmitter {
       else
         this.emit('close', close, null);
     });
-    if (data !== undefined) {
-      if (typeof data !== 'string') {
-        for (let line of data) {
+    if (stderr !== undefined) {
+      this.stderr.push(stderr);
+      this.stderr.push(null);
+    }
+    if (stdout !== undefined) {
+      if (typeof stdout !== 'string') {
+        for (let line of stdout) {
           this.write(line);
         }
         this.close();
       } else {
-        this.writeAndClose(data);
+        this.writeAndClose(stdout);
       }
     }
   }
 
   kill() {
     this.stdout.push(null);
+    this.stderr.push(null);
   }
 
   write(data: string): void {
@@ -48,6 +55,7 @@ export class ChildProcessStub extends EventEmitter {
 
   close(): void {
     this.stdout.push(null);
+    this.stderr.push(null);
   }
 
   writeAndClose(data: string): void {

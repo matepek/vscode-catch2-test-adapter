@@ -1691,6 +1691,36 @@ describe('C2TestAdapter', function () {
       assert.equal(suite1.children.length, 2);
     })
 
+    specify('test list error: duplicated test name', async function () {
+      this.slow(500);
+      await updateConfig('executables', example1.suite1.execPath);
+
+      const adapter = createAdapterAndSubscribe();
+
+      const testListOutput = [
+        'error: TEST_CASE( "biggest rectangle" ) already defined.',
+        '  First seen at ../Task/biggest_rectangle.cpp:46',
+        '  Redefined at ../Task/biggest_rectangle.cpp:102',
+        ''];
+      const withArgs = spawnStub.withArgs(
+        example1.suite1.execPath, example1.suite1.outputs[1][0]);
+      withArgs.onCall(withArgs.callCount)
+        .returns(new ChildProcessStub('Matching test cases:' + EOL, undefined, testListOutput.join(EOL)));
+
+
+      await adapter.load();
+      assert.equal(testsEvents.length, 2);
+      const root =
+        (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]).suite!;
+      assert.equal(root.children.length, 1);
+
+      const suite1 = <TestSuiteInfo>root.children[0];
+      assert.equal(
+        suite1.children.length, 1, inspect([testListOutput, testsEvents]));
+
+      assert.strictEqual(suite1.children[0].label, '!! error: TEST_CASE( "biggest rectangle" ) already defined.');
+    })
+
     specify('load executables=<full path of execPath1>', async function () {
       this.slow(500);
       await updateConfig('executables', example1.suite1.execPath);
