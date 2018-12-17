@@ -255,6 +255,12 @@ describe('C2TestAdapter', function () {
       });
     })
 
+    it('defaultRunningTimeoutSec', function () {
+      return updateConfig('defaultRunningTimeoutSec', 8765).then(function () {
+        assert.equal((<any>adapter)._allTests.execRunningTimeout, 8765000);
+      });
+    })
+
     it('defaultNoThrow', function () {
       return updateConfig('defaultNoThrow', true).then(function () {
         assert.equal((<any>adapter)._allTests.isNoThrow, true);
@@ -368,7 +374,7 @@ describe('C2TestAdapter', function () {
     })
 
     describe('load', function () {
-      this.slow(500);
+      this.slow(1000);
 
       const uniqueIdC = new Set<string>();
       let adapter: TestAdapter;
@@ -405,9 +411,9 @@ describe('C2TestAdapter', function () {
         assert.deepStrictEqual(testStatesEvents, []);
       }
 
-      beforeEach(function () {
+      beforeEach(async function () {
         this.timeout(8000);
-        return updateConfig('workerMaxNumber', 3);
+        await updateConfig('workerMaxNumber', 3);
       })
 
       afterEach(function () {
@@ -458,7 +464,7 @@ describe('C2TestAdapter', function () {
               state: 'passed',
               test: s1t1,
               decorations: undefined,
-              message: 'Duration: 0.000112 second(s)\n'
+              message: 'Duration: 0.000112 second(s).\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' },
@@ -481,16 +487,16 @@ describe('C2TestAdapter', function () {
               state: 'passed',
               test: s1t1,
               decorations: undefined,
-              message: 'Duration: 0.000132 second(s)\n'
+              message: 'Duration: 0.000132 second(s).\n'
             },
             { type: 'test', state: 'running', test: s1t2 },
             {
               type: 'test',
               state: 'failed',
               test: s1t2,
-              decorations: [{ line: 14, message: 'Expanded: false' }],
+              decorations: [{ line: 14, message: '-> false' }],
               message:
-                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' },
@@ -513,16 +519,16 @@ describe('C2TestAdapter', function () {
               state: 'passed',
               test: s1t1,
               decorations: undefined,
-              message: 'Duration: 0.000132 second(s)\n'
+              message: 'Duration: 0.000132 second(s).\n'
             },
             { type: 'test', state: 'running', test: s1t2 },
             {
               type: 'test',
               state: 'failed',
               test: s1t2,
-              decorations: [{ line: 14, message: 'Expanded: false' }],
+              decorations: [{ line: 14, message: '-> false' }],
               message:
-                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' },
@@ -552,7 +558,7 @@ describe('C2TestAdapter', function () {
               state: 'passed',
               test: s1t1,
               decorations: undefined,
-              message: 'Duration: 0.000112 second(s)\n'
+              message: 'Duration: 0.000112 second(s).\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -582,7 +588,7 @@ describe('C2TestAdapter', function () {
                 test: s1t1,
                 decorations: undefined,
                 message:
-                  'Randomness seeded to: 2\nDuration: 0.000327 second(s)\n'
+                  'Randomness seeded to: 2.\nDuration: 0.000327 second(s).\n'
               },
               { type: 'suite', state: 'completed', suite: suite1 },
               { type: 'finished' }
@@ -682,7 +688,7 @@ describe('C2TestAdapter', function () {
             state: 'passed',
             test: s1t1,
             decorations: undefined,
-            message: 'Duration: 0.000132 second(s)\n'
+            message: 'Duration: 0.000132 second(s).\n'
           };
           assert.ok(testStatesEvI(s1t1running) < testStatesEvI(s1t1finished));
           assert.ok(testStatesEvI(s1t1finished) < testStatesEvI(s1finished));
@@ -694,9 +700,9 @@ describe('C2TestAdapter', function () {
             type: 'test',
             state: 'failed',
             test: s1t2,
-            decorations: [{ line: 14, message: 'Expanded: false' }],
+            decorations: [{ line: 14, message: '-> false' }],
             message:
-              'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+              'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
           };
           assert.ok(testStatesEvI(s1t2running) < testStatesEvI(s1t2finished));
           assert.ok(testStatesEvI(s1t2finished) < testStatesEvI(s1finished));
@@ -709,7 +715,7 @@ describe('C2TestAdapter', function () {
             state: 'passed',
             test: s2t1,
             decorations: undefined,
-            message: 'Duration: 0.00037 second(s)\n'
+            message: 'Duration: 0.00037 second(s).\n'
           };
           assert.ok(testStatesEvI(s2t1running) < testStatesEvI(s2t1finished));
           assert.ok(testStatesEvI(s2t1finished) < testStatesEvI(s2finished));
@@ -728,9 +734,9 @@ describe('C2TestAdapter', function () {
             type: 'test',
             state: 'failed',
             test: s2t3,
-            decorations: [{ line: 20, message: 'Expanded: false' }],
+            decorations: [{ line: 20, message: '-> false' }],
             message:
-              'Duration: 0.000178 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+              'Duration: 0.000178 second(s).\n>>> "s2t3" at line 19 -> REQUIRE at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
           };
           assert.ok(testStatesEvI(s2t3running) < testStatesEvI(s2t3finished));
           assert.ok(testStatesEvI(s2t3finished) < testStatesEvI(s2finished));
@@ -762,7 +768,7 @@ describe('C2TestAdapter', function () {
               state: 'passed',
               test: s1t1,
               decorations: undefined,
-              message: 'Duration: 0.000112 second(s)\n'
+              message: 'Duration: 0.000112 second(s).\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -784,7 +790,7 @@ describe('C2TestAdapter', function () {
               state: 'passed',
               test: s2t2,
               decorations: undefined,
-              message: 'Duration: 0.001294 second(s)\n'
+              message: 'Duration: 0.001294 second(s).\n'
             },
             { type: 'suite', state: 'completed', suite: suite2 },
             { type: 'finished' }
@@ -805,9 +811,9 @@ describe('C2TestAdapter', function () {
               type: 'test',
               state: 'failed',
               test: s2t3,
-              decorations: [{ line: 20, message: 'Expanded: false' }],
+              decorations: [{ line: 20, message: '-> false' }],
               message:
-                'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000596 second(s).\n>>> "s2t3" at line 19 -> REQUIRE at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
             },
             { type: 'suite', state: 'completed', suite: suite2 },
             { type: 'finished' }
@@ -833,9 +839,9 @@ describe('C2TestAdapter', function () {
               type: 'test',
               state: 'failed',
               test: s2t3,
-              decorations: [{ line: 20, message: 'Expanded: false' }],
+              decorations: [{ line: 20, message: '-> false' }],
               message:
-                'Duration: 0.000596 second(s)\n>>> s2t3(line: 19) REQUIRE (line: 21) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000596 second(s).\n>>> "s2t3" at line 19 -> REQUIRE at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
             },
             { type: 'suite', state: 'completed', suite: suite2 },
             { type: 'finished' }
@@ -857,15 +863,15 @@ describe('C2TestAdapter', function () {
               state: 'passed',
               test: s1t1,
               decorations: undefined,
-              message: 'Duration: 0.000132 second(s)\n'
+              message: 'Duration: 0.000132 second(s).\n'
             },
             { type: 'test', state: 'running', test: s1t2 }, {
               type: 'test',
               state: 'failed',
               test: s1t2,
-              decorations: [{ line: 14, message: 'Expanded: false' }],
+              decorations: [{ line: 14, message: '-> false' }],
               message:
-                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -897,7 +903,7 @@ describe('C2TestAdapter', function () {
               type: 'test',
               state: 'failed',
               test: s1t1,
-              message: 'Unexpected test error. (Is Catch2 crashed?)\n'
+              message: 'Fatal error: Wrong Catch2 xml output. Error: 1\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -914,7 +920,7 @@ describe('C2TestAdapter', function () {
               state: 'passed',
               test: s1t1,
               decorations: undefined,
-              message: 'Duration: 0.000112 second(s)\n'
+              message: 'Duration: 0.000112 second(s).\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -942,7 +948,7 @@ describe('C2TestAdapter', function () {
               type: 'test',
               state: 'failed',
               test: s1t1,
-              message: 'Unexpected test error. (Is Catch2 crashed?)\n'
+              message: 'Fatal error: Wrong Catch2 xml output. Error: \'SIGTERM\'\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -951,6 +957,7 @@ describe('C2TestAdapter', function () {
 
           // this tests the sinon stubs too
           await adapter.run([s1t1.id]);
+
           assert.deepStrictEqual(testStatesEvents, [
             ...expected, { type: 'started', tests: [s1t1.id] },
             { type: 'suite', state: 'running', suite: suite1 },
@@ -959,8 +966,40 @@ describe('C2TestAdapter', function () {
               state: 'passed',
               test: s1t1,
               decorations: undefined,
-              message: 'Duration: 0.000112 second(s)\n'
+              message: 'Duration: 0.000112 second(s).\n'
             },
+            { type: 'suite', state: 'completed', suite: suite1 },
+            { type: 'finished' }
+          ]);
+        })
+
+        it('should timeout', async function () {
+          this.timeout(8000);
+          this.slow(4000);
+          await updateConfig('defaultRunningTimeoutSec', 3);
+          await loadAdapterAndAssert();
+          const withArgs = spawnStub.withArgs(
+            example1.suite1.execPath, example1.suite1.t1.outputs[0][0]);
+          const cp = new ChildProcessStub(undefined, 'SIGTERM');
+          const spyKill = <sinon.SinonSpy<never, void>>sinon.spy(cp, 'kill');
+          cp.write('<?xml version="1.0" encoding="UTF-8"?><Catch name="suite1">'); // no close
+          withArgs.onCall(withArgs.callCount).returns(cp);
+
+          const start = Date.now();
+          await adapter.run([s1t1.id]);
+          const elapsed = Date.now() - start;
+          assert.ok(3000 <= elapsed && elapsed <= 5000, elapsed.toString());
+          assert.strictEqual(spyKill.callCount, 1);
+
+          cp.close();
+
+          await waitFor(this, () => {
+            return testStatesEvents.length >= 4;
+          });
+
+          assert.deepStrictEqual(testStatesEvents, [
+            { type: 'started', tests: [s1t1.id] },
+            { type: 'suite', state: 'running', suite: suite1 },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
           ]);
@@ -1050,12 +1089,10 @@ describe('C2TestAdapter', function () {
               example1.suite2.execPath, example1.suite2.outputs[2][0]);
             withArgs.onCall(withArgs.callCount).returns(spawnEvent);
           }
-          const run = adapter.run([root.id]);
-          return await run.then(function () {
-            adapter.cancel();
-            assert.equal(spyKill1.callCount, 0);
-            assert.equal(spyKill2.callCount, 0);
-          });
+          await adapter.run([root.id]);
+          adapter.cancel();
+          assert.equal(spyKill1.callCount, 0);
+          assert.equal(spyKill2.callCount, 0);
         })
 
         it('reloads because of fswatcher event: touch(changed)',
@@ -1257,16 +1294,16 @@ describe('C2TestAdapter', function () {
               state: 'passed',
               test: s1t1,
               decorations: undefined,
-              message: 'Duration: 0.000132 second(s)\n'
+              message: 'Duration: 0.000132 second(s).\n'
             },
             { type: 'test', state: 'running', test: s1t2 },
             {
               type: 'test',
               state: 'failed',
               test: s1t2,
-              decorations: [{ line: 14, message: 'Expanded: false' }],
+              decorations: [{ line: 14, message: '-> false' }],
               message:
-                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' },
@@ -1305,9 +1342,9 @@ describe('C2TestAdapter', function () {
                 type: 'test',
                 state: 'failed',
                 test: s1t2,
-                decorations: [{ line: 14, message: 'Expanded: false' }],
+                decorations: [{ line: 14, message: '-> false' }],
                 message:
-                  'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                  'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
               },
               { type: 'suite', state: 'completed', suite: suite1 },
               { type: 'finished' },
@@ -1440,9 +1477,9 @@ describe('C2TestAdapter', function () {
               type: 'test',
               state: 'failed',
               test: s1t2,
-              decorations: [{ line: 14, message: 'Expanded: false' }],
+              decorations: [{ line: 14, message: '-> false' }],
               message:
-                'Duration: 0.000204 second(s)\n>>> s1t2(line: 13) REQUIRE (line: 15) \n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n'
+                'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' },
@@ -1454,7 +1491,7 @@ describe('C2TestAdapter', function () {
               state: 'passed',
               test: s1t1,
               decorations: undefined,
-              message: 'Duration: 0.000132 second(s)\n'
+              message: 'Duration: 0.000132 second(s).\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' },

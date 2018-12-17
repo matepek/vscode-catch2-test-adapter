@@ -2,11 +2,12 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { TestDecoration, TestEvent, TestInfo } from 'vscode-test-adapter-api';
+import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import { C2TestSuiteInfo } from './C2TestSuiteInfo';
 import { generateUniqueId } from './IdGenerator';
+import { inspect } from 'util';
 
 export class C2TestInfo implements TestInfo {
   readonly type: 'test' = 'test';
@@ -74,24 +75,22 @@ export class C2TestInfo implements TestInfo {
   private _processXmlTagTestCase(testCase: any, rngSeed: number | undefined):
     TestEvent {
     try {
-      let message = undefined;
-      let decorations = undefined;
-      let success = false;
-      [message, decorations, success] =
-        this._processXmlTagTestCaseInner(testCase, '');
-
-      if (rngSeed) {
-        message =
-          'Randomness seeded to: ' + rngSeed.toString() + '\n' + message;
-      }
-
       const testEvent: TestEvent = {
         type: 'test',
         test: this,
-        state: success ? 'passed' : 'failed',
-        message: message.length ? message : undefined,
-        decorations: decorations.length ? decorations : undefined
+        state: 'failed',
+        message: '',
+        decorations: []
       };
+
+      if (rngSeed) {
+        testEvent.message += 'Randomness seeded to: ' + rngSeed.toString() + '.\n';
+      }
+
+      this._processXmlTagTestCaseInner(testCase, testEvent);
+
+      if (testEvent.message === '') testEvent.message = '';
+      if (testEvent.decorations!.length == 0) testEvent.decorations = undefined;
 
       return testEvent;
     } catch (e) {
@@ -99,109 +98,90 @@ export class C2TestInfo implements TestInfo {
     }
   }
 
-  private _processXmlTagTestCaseInner(testCase: any, title: string):
-    [string, TestDecoration[], boolean] {
-    title = testCase.$.name + '(line: ' + testCase.$.line + ')';
-    let message = '';
-    let decorations: TestDecoration[] = [];
-    let success = false;
+  private _processXmlTagTestCaseInner(testCase: any, testEvent: TestEvent):
+    void {
+    const title = '>>> "' + testCase.$.name + '" at line ' + testCase.$.line;
 
     if (testCase.OverallResult[0].$.success === 'true') {
-      success = true;
+      testEvent.state = 'passed';
     }
 
     if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
-      message += 'Duration: ' + testCase.OverallResult[0].$.durationInSeconds +
-        ' second(s)\n';
+      testEvent.message += 'Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
     }
 
-    if (testCase.hasOwnProperty('Expression')) {
-      for (let j = 0; j < testCase.Expression.length; ++j) {
-        try {
-          let messageL = undefined;
-          let decorationsL = undefined;
-          [messageL, decorationsL] =
-            this._processXmlTagExpressionInner(testCase.Expression[j], title);
-          message += messageL;
-          decorations = decorations.concat(decorationsL);
-        } catch (error) {
-        }
-      }
-    }
+    this._processXmlTagExpressions(testCase, title, testEvent);
 
-    if (testCase.hasOwnProperty('Section')) {
-      for (let j = 0; j < testCase.Section.length; ++j) {
-        try {
-          let messageL = undefined;
-          let decorationsL = undefined;
-          [messageL, decorationsL] =
-            this._processXmlTagSectionInner(testCase.Section[j], title);
-          message += messageL;
-          decorations = decorations.concat(decorationsL);
-        } catch (error) {
-        }
-      }
-    }
+    this._processXmlTagSections(testCase, title, testEvent);
 
-    return [message, decorations, success];
+    this._processXmlTagFatalErrorConditions(testCase, title, testEvent);
   }
 
-  private _processXmlTagExpressionInner(expr: any, title: string):
-    [string, TestDecoration[]] {
-    let message = '';
-    let decorations: TestDecoration[] = [];
-
-    message += '>>> ' + title + ' ' + expr.$.type + ' (line: ' + expr.$.line +
-      ')' +
-      ' \n';
-    message += '  Original:\n    ';
-    message += expr.Original.map((x: string) => x.trim()).join(' | ');
-    message += '\n  Expanded:\n    ';
-    message += expr.Expanded.map((x: string) => x.trim()).join(' | ') + '\n';
-    message += '<<<\n';
-    decorations.push({
-      line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
-      message:
-        'Expanded: ' + expr.Expanded.map((x: string) => x.trim()).join(' | ')
-    });
-
-    return [message, decorations];
+  private _processXmlTagExpressions(xml: any, title: string, testEvent: TestEvent):
+    void {
+    if (xml.hasOwnProperty('Expression')) {
+      for (let j = 0; j < xml.Expression.length; ++j) {
+        const expr = xml.Expression[j];
+        try {
+          testEvent.message += title + ' -> '
+            + (expr.$.type ? expr.$.type : '<unknown>')
+            + ' at line ' + expr.$.line + ':\n'
+            + '  Original:\n    '
+            + expr.Original.map((x: string) => x.trim()).join(' | ') + '\n'
+            + '  Expanded:\n    '
+            + expr.Expanded.map((x: string) => x.trim()).join(' | ') + '\n'
+            + '<<<\n\n';
+          testEvent.decorations!.push({
+            line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
+            message:
+              '-> ' + expr.Expanded.map((x: string) => x.trim()).join(' | ')
+          });
+        } catch (error) {
+          this.parent.allTests.log.error(inspect(error));
+        }
+        this._processXmlTagFatalErrorConditions(expr, title, testEvent);
+      }
+    }
   }
 
-  private _processXmlTagSectionInner(section: any, title: string):
-    [string, TestDecoration[]] {
-    title += ' | ' + section.$.name + '(line: ' + section.$.line + ')';
-    let message = '';
-    let decorations: TestDecoration[] = [];
-
-    if (section.hasOwnProperty('Expression')) {
-      for (let j = 0; j < section.Expression.length; ++j) {
+  private _processXmlTagSections(xml: any, title: string, testEvent: TestEvent):
+    void {
+    if (xml.hasOwnProperty('Section')) {
+      for (let j = 0; j < xml.Section.length; ++j) {
+        const section = xml.Section[j];
         try {
-          let messageL = undefined;
-          let decorationsL = undefined;
-          [messageL, decorationsL] =
-            this._processXmlTagExpressionInner(section.Expression[j], title);
-          message += messageL;
-          decorations = decorations.concat(decorationsL);
+          title += ' -> "' + section.$.name + '" at line ' + section.$.line;
+
+          this._processXmlTagExpressions(section, title, testEvent);
+
+          this._processXmlTagSections(section, title, testEvent);
         } catch (error) {
+          this.parent.allTests.log.error(inspect(error));
         }
       }
     }
+  }
 
-    if (section.hasOwnProperty('Section')) {
-      for (let j = 0; j < section.Section.length; ++j) {
-        try {
-          let messageL = undefined;
-          let decorationsL = undefined;
-          [messageL, decorationsL] =
-            this._processXmlTagSectionInner(section.Section[j], title);
-          message += messageL;
-          decorations = decorations.concat(decorationsL);
-        } catch (error) {
+  private _processXmlTagFatalErrorConditions(expr: any, title: string, testEvent: TestEvent):
+    void {
+    if (expr.hasOwnProperty('FatalErrorCondition')) {
+      try {
+        for (let j = 0; j < expr.FatalErrorCondition.length; ++j) {
+          const fatal = expr.FatalErrorCondition[j];
+
+          testEvent.message += title + ' -> at line ' + expr.$.line + ':\n';
+          if (fatal.hasOwnProperty('_')) {
+            testEvent.message += '  Fatal error: ' + fatal._.trim() + '\n';
+          } else {
+            testEvent.message += '  Unknown fatal error: ' + inspect(fatal) + '\n';
+          }
+          testEvent.message += '<<<\n\n';
         }
       }
+      catch (error) {
+        testEvent.message += 'Unknown fatal error: ' + inspect(error);
+        this.parent.allTests.log.error(inspect(error));
+      }
     }
-
-    return [message, decorations];
   }
 }

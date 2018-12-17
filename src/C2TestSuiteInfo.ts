@@ -4,7 +4,7 @@
 
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import * as path from 'path';
-import { inspect } from 'util';
+import { promisify, inspect } from 'util';
 import { TestEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
@@ -28,7 +28,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
   constructor(
     public readonly origLabel: string,
-    private readonly allTests: C2AllTestSuiteInfo,
+    public readonly allTests: C2AllTestSuiteInfo,
     public readonly execPath: string,
     public readonly execOptions: SpawnOptions) {
     this.label = origLabel;
@@ -78,15 +78,15 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     this._isKill = false;
     this._proc = undefined;
 
+    let childrenToRun: 'all' | C2TestInfo[] = 'all';
+
     if (tests.delete(this.id)) {
       for (let i = 0; i < this.children.length; i++) {
         const c = this.children[i];
         tests.delete(c.id);
       }
-
-      return this._runInner('all', taskPool);
     } else {
-      let childrenToRun: C2TestInfo[] = [];
+      childrenToRun = [];
 
       for (let i = 0; i < this.children.length; i++) {
         const c = this.children[i];
@@ -94,9 +94,9 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       }
 
       if (childrenToRun.length == 0) return Promise.resolve();
-
-      return this._runInner(childrenToRun, taskPool);
     }
+
+    return this._runInner(childrenToRun, taskPool);
   }
 
   private _runInner(childrenToRun: C2TestInfo[] | 'all', taskPool: TaskPool):
@@ -153,6 +153,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     });
 
     const data = new class {
+      process: ChildProcess | undefined = undefined;
       buffer: string = '';
       inTestCase: boolean = false;
       currentChild: C2TestInfo | undefined = undefined;
@@ -160,8 +161,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
       rngSeed: number | undefined = undefined;
       unporessedXmlTestCases: string[] = [];
       processedTestCases: C2TestInfo[] = [];
-    }
-      ();
+    }();
+    data.process = this._proc;
 
     const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
 
@@ -253,6 +254,8 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     });
 
     this._proc.on('close', (code: number | null, signal: string | null) => {
+      data.process = undefined;
+
       if (code !== null && code !== undefined)
         pResolver && pResolver(code);
       if (signal !== null && signal !== undefined)
@@ -261,10 +264,29 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
         pRejecter && pRejecter('unknown');
     });
 
+    const startTime = Date.now();
+    const killIfTimout = (): Promise<void> => {
+      if (data.process === undefined) { return Promise.resolve(); }
+      else if (this.allTests.execRunningTimeout !== null
+        && Date.now() - startTime > this.allTests.execRunningTimeout) {
+        pResolver && pResolver('catch2TestExplorer.defaultRunningTimeoutSec: ' + this.allTests.execRunningTimeout / 1000);
+        data.process.kill();
+        data.process = undefined;
+        return Promise.resolve();
+      } else {
+        return promisify(setTimeout)(1000).then(killIfTimout);
+      }
+    };
+    promisify(setTimeout)(1000).then(killIfTimout);
+
     return p.catch(
       (reason: any) => {
-        this.allTests.log.error(inspect(reason));
-      }).then(() => {
+        this._proc && this._proc.kill();
+        this._proc = undefined;
+
+        this.allTests.log.error(inspect([reason, this, data], true, 2));
+        return reason;
+      }).then((codeOrReason: number | string) => {
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
             this.allTests.log.warn('data.currentChild !== undefined: ' + inspect(data));
@@ -272,20 +294,19 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
               type: 'test',
               test: data.currentChild!,
               state: 'failed',
-              message: 'Unexpected test error. (Is Catch2 crashed?)\n'
+              message: 'Fatal error: Wrong Catch2 xml output. Error: ' + inspect(codeOrReason) + '\n',
             });
           } else {
             this.allTests.log.warn('data.inTestCase: ' + inspect(data));
           }
         }
 
-        this.allTests.log.info(
-          'proc finished: ' + inspect([this.execPath, execParams]));
+        this.allTests.log.info('proc finished: ' + inspect([this.execPath, execParams]));
 
         this._proc = undefined;
         taskPool.release();
-        this.allTests.testStatesEmitter.fire(
-          { type: 'suite', suite: this, state: 'completed' });
+
+        this.allTests.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
         const isTestRemoved = (childrenToRun === 'all' &&
           this.children.filter(c => !c.skipped).length >
@@ -296,8 +317,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           this.allTests
             .sendLoadEvents(() => {
               return this.reloadChildren().catch(e => {
-                this.allTests.log.error(
-                  'reloading-error: ' + inspect(e));
+                this.allTests.log.error('reloading-error: ' + inspect(e));
                 // Suite possibly deleted: It is a dead suite.
               });
             })
@@ -393,18 +413,18 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
                   if (match && match.length == 5) {
                     const matchedPath = match[1] ? match[1] : match[3];
-                    filePath = path.resolve(this.allTests.workspaceFolder.uri.fsPath, matchedPath);
+                    filePath = path.join(this.allTests.workspaceFolder.uri.fsPath, matchedPath);
                     try {
                       if (!c2fs.existsSync(filePath) && this.execOptions.cwd) {
-                        filePath = path.resolve(this.execOptions.cwd, matchedPath);
+                        filePath = path.join(this.execOptions.cwd, matchedPath);
                       }
                       if (!c2fs.existsSync(filePath)) {
                         let parent = path.dirname(this.execPath);
-                        filePath = path.resolve(parent, matchedPath);
+                        filePath = path.join(parent, matchedPath);
                         let parentParent = path.dirname(parent);
                         while (!c2fs.existsSync(filePath) && parent != parentParent) {
                           parent = parentParent;
-                          filePath = path.resolve(parent, matchedPath);
+                          filePath = path.join(parent, matchedPath);
                           parentParent = path.dirname(parent);
                         }
                       }

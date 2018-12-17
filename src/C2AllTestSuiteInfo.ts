@@ -31,12 +31,13 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
       vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>,
     public readonly testStatesEmitter:
       vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent |
-      TestSuiteEvent | TestEvent>,
+        TestSuiteEvent | TestEvent>,
     public readonly autorunEmitter: vscode.EventEmitter<void>,
     public readonly variableToValue: [string, string][],
     public isEnabledSourceDecoration: boolean,
     public rngSeed: string | number | null,
     public execWatchTimeout: number,
+    public execRunningTimeout: null | number,
     public isNoThrow: boolean,
   ) {
     this.label = workspaceFolder.name + ' - Catch2';
