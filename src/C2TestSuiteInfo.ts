@@ -400,7 +400,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
             if (catch2TestListOutput.stderr) {
               this.allTests.log.warn('reloadChildren -> catch2TestListOutput.stderr: ' + inspect(catch2TestListOutput));
-              this.createChildTest(undefined, '!! ' + catch2TestListOutput.stderr.split('\n')[0], '', [], '', 1);
+              this.createChildTest(undefined, '!! ' + catch2TestListOutput.stderr.split('\n')[0].trim(), '', [], '', 1);
               return;
             }
 
