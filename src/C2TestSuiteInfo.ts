@@ -267,10 +267,11 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
     const startTime = Date.now();
     const killIfTimout = (): Promise<void> => {
       if (data.process === undefined) { return Promise.resolve(); }
-      else if ((Date.now() - startTime) > this.allTests.execRunningTimeout) {
+      else if (this.allTests.execRunningTimeout !== null
+        && Date.now() - startTime > this.allTests.execRunningTimeout) {
+        pResolver && pResolver('catch2TestExplorer.defaultRunningTimeoutSec: ' + this.allTests.execRunningTimeout / 1000);
         data.process.kill();
         data.process = undefined;
-        //TODO reject
         return Promise.resolve();
       } else {
         return promisify(setTimeout)(1000).then(killIfTimout);
@@ -280,8 +281,12 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
 
     return p.catch(
       (reason: any) => {
+        this._proc && this._proc.kill();
+        this._proc = undefined;
+
         this.allTests.log.error(inspect([reason, this, data], true, 2));
-      }).then(() => {
+        return reason;
+      }).then((codeOrReason: number | string) => {
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
             this.allTests.log.warn('data.currentChild !== undefined: ' + inspect(data));
@@ -289,20 +294,19 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
               type: 'test',
               test: data.currentChild!,
               state: 'failed',
-              message: 'Unexpected test error. (Is Catch2 crashed?)\n'
+              message: 'Fatal error: Wrong Catch2 xml output. Error: ' + inspect(codeOrReason) + '\n',
             });
           } else {
             this.allTests.log.warn('data.inTestCase: ' + inspect(data));
           }
         }
 
-        this.allTests.log.info(
-          'proc finished: ' + inspect([this.execPath, execParams]));
+        this.allTests.log.info('proc finished: ' + inspect([this.execPath, execParams]));
 
         this._proc = undefined;
         taskPool.release();
-        this.allTests.testStatesEmitter.fire(
-          { type: 'suite', suite: this, state: 'completed' });
+
+        this.allTests.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
         const isTestRemoved = (childrenToRun === 'all' &&
           this.children.filter(c => !c.skipped).length >
@@ -313,8 +317,7 @@ export class C2TestSuiteInfo implements TestSuiteInfo {
           this.allTests
             .sendLoadEvents(() => {
               return this.reloadChildren().catch(e => {
-                this.allTests.log.error(
-                  'reloading-error: ' + inspect(e));
+                this.allTests.log.error('reloading-error: ' + inspect(e));
                 // Suite possibly deleted: It is a dead suite.
               });
             })

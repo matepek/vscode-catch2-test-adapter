@@ -903,7 +903,7 @@ describe('C2TestAdapter', function () {
               type: 'test',
               state: 'failed',
               test: s1t1,
-              message: 'Unexpected test error. (Is Catch2 crashed?)\n'
+              message: 'Fatal error: Wrong Catch2 xml output. Error: 1\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -948,7 +948,7 @@ describe('C2TestAdapter', function () {
               type: 'test',
               state: 'failed',
               test: s1t1,
-              message: 'Unexpected test error. (Is Catch2 crashed?)\n'
+              message: 'Fatal error: Wrong Catch2 xml output. Error: \'SIGTERM\'\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -973,42 +973,33 @@ describe('C2TestAdapter', function () {
           ]);
         })
 
-        it.skip('should timeout', async function () {
-          await updateConfig('defaultRunningTimeoutSec', 2);
+        it('should timeout', async function () {
+          this.timeout(8000);
+          this.slow(4000);
+          await updateConfig('defaultRunningTimeoutSec', 3);
           await loadAdapterAndAssert();
           const withArgs = spawnStub.withArgs(
             example1.suite1.execPath, example1.suite1.t1.outputs[0][0]);
           const cp = new ChildProcessStub(undefined, 'SIGTERM');
+          const spyKill = <sinon.SinonSpy<never, void>>sinon.spy(cp, 'kill');
           cp.write('<?xml version="1.0" encoding="UTF-8"?><Catch name="suite1">'); // no close
           withArgs.onCall(withArgs.callCount).returns(cp);
 
+          const start = Date.now();
           await adapter.run([s1t1.id]);
+          const elapsed = Date.now() - start;
+          assert.ok(3000 <= elapsed && elapsed <= 5000, elapsed.toString());
+          assert.strictEqual(spyKill.callCount, 1);
+
           cp.close();
 
-          const expected = [
-            { type: 'started', tests: [s1t1.id] },
-            { type: 'suite', state: 'running', suite: suite1 },
-            { type: 'suite', state: 'completed', suite: suite1 },
-            { type: 'finished' }
-          ];
           await waitFor(this, () => {
             return testStatesEvents.length >= 4;
-          })
-          assert.deepStrictEqual(testStatesEvents, expected);
-
-          // this tests the sinon stubs too
-          await adapter.run([s1t1.id]);
+          });
 
           assert.deepStrictEqual(testStatesEvents, [
-            ...expected, { type: 'started', tests: [s1t1.id] },
+            { type: 'started', tests: [s1t1.id] },
             { type: 'suite', state: 'running', suite: suite1 },
-            { type: 'test', state: 'running', test: s1t1 }, {
-              type: 'test',
-              state: 'passed',
-              test: s1t1,
-              decorations: undefined,
-              message: 'Duration: 0.000112 second(s).\n'
-            },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
           ]);
@@ -1098,12 +1089,10 @@ describe('C2TestAdapter', function () {
               example1.suite2.execPath, example1.suite2.outputs[2][0]);
             withArgs.onCall(withArgs.callCount).returns(spawnEvent);
           }
-          const run = adapter.run([root.id]);
-          return await run.then(function () {
-            adapter.cancel();
-            assert.equal(spyKill1.callCount, 0);
-            assert.equal(spyKill2.callCount, 0);
-          });
+          await adapter.run([root.id]);
+          adapter.cancel();
+          assert.equal(spyKill1.callCount, 0);
+          assert.equal(spyKill2.callCount, 0);
         })
 
         it('reloads because of fswatcher event: touch(changed)',

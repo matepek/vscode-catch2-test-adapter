@@ -354,8 +354,9 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   }
 
   private _getDefaultExecRunningTimeout(config: vscode.WorkspaceConfiguration):
-    number {
-    return config.get<number>('defaultRunningTimeoutSec', 0) * 1000;
+    null | number {
+    const r = config.get<null | number>('defaultRunningTimeoutSec', null);
+    return r !== null ? r * 1000 : r;
   }
 
   private _getGlobalAndDefaultEnvironmentVariables(

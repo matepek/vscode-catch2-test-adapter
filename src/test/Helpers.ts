@@ -11,7 +11,7 @@ export class ChildProcessStub extends EventEmitter {
   public closed: boolean = false;
 
   private _read() {
-    this.stdout.push(null);
+    //this.stdout.push(null);
   }
 
   constructor(data?: string | Iterable<string>, close?: number | string) {
