@@ -25,11 +25,11 @@ export class C2TestInfo implements TestInfo {
     public readonly line: number,
     public readonly parent: C2TestSuiteInfo,
   ) {
+    if (line < 0) throw Error('line smaller than zero');
     this.testNameTrimmed = this.testNameFull.trim();
     this.skipped = tags.some((v: string) => {
       return v.startsWith('[.') || v == '[hide]';
-    }) ||
-      this.testNameFull.startsWith('./');
+    }) || this.testNameFull.startsWith('./');
     this.label = C2TestInfo._generateLabel(this.testNameFull, description, tags);
     this.id = id ? id : generateUniqueId();
   }

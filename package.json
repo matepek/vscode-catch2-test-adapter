@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -55,7 +55,7 @@
     "@types/entities": "^1.1.0",
     "@types/fs-extra": "^5.0.4",
     "@types/mocha": "^5.2.5",
-    "@types/node": "^10.12.15",
+    "@types/node": "^10.12.17",
     "@types/request-promise": "4.1.42",
     "@types/sinon": "^5.0.7",
     "@types/xml2js": "^0.4.3",
@@ -64,7 +64,7 @@
     "request-promise": "4.2.2",
     "sinon": "^7.2.2",
     "typescript": "^3.2.2",
-    "vsce": "^1.53.2",
+    "vsce": "^1.54.0",
     "vscode": "^1.1.26"
   },
   "engines": {
