@@ -7,7 +7,7 @@ import { inspect, promisify } from 'util';
 import * as vscode from 'vscode';
 
 import { C2AllTestSuiteInfo } from './C2AllTestSuiteInfo';
-import { C2TestSuiteInfo } from './C2TestSuiteInfo';
+import { TestSuiteInfoBase } from './C2TestSuiteInfo';
 import * as c2fs from './FsWrapper';
 import { resolveVariables } from './Helpers';
 
@@ -20,7 +20,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
   private _disposables: vscode.Disposable[] = [];
   private _watcher: vscode.FileSystemWatcher | undefined = undefined;
 
-  private readonly _executables: Map<string /*fsPath*/, C2TestSuiteInfo> =
+  private readonly _executables: Map<string /*fsPath*/, TestSuiteInfoBase> =
     new Map();
 
   private readonly _lastEventArrivedAt:
@@ -84,23 +84,22 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     for (let i = 0; i < fileUris.length; i++) {
       const file = fileUris[i];
-      const suite = this._createSuiteByUri(file);
-
-      await suite.reloadChildren().then(() => {
-        this._executables.set(file.fsPath, suite);
-        this._allTests.insertChildSuite(suite);
+      await this._createSuiteByUri(file).then((suite: TestSuiteInfoBase) => {
+        return suite.reloadChildren().then(() => {
+          this._executables.set(file.fsPath, suite);
+          this._allTests.insertChildSuite(suite);
+        }, (reason: any) => {
+          this._allTests.log.error('Couldn\'t load executable: ' + inspect([reason, suite]));
+        });
       }, (reason: any) => {
-        this._allTests.log.warn(
-          'Couldn\'t load suite: ' + inspect([reason, suite]));
-        if (suite.catch2Version !== undefined)
-          this._allTests.log.error('but it was a Catch2 executable');
+        this._allTests.log.info('Not a test executable: ' + file.fsPath);
       });
     }
 
     this._uniquifySuiteNames();
   }
 
-  private _createSuiteByUri(file: vscode.Uri): C2TestSuiteInfo {
+  private _createSuiteByUri(file: vscode.Uri): Promise<TestSuiteInfoBase> {
     const wsUri = this._allTests.workspaceFolder.uri;
 
     let resolvedLabel = this.name;
@@ -143,7 +142,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
       this._allTests.log.error(inspect([e, this]));
     }
 
-    return new C2TestSuiteInfo(resolvedLabel, this._allTests,
+    return TestSuiteInfoBase.create(resolvedLabel, this._allTests,
       file.fsPath, { cwd: resolvedCwd, env: resolvedEnv });
   }
 
@@ -153,14 +152,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     this._lastEventArrivedAt.set(uri.fsPath, Date.now());
 
-    let suite = this._executables.get(uri.fsPath);
-
-    if (suite == undefined) {
-      this._allTests.log.info('new suite: ' + uri.fsPath);
-      suite = this._createSuiteByUri(uri);
-    }
-
-    const x = (exists: boolean, delay: number): Promise<void> => {
+    const x = (suite: TestSuiteInfoBase, exists: boolean, delay: number): Promise<void> => {
       let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
       if (lastEventArrivedAt === undefined) {
         this._allTests.log.error('assert in ' + __filename);
@@ -169,10 +161,10 @@ export class C2ExecutableInfo implements vscode.Disposable {
       } else if (Date.now() - lastEventArrivedAt! > this._allTests.execWatchTimeout) {
         this._allTests.log.info('refresh timeout: ' + uri.fsPath);
         this._lastEventArrivedAt.delete(uri.fsPath);
-        if (this._allTests.hasSuite(suite!)) {
+        if (this._allTests.hasSuite(suite)) {
           return this._allTests.sendLoadEvents(() => {
             this._executables.delete(uri.fsPath);
-            this._allTests.removeChild(suite!);
+            this._allTests.removeChild(suite);
             return Promise.resolve();
           });
         } else {
@@ -181,10 +173,10 @@ export class C2ExecutableInfo implements vscode.Disposable {
       } else if (exists) {
         // note: here we reload children outside start-finished event
         // it seems ok now, but maybe it is a problem, if insertChildSuite == false
-        return suite!.reloadChildren().then(() => {
+        return suite.reloadChildren().then(() => {
           return this._allTests.sendLoadEvents(() => {
-            if (this._allTests.insertChildSuite(suite!)) {
-              this._executables.set(uri.fsPath, suite!);
+            if (this._allTests.insertChildSuite(suite)) {
+              this._executables.set(uri.fsPath, suite);
               this._uniquifySuiteNames();
             }
             this._lastEventArrivedAt.delete(uri.fsPath);
@@ -193,18 +185,30 @@ export class C2ExecutableInfo implements vscode.Disposable {
         }, (reason: any) => {
           this._allTests.log.warn(
             'Problem under reloadChildren: ' + inspect([reason, uri.fsPath, suite]));
-          return x(false, Math.min(delay * 2, 2000));
+          return x(suite, false, Math.min(delay * 2, 2000));
         });
       } else {
         return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
           return c2fs.existsAsync(uri.fsPath).then((exists: boolean) => {
-            return x(exists, Math.min(delay * 2, 2000));
+            return x(suite, exists, Math.min(delay * 2, 2000));
           });
         });
       }
     };
 
-    x(false, 64);
+
+    let suite = this._executables.get(uri.fsPath);
+
+    if (suite == undefined) {
+      this._allTests.log.info('new suite: ' + uri.fsPath);
+      this._createSuiteByUri(uri).then((s: TestSuiteInfoBase) => {
+        x(s, false, 64);
+      }, (reason: any) => {
+        this._allTests.log.info('couldn\'t add: ' + uri.fsPath);
+      });
+    } else {
+      x(suite!, false, 64);
+    }
   }
 
   private _handleCreate(uri: vscode.Uri) {
@@ -223,7 +227,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
   }
 
   private _uniquifySuiteNames() {
-    const uniqueNames: Map<string /* name */, C2TestSuiteInfo[]> = new Map();
+    const uniqueNames: Map<string /* name */, TestSuiteInfoBase[]> = new Map();
 
     for (const suite of this._executables.values()) {
       const suites = uniqueNames.get(suite.origLabel);

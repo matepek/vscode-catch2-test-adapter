@@ -10,7 +10,7 @@ import * as util from 'vscode-test-adapter-util';
 
 import { C2AllTestSuiteInfo } from './C2AllTestSuiteInfo';
 import { C2ExecutableInfo } from './C2ExecutableInfo';
-import { C2TestInfo } from './C2TestInfo';
+import { TestInfoBase } from './C2TestInfo';
 import { resolveVariables } from './Helpers';
 import { QueueGraphNode } from './QueueGraph';
 
@@ -208,12 +208,12 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       throw Error('Not existing test id');
     }
 
-    if (!(info instanceof C2TestInfo)) {
-      this._log.info(__filename + ' !(info instanceof C2TestInfo)');
+    if (!(info instanceof TestInfoBase)) {
+      this._log.info(__filename + ' !(info instanceof TestInfoBase)');
       throw 'Can\'t choose a group, only a single test.';
     }
 
-    const testInfo = <C2TestInfo>info;
+    const testInfo = <TestInfoBase>info;
 
     this._log.info('testInfo: ' + inspect([testInfo, tests]));
 
@@ -254,8 +254,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       if (template !== null && !template.hasOwnProperty('request'))
         template = Object.assign({ 'request': "launch" }, template);
 
-      const args = [testInfo.getEscapedTestName(), '--reporter', 'console'];
-      if (this._getDebugBreakOnFailure(config)) args.push('--break');
+      const args = testInfo.getDebugParams(this._getDebugBreakOnFailure(config));
 
       return resolveVariables(template, [
         ...this._variableToValue,
