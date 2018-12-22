@@ -38,7 +38,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   constructor(private readonly _workspaceFolder: vscode.WorkspaceFolder) {
     this._log = new util.Log(
-      'catch2TestExplorer', this._workspaceFolder, 'Catch2 Test Explorer');
+      'catch2TestExplorer', this._workspaceFolder, 'Test Explorer: ' + this._workspaceFolder.name);
     this._disposables.push(this._log);
 
     this._log.info(

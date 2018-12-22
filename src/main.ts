@@ -11,8 +11,6 @@ import { TestAdapter } from './TestAdapter';
 
 export async function activate(context: vscode.ExtensionContext) {
 
-  const workspaceFolder = (vscode.workspace.workspaceFolders || [])[0];
-
   const testExplorerExtension = vscode.extensions.getExtension<TestHub>(testExplorerExtensionId);
 
   if (testExplorerExtension) {
