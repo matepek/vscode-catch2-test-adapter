@@ -6,21 +6,22 @@ import * as path from 'path';
 import { inspect, promisify } from 'util';
 import * as vscode from 'vscode';
 
-import { C2AllTestSuiteInfo } from './C2AllTestSuiteInfo';
-import { C2TestSuiteInfoBase } from './C2TestSuiteInfo';
+import { RootTestSuiteInfo } from './RootTestSuiteInfo';
+import { TestSuiteInfoBase } from './TestSuiteInfoBase';
 import * as c2fs from './FsWrapper';
 import { resolveVariables } from './Helpers';
+import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 
-export class C2ExecutableInfo implements vscode.Disposable {
+export class TestExecutableInfo implements vscode.Disposable {
   constructor(
-    private _allTests: C2AllTestSuiteInfo, public readonly name: string,
+    private _allTests: RootTestSuiteInfo, public readonly name: string,
     public readonly pattern: string, public readonly cwd: string,
     public readonly env: { [prop: string]: any }) { }
 
   private _disposables: vscode.Disposable[] = [];
   private _watcher: vscode.FileSystemWatcher | undefined = undefined;
 
-  private readonly _executables: Map<string /*fsPath*/, C2TestSuiteInfoBase> =
+  private readonly _executables: Map<string /*fsPath*/, TestSuiteInfoBase> =
     new Map();
 
   private readonly _lastEventArrivedAt:
@@ -84,7 +85,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     for (let i = 0; i < fileUris.length; i++) {
       const file = fileUris[i];
-      await this._createSuiteByUri(file).then((suite: C2TestSuiteInfoBase) => {
+      await this._createSuiteByUri(file).then((suite: TestSuiteInfoBase) => {
         return suite.reloadChildren().then(() => {
           this._executables.set(file.fsPath, suite);
           this._allTests.insertChildSuite(suite);
@@ -99,7 +100,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
     this._uniquifySuiteNames();
   }
 
-  private _createSuiteByUri(file: vscode.Uri): Promise<C2TestSuiteInfoBase> {
+  private _createSuiteByUri(file: vscode.Uri): Promise<TestSuiteInfoBase> {
     const wsUri = this._allTests.workspaceFolder.uri;
 
     let resolvedLabel = this.name;
@@ -142,8 +143,11 @@ export class C2ExecutableInfo implements vscode.Disposable {
       this._allTests.log.error(inspect([e, this]));
     }
 
-    return C2TestSuiteInfoBase.create(resolvedLabel, this._allTests,
-      file.fsPath, { cwd: resolvedCwd, env: resolvedEnv });
+    return TestSuiteInfoBase.determineTestTypeOfExecutable(file.fsPath)
+      .then((framework) => {
+        return new TestSuiteInfoFactory(resolvedLabel, this._allTests,
+          file.fsPath, { cwd: resolvedCwd, env: resolvedEnv }).create(framework);
+      });
   }
 
   private _handleEverything(uri: vscode.Uri) {
@@ -152,7 +156,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     this._lastEventArrivedAt.set(uri.fsPath, Date.now());
 
-    const x = (suite: C2TestSuiteInfoBase, exists: boolean, delay: number): Promise<void> => {
+    const x = (suite: TestSuiteInfoBase, exists: boolean, delay: number): Promise<void> => {
       let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
       if (lastEventArrivedAt === undefined) {
         this._allTests.log.error('assert in ' + __filename);
@@ -201,7 +205,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
 
     if (suite == undefined) {
       this._allTests.log.info('new suite: ' + uri.fsPath);
-      this._createSuiteByUri(uri).then((s: C2TestSuiteInfoBase) => {
+      this._createSuiteByUri(uri).then((s: TestSuiteInfoBase) => {
         x(s, false, 64);
       }, (reason: any) => {
         this._allTests.log.info('couldn\'t add: ' + uri.fsPath);
@@ -227,7 +231,7 @@ export class C2ExecutableInfo implements vscode.Disposable {
   }
 
   private _uniquifySuiteNames() {
-    const uniqueNames: Map<string /* name */, C2TestSuiteInfoBase[]> = new Map();
+    const uniqueNames: Map<string /* name */, TestSuiteInfoBase[]> = new Map();
 
     for (const suite of this._executables.values()) {
       const suites = uniqueNames.get(suite.origLabel);

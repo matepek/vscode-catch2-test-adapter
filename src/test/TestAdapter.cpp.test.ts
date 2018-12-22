@@ -8,9 +8,9 @@ import * as fse from 'fs-extra';
 import * as path from 'path';
 import { inspect, promisify } from 'util';
 import * as vscode from 'vscode';
-import { TestAdapter, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
+import { TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
 
-import { C2TestAdapter } from '../C2TestAdapter';
+import { TestAdapter } from '../TestAdapter';
 import * as c2fs from '../FsWrapper';
 
 assert.notStrictEqual(vscode.workspace.workspaceFolders, undefined);
@@ -31,7 +31,7 @@ const isWin = process.platform === 'win32';
 
 ///
 
-describe('C2TestAdapter.cpp', function () {
+describe('TestAdapter.cpp', function () {
   async function compile(source: vscode.Uri, output: vscode.Uri) {
     if (isWin) {
       let vcvarsall: vscode.Uri | undefined;
@@ -120,7 +120,7 @@ describe('C2TestAdapter.cpp', function () {
       vscode.Uri.file(path.join(cppUri.fsPath, to)).fsPath);
   }
 
-  let adapter: C2TestAdapter | undefined;
+  let adapter: TestAdapter | undefined;
   let testsEventsConnection: vscode.Disposable | undefined;
   let testStatesEventsConnection: vscode.Disposable | undefined;
   let testsEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
@@ -128,7 +128,7 @@ describe('C2TestAdapter.cpp', function () {
     TestSuiteEvent | TestEvent)[] = [];
 
   function createAdapterAndSubscribe() {
-    adapter = new C2TestAdapter(workspaceFolder);
+    adapter = new TestAdapter(workspaceFolder);
 
     testsEvents = [];
     testsEventsConnection =

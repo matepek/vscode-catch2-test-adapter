@@ -11,11 +11,11 @@ import * as fse from 'fs-extra';
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
-import { TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo, TestInfo, TestAdapter } from 'vscode-test-adapter-api';
+import { TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
 import { inspect, promisify } from 'util';
 import { EOL } from 'os';
 
-import { C2TestAdapter } from '../C2TestAdapter';
+import { TestAdapter } from '../TestAdapter';
 import { example1 } from './example1';
 import { ChildProcessStub, FileSystemWatcherStub } from './Helpers';
 import * as Mocha from 'mocha';
@@ -35,7 +35,7 @@ const sinonSandbox = sinon.createSandbox();
 
 ///
 
-describe('C2TestAdapter', function () {
+describe('TestAdapter', function () {
   let testsEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
   let testStatesEvents: (TestRunStartedEvent | TestRunFinishedEvent |
     TestSuiteEvent | TestEvent)[] = [];
@@ -52,7 +52,7 @@ describe('C2TestAdapter', function () {
     while (testsEvents.length < count--) testsEvents.pop();
   }
 
-  let adapter: C2TestAdapter | undefined;
+  let adapter: TestAdapter | undefined;
 
   let testsEventsConnection: vscode.Disposable | undefined;
   let testStatesEventsConnection: vscode.Disposable | undefined;
@@ -93,7 +93,7 @@ describe('C2TestAdapter', function () {
   }
 
   function createAdapterAndSubscribe() {
-    adapter = new C2TestAdapter(workspaceFolder);
+    adapter = new TestAdapter(workspaceFolder);
 
     testsEventsConnection =
       adapter.tests((e: TestLoadStartedEvent | TestLoadFinishedEvent) => {
@@ -217,7 +217,7 @@ describe('C2TestAdapter', function () {
     this.timeout(5000);
     this.slow(300);
 
-    let adapter: C2TestAdapter;
+    let adapter: TestAdapter;
 
     beforeEach(function () {
       this.timeout(8000);
