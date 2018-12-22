@@ -5,11 +5,11 @@
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
-import { Catch2TestSuiteInfo, TestSuiteInfoBase, GoogleTestSuiteInfo } from './C2TestSuiteInfo';
+import { Catch2TestSuiteInfo, C2TestSuiteInfoBase, GoogleTestSuiteInfo } from './C2TestSuiteInfo';
 import { generateUniqueId } from './IdGenerator';
 import { inspect } from 'util';
 
-export abstract class TestInfoBase implements TestInfo {
+export abstract class C2TestInfoBase implements TestInfo {
   readonly type: 'test' = 'test';
   readonly id: string;
 
@@ -19,7 +19,7 @@ export abstract class TestInfoBase implements TestInfo {
     public readonly skipped: boolean,
     public readonly file: string | undefined,
     public readonly line: number | undefined,
-    public readonly parent: TestSuiteInfoBase,
+    public readonly parent: C2TestSuiteInfoBase,
   ) {
     this.id = id ? id : generateUniqueId();
   }
@@ -37,7 +37,7 @@ export abstract class TestInfoBase implements TestInfo {
   abstract getDebugParams(breakOnFailure: boolean): string[];
 }
 
-export class Catch2TestInfo extends TestInfoBase {
+export class Catch2TestInfo extends C2TestInfoBase {
   constructor(
     id: string | undefined,
     testNameFull: string,
@@ -208,7 +208,7 @@ export class Catch2TestInfo extends TestInfoBase {
   }
 }
 
-export class GoogleTestInfo extends TestInfoBase {
+export class GoogleTestInfo extends C2TestInfoBase {
   constructor(
     id: string | undefined,
     testNameFull: string,
@@ -247,33 +247,36 @@ export class GoogleTestInfo extends TestInfoBase {
       message: output,
     };
 
-    try {
-      const lastLineIndex = output.lastIndexOf('\n') + 1;
 
-      if (output.indexOf('[       OK ]', lastLineIndex) != -1)
-        ev.state = 'passed';
+    const lastLineIndex = output.lastIndexOf('\n') + 1;
 
-      const failure = /^(.+):([0-9]+): Failure$/;
+    if (output.indexOf('[       OK ]', lastLineIndex) != -1)
+      ev.state = 'passed';
 
-      const lines = output.split(/\r?\n/);
+    const failure = /^(.+):([0-9]+): Failure$/;
 
-      for (let i = 1; i < lines.length - 1; ++i) {
-        const m = lines[i].match(failure);
-        if (m !== null) {
-          if (i + 1 < lines.length - 1
-            && lines[i + 1].startsWith('Expected: ')) {
-            ev.decorations!.push({ line: Number(m[2]) - 1, message: lines[i + 1] });
-          } else if (i + 3 < lines.length - 1
-            && lines[i + 1].startsWith('Value of: ')
-            && lines[i + 2].startsWith('  Actual: ')
-            && lines[i + 3].startsWith('Expected: ')) {
-            ev.decorations!.push({ line: Number(m[2]) - 1, message: lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';' });
-          } else {
-            ev.decorations!.push({ line: Number(m[2]) - 1, message: '<-- failure here' });
-          }
+    const lines = output.split(/\r?\n/);
+
+    for (let i = 1; i < lines.length - 1; ++i) {
+      const m = lines[i].match(failure);
+      if (m !== null) {
+        if (i + 2 < lines.length - 1
+          && lines[i + 1].startsWith('Expected: ')
+          && lines[i + 2].startsWith('  Actual: ')) {
+          ev.decorations!.push({ line: Number(m[2]) - 1, message: lines[i + 1] + ';  ' + lines[i + 2] });
+        } else if (i + 1 < lines.length - 1
+          && lines[i + 1].startsWith('Expected: ')) {
+          ev.decorations!.push({ line: Number(m[2]) - 1, message: lines[i + 1] });
+        } else if (i + 3 < lines.length - 1
+          && lines[i + 1].startsWith('Value of: ')
+          && lines[i + 2].startsWith('  Actual: ')
+          && lines[i + 3].startsWith('Expected: ')) {
+          ev.decorations!.push({ line: Number(m[2]) - 1, message: lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';' });
+        } else {
+          ev.decorations!.push({ line: Number(m[2]) - 1, message: '<-- failure' });
         }
       }
-    } catch (e) { }
+    }
 
     return ev;
   }

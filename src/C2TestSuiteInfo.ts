@@ -10,16 +10,16 @@ import { TestEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import { C2AllTestSuiteInfo } from './C2AllTestSuiteInfo';
-import { Catch2TestInfo, GoogleTestInfo, TestInfoBase } from './C2TestInfo';
+import { Catch2TestInfo, GoogleTestInfo, C2TestInfoBase } from './C2TestInfo';
 import * as c2fs from './FsWrapper';
 import { generateUniqueId } from './IdGenerator';
 import { TaskPool } from './TaskPool';
 
-export abstract class TestSuiteInfoBase implements TestSuiteInfo {
+export abstract class C2TestSuiteInfoBase implements TestSuiteInfo {
   readonly type: 'suite' = 'suite';
   readonly id: string;
   label: string;
-  children: TestInfoBase[] = [];
+  children: C2TestInfoBase[] = [];
   file?: string;
   line?: number;
 
@@ -54,7 +54,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   static create(origLabel: string,
     allTests: C2AllTestSuiteInfo,
     execPath: string,
-    execOptions: SpawnOptions): Promise<TestSuiteInfoBase> {
+    execOptions: SpawnOptions): Promise<C2TestSuiteInfoBase> {
     return this.determineTestType(execPath).then((result) => {
       if (result.type === 'google')
         return new GoogleTestSuiteInfo(origLabel, allTests, execPath, execOptions);
@@ -84,7 +84,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     this._isKill = false;
     this._proc = undefined;
 
-    let childrenToRun: 'all' | TestInfoBase[] = 'all';
+    let childrenToRun: 'all' | C2TestInfoBase[] = 'all';
 
     if (tests.delete(this.id)) {
       for (let i = 0; i < this.children.length; i++) {
@@ -105,9 +105,9 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     return this._runInner(childrenToRun, taskPool);
   }
 
-  protected abstract _getExecParams(childrenToRun: TestInfoBase[] | 'all'): string[];
+  protected abstract _getExecParams(childrenToRun: C2TestInfoBase[] | 'all'): string[];
 
-  private _runInner(childrenToRun: TestInfoBase[] | 'all', taskPool: TaskPool):
+  private _runInner(childrenToRun: C2TestInfoBase[] | 'all', taskPool: TaskPool):
     Promise<void> {
     if (this._isKill) return Promise.reject(Error('Test was killed.'));
 
@@ -164,7 +164,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
       });
   }
 
-  protected abstract _handleProcess(process: ChildProcess, childrenToRun: TestInfoBase[] | 'all'): Promise<void>;
+  protected abstract _handleProcess(process: ChildProcess, childrenToRun: C2TestInfoBase[] | 'all'): Promise<void>;
 
   protected _sendTestStateEventsWithParent(events: TestEvent[]) {
     this.allTests.sendTestSuiteStateEventsWithParent([
@@ -201,7 +201,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   }
 }
 
-export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
+export class Catch2TestSuiteInfo extends C2TestSuiteInfoBase {
   children: Catch2TestInfo[] = [];
   ;
 
@@ -215,7 +215,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
   }
 
   reloadChildren(): Promise<void> {
-    return TestSuiteInfoBase.determineTestType(this.execPath).then((testInfo) => {
+    return C2TestSuiteInfoBase.determineTestType(this.execPath).then((testInfo) => {
       if (testInfo.type === 'catch2') {
         this.catch2Version = testInfo.version;
         if (this.catch2Version[0] > 2 || this.catch2Version[0] < 2)
@@ -323,7 +323,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
     return test;
   }
 
-  protected _getExecParams(childrenToRun: TestInfoBase[] | 'all'): string[] {
+  protected _getExecParams(childrenToRun: C2TestInfoBase[] | 'all'): string[] {
     const execParams: string[] = [];
 
     if (childrenToRun !== 'all') {
@@ -350,7 +350,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
     return execParams;
   }
 
-  protected _handleProcess(process: ChildProcess, childrenToRun: TestInfoBase[] | 'all'): Promise<void> {
+  protected _handleProcess(process: ChildProcess, childrenToRun: C2TestInfoBase[] | 'all'): Promise<void> {
     const data = new class {
       process: ChildProcess | undefined = process;
       buffer: string = '';
@@ -543,7 +543,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
   }
 }
 
-export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
+export class GoogleTestSuiteInfo extends C2TestSuiteInfoBase {
   children: GoogleTestInfo[] = [];
 
   constructor(
@@ -555,7 +555,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
   }
 
   reloadChildren(): Promise<void> {
-    return TestSuiteInfoBase.determineTestType(this.execPath).then((testInfo) => {
+    return C2TestSuiteInfoBase.determineTestType(this.execPath).then((testInfo) => {
       if (testInfo.type === 'google') {
         return this._reloadGoogleTests();
       }
@@ -657,8 +657,8 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
       });
   }
 
-  protected _getExecParams(childrenToRun: TestInfoBase[] | 'all'): string[] {
-    const execParams: string[] = [];
+  protected _getExecParams(childrenToRun: C2TestInfoBase[] | 'all'): string[] {
+    const execParams: string[] = ['--gtest_color=no'];
 
     if (childrenToRun !== 'all') {
       let testNames: string[] = [];
@@ -679,7 +679,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
     return execParams;
   }
 
-  protected _handleProcess(process: ChildProcess, childrenToRun: TestInfoBase[] | 'all'): Promise<void> {
+  protected _handleProcess(process: ChildProcess, childrenToRun: C2TestInfoBase[] | 'all'): Promise<void> {
     const data = new class {
       process: ChildProcess | undefined = process;
       buffer: string = '';
@@ -826,10 +826,13 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
                   return v.testNameFull == testNameFull;
                 });
                 if (currentChild === undefined) break;
-
-                const ev = currentChild.parseAndProcessTestCase(testCase);
-                events.push(currentChild.getStartEvent());
-                events.push(ev);
+                try {
+                  const ev = currentChild.parseAndProcessTestCase(testCase);
+                  events.push(currentChild.getStartEvent());
+                  events.push(ev);
+                } catch (e) {
+                  this.allTests.log.error('parsing and processing test: ' + testCase);
+                }
               }
               events.length && this._sendTestStateEventsWithParent(events);
             });

@@ -10,7 +10,7 @@ import * as util from 'vscode-test-adapter-util';
 
 import { C2AllTestSuiteInfo } from './C2AllTestSuiteInfo';
 import { C2ExecutableInfo } from './C2ExecutableInfo';
-import { TestInfoBase } from './C2TestInfo';
+import { C2TestInfoBase } from './C2TestInfo';
 import { resolveVariables } from './Helpers';
 import { QueueGraphNode } from './QueueGraph';
 
@@ -61,8 +61,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
           configChange.affectsConfiguration(
             'catch2TestExplorer.defaultCwd', this._workspaceFolder.uri) ||
           configChange.affectsConfiguration(
-            'catch2TestExplorer.executables',
-            this._workspaceFolder.uri)) {
+            'catch2TestExplorer.executables', this._workspaceFolder.uri)) {
           this.load();
         }
       }));
@@ -177,8 +176,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
   run(tests: string[]): Promise<void> {
     if (this._allTasks.size > 0) {
-      this._log.info(__filename + 'run is busy');
-      // throw 'Catch2 is busy. Try it again a bit later.';
+      this._log.info(__filename + '. Run is busy');
     }
 
     return this._allTasks.then(() => {
@@ -191,8 +189,8 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
   debug(tests: string[]): Promise<void> {
     if (this._allTasks.size > 0) {
-      this._log.info(__filename + 'debug is busy');
-      throw 'Catch2 is busy. Try it again a bit later.';
+      this._log.info(__filename + '. Debug is busy');
+      throw 'The adapter is busy. Try it again a bit later.';
     }
 
     this._log.info('Debugging');
@@ -208,12 +206,12 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       throw Error('Not existing test id');
     }
 
-    if (!(info instanceof TestInfoBase)) {
+    if (!(info instanceof C2TestInfoBase)) {
       this._log.info(__filename + ' !(info instanceof TestInfoBase)');
       throw 'Can\'t choose a group, only a single test.';
     }
 
-    const testInfo = <TestInfoBase>info;
+    const testInfo = <C2TestInfoBase>info;
 
     this._log.info('testInfo: ' + inspect([testInfo, tests]));
 
@@ -246,7 +244,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
           "env": "${envObj}"
         };
       } else {
-        throw 'Catch2: For debugging \'debugConfigTemplate\' should be set.';
+        throw 'C2: For debugging \'debugConfigTemplate\' should be set.';
       }
 
       if (template !== null && !template.hasOwnProperty('name'))
@@ -459,7 +457,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         this._log.error(inspect(e));
       }
     } else {
-      throw 'Catch2 config error: wrong type: executables';
+      throw 'Config error: wrong type: executables';
     }
 
     return executables;
