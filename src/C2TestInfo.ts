@@ -226,14 +226,11 @@ export class GoogleTestInfo extends C2TestInfoBase {
   }
 
   getEscapedTestName(): string {
-    let t = this.testNameFull;
-    t = t.replace(/\*/g, '\\*');
-    if (t.startsWith(' ')) t = '*' + t.substr(1);
-    return t;
+    return this.testNameFull;
   }
 
   getDebugParams(breakOnFailure: boolean): string[] {
-    const debugParams: string[] = [this.getEscapedTestName()];
+    const debugParams: string[] = ['--gtest_filter=' + this.getEscapedTestName()];
     if (breakOnFailure) debugParams.push('--gtest_break_on_failure');
     return debugParams;
   }
@@ -247,33 +244,33 @@ export class GoogleTestInfo extends C2TestInfoBase {
       message: output,
     };
 
+    const lines = output.split(/\r?\n/);
 
-    const lastLineIndex = output.lastIndexOf('\n') + 1;
+    if (lines.length < 2) throw Error('unexpected');
 
-    if (output.indexOf('[       OK ]', lastLineIndex) != -1)
+    if (lines[lines.length - 1].startsWith('[       OK ]'))
       ev.state = 'passed';
 
     const failure = /^(.+):([0-9]+): Failure$/;
 
-    const lines = output.split(/\r?\n/);
-
     for (let i = 1; i < lines.length - 1; ++i) {
       const m = lines[i].match(failure);
       if (m !== null) {
+        const lineNumber = Number(m[2]) - 1/*It looks vscode works like this.*/;
         if (i + 2 < lines.length - 1
           && lines[i + 1].startsWith('Expected: ')
           && lines[i + 2].startsWith('  Actual: ')) {
-          ev.decorations!.push({ line: Number(m[2]) - 1, message: lines[i + 1] + ';  ' + lines[i + 2] });
+          ev.decorations!.push({ line: lineNumber, message: lines[i + 1] + ';  ' + lines[i + 2] });
         } else if (i + 1 < lines.length - 1
           && lines[i + 1].startsWith('Expected: ')) {
-          ev.decorations!.push({ line: Number(m[2]) - 1, message: lines[i + 1] });
+          ev.decorations!.push({ line: lineNumber, message: lines[i + 1] });
         } else if (i + 3 < lines.length - 1
           && lines[i + 1].startsWith('Value of: ')
           && lines[i + 2].startsWith('  Actual: ')
           && lines[i + 3].startsWith('Expected: ')) {
-          ev.decorations!.push({ line: Number(m[2]) - 1, message: lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';' });
+          ev.decorations!.push({ line: lineNumber, message: lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';' });
         } else {
-          ev.decorations!.push({ line: Number(m[2]) - 1, message: '<-- failure' });
+          ev.decorations!.push({ line: lineNumber, message: '<-- failure' });
         }
       }
     }
