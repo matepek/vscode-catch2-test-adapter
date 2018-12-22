@@ -8,8 +8,8 @@ import { TestEvent, TestInfo, TestLoadFinishedEvent, TestLoadStartedEvent, TestR
 import * as util from 'vscode-test-adapter-util';
 
 import { C2ExecutableInfo } from './C2ExecutableInfo'
-import { C2TestInfo } from './C2TestInfo';
-import { C2TestSuiteInfo } from './C2TestSuiteInfo';
+import { C2TestInfoBase } from './C2TestInfo';
+import { C2TestSuiteInfoBase } from './C2TestSuiteInfo';
 import { generateUniqueId } from './IdGenerator';
 import { QueueGraphNode } from './QueueGraph';
 import { TaskPool } from './TaskPool';
@@ -18,7 +18,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly type: 'suite' = 'suite';
   readonly id: string;
   readonly label: string;
-  readonly children: C2TestSuiteInfo[] = [];
+  readonly children: C2TestSuiteInfoBase[] = [];
   private readonly _executables: C2ExecutableInfo[] = [];
   private _isDisposed = false;
 
@@ -89,7 +89,7 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     });
   }
 
-  removeChild(child: C2TestSuiteInfo): boolean {
+  removeChild(child: C2TestSuiteInfoBase): boolean {
     const i = this.children.findIndex(val => val.id == child.id);
     if (i != -1) {
       this.children.splice(i, 1);
@@ -98,14 +98,14 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     return false;
   }
 
-  findChildById(id: string): C2TestSuiteInfo | C2TestInfo | undefined {
+  findChildById(id: string): C2TestSuiteInfoBase | C2TestInfoBase | undefined {
     const recursiveSearch =
-      (child: C2TestSuiteInfo | C2TestInfo): C2TestSuiteInfo | C2TestInfo |
+      (child: C2TestSuiteInfoBase | C2TestInfoBase): C2TestSuiteInfoBase | C2TestInfoBase |
         undefined => {
         if (child.id == id) {
           return child;
         } else if (child.type == 'suite') {
-          const suite: C2TestSuiteInfo = child;
+          const suite: C2TestSuiteInfoBase = child;
           for (let i = 0; i < suite.children.length; ++i) {
             const r = recursiveSearch(suite.children[i]);
             if (r != undefined) return r;
@@ -122,14 +122,14 @@ export class C2AllTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     return undefined;
   }
 
-  hasSuite(suite: C2TestSuiteInfo): boolean {
+  hasSuite(suite: C2TestSuiteInfoBase): boolean {
     return this.children.indexOf(suite) != -1;
   }
 
-  insertChildSuite(suite: C2TestSuiteInfo): boolean {
+  insertChildSuite(suite: C2TestSuiteInfoBase): boolean {
     if (this.children.indexOf(suite) != -1) return false;
 
-    let i = this.children.findIndex((v: C2TestSuiteInfo) => {
+    let i = this.children.findIndex((v: C2TestSuiteInfoBase) => {
       return suite.label.trim().localeCompare(v.label.trim()) < 0;
     });
 

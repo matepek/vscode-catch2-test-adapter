@@ -5,33 +5,57 @@
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
-import { C2TestSuiteInfo } from './C2TestSuiteInfo';
+import { Catch2TestSuiteInfo, C2TestSuiteInfoBase, GoogleTestSuiteInfo } from './C2TestSuiteInfo';
 import { generateUniqueId } from './IdGenerator';
 import { inspect } from 'util';
 
-export class C2TestInfo implements TestInfo {
+export abstract class C2TestInfoBase implements TestInfo {
   readonly type: 'test' = 'test';
   readonly id: string;
-  readonly label: string;
-  readonly skipped: boolean;
-  readonly testNameTrimmed: string;
 
+  constructor(id: string | undefined,
+    public readonly testNameFull: string,
+    public readonly label: string,
+    public readonly skipped: boolean,
+    public readonly file: string | undefined,
+    public readonly line: number | undefined,
+    public readonly parent: C2TestSuiteInfoBase,
+  ) {
+    this.id = id ? id : generateUniqueId();
+  }
+
+  abstract getEscapedTestName(): string;
+
+  getStartEvent(): TestEvent {
+    return { type: 'test', test: this, state: 'running' };
+  }
+
+  getSkippedEvent(): TestEvent {
+    return { type: 'test', test: this, state: 'skipped' };
+  }
+
+  abstract getDebugParams(breakOnFailure: boolean): string[];
+}
+
+export class Catch2TestInfo extends C2TestInfoBase {
   constructor(
     id: string | undefined,
-    public readonly testNameFull: string,
+    testNameFull: string,
     description: string,
     tags: string[],
-    public readonly file: string,
-    public readonly line: number,
-    public readonly parent: C2TestSuiteInfo,
+    file: string,
+    line: number,
+    parent: Catch2TestSuiteInfo,
   ) {
+    super(id,
+      testNameFull,
+      Catch2TestInfo._generateLabel(testNameFull, description, tags),
+      tags.some((v: string) => { return v.startsWith('[.') || v == '[hide]'; }) || testNameFull.startsWith('./'),
+      file,
+      line,
+      parent);
+
     if (line < 0) throw Error('line smaller than zero');
-    this.testNameTrimmed = this.testNameFull.trim();
-    this.skipped = tags.some((v: string) => {
-      return v.startsWith('[.') || v == '[hide]';
-    }) || this.testNameFull.startsWith('./');
-    this.label = C2TestInfo._generateLabel(this.testNameFull, description, tags);
-    this.id = id ? id : generateUniqueId();
   }
 
   private static _generateLabel(
@@ -49,12 +73,10 @@ export class C2TestInfo implements TestInfo {
     return t;
   }
 
-  getStartEvent(): TestEvent {
-    return { type: 'test', test: this, state: 'running' };
-  }
-
-  getSkippedEvent(): TestEvent {
-    return { type: 'test', test: this, state: 'skipped' };
+  getDebugParams(breakOnFailure: boolean): string[] {
+    const debugParams: string[] = [this.getEscapedTestName(), '--reporter', 'console'];
+    if (breakOnFailure) debugParams.push('--break');
+    return debugParams;
   }
 
   parseAndProcessTestCase(xmlStr: string, rngSeed: number | undefined):
@@ -183,5 +205,79 @@ export class C2TestInfo implements TestInfo {
         this.parent.allTests.log.error(inspect(error));
       }
     }
+  }
+}
+
+export class GoogleTestInfo extends C2TestInfoBase {
+  constructor(
+    id: string | undefined,
+    testNameFull: string,
+    file: string | undefined,
+    line: number | undefined,
+    parent: GoogleTestSuiteInfo,
+  ) {
+    super(id,
+      testNameFull,
+      testNameFull,
+      testNameFull.startsWith('DISABLED_') || testNameFull.indexOf('.DISABLED_') != -1,
+      file,
+      line,
+      parent);
+  }
+
+  getEscapedTestName(): string {
+    let t = this.testNameFull;
+    t = t.replace(/\*/g, '\\*');
+    if (t.startsWith(' ')) t = '*' + t.substr(1);
+    return t;
+  }
+
+  getDebugParams(breakOnFailure: boolean): string[] {
+    const debugParams: string[] = [this.getEscapedTestName()];
+    if (breakOnFailure) debugParams.push('--gtest_break_on_failure');
+    return debugParams;
+  }
+
+  parseAndProcessTestCase(output: string): TestEvent {
+    const ev: TestEvent = {
+      type: 'test',
+      test: this,
+      state: 'failed',
+      decorations: [],
+      message: output,
+    };
+
+
+    const lastLineIndex = output.lastIndexOf('\n') + 1;
+
+    if (output.indexOf('[       OK ]', lastLineIndex) != -1)
+      ev.state = 'passed';
+
+    const failure = /^(.+):([0-9]+): Failure$/;
+
+    const lines = output.split(/\r?\n/);
+
+    for (let i = 1; i < lines.length - 1; ++i) {
+      const m = lines[i].match(failure);
+      if (m !== null) {
+        if (i + 2 < lines.length - 1
+          && lines[i + 1].startsWith('Expected: ')
+          && lines[i + 2].startsWith('  Actual: ')) {
+          ev.decorations!.push({ line: Number(m[2]) - 1, message: lines[i + 1] + ';  ' + lines[i + 2] });
+        } else if (i + 1 < lines.length - 1
+          && lines[i + 1].startsWith('Expected: ')) {
+          ev.decorations!.push({ line: Number(m[2]) - 1, message: lines[i + 1] });
+        } else if (i + 3 < lines.length - 1
+          && lines[i + 1].startsWith('Value of: ')
+          && lines[i + 2].startsWith('  Actual: ')
+          && lines[i + 3].startsWith('Expected: ')) {
+          ev.decorations!.push({ line: Number(m[2]) - 1, message: lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';' });
+        } else {
+          ev.decorations!.push({ line: Number(m[2]) - 1, message: '<-- failure' });
+        }
+      }
+    }
+
+    return ev;
   }
 }

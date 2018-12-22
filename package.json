@@ -1,11 +1,11 @@
 {
   "name": "vscode-catch2-test-adapter",
-  "displayName": "Catch2 Test Explorer",
-  "description": "Run your Catch2 tests in the Sidebar of Visual Studio Code",
+  "displayName": "Catch2 and Google Test Explorer",
+  "description": "Run your Catch2 and Google Test tests in the Sidebar of Visual Studio Code",
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -20,6 +20,9 @@
   ],
   "keywords": [
     "catch2",
+    "googletest",
+    "google test",
+    "gtest",
     "test",
     "testing",
     "unit test",
@@ -55,7 +58,7 @@
     "@types/entities": "^1.1.0",
     "@types/fs-extra": "^5.0.4",
     "@types/mocha": "^5.2.5",
-    "@types/node": "^10.12.17",
+    "@types/node": "^10.12.18",
     "@types/request-promise": "4.1.42",
     "@types/sinon": "^5.0.7",
     "@types/xml2js": "^0.4.3",

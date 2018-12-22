@@ -989,7 +989,7 @@ describe('C2TestAdapter', function () {
           await adapter.run([s1t1.id]);
           const elapsed = Date.now() - start;
           assert.ok(3000 <= elapsed && elapsed <= 5000, elapsed.toString());
-          assert.strictEqual(spyKill.callCount, 1);
+          assert.strictEqual(spyKill.callCount, 2);
 
           cp.close();
 
