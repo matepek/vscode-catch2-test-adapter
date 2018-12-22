@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.4]
+
+### Fixed
+
+- Debugging a Google Test did run all the tests.
+
 ## [2.3.3] - 2018-12-22
 
 Google Test framework support has been added. It is in experimental phase.

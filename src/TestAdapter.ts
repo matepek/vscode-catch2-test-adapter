@@ -5,16 +5,17 @@
 import * as path from 'path';
 import { inspect } from 'util';
 import * as vscode from 'vscode';
-import { TestAdapter, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent } from 'vscode-test-adapter-api';
+import { TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent } from 'vscode-test-adapter-api';
+import * as api from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
 
-import { C2AllTestSuiteInfo } from './C2AllTestSuiteInfo';
-import { C2ExecutableInfo } from './C2ExecutableInfo';
-import { C2TestInfoBase } from './C2TestInfo';
+import { RootTestSuiteInfo } from './RootTestSuiteInfo';
+import { TestInfoBase } from './TestInfoBase';
 import { resolveVariables } from './Helpers';
 import { QueueGraphNode } from './QueueGraph';
+import { TestExecutableInfo } from './TestExecutableInfo';
 
-export class C2TestAdapter implements TestAdapter, vscode.Disposable {
+export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: util.Log;
   private readonly _testsEmitter =
     new vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>();
@@ -32,12 +33,12 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
   private readonly _loadFinishedEmitter = new vscode.EventEmitter<void>();
 
   private _allTasks = new QueueGraphNode();
-  private _allTests: C2AllTestSuiteInfo;
+  private _allTests: RootTestSuiteInfo;
   private readonly _disposables: vscode.Disposable[] = [];
 
   constructor(private readonly _workspaceFolder: vscode.WorkspaceFolder) {
     this._log = new util.Log(
-      'catch2TestExplorer', this._workspaceFolder, 'Catch2 Test Explorer');
+      'catch2TestExplorer', this._workspaceFolder, 'Test Explorer: ' + this._workspaceFolder.name);
     this._disposables.push(this._log);
 
     this._log.info(
@@ -102,7 +103,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       }));
 
     const config = this._getConfiguration();
-    this._allTests = new C2AllTestSuiteInfo(
+    this._allTests = new RootTestSuiteInfo(
       this._allTasks, this._log, this._workspaceFolder,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
       this._autorunEmitter, this._variableToValue,
@@ -141,7 +142,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
     this._allTests.dispose();
     this._allTasks = new QueueGraphNode();
 
-    this._allTests = new C2AllTestSuiteInfo(
+    this._allTests = new RootTestSuiteInfo(
       this._allTasks, this._log, this._workspaceFolder,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
       this._autorunEmitter, this._variableToValue,
@@ -206,12 +207,12 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
       throw Error('Not existing test id');
     }
 
-    if (!(info instanceof C2TestInfoBase)) {
+    if (!(info instanceof TestInfoBase)) {
       this._log.info(__filename + ' !(info instanceof TestInfoBase)');
       throw 'Can\'t choose a group, only a single test.';
     }
 
-    const testInfo = <C2TestInfoBase>info;
+    const testInfo = <TestInfoBase>info;
 
     this._log.info('testInfo: ' + inspect([testInfo, tests]));
 
@@ -399,15 +400,15 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
 
   private _getExecutables(
     config: vscode.WorkspaceConfiguration,
-    allTests: C2AllTestSuiteInfo): C2ExecutableInfo[] {
+    allTests: RootTestSuiteInfo): TestExecutableInfo[] {
     const globalWorkingDirectory = this._getDefaultCwd(config);
 
-    let executables: C2ExecutableInfo[] = [];
+    let executables: TestExecutableInfo[] = [];
 
     const configExecs: |undefined | string | string[] | { [prop: string]: any } |
       { [prop: string]: any }[] = config.get('executables');
 
-    const createFromObject = (obj: { [prop: string]: any }): C2ExecutableInfo => {
+    const createFromObject = (obj: { [prop: string]: any }): TestExecutableInfo => {
       const name: string = obj.hasOwnProperty('name') ? obj.name : '${relPath}';
 
       let pattern: string = '';
@@ -425,12 +426,12 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         this._getGlobalAndCurrentEnvironmentVariables(obj.env) :
         this._getGlobalAndDefaultEnvironmentVariables(config);
 
-      return new C2ExecutableInfo(allTests, name, pattern, cwd, env);
+      return new TestExecutableInfo(allTests, name, pattern, cwd, env);
     };
 
     if (typeof configExecs === 'string') {
       if (configExecs.length == 0) return [];
-      executables.push(new C2ExecutableInfo(
+      executables.push(new TestExecutableInfo(
         allTests, configExecs, configExecs, globalWorkingDirectory, {}));
     } else if (Array.isArray(configExecs)) {
       for (var i = 0; i < configExecs.length; ++i) {
@@ -438,7 +439,7 @@ export class C2TestAdapter implements TestAdapter, vscode.Disposable {
         if (typeof configExe == 'string') {
           const configExecsName = String(configExe);
           if (configExecsName.length > 0) {
-            executables.push(new C2ExecutableInfo(
+            executables.push(new TestExecutableInfo(
               allTests, configExecsName, configExecsName,
               globalWorkingDirectory, {}));
           }

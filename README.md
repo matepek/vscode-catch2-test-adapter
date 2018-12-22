@@ -7,7 +7,7 @@
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/d/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 
-This extension allows you to run your [Catch2 tests](https://github.com/catchorg/Catch2)
+This extension allows you to run your [Catch2](https://github.com/catchorg/Catch2)
 and [Google Test](https://github.com/google/googletest) tests using the
 [Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
 

@@ -1,41 +1,26 @@
-import * as vscode from 'vscode';
-import {testExplorerExtensionId, TestHub} from 'vscode-test-adapter-api';
+//-----------------------------------------------------------------------------
+// vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
+// public domain. The author hereby disclaims copyright to this source code.
 
-import {C2TestAdapter} from './C2TestAdapter';
+// https://github.com/hbenl/vscode-example-test-adapter/blob/master/src/main.ts
+
+import * as vscode from 'vscode';
+import { testExplorerExtensionId, TestHub } from 'vscode-test-adapter-api';
+import { TestAdapterRegistrar } from 'vscode-test-adapter-util';
+import { TestAdapter } from './TestAdapter';
 
 export async function activate(context: vscode.ExtensionContext) {
-  const testExplorerExtension =
-      vscode.extensions.getExtension<TestHub>(testExplorerExtensionId);
+
+  const testExplorerExtension = vscode.extensions.getExtension<TestHub>(testExplorerExtensionId);
 
   if (testExplorerExtension) {
-    if (!testExplorerExtension.isActive) {
-      await testExplorerExtension.activate();
-    }
 
-    const registeredAdapters = new Map<vscode.WorkspaceFolder, C2TestAdapter>();
+    const testHub = testExplorerExtension.exports;
 
-    if (vscode.workspace.workspaceFolders) {
-      for (const workspaceFolder of vscode.workspace.workspaceFolders) {
-        const adapter = new C2TestAdapter(workspaceFolder);
-        registeredAdapters.set(workspaceFolder, adapter);
-        testExplorerExtension.exports.registerTestAdapter(adapter);
-      }
-    }
-    context.subscriptions.push(
-        vscode.workspace.onDidChangeWorkspaceFolders(event => {
-          for (const workspaceFolder of event.removed) {
-            const adapter = registeredAdapters.get(workspaceFolder);
-            if (adapter) {
-              testExplorerExtension.exports.unregisterTestAdapter(adapter);
-              registeredAdapters.delete(workspaceFolder);
-            }
-          }
-
-          for (const workspaceFolder of event.added) {
-            const adapter = new C2TestAdapter(workspaceFolder);
-            registeredAdapters.set(workspaceFolder, adapter);
-            testExplorerExtension.exports.registerTestAdapter(adapter);
-          }
-        }));
+    context.subscriptions.push(new TestAdapterRegistrar(
+      testHub,
+      workspaceFolder => new TestAdapter(workspaceFolder),
+      undefined
+    ));
   }
 }
