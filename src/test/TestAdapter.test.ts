@@ -170,6 +170,7 @@ describe('TestAdapter', function () {
   let spawnStub: sinon.SinonStub<any[], any>;
   let vsfsWatchStub: sinon.SinonStub<any[], any>;
   let fsStatStub: sinon.SinonStub<any[], any>;
+  let fsReadFileSyncStub: sinon.SinonStub<any[], any>;
   let vsFindFilesStub: sinon.SinonStub<
     [vscode.GlobPattern | sinon.SinonMatcher], Thenable<vscode.Uri[]>>;
 
@@ -180,6 +181,7 @@ describe('TestAdapter', function () {
       <any>sinonSandbox.stub(vscode.workspace, 'createFileSystemWatcher')
         .named('vscode.createFileSystemWatcher');
     fsStatStub = <any>sinonSandbox.stub(fs, 'stat').named('fsStat');
+    fsReadFileSyncStub = <any>sinonSandbox.stub(fs, 'readFileSync').named('fsReadFileSync');
     vsFindFilesStub =
       <sinon.SinonStub<[vscode.GlobPattern], Thenable<vscode.Uri[]>>>
       sinonSandbox.stub(vscode.workspace, 'findFiles')
@@ -200,6 +202,7 @@ describe('TestAdapter', function () {
     spawnStub.callThrough();
     vsfsWatchStub.callThrough();
     fsStatStub.callThrough();
+    fsReadFileSyncStub.callThrough();
     vsFindFilesStub.callThrough();
 
     // reset config can cause problem with fse.removeSync(dotVscodePath);
@@ -2014,6 +2017,171 @@ describe('TestAdapter', function () {
       const callCount = spawnWithArgs.callCount;
       await adapter.run([suite.children[0].id]);
       assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
+    })
+
+    specify.only('load gtest executables=gtest1.exe', async function () {
+      this.slow(500);
+      await updateConfig('executables', example1.gtest1.execPath);
+      adapter = createAdapterAndSubscribe();
+
+      spawnStub.withArgs(example1.gtest1.execPath,
+        sinon.match((args: string[]) => { return args[0] === '--gtest_list_tests' }))
+        .callsFake(function () {
+          return new ChildProcessStub('');
+        });
+
+      fsReadFileSyncStub
+        .withArgs(sinon.match(/.*tmp_gtest_output_.+_.json.tmp/), 'utf8')
+        .returns(example1.gtest1.gtest_list_tests_output);
+
+      await adapter.load();
+
+      assert.equal(testsEvents.length, 2);
+      const root =
+        (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]).suite!;
+      testsEvents.pop();
+      testsEvents.pop();
+
+      assert.equal(root.children.length, 1);
+      const gtest = <TestSuiteInfo>root.children[0];
+
+      assert.equal(gtest.children.length, 6);
+
+      await adapter.run([root.id]);
+
+      assert.deepStrictEqual(testStatesEvents, [
+        { type: 'started', tests: [root.id] },
+        { type: 'suite', state: 'running', suite: gtest },
+        { type: 'test', state: 'running', test: gtest.children[0] },
+        {
+          type: 'test',
+          state: 'passed',
+          test: gtest.children[0],
+          message: [
+            '[ RUN      ] TestCas1.test1',
+            '[       OK ] TestCas1.test1 (0 ms)',
+          ].join(EOL)
+        },
+        { type: 'test', state: 'running', test: gtest.children[1] },
+        {
+          type: 'test',
+          state: 'failed',
+          test: gtest.children[1],
+          decorations: [{ line: 18, message: "Actual: false;  Expected: true;" }],
+          message: [
+            "[ RUN      ] TestCas1.test2",
+            "gtest.cpp:19: Failure",
+            "Value of: 1 == 2",
+            "  Actual: false",
+            "Expected: true",
+            "[  FAILED  ] TestCas1.test2 (0 ms)",
+          ].join(EOL),
+        },
+        { type: 'test', state: 'running', test: gtest.children[2] },
+        {
+          type: 'test',
+          state: 'failed',
+          test: gtest.children[2],
+          decorations: [
+            { line: 23, message: "Actual: false;  Expected: true;" },
+            { line: 24, message: "Actual: true;  Expected: false;" },
+            { line: 25, message: "<-- failure" },
+            { line: 26, message: "Expected: (1) != (1), actual: 1 vs 1" },
+            { line: 27, message: "Expected: (1) < (1), actual: 1 vs 1" },
+            { line: 28, message: "Expected: (1) > (1), actual: 1 vs 1" },
+          ],
+          message: [
+            '[ RUN      ] TestCas2.test1',
+            'gtest.cpp:24: Failure',
+            'Value of: 1 != 1',
+            '  Actual: false',
+            'Expected: true',
+            'gtest.cpp:25: Failure',
+            'Value of: 1 == 1',
+            '  Actual: true',
+            'Expected: false',
+            'gtest.cpp:26: Failure',
+            'Expected equality of these values:',
+            '  1',
+            '  2',
+            'gtest.cpp:27: Failure',
+            'Expected: (1) != (1), actual: 1 vs 1',
+            'gtest.cpp:28: Failure',
+            'Expected: (1) < (1), actual: 1 vs 1',
+            'gtest.cpp:29: Failure',
+            'Expected: (1) > (1), actual: 1 vs 1',
+            '[  FAILED  ] TestCas2.test1 (0 ms)',
+          ].join(EOL),
+        },
+        { type: 'test', state: 'running', test: gtest.children[3] },
+        {
+          type: 'test',
+          state: 'failed',
+          test: gtest.children[3],
+          decorations: [
+            { line: 31, message: "Actual: false;  Expected: true;" },
+            { line: 35, message: "Expected: magic_func() doesn't generate new fatal failures in the current thread.;    Actual: it does." },
+          ],
+          message: [
+            '[ RUN      ] TestCas2.test2',
+            'gtest.cpp:32: Failure',
+            'Value of: false',
+            '  Actual: false',
+            'Expected: true',
+            'gtest.cpp:36: Failure',
+            'Expected: magic_func() doesn\'t generate new fatal failures in the current thread.',
+            '  Actual: it does.',
+            '[  FAILED  ] TestCas2.test2 (0 ms)',
+          ].join(EOL),
+        },
+        { type: 'test', state: 'running', test: gtest.children[4] },
+        {
+          type: 'test',
+          state: 'failed',
+          test: gtest.children[4],
+          decorations: [
+            { line: 58, message: "<-- failure" },
+          ],
+          message: [
+            '[ RUN      ] MockTestCase.expect1',
+            'gtest.cpp:59: Failure',
+            'Actual function call count doesn\'t match EXPECT_CALL(foo, GetSize())...',
+            '         Expected: to be called once',
+            '           Actual: never called - unsatisfied and active',
+            '[  FAILED  ] MockTestCase.expect1 (0 ms)',
+          ].join(EOL),
+        },
+        { type: 'test', state: 'running', test: gtest.children[5] },
+        {
+          type: 'test',
+          state: 'failed',
+          test: gtest.children[5],
+          decorations: [
+            { line: 66, message: "<-- failure" },
+          ],
+          message: [
+            '[ RUN      ] MockTestCase.expect2',
+            'unknown file: Failure',
+            '',
+            'Unexpected mock function call - returning directly.',
+            '    Function call: Describe(3)',
+            'Google Mock tried the following 1 expectation, but it didn\'t match: ',
+            '',
+            'gtest.cpp:67: EXPECT_CALL(foo, Describe(4))...',
+            '  Expected arg #0: is equal to 4',
+            '           Actual: 3',
+            '         Expected: to be called once',
+            '           Actual: never called - unsatisfied and active',
+            'gtest.cpp:67: Failure',
+            'Actual function call count doesn\'t match EXPECT_CALL(foo, Describe(4))...',
+            '         Expected: to be called once',
+            '           Actual: never called - unsatisfied and active',
+            '[  FAILED  ] MockTestCase.expect2 (0 ms)',
+          ].join(EOL),
+        },
+        { type: 'suite', state: 'completed', suite: gtest },
+        { type: 'finished' },
+      ]);
     })
   })
 })

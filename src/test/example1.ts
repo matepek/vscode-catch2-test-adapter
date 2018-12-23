@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import { EOL } from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { TestInfo, TestSuiteInfo } from 'vscode-test-adapter-api';
@@ -2144,9 +2145,159 @@ For more detailed usage please see the project docs
     }
   };
 
+  readonly gtest1 = new class {
+    readonly execPath =
+      vscode.Uri.file(path.join(workspaceFolderUri.path, 'gtest1')).fsPath;
+
+    readonly gtest_list_tests_output = `{
+        "tests": 6,
+        "name": "AllTests",
+        "testsuites": [
+          {
+            "name": "TestCas1",
+            "tests": 2,
+            "testsuite": [
+              {
+                "name": "test1",
+                "file": "gtest.cpp",
+                "line": 11
+              },
+              {
+                "name": "test2",
+                "file": "gtest.cpp",
+                "line": 16
+              }
+            ]
+          },
+          {
+            "name": "TestCas2",
+            "tests": 2,
+            "testsuite": [
+              {
+                "name": "test1",
+                "file": "gtest.cpp",
+                "line": 22
+              },
+              {
+                "name": "test2",
+                "file": "gtest.cpp",
+                "line": 34
+              }
+            ]
+          },
+          {
+            "name": "MockTestCase",
+            "tests": 2,
+            "testsuite": [
+              {
+                "name": "expect1",
+                "file": "gtest.cpp",
+                "line": 56
+              },
+              {
+                "name": "expect2",
+                "file": "gtest.cpp",
+                "line": 64
+              }
+            ]
+          }
+        ]
+      }
+      `;
+
+    readonly outputs: [string[], string][] = [
+      [['--help'], 'This program contains tests written using Google Test. Yo'],
+      [['--gtest_color=no'], [
+        '[==========] Running 6 tests from 3 test cases.',
+        '[----------] Global test environment set-up.',
+        '[----------] 2 tests from TestCas1',
+        '[ RUN      ] TestCas1.test1',
+        '[       OK ] TestCas1.test1 (0 ms)',
+        '[ RUN      ] TestCas1.test2',
+        'gtest.cpp:19: Failure',
+        'Value of: 1 == 2',
+        '  Actual: false',
+        'Expected: true',
+        '[  FAILED  ] TestCas1.test2 (0 ms)',
+        '[----------] 2 tests from TestCas1 (0 ms total)',
+        '',
+        '[----------] 2 tests from TestCas2',
+        '[ RUN      ] TestCas2.test1',
+        'gtest.cpp:24: Failure',
+        'Value of: 1 != 1',
+        '  Actual: false',
+        'Expected: true',
+        'gtest.cpp:25: Failure',
+        'Value of: 1 == 1',
+        '  Actual: true',
+        'Expected: false',
+        'gtest.cpp:26: Failure',
+        'Expected equality of these values:',
+        '  1',
+        '  2',
+        'gtest.cpp:27: Failure',
+        'Expected: (1) != (1), actual: 1 vs 1',
+        'gtest.cpp:28: Failure',
+        'Expected: (1) < (1), actual: 1 vs 1',
+        'gtest.cpp:29: Failure',
+        'Expected: (1) > (1), actual: 1 vs 1',
+        '[  FAILED  ] TestCas2.test1 (0 ms)',
+        '[ RUN      ] TestCas2.test2',
+        'gtest.cpp:32: Failure',
+        'Value of: false',
+        '  Actual: false',
+        'Expected: true',
+        'gtest.cpp:36: Failure',
+        'Expected: magic_func() doesn\'t generate new fatal failures in the current thread.',
+        '  Actual: it does.',
+        '[  FAILED  ] TestCas2.test2 (0 ms)',
+        '[----------] 2 tests from TestCas2 (0 ms total)',
+        '',
+        '[----------] 2 tests from MockTestCase',
+        '[ RUN      ] MockTestCase.expect1',
+        'gtest.cpp:59: Failure',
+        'Actual function call count doesn\'t match EXPECT_CALL(foo, GetSize())...',
+        '         Expected: to be called once',
+        '           Actual: never called - unsatisfied and active',
+        '[  FAILED  ] MockTestCase.expect1 (0 ms)',
+        '[ RUN      ] MockTestCase.expect2',
+        'unknown file: Failure',
+        '',
+        'Unexpected mock function call - returning directly.',
+        '    Function call: Describe(3)',
+        'Google Mock tried the following 1 expectation, but it didn\'t match: ',
+        '',
+        'gtest.cpp:67: EXPECT_CALL(foo, Describe(4))...',
+        '  Expected arg #0: is equal to 4',
+        '           Actual: 3',
+        '         Expected: to be called once',
+        '           Actual: never called - unsatisfied and active',
+        'gtest.cpp:67: Failure',
+        'Actual function call count doesn\'t match EXPECT_CALL(foo, Describe(4))...',
+        '         Expected: to be called once',
+        '           Actual: never called - unsatisfied and active',
+        '[  FAILED  ] MockTestCase.expect2 (0 ms)',
+        '[----------] 2 tests from MockTestCase (0 ms total)',
+        '',
+        '[----------] Global test environment tear-down',
+        '[==========] 6 tests from 3 test cases ran. (1 ms total)',
+        '[  PASSED  ] 1 test.',
+        '[  FAILED  ] 5 tests, listed below:',
+        '[  FAILED  ] TestCas1.test2',
+        '[  FAILED  ] TestCas2.test1',
+        '[  FAILED  ] TestCas2.test2',
+        '[  FAILED  ] MockTestCase.expect1',
+        '[  FAILED  ] MockTestCase.expect2',
+        '',
+        ' 5 FAILED TESTS',
+        ''].join(EOL)],
+    ];
+  };
+
   readonly outputs: [string, [string[], string][]][] = [
     [this.suite1.execPath, this.suite1.outputs],
     [this.suite2.execPath, this.suite2.outputs],
     [this.suite3.execPath, this.suite3.outputs],
+    [this.gtest1.execPath, this.gtest1.outputs],
   ];
 };

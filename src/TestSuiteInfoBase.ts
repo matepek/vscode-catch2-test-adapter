@@ -222,8 +222,8 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   }
 
   protected _getTimeoutMessage(milisec: number): string {
-    return 'Timed out: ' + milisec / 1000
-      + ' second(s).\nCheck config "catch2TestExplorer.defaultRunningTimeoutSec".';
+    return 'Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": '
+      + milisec / 1000 + ' second(s).\n';
   }
 }
 

@@ -34,7 +34,8 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 	}
 
 	private _reloadGoogleTests(): Promise<void> {
-		const tmpFilePath = (this.execOptions.cwd || '.') + '/tmp_83q5vmip3fm5489w_gtest_output.json.tmp';
+		const tmpFilePath = (this.execOptions.cwd || '.')
+			+ '/tmp_gtest_output_' + Math.random().toString(36) + '_.json.tmp';
 		return c2fs
 			.spawnAsync(
 				this.execPath,
