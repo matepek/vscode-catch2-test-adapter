@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -115,7 +115,7 @@
           "scope": "resource"
         },
         "catch2TestExplorer.defaultRngSeed": {
-          "description": "Specify a seed for the Random Number Generator. (ex.: '<number>', '\"time\"') For details see: https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed",
+          "description": "Catch2: --rng-seed (<number>|\"time\"); Google Test: --gtest_random_seed=<number>;",
           "type": [
             "string",
             "number",
@@ -163,7 +163,7 @@
           "scope": "resource"
         },
         "catch2TestExplorer.debugBreakOnFailure": {
-          "description": "Debugger breaks on failure while debugging the test. This is a Catch2 parameter: --break",
+          "description": "Debugger breaks on failure while debugging the test. Catch2: --break; Google Test: --gtest_break_on_failure;",
           "type": "boolean",
           "default": true,
           "scope": "resource"
