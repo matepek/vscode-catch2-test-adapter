@@ -3,7 +3,7 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import { ChildProcess, SpawnOptions } from 'child_process';
-import * as fsx from 'fs-extra';
+import * as fs from 'fs';
 import { inspect } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
@@ -54,10 +54,12 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 					return;
 				}
 				try {
-					const testOutputJson = fsx.readJSONSync(tmpFilePath);
+					const testOutputStr = fs.readFileSync(tmpFilePath, 'utf8');
+					const testOutputJson = JSON.parse(testOutputStr);
 
-					try { fsx.remove(tmpFilePath); }
-					catch (e) { this.allTests.log.error('Couldn\'t remove tmpFilePath: ' + tmpFilePath); }
+					fs.unlink(tmpFilePath, (err: any) => {
+						this.allTests.log.error('Couldn\'t remove tmpFilePath: ' + tmpFilePath);
+					});
 
 					for (let i = 0; i < testOutputJson.testsuites.length; ++i) {
 						const suiteName = testOutputJson.testsuites[i].name;

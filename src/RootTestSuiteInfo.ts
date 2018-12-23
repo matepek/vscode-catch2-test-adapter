@@ -40,7 +40,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     public execRunningTimeout: null | number,
     public isNoThrow: boolean,
   ) {
-    this.label = workspaceFolder.name + ' - Catch2';
+    this.label = workspaceFolder.name + ' (Catch2 and Google Test Explorer)';
     this.id = generateUniqueId();
   }
 

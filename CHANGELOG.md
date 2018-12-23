@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.5]
+
+### Fixed
+
+- `fs-extra` was only a devDependencie, so the extension couldn't load.
+
 ## [2.3.4] - 2018-12-22
 
 ### Fixed
