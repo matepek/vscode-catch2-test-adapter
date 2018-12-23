@@ -29,7 +29,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   ];
 
   // because we always want to return with the current allTests suite
-  private readonly _loadFinishedEmitter = new vscode.EventEmitter<void>();
+  private readonly _loadFinishedEmitter = new vscode.EventEmitter<string | undefined>();
 
   private _allTasks = new QueueGraphNode();
   private _allTests: RootTestSuiteInfo;
@@ -50,8 +50,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._disposables.push(this._autorunEmitter);
 
     this._disposables.push(this._loadFinishedEmitter);
-    this._disposables.push(this._loadFinishedEmitter.event(() => {
-      this._testsEmitter.fire({ type: 'finished', suite: this._allTests });
+    this._disposables.push(this._loadFinishedEmitter.event((errorMessage: string | undefined) => {
+      const ev: TestLoadFinishedEvent = { type: 'finished', suite: this._allTests };
+      if (errorMessage) ev.errorMessage = errorMessage;
+      this._testsEmitter.fire(ev);
     }));
 
     this._disposables.push(
@@ -349,7 +351,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private _getDefaultExecRunningTimeout(config: vscode.WorkspaceConfiguration):
     null | number {
     const r = config.get<null | number>('defaultRunningTimeoutSec', null);
-    return r !== null ? r * 1000 : r;
+    return r !== null && r > 0 ? r * 1000 : null;
   }
 
   private _getGlobalAndDefaultEnvironmentVariables(

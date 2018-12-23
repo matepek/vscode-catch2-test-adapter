@@ -26,7 +26,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     public readonly allTasks: QueueGraphNode,
     public readonly log: util.Log,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
-    private readonly _loadFinishedEmitter: vscode.EventEmitter<void>,
+    private readonly _loadFinishedEmitter: vscode.EventEmitter<string | undefined>,
     private readonly _testsEmitter:
       vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>,
     public readonly testStatesEmitter:
@@ -59,13 +59,12 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
         this._testsEmitter.fire({ type: 'started' });
         return task().then(
           () => {
-            this._loadFinishedEmitter.fire();
+            this._loadFinishedEmitter.fire(undefined);
           },
           (reason: any) => {
-            this._loadFinishedEmitter.fire();
             this.log.error(inspect(reason));
+            this._loadFinishedEmitter.fire(inspect(reason));
             debugger;
-            throw reason;
           });
       }
     });

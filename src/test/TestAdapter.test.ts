@@ -903,7 +903,7 @@ describe('TestAdapter', function () {
               type: 'test',
               state: 'failed',
               test: s1t1,
-              message: 'Fatal error: Wrong Catch2 xml output. Error: 1\n'
+              message: 'Fatal error: (Wrong Catch2 xml output.)\nError: 1\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -948,7 +948,7 @@ describe('TestAdapter', function () {
               type: 'test',
               state: 'failed',
               test: s1t1,
-              message: 'Fatal error: Wrong Catch2 xml output. Error: \'SIGTERM\'\n'
+              message: 'Fatal error: (Wrong Catch2 xml output.)\nError: \'SIGTERM\'\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -973,7 +973,7 @@ describe('TestAdapter', function () {
           ]);
         })
 
-        it('should timeout', async function () {
+        it('should timeout not inside a test case', async function () {
           this.timeout(8000);
           this.slow(4000);
           await updateConfig('defaultRunningTimeoutSec', 3);
@@ -1000,6 +1000,49 @@ describe('TestAdapter', function () {
           assert.deepStrictEqual(testStatesEvents, [
             { type: 'started', tests: [s1t1.id] },
             { type: 'suite', state: 'running', suite: suite1 },
+            { type: 'suite', state: 'completed', suite: suite1 },
+            { type: 'finished' }
+          ]);
+        })
+
+        it('should timeout inside a test case', async function () {
+          this.timeout(8000);
+          this.slow(4000);
+          await updateConfig('defaultRunningTimeoutSec', 3);
+          await loadAdapterAndAssert();
+          const withArgs = spawnStub.withArgs(
+            example1.suite1.execPath, example1.suite1.t1.outputs[0][0]);
+          const cp = new ChildProcessStub(undefined, 'SIGTERM');
+          const spyKill = <sinon.SinonSpy<never, void>>sinon.spy(cp, 'kill');
+          cp.write(['<?xml version="1.0" encoding="UTF-8"?>',
+            '<Catch name="suite1">',
+            '  <Group name="suite1">',
+            '    <TestCase name="s1t1" description="tag1" filename="suite1.cpp" line="7">',
+          ].join(EOL)); // no close
+          withArgs.onCall(withArgs.callCount).returns(cp);
+
+          const start = Date.now();
+          await adapter.run([s1t1.id]);
+          const elapsed = Date.now() - start;
+          assert.ok(3000 <= elapsed && elapsed <= 5000, elapsed.toString());
+          assert.strictEqual(spyKill.callCount, 2);
+
+          cp.close();
+
+          await waitFor(this, () => {
+            return testStatesEvents.length >= 6;
+          });
+
+          assert.deepStrictEqual(testStatesEvents, [
+            { type: 'started', tests: [s1t1.id] },
+            { type: 'suite', state: 'running', suite: suite1 },
+            { type: 'test', state: 'running', test: s1t1 },
+            {
+              type: 'test',
+              state: 'failed',
+              test: s1t1,
+              message: 'Timed out: 3 second(s).\nCheck config "catch2TestExplorer.defaultRunningTimeoutSec".'
+            },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
           ]);
