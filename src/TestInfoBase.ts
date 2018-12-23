@@ -20,6 +20,8 @@ export abstract class TestInfoBase implements TestInfo {
     public readonly parent: TestSuiteInfoBase,
   ) {
     this.id = id ? id : generateUniqueId();
+
+    if (line && line < 0) throw Error('line smaller than zero');
   }
 
   abstract getDebugParams(breakOnFailure: boolean): string[];

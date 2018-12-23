@@ -88,7 +88,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       await this._createSuiteByUri(file).then((suite: TestSuiteInfoBase) => {
         return suite.reloadChildren().then(() => {
           this._executables.set(file.fsPath, suite);
-          this._allTests.insertChildSuite(suite);
+          this._allTests.insertChild(suite);
         }, (reason: any) => {
           this._allTests.log.error('Couldn\'t load executable: ' + inspect([reason, suite]));
         });
@@ -165,7 +165,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       } else if (Date.now() - lastEventArrivedAt! > this._allTests.execWatchTimeout) {
         this._allTests.log.info('refresh timeout: ' + uri.fsPath);
         this._lastEventArrivedAt.delete(uri.fsPath);
-        if (this._allTests.hasSuite(suite)) {
+        if (this._allTests.hasChild(suite)) {
           return this._allTests.sendLoadEvents(() => {
             this._executables.delete(uri.fsPath);
             this._allTests.removeChild(suite);
@@ -176,10 +176,10 @@ export class TestExecutableInfo implements vscode.Disposable {
         }
       } else if (exists) {
         // note: here we reload children outside start-finished event
-        // it seems ok now, but maybe it is a problem, if insertChildSuite == false
+        // it seems ok now, but maybe it is a problem, if insertChild == false
         return suite.reloadChildren().then(() => {
           return this._allTests.sendLoadEvents(() => {
-            if (this._allTests.insertChildSuite(suite)) {
+            if (this._allTests.insertChild(suite)) {
               this._executables.set(uri.fsPath, suite);
               this._uniquifySuiteNames();
             }

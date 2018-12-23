@@ -21,18 +21,11 @@ export class Catch2TestInfo extends TestInfoBase {
 	) {
 		super(id,
 			testNameFull,
-			Catch2TestInfo._generateLabel(testNameFull, description, tags),
+			testNameFull + (tags.length > 0 ? ' ' + tags.join('') : ''),
 			tags.some((v: string) => { return v.startsWith('[.') || v == '[hide]'; }) || testNameFull.startsWith('./'),
 			file,
 			line,
 			parent);
-
-		if (line < 0) throw Error('line smaller than zero');
-	}
-
-	private static _generateLabel(
-		testNameFull: string, description: string, tags: string[]): string {
-		return testNameFull + (tags.length > 0 ? ' ' + tags.join('') : '');
 	}
 
 	getEscapedTestName(): string {

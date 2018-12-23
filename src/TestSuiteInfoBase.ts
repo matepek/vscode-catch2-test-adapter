@@ -149,6 +149,32 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
       });
   }
 
+  protected _addChild(test: TestInfoBase) {
+    if (this.children.length == 0) {
+      this.file = test.file;
+      this.line = test.file ? 0 : undefined;
+    } else if (this.file != test.file) {
+      this.file = undefined;
+      this.line = undefined;
+    }
+
+    let i = this.children.findIndex((v: TestInfoBase) => {
+      if (test.file && v.file && test.line && v.line) {
+        const f = test.file.trim().localeCompare(v.file.trim());
+        if (f != 0)
+          return f < 0;
+        else
+          return test.line < v.line;
+      } else {
+        return test.label.trim().localeCompare(v.label.trim()) < 0;
+      }
+    });
+
+    if (i == -1) i = this.children.length;
+
+    this.children.splice(i, 0, test);
+  }
+
   protected _sendTestStateEventsWithParent(events: TestEvent[]) {
     this.allTests.sendTestSuiteStateEventsWithParent([
       { type: 'suite', suite: this, state: 'running' },
@@ -181,5 +207,12 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
       filePath = path.resolve(this.allTests.workspaceFolder.uri.fsPath, matchedPath);
     }
     return filePath;
+  }
+
+  findTestById(id: string): TestInfoBase | undefined {
+    for (let i = 0; i < this.children.length; ++i) {
+      if (this.children[i].id === id) return this.children[i];
+    }
+    return undefined;
   }
 }

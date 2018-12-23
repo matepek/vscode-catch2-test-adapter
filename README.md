@@ -116,7 +116,7 @@ Usable variables:
 | Variable name   | Value meaning                                                | Type                    |
 | --------------- | ------------------------------------------------------------ | ----------------------- |
 | `${label}`      | The name of the test. Same as in the Test Explorer.          | string                  |
-| `${suitelabel}` | The name of parent suite test. Same as in the Test Explorer. | string                  |
+| `${suiteLabel}` | The name of parent suite test. Same as in the Test Explorer. | string                  |
 | `${exec}`       | The path of the executable.                                  | string                  |
 | `${args}`       | The arguments for the executable.                            | string[]                |
 | `${cwd}`        | The current working directory for execution.                 | string                  |
@@ -147,13 +147,12 @@ Example:
 ## Known issues
 
 - (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
-- (2018-11-17) Long (>80 character) filename, test-name or description can cause test-list parsing failures. Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
+- (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures. Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
 
 ## TODOs
 
-- Write tests for Google Test
-- Support Google Mock
-- Refactoring source structure a bit
+- Write tests for Google Test and Mock
+- Is Google Mock working? IDK.
 
 ## Contribution
 

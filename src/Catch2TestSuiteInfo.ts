@@ -17,11 +17,11 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 	children: Catch2TestInfo[] = [];
 
 	constructor(
-		public readonly origLabel: string,
-		public readonly allTests: RootTestSuiteInfo,
-		public readonly execPath: string,
-		public readonly execOptions: SpawnOptions,
-		public catch2Version: [number, number, number] | undefined) {
+		origLabel: string,
+		allTests: RootTestSuiteInfo,
+		execPath: string,
+		execOptions: SpawnOptions,
+		private _catch2Version: [number, number, number] | undefined) {
 		super(origLabel, allTests, execPath, execOptions);
 	}
 
@@ -29,9 +29,9 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		return TestSuiteInfoBase.determineTestTypeOfExecutable(this.execPath)
 			.then((testInfo) => {
 				if (testInfo.type === 'catch2') {
-					this.catch2Version = testInfo.version;
-					if (this.catch2Version[0] > 2 || this.catch2Version[0] < 2)
-						this.allTests.log.warn('Unsupported Cathc2 version: ' + inspect(this.catch2Version));
+					this._catch2Version = testInfo.version;
+					if (this._catch2Version[0] > 2 || this._catch2Version[0] < 2)
+						this.allTests.log.warn('Unsupported Cathc2 version: ' + inspect(this._catch2Version));
 					return this._reloadCatch2Tests();
 				}
 				throw Error('Not a catch2 test executable: ' + this.execPath);
@@ -110,27 +110,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		const test =
 			new Catch2TestInfo(id, testName, description, tags, file, line, this);
 
-		if (this.children.length == 0) {
-			this.file = file;
-			this.line = 0;
-		} else if (this.file != file) {
-			this.file = undefined;
-			this.line = undefined;
-		}
-
-		let i = this.children.findIndex((v: Catch2TestInfo) => {
-			if (test.file && v.file && test.line && v.line) {
-				const f = test.file.trim().localeCompare(v.file.trim());
-				if (f != 0)
-					return f < 0;
-				else
-					return test.line < v.line;
-			} else {
-				return false;
-			}
-		});
-		if (i == -1) i = this.children.length;
-		this.children.splice(i, 0, test);
+		this._addChild(test);
 
 		return test;
 	}

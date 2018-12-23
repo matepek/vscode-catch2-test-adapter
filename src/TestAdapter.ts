@@ -10,7 +10,6 @@ import * as api from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { TestInfoBase } from './TestInfoBase';
 import { resolveVariables } from './Helpers';
 import { QueueGraphNode } from './QueueGraph';
 import { TestExecutableInfo } from './TestExecutableInfo';
@@ -200,19 +199,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._log.error('unsupported test count: ' + inspect(tests));
       throw Error('Unsupported input. Contact');
     }
-    const info = this._allTests.findChildById(tests[0]);
-    if (info === undefined) {
+
+    const testInfo = this._allTests.findTestById(tests[0]);
+
+    if (testInfo === undefined) {
       this._log.error(
         'Not existing id: ' + inspect([tests, this._allTasks], true, 3));
       throw Error('Not existing test id');
     }
-
-    if (!(info instanceof TestInfoBase)) {
-      this._log.info(__filename + ' !(info instanceof TestInfoBase)');
-      throw 'Can\'t choose a group, only a single test.';
-    }
-
-    const testInfo = <TestInfoBase>info;
 
     this._log.info('testInfo: ' + inspect([testInfo, tests]));
 
@@ -257,6 +251,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       return resolveVariables(template, [
         ...this._variableToValue,
+        ["${suitelabel}", testInfo.parent.label],
         ["${suiteLabel}", testInfo.parent.label],
         ["${label}", testInfo.label],
         ["${exec}", testInfo.parent.execPath],

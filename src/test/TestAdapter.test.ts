@@ -65,7 +65,7 @@ describe('TestAdapter', function () {
     let t: Thenable<void> = Promise.resolve();
     Object.keys(properties).forEach(key => {
       assert.ok(key.startsWith('catch2TestExplorer.'));
-      const k = key.replace('catch2TestExplorer.', '');
+      const k = key.substr('catch2TestExplorer.'.length);
       if (k == 'logfile') return;
       t = t.then(function () {
         return getConfig().update(k, undefined);
