@@ -154,7 +154,7 @@ Example:
 ## TODOs
 
 - Remove deprecated `catch2TestExplorer.enableSourceDecoration`.
-- Test cases: google test, catch2: info, warn, fail, stdout, stderr
+- Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture
 
 ## Contribution
 

@@ -146,8 +146,8 @@ export class Catch2TestInfo extends TestInfoBase {
 				testEvent.decorations!.push({
 					line: Number(failure.$.line) - 1 /*It looks vscode works like this.*/,
 					message: '-> ' + failure._.split(EOL)
-						.map(l => l.trim())
-						.filter(l => l.length > 0)
+						.map((l: string) => l.trim())
+						.filter((l: string) => l.length > 0)
 						.join('; ')
 				});
 			}
