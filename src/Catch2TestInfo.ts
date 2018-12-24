@@ -89,23 +89,52 @@ export class Catch2TestInfo extends TestInfoBase {
 		void {
 		const title = '>>> "' + testCase.$.name + '" at line ' + testCase.$.line;
 
-		if (testCase.OverallResult[0].$.success === 'true') {
-			testEvent.state = 'passed';
-		}
-
 		if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
 			testEvent.message += 'Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
 		}
+
+		this._processInfoTags(testCase, title, testEvent);
 
 		this._processXmlTagExpressions(testCase, title, testEvent);
 
 		this._processXmlTagSections(testCase, title, testEvent);
 
 		this._processXmlTagFatalErrorConditions(testCase, title, testEvent);
+
+
+		if (testCase.OverallResult[0].hasOwnProperty('StdOut')) {
+			testEvent.message += '>>> std::cout:';
+			for (let i = 0; i < testCase.OverallResult[0].StdOut.length; i++) {
+				const element = testCase.OverallResult[0].StdOut[i];
+				testEvent.message += element.trimRight();
+			}
+			testEvent.message += '\n<<< std::cout\n';
+		}
+
+		if (testCase.OverallResult[0].hasOwnProperty('StdErr')) {
+			testEvent.message += '>>> std::err:';
+			for (let i = 0; i < testCase.OverallResult[0].StdErr.length; i++) {
+				const element = testCase.OverallResult[0].StdErr[i];
+				testEvent.message += element.trimRight();
+			}
+			testEvent.message += '\n<<< std::err\n';
+		}
+
+		if (testCase.OverallResult[0].$.success === 'true') {
+			testEvent.state = 'passed';
+		}
 	}
 
-	private _processXmlTagExpressions(xml: any, title: string, testEvent: TestEvent):
-		void {
+	private _processInfoTags(xml: any, title: string, testEvent: TestEvent) {
+		if (xml.hasOwnProperty('Info')) {
+			for (let j = 0; j < xml.Info.length; ++j) {
+				const info = xml.Info[j];
+				testEvent.message += '>>> Info: ' + info.trim() + ' <<<\n';
+			}
+		}
+	}
+
+	private _processXmlTagExpressions(xml: any, title: string, testEvent: TestEvent) {
 		if (xml.hasOwnProperty('Expression')) {
 			for (let j = 0; j < xml.Expression.length; ++j) {
 				const expr = xml.Expression[j];
@@ -138,6 +167,8 @@ export class Catch2TestInfo extends TestInfoBase {
 				const section = xml.Section[j];
 				try {
 					title += ' -> "' + section.$.name + '" at line ' + section.$.line;
+
+					this._processInfoTags(xml, title, testEvent);
 
 					this._processXmlTagExpressions(section, title, testEvent);
 

@@ -1044,7 +1044,7 @@ describe('TestAdapter', function () {
               type: 'test',
               state: 'failed',
               test: s1t1,
-              message: 'Timed out: 3 second(s).\nCheck config "catch2TestExplorer.defaultRunningTimeoutSec".'
+              message: 'Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": 3 second(s).\n'
             },
             { type: 'suite', state: 'completed', suite: suite1 },
             { type: 'finished' }
@@ -2019,7 +2019,7 @@ describe('TestAdapter', function () {
       assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
     })
 
-    specify.only('load gtest executables=gtest1.exe', async function () {
+    specify('load gtest executables=gtest1.exe', async function () {
       this.slow(500);
       await updateConfig('executables', example1.gtest1.execPath);
       adapter = createAdapterAndSubscribe();

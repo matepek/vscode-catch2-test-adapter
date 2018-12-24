@@ -153,8 +153,6 @@ Example:
 
 ## TODOs
 
-- Write tests for Google Test and Mock
-- Is Google Mock working? IDK.
 - Remove deprecated `catch2TestExplorer.enableSourceDecoration`.
 
 ## Contribution
