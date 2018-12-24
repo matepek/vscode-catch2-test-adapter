@@ -4,6 +4,7 @@
 
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
+import { EOL } from 'os';
 
 import { Catch2TestSuiteInfo } from './Catch2TestSuiteInfo';
 import { TestInfoBase } from './TestInfoBase';
@@ -93,7 +94,7 @@ export class Catch2TestInfo extends TestInfoBase {
 			testEvent.message += 'Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
 		}
 
-		this._processInfoTags(testCase, title, testEvent);
+		this._processInfoWarningAndFailureTags(testCase, title, testEvent);
 
 		this._processXmlTagExpressions(testCase, title, testEvent);
 
@@ -125,11 +126,30 @@ export class Catch2TestInfo extends TestInfoBase {
 		}
 	}
 
-	private _processInfoTags(xml: any, title: string, testEvent: TestEvent) {
+	private _processInfoWarningAndFailureTags(xml: any, title: string, testEvent: TestEvent) {
 		if (xml.hasOwnProperty('Info')) {
 			for (let j = 0; j < xml.Info.length; ++j) {
 				const info = xml.Info[j];
 				testEvent.message += '>>> Info: ' + info.trim() + ' <<<\n';
+			}
+		}
+		if (xml.hasOwnProperty('Warning')) {
+			for (let j = 0; j < xml.Warning.length; ++j) {
+				const warning = xml.Warning[j];
+				testEvent.message += '>>> Warning: ' + warning.trim() + ' <<<\n';
+			}
+		}
+		if (xml.hasOwnProperty('Failure')) {
+			for (let j = 0; j < xml.Failure.length; ++j) {
+				const failure = xml.Failure[j];
+				testEvent.message += '>>> Failure: ' + failure._.trim() + ' <<<\n';
+				testEvent.decorations!.push({
+					line: Number(failure.$.line) - 1 /*It looks vscode works like this.*/,
+					message: '-> ' + failure._.split(EOL)
+						.map(l => l.trim())
+						.filter(l => l.length > 0)
+						.join('; ')
+				});
 			}
 		}
 	}
@@ -143,14 +163,14 @@ export class Catch2TestInfo extends TestInfoBase {
 						+ (expr.$.type ? expr.$.type : '<unknown>')
 						+ ' at line ' + expr.$.line + ':\n'
 						+ '  Original:\n    '
-						+ expr.Original.map((x: string) => x.trim()).join(' | ') + '\n'
+						+ expr.Original.map((x: string) => x.trim()).join('; ') + '\n'
 						+ '  Expanded:\n    '
-						+ expr.Expanded.map((x: string) => x.trim()).join(' | ') + '\n'
+						+ expr.Expanded.map((x: string) => x.trim()).join('; ') + '\n'
 						+ '<<<\n\n';
 					testEvent.decorations!.push({
 						line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
 						message:
-							'-> ' + expr.Expanded.map((x: string) => x.trim()).join(' | ')
+							'-> ' + expr.Expanded.map((x: string) => x.trim()).join('; ')
 					});
 				} catch (error) {
 					this.parent.allTests.log.error(inspect(error));
@@ -168,7 +188,7 @@ export class Catch2TestInfo extends TestInfoBase {
 				try {
 					title += ' -> "' + section.$.name + '" at line ' + section.$.line;
 
-					this._processInfoTags(xml, title, testEvent);
+					this._processInfoWarningAndFailureTags(xml, title, testEvent);
 
 					this._processXmlTagExpressions(section, title, testEvent);
 

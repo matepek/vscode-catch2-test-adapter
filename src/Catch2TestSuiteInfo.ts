@@ -221,7 +221,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 								data.processedTestCases.push(data.currentChild);
 							} catch (e) {
 								this.allTests.log.error(
-									'parsing and processing test: ' + data.currentChild.label);
+									'parsing and processing test: ' + inspect([data.currentChild.label, testCaseXml]));
 							}
 						} else {
 							this.allTests.log.info(

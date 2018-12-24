@@ -1,4 +1,3 @@
-#include <iostream>
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp.txt"
 
@@ -7,15 +6,12 @@
 
 TEST_CASE("s1t1", "tag1") {
   //
-  std::cout << "apple" << std::endl;
   REQUIRE(std::true_type::value);
   //
 }
 
 TEST_CASE("s1t2", "tag1") {
   //
-  INFO("alma");
-  INFO("korte");
   REQUIRE(std::false_type::value);
   //
 }

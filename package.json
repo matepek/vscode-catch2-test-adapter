@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.3.5",
+  "version": "2.3.6",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -148,7 +148,7 @@
           "scope": "resource"
         },
         "catch2TestExplorer.enableSourceDecoration": {
-          "description": "Sets the source code decorations: Errored lines will be highlighted.",
+          "description": "Deprecated! Use 'testExplorer.errorDecoration' instead.",
           "type": "boolean",
           "default": true,
           "scope": "resource"

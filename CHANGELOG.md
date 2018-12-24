@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.3.6]
 
+### Added
+
+- Handling: Catch2: INFO, WARN, FAIL, std::cout, std::cerr
+
 ### Deprecated
 
 - `catch2TestExplorer.enableSourceDecoration` will be removed. Use `testExplorer.errorDecoration`.
