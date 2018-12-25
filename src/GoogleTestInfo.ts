@@ -70,6 +70,7 @@ export class GoogleTestInfo extends TestInfoBase {
 			}
 		}
 
+		if (ev.decorations!.length == 0) delete ev.decorations;
 		return ev;
 	}
 }

@@ -28,10 +28,12 @@ Endorse my [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/
 | `catch2TestExplorer.defaultRngSeed`           | Catch2: `--rng-seed <number> or "time"`; Google Test: `--gtest_random_seed=<number>`;                                                                                        |
 | `catch2TestExplorer.defaultWatchTimeoutSec`   | Test executables are being watched. In case of one compiles too much this variable can help with it. Unit: second.                                                           |
 | `catch2TestExplorer.defaultRunningTimeoutSec` | Test executable is running in a process. In case of an inifinite loop, it will run forever, unless this parameter is set.                                                    |
-| `catch2TestExplorer.enableSourceDecoration`   | Sets the source code decorations: Errored lines will be highlited.                                                                                                           |
 | `catch2TestExplorer.workerMaxNumber`          | The variable maximize the number of the parallel test execution.                                                                                                             |
-| `testExplorer.onStart`                        | (This is part of the [dependency extension](https://github.com/hbenl/vscode-test-explorer#configuration)'s settings.)                                                        |
-| `testExplorer.onReload`                       | (This is part of the [dependency extension](https://github.com/hbenl/vscode-test-explorer#configuration)'s settings.)                                                        |
+| `testExplorer.errorDecoration`                | Show error messages from test failures as decorations in the editor. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                  |
+| `testExplorer.gutterDecoration`               | Show the state of each test in the editor using Gutter Decorations. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                   |
+| `testExplorer.codeLens`                       | Show a CodeLens above each test or suite for running or debugging the tests. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                          |
+| `testExplorer.onStart`                        | Retire or reset all test states whenever a test run is started. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                       |
+| `testExplorer.onReload`                       | Retire or reset all test states whenever the test tree is reloaded. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                   |
 
 ### catch2TestExplorer.executables
 
@@ -116,7 +118,7 @@ Usable variables:
 | Variable name   | Value meaning                                                | Type                    |
 | --------------- | ------------------------------------------------------------ | ----------------------- |
 | `${label}`      | The name of the test. Same as in the Test Explorer.          | string                  |
-| `${suitelabel}` | The name of parent suite test. Same as in the Test Explorer. | string                  |
+| `${suiteLabel}` | The name of parent suite test. Same as in the Test Explorer. | string                  |
 | `${exec}`       | The path of the executable.                                  | string                  |
 | `${args}`       | The arguments for the executable.                            | string[]                |
 | `${cwd}`        | The current working directory for execution.                 | string                  |
@@ -147,13 +149,12 @@ Example:
 ## Known issues
 
 - (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
-- (2018-11-17) Long (>80 character) filename, test-name or description can cause test-list parsing failures. Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
+- (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures. Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
 
 ## TODOs
 
-- Write tests for Google Test
-- Support Google Mock
-- Refactoring source structure a bit
+- Remove deprecated `catch2TestExplorer.enableSourceDecoration`.
+- Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture
 
 ## Contribution
 

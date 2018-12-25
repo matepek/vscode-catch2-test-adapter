@@ -26,7 +26,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     public readonly allTasks: QueueGraphNode,
     public readonly log: util.Log,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
-    private readonly _loadFinishedEmitter: vscode.EventEmitter<void>,
+    private readonly _loadFinishedEmitter: vscode.EventEmitter<string | undefined>,
     private readonly _testsEmitter:
       vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>,
     public readonly testStatesEmitter:
@@ -59,13 +59,12 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
         this._testsEmitter.fire({ type: 'started' });
         return task().then(
           () => {
-            this._loadFinishedEmitter.fire();
+            this._loadFinishedEmitter.fire(undefined);
           },
           (reason: any) => {
-            this._loadFinishedEmitter.fire();
             this.log.error(inspect(reason));
+            this._loadFinishedEmitter.fire(inspect(reason));
             debugger;
-            throw reason;
           });
       }
     });
@@ -98,35 +97,19 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     return false;
   }
 
-  findChildById(id: string): TestSuiteInfoBase | TestInfoBase | undefined {
-    const recursiveSearch =
-      (child: TestSuiteInfoBase | TestInfoBase): TestSuiteInfoBase | TestInfoBase |
-        undefined => {
-        if (child.id == id) {
-          return child;
-        } else if (child.type == 'suite') {
-          const suite: TestSuiteInfoBase = child;
-          for (let i = 0; i < suite.children.length; ++i) {
-            const r = recursiveSearch(suite.children[i]);
-            if (r != undefined) return r;
-          }
-        }
-        return undefined;
-      };
-
+  findTestById(id: string): TestInfoBase | undefined {
     for (let i = 0; i < this.children.length; ++i) {
-      const r = recursiveSearch(this.children[i]);
-      if (r) return r;
+      const test = this.children[i].findTestById(id);
+      if (test) return test;
     }
-
     return undefined;
   }
 
-  hasSuite(suite: TestSuiteInfoBase): boolean {
+  hasChild(suite: TestSuiteInfoBase): boolean {
     return this.children.indexOf(suite) != -1;
   }
 
-  insertChildSuite(suite: TestSuiteInfoBase): boolean {
+  insertChild(suite: TestSuiteInfoBase): boolean {
     if (this.children.indexOf(suite) != -1) return false;
 
     let i = this.children.findIndex((v: TestSuiteInfoBase) => {
@@ -134,14 +117,14 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     });
 
     if (i == -1) i = this.children.length;
+
     this.children.splice(i, 0, suite);
+
     return true;
   }
 
   cancel(): void {
-    this.children.forEach(c => {
-      c.cancel();
-    });
+    this.children.forEach(c => c.cancel());
   }
 
   async load(executables: TestExecutableInfo[]) {

@@ -2,26 +2,25 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { ChildProcess, SpawnOptions } from 'child_process';
+import { SpawnOptions } from 'child_process';
 import { inspect } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { TestInfoBase } from './TestInfoBase';
 import { Catch2TestInfo } from './Catch2TestInfo';
 import * as c2fs from './FsWrapper';
-import { TestSuiteInfoBase } from './TestSuiteInfoBase';
+import { TestSuiteInfoBase, TestSuiteInfoBaseRunInfo } from './TestSuiteInfoBase';
 
 export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 	children: Catch2TestInfo[] = [];
 
 	constructor(
-		public readonly origLabel: string,
-		public readonly allTests: RootTestSuiteInfo,
-		public readonly execPath: string,
-		public readonly execOptions: SpawnOptions,
-		public catch2Version: [number, number, number] | undefined) {
+		origLabel: string,
+		allTests: RootTestSuiteInfo,
+		execPath: string,
+		execOptions: SpawnOptions,
+		private _catch2Version: [number, number, number] | undefined) {
 		super(origLabel, allTests, execPath, execOptions);
 	}
 
@@ -29,9 +28,9 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		return TestSuiteInfoBase.determineTestTypeOfExecutable(this.execPath)
 			.then((testInfo) => {
 				if (testInfo.type === 'catch2') {
-					this.catch2Version = testInfo.version;
-					if (this.catch2Version[0] > 2 || this.catch2Version[0] < 2)
-						this.allTests.log.warn('Unsupported Cathc2 version: ' + inspect(this.catch2Version));
+					this._catch2Version = testInfo.version;
+					if (this._catch2Version[0] > 2 || this._catch2Version[0] < 2)
+						this.allTests.log.warn('Unsupported Cathc2 version: ' + inspect(this._catch2Version));
 					return this._reloadCatch2Tests();
 				}
 				throw Error('Not a catch2 test executable: ' + this.execPath);
@@ -110,27 +109,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		const test =
 			new Catch2TestInfo(id, testName, description, tags, file, line, this);
 
-		if (this.children.length == 0) {
-			this.file = file;
-			this.line = 0;
-		} else if (this.file != file) {
-			this.file = undefined;
-			this.line = undefined;
-		}
-
-		let i = this.children.findIndex((v: Catch2TestInfo) => {
-			if (test.file && v.file && test.line && v.line) {
-				const f = test.file.trim().localeCompare(v.file.trim());
-				if (f != 0)
-					return f < 0;
-				else
-					return test.line < v.line;
-			} else {
-				return false;
-			}
-		});
-		if (i == -1) i = this.children.length;
-		this.children.splice(i, 0, test);
+		this._addChild(test);
 
 		return test;
 	}
@@ -162,9 +141,8 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		return execParams;
 	}
 
-	protected _handleProcess(process: ChildProcess, childrenToRun: TestInfoBase[] | 'all'): Promise<void> {
+	protected _handleProcess(runInfo: TestSuiteInfoBaseRunInfo): Promise<void> {
 		const data = new class {
-			process: ChildProcess | undefined = process;
 			buffer: string = '';
 			inTestCase: boolean = false;
 			currentChild: Catch2TestInfo | undefined = undefined;
@@ -237,11 +215,13 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 									testCaseXml, data.rngSeed);
 								if (!this.allTests.isEnabledSourceDecoration)
 									ev.decorations = undefined;
+								if (runInfo.timeout)
+									ev.message = this._getTimeoutMessage(runInfo.timeout);
 								this.allTests.testStatesEmitter.fire(ev);
 								data.processedTestCases.push(data.currentChild);
 							} catch (e) {
 								this.allTests.log.error(
-									'parsing and processing test: ' + data.currentChild.label);
+									'parsing and processing test: ' + inspect([data.currentChild.label, testCaseXml]));
 							}
 						} else {
 							this.allTests.log.info(
@@ -256,23 +236,21 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 					}
 				} while (data.buffer.length > 0 && --invariant > 0);
 				if (invariant == 0) {
-					process.kill();
+					runInfo.process.kill();
 					reject('Possible infinite loop of this extension');
 				}
 			};
 
-			process.stdout.on('data', (chunk: Uint8Array) => {
+			runInfo.process.stdout.on('data', (chunk: Uint8Array) => {
 				const xml = chunk.toLocaleString();
 				processChunk(xml);
 			});
 
-			process.on('error', (err: Error) => {
+			runInfo.process.on('error', (err: Error) => {
 				reject(err);
 			});
 
-			process.on('close', (code: number | null, signal: string | null) => {
-				data.process = undefined;
-
+			runInfo.process.on('close', (code: number | null, signal: string | null) => {
 				if (code !== null && code !== undefined)
 					resolve(code);
 				if (signal !== null && signal !== undefined)
@@ -283,28 +261,33 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 
 		}).catch(
 			(reason: any) => {
-				process.kill();
-				this.allTests.log.warn(inspect([reason, this, data], true, 2));
+				runInfo.process.kill();
+				this.allTests.log.warn(inspect([runInfo, reason, this, data], true, 2));
 				return reason;
 			}).then((codeOrReason: number | string | any) => {
 				if (data.inTestCase) {
 					if (data.currentChild !== undefined) {
 						this.allTests.log.warn('data.currentChild !== undefined: ' + inspect(data));
-						this.allTests.testStatesEmitter.fire({
+						const ev: TestEvent = {
 							type: 'test',
 							test: data.currentChild!,
 							state: 'failed',
-							message: 'Fatal error: Wrong Catch2 xml output. Error: ' + inspect(codeOrReason) + '\n',
-						});
+						};
+						if (runInfo.timeout !== undefined) {
+							ev.message = this._getTimeoutMessage(runInfo.timeout);
+						} else {
+							ev.message = 'Fatal error: (Wrong Catch2 xml output.)\nError: ' + inspect(codeOrReason) + '\n';
+						}
+						this.allTests.testStatesEmitter.fire(ev);
 					} else {
 						this.allTests.log.warn('data.inTestCase: ' + inspect(data));
 					}
 				}
 
-				const isTestRemoved = (childrenToRun === 'all' &&
+				const isTestRemoved = (runInfo.childrenToRun === 'all' &&
 					this.children.filter(c => !c.skipped).length >
 					data.processedTestCases.length) ||
-					(childrenToRun !== 'all' && data.processedTestCases.length == 0);
+					(runInfo.childrenToRun !== 'all' && data.processedTestCases.length == 0);
 
 				if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
 					this.allTests

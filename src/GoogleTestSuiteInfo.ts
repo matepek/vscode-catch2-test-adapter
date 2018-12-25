@@ -2,25 +2,24 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { ChildProcess, SpawnOptions } from 'child_process';
+import { SpawnOptions } from 'child_process';
 import * as fs from 'fs';
 import { inspect } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { TestInfoBase } from './TestInfoBase';
 import { GoogleTestInfo } from './GoogleTestInfo';
 import * as c2fs from './FsWrapper';
-import { TestSuiteInfoBase } from './TestSuiteInfoBase';
+import { TestSuiteInfoBase, TestSuiteInfoBaseRunInfo } from './TestSuiteInfoBase';
 
 export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 	children: GoogleTestInfo[] = [];
 
 	constructor(
-		public readonly origLabel: string,
-		public readonly allTests: RootTestSuiteInfo,
-		public readonly execPath: string,
-		public readonly execOptions: SpawnOptions) {
+		origLabel: string,
+		allTests: RootTestSuiteInfo,
+		execPath: string,
+		execOptions: SpawnOptions) {
 		super(origLabel, allTests, execPath, execOptions);
 	}
 
@@ -35,7 +34,8 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 	}
 
 	private _reloadGoogleTests(): Promise<void> {
-		const tmpFilePath = (this.execOptions.cwd || '.') + '/tmp_83q5vmip3fm5489w_gtest_output.json.tmp';
+		const tmpFilePath = (this.execOptions.cwd || '.')
+			+ '/tmp_gtest_output_' + Math.random().toString(36) + '_.json.tmp';
 		return c2fs
 			.spawnAsync(
 				this.execPath,
@@ -103,31 +103,12 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 	}
 
 	private _createGoogleTestInfo(
-		id: string | undefined, testName: string, file: string | undefined, line: number | undefined): GoogleTestInfo {
+		id: string | undefined, testName: string,
+		file: string | undefined, line: number | undefined): GoogleTestInfo {
 		const test =
 			new GoogleTestInfo(id, testName, file, line, this);
 
-		if (this.children.length == 0) {
-			this.file = file;
-			this.line = 0;
-		} else if (this.file != file) {
-			this.file = undefined;
-			this.line = undefined;
-		}
-
-		let i = this.children.findIndex((v: GoogleTestInfo) => {
-			if (test.file && test.line && v.file && v.line) {
-				const f = test.file.trim().localeCompare(v.file.trim());
-				if (f != 0)
-					return f < 0;
-				else
-					return test.line < v.line;
-			} else {
-				return false;
-			}
-		});
-		if (i == -1) i = this.children.length;
-		this.children.splice(i, 0, test);
+		this._addChild(test);
 
 		return test;
 	}
@@ -154,9 +135,8 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 		return execParams;
 	}
 
-	protected _handleProcess(process: ChildProcess, childrenToRun: TestInfoBase[] | 'all'): Promise<void> {
+	protected _handleProcess(runInfo: TestSuiteInfoBaseRunInfo): Promise<void> {
 		const data = new class {
-			process: ChildProcess | undefined = process;
 			buffer: string = '';
 			inTestCase: boolean = false;
 			currentChild: GoogleTestInfo | undefined = undefined;
@@ -206,6 +186,8 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 								const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase);
 								if (!this.allTests.isEnabledSourceDecoration)
 									ev.decorations = undefined;
+								if (runInfo.timeout)
+									ev.message = this._getTimeoutMessage(runInfo.timeout);
 								this.allTests.testStatesEmitter.fire(ev);
 								data.processedTestCases.push(data.currentChild);
 							} catch (e) {
@@ -225,23 +207,21 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 					}
 				} while (data.buffer.length > 0 && --invariant > 0);
 				if (invariant == 0) {
-					process.kill();
+					runInfo.process.kill();
 					reject('Possible infinite loop of this extension');
 				}
 			};
 
-			process.stdout.on('data', (chunk: Uint8Array) => {
+			runInfo.process.stdout.on('data', (chunk: Uint8Array) => {
 				const xml = chunk.toLocaleString();
 				processChunk(xml);
 			});
 
-			process.on('error', (err: Error) => {
+			runInfo.process.on('error', (err: Error) => {
 				reject(err);
 			});
 
-			process.on('close', (code: number | null, signal: string | null) => {
-				data.process = undefined;
-
+			runInfo.process.on('close', (code: number | null, signal: string | null) => {
 				if (code !== null && code !== undefined)
 					resolve(code);
 				if (signal !== null && signal !== undefined)
@@ -252,29 +232,33 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 
 		}).catch(
 			(reason: any) => {
-				process.kill();
-
-				this.allTests.log.warn(inspect([reason, this, data], true, 2));
+				runInfo.process.kill();
+				this.allTests.log.warn(inspect([runInfo, reason, this, data], true, 2));
 				return reason;
 			}).then((codeOrReason: number | string | any) => {
 				if (data.inTestCase) {
 					if (data.currentChild !== undefined) {
 						this.allTests.log.warn('data.currentChild !== undefined: ' + inspect(data));
-						this.allTests.testStatesEmitter.fire({
+						const ev: TestEvent = {
 							type: 'test',
 							test: data.currentChild!,
 							state: 'failed',
-							message: 'Fatal error: Wrong Catch2 xml output. Error: ' + inspect(codeOrReason) + '\n',
-						});
+						};
+						if (runInfo.timeout !== undefined) {
+							ev.message = this._getTimeoutMessage(runInfo.timeout);
+						} else {
+							ev.message = 'Fatal error: (Wrong Google Test output.)\nError: ' + inspect(codeOrReason) + '\n';
+						}
+						this.allTests.testStatesEmitter.fire(ev);
 					} else {
 						this.allTests.log.warn('data.inTestCase: ' + inspect(data));
 					}
 				}
 
-				const isTestRemoved = (childrenToRun === 'all' &&
+				const isTestRemoved = (runInfo.childrenToRun === 'all' &&
 					this.children.filter(c => !c.skipped).length >
 					data.processedTestCases.length) ||
-					(childrenToRun !== 'all' && data.processedTestCases.length == 0);
+					(runInfo.childrenToRun !== 'all' && data.processedTestCases.length == 0);
 
 				if (data.unprocessedTestCases.length > 0 || isTestRemoved) {
 					this.allTests

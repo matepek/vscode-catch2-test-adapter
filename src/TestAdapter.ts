@@ -10,7 +10,6 @@ import * as api from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { TestInfoBase } from './TestInfoBase';
 import { resolveVariables } from './Helpers';
 import { QueueGraphNode } from './QueueGraph';
 import { TestExecutableInfo } from './TestExecutableInfo';
@@ -30,7 +29,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   ];
 
   // because we always want to return with the current allTests suite
-  private readonly _loadFinishedEmitter = new vscode.EventEmitter<void>();
+  private readonly _loadFinishedEmitter = new vscode.EventEmitter<string | undefined>();
 
   private _allTasks = new QueueGraphNode();
   private _allTests: RootTestSuiteInfo;
@@ -51,8 +50,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._disposables.push(this._autorunEmitter);
 
     this._disposables.push(this._loadFinishedEmitter);
-    this._disposables.push(this._loadFinishedEmitter.event(() => {
-      this._testsEmitter.fire({ type: 'finished', suite: this._allTests });
+    this._disposables.push(this._loadFinishedEmitter.event((errorMessage: string | undefined) => {
+      const ev: TestLoadFinishedEvent = { type: 'finished', suite: this._allTests };
+      if (errorMessage) ev.errorMessage = errorMessage;
+      this._testsEmitter.fire(ev);
     }));
 
     this._disposables.push(
@@ -200,19 +201,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._log.error('unsupported test count: ' + inspect(tests));
       throw Error('Unsupported input. Contact');
     }
-    const info = this._allTests.findChildById(tests[0]);
-    if (info === undefined) {
+
+    const testInfo = this._allTests.findTestById(tests[0]);
+
+    if (testInfo === undefined) {
       this._log.error(
         'Not existing id: ' + inspect([tests, this._allTasks], true, 3));
       throw Error('Not existing test id');
     }
-
-    if (!(info instanceof TestInfoBase)) {
-      this._log.info(__filename + ' !(info instanceof TestInfoBase)');
-      throw 'Can\'t choose a group, only a single test.';
-    }
-
-    const testInfo = <TestInfoBase>info;
 
     this._log.info('testInfo: ' + inspect([testInfo, tests]));
 
@@ -257,6 +253,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       return resolveVariables(template, [
         ...this._variableToValue,
+        ["${suitelabel}", testInfo.parent.label],
         ["${suiteLabel}", testInfo.parent.label],
         ["${label}", testInfo.label],
         ["${exec}", testInfo.parent.execPath],
@@ -354,7 +351,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private _getDefaultExecRunningTimeout(config: vscode.WorkspaceConfiguration):
     null | number {
     const r = config.get<null | number>('defaultRunningTimeoutSec', null);
-    return r !== null ? r * 1000 : r;
+    return r !== null && r > 0 ? r * 1000 : null;
   }
 
   private _getGlobalAndDefaultEnvironmentVariables(

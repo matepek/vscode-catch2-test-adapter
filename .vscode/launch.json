@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Extension Tests",
+      "name": "Integration test",
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
@@ -21,7 +21,7 @@
     {
       "type": "extensionHost",
       "request": "launch",
-      "name": "Catch2 adapter",
+      "name": "Manual test",
       "runtimeExecutable": "${execPath}",
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
       "outFiles": ["${workspaceFolder}/out"],

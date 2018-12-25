@@ -53,7 +53,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
   protected abstract _getRunParams(childrenToRun: TestInfoBase[] | 'all'): string[];
 
-  protected abstract _handleProcess(process: ChildProcess, childrenToRun: TestInfoBase[] | 'all'): Promise<void>;
+  protected abstract _handleProcess(runInfo: TestSuiteInfoBaseRunInfo): Promise<void>;
 
   cancel(): void {
     this.allTests.log.info(
@@ -118,7 +118,12 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     const execParams = this._getRunParams(childrenToRun);
 
     this._proc = spawn(this.execPath, execParams, this.execOptions);
-    let process: ChildProcess | undefined = this._proc;
+
+    const runInfo: TestSuiteInfoBaseRunInfo = {
+      process: this._proc,
+      childrenToRun: childrenToRun,
+      timeout: undefined
+    };
 
     this.allTests.log.info('proc started: ' + inspect([this.execPath, execParams]));
 
@@ -127,7 +132,8 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
       if (process === undefined) { return Promise.resolve(); }
       else if (this.allTests.execRunningTimeout !== null
         && Date.now() - startTime > this.allTests.execRunningTimeout) {
-        process.kill();
+        runInfo.process.kill();
+        runInfo.timeout = this.allTests.execRunningTimeout;
         return Promise.resolve();
       } else {
         return promisify(setTimeout)(1000).then(killIfTimout);
@@ -135,7 +141,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     };
     promisify(setTimeout)(1000).then(killIfTimout);
 
-    return this._handleProcess(process, childrenToRun)
+    return this._handleProcess(runInfo)
       .catch((reason: any) => {
         this.allTests.log.error(inspect(reason));
       })
@@ -145,8 +151,33 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
         taskPool.release();
         this._proc = undefined;
-        process = undefined;
       });
+  }
+
+  protected _addChild(test: TestInfoBase) {
+    if (this.children.length == 0) {
+      this.file = test.file;
+      this.line = test.file ? 0 : undefined;
+    } else if (this.file != test.file) {
+      this.file = undefined;
+      this.line = undefined;
+    }
+
+    let i = this.children.findIndex((v: TestInfoBase) => {
+      if (test.file && v.file && test.line && v.line) {
+        const f = test.file.trim().localeCompare(v.file.trim());
+        if (f != 0)
+          return f < 0;
+        else
+          return test.line < v.line;
+      } else {
+        return test.label.trim().localeCompare(v.label.trim()) < 0;
+      }
+    });
+
+    if (i == -1) i = this.children.length;
+
+    this.children.splice(i, 0, test);
   }
 
   protected _sendTestStateEventsWithParent(events: TestEvent[]) {
@@ -182,4 +213,22 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     }
     return filePath;
   }
+
+  findTestById(id: string): TestInfoBase | undefined {
+    for (let i = 0; i < this.children.length; ++i) {
+      if (this.children[i].id === id) return this.children[i];
+    }
+    return undefined;
+  }
+
+  protected _getTimeoutMessage(milisec: number): string {
+    return 'Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": '
+      + milisec / 1000 + ' second(s).\n';
+  }
+}
+
+export interface TestSuiteInfoBaseRunInfo {
+  process: ChildProcess;
+  childrenToRun: TestInfoBase[] | 'all';
+  timeout: number | undefined;
 }
