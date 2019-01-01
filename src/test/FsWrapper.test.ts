@@ -128,6 +128,14 @@ describe('vscode.Uri', function () {
   it('!=', function () {
     assert.ok(vscode.Uri.file(__filename) != vscode.Uri.file(__filename));
   })
+
+  it('normalizes', function () {
+    const parent = path.dirname(__filename);
+    const filename = path.basename(__filename);
+    assert.ok(!parent.endsWith('/') && !parent.endsWith('\\'));
+    assert.strictEqual(path.normalize(vscode.Uri.file(parent + '/a/b/../../' + filename).fsPath),
+      vscode.Uri.file(__filename).fsPath);
+  })
 })
 
 describe('ChildProcessStub', function () {

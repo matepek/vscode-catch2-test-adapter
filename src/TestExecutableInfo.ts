@@ -101,12 +101,10 @@ export class TestExecutableInfo implements vscode.Disposable {
   }
 
   private _createSuiteByUri(file: vscode.Uri): Promise<TestSuiteInfoBase> {
-    const wsUri = this._allTests.workspaceFolder.uri;
 
-    let resolvedLabel = this.name;
-    let resolvedCwd = this.cwd;
-    let resolvedEnv: { [prop: string]: string } = this.env;
+    let varToValue: [string, string][] = [];
     try {
+      const wsUri = this._allTests.workspaceFolder.uri;
       const relPath = path.relative(wsUri.fsPath, file.fsPath);
 
       const filename = path.basename(file.fsPath);
@@ -117,7 +115,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       const ext3Filename = path.extname(base2Filename);
       const base3Filename = path.basename(base2Filename, ext3Filename);
 
-      const varToValue: [string, string][] = [
+      varToValue = [
         ...this._allTests.variableToValue,
         ['${absPath}', file.fsPath],
         ['${relPath}', relPath],
@@ -131,17 +129,30 @@ export class TestExecutableInfo implements vscode.Disposable {
         ['${ext3Filename}', ext3Filename],
         ['${base3Filename}', base3Filename],
       ];
+    } catch (e) { this._allTests.log.error(inspect(e)); }
+
+    let resolvedLabel = this.name;
+    try {
       resolvedLabel = resolveVariables(this.name, varToValue);
+
       if (resolvedLabel.match(/\$\{.*\}/))
-        this._allTests.log.warn(
-          'Possibly unresolved variable: ' + resolvedLabel);
-      resolvedCwd = path.normalize(resolveVariables(this.cwd, varToValue));
+        this._allTests.log.warn('Possibly unresolved variable: ' + resolvedLabel);
+    } catch (e) { this._allTests.log.error(inspect(e)); }
+
+    let resolvedCwd = this.cwd;
+    try {
+      resolvedCwd = resolveVariables(this.cwd, varToValue);
+
       if (resolvedCwd.match(/\$\{.*\}/))
         this._allTests.log.warn('Possibly unresolved variable: ' + resolvedCwd);
+
+      resolvedCwd = path.normalize(vscode.Uri.file(resolvedCwd).fsPath);
+    } catch (e) { this._allTests.log.error(inspect(e)); }
+
+    let resolvedEnv: { [prop: string]: string } = this.env;
+    try {
       resolvedEnv = resolveVariables(this.env, varToValue);
-    } catch (e) {
-      this._allTests.log.error(inspect([e, this]));
-    }
+    } catch (e) { this._allTests.log.error(inspect(e)); }
 
     return TestSuiteInfoBase.determineTestTypeOfExecutable(file.fsPath)
       .then((framework) => {

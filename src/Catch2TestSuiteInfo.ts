@@ -236,21 +236,21 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 					}
 				} while (data.buffer.length > 0 && --invariant > 0);
 				if (invariant == 0) {
-					runInfo.process.kill();
+					runInfo.process && runInfo.process.kill();
 					reject('Possible infinite loop of this extension');
 				}
 			};
 
-			runInfo.process.stdout.on('data', (chunk: Uint8Array) => {
+			runInfo.process!.stdout.on('data', (chunk: Uint8Array) => {
 				const xml = chunk.toLocaleString();
 				processChunk(xml);
 			});
 
-			runInfo.process.on('error', (err: Error) => {
+			runInfo.process!.on('error', (err: Error) => {
 				reject(err);
 			});
 
-			runInfo.process.on('close', (code: number | null, signal: string | null) => {
+			runInfo.process!.on('close', (code: number | null, signal: string | null) => {
 				if (code !== null && code !== undefined)
 					resolve(code);
 				if (signal !== null && signal !== undefined)
@@ -261,7 +261,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 
 		}).catch(
 			(reason: any) => {
-				runInfo.process.kill();
+				runInfo.process && runInfo.process.kill();
 				this.allTests.log.warn(inspect([runInfo, reason, this, data], true, 2));
 				return reason;
 			}).then((codeOrReason: number | string | any) => {

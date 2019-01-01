@@ -1702,6 +1702,79 @@ describe('TestAdapter', function () {
         })
     })
 
+    specify('resolving relative defaultCwd', async function () {
+      this.slow(500);
+      await updateConfig('executables', example1.suite1.execPath);
+      await updateConfig('defaultCwd', 'defaultCwdStr');
+      const adapter = createAdapterAndSubscribe();
+
+      let assertNoError = false;
+      const spawnWithArgs = spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
+      spawnWithArgs.callsFake(function (p: string, args: string[], ops: any) {
+        assert.strictEqual(ops.cwd, path.join(workspaceFolderUri.fsPath, 'defaultCwdStr'));
+        assertNoError = true;
+        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+      });
+
+      const callCount = spawnWithArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
+      assert.ok(assertNoError);
+    })
+
+    specify('resolving absolute defaultCwd', async function () {
+      this.slow(500);
+      const isWin = process.platform === 'win32';
+      await updateConfig('executables', example1.suite1.execPath);
+
+      if (isWin)
+        await updateConfig('defaultCwd', 'C:\\defaultCwdStr');
+      else
+        await updateConfig('defaultCwd', '/defaultCwdStr');
+
+      const adapter = createAdapterAndSubscribe();
+
+      let assertNoError = false;
+      let cwd = '';
+      const spawnWithArgs = spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
+      spawnWithArgs.callsFake(function (p: string, args: string[], ops: any) {
+        cwd = ops.cwd;
+        if (isWin)
+          assert.strictEqual(ops.cwd, 'c:\\defaultCwdStr');
+        else
+          assert.strictEqual(ops.cwd, '/defaultCwdStr');
+        assertNoError = true; // this is necessary because it handles errors
+        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+      });
+
+      const callCount = spawnWithArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
+      assert.ok(assertNoError, cwd);
+    })
+
+    specify('using defaultEnv', async function () {
+      this.slow(500);
+      await updateConfig('executables', example1.suite1.execPath);
+      await updateConfig('defaultEnv', { 'ENVTEST': 'envtest' });
+
+      const adapter = createAdapterAndSubscribe();
+
+      let assertNoError = false;
+      const spawnWithArgs = spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
+      spawnWithArgs.callsFake(function (p: string, args: string[], ops: any) {
+        assert.ok(ops.env.hasOwnProperty('ENVTEST'));
+        assert.equal(ops.env.ENVTEST, 'envtest');
+        assertNoError = true; // this is necessary because it handles errors
+        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+      });
+
+      const callCount = spawnWithArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
+      assert.ok(assertNoError);
+    })
+
     specify('arriving <TestCase> for missing TestInfo', async function () {
       this.slow(500);
       await updateConfig('executables', example1.suite1.execPath);

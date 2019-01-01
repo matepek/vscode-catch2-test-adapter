@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.7]
+
+### Fixed
+
+- a bug related to `defaultCwd` and `defaultEnv` and `executables`'s `cwd`.
+
 ## [2.3.6] - 2018-12-25
 
 ### Added
