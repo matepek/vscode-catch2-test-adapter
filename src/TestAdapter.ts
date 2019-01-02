@@ -402,7 +402,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     let executables: TestExecutableInfo[] = [];
 
-    const configExecs: |undefined | string | string[] | { [prop: string]: any } |
+    const configExecs: undefined | string | string[] | { [prop: string]: any } |
       { [prop: string]: any }[] = config.get('executables');
 
     const createFromObject = (obj: { [prop: string]: any }): TestExecutableInfo => {
@@ -429,7 +429,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     if (typeof configExecs === 'string') {
       if (configExecs.length == 0) return [];
       executables.push(new TestExecutableInfo(
-        allTests, configExecs, configExecs, globalWorkingDirectory, {}));
+        allTests, configExecs, configExecs, globalWorkingDirectory,
+        this._getGlobalAndDefaultEnvironmentVariables(config)));
     } else if (Array.isArray(configExecs)) {
       for (var i = 0; i < configExecs.length; ++i) {
         const configExe = configExecs[i];
@@ -437,8 +438,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           const configExecsName = String(configExe);
           if (configExecsName.length > 0) {
             executables.push(new TestExecutableInfo(
-              allTests, configExecsName, configExecsName,
-              globalWorkingDirectory, {}));
+              allTests, configExecsName, configExecsName, globalWorkingDirectory,
+              this._getGlobalAndDefaultEnvironmentVariables(config)));
           }
         } else {
           try {

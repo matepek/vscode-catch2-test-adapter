@@ -79,7 +79,7 @@ Examples:
 
 ```json
 "catch2TestExplorer.executables": {
-	"name": "${relPath} (${relDirpath}/)",
+	"name": "${filename} (${relDirpath}/)",
 	"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
 	"cwd": "${absDirpath}",
 	"env": {

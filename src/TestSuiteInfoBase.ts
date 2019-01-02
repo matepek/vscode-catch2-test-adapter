@@ -128,18 +128,18 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     this.allTests.log.info('proc started: ' + inspect([this.execPath, execParams]));
 
     const startTime = Date.now();
-    const killIfTimout = (): Promise<void> => {
-      if (process === undefined) { return Promise.resolve(); }
+    const killIfTimeouts = (): Promise<void> => {
+      if (runInfo.process === undefined) { return Promise.resolve(); }
       else if (this.allTests.execRunningTimeout !== null
         && Date.now() - startTime > this.allTests.execRunningTimeout) {
         runInfo.process.kill();
         runInfo.timeout = this.allTests.execRunningTimeout;
         return Promise.resolve();
       } else {
-        return promisify(setTimeout)(1000).then(killIfTimout);
+        return promisify(setTimeout)(1000).then(killIfTimeouts);
       }
     };
-    promisify(setTimeout)(1000).then(killIfTimout);
+    promisify(setTimeout)(1000).then(killIfTimeouts);
 
     return this._handleProcess(runInfo)
       .catch((reason: any) => {
@@ -151,6 +151,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
         taskPool.release();
         this._proc = undefined;
+        runInfo.process = undefined;
       });
   }
 
@@ -209,7 +210,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
         filePath = matchedPath;
       }
     } catch (e) {
-      filePath = path.resolve(this.allTests.workspaceFolder.uri.fsPath, matchedPath);
+      filePath = path.join(this.allTests.workspaceFolder.uri.fsPath, matchedPath);
     }
     return filePath;
   }
@@ -228,7 +229,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 }
 
 export interface TestSuiteInfoBaseRunInfo {
-  process: ChildProcess;
+  process: ChildProcess | undefined;
   childrenToRun: TestInfoBase[] | 'all';
   timeout: number | undefined;
 }
