@@ -11,10 +11,6 @@ This extension allows you to run your [Catch2](https://github.com/catchorg/Catch
 and [Google Test](https://github.com/google/googletest) tests using the
 [Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
 
-**Note**: The Google Test support is experimental and partially tested.
-Endorse my [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/37) if you want more features.
-(Also feature suggestions and pull requests are welcome.)
-
 ## Configuration
 
 | Property                                      | Description                                                                                                                                                                  |

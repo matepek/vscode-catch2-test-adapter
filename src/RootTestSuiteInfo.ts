@@ -23,7 +23,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   private _isDisposed = false;
 
   constructor(
-    public readonly allTasks: QueueGraphNode,
+    private readonly _allTasks: QueueGraphNode,
     public readonly log: util.Log,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
     private readonly _loadFinishedEmitter: vscode.EventEmitter<string | undefined>,
@@ -52,9 +52,9 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   sendLoadEvents(task: (() => Promise<void>)) {
-    return this.allTasks.then(() => {
+    return this._allTasks.then(() => {
       if (this._isDisposed) {
-        return task();
+        return task().catch(() => { });
       } else {
         this._testsEmitter.fire({ type: 'started' });
         return task().then(
@@ -71,7 +71,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   sendTestSuiteStateEventsWithParent(events: (TestSuiteEvent | TestEvent)[]) {
-    this.allTasks.then(() => {
+    this._allTasks.then(() => {
       if (this._isDisposed) return;
 
       const tests =
