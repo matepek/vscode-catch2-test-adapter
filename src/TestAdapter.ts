@@ -401,7 +401,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       { [prop: string]: any }[] = config.get('executables');
 
     const createFromObject = (obj: { [prop: string]: any }): TestExecutableInfo => {
-      const name: string = obj.hasOwnProperty('name') ? obj.name : '${relPath}';
+      const name: string | undefined = obj.hasOwnProperty('name') ? obj.name : undefined;
 
       let pattern: string = '';
       if (obj.hasOwnProperty('pattern') && typeof obj.pattern == 'string')
@@ -424,7 +424,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     if (typeof configExecs === 'string') {
       if (configExecs.length == 0) return [];
       executables.push(new TestExecutableInfo(
-        allTests, configExecs, configExecs, globalWorkingDirectory,
+        allTests, undefined, configExecs, globalWorkingDirectory,
         this._getGlobalAndDefaultEnvironmentVariables(config)));
     } else if (Array.isArray(configExecs)) {
       for (var i = 0; i < configExecs.length; ++i) {
@@ -433,7 +433,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           const configExecsName = String(configExe);
           if (configExecsName.length > 0) {
             executables.push(new TestExecutableInfo(
-              allTests, configExecsName, configExecsName, globalWorkingDirectory,
+              allTests, undefined, configExecsName, globalWorkingDirectory,
               this._getGlobalAndDefaultEnvironmentVariables(config)));
           }
         } else {

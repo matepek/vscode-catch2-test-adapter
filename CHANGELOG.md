@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.9]
+
+### Fixed
+
+- a bug which caused that `files.exlude` were also applied to pattern. Not anymore.
+- a bug which caused to show not file names but patterns in the explorer.
+
 ## [2.3.8] - 2019-01-03
 
 ### Fixed

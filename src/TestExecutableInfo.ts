@@ -14,7 +14,7 @@ import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 
 export class TestExecutableInfo implements vscode.Disposable {
   constructor(
-    private _allTests: RootTestSuiteInfo, public readonly name: string,
+    private _allTests: RootTestSuiteInfo, public readonly name: string | undefined,
     public readonly pattern: string, public readonly cwd: string,
     public readonly env: { [prop: string]: any }) { }
 
@@ -64,7 +64,7 @@ export class TestExecutableInfo implements vscode.Disposable {
           new vscode.RelativePattern(this._allTests.workspaceFolder, pattern);
       try {
         fileUris =
-          await vscode.workspace.findFiles(relativePattern, undefined, 1000);
+          await vscode.workspace.findFiles(relativePattern, null, 1000);
 
         // abs path string or vscode.RelativePattern is required.
         this._watcher = vscode.workspace.createFileSystemWatcher(
@@ -101,12 +101,11 @@ export class TestExecutableInfo implements vscode.Disposable {
   }
 
   private _createSuiteByUri(file: vscode.Uri): Promise<TestSuiteInfoBase> {
+    const wsUri = this._allTests.workspaceFolder.uri;
+    const relPath = path.relative(wsUri.fsPath, file.fsPath);
 
     let varToValue: [string, string][] = [];
     try {
-      const wsUri = this._allTests.workspaceFolder.uri;
-      const relPath = path.relative(wsUri.fsPath, file.fsPath);
-
       const filename = path.basename(file.fsPath);
       const extFilename = path.extname(filename);
       const baseFilename = path.basename(filename, extFilename);
@@ -131,13 +130,15 @@ export class TestExecutableInfo implements vscode.Disposable {
       ];
     } catch (e) { this._allTests.log.error(inspect(e)); }
 
-    let resolvedLabel = this.name;
-    try {
-      resolvedLabel = resolveVariables(this.name, varToValue);
+    let resolvedLabel = relPath;
+    if (this.name) {
+      try {
+        resolvedLabel = resolveVariables(this.name, varToValue);
 
-      if (resolvedLabel.match(/\$\{.*\}/))
-        this._allTests.log.warn('Possibly unresolved variable: ' + resolvedLabel);
-    } catch (e) { this._allTests.log.error(inspect(e)); }
+        if (resolvedLabel.match(/\$\{.*\}/))
+          this._allTests.log.warn('Possibly unresolved variable: ' + resolvedLabel);
+      } catch (e) { this._allTests.log.error(inspect(e)); }
+    }
 
     let resolvedCwd = this.cwd;
     try {
