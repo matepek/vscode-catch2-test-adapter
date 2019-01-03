@@ -45,7 +45,11 @@ If it is an object it can contains the following properties:
 | `cwd`     | (optional) | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                       |
 | `env`     | (optional) | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                               |
 
-Variables which can be used in `name`, `cwd` and `env` of `executables`:
+**Remark**: The `pattern` (or the `executables` used as string or an array of strings)
+can only contains _search-pattern_ if it points somewhere inside of the workspace folder.
+Otherwise it only can point to an executable (No _search-pattern_!).
+
+#### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
 | Variable                | Description                                                                     |
 | ----------------------- | ------------------------------------------------------------------------------- |
@@ -63,7 +67,7 @@ Variables which can be used in `name`, `cwd` and `env` of `executables`:
 | `${workspaceDirectory}` | (You can only guess once.)                                                      |
 | `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                |
 
-Examples:
+#### Examples:
 
 ```json
 "catch2TestExplorer.executables": "dir/test.exe"
