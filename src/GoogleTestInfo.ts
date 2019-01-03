@@ -11,13 +11,14 @@ export class GoogleTestInfo extends TestInfoBase {
 	constructor(
 		id: string | undefined,
 		testNameFull: string,
+		valueParam: string | undefined,
 		file: string | undefined,
 		line: number | undefined,
 		parent: GoogleTestSuiteInfo,
 	) {
 		super(id,
 			testNameFull,
-			testNameFull,
+			testNameFull + (valueParam ? (' # GetParam() = ' + valueParam) : ''),
 			testNameFull.startsWith('DISABLED_') || testNameFull.indexOf('.DISABLED_') != -1,
 			file,
 			line,

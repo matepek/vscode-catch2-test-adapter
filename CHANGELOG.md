@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.3.8]
 
-Just a bit shinier under the hood.
+### Fixed
+
+- a bug related to Google Test framework: `INSTANTIATE_TEST_CASE_P`.
 
 ## [2.3.7] - 2019-001-02
 

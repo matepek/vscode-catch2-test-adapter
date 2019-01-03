@@ -2149,66 +2149,57 @@ For more detailed usage please see the project docs
     readonly execPath =
       vscode.Uri.file(path.join(workspaceFolderUri.path, 'gtest1')).fsPath;
 
-    readonly gtest_list_tests_output = `{
-        "tests": 6,
-        "name": "AllTests",
-        "testsuites": [
-          {
-            "name": "TestCas1",
-            "tests": 2,
-            "testsuite": [
-              {
-                "name": "test1",
-                "file": "gtest.cpp",
-                "line": 11
-              },
-              {
-                "name": "test2",
-                "file": "gtest.cpp",
-                "line": 16
-              }
-            ]
-          },
-          {
-            "name": "TestCas2",
-            "tests": 2,
-            "testsuite": [
-              {
-                "name": "test1",
-                "file": "gtest.cpp",
-                "line": 22
-              },
-              {
-                "name": "test2",
-                "file": "gtest.cpp",
-                "line": 34
-              }
-            ]
-          },
-          {
-            "name": "MockTestCase",
-            "tests": 2,
-            "testsuite": [
-              {
-                "name": "expect1",
-                "file": "gtest.cpp",
-                "line": 56
-              },
-              {
-                "name": "expect2",
-                "file": "gtest.cpp",
-                "line": 64
-              }
-            ]
-          }
-        ]
-      }
-      `;
+    readonly gtest_list_tests_output = [
+      'TestCas1.',
+      '  test1',
+      '  test2',
+      'TestCas2.',
+      '  test1',
+      '  test2',
+      'MockTestCase.',
+      '  expect1',
+      '  expect2',
+      'PrintingFailingParams1/FailingParamTest.',
+      '  Fails1/0  # GetParam() = 2',
+      '  Fails1/1  # GetParam() = 3',
+      '  Fails2/0  # GetParam() = 2',
+      '  Fails2/1  # GetParam() = 3',
+      'PrintingFailingParams2/FailingParamTest.',
+      '  Fails1/0  # GetParam() = 3',
+      '  Fails2/0  # GetParam() = 3',
+      '',
+    ].join(EOL);
+
+    readonly gtest_list_tests_output_xml = `<?xml version="1.0" encoding="UTF-8"?>
+    <testsuites tests="12" name="AllTests">
+      <testsuite name="TestCas1" tests="2">
+        <testcase name="test1" file="gtest.cpp" line="11" />
+        <testcase name="test2" file="gtest.cpp" line="16" />
+      </testsuite>
+      <testsuite name="TestCas2" tests="2">
+        <testcase name="test1" file="gtest.cpp" line="22" />
+        <testcase name="test2" file="gtest.cpp" line="34" />
+      </testsuite>
+      <testsuite name="MockTestCase" tests="2">
+        <testcase name="expect1" file="gtest.cpp" line="67" />
+        <testcase name="expect2" file="gtest.cpp" line="75" />
+      </testsuite>
+      <testsuite name="PrintingFailingParams1/FailingParamTest" tests="4">
+        <testcase name="Fails1/0" value_param="2" file="gtest.cpp" line="41" />
+        <testcase name="Fails1/1" value_param="3" file="gtest.cpp" line="41" />
+        <testcase name="Fails2/0" value_param="2" file="gtest.cpp" line="41" />
+        <testcase name="Fails2/1" value_param="3" file="gtest.cpp" line="41" />
+      </testsuite>
+      <testsuite name="PrintingFailingParams2/FailingParamTest" tests="2">
+        <testcase name="Fails1/0" value_param="3" file="gtest.cpp" line="41" />
+        <testcase name="Fails2/0" value_param="3" file="gtest.cpp" line="41" />
+      </testsuite>
+    </testsuites>`;
 
     readonly outputs: [string[], string][] = [
       [['--help'], 'This program contains tests written using Google Test. Yo'],
       [['--gtest_color=no'], [
-        '[==========] Running 6 tests from 3 test cases.',
+        '[==========] Running 12 tests from 5 test cases.',
         '[----------] Global test environment set-up.',
         '[----------] 2 tests from TestCas1',
         '[ RUN      ] TestCas1.test1',
@@ -2241,7 +2232,7 @@ For more detailed usage please see the project docs
         'Expected: (1) < (1), actual: 1 vs 1',
         'gtest.cpp:29: Failure',
         'Expected: (1) > (1), actual: 1 vs 1',
-        '[  FAILED  ] TestCas2.test1 (0 ms)',
+        '[  FAILED  ] TestCas2.test1 (1 ms)',
         '[ RUN      ] TestCas2.test2',
         'gtest.cpp:32: Failure',
         'Value of: false',
@@ -2251,11 +2242,11 @@ For more detailed usage please see the project docs
         'Expected: magic_func() doesn\'t generate new fatal failures in the current thread.',
         '  Actual: it does.',
         '[  FAILED  ] TestCas2.test2 (0 ms)',
-        '[----------] 2 tests from TestCas2 (0 ms total)',
+        '[----------] 2 tests from TestCas2 (1 ms total)',
         '',
         '[----------] 2 tests from MockTestCase',
         '[ RUN      ] MockTestCase.expect1',
-        'gtest.cpp:59: Failure',
+        'gtest.cpp:70: Failure',
         'Actual function call count doesn\'t match EXPECT_CALL(foo, GetSize())...',
         '         Expected: to be called once',
         '           Actual: never called - unsatisfied and active',
@@ -2267,30 +2258,121 @@ For more detailed usage please see the project docs
         '    Function call: Describe(3)',
         'Google Mock tried the following 1 expectation, but it didn\'t match: ',
         '',
-        'gtest.cpp:67: EXPECT_CALL(foo, Describe(4))...',
+        'gtest.cpp:78: EXPECT_CALL(foo, Describe(4))...',
         '  Expected arg #0: is equal to 4',
         '           Actual: 3',
         '         Expected: to be called once',
         '           Actual: never called - unsatisfied and active',
-        'gtest.cpp:67: Failure',
+        'gtest.cpp:78: Failure',
         'Actual function call count doesn\'t match EXPECT_CALL(foo, Describe(4))...',
         '         Expected: to be called once',
         '           Actual: never called - unsatisfied and active',
         '[  FAILED  ] MockTestCase.expect2 (0 ms)',
         '[----------] 2 tests from MockTestCase (0 ms total)',
         '',
+        '[----------] 4 tests from PrintingFailingParams1/FailingParamTest',
+        '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
+        'gtest.cpp:41: Failure',
+        'Expected equality of these values:',
+        '  1',
+        '  GetParam()',
+        '    Which is: 2',
+        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
+        '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/1',
+        'gtest.cpp:41: Failure',
+        'Expected equality of these values:',
+        '  1',
+        '  GetParam()',
+        '    Which is: 3',
+        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3 (0 ms)',
+        '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/0',
+        'gtest.cpp:42: Failure',
+        'Expected equality of these values:',
+        '  1',
+        '  GetParam()',
+        '    Which is: 2',
+        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2 (1 ms)',
+        '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/1',
+        'gtest.cpp:42: Failure',
+        'Expected equality of these values:',
+        '  1',
+        '  GetParam()',
+        '    Which is: 3',
+        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3 (0 ms)',
+        '[----------] 4 tests from PrintingFailingParams1/FailingParamTest (1 ms total)',
+        '',
+        '[----------] 2 tests from PrintingFailingParams2/FailingParamTest',
+        '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails1/0',
+        'gtest.cpp:41: Failure',
+        'Expected equality of these values:',
+        '  1',
+        '  GetParam()',
+        '    Which is: 3',
+        '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3 (0 ms)',
+        '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails2/0',
+        'gtest.cpp:42: Failure',
+        'Expected equality of these values:',
+        '  1',
+        '  GetParam()',
+        '    Which is: 3',
+        '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3 (0 ms)',
+        '[----------] 2 tests from PrintingFailingParams2/FailingParamTest (0 ms total)',
+        '',
         '[----------] Global test environment tear-down',
-        '[==========] 6 tests from 3 test cases ran. (1 ms total)',
+        '[==========] 12 tests from 5 test cases ran. (2 ms total)',
         '[  PASSED  ] 1 test.',
-        '[  FAILED  ] 5 tests, listed below:',
+        '[  FAILED  ] 11 tests, listed below:',
         '[  FAILED  ] TestCas1.test2',
         '[  FAILED  ] TestCas2.test1',
         '[  FAILED  ] TestCas2.test2',
         '[  FAILED  ] MockTestCase.expect1',
         '[  FAILED  ] MockTestCase.expect2',
+        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2',
+        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3',
+        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2',
+        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3',
+        '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3',
+        '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3',
         '',
-        ' 5 FAILED TESTS',
+        '11 FAILED TESTS',
         ''].join(EOL)],
+      [["--gtest_color=no", "--gtest_filter=TestCas1.test1", "--gtest_also_run_disabled_tests"], [
+        'Note: Google Test filter = TestCas1.test1',
+        '[==========] Running 1 test from 1 test case.',
+        '[----------] Global test environment set-up.',
+        '[----------] 1 test from TestCas1',
+        '[ RUN      ] TestCas1.test1',
+        '[       OK ] TestCas1.test1 (0 ms)',
+        '[----------] 1 test from TestCas1 (0 ms total)',
+        '',
+        '[----------] Global test environment tear-down',
+        '[==========] 1 test from 1 test case ran. (1 ms total)',
+        '[  PASSED  ] 1 test.',
+        '',
+      ].join(EOL)],
+      [["--gtest_color=no", "--gtest_filter=PrintingFailingParams1/FailingParamTest.Fails1/0", "--gtest_also_run_disabled_tests"], [
+        'Note: Google Test filter = PrintingFailingParams1/FailingParamTest.Fails1/0',
+        '[==========] Running 1 test from 1 test case.',
+        '[----------] Global test environment set-up.',
+        '[----------] 1 test from PrintingFailingParams1/FailingParamTest',
+        '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
+        'gtest.cpp:41: Failure',
+        'Expected equality of these values:',
+        '  1',
+        '  GetParam()',
+        '    Which is: 2',
+        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
+        '[----------] 1 test from PrintingFailingParams1/FailingParamTest (0 ms total)',
+        '',
+        '[----------] Global test environment tear-down',
+        '[==========] 1 test from 1 test case ran. (1 ms total)',
+        '[  PASSED  ] 0 tests.',
+        '[  FAILED  ] 1 test, listed below:',
+        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2',
+        '',
+        ' 1 FAILED TEST',
+        '',
+      ].join(EOL)]
     ];
   };
 

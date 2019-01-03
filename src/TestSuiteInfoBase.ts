@@ -117,6 +117,8 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
     const execParams = this._getRunParams(childrenToRun);
 
+    this.allTests.log.info('proc starting: ' + inspect([this.execPath, execParams]));
+
     this._proc = spawn(this.execPath, execParams, this.execOptions);
 
     const runInfo: TestSuiteInfoBaseRunInfo = {
@@ -125,7 +127,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
       timeout: undefined
     };
 
-    this.allTests.log.info('proc started: ' + inspect([this.execPath, execParams]));
+    this.allTests.log.info('proc started');
 
     const startTime = Date.now();
     const killIfTimeouts = (): Promise<void> => {

@@ -22,7 +22,7 @@ about: Create a report to help us improve
 
 - Extension Version [e.g. 22]
 - VS Code Version [e.g. 22]
-- Catch2 Version
+- Catch2/Google Test Version
 - OS Type and Version
 
 **Log** (Attach log. (optional, Set: `catch2TestExplorer.logfile` and reproduce the bug.) _Warning_: Log probably contains file and test names too.)
