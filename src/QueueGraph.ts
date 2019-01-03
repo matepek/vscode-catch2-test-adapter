@@ -18,6 +18,10 @@ export class QueueGraphNode {
     return this._count;
   }
 
+  get length(): number {
+    return this._count;
+  }
+
   then<TResult1, TResult2 = never>(
     task: (() => TResult1 | PromiseLike<TResult1>),
     taskErrorHandler?: ((reason: any) => TResult2 | PromiseLike<TResult2>) |
@@ -41,7 +45,7 @@ export class QueueGraphNode {
           else if (this._handleError)
             return this._handleError(reason);
           else
-            throw reason;
+            throw reason; // fatal: the queue is broken
         });
 
     return current;

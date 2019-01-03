@@ -11,6 +11,7 @@ import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { GoogleTestInfo } from './GoogleTestInfo';
 import * as c2fs from './FsWrapper';
 import { TestSuiteInfoBase, TestSuiteInfoBaseRunInfo } from './TestSuiteInfoBase';
+import { Parser } from 'xml2js';
 
 export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 	children: GoogleTestInfo[] = [];
@@ -35,13 +36,13 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 
 	private _reloadGoogleTests(): Promise<void> {
 		const tmpFilePath = (this.execOptions.cwd || '.')
-			+ '/tmp_gtest_output_' + Math.random().toString(36) + '_.json.tmp';
+			+ '/tmp_gtest_output_' + Math.random().toString(36) + '_.xml.tmp';
 		return c2fs
 			.spawnAsync(
 				this.execPath,
 				[
 					"--gtest_list_tests",
-					"--gtest_output=json:" + tmpFilePath
+					"--gtest_output=xml:" + tmpFilePath
 				],
 				this.execOptions)
 			.then((googleTestListOutput) => {
@@ -50,30 +51,44 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 
 				if (googleTestListOutput.stderr) {
 					this.allTests.log.warn('reloadChildren -> googleTestListOutput.stderr: ' + inspect(googleTestListOutput));
-					this._createGoogleTestInfo(undefined, '!! ' + googleTestListOutput.stderr.split('\n')[0].trim(), undefined, undefined);
+					this._createGoogleTestInfo(undefined, '!! ' + googleTestListOutput.stderr.split('\n')[0].trim(),
+						undefined, undefined, undefined);
 					return;
 				}
 				try {
 					const testOutputStr = fs.readFileSync(tmpFilePath, 'utf8');
-					const testOutputJson = JSON.parse(testOutputStr);
+					let xml: any = undefined;
+					new Parser({ explicitArray: true }).parseString(testOutputStr, (err: any, result: any) => {
+						if (err) {
+							this.allTests.log.error(err.toString());
+							throw err;
+						} else {
+							xml = result;
+						}
+					});
 
 					fs.unlink(tmpFilePath, (err: any) => {
 						this.allTests.log.error('Couldn\'t remove tmpFilePath: ' + tmpFilePath);
 					});
 
-					for (let i = 0; i < testOutputJson.testsuites.length; ++i) {
-						const suiteName = testOutputJson.testsuites[i].name;
-						for (let j = 0; j < testOutputJson.testsuites[i].testsuite.length; j++) {
-							const test = testOutputJson.testsuites[i].testsuite[j];
-							const testNameFull = suiteName + '.' + test.name;
+					for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
+						const suiteName = xml.testsuites.testsuite[i].$.name;
+						for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
+							const test = xml.testsuites.testsuite[i].testcase[j];
+							const testNameFull = suiteName + '.' + test.$.name;
+							let valueParam: string | undefined = undefined;
+							if (test.$.hasOwnProperty('value_param'))
+								valueParam = test.$.value_param;
 
 							const index = oldChildren.findIndex(c => c.testNameFull == testNameFull);
 							this._createGoogleTestInfo(index != -1 ? oldChildren[index].id : undefined,
-								testNameFull, this._findFilePath(test.file), test.line - 1);
+								testNameFull, valueParam, this._findFilePath(test.$.file), test.$.line - 1);
 						}
 					}
 
 				} catch (e) {
+					this.allTests.log.error('Couldn\'t parse output file. It is trying to parse the output: ' + inspect(googleTestListOutput));
+
 					this.children = [];
 
 					let lines = googleTestListOutput.stdout.split(/\r?\n/);
@@ -82,7 +97,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 
 					if (lines.length == 0) throw Error('Wrong test list.');
 
-					for (let i = 1; i < lines.length;) {
+					for (let i = 0; i < lines.length;) {
 						if (lines[i][0] == ' ')
 							this.allTests.log.error(
 								'Wrong test list output format: ' + lines.toString());
@@ -90,11 +105,18 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 						const testClassNameFull = lines[i++];
 
 						while (i < lines.length && lines[i].startsWith('  ')) {
-							const testNameFull = testClassNameFull + lines[i].trim();
+							let testNameFull = testClassNameFull + lines[i].trim();
+							let valueParam: string | undefined = undefined;
+							const getParamStr = '# GetParam() =';
+							const hash = testNameFull.indexOf(getParamStr);
+							if (hash != -1) {
+								valueParam = testNameFull.substr(hash + getParamStr.length).trim();
+								testNameFull = testNameFull.substr(0, hash).trim();
+							}
 
 							const index = oldChildren.findIndex(c => c.testNameFull == testNameFull);
 							this._createGoogleTestInfo(index != -1 ? oldChildren[index].id : undefined,
-								testNameFull, undefined, undefined);
+								testNameFull, valueParam, undefined, undefined);
 							++i;
 						}
 					}
@@ -104,9 +126,10 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 
 	private _createGoogleTestInfo(
 		id: string | undefined, testName: string,
+		valueParam: string | undefined,
 		file: string | undefined, line: number | undefined): GoogleTestInfo {
 		const test =
-			new GoogleTestInfo(id, testName, file, line, this);
+			new GoogleTestInfo(id, testName, valueParam, file, line, this);
 
 		this._addChild(test);
 
@@ -175,7 +198,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 
 						data.buffer = data.buffer.substr(m.index!);
 					} else {
-						const testEndRe = /^(\[       OK \]|\[  FAILED  \]) (.+) \(.+\)$/m;
+						const testEndRe = /^(?:\[       OK \]|\[  FAILED  \]) .+$/m;
 						const m = data.buffer.match(testEndRe);
 						if (m == null) return;
 

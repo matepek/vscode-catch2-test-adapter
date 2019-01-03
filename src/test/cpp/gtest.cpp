@@ -36,6 +36,17 @@ GTEST_TEST(TestCas2, test2) {
   ASSERT_NO_FATAL_FAILURE(magic_func());
 }
 
+class FailingParamTest : public testing::TestWithParam<int> {};
+
+TEST_P(FailingParamTest, Fails1) { EXPECT_EQ(1, GetParam()); }
+TEST_P(FailingParamTest, Fails2) { EXPECT_EQ(1, GetParam()); }
+
+INSTANTIATE_TEST_CASE_P(PrintingFailingParams1, FailingParamTest,
+                        testing::Values(2, 3));
+
+INSTANTIATE_TEST_CASE_P(PrintingFailingParams2, FailingParamTest,
+                        testing::Range(3, 4));
+
 // Google Mock
 
 #include "googletest/googlemock/include/gmock/gmock.h"
