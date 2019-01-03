@@ -112,6 +112,11 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   insertChild(suite: TestSuiteInfoBase): boolean {
     if (this.children.indexOf(suite) != -1) return false;
 
+    // we want to filter the situation when 2 patterns match the same file
+    if (this.children.find((s: TestSuiteInfoBase) => { return suite.execPath == s.execPath; })) {
+      return false;
+    }
+
     let i = this.children.findIndex((v: TestSuiteInfoBase) => {
       return suite.label.trim().localeCompare(v.label.trim()) < 0;
     });

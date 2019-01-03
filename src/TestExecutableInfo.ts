@@ -87,8 +87,9 @@ export class TestExecutableInfo implements vscode.Disposable {
       const file = fileUris[i];
       await this._createSuiteByUri(file).then((suite: TestSuiteInfoBase) => {
         return suite.reloadChildren().then(() => {
-          this._executables.set(file.fsPath, suite);
-          this._allTests.insertChild(suite);
+          if (this._allTests.insertChild(suite)) {
+            this._executables.set(file.fsPath, suite);
+          }
         }, (reason: any) => {
           this._allTests.log.error('Couldn\'t load executable: ' + inspect([reason, suite]));
         });
