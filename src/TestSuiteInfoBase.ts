@@ -97,7 +97,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     if (this._isKill) return Promise.reject(Error('Test was killed.'));
 
     if (!taskPool.acquire()) {
-      return new Promise<void>(resolve => setTimeout(resolve, 64)).then(() => {
+      return new Promise<void>(resolve => setTimeout(resolve, 128)).then(() => {
         return this._runInner(childrenToRun, taskPool);
       });
     }

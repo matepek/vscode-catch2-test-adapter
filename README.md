@@ -83,7 +83,7 @@ Otherwise it only can point to an executable (No _search-pattern_!).
 	"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
 	"cwd": "${absDirpath}",
 	"env": {
-		"ExampleENV1": "You can use variables here too, like ${absName}"
+		"ExampleENV1": "You can use variables here too, like ${absPath}"
 	}
 }
 ```

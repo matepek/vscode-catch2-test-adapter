@@ -32,7 +32,6 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     public readonly testStatesEmitter:
       vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent |
         TestSuiteEvent | TestEvent>,
-    public readonly autorunEmitter: vscode.EventEmitter<void>,
     public readonly variableToValue: [string, string][],
     public isEnabledSourceDecoration: boolean,
     public rngSeed: string | number | null,

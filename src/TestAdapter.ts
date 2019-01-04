@@ -112,7 +112,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._allTests = new RootTestSuiteInfo(
       this._allTasks, this._log, this.workspaceFolder,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
-      this._autorunEmitter, this._variableToValue,
+      this._variableToValue,
       this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
@@ -149,7 +149,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._allTests = new RootTestSuiteInfo(
       this._allTasks, this._log, this.workspaceFolder,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
-      this._autorunEmitter, this._variableToValue,
+      this._variableToValue,
       this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
