@@ -219,8 +219,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const getDebugConfiguration = (): vscode.DebugConfiguration => {
       const config = this._getConfiguration();
 
-      let template =
-        this._getDebugConfigurationTemplate(config);
+      let template = this._getDebugConfigurationTemplate(config);
 
       if (template !== null) {
         //skip
@@ -244,16 +243,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           "cwd": "${cwd}",
           "env": "${envObj}"
         };
-      } else {
+      }
+
+      if (!template) {
         throw 'C2: For debugging \'debugConfigTemplate\' should be set.';
       }
 
-      if (template !== null && !template.hasOwnProperty('name'))
-        template = Object.assign({ 'name': "${label} (${suiteLabel})" }, template);
-      if (template !== null && !template.hasOwnProperty('request'))
-        template = Object.assign({ 'request': "launch" }, template);
-
-      const args = testInfo.getDebugParams(this._getDebugBreakOnFailure(config));
+      template = Object.assign({ 'name': "${label} (${suiteLabel})" }, template);
+      template = Object.assign({ 'request': "launch" }, template);
 
       return resolveVariables(template, [
         ...this._variableToValue,
@@ -261,7 +258,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         ["${suiteLabel}", testInfo.parent.label],
         ["${label}", testInfo.label],
         ["${exec}", testInfo.parent.execPath],
-        ["${args}", args],
+        ["${args}", testInfo.getDebugParams(this._getDebugBreakOnFailure(config))],
         ["${cwd}", testInfo.parent.execOptions.cwd!],
         ["${envObj}", testInfo.parent.execOptions.env!],
       ]);
