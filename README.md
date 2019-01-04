@@ -46,7 +46,7 @@ If it is an object it can contains the following properties:
 | `env`     | (optional) | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                               |
 
 **Remark**: The `pattern` (or the `executables` used as string or an array of strings)
-can only contains _search-pattern_ if it points somewhere inside of the workspace folder.
+can contains _search-pattern_ if it points somewhere inside of the workspace folder.
 Otherwise it only can point to an executable (No _search-pattern_!).
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
