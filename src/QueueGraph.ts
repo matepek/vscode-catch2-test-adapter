@@ -25,7 +25,7 @@ export class QueueGraphNode {
   then<TResult1, TResult2 = never>(
     task: (() => TResult1 | PromiseLike<TResult1>),
     taskErrorHandler?: ((reason: any) => TResult2 | PromiseLike<TResult2>) |
-      undefined | null): Promise<TResult1 | TResult2> {
+      undefined | null): Promise<TResult1> {
     this._count++;
 
     const previous = this._queue;
@@ -35,7 +35,7 @@ export class QueueGraphNode {
       });
     this._queue = current
       .then(
-        (value: TResult1 | PromiseLike<TResult1>) => {
+        (value: TResult1) => {
           this._count--;
         },
         (reason: any) => {

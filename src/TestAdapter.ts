@@ -106,6 +106,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           this._allTests.isNoThrow =
             this._getDefaultNoThrow(this._getConfiguration());
         }
+        if (configChange.affectsConfiguration(
+          'catch2TestExplorer.workerMaxNumber',
+          this.workspaceFolder.uri)) {
+          this._allTests.workerMaxNumber =
+            this._getWorkerMaxNumber(this._getConfiguration());
+        }
       }));
 
     const config = this._getConfiguration();
@@ -117,7 +123,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),
-      this._getDefaultNoThrow(config));
+      this._getDefaultNoThrow(config),
+      this._getWorkerMaxNumber(config)
+    );
   }
 
   dispose() {
@@ -154,7 +162,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),
-      this._getDefaultNoThrow(config));
+      this._getDefaultNoThrow(config),
+      this._getWorkerMaxNumber(config)
+    );
 
     this._testsEmitter.fire(<TestLoadStartedEvent>{ type: 'started' });
 
@@ -186,7 +196,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     return this._allTasks.then(() => {
       return this._allTests
-        .run(tests, this._getWorkerMaxNumber(this._getConfiguration()))
+        .run(tests)
         .catch((reason: any) => {
           this._log.error(inspect(reason));
         });
@@ -332,7 +342,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   private _getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
-    return config.get<number>('workerMaxNumber', 4);
+    return Math.max(1, config.get<number>('workerMaxNumber', 1));
   }
 
   private _getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration):

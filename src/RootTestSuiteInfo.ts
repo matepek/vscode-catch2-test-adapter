@@ -21,6 +21,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly children: TestSuiteInfoBase[] = [];
   private readonly _executables: TestExecutableInfo[] = [];
   private _isDisposed = false;
+  private readonly _taskPool: TaskPool;
 
   constructor(
     private readonly _allTasks: QueueGraphNode,
@@ -38,9 +39,15 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     public execWatchTimeout: number,
     public execRunningTimeout: null | number,
     public isNoThrow: boolean,
+    workerMaxNumber: number,
   ) {
     this.label = workspaceFolder.name + ' (Catch2 and Google Test Explorer)';
     this.id = generateUniqueId();
+    this._taskPool = new TaskPool(workerMaxNumber);
+  }
+
+  set workerMaxNumber(workerMaxNumber: number) {
+    this._taskPool.maxTaskCount = workerMaxNumber;
   }
 
   dispose() {
@@ -143,10 +150,8 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     }
   }
 
-  run(tests: string[], workerMaxNumber: number): Promise<void> {
+  run(tests: string[]): Promise<void> {
     this.testStatesEmitter.fire({ type: 'started', tests: tests });
-
-    const taskPool = new TaskPool(workerMaxNumber);
 
     // everybody should remove what they use from it.
     // and put their children into if they are in it
@@ -161,7 +166,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     const ps: Promise<void>[] = [];
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i];
-      ps.push(child.run(testSet, taskPool));
+      ps.push(child.run(testSet, this._taskPool));
     }
 
     if (testSet.size > 0) {

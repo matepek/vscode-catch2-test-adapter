@@ -89,18 +89,12 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
       if (childrenToRun.length == 0) return Promise.resolve();
     }
 
-    return this._runInner(childrenToRun, taskPool);
+    return taskPool.scheduleTask(() => { return this._runInner(childrenToRun); });
   }
 
-  private _runInner(childrenToRun: TestInfoBase[] | 'all', taskPool: TaskPool):
+  private _runInner(childrenToRun: TestInfoBase[] | 'all'):
     Promise<void> {
     if (this._isKill) return Promise.reject(Error('Test was killed.'));
-
-    if (!taskPool.acquire()) {
-      return new Promise<void>(resolve => setTimeout(resolve, 128)).then(() => {
-        return this._runInner(childrenToRun, taskPool);
-      });
-    }
 
     this.allTests.testStatesEmitter.fire(
       { type: 'suite', suite: this, state: 'running' });
@@ -151,7 +145,6 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
         this.allTests.log.info('proc finished: ' + inspect(this.execPath));
         this.allTests.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
-        taskPool.release();
         this._proc = undefined;
         runInfo.process = undefined;
       });
