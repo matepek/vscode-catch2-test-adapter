@@ -266,7 +266,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 							test: data.currentChild!,
 							state: 'failed',
 						};
-						if (runInfo.timeout !== undefined) {
+						if (runInfo.timeout != undefined) {
 							ev.message = this._getTimeoutMessage(runInfo.timeout);
 						} else {
 							ev.message = 'Fatal error: (Wrong Google Test output.)\nError: ' + inspect(codeOrReason) + '\n';
@@ -277,10 +277,10 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 					}
 				}
 
-				const isTestRemoved = (runInfo.childrenToRun === 'all' &&
-					this.children.filter(c => !c.skipped).length >
-					data.processedTestCases.length) ||
-					(runInfo.childrenToRun !== 'all' && data.processedTestCases.length == 0);
+				const isTestRemoved = (runInfo.timeout == undefined)
+					&& ((runInfo.childrenToRun === 'all'
+						&& this.children.filter(c => !c.skipped).length > data.processedTestCases.length)
+						|| (runInfo.childrenToRun !== 'all' && data.processedTestCases.length == 0));
 
 				if (data.unprocessedTestCases.length > 0 || isTestRemoved) {
 					this.allTests

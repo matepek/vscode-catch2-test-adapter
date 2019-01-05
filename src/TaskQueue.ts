@@ -32,14 +32,9 @@ export class TaskQueue {
         return previous.then(task);
       });
 
-    this._queue = current
-      .then(
-        (value: TResult1) => {
-          this._count--;
-        },
-        (reason: any) => {
-          this._count--;
-        });
+    const decr = () => { this._count--; };
+
+    this._queue = current.then(decr, decr);
 
     return current;
   }
