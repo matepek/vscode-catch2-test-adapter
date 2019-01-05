@@ -3,13 +3,13 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import * as assert from 'assert';
-import {promisify} from 'util';
+import { promisify } from 'util';
 
-import {QueueGraphNode} from '../QueueGraph';
+import { TaskQueue } from '../TaskQueue';
 
-describe('QueueGraphNode', function() {
+describe('TaskQueue', function () {
   async function waitFor(
-      test: Mocha.Context, condition: Function, timeout: number = 1000) {
+    test: Mocha.Context, condition: Function, timeout: number = 1000) {
     const start = Date.now();
     let c = await condition();
     while (!c && (Date.now() - start < timeout || !test.enableTimeouts())) {
@@ -19,7 +19,7 @@ describe('QueueGraphNode', function() {
     return c;
   }
 
-  it('promise practice 1', async function() {
+  it('promise practice 1', async function () {
     let resolve: Function;
     let second = false;
     new Promise(r => {
@@ -36,7 +36,7 @@ describe('QueueGraphNode', function() {
     assert.ok(second);
   });
 
-  it('promise practice 2', async function() {
+  it('promise practice 2', async function () {
     let resolve: Function;
     let second = false;
     const p = new Promise(r => {
@@ -56,16 +56,16 @@ describe('QueueGraphNode', function() {
     assert.ok(second);
   });
 
-  context('example 1', function() {
+  context('example 1', function () {
     /**
      *  node1 <___ node
      *  node2 <___/
      */
-    const node1 = new QueueGraphNode('node1');
-    const node2 = new QueueGraphNode('node2');
-    const nodeD = new QueueGraphNode('nodeD', [node1, node2]);
+    const node1 = new TaskQueue([], 'node1');
+    const node2 = new TaskQueue([], 'node2');
+    const nodeD = new TaskQueue([node1, node2], 'nodeD');
 
-    it('add:depends before', async function() {
+    it('add:depends before', async function () {
       this.slow(150);
       let startD: Function;
       let hasRunDatOnce = false;

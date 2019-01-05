@@ -11,7 +11,7 @@ import * as util from 'vscode-test-adapter-util';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { resolveVariables } from './Helpers';
-import { QueueGraphNode } from './QueueGraph';
+import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
@@ -31,7 +31,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   // because we always want to return with the current allTests suite
   private readonly _loadFinishedEmitter = new vscode.EventEmitter<string | undefined>();
 
-  private _allTasks: QueueGraphNode;
+  private _allTasks: TaskQueue;
   private _allTests: RootTestSuiteInfo;
   private readonly _disposables: vscode.Disposable[] = [];
 
@@ -45,9 +45,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         process.platform, process.version, process.versions, vscode.version
       ]));
 
-    this._allTasks = new QueueGraphNode('TestAdapter', [], (reason: any) => {
-      this._log.error('fatal error: QueueGraphNode(TestAdapter): ' + inspect(this));
-    });
+    this._allTasks = new TaskQueue([], 'TestAdapter');
 
     this._disposables.push(this._testsEmitter);
     this._disposables.push(this._testStatesEmitter);
@@ -106,18 +104,26 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           this._allTests.isNoThrow =
             this._getDefaultNoThrow(this._getConfiguration());
         }
+        if (configChange.affectsConfiguration(
+          'catch2TestExplorer.workerMaxNumber',
+          this.workspaceFolder.uri)) {
+          this._allTests.workerMaxNumber =
+            this._getWorkerMaxNumber(this._getConfiguration());
+        }
       }));
 
     const config = this._getConfiguration();
     this._allTests = new RootTestSuiteInfo(
       this._allTasks, this._log, this.workspaceFolder,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
-      this._autorunEmitter, this._variableToValue,
+      this._variableToValue,
       this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),
-      this._getDefaultNoThrow(config));
+      this._getDefaultNoThrow(config),
+      this._getWorkerMaxNumber(config)
+    );
   }
 
   dispose() {
@@ -144,17 +150,19 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const config = this._getConfiguration();
 
     this._allTests.dispose();
-    this._allTasks = new QueueGraphNode();
+    this._allTasks = new TaskQueue([], 'TestAdapter');
 
     this._allTests = new RootTestSuiteInfo(
       this._allTasks, this._log, this.workspaceFolder,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
-      this._autorunEmitter, this._variableToValue,
+      this._variableToValue,
       this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),
-      this._getDefaultNoThrow(config));
+      this._getDefaultNoThrow(config),
+      this._getWorkerMaxNumber(config)
+    );
 
     this._testsEmitter.fire(<TestLoadStartedEvent>{ type: 'started' });
 
@@ -186,7 +194,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     return this._allTasks.then(() => {
       return this._allTests
-        .run(tests, this._getWorkerMaxNumber(this._getConfiguration()))
+        .run(tests)
         .catch((reason: any) => {
           this._log.error(inspect(reason));
         });
@@ -219,8 +227,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const getDebugConfiguration = (): vscode.DebugConfiguration => {
       const config = this._getConfiguration();
 
-      let template =
-        this._getDebugConfigurationTemplate(config);
+      let template = this._getDebugConfigurationTemplate(config);
 
       if (template !== null) {
         //skip
@@ -244,16 +251,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           "cwd": "${cwd}",
           "env": "${envObj}"
         };
-      } else {
+      }
+
+      if (!template) {
         throw 'C2: For debugging \'debugConfigTemplate\' should be set.';
       }
 
-      if (template !== null && !template.hasOwnProperty('name'))
-        template = Object.assign({ 'name': "${label} (${suiteLabel})" }, template);
-      if (template !== null && !template.hasOwnProperty('request'))
-        template = Object.assign({ 'request': "launch" }, template);
-
-      const args = testInfo.getDebugParams(this._getDebugBreakOnFailure(config));
+      template = Object.assign({ 'name': "${label} (${suiteLabel})" }, template);
+      template = Object.assign({ 'request': "launch" }, template);
 
       return resolveVariables(template, [
         ...this._variableToValue,
@@ -261,7 +266,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         ["${suiteLabel}", testInfo.parent.label],
         ["${label}", testInfo.label],
         ["${exec}", testInfo.parent.execPath],
-        ["${args}", args],
+        ["${args}", testInfo.getDebugParams(this._getDebugBreakOnFailure(config))],
         ["${cwd}", testInfo.parent.execOptions.cwd!],
         ["${envObj}", testInfo.parent.execOptions.env!],
       ]);
@@ -335,7 +340,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   private _getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
-    return config.get<number>('workerMaxNumber', 4);
+    return Math.max(1, config.get<number>('workerMaxNumber', 1));
   }
 
   private _getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration):

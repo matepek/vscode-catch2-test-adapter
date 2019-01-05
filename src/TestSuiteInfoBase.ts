@@ -4,7 +4,8 @@
 
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import * as path from 'path';
-import { promisify, inspect } from 'util';
+import { inspect } from 'util';
+import * as vscode from 'vscode';
 import { TestEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
@@ -89,18 +90,12 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
       if (childrenToRun.length == 0) return Promise.resolve();
     }
 
-    return this._runInner(childrenToRun, taskPool);
+    return taskPool.scheduleTask(() => { return this._runInner(childrenToRun); });
   }
 
-  private _runInner(childrenToRun: TestInfoBase[] | 'all', taskPool: TaskPool):
+  private _runInner(childrenToRun: TestInfoBase[] | 'all'):
     Promise<void> {
     if (this._isKill) return Promise.reject(Error('Test was killed.'));
-
-    if (!taskPool.acquire()) {
-      return new Promise<void>(resolve => setTimeout(resolve, 64)).then(() => {
-        return this._runInner(childrenToRun, taskPool);
-      });
-    }
 
     this.allTests.testStatesEmitter.fire(
       { type: 'suite', suite: this, state: 'running' });
@@ -124,24 +119,44 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     const runInfo: TestSuiteInfoBaseRunInfo = {
       process: this._proc,
       childrenToRun: childrenToRun,
-      timeout: undefined
+      timeout: undefined,
+      timeoutWatcherTrigger: () => { },
     };
 
     this.allTests.log.info('proc started');
+    {
+      const startTime = Date.now();
 
-    const startTime = Date.now();
-    const killIfTimeouts = (): Promise<void> => {
-      if (runInfo.process === undefined) { return Promise.resolve(); }
-      else if (this.allTests.execRunningTimeout !== null
-        && Date.now() - startTime > this.allTests.execRunningTimeout) {
-        runInfo.process.kill();
-        runInfo.timeout = this.allTests.execRunningTimeout;
-        return Promise.resolve();
-      } else {
-        return promisify(setTimeout)(1000).then(killIfTimeouts);
-      }
-    };
-    promisify(setTimeout)(1000).then(killIfTimeouts);
+      const killIfTimeouts = (): Promise<void> => {
+        return new Promise<vscode.Disposable>(resolve => {
+          const conn = this.allTests.onDidExecRunningTimeoutChanged(() => {
+            resolve(conn);
+          });
+
+          runInfo.timeoutWatcherTrigger = () => { resolve(conn); };
+
+          if (this.allTests.execRunningTimeout !== null) {
+            const elapsed = Date.now() - startTime;
+            const left = this.allTests.execRunningTimeout - elapsed;
+            if (left <= 0) resolve(conn);
+            else setTimeout(resolve, left, conn);
+          }
+        }).then((conn: vscode.Disposable) => {
+          conn.dispose();
+          if (runInfo.process === undefined) {
+            return Promise.resolve();
+          } else if (this.allTests.execRunningTimeout !== null
+            && Date.now() - startTime > this.allTests.execRunningTimeout) {
+            runInfo.process.kill();
+            runInfo.timeout = this.allTests.execRunningTimeout;
+            return Promise.resolve();
+          } else {
+            return killIfTimeouts();
+          }
+        });
+      };
+      killIfTimeouts();
+    }
 
     return this._handleProcess(runInfo)
       .catch((reason: any) => {
@@ -151,9 +166,9 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
         this.allTests.log.info('proc finished: ' + inspect(this.execPath));
         this.allTests.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
-        taskPool.release();
         this._proc = undefined;
         runInfo.process = undefined;
+        runInfo.timeoutWatcherTrigger();
       });
   }
 
@@ -234,4 +249,5 @@ export interface TestSuiteInfoBaseRunInfo {
   process: ChildProcess | undefined;
   childrenToRun: TestInfoBase[] | 'all';
   timeout: number | undefined;
+  timeoutWatcherTrigger: () => void;
 }
