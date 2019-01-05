@@ -37,7 +37,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     public isEnabledSourceDecoration: boolean,
     public rngSeed: string | number | null,
     public execWatchTimeout: number,
-    public execRunningTimeout: null | number,
+    private _execRunningTimeout: null | number,
     public isNoThrow: boolean,
     workerMaxNumber: number,
   ) {
@@ -50,8 +50,19 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     this._taskPool.maxTaskCount = workerMaxNumber;
   }
 
+  get execRunningTimeout() { return this._execRunningTimeout; }
+
+  set execRunningTimeout(value: null | number) {
+    this._execRunningTimeout = value;
+    this._execRunningTimeoutChangeEmitter.fire();
+  }
+
+  private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
+  readonly onDidExecRunningTimeoutChanged = this._execRunningTimeoutChangeEmitter.event;
+
   dispose() {
     this._isDisposed = true;
+    this._execRunningTimeoutChangeEmitter.dispose();
     for (let i = 0; i < this._executables.length; i++) {
       this._executables[i].dispose();
     }
