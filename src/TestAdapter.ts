@@ -11,7 +11,7 @@ import * as util from 'vscode-test-adapter-util';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { resolveVariables } from './Helpers';
-import { QueueGraphNode } from './QueueGraph';
+import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
@@ -31,7 +31,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   // because we always want to return with the current allTests suite
   private readonly _loadFinishedEmitter = new vscode.EventEmitter<string | undefined>();
 
-  private _allTasks: QueueGraphNode;
+  private _allTasks: TaskQueue;
   private _allTests: RootTestSuiteInfo;
   private readonly _disposables: vscode.Disposable[] = [];
 
@@ -45,9 +45,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         process.platform, process.version, process.versions, vscode.version
       ]));
 
-    this._allTasks = new QueueGraphNode('TestAdapter', [], (reason: any) => {
-      this._log.error('fatal error: QueueGraphNode(TestAdapter): ' + inspect(this));
-    });
+    this._allTasks = new TaskQueue([], 'TestAdapter');
 
     this._disposables.push(this._testsEmitter);
     this._disposables.push(this._testStatesEmitter);
@@ -152,7 +150,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const config = this._getConfiguration();
 
     this._allTests.dispose();
-    this._allTasks = new QueueGraphNode();
+    this._allTasks = new TaskQueue([], 'TestAdapter');
 
     this._allTests = new RootTestSuiteInfo(
       this._allTasks, this._log, this.workspaceFolder,

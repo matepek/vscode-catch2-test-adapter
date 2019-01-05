@@ -11,7 +11,7 @@ import { TestExecutableInfo } from './TestExecutableInfo'
 import { TestInfoBase } from './TestInfoBase';
 import { TestSuiteInfoBase } from './TestSuiteInfoBase';
 import { generateUniqueId } from './IdGenerator';
-import { QueueGraphNode } from './QueueGraph';
+import { TaskQueue } from './TaskQueue';
 import { TaskPool } from './TaskPool';
 
 export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
@@ -24,7 +24,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   private readonly _taskPool: TaskPool;
 
   constructor(
-    private readonly _allTasks: QueueGraphNode,
+    private readonly _allTasks: TaskQueue,
     public readonly log: util.Log,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
     private readonly _loadFinishedEmitter: vscode.EventEmitter<string | undefined>,
