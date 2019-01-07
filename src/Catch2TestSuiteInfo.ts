@@ -30,7 +30,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 				if (testInfo.type === 'catch2') {
 					this._catch2Version = testInfo.version;
 					if (this._catch2Version[0] > 2 || this._catch2Version[0] < 2)
-						this.allTests.log.warn('Unsupported Cathc2 version: ' + inspect(this._catch2Version));
+						this.allTests.log.warn('Unsupported Cathc2 version: ', this._catch2Version);
 					return this._reloadCatch2Tests();
 				}
 				throw Error('Not a catch2 test executable: ' + this.execPath);
@@ -51,7 +51,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 				this.children = [];
 
 				if (catch2TestListOutput.stderr) {
-					this.allTests.log.warn('reloadChildren -> catch2TestListOutput.stderr: ' + inspect(catch2TestListOutput));
+					this.allTests.log.warn('reloadChildren -> catch2TestListOutput.stderr: ', catch2TestListOutput);
 					this._createCatch2TestInfo(undefined, '!! ' + catch2TestListOutput.stderr.split('\n')[0].trim(), '', [], '', 0);
 					return;
 				}
@@ -181,8 +181,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 							});
 
 						if (data.beforeFirstTestCase) {
-							const ri =
-								data.buffer.match(/<Randomness\s+seed="([0-9]+)"\s*\/?>/);
+							const ri = data.buffer.match(/<Randomness\s+seed="([0-9]+)"\s*\/?>/);
 							if (ri != null && ri.length == 2) {
 								data.rngSeed = Number(ri[1]);
 							}
@@ -195,6 +194,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 						});
 
 						if (data.currentChild !== undefined) {
+							this.allTests.log.info('Test ', data.currentChild.testNameFull, 'has started.');
 							const ev = data.currentChild.getStartEvent();
 							this.allTests.testStatesEmitter.fire(ev);
 						} else {
@@ -210,6 +210,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 						const testCaseXml = data.buffer.substring(0, b + endTestCase.length);
 
 						if (data.currentChild !== undefined) {
+							this.allTests.log.info('Test ', data.currentChild.testNameFull, 'has finished.');
 							try {
 								const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
 									testCaseXml, data.rngSeed);
@@ -221,12 +222,11 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 								data.processedTestCases.push(data.currentChild);
 							} catch (e) {
 								this.allTests.log.error(
-									'parsing and processing test: ' + inspect([data.currentChild.label, testCaseXml]));
+									'parsing and processing test: ', data.currentChild.label, testCaseXml);
 							}
 						} else {
 							this.allTests.log.info(
-								'<TestCase> found without TestInfo: ' + inspect(this, true, 1) +
-								'; ' + testCaseXml);
+								'<TestCase> found without TestInfo: ', this, '; ', testCaseXml);
 							data.unprocessedXmlTestCases.push(testCaseXml);
 						}
 
@@ -262,12 +262,12 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		}).catch(
 			(reason: any) => {
 				runInfo.process && runInfo.process.kill();
-				this.allTests.log.warn(inspect([runInfo, reason, this, data], true, 2));
+				this.allTests.log.warn(runInfo, reason, this, data);
 				return reason;
 			}).then((codeOrReason: number | string | any) => {
 				if (data.inTestCase) {
 					if (data.currentChild !== undefined) {
-						this.allTests.log.warn('data.currentChild !== undefined: ' + inspect(data));
+						this.allTests.log.warn('data.currentChild !== undefined: ', data);
 						const ev: TestEvent = {
 							type: 'test',
 							test: data.currentChild!,
@@ -280,7 +280,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 						}
 						this.allTests.testStatesEmitter.fire(ev);
 					} else {
-						this.allTests.log.warn('data.inTestCase: ' + inspect(data));
+						this.allTests.log.warn('data.inTestCase: ', data);
 					}
 				}
 
@@ -293,7 +293,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 					this.allTests
 						.sendLoadEvents(() => {
 							return this.reloadChildren().catch(e => {
-								this.allTests.log.error('reloading-error: ' + inspect(e));
+								this.allTests.log.error('reloading-error: ', e);
 								// Suite possibly deleted: It is a dead suite.
 							});
 						})

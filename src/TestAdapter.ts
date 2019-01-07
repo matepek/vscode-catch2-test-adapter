@@ -37,13 +37,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
     this._log = new util.Log(
-      'catch2TestExplorer', this.workspaceFolder, 'Test Explorer: ' + this.workspaceFolder.name);
+      'catch2TestExplorer',
+      this.workspaceFolder,
+      'Test Explorer: ' + this.workspaceFolder.name, { showProxy: true, depth: 3 });
     this._disposables.push(this._log);
 
-    this._log.info(
-      'info: ' + inspect([
-        process.platform, process.version, process.versions, vscode.version
-      ]));
+    this._log.info('info: ', process.platform, process.version, process.versions, vscode.version);
 
     this._allTasks = new TaskQueue([], 'TestAdapter');
 
@@ -177,7 +176,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             this._testsEmitter.fire({
               type: 'finished',
               suite: undefined,
-              errorMessage: inspect(e).toString()
+              errorMessage: inspect(e)
             });
           });
     });
@@ -196,7 +195,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       return this._allTests
         .run(tests)
         .catch((reason: any) => {
-          this._log.error(inspect(reason));
+          this._log.error(reason);
         });
     });
   }
@@ -210,19 +209,18 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._log.info('Debugging');
 
     if (tests.length !== 1) {
-      this._log.error('unsupported test count: ' + inspect(tests));
+      this._log.error('unsupported test count: ', tests);
       throw Error('Unsupported input. Contact');
     }
 
     const testInfo = this._allTests.findTestById(tests[0]);
 
     if (testInfo === undefined) {
-      this._log.error(
-        'Not existing id: ' + inspect([tests, this._allTasks], true, 3));
+      this._log.error('Not existing id: ', tests, this._allTasks);
       throw Error('Not existing test id');
     }
 
-    this._log.info('testInfo: ' + inspect([testInfo, tests]));
+    this._log.info('testInfo: ', testInfo, tests);
 
     const getDebugConfiguration = (): vscode.DebugConfiguration => {
       const config = this._getConfiguration();
@@ -273,7 +271,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     };
 
     const debugConfig = getDebugConfiguration();
-    this._log.info('Debug config: ' + inspect(debugConfig));
+    this._log.info('Debug config: ', debugConfig);
 
     return this._allTasks.then(
       () => {
@@ -284,7 +282,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             if (!debugSessionStarted || !currentSession) {
               return Promise.reject(
                 'Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate"' +
-                inspect({ debugSessionStarted: debugSessionStarted, currentSession: currentSession }));
+                + debugSessionStarted + '; ' + currentSession);
             }
 
             this._log.info('debugSessionStarted');
@@ -299,7 +297,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                 });
             });
           }).then(undefined, (reason: any) => {
-            this._log.error(inspect(reason));
+            this._log.error(reason);
             throw reason;
           });
       });
@@ -445,7 +443,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           try {
             executables.push(createFromObject(configExe));
           } catch (e) {
-            this._log.error(inspect(e));
+            this._log.error(e);
           }
         }
       }
@@ -453,7 +451,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       try {
         executables.push(createFromObject(configExecs));
       } catch (e) {
-        this._log.error(inspect(e));
+        this._log.error(e);
       }
     } else {
       throw 'Config error: wrong type: executables';

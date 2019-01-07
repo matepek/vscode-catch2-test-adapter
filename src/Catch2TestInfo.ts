@@ -173,7 +173,7 @@ export class Catch2TestInfo extends TestInfoBase {
 							'-> ' + expr.Expanded.map((x: string) => x.trim()).join('; ')
 					});
 				} catch (error) {
-					this.parent.allTests.log.error(inspect(error));
+					this.parent.allTests.log.error(error);
 				}
 				this._processXmlTagFatalErrorConditions(expr, title, testEvent);
 			}
@@ -194,7 +194,7 @@ export class Catch2TestInfo extends TestInfoBase {
 
 					this._processXmlTagSections(section, title, testEvent);
 				} catch (error) {
-					this.parent.allTests.log.error(inspect(error));
+					this.parent.allTests.log.error(error);
 				}
 			}
 		}
@@ -217,8 +217,8 @@ export class Catch2TestInfo extends TestInfoBase {
 				}
 			}
 			catch (error) {
+				this.parent.allTests.log.error(error);
 				testEvent.message += 'Unknown fatal error: ' + inspect(error);
-				this.parent.allTests.log.error(inspect(error));
 			}
 		}
 	}

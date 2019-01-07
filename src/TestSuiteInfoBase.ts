@@ -4,7 +4,6 @@
 
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import * as path from 'path';
-import { inspect } from 'util';
 import * as vscode from 'vscode';
 import { TestEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
 
@@ -22,8 +21,8 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   file?: string;
   line?: number;
 
-  private _isKill: boolean = false;
-  private _proc: ChildProcess | undefined = undefined;
+  private _killed: boolean = false;
+  private _process: ChildProcess | undefined = undefined;
 
   constructor(
     public readonly origLabel: string,
@@ -57,20 +56,19 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   protected abstract _handleProcess(runInfo: TestSuiteInfoBaseRunInfo): Promise<void>;
 
   cancel(): void {
-    this.allTests.log.info(
-      'canceled: ' + inspect([this.id, this.label, this._proc != undefined]));
+    this.allTests.log.info('canceled: ', this.id, this.label, this._process != undefined);
 
-    this._isKill = true;
+    this._killed = true;
 
-    if (this._proc != undefined) {
-      this._proc.kill();
-      this._proc = undefined;
+    if (this._process != undefined) {
+      this._process.kill();
+      this._process = undefined;
     }
   }
 
   run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
-    this._isKill = false;
-    this._proc = undefined;
+    this._killed = false;
+    this._process = undefined;
 
     let childrenToRun: 'all' | TestInfoBase[] = 'all';
 
@@ -95,7 +93,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
   private _runInner(childrenToRun: TestInfoBase[] | 'all'):
     Promise<void> {
-    if (this._isKill) return Promise.reject(Error('Test was killed.'));
+    if (this._killed) return Promise.reject(Error('Test was killed.'));
 
     this.allTests.testStatesEmitter.fire(
       { type: 'suite', suite: this, state: 'running' });
@@ -112,12 +110,12 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
     const execParams = this._getRunParams(childrenToRun);
 
-    this.allTests.log.info('proc starting: ' + inspect([this.execPath, execParams]));
+    this.allTests.log.info('proc starting: ', this.execPath, execParams);
 
-    this._proc = spawn(this.execPath, execParams, this.execOptions);
+    this._process = spawn(this.execPath, execParams, this.execOptions);
 
     const runInfo: TestSuiteInfoBaseRunInfo = {
-      process: this._proc,
+      process: this._process,
       childrenToRun: childrenToRun,
       timeout: undefined,
       timeoutWatcherTrigger: () => { },
@@ -129,7 +127,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
       const killIfTimeouts = (): Promise<void> => {
         return new Promise<vscode.Disposable>(resolve => {
-          const conn = this.allTests.onDidExecRunningTimeoutChanged(() => {
+          const conn = this.allTests.onDidExecRunningTimeoutChange(() => {
             resolve(conn);
           });
 
@@ -160,13 +158,13 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
     return this._handleProcess(runInfo)
       .catch((reason: any) => {
-        this.allTests.log.error(inspect(reason));
+        this.allTests.log.error(reason);
       })
       .then(() => {
-        this.allTests.log.info('proc finished: ' + inspect(this.execPath));
+        this.allTests.log.info('proc finished: ', this.execPath);
         this.allTests.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
-        this._proc = undefined;
+        this._process = undefined;
         runInfo.process = undefined;
         runInfo.timeoutWatcherTrigger();
       });

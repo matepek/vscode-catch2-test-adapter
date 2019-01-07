@@ -20,7 +20,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly label: string;
   readonly children: TestSuiteInfoBase[] = [];
   private readonly _executables: TestExecutableInfo[] = [];
-  private _isDisposed = false;
+  private _wasDisposed = false;
   private readonly _taskPool: TaskPool;
 
   constructor(
@@ -58,10 +58,10 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
-  readonly onDidExecRunningTimeoutChanged = this._execRunningTimeoutChangeEmitter.event;
+  readonly onDidExecRunningTimeoutChange = this._execRunningTimeoutChangeEmitter.event;
 
   dispose() {
-    this._isDisposed = true;
+    this._wasDisposed = true;
     this._execRunningTimeoutChangeEmitter.dispose();
     for (let i = 0; i < this._executables.length; i++) {
       this._executables[i].dispose();
@@ -70,7 +70,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
 
   sendLoadEvents(task: (() => Promise<void>)) {
     return this._allTasks.then(() => {
-      if (this._isDisposed) {
+      if (this._wasDisposed) {
         return task().catch(() => { });
       } else {
         this._testsEmitter.fire({ type: 'started' });
@@ -79,7 +79,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
             this._loadFinishedEmitter.fire(undefined);
           },
           (reason: any) => {
-            this.log.error(inspect(reason));
+            this.log.error(reason);
             this._loadFinishedEmitter.fire(inspect(reason));
             debugger;
           });
@@ -89,7 +89,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
 
   sendTestSuiteStateEventsWithParent(events: (TestSuiteEvent | TestEvent)[]) {
     this._allTasks.then(() => {
-      if (this._isDisposed) return;
+      if (this._wasDisposed) return;
 
       const tests =
         events.filter(ev => ev.type == 'test' && ev.state == 'running')
@@ -156,7 +156,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
         await executable.load();
         this._executables.push(executable);
       } catch (e) {
-        this.log.error(inspect([e, i, executables]));
+        this.log.error(e, i, executables);
       }
     }
   }
@@ -181,12 +181,12 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     }
 
     if (testSet.size > 0) {
-      this.log.error('Some tests have remained: ' + inspect(testSet));
+      this.log.error('Some tests have remained: ', testSet);
     }
 
     return Promise.all(ps).catch(e => {
       this.testStatesEmitter.fire({ type: 'finished' });
-      this.log.warn(inspect([__filename, e]));
+      this.log.warn(__filename, e);
       throw e;
     }).then(() => {
       this.testStatesEmitter.fire({ type: 'finished' });
