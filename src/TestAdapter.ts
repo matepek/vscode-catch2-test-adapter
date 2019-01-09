@@ -31,20 +31,18 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   // because we always want to return with the current allTests suite
   private readonly _loadFinishedEmitter = new vscode.EventEmitter<string | undefined>();
 
-  private _allTasks: TaskQueue;
-  private _allTests: RootTestSuiteInfo;
+  private _mainTaskQueue: TaskQueue;
+  private _rootSuite: RootTestSuiteInfo;
   private readonly _disposables: vscode.Disposable[] = [];
 
   constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
-    this._log = new util.Log(
-      'catch2TestExplorer',
-      this.workspaceFolder,
+    this._log = new util.Log('catch2TestExplorer', this.workspaceFolder,
       'Test Explorer: ' + this.workspaceFolder.name, { showProxy: true, depth: 3 });
     this._disposables.push(this._log);
 
-    this._log.info('info: ', process.platform, process.version, process.versions, vscode.version);
+    this._log.info('info:', process.platform, process.version, process.versions, vscode.version);
 
-    this._allTasks = new TaskQueue([], 'TestAdapter');
+    this._mainTaskQueue = new TaskQueue([], 'TestAdapter');
 
     this._disposables.push(this._testsEmitter);
     this._disposables.push(this._testStatesEmitter);
@@ -55,7 +53,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       if (errorMessage)
         this._testsEmitter.fire({ type: 'finished', suite: undefined, errorMessage: errorMessage });
       else
-        this._testsEmitter.fire({ type: 'finished', suite: this._allTests });
+        this._testsEmitter.fire({ type: 'finished', suite: this._rootSuite });
     }));
 
     this._disposables.push(
@@ -75,45 +73,45 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         if (configChange.affectsConfiguration(
           'catch2TestExplorer.enableSourceDecoration',
           this.workspaceFolder.uri)) {
-          this._allTests.isEnabledSourceDecoration =
+          this._rootSuite.isEnabledSourceDecoration =
             this._getEnableSourceDecoration(this._getConfiguration());
         }
         if (configChange.affectsConfiguration(
           'catch2TestExplorer.defaultRngSeed',
           this.workspaceFolder.uri)) {
-          this._allTests.rngSeed =
+          this._rootSuite.rngSeed =
             this._getDefaultRngSeed(this._getConfiguration());
           this._autorunEmitter.fire();
         }
         if (configChange.affectsConfiguration(
           'catch2TestExplorer.defaultWatchTimeoutSec',
           this.workspaceFolder.uri)) {
-          this._allTests.execWatchTimeout =
+          this._rootSuite.execWatchTimeout =
             this._getDefaultExecWatchTimeout(this._getConfiguration());
         }
         if (configChange.affectsConfiguration(
           'catch2TestExplorer.defaultRunningTimeoutSec',
           this.workspaceFolder.uri)) {
-          this._allTests.execRunningTimeout =
+          this._rootSuite.execRunningTimeout =
             this._getDefaultExecRunningTimeout(this._getConfiguration());
         }
         if (configChange.affectsConfiguration(
           'catch2TestExplorer.defaultNoThrow',
           this.workspaceFolder.uri)) {
-          this._allTests.isNoThrow =
+          this._rootSuite.isNoThrow =
             this._getDefaultNoThrow(this._getConfiguration());
         }
         if (configChange.affectsConfiguration(
           'catch2TestExplorer.workerMaxNumber',
           this.workspaceFolder.uri)) {
-          this._allTests.workerMaxNumber =
+          this._rootSuite.workerMaxNumber =
             this._getWorkerMaxNumber(this._getConfiguration());
         }
       }));
 
     const config = this._getConfiguration();
-    this._allTests = new RootTestSuiteInfo(
-      this._allTasks, this._log, this.workspaceFolder,
+    this._rootSuite = new RootTestSuiteInfo(
+      this._mainTaskQueue, this._log, this.workspaceFolder,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
       this._variableToValue,
       this._getEnableSourceDecoration(config),
@@ -127,7 +125,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   dispose() {
     this._disposables.forEach(d => d.dispose());
-    this._allTests.dispose();
+    this._rootSuite.dispose();
     this._log.dispose();
   }
 
@@ -148,11 +146,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this.cancel();
     const config = this._getConfiguration();
 
-    this._allTests.dispose();
-    this._allTasks = new TaskQueue([], 'TestAdapter');
+    this._rootSuite.dispose();
+    this._mainTaskQueue = new TaskQueue([], 'TestAdapter');
 
-    this._allTests = new RootTestSuiteInfo(
-      this._allTasks, this._log, this.workspaceFolder,
+    this._rootSuite = new RootTestSuiteInfo(
+      this._mainTaskQueue, this._log, this.workspaceFolder,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
       this._variableToValue,
       this._getEnableSourceDecoration(config),
@@ -165,12 +163,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._testsEmitter.fire(<TestLoadStartedEvent>{ type: 'started' });
 
-    return this._allTasks.then(() => {
-      return this._allTests.load(this._getExecutables(config, this._allTests))
+    return this._mainTaskQueue.then(() => {
+      return this._rootSuite.load(this._getExecutables(config, this._rootSuite))
         .then(
           () => {
             this._testsEmitter.fire(
-              { type: 'finished', suite: this._allTests });
+              { type: 'finished', suite: this._rootSuite });
           },
           (e: any) => {
             this._testsEmitter.fire({
@@ -183,16 +181,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   cancel(): void {
-    this._allTests.cancel();
+    this._rootSuite.cancel();
   }
 
   run(tests: string[]): Promise<void> {
-    if (this._allTasks.size > 0) {
+    if (this._mainTaskQueue.size > 0) {
       this._log.info(__filename + '. Run is busy');
     }
 
-    return this._allTasks.then(() => {
-      return this._allTests
+    return this._mainTaskQueue.then(() => {
+      return this._rootSuite
         .run(tests)
         .catch((reason: any) => {
           this._log.error(reason);
@@ -201,7 +199,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   debug(tests: string[]): Promise<void> {
-    if (this._allTasks.size > 0) {
+    if (this._mainTaskQueue.size > 0) {
       this._log.info(__filename + '. Debug is busy');
       throw 'The adapter is busy. Try it again a bit later.';
     }
@@ -213,10 +211,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       throw Error('Unsupported input. Contact');
     }
 
-    const testInfo = this._allTests.findTestById(tests[0]);
+    const testInfo = this._rootSuite.findTestById(tests[0]);
 
     if (testInfo === undefined) {
-      this._log.error('Not existing id: ', tests, this._allTasks);
+      this._log.error('Not existing id: ', tests, this._mainTaskQueue);
       throw Error('Not existing test id');
     }
 
@@ -273,7 +271,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const debugConfig = getDebugConfiguration();
     this._log.info('Debug config: ', debugConfig);
 
-    return this._allTasks.then(
+    return this._mainTaskQueue.then(
       () => {
         return vscode.debug.startDebugging(this.workspaceFolder, debugConfig)
           .then((debugSessionStarted: boolean) => {

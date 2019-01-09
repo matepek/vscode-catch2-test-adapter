@@ -24,7 +24,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   private readonly _taskPool: TaskPool;
 
   constructor(
-    private readonly _allTasks: TaskQueue,
+    private readonly _mainTaskQueue: TaskQueue,
     public readonly log: util.Log,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
     private readonly _loadFinishedEmitter: vscode.EventEmitter<string | undefined>,
@@ -58,7 +58,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
-  readonly onDidExecRunningTimeoutChange = this._execRunningTimeoutChangeEmitter.event;
+  readonly onDidChangeExecRunningTimeout = this._execRunningTimeoutChangeEmitter.event;
 
   dispose() {
     this._wasDisposed = true;
@@ -69,7 +69,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   sendLoadEvents(task: (() => Promise<void>)) {
-    return this._allTasks.then(() => {
+    return this._mainTaskQueue.then(() => {
       if (this._wasDisposed) {
         return task().catch(() => { });
       } else {
@@ -88,7 +88,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   sendTestSuiteStateEventsWithParent(events: (TestSuiteEvent | TestEvent)[]) {
-    this._allTasks.then(() => {
+    this._mainTaskQueue.then(() => {
       if (this._wasDisposed) return;
 
       const tests =

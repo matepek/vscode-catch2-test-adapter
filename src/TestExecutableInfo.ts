@@ -14,9 +14,12 @@ import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 
 export class TestExecutableInfo implements vscode.Disposable {
   constructor(
-    private _allTests: RootTestSuiteInfo, public readonly name: string | undefined,
-    public readonly pattern: string, public readonly cwd: string,
-    public readonly env: { [prop: string]: any }) { }
+    private _rootSuite: RootTestSuiteInfo,
+    private readonly _name: string | undefined,
+    private readonly _pattern: string,
+    private readonly _cwd: string,
+    private readonly _env: { [prop: string]: any }
+  ) { }
 
   private _disposables: vscode.Disposable[] = [];
   private _watcher: vscode.FileSystemWatcher | undefined = undefined;
@@ -34,9 +37,9 @@ export class TestExecutableInfo implements vscode.Disposable {
   }
 
   async load(): Promise<void> {
-    const wsUri = this._allTests.workspaceFolder.uri;
+    const wsUri = this._rootSuite.workspaceFolder.uri;
     const pattern =
-      this.pattern.startsWith('./') ? this.pattern.substr(2) : this.pattern;
+      this._pattern.startsWith('./') ? this._pattern.substr(2) : this._pattern;
     const isAbsolute = path.isAbsolute(pattern);
     const absPattern = isAbsolute ? path.normalize(pattern) :
       path.resolve(wsUri.fsPath, pattern);
@@ -45,12 +48,12 @@ export class TestExecutableInfo implements vscode.Disposable {
     const isPartOfWs = !relativeToWs.startsWith('..');
 
     if (isAbsolute && isPartOfWs)
-      this._allTests.log.info(
+      this._rootSuite.log.info(
         'Absolute path is used for workspace directory: ' +
         inspect(this, true, 0));
-    if (this.pattern.indexOf('\\') != -1)
-      this._allTests.log.warn(
-        'Pattern contains backslash character: ' + this.pattern);
+    if (this._pattern.indexOf('\\') != -1)
+      this._rootSuite.log.warn(
+        'Pattern contains backslash character: ' + this._pattern);
 
     let fileUris: vscode.Uri[] = [];
 
@@ -58,10 +61,10 @@ export class TestExecutableInfo implements vscode.Disposable {
       let relativePattern: vscode.RelativePattern;
       if (isAbsolute)
         relativePattern = new vscode.RelativePattern(
-          this._allTests.workspaceFolder, relativeToWs);
+          this._rootSuite.workspaceFolder, relativeToWs);
       else
         relativePattern =
-          new vscode.RelativePattern(this._allTests.workspaceFolder, pattern);
+          new vscode.RelativePattern(this._rootSuite.workspaceFolder, pattern);
       try {
         fileUris =
           await vscode.workspace.findFiles(relativePattern, null, 1000);
@@ -77,7 +80,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         this._disposables.push(
           this._watcher.onDidDelete(this._handleDelete, this));
       } catch (e) {
-        this._allTests.log.error(inspect([e, this]));
+        this._rootSuite.log.error(inspect([e, this]));
       }
     } else {
       fileUris.push(absPatternAsUri);
@@ -87,14 +90,14 @@ export class TestExecutableInfo implements vscode.Disposable {
       const file = fileUris[i];
       await this._createSuiteByUri(file).then((suite: TestSuiteInfoBase) => {
         return suite.reloadChildren().then(() => {
-          if (this._allTests.insertChild(suite)) {
+          if (this._rootSuite.insertChild(suite)) {
             this._executables.set(file.fsPath, suite);
           }
         }, (reason: any) => {
-          this._allTests.log.error('Couldn\'t load executable: ' + inspect([reason, suite]));
+          this._rootSuite.log.error('Couldn\'t load executable: ' + inspect([reason, suite]));
         });
       }, (reason: any) => {
-        this._allTests.log.info('Not a test executable: ' + file.fsPath);
+        this._rootSuite.log.info('Not a test executable: ' + file.fsPath);
       });
     }
 
@@ -102,7 +105,7 @@ export class TestExecutableInfo implements vscode.Disposable {
   }
 
   private _createSuiteByUri(file: vscode.Uri): Promise<TestSuiteInfoBase> {
-    const wsUri = this._allTests.workspaceFolder.uri;
+    const wsUri = this._rootSuite.workspaceFolder.uri;
     const relPath = path.relative(wsUri.fsPath, file.fsPath);
 
     let varToValue: [string, string][] = [];
@@ -116,7 +119,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       const base3Filename = path.basename(base2Filename, ext3Filename);
 
       varToValue = [
-        ...this._allTests.variableToValue,
+        ...this._rootSuite.variableToValue,
         ['${absPath}', file.fsPath],
         ['${relPath}', relPath],
         ['${absDirpath}', path.dirname(file.fsPath)],
@@ -129,36 +132,36 @@ export class TestExecutableInfo implements vscode.Disposable {
         ['${ext3Filename}', ext3Filename],
         ['${base3Filename}', base3Filename],
       ];
-    } catch (e) { this._allTests.log.error(inspect(e)); }
+    } catch (e) { this._rootSuite.log.error(inspect(e)); }
 
     let resolvedLabel = relPath;
-    if (this.name) {
+    if (this._name) {
       try {
-        resolvedLabel = resolveVariables(this.name, varToValue);
+        resolvedLabel = resolveVariables(this._name, varToValue);
 
         if (resolvedLabel.match(/\$\{.*\}/))
-          this._allTests.log.warn('Possibly unresolved variable: ' + resolvedLabel);
-      } catch (e) { this._allTests.log.error(inspect(e)); }
+          this._rootSuite.log.warn('Possibly unresolved variable: ' + resolvedLabel);
+      } catch (e) { this._rootSuite.log.error(inspect(e)); }
     }
 
-    let resolvedCwd = this.cwd;
+    let resolvedCwd = this._cwd;
     try {
-      resolvedCwd = resolveVariables(this.cwd, varToValue);
+      resolvedCwd = resolveVariables(this._cwd, varToValue);
 
       if (resolvedCwd.match(/\$\{.*\}/))
-        this._allTests.log.warn('Possibly unresolved variable: ' + resolvedCwd);
+        this._rootSuite.log.warn('Possibly unresolved variable: ' + resolvedCwd);
 
       resolvedCwd = path.normalize(vscode.Uri.file(resolvedCwd).fsPath);
-    } catch (e) { this._allTests.log.error(inspect(e)); }
+    } catch (e) { this._rootSuite.log.error(inspect(e)); }
 
-    let resolvedEnv: { [prop: string]: string } = this.env;
+    let resolvedEnv: { [prop: string]: string } = this._env;
     try {
-      resolvedEnv = resolveVariables(this.env, varToValue);
-    } catch (e) { this._allTests.log.error(inspect(e)); }
+      resolvedEnv = resolveVariables(this._env, varToValue);
+    } catch (e) { this._rootSuite.log.error(inspect(e)); }
 
     return TestSuiteInfoBase.determineTestTypeOfExecutable(file.fsPath)
       .then((framework) => {
-        return new TestSuiteInfoFactory(resolvedLabel, this._allTests,
+        return new TestSuiteInfoFactory(resolvedLabel, this._rootSuite,
           file.fsPath, { cwd: resolvedCwd, env: resolvedEnv }).create(framework);
       });
   }
@@ -172,16 +175,16 @@ export class TestExecutableInfo implements vscode.Disposable {
     const x = (suite: TestSuiteInfoBase, exists: boolean, delay: number): Promise<void> => {
       let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
       if (lastEventArrivedAt === undefined) {
-        this._allTests.log.error('assert in ' + __filename);
+        this._rootSuite.log.error('assert in ' + __filename);
         debugger;
         return Promise.resolve();
-      } else if (Date.now() - lastEventArrivedAt! > this._allTests.execWatchTimeout) {
-        this._allTests.log.info('refresh timeout: ' + uri.fsPath);
+      } else if (Date.now() - lastEventArrivedAt! > this._rootSuite.execWatchTimeout) {
+        this._rootSuite.log.info('refresh timeout: ' + uri.fsPath);
         this._lastEventArrivedAt.delete(uri.fsPath);
-        if (this._allTests.hasChild(suite)) {
-          return this._allTests.sendLoadEvents(() => {
+        if (this._rootSuite.hasChild(suite)) {
+          return this._rootSuite.sendLoadEvents(() => {
             this._executables.delete(uri.fsPath);
-            this._allTests.removeChild(suite);
+            this._rootSuite.removeChild(suite);
             return Promise.resolve();
           });
         } else {
@@ -191,8 +194,8 @@ export class TestExecutableInfo implements vscode.Disposable {
         // note: here we reload children outside start-finished event
         // it seems ok now, but maybe it is a problem, if insertChild == false
         return suite.reloadChildren().then(() => {
-          return this._allTests.sendLoadEvents(() => {
-            if (this._allTests.insertChild(suite)) {
+          return this._rootSuite.sendLoadEvents(() => {
+            if (this._rootSuite.insertChild(suite)) {
               this._executables.set(uri.fsPath, suite);
               this._uniquifySuiteNames();
             }
@@ -200,7 +203,7 @@ export class TestExecutableInfo implements vscode.Disposable {
             return Promise.resolve();
           });
         }, (reason: any) => {
-          this._allTests.log.warn(
+          this._rootSuite.log.warn(
             'Problem under reloadChildren: ' + inspect([reason, uri.fsPath, suite]));
           return x(suite, false, Math.min(delay * 2, 2000));
         });
@@ -217,11 +220,11 @@ export class TestExecutableInfo implements vscode.Disposable {
     let suite = this._executables.get(uri.fsPath);
 
     if (suite == undefined) {
-      this._allTests.log.info('new suite: ' + uri.fsPath);
+      this._rootSuite.log.info('new suite: ' + uri.fsPath);
       this._createSuiteByUri(uri).then((s: TestSuiteInfoBase) => {
         x(s, false, 64);
       }, (reason: any) => {
-        this._allTests.log.info('couldn\'t add: ' + uri.fsPath);
+        this._rootSuite.log.info('couldn\'t add: ' + uri.fsPath);
       });
     } else {
       x(suite!, false, 64);
@@ -229,17 +232,17 @@ export class TestExecutableInfo implements vscode.Disposable {
   }
 
   private _handleCreate(uri: vscode.Uri) {
-    this._allTests.log.info('create event: ' + uri.fsPath);
+    this._rootSuite.log.info('create event: ' + uri.fsPath);
     return this._handleEverything(uri);
   }
 
   private _handleChange(uri: vscode.Uri) {
-    this._allTests.log.info('change event: ' + uri.fsPath);
+    this._rootSuite.log.info('change event: ' + uri.fsPath);
     return this._handleEverything(uri);
   }
 
   private _handleDelete(uri: vscode.Uri) {
-    this._allTests.log.info('delete event: ' + uri.fsPath);
+    this._rootSuite.log.info('delete event: ' + uri.fsPath);
     return this._handleEverything(uri);
   }
 

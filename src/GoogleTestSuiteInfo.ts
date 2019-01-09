@@ -191,7 +191,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 						});
 
 						if (data.currentChild !== undefined) {
-							this.allTests.log.info('Test ', data.currentChild.testNameFull, 'has started.');
+							this.allTests.log.info('Test', data.currentChild.testNameFull, 'has started.');
 							const ev = data.currentChild.getStartEvent();
 							this.allTests.testStatesEmitter.fire(ev);
 						} else {

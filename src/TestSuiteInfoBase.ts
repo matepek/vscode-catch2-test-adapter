@@ -127,7 +127,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
       const killIfTimeouts = (): Promise<void> => {
         return new Promise<vscode.Disposable>(resolve => {
-          const conn = this.allTests.onDidExecRunningTimeoutChange(() => {
+          const conn = this.allTests.onDidChangeExecRunningTimeout(() => {
             resolve(conn);
           });
 
@@ -161,7 +161,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
         this.allTests.log.error(reason);
       })
       .then(() => {
-        this.allTests.log.info('proc finished: ', this.execPath);
+        this.allTests.log.info('proc finished:', this.execPath);
         this.allTests.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
         this._process = undefined;
