@@ -5,7 +5,6 @@
 import { inspect } from 'util';
 import * as vscode from 'vscode';
 import { TestEvent, TestInfo, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
-import * as util from 'vscode-test-adapter-util';
 
 import { TestExecutableInfo } from './TestExecutableInfo'
 import { TestInfoBase } from './TestInfoBase';
@@ -13,6 +12,7 @@ import { TestSuiteInfoBase } from './TestSuiteInfoBase';
 import { generateUniqueId } from './IdGenerator';
 import { TaskQueue } from './TaskQueue';
 import { TaskPool } from './TaskPool';
+import { SharedVariables } from './SharedVariables';
 
 export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly type: 'suite' = 'suite';
@@ -23,17 +23,14 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   private _wasDisposed = false;
   private readonly _taskPool: TaskPool;
 
-  constructor(
+  constructor(private readonly _shared: SharedVariables,
     private readonly _mainTaskQueue: TaskQueue,
-    public readonly log: util.Log,
-    public readonly workspaceFolder: vscode.WorkspaceFolder,
     private readonly _loadFinishedEmitter: vscode.EventEmitter<string | undefined>,
     private readonly _testsEmitter:
       vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>,
     public readonly testStatesEmitter:
       vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent |
         TestSuiteEvent | TestEvent>,
-    public readonly variableToValue: [string, string][],
     public isEnabledSourceDecoration: boolean,
     public rngSeed: string | number | null,
     public execWatchTimeout: number,
@@ -41,7 +38,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     public isNoThrow: boolean,
     workerMaxNumber: number,
   ) {
-    this.label = workspaceFolder.name + ' (Catch2 and Google Test Explorer)';
+    this.label = this._shared.workspaceFolder.name + ' (Catch2 and Google Test Explorer)';
     this.id = generateUniqueId();
     this._taskPool = new TaskPool(workerMaxNumber);
   }
@@ -79,7 +76,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
             this._loadFinishedEmitter.fire(undefined);
           },
           (reason: any) => {
-            this.log.error(reason);
+            this._shared.log.error(reason);
             this._loadFinishedEmitter.fire(inspect(reason));
             debugger;
           });
@@ -156,7 +153,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
         await executable.load();
         this._executables.push(executable);
       } catch (e) {
-        this.log.error(e, i, executables);
+        this._shared.log.error(e, i, executables);
       }
     }
   }
@@ -181,12 +178,12 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     }
 
     if (testSet.size > 0) {
-      this.log.error('Some tests have remained: ', testSet);
+      this._shared.log.error('Some tests have remained: ', testSet);
     }
 
     return Promise.all(ps).catch(e => {
       this.testStatesEmitter.fire({ type: 'finished' });
-      this.log.warn(__filename, e);
+      this._shared.log.warn(__filename, e);
       throw e;
     }).then(() => {
       this.testStatesEmitter.fire({ type: 'finished' });

@@ -11,17 +11,19 @@ import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { Catch2TestInfo } from './Catch2TestInfo';
 import * as c2fs from './FsWrapper';
 import { TestSuiteInfoBase, TestSuiteInfoBaseRunInfo } from './TestSuiteInfoBase';
+import { SharedVariables } from './SharedVariables';
 
 export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 	children: Catch2TestInfo[] = [];
 
 	constructor(
+		shared: SharedVariables,
 		origLabel: string,
 		allTests: RootTestSuiteInfo,
 		execPath: string,
 		execOptions: SpawnOptions,
 		private _catch2Version: [number, number, number] | undefined) {
-		super(origLabel, allTests, execPath, execOptions);
+		super(shared, origLabel, allTests, execPath, execOptions);
 	}
 
 	reloadChildren(): Promise<void> {
@@ -30,7 +32,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 				if (testInfo.type === 'catch2') {
 					this._catch2Version = testInfo.version;
 					if (this._catch2Version[0] > 2 || this._catch2Version[0] < 2)
-						this.allTests.log.warn('Unsupported Cathc2 version: ', this._catch2Version);
+						this._shared.log.warn('Unsupported Cathc2 version: ', this._catch2Version);
 					return this._reloadCatch2Tests();
 				}
 				throw Error('Not a catch2 test executable: ' + this.execPath);
@@ -51,7 +53,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 				this.children = [];
 
 				if (catch2TestListOutput.stderr) {
-					this.allTests.log.warn('reloadChildren -> catch2TestListOutput.stderr: ', catch2TestListOutput);
+					this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr: ', catch2TestListOutput);
 					this._createCatch2TestInfo(undefined, '!! ' + catch2TestListOutput.stderr.split('\n')[0].trim(), '', [], '', 0);
 					return;
 				}
@@ -65,7 +67,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 				// first line: 'Matching test cases:'
 				for (let i = 1; i < lines.length - 1;) {
 					if (lines[i][0] != ' ')
-						this.allTests.log.error(
+						this._shared.log.error(
 							'Wrong test list output format: ' + lines.toString());
 
 					const testNameFull = lines[i++].substr(2);
@@ -107,7 +109,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		id: string | undefined, testName: string, description: string,
 		tags: string[], file: string, line: number): Catch2TestInfo {
 		const test =
-			new Catch2TestInfo(id, testName, description, tags, file, line, this);
+			new Catch2TestInfo(this._shared, id, testName, description, tags, file, line, this);
 
 		this._addChild(test);
 
@@ -131,11 +133,11 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		execParams.push('--durations')
 		execParams.push('yes');
 
-		if (this.allTests.isNoThrow) execParams.push('--nothrow');
+		if (this.rootSuite.isNoThrow) execParams.push('--nothrow');
 
-		if (this.allTests.rngSeed !== null) {
+		if (this.rootSuite.rngSeed !== null) {
 			execParams.push('--rng-seed');
-			execParams.push(this.allTests.rngSeed.toString());
+			execParams.push(this.rootSuite.rngSeed.toString());
 		}
 
 		return execParams;
@@ -173,7 +175,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 						new xml2js.Parser({ explicitArray: true })
 							.parseString(m[0] + '</TestCase>', (err: any, result: any) => {
 								if (err) {
-									this.allTests.log.error(err.toString());
+									this._shared.log.error(err.toString());
 									throw err;
 								} else {
 									name = result.TestCase.$.name;
@@ -194,11 +196,11 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 						});
 
 						if (data.currentChild !== undefined) {
-							this.allTests.log.info('Test', data.currentChild.testNameFull, 'has started.');
+							this._shared.log.info('Test', data.currentChild.testNameFull, 'has started.');
 							const ev = data.currentChild.getStartEvent();
-							this.allTests.testStatesEmitter.fire(ev);
+							this.rootSuite.testStatesEmitter.fire(ev);
 						} else {
-							this.allTests.log.error('TestCase not found in children: ' + name);
+							this._shared.log.error('TestCase not found in children: ' + name);
 						}
 
 						data.buffer = data.buffer.substr(b);
@@ -210,22 +212,22 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 						const testCaseXml = data.buffer.substring(0, b + endTestCase.length);
 
 						if (data.currentChild !== undefined) {
-							this.allTests.log.info('Test ', data.currentChild.testNameFull, 'has finished.');
+							this._shared.log.info('Test ', data.currentChild.testNameFull, 'has finished.');
 							try {
 								const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
 									testCaseXml, data.rngSeed);
-								if (!this.allTests.isEnabledSourceDecoration)
+								if (!this.rootSuite.isEnabledSourceDecoration)
 									ev.decorations = undefined;
 								if (runInfo.timeout)
 									ev.message = this._getTimeoutMessage(runInfo.timeout);
-								this.allTests.testStatesEmitter.fire(ev);
+								this.rootSuite.testStatesEmitter.fire(ev);
 								data.processedTestCases.push(data.currentChild);
 							} catch (e) {
-								this.allTests.log.error(
+								this._shared.log.error(
 									'parsing and processing test: ', data.currentChild.label, testCaseXml);
 							}
 						} else {
-							this.allTests.log.info(
+							this._shared.log.info(
 								'<TestCase> found without TestInfo: ', this, '; ', testCaseXml);
 							data.unprocessedXmlTestCases.push(testCaseXml);
 						}
@@ -262,12 +264,12 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		}).catch(
 			(reason: any) => {
 				runInfo.process && runInfo.process.kill();
-				this.allTests.log.warn(runInfo, reason, this, data);
+				this._shared.log.warn(runInfo, reason, this, data);
 				return reason;
 			}).then((codeOrReason: number | string | any) => {
 				if (data.inTestCase) {
 					if (data.currentChild !== undefined) {
-						this.allTests.log.warn('data.currentChild !== undefined: ', data);
+						this._shared.log.warn('data.currentChild !== undefined: ', data);
 						const ev: TestEvent = {
 							type: 'test',
 							test: data.currentChild!,
@@ -278,9 +280,9 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 						} else {
 							ev.message = 'Fatal error: (Wrong Catch2 xml output.)\nError: ' + inspect(codeOrReason) + '\n';
 						}
-						this.allTests.testStatesEmitter.fire(ev);
+						this.rootSuite.testStatesEmitter.fire(ev);
 					} else {
-						this.allTests.log.warn('data.inTestCase: ', data);
+						this._shared.log.warn('data.inTestCase: ', data);
 					}
 				}
 
@@ -290,10 +292,10 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 					(runInfo.childrenToRun !== 'all' && data.processedTestCases.length == 0);
 
 				if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
-					this.allTests
+					this.rootSuite
 						.sendLoadEvents(() => {
 							return this.reloadChildren().catch(e => {
-								this.allTests.log.error('reloading-error: ', e);
+								this._shared.log.error('reloading-error: ', e);
 								// Suite possibly deleted: It is a dead suite.
 							});
 						})
@@ -313,7 +315,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 									.parseString(
 										m[0] + '</TestCase>', (err: any, result: any) => {
 											if (err) {
-												this.allTests.log.error(err.toString());
+												this._shared.log.error(err.toString());
 											} else {
 												name = result.TestCase.$.name;
 											}
@@ -332,7 +334,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 									events.push(currentChild.getStartEvent());
 									events.push(ev);
 								} catch (e) {
-									this.allTests.log.error('parsing and processing test: ' + testCaseXml);
+									this._shared.log.error('parsing and processing test: ' + testCaseXml);
 								}
 							}
 							events.length && this._sendTestStateEventsWithParent(events);

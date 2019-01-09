@@ -9,9 +9,11 @@ import { EOL } from 'os';
 import { Catch2TestSuiteInfo } from './Catch2TestSuiteInfo';
 import { TestInfoBase } from './TestInfoBase';
 import { inspect } from 'util';
+import { SharedVariables } from './SharedVariables';
 
 export class Catch2TestInfo extends TestInfoBase {
 	constructor(
+		shared: SharedVariables,
 		id: string | undefined,
 		testNameFull: string,
 		description: string,
@@ -20,7 +22,8 @@ export class Catch2TestInfo extends TestInfoBase {
 		line: number,
 		parent: Catch2TestSuiteInfo,
 	) {
-		super(id,
+		super(shared,
+			id,
 			testNameFull,
 			testNameFull + (tags.length > 0 ? ' ' + tags.join('') : ''),
 			tags.some((v: string) => { return v.startsWith('[.') || v == '[hide]'; }) || testNameFull.startsWith('./'),
@@ -173,7 +176,7 @@ export class Catch2TestInfo extends TestInfoBase {
 							'-> ' + expr.Expanded.map((x: string) => x.trim()).join('; ')
 					});
 				} catch (error) {
-					this.parent.allTests.log.error(error);
+					this._shared.log.error(error);
 				}
 				this._processXmlTagFatalErrorConditions(expr, title, testEvent);
 			}
@@ -194,7 +197,7 @@ export class Catch2TestInfo extends TestInfoBase {
 
 					this._processXmlTagSections(section, title, testEvent);
 				} catch (error) {
-					this.parent.allTests.log.error(error);
+					this._shared.log.error(error);
 				}
 			}
 		}
@@ -217,7 +220,7 @@ export class Catch2TestInfo extends TestInfoBase {
 				}
 			}
 			catch (error) {
-				this.parent.allTests.log.error(error);
+				this._shared.log.error(error);
 				testEvent.message += 'Unknown fatal error: ' + inspect(error);
 			}
 		}

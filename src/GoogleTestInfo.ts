@@ -6,9 +6,11 @@ import { TestEvent } from 'vscode-test-adapter-api';
 
 import { GoogleTestSuiteInfo } from './GoogleTestSuiteInfo';
 import { TestInfoBase } from './TestInfoBase';
+import { SharedVariables } from './SharedVariables';
 
 export class GoogleTestInfo extends TestInfoBase {
 	constructor(
+		shared: SharedVariables,
 		id: string | undefined,
 		testNameFull: string,
 		valueParam: string | undefined,
@@ -16,7 +18,8 @@ export class GoogleTestInfo extends TestInfoBase {
 		line: number | undefined,
 		parent: GoogleTestSuiteInfo,
 	) {
-		super(id,
+		super(shared,
+			id,
 			testNameFull,
 			testNameFull + (valueParam ? (' # GetParam() = ' + valueParam) : ''),
 			testNameFull.startsWith('DISABLED_') || testNameFull.indexOf('.DISABLED_') != -1,

@@ -13,6 +13,7 @@ import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { resolveVariables } from './Helpers';
 import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
+import { SharedVariables } from './SharedVariables';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: util.Log;
@@ -31,6 +32,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   // because we always want to return with the current allTests suite
   private readonly _loadFinishedEmitter = new vscode.EventEmitter<string | undefined>();
 
+  private _shared: SharedVariables;
   private _mainTaskQueue: TaskQueue;
   private _rootSuite: RootTestSuiteInfo;
   private readonly _disposables: vscode.Disposable[] = [];
@@ -110,10 +112,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }));
 
     const config = this._getConfiguration();
-    this._rootSuite = new RootTestSuiteInfo(
-      this._mainTaskQueue, this._log, this.workspaceFolder,
+
+    this._shared = new SharedVariables(this._log, this.workspaceFolder);
+
+    this._rootSuite = new RootTestSuiteInfo(this._shared,
+      this._mainTaskQueue,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
-      this._variableToValue,
       this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
@@ -149,10 +153,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._rootSuite.dispose();
     this._mainTaskQueue = new TaskQueue([], 'TestAdapter');
 
-    this._rootSuite = new RootTestSuiteInfo(
-      this._mainTaskQueue, this._log, this.workspaceFolder,
+    this._rootSuite = new RootTestSuiteInfo(this._shared,
+      this._mainTaskQueue,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
-      this._variableToValue,
       this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
@@ -393,7 +396,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private _getExecutables(
     config: vscode.WorkspaceConfiguration,
-    allTests: RootTestSuiteInfo): TestExecutableInfo[] {
+    rootSuite: RootTestSuiteInfo): TestExecutableInfo[] {
     const globalWorkingDirectory = this._getDefaultCwd(config);
 
     let executables: TestExecutableInfo[] = [];
@@ -419,23 +422,23 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         this._getGlobalAndCurrentEnvironmentVariables(obj.env) :
         this._getGlobalAndDefaultEnvironmentVariables(config);
 
-      return new TestExecutableInfo(allTests, name, pattern, cwd, env);
+      return new TestExecutableInfo(this._shared, rootSuite, name, pattern, cwd, env, this._variableToValue);
     };
 
     if (typeof configExecs === 'string') {
       if (configExecs.length == 0) return [];
-      executables.push(new TestExecutableInfo(
-        allTests, undefined, configExecs, globalWorkingDirectory,
-        this._getGlobalAndDefaultEnvironmentVariables(config)));
+      executables.push(new TestExecutableInfo(this._shared,
+        rootSuite, undefined, configExecs, globalWorkingDirectory,
+        this._getGlobalAndDefaultEnvironmentVariables(config), this._variableToValue));
     } else if (Array.isArray(configExecs)) {
       for (var i = 0; i < configExecs.length; ++i) {
         const configExe = configExecs[i];
         if (typeof configExe == 'string') {
           const configExecsName = String(configExe);
           if (configExecsName.length > 0) {
-            executables.push(new TestExecutableInfo(
-              allTests, undefined, configExecsName, globalWorkingDirectory,
-              this._getGlobalAndDefaultEnvironmentVariables(config)));
+            executables.push(new TestExecutableInfo(this._shared,
+              rootSuite, undefined, configExecsName, globalWorkingDirectory,
+              this._getGlobalAndDefaultEnvironmentVariables(config), this._variableToValue));
           }
         } else {
           try {
