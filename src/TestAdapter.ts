@@ -75,6 +75,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._shared = new SharedVariables(
       this._log,
       this.workspaceFolder,
+      this._testStatesEmitter,
       this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
@@ -126,7 +127,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._rootSuite = new RootTestSuiteInfo(this._shared,
       this._mainTaskQueue,
-      this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
+      this._loadFinishedEmitter, this._testsEmitter,
       this._getWorkerMaxNumber(config)
     );
   }
@@ -159,7 +160,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._rootSuite = new RootTestSuiteInfo(this._shared,
       this._mainTaskQueue,
-      this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
+      this._loadFinishedEmitter, this._testsEmitter,
       this._getWorkerMaxNumber(config)
     );
 

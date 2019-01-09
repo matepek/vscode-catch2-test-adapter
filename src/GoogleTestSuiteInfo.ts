@@ -194,7 +194,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 						if (data.currentChild !== undefined) {
 							this._shared.log.info('Test', data.currentChild.testNameFull, 'has started.');
 							const ev = data.currentChild.getStartEvent();
-							this.rootSuite.testStatesEmitter.fire(ev);
+							this._shared.testStatesEmitter.fire(ev);
 						} else {
 							this._shared.log.warn('TestCase not found in children: ' + testNameFull);
 						}
@@ -215,7 +215,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 									ev.decorations = undefined;
 								if (runInfo.timeout)
 									ev.message = this._getTimeoutMessage(runInfo.timeout);
-								this.rootSuite.testStatesEmitter.fire(ev);
+								this._shared.testStatesEmitter.fire(ev);
 								data.processedTestCases.push(data.currentChild);
 							} catch (e) {
 								this._shared.log.error(
@@ -274,7 +274,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 						} else {
 							ev.message = 'Fatal error: (Wrong Google Test output.)\nError: ' + inspect(codeOrReason) + '\n';
 						}
-						this.rootSuite.testStatesEmitter.fire(ev);
+						this._shared.testStatesEmitter.fire(ev);
 					} else {
 						this._shared.log.warn('data.inTestCase: ', data);
 					}

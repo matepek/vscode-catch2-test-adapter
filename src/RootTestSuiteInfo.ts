@@ -4,7 +4,7 @@
 
 import { inspect } from 'util';
 import * as vscode from 'vscode';
-import { TestEvent, TestInfo, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
+import { TestEvent, TestInfo, TestLoadFinishedEvent, TestLoadStartedEvent, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
 
 import { TestExecutableInfo } from './TestExecutableInfo'
 import { TestInfoBase } from './TestInfoBase';
@@ -28,9 +28,6 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     private readonly _loadFinishedEmitter: vscode.EventEmitter<string | undefined>,
     private readonly _testsEmitter:
       vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>,
-    public readonly testStatesEmitter:
-      vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent |
-        TestSuiteEvent | TestEvent>,
     workerMaxNumber: number,
   ) {
     this.label = this._shared.workspaceFolder.name + ' (Catch2 and Google Test Explorer)';
@@ -45,9 +42,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
 
   dispose() {
     this._wasDisposed = true;
-    for (let i = 0; i < this._executables.length; i++) {
-      this._executables[i].dispose();
-    }
+    this._executables.forEach(e => e.dispose());
   }
 
   sendLoadEvents(task: (() => Promise<void>)) {
@@ -77,13 +72,13 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
         events.filter(ev => ev.type == 'test' && ev.state == 'running')
           .map(ev => (<TestInfo>((<TestEvent>ev).test)).id);
 
-      this.testStatesEmitter.fire({ type: 'started', tests: tests });
+      this._shared.testStatesEmitter.fire({ type: 'started', tests: tests });
 
       for (let i = 0; i < events.length; i++) {
-        this.testStatesEmitter.fire(events[i]);
+        this._shared.testStatesEmitter.fire(events[i]);
       }
 
-      this.testStatesEmitter.fire({ type: 'finished' });
+      this._shared.testStatesEmitter.fire({ type: 'finished' });
     });
   }
 
@@ -144,7 +139,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   run(tests: string[]): Promise<void> {
-    this.testStatesEmitter.fire({ type: 'started', tests: tests });
+    this._shared.testStatesEmitter.fire({ type: 'started', tests: tests });
 
     // everybody should remove what they use from it.
     // and put their children into if they are in it
@@ -167,11 +162,11 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     }
 
     return Promise.all(ps).catch(e => {
-      this.testStatesEmitter.fire({ type: 'finished' });
+      this._shared.testStatesEmitter.fire({ type: 'finished' });
       this._shared.log.warn(__filename, e);
       throw e;
     }).then(() => {
-      this.testStatesEmitter.fire({ type: 'finished' });
+      this._shared.testStatesEmitter.fire({ type: 'finished' });
     });
   }
 }

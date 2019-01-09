@@ -4,6 +4,7 @@
 
 import { Log } from "vscode-test-adapter-util";
 import * as vscode from 'vscode';
+import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
 
 
 export class SharedVariables implements vscode.Disposable {
@@ -12,6 +13,7 @@ export class SharedVariables implements vscode.Disposable {
 	constructor(
 		public readonly log: Log,
 		public readonly workspaceFolder: vscode.WorkspaceFolder,
+		public readonly testStatesEmitter: vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent>,
 		public isEnabledSourceDecoration: boolean,
 		public rngSeed: string | number | null,
 		public execWatchTimeout: number,

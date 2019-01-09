@@ -28,7 +28,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   constructor(
     protected readonly _shared: SharedVariables,
     public readonly origLabel: string,
-    public readonly rootSuite: RootTestSuiteInfo,
+    protected readonly rootSuite: RootTestSuiteInfo,
     public readonly execPath: string,
     public readonly execOptions: SpawnOptions) {
     this.label = origLabel;
@@ -97,15 +97,15 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     Promise<void> {
     if (this._killed) return Promise.reject(Error('Test was killed.'));
 
-    this.rootSuite.testStatesEmitter.fire(
+    this._shared.testStatesEmitter.fire(
       { type: 'suite', suite: this, state: 'running' });
 
     if (childrenToRun === 'all') {
       for (let i = 0; i < this.children.length; i++) {
         const c = this.children[i];
         if (c.skipped) {
-          this.rootSuite.testStatesEmitter.fire(c.getStartEvent());
-          this.rootSuite.testStatesEmitter.fire(c.getSkippedEvent());
+          this._shared.testStatesEmitter.fire(c.getStartEvent());
+          this._shared.testStatesEmitter.fire(c.getSkippedEvent());
         }
       }
     }
@@ -164,7 +164,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
       })
       .then(() => {
         this._shared.log.info('proc finished:', this.execPath);
-        this.rootSuite.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
+        this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
         this._process = undefined;
         runInfo.process = undefined;
