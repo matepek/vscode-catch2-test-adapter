@@ -32,17 +32,14 @@ export class TestExecutableInfo implements vscode.Disposable {
     > = new Map();
 
   dispose() {
-    for (let i = 0; i < this._disposables.length; i++)
-      this._disposables[i].dispose();
+    this._disposables.forEach(d => d.dispose());
   }
 
   async load(): Promise<void> {
     const wsUri = this._rootSuite.workspaceFolder.uri;
-    const pattern =
-      this._pattern.startsWith('./') ? this._pattern.substr(2) : this._pattern;
-    const isAbsolute = path.isAbsolute(pattern);
-    const absPattern = isAbsolute ? path.normalize(pattern) :
-      path.resolve(wsUri.fsPath, pattern);
+    const isAbsolute = path.isAbsolute(this._pattern);
+    const absPattern = isAbsolute ? path.normalize(this._pattern) :
+      path.join(wsUri.fsPath, this._pattern);
     const absPatternAsUri = vscode.Uri.file(absPattern);
     const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
     const isPartOfWs = !relativeToWs.startsWith('..');
@@ -58,16 +55,9 @@ export class TestExecutableInfo implements vscode.Disposable {
     let fileUris: vscode.Uri[] = [];
 
     if (isPartOfWs) {
-      let relativePattern: vscode.RelativePattern;
-      if (isAbsolute)
-        relativePattern = new vscode.RelativePattern(
-          this._rootSuite.workspaceFolder, relativeToWs);
-      else
-        relativePattern =
-          new vscode.RelativePattern(this._rootSuite.workspaceFolder, pattern);
+      const relativePattern = new vscode.RelativePattern(this._rootSuite.workspaceFolder, relativeToWs);
       try {
-        fileUris =
-          await vscode.workspace.findFiles(relativePattern, null, 1000);
+        fileUris = await vscode.workspace.findFiles(relativePattern, null, 1000);
 
         // abs path string or vscode.RelativePattern is required.
         this._watcher = vscode.workspace.createFileSystemWatcher(

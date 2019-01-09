@@ -141,7 +141,7 @@ describe('TestAdapter', function () {
     if (adapter) {
       adapter.dispose();
       await waitFor(context, () => {
-        return (<any>adapter)._allTasks._count == 0;
+        return (<any>adapter)._mainTaskQueue._count == 0;
       });
     }
     testsEventsConnection && testsEventsConnection.dispose();
@@ -242,31 +242,31 @@ describe('TestAdapter', function () {
 
     it('enableSourceDecoration', function () {
       return updateConfig('enableSourceDecoration', false).then(function () {
-        assert.ok(!(<any>adapter)._allTests.isEnabledSourceDecoration);
+        assert.ok(!(<any>adapter)._rootSuite.isEnabledSourceDecoration);
       });
     })
 
     it('defaultRngSeed', function () {
       return updateConfig('defaultRngSeed', 987).then(function () {
-        assert.equal((<any>adapter)._allTests.rngSeed, 987);
+        assert.equal((<any>adapter)._rootSuite.rngSeed, 987);
       });
     })
 
     it('defaultWatchTimeoutSec', function () {
       return updateConfig('defaultWatchTimeoutSec', 9876).then(function () {
-        assert.equal((<any>adapter)._allTests.execWatchTimeout, 9876000);
+        assert.equal((<any>adapter)._rootSuite.execWatchTimeout, 9876000);
       });
     })
 
     it('defaultRunningTimeoutSec', function () {
       return updateConfig('defaultRunningTimeoutSec', 8765).then(function () {
-        assert.equal((<any>adapter)._allTests.execRunningTimeout, 8765000);
+        assert.equal((<any>adapter)._rootSuite.execRunningTimeout, 8765000);
       });
     })
 
     it('defaultNoThrow', function () {
       return updateConfig('defaultNoThrow', true).then(function () {
-        assert.equal((<any>adapter)._allTests.isNoThrow, true);
+        assert.equal((<any>adapter)._rootSuite.isNoThrow, true);
       });
     })
   })
