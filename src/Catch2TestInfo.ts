@@ -5,28 +5,33 @@
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { EOL } from 'os';
+import { SpawnOptions } from 'child_process';
 
-import { Catch2TestSuiteInfo } from './Catch2TestSuiteInfo';
 import { TestInfoBase } from './TestInfoBase';
 import { inspect } from 'util';
+import { SharedVariables } from './SharedVariables';
 
 export class Catch2TestInfo extends TestInfoBase {
 	constructor(
+		shared: SharedVariables,
 		id: string | undefined,
 		testNameFull: string,
 		description: string,
 		tags: string[],
 		file: string,
 		line: number,
-		parent: Catch2TestSuiteInfo,
+		execPath: string,
+		execOptions: SpawnOptions,
 	) {
-		super(id,
+		super(shared,
+			id,
 			testNameFull,
 			testNameFull + (tags.length > 0 ? ' ' + tags.join('') : ''),
 			tags.some((v: string) => { return v.startsWith('[.') || v == '[hide]'; }) || testNameFull.startsWith('./'),
 			file,
 			line,
-			parent);
+			execPath,
+			execOptions);
 	}
 
 	getEscapedTestName(): string {
@@ -173,7 +178,7 @@ export class Catch2TestInfo extends TestInfoBase {
 							'-> ' + expr.Expanded.map((x: string) => x.trim()).join('; ')
 					});
 				} catch (error) {
-					this.parent.allTests.log.error(error);
+					this._shared.log.error(error);
 				}
 				this._processXmlTagFatalErrorConditions(expr, title, testEvent);
 			}
@@ -194,7 +199,7 @@ export class Catch2TestInfo extends TestInfoBase {
 
 					this._processXmlTagSections(section, title, testEvent);
 				} catch (error) {
-					this.parent.allTests.log.error(error);
+					this._shared.log.error(error);
 				}
 			}
 		}
@@ -217,7 +222,7 @@ export class Catch2TestInfo extends TestInfoBase {
 				}
 			}
 			catch (error) {
-				this.parent.allTests.log.error(error);
+				this._shared.log.error(error);
 				testEvent.message += 'Unknown fatal error: ' + inspect(error);
 			}
 		}

@@ -49,7 +49,7 @@
     "entities": "^1.1.2",
     "tslib": "^1.9.3",
     "vscode-test-adapter-api": "^1.1.0",
-    "vscode-test-adapter-util": "^0.6.0",
+    "vscode-test-adapter-util": "^0.6.1",
     "xml2js": "^0.4.19"
   },
   "devDependencies": {

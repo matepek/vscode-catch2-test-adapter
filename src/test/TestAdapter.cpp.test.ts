@@ -111,7 +111,7 @@ describe('TestAdapter.cpp', function () {
     while (!(c = await condition()) &&
       (Date.now() - start < timeout || !context.enableTimeouts()))
       await promisify(setTimeout)(10);
-    assert.ok(c);
+    assert.ok(c, condition.toString());
   }
 
   function copy(from: string, to: string) {
@@ -249,29 +249,31 @@ describe('TestAdapter.cpp', function () {
       await copy('../suite1.exe', 'out/suite1.exe');
 
       await waitFor(this, () => {
-        return root.children.length == 1;
-      }, 2000);
+        return root.children.length > 0;
+      });
+      assert.strictEqual(root.children.length, 1);
+
       await waitFor(this, () => {
         return autorunCounter == 0;
-      }, 2000);
+      });
 
       await copy('../suite2.exe', 'out/sub/suite2X.exe');
 
       await waitFor(this, () => {
         return root.children.length == 2;
-      }, 2000);
+      });
       await waitFor(this, () => {
         return autorunCounter == 0;
-      }, 2000);
+      });
 
       await copy('../suite2.exe', 'out/sub/suite2.exe');
 
       await waitFor(this, () => {
         return root.children.length == 3;
-      }, 2000);
+      });
       await waitFor(this, () => {
         return autorunCounter == 0;
-      }, 2000);
+      });
 
       await updateConfig('defaultWatchTimeoutSec', 1);
 

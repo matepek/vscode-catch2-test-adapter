@@ -25,7 +25,8 @@ export class TaskQueue {
     task: (() => TResult1 | PromiseLike<TResult1>)): Promise<TResult1> {
     this._count++;
 
-    const depends = this._depends.map(v => v._queue).concat(this._queue);
+    const depends = this._depends.map(v => v._queue);
+    depends.push(this._queue);
 
     const current = Promise.all(depends).then(task);
 

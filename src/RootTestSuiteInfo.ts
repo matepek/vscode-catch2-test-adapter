@@ -2,17 +2,15 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { inspect } from 'util';
 import * as vscode from 'vscode';
-import { TestEvent, TestInfo, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
-import * as util from 'vscode-test-adapter-util';
+import { TestSuiteInfo } from 'vscode-test-adapter-api';
 
 import { TestExecutableInfo } from './TestExecutableInfo'
 import { TestInfoBase } from './TestInfoBase';
 import { TestSuiteInfoBase } from './TestSuiteInfoBase';
 import { generateUniqueId } from './IdGenerator';
-import { TaskQueue } from './TaskQueue';
 import { TaskPool } from './TaskPool';
+import { SharedVariables } from './SharedVariables';
 
 export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly type: 'suite' = 'suite';
@@ -20,28 +18,12 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly label: string;
   readonly children: TestSuiteInfoBase[] = [];
   private readonly _executables: TestExecutableInfo[] = [];
-  private _wasDisposed = false;
   private readonly _taskPool: TaskPool;
 
-  constructor(
-    private readonly _allTasks: TaskQueue,
-    public readonly log: util.Log,
-    public readonly workspaceFolder: vscode.WorkspaceFolder,
-    private readonly _loadFinishedEmitter: vscode.EventEmitter<string | undefined>,
-    private readonly _testsEmitter:
-      vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>,
-    public readonly testStatesEmitter:
-      vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent |
-        TestSuiteEvent | TestEvent>,
-    public readonly variableToValue: [string, string][],
-    public isEnabledSourceDecoration: boolean,
-    public rngSeed: string | number | null,
-    public execWatchTimeout: number,
-    private _execRunningTimeout: null | number,
-    public isNoThrow: boolean,
+  constructor(private readonly _shared: SharedVariables,
     workerMaxNumber: number,
   ) {
-    this.label = workspaceFolder.name + ' (Catch2 and Google Test Explorer)';
+    this.label = this._shared.workspaceFolder.name + ' (Catch2 and Google Test Explorer)';
     this.id = generateUniqueId();
     this._taskPool = new TaskPool(workerMaxNumber);
   }
@@ -50,59 +32,8 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     this._taskPool.maxTaskCount = workerMaxNumber;
   }
 
-  get execRunningTimeout() { return this._execRunningTimeout; }
-
-  set execRunningTimeout(value: null | number) {
-    this._execRunningTimeout = value;
-    this._execRunningTimeoutChangeEmitter.fire();
-  }
-
-  private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
-  readonly onDidExecRunningTimeoutChange = this._execRunningTimeoutChangeEmitter.event;
-
   dispose() {
-    this._wasDisposed = true;
-    this._execRunningTimeoutChangeEmitter.dispose();
-    for (let i = 0; i < this._executables.length; i++) {
-      this._executables[i].dispose();
-    }
-  }
-
-  sendLoadEvents(task: (() => Promise<void>)) {
-    return this._allTasks.then(() => {
-      if (this._wasDisposed) {
-        return task().catch(() => { });
-      } else {
-        this._testsEmitter.fire({ type: 'started' });
-        return task().then(
-          () => {
-            this._loadFinishedEmitter.fire(undefined);
-          },
-          (reason: any) => {
-            this.log.error(reason);
-            this._loadFinishedEmitter.fire(inspect(reason));
-            debugger;
-          });
-      }
-    });
-  }
-
-  sendTestSuiteStateEventsWithParent(events: (TestSuiteEvent | TestEvent)[]) {
-    this._allTasks.then(() => {
-      if (this._wasDisposed) return;
-
-      const tests =
-        events.filter(ev => ev.type == 'test' && ev.state == 'running')
-          .map(ev => (<TestInfo>((<TestEvent>ev).test)).id);
-
-      this.testStatesEmitter.fire({ type: 'started', tests: tests });
-
-      for (let i = 0; i < events.length; i++) {
-        this.testStatesEmitter.fire(events[i]);
-      }
-
-      this.testStatesEmitter.fire({ type: 'finished' });
-    });
+    this._executables.forEach(e => e.dispose());
   }
 
   removeChild(child: TestSuiteInfoBase): boolean {
@@ -114,10 +45,10 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     return false;
   }
 
-  findTestById(id: string): TestInfoBase | undefined {
+  findRouteToTestById(id: string): (TestSuiteInfoBase | TestInfoBase)[] | undefined {
     for (let i = 0; i < this.children.length; ++i) {
-      const test = this.children[i].findTestById(id);
-      if (test) return test;
+      const res = this.children[i].findRouteToTestById(id);
+      if (res) return res;
     }
     return undefined;
   }
@@ -156,13 +87,13 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
         await executable.load();
         this._executables.push(executable);
       } catch (e) {
-        this.log.error(e, i, executables);
+        this._shared.log.error(e, i, executables);
       }
     }
   }
 
   run(tests: string[]): Promise<void> {
-    this.testStatesEmitter.fire({ type: 'started', tests: tests });
+    this._shared.testStatesEmitter.fire({ type: 'started', tests: tests });
 
     // everybody should remove what they use from it.
     // and put their children into if they are in it
@@ -181,15 +112,15 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     }
 
     if (testSet.size > 0) {
-      this.log.error('Some tests have remained: ', testSet);
+      this._shared.log.error('Some tests have remained: ', testSet);
     }
 
     return Promise.all(ps).catch(e => {
-      this.testStatesEmitter.fire({ type: 'finished' });
-      this.log.warn(__filename, e);
+      this._shared.testStatesEmitter.fire({ type: 'finished' });
+      this._shared.log.warn(__filename, e);
       throw e;
     }).then(() => {
-      this.testStatesEmitter.fire({ type: 'finished' });
+      this._shared.testStatesEmitter.fire({ type: 'finished' });
     });
   }
 }
