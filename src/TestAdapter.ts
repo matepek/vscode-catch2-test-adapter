@@ -29,13 +29,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     ['${workspaceFolder}', this.workspaceFolder.uri.fsPath]
   ];
 
-  // because we always want to return with the current allTests suite
-  private readonly _loadFinishedEmitter = new vscode.EventEmitter<string | undefined>();
+  // because we always want to return with the current rootSuite suite
+  private readonly _loadWithTaskEmitter = new vscode.EventEmitter<() => Promise<void>>();
+  private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
+  private readonly _disposables: vscode.Disposable[] = [];
 
   private _shared: SharedVariables;
-  private _mainTaskQueue: TaskQueue;
   private _rootSuite: RootTestSuiteInfo;
-  private readonly _disposables: vscode.Disposable[] = [];
 
   constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
     this._log = new util.Log('catch2TestExplorer', this.workspaceFolder,
@@ -44,18 +44,24 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._log.info('info:', process.platform, process.version, process.versions, vscode.version);
 
-    this._mainTaskQueue = new TaskQueue([], 'TestAdapter');
-
     this._disposables.push(this._testsEmitter);
     this._disposables.push(this._testStatesEmitter);
     this._disposables.push(this._autorunEmitter);
 
-    this._disposables.push(this._loadFinishedEmitter);
-    this._disposables.push(this._loadFinishedEmitter.event((errorMessage: string | undefined) => {
-      if (errorMessage)
-        this._testsEmitter.fire({ type: 'finished', suite: undefined, errorMessage: errorMessage });
-      else
-        this._testsEmitter.fire({ type: 'finished', suite: this._rootSuite });
+    this._disposables.push(this._loadWithTaskEmitter);
+    this._disposables.push(this._loadWithTaskEmitter.event((task: () => Promise<void>) => {
+      this._mainTaskQueue.then(() => {
+        this._testsEmitter.fire({ type: 'started' });
+        return task().then(() => {
+          this._testsEmitter.fire({ type: 'finished', suite: this._rootSuite });
+        }, (reason: any) => {
+          this._log.error(__filename, reason);
+          debugger;
+          this._testsEmitter.fire({ type: 'finished', suite: this._rootSuite });
+        });
+      });
+
+
     }));
 
     this._disposables.push(
@@ -76,6 +82,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._log,
       this.workspaceFolder,
       this._testStatesEmitter,
+      this._loadWithTaskEmitter,
       this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
@@ -127,7 +134,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._rootSuite = new RootTestSuiteInfo(this._shared,
       this._mainTaskQueue,
-      this._loadFinishedEmitter, this._testsEmitter,
       this._getWorkerMaxNumber(config)
     );
   }
@@ -156,17 +162,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const config = this._getConfiguration();
 
     this._rootSuite.dispose();
-    this._mainTaskQueue = new TaskQueue([], 'TestAdapter');
 
     this._rootSuite = new RootTestSuiteInfo(this._shared,
       this._mainTaskQueue,
-      this._loadFinishedEmitter, this._testsEmitter,
       this._getWorkerMaxNumber(config)
     );
 
-    this._testsEmitter.fire(<TestLoadStartedEvent>{ type: 'started' });
-
     return this._mainTaskQueue.then(() => {
+      this._testsEmitter.fire(<TestLoadStartedEvent>{ type: 'started' });
+
       return this._rootSuite.load(this._getExecutables(config, this._rootSuite))
         .then(
           () => {

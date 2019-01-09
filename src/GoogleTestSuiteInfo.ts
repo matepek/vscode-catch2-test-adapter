@@ -286,40 +286,44 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 						|| (runInfo.childrenToRun !== 'all' && data.processedTestCases.length == 0));
 
 				if (data.unprocessedTestCases.length > 0 || isTestRemoved) {
-					this.rootSuite
-						.sendLoadEvents(() => {
-							return this.reloadChildren().catch(e => {
-								this._shared.log.error('reloading-error: ', e);
-								// Suite possibly deleted: It is a dead suite.
+					new Promise<void>((resolve, reject) => {
+						this._shared.loadWithTaskEmitter.fire(() => {
+							return this.reloadChildren().then(() => {
+								resolve();
+							}, (reason: any) => {
+								reject(reason);
 							});
-						})
-						.then(() => {
-							// we have test results for the newly detected tests
-							// after reload we can set the results
-							const events: TestEvent[] = [];
-
-							for (let i = 0; i < data.unprocessedTestCases.length; i++) {
-								const testCase = data.unprocessedTestCases[i];
-
-								const m = testCase.match(testBeginRe);
-								if (m == null) break;
-
-								const testNameFull = m[1];
-
-								const currentChild = this.children.find((v: GoogleTestInfo) => {
-									return v.testNameFull == testNameFull;
-								});
-								if (currentChild === undefined) break;
-								try {
-									const ev = currentChild.parseAndProcessTestCase(testCase);
-									events.push(currentChild.getStartEvent());
-									events.push(ev);
-								} catch (e) {
-									this._shared.log.error('parsing and processing test: ' + testCase);
-								}
-							}
-							events.length && this._sendTestStateEventsWithParent(events);
 						});
+					}).then(() => {
+						// we have test results for the newly detected tests
+						// after reload we can set the results
+						const events: TestEvent[] = [];
+
+						for (let i = 0; i < data.unprocessedTestCases.length; i++) {
+							const testCase = data.unprocessedTestCases[i];
+
+							const m = testCase.match(testBeginRe);
+							if (m == null) break;
+
+							const testNameFull = m[1];
+
+							const currentChild = this.children.find((v: GoogleTestInfo) => {
+								return v.testNameFull == testNameFull;
+							});
+							if (currentChild === undefined) break;
+							try {
+								const ev = currentChild.parseAndProcessTestCase(testCase);
+								events.push(currentChild.getStartEvent());
+								events.push(ev);
+							} catch (e) {
+								this._shared.log.error('parsing and processing test: ' + testCase);
+							}
+						}
+						events.length && this._sendTestStateEventsWithParent(events);
+					}, (reason: any) => {
+						// Suite possibly deleted: It is a dead suite.
+						this._shared.log.error('reloading-error: ', reason);
+					});
 				}
 			});
 	}

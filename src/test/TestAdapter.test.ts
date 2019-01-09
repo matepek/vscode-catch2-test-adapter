@@ -216,6 +216,15 @@ describe('TestAdapter', function () {
     return promisify(setTimeout)(1000);
   })
 
+  function matchPattern(p: string) {
+    return sinon.match((actual: vscode.RelativePattern) => {
+      const required = new vscode.RelativePattern(
+        workspaceFolder, p);
+      return required.base == actual.base &&
+        required.pattern == actual.pattern;
+    });
+  }
+
   describe('detect config change', function () {
     this.timeout(5000);
     this.slow(300);
@@ -242,45 +251,85 @@ describe('TestAdapter', function () {
 
     it('enableSourceDecoration', function () {
       return updateConfig('enableSourceDecoration', false).then(function () {
-        assert.ok(!(<any>adapter)._rootSuite.isEnabledSourceDecoration);
+        assert.ok(!(<any>adapter)._shared.isEnabledSourceDecoration);
       });
     })
 
     it('defaultRngSeed', function () {
       return updateConfig('defaultRngSeed', 987).then(function () {
-        assert.equal((<any>adapter)._rootSuite.rngSeed, 987);
+        assert.equal((<any>adapter)._shared.rngSeed, 987);
       });
     })
 
     it('defaultWatchTimeoutSec', function () {
       return updateConfig('defaultWatchTimeoutSec', 9876).then(function () {
-        assert.equal((<any>adapter)._rootSuite.execWatchTimeout, 9876000);
+        assert.equal((<any>adapter)._shared.execWatchTimeout, 9876000);
       });
     })
 
     it('defaultRunningTimeoutSec', function () {
       return updateConfig('defaultRunningTimeoutSec', 8765).then(function () {
-        assert.equal((<any>adapter)._rootSuite.execRunningTimeout, 8765000);
+        assert.equal((<any>adapter)._shared.execRunningTimeout, 8765000);
       });
     })
 
     it('defaultNoThrow', function () {
       return updateConfig('defaultNoThrow', true).then(function () {
-        assert.equal((<any>adapter)._rootSuite.isNoThrow, true);
+        assert.equal((<any>adapter)._shared.isNoThrow, true);
       });
     })
   })
 
-  it('load with empty config', async function () {
+  describe('load executables with value', function () {
     this.slow(500);
-    const adapter = createAdapterAndSubscribe();
-    await adapter.load();
-    assert.equal(testsEvents.length, 2);
-    assert.equal(testsEvents[0].type, 'started');
-    assert.equal(testsEvents[1].type, 'finished');
-    const suite = (<TestLoadFinishedEvent>testsEvents[1]).suite;
-    assert.notStrictEqual(suite, undefined);
-    assert.equal(suite!.children.length, 0);
+
+    let adapter: TestAdapter;
+
+    beforeEach(function () {
+      adapter = createAdapterAndSubscribe();
+    })
+
+    specify('empty config', async function () {
+      await adapter.load();
+      assert.equal(testsEvents.length, 2);
+      assert.equal(testsEvents[0].type, 'started');
+      assert.equal(testsEvents[1].type, 'finished');
+      const suite = (<TestLoadFinishedEvent>testsEvents[1]).suite;
+      assert.notStrictEqual(suite, undefined);
+      assert.equal(suite!.children.length, 0);
+    })
+
+    specify('../<workspaceFolder>/first', async function () {
+      await updateConfig('executables', '../' + path.basename(workspaceFolderUri.fsPath) + '/first');
+      const withArgs = vsFindFilesStub.withArgs(matchPattern('first'));
+      const count = withArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(withArgs.callCount, count + 1);
+    })
+
+    specify('./first', async function () {
+      await updateConfig('executables', './first');
+      const withArgs = vsFindFilesStub.withArgs(matchPattern('first'));
+      const count = withArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(withArgs.callCount, count + 1);
+    })
+
+    specify('./a/b/../../first', async function () {
+      await updateConfig('executables', './a/b/../../first');
+      const withArgs = vsFindFilesStub.withArgs(matchPattern('first'));
+      const count = withArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(withArgs.callCount, count + 1);
+    })
+
+    specify('../a/first', async function () {
+      await updateConfig('executables', '../a/first');
+      const withArgs = vsFindFilesStub.withArgs(matchPattern('first'));
+      const count = withArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(withArgs.callCount, count);
+    })
   })
 
   context('example1', function () {

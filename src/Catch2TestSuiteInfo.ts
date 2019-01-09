@@ -292,53 +292,57 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 					(runInfo.childrenToRun !== 'all' && data.processedTestCases.length == 0);
 
 				if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
-					this.rootSuite
-						.sendLoadEvents(() => {
-							return this.reloadChildren().catch(e => {
-								this._shared.log.error('reloading-error: ', e);
-								// Suite possibly deleted: It is a dead suite.
+					new Promise<void>((resolve, reject) => {
+						this._shared.loadWithTaskEmitter.fire(() => {
+							return this.reloadChildren().then(() => {
+								resolve();
+							}, (reason: any) => {
+								reject(reason);
 							});
-						})
-						.then(() => {
-							// we have test results for the newly detected tests
-							// after reload we can set the results
-							const events: TestEvent[] = [];
-
-							for (let i = 0; i < data.unprocessedXmlTestCases.length; i++) {
-								const testCaseXml = data.unprocessedXmlTestCases[i];
-
-								const m = testCaseXml.match(testCaseTagRe);
-								if (m == null || m.length != 1) break;
-
-								let name: string | undefined = undefined;
-								new xml2js.Parser({ explicitArray: true })
-									.parseString(
-										m[0] + '</TestCase>', (err: any, result: any) => {
-											if (err) {
-												this._shared.log.error(err.toString());
-											} else {
-												name = result.TestCase.$.name;
-											}
-										});
-								if (name === undefined) break;
-
-								const currentChild = this.children.find((v: Catch2TestInfo) => {
-									// xml output trimmes the name of the test
-									return v.testNameFull.trim() == name;
-								});
-								if (currentChild === undefined) break;
-
-								try {
-									const ev = currentChild.parseAndProcessTestCase(
-										testCaseXml, data.rngSeed);
-									events.push(currentChild.getStartEvent());
-									events.push(ev);
-								} catch (e) {
-									this._shared.log.error('parsing and processing test: ' + testCaseXml);
-								}
-							}
-							events.length && this._sendTestStateEventsWithParent(events);
 						});
+					}).then(() => {
+						// we have test results for the newly detected tests
+						// after reload we can set the results
+						const events: TestEvent[] = [];
+
+						for (let i = 0; i < data.unprocessedXmlTestCases.length; i++) {
+							const testCaseXml = data.unprocessedXmlTestCases[i];
+
+							const m = testCaseXml.match(testCaseTagRe);
+							if (m == null || m.length != 1) break;
+
+							let name: string | undefined = undefined;
+							new xml2js.Parser({ explicitArray: true })
+								.parseString(
+									m[0] + '</TestCase>', (err: any, result: any) => {
+										if (err) {
+											this._shared.log.error(err.toString());
+										} else {
+											name = result.TestCase.$.name;
+										}
+									});
+							if (name === undefined) break;
+
+							const currentChild = this.children.find((v: Catch2TestInfo) => {
+								// xml output trimmes the name of the test
+								return v.testNameFull.trim() == name;
+							});
+							if (currentChild === undefined) break;
+
+							try {
+								const ev = currentChild.parseAndProcessTestCase(
+									testCaseXml, data.rngSeed);
+								events.push(currentChild.getStartEvent());
+								events.push(ev);
+							} catch (e) {
+								this._shared.log.error('parsing and processing test: ' + testCaseXml);
+							}
+						}
+						events.length && this._sendTestStateEventsWithParent(events);
+					}, (reason: any) => {
+						// Suite possibly deleted: It is a dead suite.
+						this._shared.log.error('reloading-error: ', reason);
+					});
 				}
 			});
 	}

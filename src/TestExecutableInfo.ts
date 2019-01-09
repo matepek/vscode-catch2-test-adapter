@@ -38,11 +38,8 @@ export class TestExecutableInfo implements vscode.Disposable {
 
   async load(): Promise<void> {
     const wsUri = this._shared.workspaceFolder.uri;
-    const pattern =
-      this._pattern.startsWith('./') ? this._pattern.substr(2) : this._pattern;
-    const isAbsolute = path.isAbsolute(pattern);
-    const absPattern = isAbsolute ? path.normalize(pattern) :
-      path.resolve(wsUri.fsPath, pattern);
+    const isAbsolute = path.isAbsolute(this._pattern);
+    const absPattern = isAbsolute ? path.normalize(this._pattern) : path.join(wsUri.fsPath, this._pattern);
     const absPatternAsUri = vscode.Uri.file(absPattern);
     const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
     const isPartOfWs = !relativeToWs.startsWith('..');
@@ -55,13 +52,13 @@ export class TestExecutableInfo implements vscode.Disposable {
     let fileUris: vscode.Uri[] = [];
 
     if (isPartOfWs) {
-      let relativePattern: vscode.RelativePattern;
-      if (isAbsolute)
-        relativePattern = new vscode.RelativePattern(this._shared.workspaceFolder, relativeToWs);
-      else
-        relativePattern = new vscode.RelativePattern(this._shared.workspaceFolder, pattern);
       try {
-        fileUris = await vscode.workspace.findFiles(relativePattern, null, 1000);
+        const relativePattern = new vscode.RelativePattern(this._shared.workspaceFolder, relativeToWs);
+        fileUris = await vscode.workspace.findFiles(relativePattern, null, 10000);
+
+        if (fileUris.length === 10000) {
+          this._shared.log.error('vscode.workspace.findFiles reached it\'s limit.', fileUris.map(u => u.fsPath));
+        }
 
         // abs path string or vscode.RelativePattern is required.
         this._watcher = vscode.workspace.createFileSystemWatcher(
@@ -176,27 +173,32 @@ export class TestExecutableInfo implements vscode.Disposable {
         this._shared.log.info('refresh timeout: ' + uri.fsPath);
         this._lastEventArrivedAt.delete(uri.fsPath);
         if (this._rootSuite.hasChild(suite)) {
-          return this._rootSuite.sendLoadEvents(() => {
-            this._executables.delete(uri.fsPath);
-            this._rootSuite.removeChild(suite);
-            return Promise.resolve();
+          return new Promise<void>(resolve => {
+            this._shared.loadWithTaskEmitter.fire(() => {
+              this._executables.delete(uri.fsPath);
+              this._rootSuite.removeChild(suite);
+              resolve();
+              return Promise.resolve();
+            });
           });
         } else {
           return Promise.resolve();
         }
       } else if (exists) {
-        // note: here we reload children outside start-finished event
-        // it seems ok now, but maybe it is a problem, if insertChild == false
-        return suite.reloadChildren().then(() => {
-          return this._rootSuite.sendLoadEvents(() => {
-            if (this._rootSuite.insertChild(suite)) {
-              this._executables.set(uri.fsPath, suite);
-              this._uniquifySuiteNames();
-            }
-            this._lastEventArrivedAt.delete(uri.fsPath);
-            return Promise.resolve();
+        return new Promise<void>((resolve, reject) => {
+          this._shared.loadWithTaskEmitter.fire(() => {
+            return suite.reloadChildren().then(() => {
+              if (this._rootSuite.insertChild(suite)) {
+                this._executables.set(uri.fsPath, suite);
+                this._uniquifySuiteNames();
+              }
+              this._lastEventArrivedAt.delete(uri.fsPath);
+              resolve();
+            }, (reason: any) => {
+              reject(reason);
+            });
           });
-        }, (reason: any) => {
+        }).catch((reason: any) => {
           this._shared.log.warn('Problem under reloadChildren:', reason, uri.fsPath, suite);
           return x(suite, false, Math.min(delay * 2, 2000));
         });

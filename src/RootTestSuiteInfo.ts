@@ -2,9 +2,8 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { inspect } from 'util';
 import * as vscode from 'vscode';
-import { TestEvent, TestInfo, TestLoadFinishedEvent, TestLoadStartedEvent, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
+import { TestEvent, TestInfo, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
 
 import { TestExecutableInfo } from './TestExecutableInfo'
 import { TestInfoBase } from './TestInfoBase';
@@ -25,9 +24,6 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
 
   constructor(private readonly _shared: SharedVariables,
     private readonly _mainTaskQueue: TaskQueue,
-    private readonly _loadFinishedEmitter: vscode.EventEmitter<string | undefined>,
-    private readonly _testsEmitter:
-      vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>,
     workerMaxNumber: number,
   ) {
     this.label = this._shared.workspaceFolder.name + ' (Catch2 and Google Test Explorer)';
@@ -39,29 +35,9 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     this._taskPool.maxTaskCount = workerMaxNumber;
   }
 
-
   dispose() {
     this._wasDisposed = true;
     this._executables.forEach(e => e.dispose());
-  }
-
-  sendLoadEvents(task: (() => Promise<void>)) {
-    return this._mainTaskQueue.then(() => {
-      if (this._wasDisposed) {
-        return task().catch(() => { });
-      } else {
-        this._testsEmitter.fire({ type: 'started' });
-        return task().then(
-          () => {
-            this._loadFinishedEmitter.fire(undefined);
-          },
-          (reason: any) => {
-            this._shared.log.error(reason);
-            this._loadFinishedEmitter.fire(inspect(reason));
-            debugger;
-          });
-      }
-    });
   }
 
   sendTestSuiteStateEventsWithParent(events: (TestSuiteEvent | TestEvent)[]) {

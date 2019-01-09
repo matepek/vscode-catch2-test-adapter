@@ -28,7 +28,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   constructor(
     protected readonly _shared: SharedVariables,
     public readonly origLabel: string,
-    protected readonly rootSuite: RootTestSuiteInfo,
+    private readonly rootSuite: RootTestSuiteInfo,
     public readonly execPath: string,
     public readonly execOptions: SpawnOptions) {
     this.label = origLabel;
