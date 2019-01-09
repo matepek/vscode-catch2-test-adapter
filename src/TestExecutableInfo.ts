@@ -3,7 +3,7 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import * as path from 'path';
-import { inspect, promisify } from 'util';
+import { promisify } from 'util';
 import * as vscode from 'vscode';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
@@ -22,14 +22,12 @@ export class TestExecutableInfo implements vscode.Disposable {
   ) { }
 
   private _disposables: vscode.Disposable[] = [];
+
   private _watcher: vscode.FileSystemWatcher | undefined = undefined;
 
-  private readonly _executables: Map<string /*fsPath*/, TestSuiteInfoBase> =
-    new Map();
+  private readonly _executables: Map<string /*fsPath*/, TestSuiteInfoBase> = new Map();
 
-  private readonly _lastEventArrivedAt:
-    Map<string /*fsPath*/, number /*Date*/
-    > = new Map();
+  private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
   dispose() {
     this._disposables.forEach(d => d.dispose());
@@ -37,25 +35,28 @@ export class TestExecutableInfo implements vscode.Disposable {
 
   async load(): Promise<void> {
     const wsUri = this._rootSuite.workspaceFolder.uri;
-    const isAbsolute = path.isAbsolute(this._pattern);
-    const absPattern = isAbsolute ? path.normalize(this._pattern) :
-      path.join(wsUri.fsPath, this._pattern);
+    const pattern =
+      this._pattern.startsWith('./') ? this._pattern.substr(2) : this._pattern;
+    const isAbsolute = path.isAbsolute(pattern);
+    const absPattern = isAbsolute ? path.normalize(pattern) :
+      path.resolve(wsUri.fsPath, pattern);
     const absPatternAsUri = vscode.Uri.file(absPattern);
     const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
     const isPartOfWs = !relativeToWs.startsWith('..');
 
     if (isAbsolute && isPartOfWs)
-      this._rootSuite.log.info(
-        'Absolute path is used for workspace directory: ' +
-        inspect(this, true, 0));
+      this._rootSuite.log.info('Absolute path is used for workspace directory:', this);
     if (this._pattern.indexOf('\\') != -1)
-      this._rootSuite.log.warn(
-        'Pattern contains backslash character: ' + this._pattern);
+      this._rootSuite.log.warn('Pattern contains backslash character:', this._pattern);
 
     let fileUris: vscode.Uri[] = [];
 
     if (isPartOfWs) {
-      const relativePattern = new vscode.RelativePattern(this._rootSuite.workspaceFolder, relativeToWs);
+      let relativePattern: vscode.RelativePattern;
+      if (isAbsolute)
+        relativePattern = new vscode.RelativePattern(this._rootSuite.workspaceFolder, relativeToWs);
+      else
+        relativePattern = new vscode.RelativePattern(this._rootSuite.workspaceFolder, pattern);
       try {
         fileUris = await vscode.workspace.findFiles(relativePattern, null, 1000);
 
@@ -70,7 +71,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         this._disposables.push(
           this._watcher.onDidDelete(this._handleDelete, this));
       } catch (e) {
-        this._rootSuite.log.error(inspect([e, this]));
+        this._rootSuite.log.error(e, this);
       }
     } else {
       fileUris.push(absPatternAsUri);
@@ -84,10 +85,10 @@ export class TestExecutableInfo implements vscode.Disposable {
             this._executables.set(file.fsPath, suite);
           }
         }, (reason: any) => {
-          this._rootSuite.log.error('Couldn\'t load executable: ' + inspect([reason, suite]));
+          this._rootSuite.log.error('Couldn\'t load executable:', reason, suite);
         });
       }, (reason: any) => {
-        this._rootSuite.log.info('Not a test executable: ' + file.fsPath);
+        this._rootSuite.log.info('Not a test executable:', file.fsPath);
       });
     }
 
@@ -122,7 +123,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         ['${ext3Filename}', ext3Filename],
         ['${base3Filename}', base3Filename],
       ];
-    } catch (e) { this._rootSuite.log.error(inspect(e)); }
+    } catch (e) { this._rootSuite.log.error(e); }
 
     let resolvedLabel = relPath;
     if (this._name) {
@@ -131,7 +132,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
         if (resolvedLabel.match(/\$\{.*\}/))
           this._rootSuite.log.warn('Possibly unresolved variable: ' + resolvedLabel);
-      } catch (e) { this._rootSuite.log.error(inspect(e)); }
+      } catch (e) { this._rootSuite.log.error(__filename, e); }
     }
 
     let resolvedCwd = this._cwd;
@@ -142,12 +143,12 @@ export class TestExecutableInfo implements vscode.Disposable {
         this._rootSuite.log.warn('Possibly unresolved variable: ' + resolvedCwd);
 
       resolvedCwd = path.normalize(vscode.Uri.file(resolvedCwd).fsPath);
-    } catch (e) { this._rootSuite.log.error(inspect(e)); }
+    } catch (e) { this._rootSuite.log.error(e); }
 
     let resolvedEnv: { [prop: string]: string } = this._env;
     try {
       resolvedEnv = resolveVariables(this._env, varToValue);
-    } catch (e) { this._rootSuite.log.error(inspect(e)); }
+    } catch (e) { this._rootSuite.log.error(__filename, e); }
 
     return TestSuiteInfoBase.determineTestTypeOfExecutable(file.fsPath)
       .then((framework) => {
@@ -193,8 +194,7 @@ export class TestExecutableInfo implements vscode.Disposable {
             return Promise.resolve();
           });
         }, (reason: any) => {
-          this._rootSuite.log.warn(
-            'Problem under reloadChildren: ' + inspect([reason, uri.fsPath, suite]));
+          this._rootSuite.log.warn('Problem under reloadChildren:', reason, uri.fsPath, suite);
           return x(suite, false, Math.min(delay * 2, 2000));
         });
       } else {
