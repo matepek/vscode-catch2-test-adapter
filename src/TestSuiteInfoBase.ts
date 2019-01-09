@@ -129,15 +129,15 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
       const killIfTimeouts = (): Promise<void> => {
         return new Promise<vscode.Disposable>(resolve => {
-          const conn = this.rootSuite.onDidChangeExecRunningTimeout(() => {
+          const conn = this._shared.onDidChangeExecRunningTimeout(() => {
             resolve(conn);
           });
 
           runInfo.timeoutWatcherTrigger = () => { resolve(conn); };
 
-          if (this.rootSuite.execRunningTimeout !== null) {
+          if (this._shared.execRunningTimeout !== null) {
             const elapsed = Date.now() - startTime;
-            const left = this.rootSuite.execRunningTimeout - elapsed;
+            const left = this._shared.execRunningTimeout - elapsed;
             if (left <= 0) resolve(conn);
             else setTimeout(resolve, left, conn);
           }
@@ -145,10 +145,10 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
           conn.dispose();
           if (runInfo.process === undefined) {
             return Promise.resolve();
-          } else if (this.rootSuite.execRunningTimeout !== null
-            && Date.now() - startTime > this.rootSuite.execRunningTimeout) {
+          } else if (this._shared.execRunningTimeout !== null
+            && Date.now() - startTime > this._shared.execRunningTimeout) {
             runInfo.process.kill();
-            runInfo.timeout = this.rootSuite.execRunningTimeout;
+            runInfo.timeout = this._shared.execRunningTimeout;
             return Promise.resolve();
           } else {
             return killIfTimeouts();

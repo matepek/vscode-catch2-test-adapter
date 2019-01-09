@@ -133,11 +133,11 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		execParams.push('--durations')
 		execParams.push('yes');
 
-		if (this.rootSuite.isNoThrow) execParams.push('--nothrow');
+		if (this._shared.isNoThrow) execParams.push('--nothrow');
 
-		if (this.rootSuite.rngSeed !== null) {
+		if (this._shared.rngSeed !== null) {
 			execParams.push('--rng-seed');
-			execParams.push(this.rootSuite.rngSeed.toString());
+			execParams.push(this._shared.rngSeed.toString());
 		}
 
 		return execParams;
@@ -216,7 +216,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 							try {
 								const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
 									testCaseXml, data.rngSeed);
-								if (!this.rootSuite.isEnabledSourceDecoration)
+								if (!this._shared.isEnabledSourceDecoration)
 									ev.decorations = undefined;
 								if (runInfo.timeout)
 									ev.message = this._getTimeoutMessage(runInfo.timeout);

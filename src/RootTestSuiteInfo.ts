@@ -31,11 +31,6 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     public readonly testStatesEmitter:
       vscode.EventEmitter<TestRunStartedEvent | TestRunFinishedEvent |
         TestSuiteEvent | TestEvent>,
-    public isEnabledSourceDecoration: boolean,
-    public rngSeed: string | number | null,
-    public execWatchTimeout: number,
-    private _execRunningTimeout: null | number,
-    public isNoThrow: boolean,
     workerMaxNumber: number,
   ) {
     this.label = this._shared.workspaceFolder.name + ' (Catch2 and Google Test Explorer)';
@@ -47,19 +42,9 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     this._taskPool.maxTaskCount = workerMaxNumber;
   }
 
-  get execRunningTimeout() { return this._execRunningTimeout; }
-
-  set execRunningTimeout(value: null | number) {
-    this._execRunningTimeout = value;
-    this._execRunningTimeoutChangeEmitter.fire();
-  }
-
-  private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
-  readonly onDidChangeExecRunningTimeout = this._execRunningTimeoutChangeEmitter.event;
 
   dispose() {
     this._wasDisposed = true;
-    this._execRunningTimeoutChangeEmitter.dispose();
     for (let i = 0; i < this._executables.length; i++) {
       this._executables[i].dispose();
     }

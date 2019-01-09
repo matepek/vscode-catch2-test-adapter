@@ -70,37 +70,50 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         }
       }));
 
+    const config = this._getConfiguration();
+
+    this._shared = new SharedVariables(
+      this._log,
+      this.workspaceFolder,
+      this._getEnableSourceDecoration(config),
+      this._getDefaultRngSeed(config),
+      this._getDefaultExecWatchTimeout(config),
+      this._getDefaultExecRunningTimeout(config),
+      this._getDefaultNoThrow(config),
+    );
+    this._disposables.push(this._shared);
+
     this._disposables.push(
       vscode.workspace.onDidChangeConfiguration(configChange => {
         if (configChange.affectsConfiguration(
           'catch2TestExplorer.enableSourceDecoration',
           this.workspaceFolder.uri)) {
-          this._rootSuite.isEnabledSourceDecoration =
+          this._shared.isEnabledSourceDecoration =
             this._getEnableSourceDecoration(this._getConfiguration());
         }
         if (configChange.affectsConfiguration(
           'catch2TestExplorer.defaultRngSeed',
           this.workspaceFolder.uri)) {
-          this._rootSuite.rngSeed =
+          this._shared.rngSeed =
             this._getDefaultRngSeed(this._getConfiguration());
           this._autorunEmitter.fire();
         }
         if (configChange.affectsConfiguration(
           'catch2TestExplorer.defaultWatchTimeoutSec',
           this.workspaceFolder.uri)) {
-          this._rootSuite.execWatchTimeout =
+          this._shared.execWatchTimeout =
             this._getDefaultExecWatchTimeout(this._getConfiguration());
         }
         if (configChange.affectsConfiguration(
           'catch2TestExplorer.defaultRunningTimeoutSec',
           this.workspaceFolder.uri)) {
-          this._rootSuite.execRunningTimeout =
+          this._shared.execRunningTimeout =
             this._getDefaultExecRunningTimeout(this._getConfiguration());
         }
         if (configChange.affectsConfiguration(
           'catch2TestExplorer.defaultNoThrow',
           this.workspaceFolder.uri)) {
-          this._rootSuite.isNoThrow =
+          this._shared.isNoThrow =
             this._getDefaultNoThrow(this._getConfiguration());
         }
         if (configChange.affectsConfiguration(
@@ -111,18 +124,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         }
       }));
 
-    const config = this._getConfiguration();
-
-    this._shared = new SharedVariables(this._log, this.workspaceFolder);
-
     this._rootSuite = new RootTestSuiteInfo(this._shared,
       this._mainTaskQueue,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
-      this._getEnableSourceDecoration(config),
-      this._getDefaultRngSeed(config),
-      this._getDefaultExecWatchTimeout(config),
-      this._getDefaultExecRunningTimeout(config),
-      this._getDefaultNoThrow(config),
       this._getWorkerMaxNumber(config)
     );
   }
@@ -156,11 +160,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._rootSuite = new RootTestSuiteInfo(this._shared,
       this._mainTaskQueue,
       this._loadFinishedEmitter, this._testsEmitter, this._testStatesEmitter,
-      this._getEnableSourceDecoration(config),
-      this._getDefaultRngSeed(config),
-      this._getDefaultExecWatchTimeout(config),
-      this._getDefaultExecRunningTimeout(config),
-      this._getDefaultNoThrow(config),
       this._getWorkerMaxNumber(config)
     );
 

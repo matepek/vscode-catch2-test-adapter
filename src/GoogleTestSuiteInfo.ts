@@ -152,9 +152,9 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 			execParams.push('--gtest_also_run_disabled_tests');
 		}
 
-		if (this.rootSuite.rngSeed !== null) {
+		if (this._shared.rngSeed !== null) {
 			execParams.push('--gtest_random_seed='
-				+ (this.rootSuite.rngSeed === 'time' ? '0' : this.rootSuite.rngSeed.toString()));
+				+ (this._shared.rngSeed === 'time' ? '0' : this._shared.rngSeed.toString()));
 		}
 
 		return execParams;
@@ -211,7 +211,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 							this._shared.log.info('Test ', data.currentChild.testNameFull, 'has finished.');
 							try {
 								const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase);
-								if (!this.rootSuite.isEnabledSourceDecoration)
+								if (!this._shared.isEnabledSourceDecoration)
 									ev.decorations = undefined;
 								if (runInfo.timeout)
 									ev.message = this._getTimeoutMessage(runInfo.timeout);
