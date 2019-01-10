@@ -1824,7 +1824,7 @@ describe('TestAdapter', function () {
       assert.ok(assertNoError);
     })
 
-    specify.only('arriving <TestCase> for missing TestInfo', async function () {
+    specify('arriving <TestCase> for missing TestInfo', async function () {
       this.slow(500);
       await updateConfig('executables', example1.suite1.execPath);
 

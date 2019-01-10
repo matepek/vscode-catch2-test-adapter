@@ -36,4 +36,11 @@ export abstract class TestInfoBase implements TestInfo {
   getSkippedEvent(): TestEvent {
     return { type: 'test', test: this, state: 'skipped' };
   }
+
+  findRouteToTestById(id: string): TestInfo[] | undefined {
+    if (this.id === id)
+      return [this];
+    else
+      return undefined;
+  }
 }

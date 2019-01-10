@@ -7,7 +7,6 @@ import { inspect } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
-import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { Catch2TestInfo } from './Catch2TestInfo';
 import * as c2fs from './FsWrapper';
 import { TestSuiteInfoBase, TestSuiteInfoBaseRunInfo } from './TestSuiteInfoBase';
@@ -19,11 +18,10 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 	constructor(
 		shared: SharedVariables,
 		origLabel: string,
-		allTests: RootTestSuiteInfo,
 		execPath: string,
 		execOptions: SpawnOptions,
 		private _catch2Version: [number, number, number] | undefined) {
-		super(shared, origLabel, allTests, execPath, execOptions);
+		super(shared, origLabel, execPath, execOptions);
 	}
 
 	reloadChildren(): Promise<void> {
@@ -330,15 +328,13 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 							if (currentChild === undefined) break;
 
 							try {
-								const ev = currentChild.parseAndProcessTestCase(
-									testCaseXml, data.rngSeed);
-								events.push(currentChild.getStartEvent());
+								const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed);
 								events.push(ev);
 							} catch (e) {
 								this._shared.log.error('parsing and processing test: ' + testCaseXml);
 							}
 						}
-						events.length && this._sendTestStateEventsWithParent(events);
+						events.length && this._shared.sendTestEventEmitter.fire(events);
 					}, (reason: any) => {
 						// Suite possibly deleted: It is a dead suite.
 						this._shared.log.error('reloading-error: ', reason);

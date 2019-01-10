@@ -7,7 +7,6 @@ import * as fs from 'fs';
 import { inspect } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
-import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { GoogleTestInfo } from './GoogleTestInfo';
 import * as c2fs from './FsWrapper';
 import { TestSuiteInfoBase, TestSuiteInfoBaseRunInfo } from './TestSuiteInfoBase';
@@ -20,10 +19,9 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 	constructor(
 		shared: SharedVariables,
 		origLabel: string,
-		allTests: RootTestSuiteInfo,
 		execPath: string,
 		execOptions: SpawnOptions) {
-		super(shared, origLabel, allTests, execPath, execOptions);
+		super(shared, origLabel, execPath, execOptions);
 	}
 
 	reloadChildren(): Promise<void> {
@@ -313,13 +311,12 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 							if (currentChild === undefined) break;
 							try {
 								const ev = currentChild.parseAndProcessTestCase(testCase);
-								events.push(currentChild.getStartEvent());
 								events.push(ev);
 							} catch (e) {
 								this._shared.log.error('parsing and processing test: ' + testCase);
 							}
 						}
-						events.length && this._sendTestStateEventsWithParent(events);
+						events.length && this._shared.sendTestEventEmitter.fire(events);
 					}, (reason: any) => {
 						// Suite possibly deleted: It is a dead suite.
 						this._shared.log.error('reloading-error: ', reason);

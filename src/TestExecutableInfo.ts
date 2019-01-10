@@ -152,7 +152,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     return TestSuiteInfoBase.determineTestTypeOfExecutable(file.fsPath)
       .then((framework) => {
-        return new TestSuiteInfoFactory(this._shared, resolvedLabel, this._rootSuite,
+        return new TestSuiteInfoFactory(this._shared, resolvedLabel,
           file.fsPath, { cwd: resolvedCwd, env: resolvedEnv }).create(framework);
       });
   }

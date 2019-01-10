@@ -5,9 +5,8 @@
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { TestEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
+import { TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
 
-import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { TestInfoBase } from './TestInfoBase';
 import * as c2fs from './FsWrapper';
 import { generateUniqueId } from './IdGenerator';
@@ -28,7 +27,6 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   constructor(
     protected readonly _shared: SharedVariables,
     public readonly origLabel: string,
-    private readonly rootSuite: RootTestSuiteInfo,
     public readonly execPath: string,
     public readonly execOptions: SpawnOptions) {
     this.label = origLabel;
@@ -198,14 +196,6 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     this.children.splice(i, 0, test);
   }
 
-  protected _sendTestStateEventsWithParent(events: TestEvent[]) {
-    this.rootSuite.sendTestSuiteStateEventsWithParent([
-      { type: 'suite', suite: this, state: 'running' },
-      ...events,
-      { type: 'suite', suite: this, state: 'completed' },
-    ]);
-  }
-
   protected _findFilePath(matchedPath: string): string {
     let filePath = matchedPath;
     try {
@@ -235,6 +225,14 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   findTestById(id: string): TestInfoBase | undefined {
     for (let i = 0; i < this.children.length; ++i) {
       if (this.children[i].id === id) return this.children[i];
+    }
+    return undefined;
+  }
+
+  findRouteToTestById(id: string): (TestSuiteInfo | TestInfo)[] | undefined {
+    for (let i = 0; i < this.children.length; ++i) {
+      const res = this.children[i].findRouteToTestById(id);
+      if (res) return [this, ...res];
     }
     return undefined;
   }

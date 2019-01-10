@@ -3,13 +3,12 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import * as vscode from 'vscode';
-import { TestEvent, TestInfo, TestSuiteEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
+import { TestInfo, TestSuiteInfo } from 'vscode-test-adapter-api';
 
 import { TestExecutableInfo } from './TestExecutableInfo'
 import { TestInfoBase } from './TestInfoBase';
 import { TestSuiteInfoBase } from './TestSuiteInfoBase';
 import { generateUniqueId } from './IdGenerator';
-import { TaskQueue } from './TaskQueue';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 
@@ -19,11 +18,9 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   readonly label: string;
   readonly children: TestSuiteInfoBase[] = [];
   private readonly _executables: TestExecutableInfo[] = [];
-  private _wasDisposed = false;
   private readonly _taskPool: TaskPool;
 
   constructor(private readonly _shared: SharedVariables,
-    private readonly _mainTaskQueue: TaskQueue,
     workerMaxNumber: number,
   ) {
     this.label = this._shared.workspaceFolder.name + ' (Catch2 and Google Test Explorer)';
@@ -36,26 +33,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
   }
 
   dispose() {
-    this._wasDisposed = true;
     this._executables.forEach(e => e.dispose());
-  }
-
-  sendTestSuiteStateEventsWithParent(events: (TestSuiteEvent | TestEvent)[]) {
-    this._mainTaskQueue.then(() => {
-      if (this._wasDisposed) return;
-
-      const tests =
-        events.filter(ev => ev.type == 'test' && ev.state == 'running')
-          .map(ev => (<TestInfo>((<TestEvent>ev).test)).id);
-
-      this._shared.testStatesEmitter.fire({ type: 'started', tests: tests });
-
-      for (let i = 0; i < events.length; i++) {
-        this._shared.testStatesEmitter.fire(events[i]);
-      }
-
-      this._shared.testStatesEmitter.fire({ type: 'finished' });
-    });
   }
 
   removeChild(child: TestSuiteInfoBase): boolean {
@@ -71,6 +49,14 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     for (let i = 0; i < this.children.length; ++i) {
       const test = this.children[i].findTestById(id);
       if (test) return test;
+    }
+    return undefined;
+  }
+
+  findRouteToTestById(id: string): (TestSuiteInfo | TestInfo)[] | undefined {
+    for (let i = 0; i < this.children.length; ++i) {
+      const res = this.children[i].findRouteToTestById(id);
+      if (res) return res;
     }
     return undefined;
   }

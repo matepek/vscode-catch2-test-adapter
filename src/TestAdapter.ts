@@ -5,7 +5,7 @@
 import * as path from 'path';
 import { inspect } from 'util';
 import * as vscode from 'vscode';
-import { TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent } from 'vscode-test-adapter-api';
+import { TestInfo, TestSuiteInfo, TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, TestRunFinishedEvent, TestRunStartedEvent, TestSuiteEvent } from 'vscode-test-adapter-api';
 import * as api from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
 
@@ -31,6 +31,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   // because we always want to return with the current rootSuite suite
   private readonly _loadWithTaskEmitter = new vscode.EventEmitter<() => Promise<void>>();
+
+  private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
+
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
 
@@ -60,8 +63,35 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           this._testsEmitter.fire({ type: 'finished', suite: this._rootSuite });
         });
       });
+    }));
 
+    this._disposables.push(this._sendTestEventEmitter);
+    this._disposables.push(this._sendTestEventEmitter.event((testEvents: TestEvent[]) => {
+      this._mainTaskQueue.then(() => {
+        for (let i = 0; i < testEvents.length; ++i) {
+          const id: string = typeof testEvents[i].test === 'string'
+            ? <string>testEvents[i].test
+            : (<TestInfo>testEvents[i].test).id;
+          const route = this._rootSuite.findRouteToTestById(id);
 
+          if (route !== undefined && route.length > 1) {
+            this._testStatesEmitter.fire({ type: 'started', tests: [id] });
+
+            for (let j = 0; j < route.length - 1; ++j)
+              this._testStatesEmitter.fire({ type: 'suite', suite: <TestSuiteInfo>route[j], state: 'running' });
+
+            this._testStatesEmitter.fire({ type: 'test', test: testEvents[i].test, state: 'running' });
+            this._testStatesEmitter.fire(testEvents[i]);
+
+            for (let j = route.length - 2; j >= 0; --j)
+              this._testStatesEmitter.fire({ type: 'suite', suite: <TestSuiteInfo>route[j], state: 'completed' });
+
+            this._testStatesEmitter.fire({ type: 'finished' });
+          } else {
+            this._log.error('sendTestEventEmitter.event', testEvents[i], route, this._rootSuite);
+          }
+        }
+      });
     }));
 
     this._disposables.push(
@@ -83,6 +113,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this.workspaceFolder,
       this._testStatesEmitter,
       this._loadWithTaskEmitter,
+      this._sendTestEventEmitter,
       this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
@@ -133,7 +164,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }));
 
     this._rootSuite = new RootTestSuiteInfo(this._shared,
-      this._mainTaskQueue,
       this._getWorkerMaxNumber(config)
     );
   }
@@ -164,7 +194,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._rootSuite.dispose();
 
     this._rootSuite = new RootTestSuiteInfo(this._shared,
-      this._mainTaskQueue,
       this._getWorkerMaxNumber(config)
     );
 
