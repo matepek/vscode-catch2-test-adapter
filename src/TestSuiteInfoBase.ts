@@ -222,13 +222,6 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     return filePath;
   }
 
-  findTestById(id: string): TestInfoBase | undefined {
-    for (let i = 0; i < this.children.length; ++i) {
-      if (this.children[i].id === id) return this.children[i];
-    }
-    return undefined;
-  }
-
   findRouteToTestById(id: string): (TestSuiteInfo | TestInfo)[] | undefined {
     for (let i = 0; i < this.children.length; ++i) {
       const res = this.children[i].findRouteToTestById(id);

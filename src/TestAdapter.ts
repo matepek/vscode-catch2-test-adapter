@@ -14,6 +14,7 @@ import { resolveVariables } from './Helpers';
 import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
+import { TestInfoBase } from './TestInfoBase';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: util.Log;
@@ -247,7 +248,19 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       throw Error('Unsupported input. Contact');
     }
 
-    const testInfo = this._rootSuite.findTestById(tests[0]);
+    const route = this._rootSuite.findRouteToTestById(tests[0]);
+    if (route === undefined) {
+      this._log.warn('route === undefined');
+      throw Error('Not existing test id.');
+    } else if (route.length == 0) {
+      this._log.error('route.length == 0');
+      throw Error('Unexpected error.');
+    } else if (route[route.length - 1].type !== 'test') {
+      this._log.error("route[route.length-1].type !== 'test'");
+      throw Error('Unexpected error.');
+    }
+
+    const testInfo = <TestInfoBase>route[route.length - 1];
 
     if (testInfo === undefined) {
       this._log.error('Not existing id: ', tests, this._mainTaskQueue);

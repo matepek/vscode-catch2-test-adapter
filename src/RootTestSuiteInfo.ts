@@ -6,7 +6,6 @@ import * as vscode from 'vscode';
 import { TestInfo, TestSuiteInfo } from 'vscode-test-adapter-api';
 
 import { TestExecutableInfo } from './TestExecutableInfo'
-import { TestInfoBase } from './TestInfoBase';
 import { TestSuiteInfoBase } from './TestSuiteInfoBase';
 import { generateUniqueId } from './IdGenerator';
 import { TaskPool } from './TaskPool';
@@ -43,14 +42,6 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
       return true;
     }
     return false;
-  }
-
-  findTestById(id: string): TestInfoBase | undefined {
-    for (let i = 0; i < this.children.length; ++i) {
-      const test = this.children[i].findTestById(id);
-      if (test) return test;
-    }
-    return undefined;
   }
 
   findRouteToTestById(id: string): (TestSuiteInfo | TestInfo)[] | undefined {
