@@ -3,9 +3,10 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import * as vscode from 'vscode';
-import { TestInfo, TestSuiteInfo } from 'vscode-test-adapter-api';
+import { TestSuiteInfo } from 'vscode-test-adapter-api';
 
 import { TestExecutableInfo } from './TestExecutableInfo'
+import { TestInfoBase } from './TestInfoBase';
 import { TestSuiteInfoBase } from './TestSuiteInfoBase';
 import { generateUniqueId } from './IdGenerator';
 import { TaskPool } from './TaskPool';
@@ -44,7 +45,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     return false;
   }
 
-  findRouteToTestById(id: string): (TestSuiteInfo | TestInfo)[] | undefined {
+  findRouteToTestById(id: string): (TestSuiteInfoBase | TestInfoBase)[] | undefined {
     for (let i = 0; i < this.children.length; ++i) {
       const res = this.children[i].findRouteToTestById(id);
       if (res) return res;

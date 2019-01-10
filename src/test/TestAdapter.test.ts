@@ -1331,7 +1331,7 @@ describe('TestAdapter', function () {
           }
         })
 
-        it('reloads because new test found under run', async function () {
+        it('reloads because new tests found under run', async function () {
           await loadAdapterAndAssert();
           const testListOutput = example1.suite1.outputs[1][1].split('\n');
           assert.equal(testListOutput.length, 10);
@@ -1370,7 +1370,7 @@ describe('TestAdapter', function () {
           await waitFor(this, function () {
             return suite1.children.length == 2 &&
               testStatesEvents.length >= 4 + 8;
-          }, 2000);
+          });
 
           assert.strictEqual(testsEvents.length, testLoadEventCount + 2);
           assert.strictEqual(suite1.children.length, 2);
@@ -1381,7 +1381,7 @@ describe('TestAdapter', function () {
 
           assert.deepStrictEqual(testStatesEvents, [
             ...expected,
-            { type: 'started', tests: [s1t1.id, s1t2.id] },
+            { type: 'started', tests: [s1t1.id] },
             { type: 'suite', state: 'running', suite: suite1 },
             { type: 'test', state: 'running', test: s1t1 },
             {
@@ -1391,6 +1391,10 @@ describe('TestAdapter', function () {
               decorations: undefined,
               message: 'Duration: 0.000132 second(s).\n'
             },
+            { type: 'suite', state: 'completed', suite: suite1 },
+            { type: 'finished' },
+            { type: 'started', tests: [s1t2.id] },
+            { type: 'suite', state: 'running', suite: suite1 },
             { type: 'test', state: 'running', test: s1t2 },
             {
               type: 'test',

@@ -3,8 +3,8 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
+import { SpawnOptions } from 'child_process';
 
-import { TestSuiteInfoBase } from './TestSuiteInfoBase';
 import { generateUniqueId } from './IdGenerator';
 import { SharedVariables } from './SharedVariables';
 
@@ -20,7 +20,8 @@ export abstract class TestInfoBase implements TestInfo {
     public readonly skipped: boolean,
     public readonly file: string | undefined,
     public readonly line: number | undefined,
-    public readonly parent: TestSuiteInfoBase,
+    public readonly execPath: string,
+    public readonly execOptions: SpawnOptions
   ) {
     this.id = id ? id : generateUniqueId();
 
@@ -37,7 +38,7 @@ export abstract class TestInfoBase implements TestInfo {
     return { type: 'test', test: this, state: 'skipped' };
   }
 
-  findRouteToTestById(id: string): TestInfo[] | undefined {
+  findRouteToTestById(id: string): TestInfoBase[] | undefined {
     if (this.id === id)
       return [this];
     else

@@ -5,7 +5,7 @@
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
+import { TestSuiteInfo } from 'vscode-test-adapter-api';
 
 import { TestInfoBase } from './TestInfoBase';
 import * as c2fs from './FsWrapper';
@@ -222,7 +222,7 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     return filePath;
   }
 
-  findRouteToTestById(id: string): (TestSuiteInfo | TestInfo)[] | undefined {
+  findRouteToTestById(id: string): (TestSuiteInfoBase | TestInfoBase)[] | undefined {
     for (let i = 0; i < this.children.length; ++i) {
       const res = this.children[i].findRouteToTestById(id);
       if (res) return [this, ...res];

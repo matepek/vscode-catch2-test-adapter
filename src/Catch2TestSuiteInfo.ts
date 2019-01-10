@@ -107,7 +107,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		id: string | undefined, testName: string, description: string,
 		tags: string[], file: string, line: number): Catch2TestInfo {
 		const test =
-			new Catch2TestInfo(this._shared, id, testName, description, tags, file, line, this);
+			new Catch2TestInfo(this._shared, id, testName, description, tags, file, line, this.execPath, this.execOptions);
 
 		this._addChild(test);
 

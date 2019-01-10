@@ -5,8 +5,8 @@
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { EOL } from 'os';
+import { SpawnOptions } from 'child_process';
 
-import { Catch2TestSuiteInfo } from './Catch2TestSuiteInfo';
 import { TestInfoBase } from './TestInfoBase';
 import { inspect } from 'util';
 import { SharedVariables } from './SharedVariables';
@@ -20,7 +20,8 @@ export class Catch2TestInfo extends TestInfoBase {
 		tags: string[],
 		file: string,
 		line: number,
-		parent: Catch2TestSuiteInfo,
+		execPath: string,
+		execOptions: SpawnOptions,
 	) {
 		super(shared,
 			id,
@@ -29,7 +30,8 @@ export class Catch2TestInfo extends TestInfoBase {
 			tags.some((v: string) => { return v.startsWith('[.') || v == '[hide]'; }) || testNameFull.startsWith('./'),
 			file,
 			line,
-			parent);
+			execPath,
+			execOptions);
 	}
 
 	getEscapedTestName(): string {

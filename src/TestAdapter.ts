@@ -261,11 +261,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
 
     const testInfo = <TestInfoBase>route[route.length - 1];
-
-    if (testInfo === undefined) {
-      this._log.error('Not existing id: ', tests, this._mainTaskQueue);
-      throw Error('Not existing test id');
-    }
+    route.pop();
+    const suiteLabels = route.map(s => s.label).join(' -> ');
 
     this._log.info('testInfo: ', testInfo, tests);
 
@@ -307,13 +304,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       return resolveVariables(template, [
         ...this._variableToValue,
-        ["${suitelabel}", testInfo.parent.label],
-        ["${suiteLabel}", testInfo.parent.label],
+        ["${suitelabel}", suiteLabels],
+        ["${suiteLabel}", suiteLabels],
         ["${label}", testInfo.label],
-        ["${exec}", testInfo.parent.execPath],
+        ["${exec}", testInfo.execPath],
         ["${args}", testInfo.getDebugParams(this._getDebugBreakOnFailure(config))],
-        ["${cwd}", testInfo.parent.execOptions.cwd!],
-        ["${envObj}", testInfo.parent.execOptions.env!],
+        ["${cwd}", testInfo.execOptions.cwd!],
+        ["${envObj}", testInfo.execOptions.env!],
       ]);
     };
 

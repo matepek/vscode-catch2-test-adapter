@@ -129,7 +129,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 		id: string | undefined, testName: string,
 		valueParam: string | undefined,
 		file: string | undefined, line: number | undefined): GoogleTestInfo {
-		const test = new GoogleTestInfo(this._shared, id, testName, valueParam, file, line, this);
+		const test = new GoogleTestInfo(this._shared, id, testName, valueParam, file, line, this.execPath, this.execOptions);
 
 		this._addChild(test);
 
