@@ -1824,7 +1824,7 @@ describe('TestAdapter', function () {
       assert.ok(assertNoError);
     })
 
-    specify('arriving <TestCase> for missing TestInfo', async function () {
+    specify.only('arriving <TestCase> for missing TestInfo', async function () {
       this.slow(500);
       await updateConfig('executables', example1.suite1.execPath);
 
@@ -1840,23 +1840,56 @@ describe('TestAdapter', function () {
 
 
       await adapter.load();
+
       assert.equal(testsEvents.length, 2);
       const root =
         (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]).suite!;
+
       assert.equal(root.children.length, 1);
       const suite1 = <TestSuiteInfo>root.children[0];
       assert.equal(
         suite1.children.length, 1, inspect([testListOutput, testsEvents]));
+      const s1t2 = suite1.children[0];
 
-      await adapter.run([
-        (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]).suite!.id
-      ]);
+      const stateEvents = testStatesEvents.length;
+      await adapter.run([root.id]);
 
       await waitFor(this, () => {
         return suite1.children.length == 2;
-      }, 1000);
+      });
+      const s1t1 = suite1.children[0];
 
-      assert.equal(suite1.children.length, 2);
+      await waitFor(this, () => {
+        return testStatesEvents.length == stateEvents + 6 + 6;
+      });
+
+      assert.deepStrictEqual(testStatesEvents, [
+        { type: 'started', tests: [root.id] },
+        { type: 'suite', state: 'running', suite: suite1 },
+        { type: 'test', state: 'running', test: s1t2 },
+        {
+          type: 'test',
+          state: 'failed',
+          test: s1t2,
+          decorations: [{ line: 14, message: '-> false' }],
+          message:
+            'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+        },
+        { type: 'suite', state: 'completed', suite: suite1 },
+        { type: 'finished' },
+        { type: 'started', tests: [s1t1.id] },
+        { type: 'suite', state: 'running', suite: suite1 },
+        { type: 'test', state: 'running', test: s1t1 },
+        {
+          type: 'test',
+          state: 'passed',
+          test: s1t1,
+          message: "Duration: 0.000132 second(s).\n",
+          decorations: undefined,
+        },
+        { type: 'suite', state: 'completed', suite: suite1 },
+        { type: 'finished' },
+      ]);
     })
 
     specify('test list error: duplicated test name', async function () {
