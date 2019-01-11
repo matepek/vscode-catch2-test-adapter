@@ -283,7 +283,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           "env": "${envObj}"
         };
       } else if (vscode.extensions.getExtension("ms-vscode.cpptools")) {
-        // documentation says debug"environment" = [{...}] but that is not works
+        // documentation says debug"environment" = [{...}] but that doesn't work
         template = {
           "type": "cppvsdbg",
           "linux": { "type": "cppdbg", "MIMode": "gdb" },
@@ -296,7 +296,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }
 
       if (!template) {
-        throw 'C2: For debugging \'debugConfigTemplate\' should be set.';
+        throw 'For debugging \'catch2TestExplorer.debugConfigTemplate\' should be set.';
       }
 
       template = Object.assign({ 'name': "${label} (${suiteLabel})" }, template);
