@@ -25,11 +25,9 @@ assert.equal(vscode.workspace.workspaceFolders!.length, 1);
 
 const workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
 
-const workspaceFolder =
-  vscode.workspace.getWorkspaceFolder(workspaceFolderUri)!;
+const workspaceFolder = vscode.workspace.getWorkspaceFolder(workspaceFolderUri)!;
 
 const dotVscodePath = path.join(workspaceFolderUri.fsPath, '.vscode');
-
 
 const sinonSandbox = sinon.createSandbox();
 
@@ -119,7 +117,7 @@ describe('TestAdapter', function () {
     while (!(c = await condition()) &&
       (Date.now() - start < timeout || !context.enableTimeouts()))
       await promisify(setTimeout)(32);
-    assert.ok(c);
+    assert.ok(c, condition.toString());
   }
 
   async function doAndWaitForReloadEvent(
@@ -129,7 +127,7 @@ describe('TestAdapter', function () {
     await waitFor(context, () => {
       return testsEvents.length >= origCount + 2;
     });
-    assert.equal(testsEvents.length, origCount + 2);
+    assert.equal(testsEvents.length, origCount + 2, action.toString());
     const e = <TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]!;
     assert.equal(e.type, 'finished');
     assert.ok(e.suite != undefined);
@@ -141,7 +139,7 @@ describe('TestAdapter', function () {
     if (adapter) {
       adapter.dispose();
       await waitFor(context, () => {
-        return (<any>adapter)._allTasks._count == 0;
+        return (<any>adapter)._mainTaskQueue._count == 0;
       });
     }
     testsEventsConnection && testsEventsConnection.dispose();
@@ -216,6 +214,15 @@ describe('TestAdapter', function () {
     return promisify(setTimeout)(1000);
   })
 
+  function matchPattern(p: string) {
+    return sinon.match((actual: vscode.RelativePattern) => {
+      const required = new vscode.RelativePattern(
+        workspaceFolder, p);
+      return required.base == actual.base &&
+        required.pattern == actual.pattern;
+    });
+  }
+
   describe('detect config change', function () {
     this.timeout(5000);
     this.slow(300);
@@ -242,45 +249,93 @@ describe('TestAdapter', function () {
 
     it('enableSourceDecoration', function () {
       return updateConfig('enableSourceDecoration', false).then(function () {
-        assert.ok(!(<any>adapter)._allTests.isEnabledSourceDecoration);
+        assert.ok(!(<any>adapter)._shared.isEnabledSourceDecoration);
       });
     })
 
     it('defaultRngSeed', function () {
       return updateConfig('defaultRngSeed', 987).then(function () {
-        assert.equal((<any>adapter)._allTests.rngSeed, 987);
+        assert.equal((<any>adapter)._shared.rngSeed, 987);
       });
     })
 
     it('defaultWatchTimeoutSec', function () {
       return updateConfig('defaultWatchTimeoutSec', 9876).then(function () {
-        assert.equal((<any>adapter)._allTests.execWatchTimeout, 9876000);
+        assert.equal((<any>adapter)._shared.execWatchTimeout, 9876000);
       });
     })
 
     it('defaultRunningTimeoutSec', function () {
       return updateConfig('defaultRunningTimeoutSec', 8765).then(function () {
-        assert.equal((<any>adapter)._allTests.execRunningTimeout, 8765000);
+        assert.equal((<any>adapter)._shared.execRunningTimeout, 8765000);
       });
     })
 
     it('defaultNoThrow', function () {
       return updateConfig('defaultNoThrow', true).then(function () {
-        assert.equal((<any>adapter)._allTests.isNoThrow, true);
+        assert.equal((<any>adapter)._shared.isNoThrow, true);
       });
     })
   })
 
-  it('load with empty config', async function () {
+  describe('load executables with value', function () {
     this.slow(500);
-    const adapter = createAdapterAndSubscribe();
-    await adapter.load();
-    assert.equal(testsEvents.length, 2);
-    assert.equal(testsEvents[0].type, 'started');
-    assert.equal(testsEvents[1].type, 'finished');
-    const suite = (<TestLoadFinishedEvent>testsEvents[1]).suite;
-    assert.notStrictEqual(suite, undefined);
-    assert.equal(suite!.children.length, 0);
+
+    let adapter: TestAdapter;
+
+    beforeEach(function () {
+      adapter = createAdapterAndSubscribe();
+    })
+
+    specify('empty config', async function () {
+      await adapter.load();
+      assert.equal(testsEvents.length, 2);
+      assert.equal(testsEvents[0].type, 'started');
+      assert.equal(testsEvents[1].type, 'finished');
+      const suite = (<TestLoadFinishedEvent>testsEvents[1]).suite;
+      assert.notStrictEqual(suite, undefined);
+      assert.equal(suite!.children.length, 0);
+    })
+
+    specify('../a/first', async function () {
+      await updateConfig('executables', '../a/first');
+      const withArgs = vsFindFilesStub.withArgs(matchPattern('first'));
+      const count = withArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(withArgs.callCount, count);
+    })
+
+    specify('../<workspaceFolder>/first', async function () {
+      await updateConfig('executables', '../' + path.basename(workspaceFolderUri.fsPath) + '/first');
+      const withArgs = vsFindFilesStub.withArgs(matchPattern('first'));
+      const count = withArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(withArgs.callCount, count + 1);
+    })
+
+    specify('./first', async function () {
+      await updateConfig('executables', './first');
+      const withArgs = vsFindFilesStub.withArgs(matchPattern('first'));
+      const count = withArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(withArgs.callCount, count + 1);
+    })
+
+    specify('./a/b/../../first', async function () {
+      await updateConfig('executables', './a/b/../../first');
+      const withArgs = vsFindFilesStub.withArgs(matchPattern('first'));
+      const count = withArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(withArgs.callCount, count + 1);
+    })
+
+    specify('cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*', async function () {
+      await updateConfig('executables', 'cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*');
+      const withArgs = vsFindFilesStub.withArgs(matchPattern('cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*'));
+      const count = withArgs.callCount;
+      await adapter.load();
+      assert.strictEqual(withArgs.callCount, count + 1);
+    })
   })
 
   context('example1', function () {
@@ -1282,7 +1337,7 @@ describe('TestAdapter', function () {
           }
         })
 
-        it('reloads because new test found under run', async function () {
+        it('reloads because new tests found under run', async function () {
           await loadAdapterAndAssert();
           const testListOutput = example1.suite1.outputs[1][1].split('\n');
           assert.equal(testListOutput.length, 10);
@@ -1321,7 +1376,7 @@ describe('TestAdapter', function () {
           await waitFor(this, function () {
             return suite1.children.length == 2 &&
               testStatesEvents.length >= 4 + 8;
-          }, 2000);
+          });
 
           assert.strictEqual(testsEvents.length, testLoadEventCount + 2);
           assert.strictEqual(suite1.children.length, 2);
@@ -1332,7 +1387,7 @@ describe('TestAdapter', function () {
 
           assert.deepStrictEqual(testStatesEvents, [
             ...expected,
-            { type: 'started', tests: [s1t1.id, s1t2.id] },
+            { type: 'started', tests: [s1t1.id] },
             { type: 'suite', state: 'running', suite: suite1 },
             { type: 'test', state: 'running', test: s1t1 },
             {
@@ -1342,6 +1397,10 @@ describe('TestAdapter', function () {
               decorations: undefined,
               message: 'Duration: 0.000132 second(s).\n'
             },
+            { type: 'suite', state: 'completed', suite: suite1 },
+            { type: 'finished' },
+            { type: 'started', tests: [s1t2.id] },
+            { type: 'suite', state: 'running', suite: suite1 },
             { type: 'test', state: 'running', test: s1t2 },
             {
               type: 'test',
@@ -1791,23 +1850,56 @@ describe('TestAdapter', function () {
 
 
       await adapter.load();
+
       assert.equal(testsEvents.length, 2);
       const root =
         (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]).suite!;
+
       assert.equal(root.children.length, 1);
       const suite1 = <TestSuiteInfo>root.children[0];
       assert.equal(
         suite1.children.length, 1, inspect([testListOutput, testsEvents]));
+      const s1t2 = suite1.children[0];
 
-      await adapter.run([
-        (<TestLoadFinishedEvent>testsEvents[testsEvents.length - 1]).suite!.id
-      ]);
+      const stateEvents = testStatesEvents.length;
+      await adapter.run([root.id]);
 
       await waitFor(this, () => {
         return suite1.children.length == 2;
-      }, 1000);
+      });
+      const s1t1 = suite1.children[0];
 
-      assert.equal(suite1.children.length, 2);
+      await waitFor(this, () => {
+        return testStatesEvents.length == stateEvents + 6 + 6;
+      });
+
+      assert.deepStrictEqual(testStatesEvents, [
+        { type: 'started', tests: [root.id] },
+        { type: 'suite', state: 'running', suite: suite1 },
+        { type: 'test', state: 'running', test: s1t2 },
+        {
+          type: 'test',
+          state: 'failed',
+          test: s1t2,
+          decorations: [{ line: 14, message: '-> false' }],
+          message:
+            'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+        },
+        { type: 'suite', state: 'completed', suite: suite1 },
+        { type: 'finished' },
+        { type: 'started', tests: [s1t1.id] },
+        { type: 'suite', state: 'running', suite: suite1 },
+        { type: 'test', state: 'running', test: s1t1 },
+        {
+          type: 'test',
+          state: 'passed',
+          test: s1t1,
+          message: "Duration: 0.000132 second(s).\n",
+          decorations: undefined,
+        },
+        { type: 'suite', state: 'completed', suite: suite1 },
+        { type: 'finished' },
+      ]);
     })
 
     specify('test list error: duplicated test name', async function () {
@@ -2020,14 +2112,13 @@ describe('TestAdapter', function () {
       this.timeout(8000);
       this.slow(500);
       const wsPath = workspaceFolderUri.fsPath;
-      const execPath2CopyRelPath = path.normalize('foo/bar/base.second.first');
-      const execPath2CopyPath =
-        vscode.Uri.file(path.join(wsPath, execPath2CopyRelPath)).fsPath;
+      const execPath2CopyRelPath = 'foo/bar/base.second.first';
+      const execPath2CopyPath = path.join(wsPath, execPath2CopyRelPath);
 
       const envArray: [string, string][] = [
         ['${absPath}', execPath2CopyPath],
-        ['${relPath}', execPath2CopyRelPath],
-        ['${absDirpath}', path.join(wsPath, path.normalize('foo/bar'))],
+        ['${relPath}', path.normalize(execPath2CopyRelPath)],
+        ['${absDirpath}', path.join(wsPath, 'foo/bar')],
         ['${relDirpath}', path.normalize('foo/bar')],
         ['${filename}', 'base.second.first'],
         ['${baseFilename}', 'base.second'],
@@ -2068,7 +2159,7 @@ describe('TestAdapter', function () {
       vsfsWatchStub.withArgs(matchRelativePattern(execPath2CopyPath))
         .callsFake(handleCreateWatcherCb);
 
-      vsFindFilesStub.withArgs(matchRelativePattern(execPath2CopyPath))
+      vsFindFilesStub.withArgs(matchPattern(execPath2CopyRelPath))
         .resolves([vscode.Uri.file(execPath2CopyPath)]);
 
       adapter = createAdapterAndSubscribe();

@@ -4,15 +4,14 @@
 
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import * as path from 'path';
-import { inspect } from 'util';
 import * as vscode from 'vscode';
-import { TestEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
+import { TestSuiteInfo } from 'vscode-test-adapter-api';
 
-import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { TestInfoBase } from './TestInfoBase';
 import * as c2fs from './FsWrapper';
 import { generateUniqueId } from './IdGenerator';
 import { TaskPool } from './TaskPool';
+import { SharedVariables } from './SharedVariables';
 
 export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   readonly type: 'suite' = 'suite';
@@ -22,12 +21,12 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   file?: string;
   line?: number;
 
-  private _isKill: boolean = false;
-  private _proc: ChildProcess | undefined = undefined;
+  private _killed: boolean = false;
+  private _process: ChildProcess | undefined = undefined;
 
   constructor(
+    protected readonly _shared: SharedVariables,
     public readonly origLabel: string,
-    public readonly allTests: RootTestSuiteInfo,
     public readonly execPath: string,
     public readonly execOptions: SpawnOptions) {
     this.label = origLabel;
@@ -57,20 +56,19 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
   protected abstract _handleProcess(runInfo: TestSuiteInfoBaseRunInfo): Promise<void>;
 
   cancel(): void {
-    this.allTests.log.info(
-      'canceled: ' + inspect([this.id, this.label, this._proc != undefined]));
+    this._shared.log.info('canceled: ', this.id, this.label, this._process != undefined);
 
-    this._isKill = true;
+    this._killed = true;
 
-    if (this._proc != undefined) {
-      this._proc.kill();
-      this._proc = undefined;
+    if (this._process != undefined) {
+      this._process.kill();
+      this._process = undefined;
     }
   }
 
   run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
-    this._isKill = false;
-    this._proc = undefined;
+    this._killed = false;
+    this._process = undefined;
 
     let childrenToRun: 'all' | TestInfoBase[] = 'all';
 
@@ -95,49 +93,49 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
   private _runInner(childrenToRun: TestInfoBase[] | 'all'):
     Promise<void> {
-    if (this._isKill) return Promise.reject(Error('Test was killed.'));
+    if (this._killed) return Promise.reject(Error('Test was killed.'));
 
-    this.allTests.testStatesEmitter.fire(
+    this._shared.testStatesEmitter.fire(
       { type: 'suite', suite: this, state: 'running' });
 
     if (childrenToRun === 'all') {
       for (let i = 0; i < this.children.length; i++) {
         const c = this.children[i];
         if (c.skipped) {
-          this.allTests.testStatesEmitter.fire(c.getStartEvent());
-          this.allTests.testStatesEmitter.fire(c.getSkippedEvent());
+          this._shared.testStatesEmitter.fire(c.getStartEvent());
+          this._shared.testStatesEmitter.fire(c.getSkippedEvent());
         }
       }
     }
 
     const execParams = this._getRunParams(childrenToRun);
 
-    this.allTests.log.info('proc starting: ' + inspect([this.execPath, execParams]));
+    this._shared.log.info('proc starting: ', this.execPath, execParams);
 
-    this._proc = spawn(this.execPath, execParams, this.execOptions);
+    this._process = spawn(this.execPath, execParams, this.execOptions);
 
     const runInfo: TestSuiteInfoBaseRunInfo = {
-      process: this._proc,
+      process: this._process,
       childrenToRun: childrenToRun,
       timeout: undefined,
       timeoutWatcherTrigger: () => { },
     };
 
-    this.allTests.log.info('proc started');
+    this._shared.log.info('proc started');
     {
       const startTime = Date.now();
 
       const killIfTimeouts = (): Promise<void> => {
         return new Promise<vscode.Disposable>(resolve => {
-          const conn = this.allTests.onDidExecRunningTimeoutChanged(() => {
+          const conn = this._shared.onDidChangeExecRunningTimeout(() => {
             resolve(conn);
           });
 
           runInfo.timeoutWatcherTrigger = () => { resolve(conn); };
 
-          if (this.allTests.execRunningTimeout !== null) {
+          if (this._shared.execRunningTimeout !== null) {
             const elapsed = Date.now() - startTime;
-            const left = this.allTests.execRunningTimeout - elapsed;
+            const left = this._shared.execRunningTimeout - elapsed;
             if (left <= 0) resolve(conn);
             else setTimeout(resolve, left, conn);
           }
@@ -145,10 +143,10 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
           conn.dispose();
           if (runInfo.process === undefined) {
             return Promise.resolve();
-          } else if (this.allTests.execRunningTimeout !== null
-            && Date.now() - startTime > this.allTests.execRunningTimeout) {
+          } else if (this._shared.execRunningTimeout !== null
+            && Date.now() - startTime > this._shared.execRunningTimeout) {
             runInfo.process.kill();
-            runInfo.timeout = this.allTests.execRunningTimeout;
+            runInfo.timeout = this._shared.execRunningTimeout;
             return Promise.resolve();
           } else {
             return killIfTimeouts();
@@ -160,13 +158,13 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
 
     return this._handleProcess(runInfo)
       .catch((reason: any) => {
-        this.allTests.log.error(inspect(reason));
+        this._shared.log.error(reason);
       })
       .then(() => {
-        this.allTests.log.info('proc finished: ' + inspect(this.execPath));
-        this.allTests.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
+        this._shared.log.info('proc finished:', this.execPath);
+        this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
-        this._proc = undefined;
+        this._process = undefined;
         runInfo.process = undefined;
         runInfo.timeoutWatcherTrigger();
       });
@@ -198,18 +196,10 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     this.children.splice(i, 0, test);
   }
 
-  protected _sendTestStateEventsWithParent(events: TestEvent[]) {
-    this.allTests.sendTestSuiteStateEventsWithParent([
-      { type: 'suite', suite: this, state: 'running' },
-      ...events,
-      { type: 'suite', suite: this, state: 'completed' },
-    ]);
-  }
-
   protected _findFilePath(matchedPath: string): string {
     let filePath = matchedPath;
     try {
-      filePath = path.join(this.allTests.workspaceFolder.uri.fsPath, matchedPath);
+      filePath = path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
       if (!c2fs.existsSync(filePath) && this.execOptions.cwd) {
         filePath = path.join(this.execOptions.cwd, matchedPath);
       }
@@ -227,14 +217,15 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
         filePath = matchedPath;
       }
     } catch (e) {
-      filePath = path.join(this.allTests.workspaceFolder.uri.fsPath, matchedPath);
+      filePath = path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
     }
     return filePath;
   }
 
-  findTestById(id: string): TestInfoBase | undefined {
+  findRouteToTestById(id: string): (TestSuiteInfoBase | TestInfoBase)[] | undefined {
     for (let i = 0; i < this.children.length; ++i) {
-      if (this.children[i].id === id) return this.children[i];
+      const res = this.children[i].findRouteToTestById(id);
+      if (res) return [this, ...res];
     }
     return undefined;
   }

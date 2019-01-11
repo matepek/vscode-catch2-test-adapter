@@ -3,26 +3,31 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import { TestEvent } from 'vscode-test-adapter-api';
+import { SpawnOptions } from 'child_process';
 
-import { GoogleTestSuiteInfo } from './GoogleTestSuiteInfo';
 import { TestInfoBase } from './TestInfoBase';
+import { SharedVariables } from './SharedVariables';
 
 export class GoogleTestInfo extends TestInfoBase {
 	constructor(
+		shared: SharedVariables,
 		id: string | undefined,
 		testNameFull: string,
 		valueParam: string | undefined,
 		file: string | undefined,
 		line: number | undefined,
-		parent: GoogleTestSuiteInfo,
+		execPath: string,
+		execOptions: SpawnOptions,
 	) {
-		super(id,
+		super(shared,
+			id,
 			testNameFull,
 			testNameFull + (valueParam ? (' # GetParam() = ' + valueParam) : ''),
 			testNameFull.startsWith('DISABLED_') || testNameFull.indexOf('.DISABLED_') != -1,
 			file,
 			line,
-			parent);
+			execPath,
+			execOptions);
 	}
 
 	getDebugParams(breakOnFailure: boolean): string[] {

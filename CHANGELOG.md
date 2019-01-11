@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.11]
+
+Performance and stability impovements.
+
 ## [2.3.10] - 2019-01-05
 
 Performance and stability impovements.
@@ -15,7 +19,7 @@ Performance and stability impovements.
 
 ### Fixed
 
-- a bug which caused that `files.exlude` were also applied to pattern. Not anymore.
+- a bug which caused that `files.exclude` were also applied to pattern. Not anymore.
 - a bug which caused to show not file names but patterns in the explorer.
 - a bug which allowed suite duplications if more patterns were matching.
 

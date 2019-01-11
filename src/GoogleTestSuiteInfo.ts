@@ -7,21 +7,21 @@ import * as fs from 'fs';
 import { inspect } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
-import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { GoogleTestInfo } from './GoogleTestInfo';
 import * as c2fs from './FsWrapper';
 import { TestSuiteInfoBase, TestSuiteInfoBaseRunInfo } from './TestSuiteInfoBase';
 import { Parser } from 'xml2js';
+import { SharedVariables } from './SharedVariables';
 
 export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 	children: GoogleTestInfo[] = [];
 
 	constructor(
+		shared: SharedVariables,
 		origLabel: string,
-		allTests: RootTestSuiteInfo,
 		execPath: string,
 		execOptions: SpawnOptions) {
-		super(origLabel, allTests, execPath, execOptions);
+		super(shared, origLabel, execPath, execOptions);
 	}
 
 	reloadChildren(): Promise<void> {
@@ -50,7 +50,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 				this.children = [];
 
 				if (googleTestListOutput.stderr) {
-					this.allTests.log.warn('reloadChildren -> googleTestListOutput.stderr: ' + inspect(googleTestListOutput));
+					this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
 					this._createGoogleTestInfo(undefined, '!! ' + googleTestListOutput.stderr.split('\n')[0].trim(),
 						undefined, undefined, undefined);
 					return;
@@ -60,7 +60,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 					let xml: any = undefined;
 					new Parser({ explicitArray: true }).parseString(testOutputStr, (err: any, result: any) => {
 						if (err) {
-							this.allTests.log.error(err.toString());
+							this._shared.log.error(err.toString());
 							throw err;
 						} else {
 							xml = result;
@@ -68,7 +68,8 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 					});
 
 					fs.unlink(tmpFilePath, (err: any) => {
-						this.allTests.log.error('Couldn\'t remove tmpFilePath: ' + tmpFilePath);
+						if (err)
+							this._shared.log.error('Couldn\'t remove tmpFilePath: ' + tmpFilePath, err);
 					});
 
 					for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
@@ -87,7 +88,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 					}
 
 				} catch (e) {
-					this.allTests.log.error('Couldn\'t parse output file. It is trying to parse the output: ' + inspect(googleTestListOutput));
+					this._shared.log.error('Couldn\'t parse output file. It is trying to parse the output: ', googleTestListOutput);
 
 					this.children = [];
 
@@ -99,7 +100,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 
 					for (let i = 0; i < lines.length;) {
 						if (lines[i][0] == ' ')
-							this.allTests.log.error(
+							this._shared.log.error(
 								'Wrong test list output format: ' + lines.toString());
 
 						const testClassNameFull = lines[i++];
@@ -128,8 +129,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 		id: string | undefined, testName: string,
 		valueParam: string | undefined,
 		file: string | undefined, line: number | undefined): GoogleTestInfo {
-		const test =
-			new GoogleTestInfo(id, testName, valueParam, file, line, this);
+		const test = new GoogleTestInfo(this._shared, id, testName, valueParam, file, line, this.execPath, this.execOptions);
 
 		this._addChild(test);
 
@@ -150,9 +150,9 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 			execParams.push('--gtest_also_run_disabled_tests');
 		}
 
-		if (this.allTests.rngSeed !== null) {
+		if (this._shared.rngSeed !== null) {
 			execParams.push('--gtest_random_seed='
-				+ (this.allTests.rngSeed === 'time' ? '0' : this.allTests.rngSeed.toString()));
+				+ (this._shared.rngSeed === 'time' ? '0' : this._shared.rngSeed.toString()));
 		}
 
 		return execParams;
@@ -190,10 +190,11 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 						});
 
 						if (data.currentChild !== undefined) {
+							this._shared.log.info('Test', data.currentChild.testNameFull, 'has started.');
 							const ev = data.currentChild.getStartEvent();
-							this.allTests.testStatesEmitter.fire(ev);
+							this._shared.testStatesEmitter.fire(ev);
 						} else {
-							this.allTests.log.warn('TestCase not found in children: ' + testNameFull);
+							this._shared.log.warn('TestCase not found in children: ' + testNameFull);
 						}
 
 						data.buffer = data.buffer.substr(m.index!);
@@ -205,22 +206,22 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 						const testCase = data.buffer.substring(0, m.index! + m[0].length);
 
 						if (data.currentChild !== undefined) {
+							this._shared.log.info('Test ', data.currentChild.testNameFull, 'has finished.');
 							try {
 								const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase);
-								if (!this.allTests.isEnabledSourceDecoration)
+								if (!this._shared.isEnabledSourceDecoration)
 									ev.decorations = undefined;
 								if (runInfo.timeout)
 									ev.message = this._getTimeoutMessage(runInfo.timeout);
-								this.allTests.testStatesEmitter.fire(ev);
+								this._shared.testStatesEmitter.fire(ev);
 								data.processedTestCases.push(data.currentChild);
 							} catch (e) {
-								this.allTests.log.error(
+								this._shared.log.error(
 									'parsing and processing test: ' + data.currentChild.label);
 							}
 						} else {
-							this.allTests.log.info(
-								'Test case found without TestInfo: ' + inspect(this, true, 1) +
-								'; ' + testCase);
+							this._shared.log.info(
+								'Test case found without TestInfo: ', this, '; ' + testCase);
 							data.unprocessedTestCases.push(testCase);
 						}
 
@@ -255,12 +256,12 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 		}).catch(
 			(reason: any) => {
 				runInfo.process && runInfo.process.kill();
-				this.allTests.log.warn(inspect([runInfo, reason, this, data], true, 2));
+				this._shared.log.warn(runInfo, reason, this, data);
 				return reason;
 			}).then((codeOrReason: number | string | any) => {
 				if (data.inTestCase) {
 					if (data.currentChild !== undefined) {
-						this.allTests.log.warn('data.currentChild !== undefined: ' + inspect(data));
+						this._shared.log.warn('data.currentChild !== undefined: ', data);
 						const ev: TestEvent = {
 							type: 'test',
 							test: data.currentChild!,
@@ -271,9 +272,9 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 						} else {
 							ev.message = 'Fatal error: (Wrong Google Test output.)\nError: ' + inspect(codeOrReason) + '\n';
 						}
-						this.allTests.testStatesEmitter.fire(ev);
+						this._shared.testStatesEmitter.fire(ev);
 					} else {
-						this.allTests.log.warn('data.inTestCase: ' + inspect(data));
+						this._shared.log.warn('data.inTestCase: ', data);
 					}
 				}
 
@@ -283,40 +284,39 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 						|| (runInfo.childrenToRun !== 'all' && data.processedTestCases.length == 0));
 
 				if (data.unprocessedTestCases.length > 0 || isTestRemoved) {
-					this.allTests
-						.sendLoadEvents(() => {
-							return this.reloadChildren().catch(e => {
-								this.allTests.log.error('reloading-error: ' + inspect(e));
-								// Suite possibly deleted: It is a dead suite.
-							});
-						})
-						.then(() => {
-							// we have test results for the newly detected tests
-							// after reload we can set the results
-							const events: TestEvent[] = [];
-
-							for (let i = 0; i < data.unprocessedTestCases.length; i++) {
-								const testCase = data.unprocessedTestCases[i];
-
-								const m = testCase.match(testBeginRe);
-								if (m == null) break;
-
-								const testNameFull = m[1];
-
-								const currentChild = this.children.find((v: GoogleTestInfo) => {
-									return v.testNameFull == testNameFull;
-								});
-								if (currentChild === undefined) break;
-								try {
-									const ev = currentChild.parseAndProcessTestCase(testCase);
-									events.push(currentChild.getStartEvent());
-									events.push(ev);
-								} catch (e) {
-									this.allTests.log.error('parsing and processing test: ' + testCase);
-								}
-							}
-							events.length && this._sendTestStateEventsWithParent(events);
+					new Promise<void>((resolve, reject) => {
+						this._shared.loadWithTaskEmitter.fire(() => {
+							return this.reloadChildren().then(resolve, reject);
 						});
+					}).then(() => {
+						// we have test results for the newly detected tests
+						// after reload we can set the results
+						const events: TestEvent[] = [];
+
+						for (let i = 0; i < data.unprocessedTestCases.length; i++) {
+							const testCase = data.unprocessedTestCases[i];
+
+							const m = testCase.match(testBeginRe);
+							if (m == null) break;
+
+							const testNameFull = m[1];
+
+							const currentChild = this.children.find((v: GoogleTestInfo) => {
+								return v.testNameFull == testNameFull;
+							});
+							if (currentChild === undefined) break;
+							try {
+								const ev = currentChild.parseAndProcessTestCase(testCase);
+								events.push(ev);
+							} catch (e) {
+								this._shared.log.error('parsing and processing test: ' + testCase);
+							}
+						}
+						events.length && this._shared.sendTestEventEmitter.fire(events);
+					}, (reason: any) => {
+						// Suite possibly deleted: It is a dead suite.
+						this._shared.log.error('reloading-error: ', reason);
+					});
 				}
 			});
 	}
