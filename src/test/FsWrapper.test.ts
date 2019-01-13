@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { spawnAsync, statAsync } from '../FsWrapper';
-import { ChildProcessStub } from './Helpers';
+import { ChildProcessStub } from './TestCommon';
 
 describe('FsWrapper.spawnAsync', function () {
   it('echoes', async function () {

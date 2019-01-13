@@ -82,7 +82,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       const file = fileUris[i];
       await this._createSuiteByUri(file).then((suite: TestSuiteInfoBase) => {
         return suite.reloadChildren().then(() => {
-          if (this._rootSuite.insertChild(suite)) {
+          if (this._rootSuite.insertChild(suite, false/* called later */)) {
             this._executables.set(file.fsPath, suite);
           }
         }, (reason: any) => {
@@ -93,7 +93,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       });
     }
 
-    this._uniquifySuiteNames();
+    this._rootSuite.uniquifySuiteLabels();
   }
 
   private _createSuiteByUri(file: vscode.Uri): Promise<TestSuiteInfoBase> {
@@ -177,9 +177,8 @@ export class TestExecutableInfo implements vscode.Disposable {
           return new Promise<void>(resolve => {
             this._shared.loadWithTaskEmitter.fire(() => {
               this._executables.delete(uri.fsPath);
-              this._rootSuite.removeChild(suite);
+              this._rootSuite.removeChild(suite)
               resolve();
-              return Promise.resolve();
             });
           });
         } else {
@@ -189,15 +188,11 @@ export class TestExecutableInfo implements vscode.Disposable {
         return new Promise<void>((resolve, reject) => {
           this._shared.loadWithTaskEmitter.fire(() => {
             return suite.reloadChildren().then(() => {
-              if (this._rootSuite.insertChild(suite)) {
+              if (this._rootSuite.insertChild(suite, true)) {
                 this._executables.set(uri.fsPath, suite);
-                this._uniquifySuiteNames();
               }
               this._lastEventArrivedAt.delete(uri.fsPath);
-              resolve();
-            }, (reason: any) => {
-              reject(reason);
-            });
+            }).then(resolve, reject);
           });
         }).catch((reason: any) => {
           this._shared.log.warn('Problem under reloadChildren:', reason, uri.fsPath, suite);
@@ -240,27 +235,5 @@ export class TestExecutableInfo implements vscode.Disposable {
   private _handleDelete(uri: vscode.Uri) {
     this._shared.log.info('delete event: ' + uri.fsPath);
     return this._handleEverything(uri);
-  }
-
-  private _uniquifySuiteNames() {
-    const uniqueNames: Map<string /* name */, TestSuiteInfoBase[]> = new Map();
-
-    for (const suite of this._executables.values()) {
-      const suites = uniqueNames.get(suite.origLabel);
-      if (suites) {
-        suites.push(suite);
-      } else {
-        uniqueNames.set(suite.origLabel, [suite]);
-      }
-    }
-
-    for (const suites of uniqueNames.values()) {
-      if (suites.length > 1) {
-        let i = 1;
-        for (const suite of suites) {
-          suite.label = String(i++) + ') ' + suite.origLabel;
-        }
-      }
-    }
   }
 }

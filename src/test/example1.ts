@@ -3,16 +3,14 @@ import { EOL } from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { TestInfo, TestSuiteInfo } from 'vscode-test-adapter-api';
+import { Imitation, settings, FileSystemWatcherStub, ChildProcessStub } from './TestCommon';
 
-assert.notEqual(vscode.workspace.workspaceFolders, undefined);
-assert.equal(vscode.workspace.workspaceFolders!.length, 1);
-
-const workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
+///
 
 export const example1 = new class {
   readonly suite1 = new class {
     readonly execPath =
-      vscode.Uri.file(path.join(workspaceFolderUri.path, 'execPath1')).fsPath;
+      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath1')).fsPath;
 
     readonly t1 = new class {
       readonly fullTestName = 's1t1';
@@ -212,7 +210,7 @@ export const example1 = new class {
 
   readonly suite2 = new class {
     readonly execPath =
-      vscode.Uri.file(path.join(workspaceFolderUri.path, 'execPath2')).fsPath;
+      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath2')).fsPath;
 
     readonly t1 = new class {
       readonly fullTestName = 's2t1';
@@ -464,7 +462,7 @@ export const example1 = new class {
 
   readonly suite3 = new class {
     readonly execPath =
-      vscode.Uri.file(path.join(workspaceFolderUri.path, 'execPath3')).fsPath;
+      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath3')).fsPath;
 
     readonly outputs: [string[], string][] = [
 
@@ -2147,7 +2145,7 @@ For more detailed usage please see the project docs
 
   readonly gtest1 = new class {
     readonly execPath =
-      vscode.Uri.file(path.join(workspaceFolderUri.path, 'gtest1')).fsPath;
+      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'gtest1')).fsPath;
 
     readonly gtest_list_tests_output = [
       'TestCas1.',
@@ -2382,4 +2380,45 @@ For more detailed usage please see the project docs
     [this.suite3.execPath, this.suite3.outputs],
     [this.gtest1.execPath, this.gtest1.outputs],
   ];
+
+  initImitation(imitation: Imitation): Map<string, FileSystemWatcherStub> {
+    const watchers: Map<string, FileSystemWatcherStub> = new Map();
+
+    for (let suite of this.outputs) {
+      for (let scenario of suite[1]) {
+        imitation.spawnStub.withArgs(suite[0], scenario[0]).callsFake(function () {
+          return new ChildProcessStub(scenario[1]);
+        });
+      }
+
+      imitation.fsStatStub.withArgs(suite[0]).callsFake(imitation.handleStatFileExists);
+
+      imitation.vsfsWatchStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(suite[0]))
+        .callsFake(imitation.createCreateFSWatcherHandler(watchers));
+    }
+
+    const dirContent: Map<string, vscode.Uri[]> = new Map();
+    for (let p of this.outputs) {
+      const parent = vscode.Uri.file(path.dirname(p[0])).fsPath;
+      let children: vscode.Uri[] = [];
+      if (dirContent.has(parent))
+        children = dirContent.get(parent)!;
+      else {
+        dirContent.set(parent, children);
+      }
+      children.push(vscode.Uri.file(p[0]));
+    }
+
+    dirContent.forEach((v: vscode.Uri[], k: string) => {
+      assert.equal(settings.workspaceFolderUri.fsPath, k);
+      imitation.vsFindFilesStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(k)).resolves(v);
+      for (const p of v) {
+        imitation.vsFindFilesStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(p.fsPath)).resolves([
+          p
+        ]);
+      }
+    });
+
+    return watchers;
+  }
 };

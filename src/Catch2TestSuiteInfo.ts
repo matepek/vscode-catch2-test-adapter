@@ -49,10 +49,12 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 			.then((catch2TestListOutput) => {
 				const oldChildren = this.children;
 				this.children = [];
+				this.label = this.origLabel;
 
 				if (catch2TestListOutput.stderr) {
 					this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr: ', catch2TestListOutput);
-					this._createCatch2TestInfo(undefined, '!! ' + catch2TestListOutput.stderr.split('\n')[0].trim(), '', [], '', 0);
+					this.label = '⚠️ ' + this.label;
+					this._createCatch2TestInfo(undefined, '⚠️ ' + catch2TestListOutput.stderr.split('\n')[0].trim(), '', [], '', 0);
 					return;
 				}
 
