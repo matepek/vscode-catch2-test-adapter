@@ -543,6 +543,43 @@ describe('Test Catch2 Framework Load', function () {
 			assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
 		})
 
+		it('should run with [suite1.id,s2t2.id]', async function () {
+			await settings.updateConfig('workerMaxNumber', 1);
+			await loadAdapterAndAssert();
+			await adapter.run([suite1.id, s2t2.id]);
+			const expected = [
+				{ type: 'started', tests: [suite1.id, s2t2.id] },
+				{ type: 'suite', state: 'running', suite: suite1 },
+				{ type: 'test', state: 'running', test: s1t1 }, {
+					type: 'test',
+					state: 'passed',
+					test: s1t1,
+					decorations: undefined,
+					message: 'Duration: 0.000132 second(s).\n'
+				},
+				{ type: 'test', state: 'running', test: s1t2 }, {
+					type: 'test',
+					state: 'failed',
+					test: s1t2,
+					decorations: [{ line: 14, message: '-> false' }],
+					message:
+						'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+				},
+				{ type: 'suite', state: 'completed', suite: suite1 },
+				{ type: 'suite', state: 'running', suite: suite2 },
+				{ type: 'test', state: 'running', test: s2t2 }, {
+					type: 'test',
+					state: 'passed',
+					test: s2t2,
+					decorations: undefined,
+					message: 'Duration: 0.001294 second(s).\n'
+				},
+				{ type: 'suite', state: 'completed', suite: suite2 },
+				{ type: 'finished' }
+			];
+			assert.deepStrictEqual(adapter.testStatesEvents, expected);
+		})
+
 		it('should run with wrong xml with exit code', async function () {
 			await loadAdapterAndAssert();
 			const m = example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');

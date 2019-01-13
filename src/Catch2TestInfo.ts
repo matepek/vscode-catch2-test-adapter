@@ -7,11 +7,11 @@ import * as xml2js from 'xml2js';
 import { EOL } from 'os';
 import { SpawnOptions } from 'child_process';
 
-import { TestInfoBase } from './TestInfoBase';
+import { AbstractTestInfo } from './AbstractTestInfo';
 import { inspect } from 'util';
 import { SharedVariables } from './SharedVariables';
 
-export class Catch2TestInfo extends TestInfoBase {
+export class Catch2TestInfo extends AbstractTestInfo {
 	constructor(
 		shared: SharedVariables,
 		id: string | undefined,

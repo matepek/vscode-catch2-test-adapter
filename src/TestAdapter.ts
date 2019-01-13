@@ -14,7 +14,7 @@ import { resolveVariables } from './Helpers';
 import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
-import { TestInfoBase } from './TestInfoBase';
+import { AbstractTestInfo } from './AbstractTestInfo';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: util.Log;
@@ -260,7 +260,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       throw Error('Unexpected error.');
     }
 
-    const testInfo = <TestInfoBase>route[route.length - 1];
+    const testInfo = <AbstractTestInfo>route[route.length - 1];
     route.pop();
     const suiteLabels = route.map(s => s.label).join(' -> ');
 

@@ -5,7 +5,7 @@
 import * as fse from 'fs-extra';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { TestLoadFinishedEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
+import { TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
 import { promisify } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
@@ -48,8 +48,6 @@ describe('Test Google Framework', function () {
 
 	describe('load gtest1', function () {
 		let adapter: TestAdapter;
-		let root: TestSuiteInfo;
-		let gtest: TestSuiteInfo;
 
 		beforeEach(async function () {
 			await settings.updateConfig('executables', example1.gtest1.execPath);
@@ -69,41 +67,42 @@ describe('Test Google Framework', function () {
 			await adapter.load();
 
 			assert.equal(adapter.testLoadsEvents.length, 2);
-
-			root =
-				(<TestLoadFinishedEvent>adapter.testLoadsEvents[adapter.testLoadsEvents.length - 1]).suite!;
-			adapter.testLoadsEvents.pop();
-			adapter.testLoadsEvents.pop();
-
-			assert.equal(root.children.length, 1);
-			gtest = <TestSuiteInfo>root.children[0];
-
-			assert.equal(gtest.children.length, 12);
+			assert.equal(adapter.rootSuite.children.length, 1);
+			assert.equal(adapter.suite1.children.length, 5);
 		})
+
+		function get(...index: number[]) {
+			let res: TestSuiteInfo | TestInfo = adapter.rootSuite;
+			for (let i = 0; i < index.length; i++) {
+				res = (<TestSuiteInfo>res).children[index[i]];
+			}
+			return res;
+		}
 
 		specify('run all', async function () {
 			this.slow(500);
 
-			await adapter.run([root.id]);
+			await adapter.run([adapter.rootSuite.id]);
 
-			assert.deepStrictEqual(adapter.testStatesEvents, [
-				{ type: 'started', tests: [root.id] },
-				{ type: 'suite', state: 'running', suite: gtest },
-				{ type: 'test', state: 'running', test: gtest.children[0] },
+			const expected = [
+				{ type: 'started', tests: [adapter.rootSuite.id] },
+				{ type: 'suite', state: 'running', suite: get(0) },
+				{ type: 'suite', state: 'running', suite: get(0, 3) },
+				{ type: 'test', state: 'running', test: get(0, 3, 0) },
 				{
 					type: 'test',
 					state: 'passed',
-					test: gtest.children[0],
+					test: get(0, 3, 0),
 					message: [
 						'[ RUN      ] TestCas1.test1',
 						'[       OK ] TestCas1.test1 (0 ms)',
 					].join(EOL)
 				},
-				{ type: 'test', state: 'running', test: gtest.children[1] },
+				{ type: 'test', state: 'running', test: get(0, 3, 1) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[1],
+					test: get(0, 3, 1),
 					decorations: [{ line: 18, message: "Actual: false;  Expected: true;" }],
 					message: [
 						"[ RUN      ] TestCas1.test2",
@@ -114,11 +113,13 @@ describe('Test Google Framework', function () {
 						"[  FAILED  ] TestCas1.test2 (0 ms)",
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: gtest.children[2] },
+				{ type: 'suite', state: 'completed', suite: get(0, 3) },
+				{ type: 'suite', state: 'running', suite: get(0, 4) },
+				{ type: 'test', state: 'running', test: get(0, 4, 0) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[2],
+					test: get(0, 4, 0),
 					decorations: [
 						{ line: 23, message: "Actual: false;  Expected: true;" },
 						{ line: 24, message: "Actual: true;  Expected: false;" },
@@ -150,11 +151,11 @@ describe('Test Google Framework', function () {
 						'[  FAILED  ] TestCas2.test1 (1 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: gtest.children[3] },
+				{ type: 'test', state: 'running', test: get(0, 4, 1) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[3],
+					test: get(0, 4, 1),
 					decorations: [
 						{ line: 31, message: "Actual: false;  Expected: true;" },
 						{ line: 35, message: "Expected: magic_func() doesn't generate new fatal failures in the current thread.;    Actual: it does." },
@@ -171,11 +172,13 @@ describe('Test Google Framework', function () {
 						'[  FAILED  ] TestCas2.test2 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: gtest.children[10] },
+				{ type: 'suite', state: 'completed', suite: get(0, 4) },
+				{ type: 'suite', state: 'running', suite: get(0, 0) },
+				{ type: 'test', state: 'running', test: get(0, 0, 0) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[10],
+					test: get(0, 0, 0),
 					decorations: [
 						{ line: 69, message: "<-- failure" },
 					],
@@ -188,11 +191,11 @@ describe('Test Google Framework', function () {
 						'[  FAILED  ] MockTestCase.expect1 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: gtest.children[11] },
+				{ type: 'test', state: 'running', test: get(0, 0, 1) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[11],
+					test: get(0, 0, 1),
 					decorations: [
 						{ line: 77, message: "<-- failure" },
 					],
@@ -216,11 +219,13 @@ describe('Test Google Framework', function () {
 						'[  FAILED  ] MockTestCase.expect2 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: gtest.children[4] },
+				{ type: 'suite', state: 'completed', suite: get(0, 0) },
+				{ type: 'suite', state: 'running', suite: get(0, 1) },
+				{ type: 'test', state: 'running', test: get(0, 1, 0) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[4],
+					test: get(0, 1, 0),
 					decorations: [
 						{ line: 40, message: "<-- failure" },
 					],
@@ -234,11 +239,11 @@ describe('Test Google Framework', function () {
 						'[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: gtest.children[5] },
+				{ type: 'test', state: 'running', test: get(0, 1, 1) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[5],
+					test: get(0, 1, 1),
 					decorations: [
 						{ line: 40, message: "<-- failure" },
 					],
@@ -252,11 +257,11 @@ describe('Test Google Framework', function () {
 						'[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: gtest.children[6] },
+				{ type: 'test', state: 'running', test: get(0, 1, 2) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[6],
+					test: get(0, 1, 2),
 					decorations: [
 						{ line: 41, message: "<-- failure" },
 					],
@@ -270,11 +275,11 @@ describe('Test Google Framework', function () {
 						'[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2 (1 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: gtest.children[7] },
+				{ type: 'test', state: 'running', test: get(0, 1, 3) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[7],
+					test: get(0, 1, 3),
 					decorations: [
 						{ line: 41, message: "<-- failure" },
 					],
@@ -288,11 +293,13 @@ describe('Test Google Framework', function () {
 						'[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: gtest.children[8] },
+				{ type: 'suite', state: 'completed', suite: get(0, 1) },
+				{ type: 'suite', state: 'running', suite: get(0, 2) },
+				{ type: 'test', state: 'running', test: get(0, 2, 0) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[8],
+					test: get(0, 2, 0),
 					decorations: [
 						{ line: 40, message: "<-- failure" },
 					],
@@ -306,11 +313,11 @@ describe('Test Google Framework', function () {
 						'[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: gtest.children[9] },
+				{ type: 'test', state: 'running', test: get(0, 2, 1) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[9],
+					test: get(0, 2, 1),
 					decorations: [
 						{ line: 41, message: "<-- failure" },
 					],
@@ -324,30 +331,34 @@ describe('Test Google Framework', function () {
 						'[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'suite', state: 'completed', suite: gtest },
+				{ type: 'suite', state: 'completed', suite: get(0, 2) },
+				{ type: 'suite', state: 'completed', suite: get(0) },
 				{ type: 'finished' },
-			]);
+			];
+			assert.deepStrictEqual(adapter.testStatesEvents, expected);
 		})
 
 		specify('run first', async function () {
 			this.slow(500);
 
-			await adapter.run([gtest.children[0].id]);
+			await adapter.run([get(0, 3, 0).id]);
 
 			assert.deepStrictEqual(adapter.testStatesEvents, [
-				{ type: 'started', tests: [gtest.children[0].id] },
-				{ type: 'suite', state: 'running', suite: gtest },
-				{ type: 'test', state: 'running', test: gtest.children[0] },
+				{ type: 'started', tests: [get(0, 3, 0).id] },
+				{ type: 'suite', state: 'running', suite: get(0) },
+				{ type: 'suite', state: 'running', suite: get(0, 3) },
+				{ type: 'test', state: 'running', test: get(0, 3, 0) },
 				{
 					type: 'test',
 					state: 'passed',
-					test: gtest.children[0],
+					test: get(0, 3, 0),
 					message: [
 						'[ RUN      ] TestCas1.test1',
 						'[       OK ] TestCas1.test1 (0 ms)',
 					].join(EOL)
 				},
-				{ type: 'suite', state: 'completed', suite: gtest },
+				{ type: 'suite', state: 'completed', suite: get(0, 3) },
+				{ type: 'suite', state: 'completed', suite: get(0) },
 				{ type: 'finished' },
 			]);
 		})
@@ -355,16 +366,17 @@ describe('Test Google Framework', function () {
 		specify('run param', async function () {
 			this.slow(500);
 
-			await adapter.run([gtest.children[4].id]);
+			await adapter.run([get(0, 1, 0).id]);
 
 			assert.deepStrictEqual(adapter.testStatesEvents, [
-				{ type: 'started', tests: [gtest.children[4].id] },
-				{ type: 'suite', state: 'running', suite: gtest },
-				{ type: 'test', state: 'running', test: gtest.children[4] },
+				{ type: 'started', tests: [get(0, 1, 0).id] },
+				{ type: 'suite', state: 'running', suite: get(0) },
+				{ type: 'suite', state: 'running', suite: get(0, 1) },
+				{ type: 'test', state: 'running', test: get(0, 1, 0) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: gtest.children[4],
+					test: get(0, 1, 0),
 					decorations: [
 						{ line: 40, message: "<-- failure" },
 					],
@@ -378,7 +390,8 @@ describe('Test Google Framework', function () {
 						'[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'suite', state: 'completed', suite: gtest },
+				{ type: 'suite', state: 'completed', suite: get(0, 1) },
+				{ type: 'suite', state: 'completed', suite: get(0) },
 				{ type: 'finished' },
 			]);
 		})

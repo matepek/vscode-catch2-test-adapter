@@ -134,7 +134,6 @@ describe('Test Catch2 Framework', function () {
     withArgs.onCall(withArgs.callCount)
       .returns(new ChildProcessStub(testListOutput.join(EOL)));
 
-
     await adapter.load();
 
     assert.equal(adapter.testLoadsEvents.length, 2);
@@ -149,10 +148,11 @@ describe('Test Catch2 Framework', function () {
     await waitFor(this, () => {
       return adapter!.suite1.children.length == 2;
     });
+
     const s1t1 = adapter.suite1.children[0];
 
     await waitFor(this, () => {
-      return adapter!.testStatesEvents.length == stateEvents + 6 + 6;
+      return adapter!.testStatesEvents.length >= stateEvents + 6 + 6;
     });
 
     assert.deepStrictEqual(adapter.testStatesEvents, [

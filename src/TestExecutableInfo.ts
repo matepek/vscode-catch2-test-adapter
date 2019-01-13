@@ -7,7 +7,7 @@ import { promisify } from 'util';
 import * as vscode from 'vscode';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { TestSuiteInfoBase } from './TestSuiteInfoBase';
+import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import * as c2fs from './FsWrapper';
 import { resolveVariables } from './Helpers';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
@@ -28,7 +28,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
   private _watcher: vscode.FileSystemWatcher | undefined = undefined;
 
-  private readonly _executables: Map<string /*fsPath*/, TestSuiteInfoBase> = new Map();
+  private readonly _executables: Map<string /*fsPath*/, AbstractTestSuiteInfo> = new Map();
 
   private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
@@ -80,7 +80,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     for (let i = 0; i < fileUris.length; i++) {
       const file = fileUris[i];
-      await this._createSuiteByUri(file).then((suite: TestSuiteInfoBase) => {
+      await this._createSuiteByUri(file).then((suite: AbstractTestSuiteInfo) => {
         return suite.reloadChildren().then(() => {
           if (this._rootSuite.insertChild(suite, false/* called later */)) {
             this._executables.set(file.fsPath, suite);
@@ -96,7 +96,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     this._rootSuite.uniquifySuiteLabels();
   }
 
-  private _createSuiteByUri(file: vscode.Uri): Promise<TestSuiteInfoBase> {
+  private _createSuiteByUri(file: vscode.Uri): Promise<AbstractTestSuiteInfo> {
     const wsUri = this._shared.workspaceFolder.uri;
     const relPath = path.relative(wsUri.fsPath, file.fsPath);
 
@@ -151,7 +151,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       resolvedEnv = resolveVariables(this._env, varToValue);
     } catch (e) { this._shared.log.error(__filename, e); }
 
-    return TestSuiteInfoBase.determineTestTypeOfExecutable(file.fsPath)
+    return AbstractTestSuiteInfo.determineTestTypeOfExecutable(file.fsPath)
       .then((framework) => {
         return new TestSuiteInfoFactory(this._shared, resolvedLabel,
           file.fsPath, { cwd: resolvedCwd, env: resolvedEnv }).create(framework);
@@ -164,7 +164,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     this._lastEventArrivedAt.set(uri.fsPath, Date.now());
 
-    const x = (suite: TestSuiteInfoBase, exists: boolean, delay: number): Promise<void> => {
+    const x = (suite: AbstractTestSuiteInfo, exists: boolean, delay: number): Promise<void> => {
       let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
       if (lastEventArrivedAt === undefined) {
         this._shared.log.error('assert in ' + __filename);
@@ -212,7 +212,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     if (suite == undefined) {
       this._shared.log.info('new suite: ' + uri.fsPath);
-      this._createSuiteByUri(uri).then((s: TestSuiteInfoBase) => {
+      this._createSuiteByUri(uri).then((s: AbstractTestSuiteInfo) => {
         x(s, false, 64);
       }, (reason: any) => {
         this._shared.log.info('couldn\'t add: ' + uri.fsPath);

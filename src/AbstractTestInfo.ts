@@ -8,9 +8,10 @@ import { SpawnOptions } from 'child_process';
 import { generateUniqueId } from './IdGenerator';
 import { SharedVariables } from './SharedVariables';
 
-export abstract class TestInfoBase implements TestInfo {
+export abstract class AbstractTestInfo implements TestInfo {
   readonly type: 'test' = 'test';
   readonly id: string;
+  readonly origLabel: string;
 
   constructor(
     protected readonly _shared: SharedVariables,
@@ -24,7 +25,7 @@ export abstract class TestInfoBase implements TestInfo {
     public readonly execOptions: SpawnOptions
   ) {
     this.id = id ? id : generateUniqueId();
-
+    this.origLabel = label;
     if (line && line < 0) throw Error('line smaller than zero');
   }
 
@@ -38,9 +39,21 @@ export abstract class TestInfoBase implements TestInfo {
     return { type: 'test', test: this, state: 'skipped' };
   }
 
-  findRouteToTestById(id: string): TestInfoBase[] | undefined {
+  findRouteToTestById(id: string): AbstractTestInfo[] | undefined {
     if (this.id === id)
       return [this];
+    else
+      return undefined;
+  }
+
+  enumerateTestInfos(fn: (v: (AbstractTestInfo)) => void) {
+    fn(this);
+  }
+
+  findTestInfo(pred: (v: (AbstractTestInfo)) => boolean): AbstractTestInfo | undefined {
+    const res = pred(this);
+    if (res)
+      return this;
     else
       return undefined;
   }
