@@ -52,7 +52,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 
 				if (catch2TestListOutput.stderr) {
 					this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr: ', catch2TestListOutput);
-					this._createCatch2TestInfo(undefined, '!! ' + catch2TestListOutput.stderr.split('\n')[0].trim(), '', [], '', 0);
+					this._createCatch2TestInfo(undefined, '⚠️ ' + catch2TestListOutput.stderr.split('\n')[0].trim(), '', [], '', 0);
 					return;
 				}
 

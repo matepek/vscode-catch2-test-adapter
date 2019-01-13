@@ -51,7 +51,7 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 
 				if (googleTestListOutput.stderr) {
 					this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
-					this._createGoogleTestInfo(undefined, '!! ' + googleTestListOutput.stderr.split('\n')[0].trim(),
+					this._createGoogleTestInfo(undefined, '⚠️ ' + googleTestListOutput.stderr.split('\n')[0].trim(),
 						undefined, undefined, undefined);
 					return;
 				}

@@ -216,7 +216,7 @@ describe('Test Catch2 Framework', function () {
     assert.equal(
       suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
 
-    assert.strictEqual(suite1.children[0].label, '!! error: TEST_CASE( "biggest rectangle" ) already defined.');
+    assert.strictEqual(suite1.children[0].label, '⚠️ error: TEST_CASE( "biggest rectangle" ) already defined.');
   })
 
   specify('load executables=<full path of execPath1>', async function () {
