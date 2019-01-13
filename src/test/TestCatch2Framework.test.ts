@@ -6,7 +6,6 @@ import * as path from 'path';
 import * as fse from 'fs-extra';
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { TestLoadFinishedEvent, TestSuiteInfo } from 'vscode-test-adapter-api';
 import { inspect, promisify } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
@@ -139,30 +138,26 @@ describe('Test Catch2 Framework', function () {
     await adapter.load();
 
     assert.equal(adapter.testLoadsEvents.length, 2);
-    const root =
-      (<TestLoadFinishedEvent>adapter.testLoadsEvents[adapter.testLoadsEvents.length - 1]).suite!;
 
-    assert.equal(root.children.length, 1);
-    const suite1 = <TestSuiteInfo>root.children[0];
-    assert.equal(
-      suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
-    const s1t2 = suite1.children[0];
+    assert.equal(adapter.rootSuite.children.length, 1);
+    assert.equal(adapter.suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
+    const s1t2 = adapter.suite1.children[0];
 
     const stateEvents = adapter.testStatesEvents.length;
-    await adapter.run([root.id]);
+    await adapter.run([adapter.rootSuite.id]);
 
     await waitFor(this, () => {
-      return suite1.children.length == 2;
+      return adapter!.suite1.children.length == 2;
     });
-    const s1t1 = suite1.children[0];
+    const s1t1 = adapter.suite1.children[0];
 
     await waitFor(this, () => {
       return adapter!.testStatesEvents.length == stateEvents + 6 + 6;
     });
 
     assert.deepStrictEqual(adapter.testStatesEvents, [
-      { type: 'started', tests: [root.id] },
-      { type: 'suite', state: 'running', suite: suite1 },
+      { type: 'started', tests: [adapter.rootSuite.id] },
+      { type: 'suite', state: 'running', suite: adapter.suite1 },
       { type: 'test', state: 'running', test: s1t2 },
       {
         type: 'test',
@@ -172,10 +167,10 @@ describe('Test Catch2 Framework', function () {
         message:
           'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
       },
-      { type: 'suite', state: 'completed', suite: suite1 },
+      { type: 'suite', state: 'completed', suite: adapter.suite1 },
       { type: 'finished' },
       { type: 'started', tests: [s1t1.id] },
-      { type: 'suite', state: 'running', suite: suite1 },
+      { type: 'suite', state: 'running', suite: adapter.suite1 },
       { type: 'test', state: 'running', test: s1t1 },
       {
         type: 'test',
@@ -184,7 +179,7 @@ describe('Test Catch2 Framework', function () {
         message: "Duration: 0.000132 second(s).\n",
         decorations: undefined,
       },
-      { type: 'suite', state: 'completed', suite: suite1 },
+      { type: 'suite', state: 'completed', suite: adapter.suite1 },
       { type: 'finished' },
     ]);
   })
@@ -205,17 +200,14 @@ describe('Test Catch2 Framework', function () {
     withArgs.onCall(withArgs.callCount)
       .returns(new ChildProcessStub('Matching test cases:' + EOL, undefined, testListOutput.join(EOL)));
 
-
     await adapter.load();
-    assert.equal(adapter.testLoadsEvents.length, 2);
-    const root =
-      (<TestLoadFinishedEvent>adapter.testLoadsEvents[adapter.testLoadsEvents.length - 1]).suite!;
-    assert.equal(root.children.length, 1);
 
-    const suite1 = <TestSuiteInfo>root.children[0];
-    assert.equal(
-      suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
+    assert.equal(adapter.rootSuite.children.length, 1);
 
+    const suite1 = adapter.suite1;
+    assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
+
+    assert.strictEqual(suite1.label, '⚠️ execPath1');
     assert.strictEqual(suite1.children[0].label, '⚠️ error: TEST_CASE( "biggest rectangle" ) already defined.');
   })
 
@@ -225,13 +217,7 @@ describe('Test Catch2 Framework', function () {
     adapter = new TestAdapter();
 
     await adapter.load();
-    assert.equal(adapter.testLoadsEvents.length, 2);
-    assert.equal(
-      (<TestLoadFinishedEvent>adapter.testLoadsEvents[adapter.testLoadsEvents.length - 1])
-        .suite!.children.length,
-      1);
-    adapter.testLoadsEvents.pop();
-    adapter.testLoadsEvents.pop();
+    assert.strictEqual(adapter.rootSuite.children.length, 1);
   })
 
   specify(
@@ -247,13 +233,7 @@ describe('Test Catch2 Framework', function () {
         'dummy error for testing (should be handled)');
 
       await adapter.load();
-      assert.equal(adapter.testLoadsEvents.length, 2);
-      assert.equal(
-        (<TestLoadFinishedEvent>adapter.testLoadsEvents[adapter.testLoadsEvents.length - 1])
-          .suite!.children.length,
-        1);
-      adapter.testLoadsEvents.pop();
-      adapter.testLoadsEvents.pop();
+      assert.strictEqual(adapter.rootSuite.children.length, 1);
     })
 
   specify(
@@ -286,13 +266,8 @@ describe('Test Catch2 Framework', function () {
       adapter = new TestAdapter();
 
       await adapter.load();
-
-      assert.equal(
-        (<TestLoadFinishedEvent>adapter.testLoadsEvents[adapter.testLoadsEvents.length - 1])
-          .suite!.children.length,
-        2);
-      adapter.testLoadsEvents.pop();
-      adapter.testLoadsEvents.pop();
+      assert.equal(adapter.testLoadsEvents.length, 2);
+      assert.strictEqual(adapter.rootSuite.children.length, 2);
 
       assert.ok(watchers.has(execPath2CopyPath));
       const watcher = watchers.get(execPath2CopyPath)!;
@@ -304,7 +279,7 @@ describe('Test Catch2 Framework', function () {
         start = Date.now();
         watcher.sendDelete();
         setTimeout(() => {
-          assert.equal(adapter!.testLoadsEvents.length, 0);
+          assert.equal(adapter!.testLoadsEvents.length, 2);
         }, 1500);
         setTimeout(() => {
           imitation.fsStatStub.withArgs(execPath2CopyPath)
@@ -314,9 +289,7 @@ describe('Test Catch2 Framework', function () {
       });
       const elapsed = Date.now() - start;
 
-      assert.equal(adapter.testLoadsEvents.length, 2);
-      adapter.testLoadsEvents.pop();
-      adapter.testLoadsEvents.pop();
+      assert.equal(adapter.testLoadsEvents.length, 4);
 
       assert.equal(newRoot.children.length, 2);
       assert.ok(3000 < elapsed, inspect(elapsed));
@@ -354,12 +327,7 @@ describe('Test Catch2 Framework', function () {
 
       await adapter.load();
 
-      assert.equal(
-        (<TestLoadFinishedEvent>adapter.testLoadsEvents[adapter.testLoadsEvents.length - 1])
-          .suite!.children.length,
-        2);
-      adapter.testLoadsEvents.pop();
-      adapter.testLoadsEvents.pop();
+      assert.strictEqual(adapter.rootSuite.children.length, 2);
 
       assert.ok(watchers.has(execPath2CopyPath));
       const watcher = watchers.get(execPath2CopyPath)!;
@@ -372,8 +340,6 @@ describe('Test Catch2 Framework', function () {
         watcher.sendDelete();
       });
       const elapsed = Date.now() - start;
-      adapter.testLoadsEvents.pop();
-      adapter.testLoadsEvents.pop();
 
       assert.equal(newRoot.children.length, 1);
       assert.ok(watchTimeout * 1000 < elapsed, inspect(elapsed));
@@ -388,11 +354,7 @@ describe('Test Catch2 Framework', function () {
 
     await adapter.load();
 
-    const root =
-      (<TestLoadFinishedEvent>adapter.testLoadsEvents[adapter.testLoadsEvents.length - 1]).suite!;
-    assert.equal(root.children.length, 0);
-    adapter.testLoadsEvents.pop();
-    adapter.testLoadsEvents.pop();
+    assert.strictEqual(adapter.rootSuite.children.length, 0);
   })
 
   specify('variable substitution with executables={...}', async function () {
@@ -453,20 +415,14 @@ describe('Test Catch2 Framework', function () {
 
     await adapter.load();
 
-    const root =
-      (<TestLoadFinishedEvent>adapter.testLoadsEvents[adapter.testLoadsEvents.length - 1]).suite!;
-    adapter.testLoadsEvents.pop();
-    adapter.testLoadsEvents.pop();
+    assert.equal(adapter.rootSuite.children.length, 1);
+    assert.equal(adapter.rootSuite.children[0].type, 'suite');
 
-    assert.equal(root.children.length, 1);
-    assert.equal(root.children[0].type, 'suite');
-    const suite = <TestSuiteInfo>root.children[0];
-    assert.equal(suite.label, expectStr);
-
-    assert.equal(suite.children.length, 3);
+    assert.equal(adapter.suite1.label, expectStr);
+    assert.equal(adapter.suite1.children.length, 3);
 
     const callCount = spawnWithArgs.callCount;
-    await adapter.run([suite.children[0].id]);
+    await adapter.run([adapter.suite1.children[0].id]);
     assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
   })
 
