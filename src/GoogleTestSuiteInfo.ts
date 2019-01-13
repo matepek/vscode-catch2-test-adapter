@@ -48,9 +48,11 @@ export class GoogleTestSuiteInfo extends TestSuiteInfoBase {
 			.then((googleTestListOutput) => {
 				const oldChildren = this.children;
 				this.children = [];
+				this.label = this.origLabel;
 
 				if (googleTestListOutput.stderr) {
 					this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
+					this.label = '⚠️ ' + this.label;
 					this._createGoogleTestInfo(undefined, '⚠️ ' + googleTestListOutput.stderr.split('\n')[0].trim(),
 						undefined, undefined, undefined);
 					return;

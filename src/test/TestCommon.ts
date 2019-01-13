@@ -216,17 +216,10 @@ export class TestAdapter extends my.TestAdapter {
 		return <TestSuiteInfo>this.rootSuite.children[index];
 	}
 
-	get suite1() {
-		return this.getSuite(0);
-	}
-
-	get suite2() {
-		return this.getSuite(1);
-	}
-
-	get suite3() {
-		return this.getSuite(2);
-	}
+	get suite1() { return this.getSuite(0); }
+	get suite2() { return this.getSuite(1); }
+	get suite3() { return this.getSuite(2); }
+	get suite4() { return this.getSuite(3); }
 
 	getTestStatesEventIndex(searchFor: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent) {
 		const i = this.testStatesEvents.findIndex(

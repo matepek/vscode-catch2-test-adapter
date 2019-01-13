@@ -40,6 +40,7 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     const i = this.children.findIndex(val => val.id == child.id);
     if (i != -1) {
       this.children.splice(i, 1);
+      this.uniquifySuiteLabels();
       return true;
     }
     return false;
@@ -57,14 +58,16 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
     return this.children.indexOf(suite) != -1;
   }
 
-  insertChild(suite: TestSuiteInfoBase): boolean {
+  insertChild(suite: TestSuiteInfoBase, uniquifyLabels: boolean): boolean {
     if (this.children.indexOf(suite) != -1) return false;
 
-    // we want to filter the situation when 2 patterns match the same file
-    if (this.children.find((s: TestSuiteInfoBase) => { return suite.execPath == s.execPath; })) {
-      return false;
+    {// we want to filter the situation when 2 patterns match the same file
+      const other = this.children.find((s: TestSuiteInfoBase) => { return suite.execPath == s.execPath; })
+      if (other) {
+        this._shared.log.warn('execPath duplication: suite is skipped', suite, other);
+        return false;
+      }
     }
-
     let i = this.children.findIndex((v: TestSuiteInfoBase) => {
       return suite.label.trim().localeCompare(v.label.trim()) < 0;
     });
@@ -73,7 +76,31 @@ export class RootTestSuiteInfo implements TestSuiteInfo, vscode.Disposable {
 
     this.children.splice(i, 0, suite);
 
+    uniquifyLabels && this.uniquifySuiteLabels();
+
     return true;
+  }
+
+  uniquifySuiteLabels() {
+    const uniqueNames: Map<string /* name */, TestSuiteInfoBase[]> = new Map();
+
+    for (const suite of this.children) {
+      const suites = uniqueNames.get(suite.origLabel);
+      if (suites) {
+        suites.push(suite);
+      } else {
+        uniqueNames.set(suite.origLabel, [suite]);
+      }
+    }
+
+    for (const suites of uniqueNames.values()) {
+      if (suites.length > 1) {
+        let i = 1;
+        for (const suite of suites) {
+          suite.label = String(i++) + ') ' + suite.origLabel;
+        }
+      }
+    }
   }
 
   cancel(): void {

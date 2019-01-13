@@ -31,7 +31,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   ];
 
   // because we always want to return with the current rootSuite suite
-  private readonly _loadWithTaskEmitter = new vscode.EventEmitter<() => Promise<void>>();
+  private readonly _loadWithTaskEmitter = new vscode.EventEmitter<() => void | PromiseLike<void>>();
 
   private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
 
@@ -53,10 +53,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._disposables.push(this._autorunEmitter);
 
     this._disposables.push(this._loadWithTaskEmitter);
-    this._disposables.push(this._loadWithTaskEmitter.event((task: () => Promise<void>) => {
+    this._disposables.push(this._loadWithTaskEmitter.event((task: () => void | PromiseLike<void>) => {
       this._mainTaskQueue.then(() => {
         this._testsEmitter.fire({ type: 'started' });
-        return task().then(() => {
+        return Promise.resolve().then(task).then(() => {
           this._testsEmitter.fire({ type: 'finished', suite: this._rootSuite });
         }, (reason: any) => {
           this._log.error(__filename, reason);
