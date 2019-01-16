@@ -5,58 +5,35 @@
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { TestSuiteInfo } from 'vscode-test-adapter-api';
 
-import { TestInfoBase } from './TestInfoBase';
+import { AbstractTestInfo } from './AbstractTestInfo';
 import * as c2fs from './FsWrapper';
-import { generateUniqueId } from './IdGenerator';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
+import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 
-export abstract class TestSuiteInfoBase implements TestSuiteInfo {
-  readonly type: 'suite' = 'suite';
-  readonly id: string;
-  label: string;
-  children: TestInfoBase[] = [];
-  file?: string;
-  line?: number;
+export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   private _killed: boolean = false;
   private _process: ChildProcess | undefined = undefined;
 
   constructor(
-    protected readonly _shared: SharedVariables,
-    public readonly origLabel: string,
+    shared: SharedVariables,
+    origLabel: string,
     public readonly execPath: string,
-    public readonly execOptions: SpawnOptions) {
-    this.label = origLabel;
-    this.id = generateUniqueId();
-  }
-
-  static determineTestTypeOfExecutable(execPath: string):
-    Promise<{ type: 'catch2' | 'google' | undefined; version: [number, number, number]; }> {
-    return c2fs.spawnAsync(execPath, ['--help'])
-      .then((res): any => {
-        const catch2 = res.stdout.match(/Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/);
-        if (catch2 && catch2.length == 4) {
-          return { type: 'catch2', version: [Number(catch2[1]), Number(catch2[2]), Number(catch2[3])] };
-        }
-        const google = res.stdout.match(/This program contains tests written using Google Test./);
-        if (google) {
-          return { type: 'google', version: [0, 0, 0] };
-        }
-        return { type: undefined, version: [0, 0, 0] };
-      }).catch(() => { return { type: undefined, version: [0, 0, 0] }; });
+    public readonly execOptions: SpawnOptions,
+  ) {
+    super(shared, origLabel);
   }
 
   abstract reloadChildren(): Promise<void>;
 
-  protected abstract _getRunParams(childrenToRun: TestInfoBase[] | 'all'): string[];
+  protected abstract _getRunParams(childrenToRun: Set<AbstractTestInfo>): string[];
 
-  protected abstract _handleProcess(runInfo: TestSuiteInfoBaseRunInfo): Promise<void>;
+  protected abstract _handleProcess(runInfo: AbstractTestSuiteInfoRunInfo): Promise<void>;
 
   cancel(): void {
-    this._shared.log.info('canceled: ', this.id, this.label, this._process != undefined);
+    this._shared.log.info('canceled:', this.id, this.label, this._process != undefined);
 
     this._killed = true;
 
@@ -70,51 +47,51 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     this._killed = false;
     this._process = undefined;
 
-    let childrenToRun: 'all' | TestInfoBase[] = 'all';
+    const childrenToRun = new Set<AbstractTestInfo>();
+    const runAll = tests.delete(this.id);
 
-    if (tests.delete(this.id)) {
-      for (let i = 0; i < this.children.length; i++) {
-        const c = this.children[i];
-        tests.delete(c.id);
-      }
-    } else {
-      childrenToRun = [];
+    if (runAll) {
+      this.enumerateDescendants(v => { tests.delete(v.id); });
+    }
+    else {
+      this.enumerateDescendants((v: AbstractTestSuiteInfoBase | AbstractTestInfo) => {
+        const explicitlyIn = tests.delete(v.id);
+        if (explicitlyIn) {
+          if (v instanceof AbstractTestInfo) {
+            childrenToRun.add(v);
+          }
+          else if (v instanceof AbstractTestSuiteInfoBase) {
+            v.enumerateTestInfos(vv => { childrenToRun.add(vv); });
+          }
+          else { this._shared.log.error('unknown case', v, this); debugger; }
+        }
+      });
 
-      for (let i = 0; i < this.children.length; i++) {
-        const c = this.children[i];
-        if (tests.delete(c.id)) childrenToRun.push(c);
-      }
-
-      if (childrenToRun.length == 0) return Promise.resolve();
+      if (childrenToRun.size == 0) return Promise.resolve();
     }
 
     return taskPool.scheduleTask(() => { return this._runInner(childrenToRun); });
   }
 
-  private _runInner(childrenToRun: TestInfoBase[] | 'all'):
-    Promise<void> {
+  /**
+   * @param childrenToRun If it is empty, it means run all.
+   */
+  private _runInner(childrenToRun: Set<AbstractTestInfo>): Promise<void> {
     if (this._killed) return Promise.reject(Error('Test was killed.'));
-
-    this._shared.testStatesEmitter.fire(
-      { type: 'suite', suite: this, state: 'running' });
-
-    if (childrenToRun === 'all') {
-      for (let i = 0; i < this.children.length; i++) {
-        const c = this.children[i];
-        if (c.skipped) {
-          this._shared.testStatesEmitter.fire(c.getStartEvent());
-          this._shared.testStatesEmitter.fire(c.getSkippedEvent());
-        }
-      }
-    }
 
     const execParams = this._getRunParams(childrenToRun);
 
     this._shared.log.info('proc starting: ', this.execPath, execParams);
 
+    this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'running' });
+
+    if (childrenToRun.size === 0) {
+      this.sendSkippedChildrenEvents();
+    }
+
     this._process = spawn(this.execPath, execParams, this.execOptions);
 
-    const runInfo: TestSuiteInfoBaseRunInfo = {
+    const runInfo: AbstractTestSuiteInfoRunInfo = {
       process: this._process,
       childrenToRun: childrenToRun,
       timeout: undefined,
@@ -170,32 +147,6 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
       });
   }
 
-  protected _addChild(test: TestInfoBase) {
-    if (this.children.length == 0) {
-      this.file = test.file;
-      this.line = test.file ? 0 : undefined;
-    } else if (this.file != test.file) {
-      this.file = undefined;
-      this.line = undefined;
-    }
-
-    let i = this.children.findIndex((v: TestInfoBase) => {
-      if (test.file && v.file && test.line && v.line) {
-        const f = test.file.trim().localeCompare(v.file.trim());
-        if (f != 0)
-          return f < 0;
-        else
-          return test.line < v.line;
-      } else {
-        return test.label.trim().localeCompare(v.label.trim()) < 0;
-      }
-    });
-
-    if (i == -1) i = this.children.length;
-
-    this.children.splice(i, 0, test);
-  }
-
   protected _findFilePath(matchedPath: string): string {
     let filePath = matchedPath;
     try {
@@ -222,23 +173,15 @@ export abstract class TestSuiteInfoBase implements TestSuiteInfo {
     return filePath;
   }
 
-  findRouteToTestById(id: string): (TestSuiteInfoBase | TestInfoBase)[] | undefined {
-    for (let i = 0; i < this.children.length; ++i) {
-      const res = this.children[i].findRouteToTestById(id);
-      if (res) return [this, ...res];
-    }
-    return undefined;
-  }
-
   protected _getTimeoutMessage(milisec: number): string {
     return 'Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": '
       + milisec / 1000 + ' second(s).\n';
   }
 }
 
-export interface TestSuiteInfoBaseRunInfo {
+export interface AbstractTestSuiteInfoRunInfo {
   process: ChildProcess | undefined;
-  childrenToRun: TestInfoBase[] | 'all';
+  childrenToRun: Set<AbstractTestInfo>;
   timeout: number | undefined;
   timeoutWatcherTrigger: () => void;
 }

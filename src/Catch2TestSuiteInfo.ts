@@ -9,10 +9,11 @@ import * as xml2js from 'xml2js';
 
 import { Catch2TestInfo } from './Catch2TestInfo';
 import * as c2fs from './FsWrapper';
-import { TestSuiteInfoBase, TestSuiteInfoBaseRunInfo } from './TestSuiteInfoBase';
+import { AbstractTestSuiteInfo, AbstractTestSuiteInfoRunInfo } from './AbstractTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
+import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 
-export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
+export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 	children: Catch2TestInfo[] = [];
 
 	constructor(
@@ -25,7 +26,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 	}
 
 	reloadChildren(): Promise<void> {
-		return TestSuiteInfoBase.determineTestTypeOfExecutable(this.execPath)
+		return TestSuiteInfoFactory.determineTestTypeOfExecutable(this.execPath, this.execOptions)
 			.then((testInfo) => {
 				if (testInfo.type === 'catch2') {
 					this._catch2Version = testInfo.version;
@@ -108,23 +109,21 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 	private _createCatch2TestInfo(
 		id: string | undefined, testName: string, description: string,
 		tags: string[], file: string, line: number): Catch2TestInfo {
-		const test =
-			new Catch2TestInfo(this._shared, id, testName, description, tags, file, line, this.execPath, this.execOptions);
 
-		this._addChild(test);
+		const test =
+			new Catch2TestInfo(this._shared, id, testName,
+				description, tags, file, line, this.execPath, this.execOptions);
+
+		this.addChild(test);
 
 		return test;
 	}
 
-	protected _getRunParams(childrenToRun: Catch2TestInfo[] | 'all'): string[] {
+	protected _getRunParams(childrenToRun: Set<Catch2TestInfo>): string[] {
 		const execParams: string[] = [];
 
-		if (childrenToRun !== 'all') {
-			let testNames: string[] = [];
-			for (let i = 0; i < childrenToRun.length; i++) {
-				const c = childrenToRun[i];
-				testNames.push(c.getEscapedTestName());
-			}
+		if (childrenToRun.size != 0) {
+			const testNames = [...childrenToRun].map(c => c.getEscapedTestName());
 			execParams.push(testNames.join(','));
 		}
 
@@ -143,7 +142,7 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 		return execParams;
 	}
 
-	protected _handleProcess(runInfo: TestSuiteInfoBaseRunInfo): Promise<void> {
+	protected _handleProcess(runInfo: AbstractTestSuiteInfoRunInfo): Promise<void> {
 		const data = new class {
 			buffer: string = '';
 			inTestCase: boolean = false;
@@ -286,10 +285,10 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 					}
 				}
 
-				const isTestRemoved = (runInfo.childrenToRun === 'all' &&
+				const isTestRemoved = (runInfo.childrenToRun.size == 0 &&
 					this.children.filter(c => !c.skipped).length >
 					data.processedTestCases.length) ||
-					(runInfo.childrenToRun !== 'all' && data.processedTestCases.length == 0);
+					(runInfo.childrenToRun.size != 0 && data.processedTestCases.length == 0);
 
 				if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
 					new Promise<void>((resolve, reject) => {
@@ -340,4 +339,6 @@ export class Catch2TestSuiteInfo extends TestSuiteInfoBase {
 				}
 			});
 	}
+
+	addChild(test: Catch2TestInfo) { super.addChild(test); }
 }

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.13]
+
+Sorting has been change to alphabetic order.
+
+Google Test tests are grouped.
+
 ## [2.3.12] - 2019-01-13
 
 ### Fixed

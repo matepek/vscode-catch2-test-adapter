@@ -5,14 +5,15 @@
 import { TestEvent } from 'vscode-test-adapter-api';
 import { SpawnOptions } from 'child_process';
 
-import { TestInfoBase } from './TestInfoBase';
+import { AbstractTestInfo } from './AbstractTestInfo';
 import { SharedVariables } from './SharedVariables';
 
-export class GoogleTestInfo extends TestInfoBase {
+export class GoogleTestInfo extends AbstractTestInfo {
 	constructor(
 		shared: SharedVariables,
 		id: string | undefined,
 		testNameFull: string,
+		label: string,
 		valueParam: string | undefined,
 		file: string | undefined,
 		line: number | undefined,
@@ -22,7 +23,7 @@ export class GoogleTestInfo extends TestInfoBase {
 		super(shared,
 			id,
 			testNameFull,
-			testNameFull + (valueParam ? (' # GetParam() = ' + valueParam) : ''),
+			label + (valueParam ? (' # GetParam() = ' + valueParam) : ''),
 			testNameFull.startsWith('DISABLED_') || testNameFull.indexOf('.DISABLED_') != -1,
 			file,
 			line,
