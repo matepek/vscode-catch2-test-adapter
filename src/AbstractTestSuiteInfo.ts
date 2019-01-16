@@ -26,22 +26,6 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     super(shared, origLabel);
   }
 
-  static determineTestTypeOfExecutable(execPath: string):
-    Promise<{ type: 'catch2' | 'google' | undefined; version: [number, number, number]; }> {
-    return c2fs.spawnAsync(execPath, ['--help'])
-      .then((res): any => {
-        const catch2 = res.stdout.match(/Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/);
-        if (catch2 && catch2.length == 4) {
-          return { type: 'catch2', version: [Number(catch2[1]), Number(catch2[2]), Number(catch2[3])] };
-        }
-        const google = res.stdout.match(/This program contains tests written using Google Test./);
-        if (google) {
-          return { type: 'google', version: [0, 0, 0] };
-        }
-        return { type: undefined, version: [0, 0, 0] };
-      }).catch(() => { return { type: undefined, version: [0, 0, 0] }; });
-  }
-
   abstract reloadChildren(): Promise<void>;
 
   protected abstract _getRunParams(childrenToRun: Set<AbstractTestInfo>): string[];
@@ -49,7 +33,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   protected abstract _handleProcess(runInfo: AbstractTestSuiteInfoRunInfo): Promise<void>;
 
   cancel(): void {
-    this._shared.log.info('canceled: ', this.id, this.label, this._process != undefined);
+    this._shared.log.info('canceled:', this.id, this.label, this._process != undefined);
 
     this._killed = true;
 
@@ -95,15 +79,15 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   private _runInner(childrenToRun: Set<AbstractTestInfo>): Promise<void> {
     if (this._killed) return Promise.reject(Error('Test was killed.'));
 
+    const execParams = this._getRunParams(childrenToRun);
+
+    this._shared.log.info('proc starting: ', this.execPath, execParams);
+
     this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'running' });
 
     if (childrenToRun.size === 0) {
       this.sendSkippedChildrenEvents();
     }
-
-    const execParams = this._getRunParams(childrenToRun);
-
-    this._shared.log.info('proc starting: ', this.execPath, execParams);
 
     this._process = spawn(this.execPath, execParams, this.execOptions);
 

@@ -89,7 +89,7 @@ export class TestExecutableInfo implements vscode.Disposable {
           this._shared.log.error('Couldn\'t load executable:', reason, suite);
         });
       }, (reason: any) => {
-        this._shared.log.info('Not a test executable:', file.fsPath);
+        this._shared.log.info('Not a test executable:', file.fsPath, 'reason:', reason);
       });
     }
 
@@ -151,11 +151,12 @@ export class TestExecutableInfo implements vscode.Disposable {
       resolvedEnv = resolveVariables(this._env, varToValue);
     } catch (e) { this._shared.log.error(__filename, e); }
 
-    return AbstractTestSuiteInfo.determineTestTypeOfExecutable(file.fsPath)
-      .then((framework) => {
-        return new TestSuiteInfoFactory(this._shared, resolvedLabel,
-          file.fsPath, { cwd: resolvedCwd, env: resolvedEnv }).create(framework);
-      });
+    return new TestSuiteInfoFactory(
+      this._shared,
+      resolvedLabel,
+      file.fsPath,
+      { cwd: resolvedCwd, env: resolvedEnv },
+    ).create();
   }
 
   private _handleEverything(uri: vscode.Uri) {
@@ -207,7 +208,6 @@ export class TestExecutableInfo implements vscode.Disposable {
       }
     };
 
-
     let suite = this._executables.get(uri.fsPath);
 
     if (suite == undefined) {
@@ -215,7 +215,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._createSuiteByUri(uri).then((s: AbstractTestSuiteInfo) => {
         x(s, false, 64);
       }, (reason: any) => {
-        this._shared.log.info('couldn\'t add: ' + uri.fsPath);
+        this._shared.log.info('couldn\'t add: ' + uri.fsPath, 'reson:', reason);
       });
     } else {
       x(suite!, false, 64);

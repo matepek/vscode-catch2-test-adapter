@@ -40,10 +40,7 @@ export abstract class AbstractTestInfo implements TestInfo {
   }
 
   findRouteToTestById(id: string): AbstractTestInfo[] | undefined {
-    if (this.id === id)
-      return [this];
-    else
-      return undefined;
+    return this.id === id ? [this] : undefined;
   }
 
   enumerateTestInfos(fn: (v: (AbstractTestInfo)) => void) {
@@ -51,10 +48,6 @@ export abstract class AbstractTestInfo implements TestInfo {
   }
 
   findTestInfo(pred: (v: (AbstractTestInfo)) => boolean): AbstractTestInfo | undefined {
-    const res = pred(this);
-    if (res)
-      return this;
-    else
-      return undefined;
+    return pred(this) ? this : undefined;
   }
 }

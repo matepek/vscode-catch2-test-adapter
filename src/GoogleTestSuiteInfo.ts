@@ -13,6 +13,7 @@ import { AbstractTestSuiteInfo, AbstractTestSuiteInfoRunInfo } from './AbstractT
 import { Parser } from 'xml2js';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
+import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 
 export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 	children: GoogleTestGroupSuiteInfo[] = [];
@@ -26,7 +27,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 	}
 
 	reloadChildren(): Promise<void> {
-		return AbstractTestSuiteInfo.determineTestTypeOfExecutable(this.execPath)
+		return TestSuiteInfoFactory.determineTestTypeOfExecutable(this.execPath, this.execOptions)
 			.then((testInfo) => {
 				if (testInfo.type === 'google') {
 					return this._reloadGoogleTests();

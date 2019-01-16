@@ -11,6 +11,7 @@ import { Catch2TestInfo } from './Catch2TestInfo';
 import * as c2fs from './FsWrapper';
 import { AbstractTestSuiteInfo, AbstractTestSuiteInfoRunInfo } from './AbstractTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
+import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 
 export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 	children: Catch2TestInfo[] = [];
@@ -25,7 +26,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 	}
 
 	reloadChildren(): Promise<void> {
-		return AbstractTestSuiteInfo.determineTestTypeOfExecutable(this.execPath)
+		return TestSuiteInfoFactory.determineTestTypeOfExecutable(this.execPath, this.execOptions)
 			.then((testInfo) => {
 				if (testInfo.type === 'catch2') {
 					this._catch2Version = testInfo.version;
