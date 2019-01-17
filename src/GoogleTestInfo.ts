@@ -7,6 +7,7 @@ import { SpawnOptions } from 'child_process';
 
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { SharedVariables } from './SharedVariables';
+import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 
 export class GoogleTestInfo extends AbstractTestInfo {
 	constructor(
@@ -37,14 +38,14 @@ export class GoogleTestInfo extends AbstractTestInfo {
 		return debugParams;
 	}
 
-	parseAndProcessTestCase(output: string): TestEvent {
-		const ev: TestEvent = {
-			type: 'test',
-			test: this,
-			state: 'failed',
-			decorations: [],
-			message: output,
-		};
+	parseAndProcessTestCase(output: string, runInfo: RunningTestExecutableInfo): TestEvent {
+		if (runInfo.timeout !== undefined) {
+			return this.getTimeoutEvent(runInfo.timeout);
+		}
+
+		const ev = this.getFailedEventBase();
+
+		ev.message += output;
 
 		const lines = output.split(/\r?\n/);
 
@@ -77,7 +78,6 @@ export class GoogleTestInfo extends AbstractTestInfo {
 			}
 		}
 
-		if (ev.decorations!.length == 0) delete ev.decorations;
 		return ev;
 	}
 }

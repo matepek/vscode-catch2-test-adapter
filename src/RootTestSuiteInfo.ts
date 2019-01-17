@@ -68,9 +68,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     }
 
     return Promise.all(ps).catch(e => {
-      this._shared.testStatesEmitter.fire({ type: 'finished' });
-      this._shared.log.warn(__filename, e);
-      throw e;
+      this._shared.log.error(__filename, e);
     }).then(() => {
       this._shared.testStatesEmitter.fire({ type: 'finished' });
     });
@@ -81,7 +79,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
   }
 
   insertChild(suite: AbstractTestSuiteInfo, uniquifyLabels: boolean): boolean {
-    if (this.children.indexOf(suite) != -1)
+    if (this.hasChild(suite))
       return false;
 
     {// we want to filter the situation when 2 patterns match the same file
@@ -94,12 +92,16 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
 
     this.addChild(suite);
 
-    this.file = undefined;
-    this.line = undefined;
-
     uniquifyLabels && this.uniquifySuiteLabels();
 
     return true;
+  }
+
+  addChild(suite: AbstractTestSuiteInfo) {
+    super.addChild(suite);
+
+    this.file = undefined;
+    this.line = undefined;
   }
 
   removeChild(child: AbstractTestSuiteInfo): boolean {
@@ -136,7 +138,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
 
   findRouteToTestById(id: string) {
     const res = super.findRouteToTestById(id);
-    if (res) res.shift();
+    if (res !== undefined) res.shift(); // remove Root/this
     return res;
   }
 }

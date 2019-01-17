@@ -124,8 +124,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s1t1,
-					decorations: undefined,
-					message: 'Duration: 0.000112 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.000112 second(s).\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' },
@@ -147,8 +147,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s1t1,
-					decorations: undefined,
-					message: 'Duration: 0.000132 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.000132 second(s).\n'
 				},
 				{ type: 'test', state: 'running', test: s1t2 },
 				{
@@ -156,8 +156,7 @@ describe('Test Catch2 Framework Load', function () {
 					state: 'failed',
 					test: s1t2,
 					decorations: [{ line: 14, message: '-> false' }],
-					message:
-						'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+					message: '⏱ Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' },
@@ -179,8 +178,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s1t1,
-					decorations: undefined,
-					message: 'Duration: 0.000132 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.000132 second(s).\n'
 				},
 				{ type: 'test', state: 'running', test: s1t2 },
 				{
@@ -188,8 +187,7 @@ describe('Test Catch2 Framework Load', function () {
 					state: 'failed',
 					test: s1t2,
 					decorations: [{ line: 14, message: '-> false' }],
-					message:
-						'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+					message: '⏱ Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' },
@@ -218,8 +216,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s1t1,
-					decorations: undefined,
-					message: 'Duration: 0.000112 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.000112 second(s).\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' }
@@ -247,9 +245,8 @@ describe('Test Catch2 Framework Load', function () {
 						type: 'test',
 						state: 'passed',
 						test: s1t1,
-						decorations: undefined,
-						message:
-							'Randomness seeded to: 2.\nDuration: 0.000327 second(s).\n'
+						decorations: [],
+						message: '🔀 Randomness seeded to: 2.\n⏱ Duration: 0.000327 second(s).\n'
 					},
 					{ type: 'suite', state: 'completed', suite: suite1 },
 					{ type: 'finished' }
@@ -348,8 +345,8 @@ describe('Test Catch2 Framework Load', function () {
 				type: 'test',
 				state: 'passed',
 				test: s1t1,
-				decorations: undefined,
-				message: 'Duration: 0.000132 second(s).\n'
+				decorations: [],
+				message: '⏱ Duration: 0.000132 second(s).\n'
 			};
 			assert.ok(adapter.getTestStatesEventIndex(s1t1running) < adapter.getTestStatesEventIndex(s1t1finished));
 			assert.ok(adapter.getTestStatesEventIndex(s1t1finished) < adapter.getTestStatesEventIndex(s1finished));
@@ -362,8 +359,7 @@ describe('Test Catch2 Framework Load', function () {
 				state: 'failed',
 				test: s1t2,
 				decorations: [{ line: 14, message: '-> false' }],
-				message:
-					'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+				message: '⏱ Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
 			};
 			assert.ok(adapter.getTestStatesEventIndex(s1t2running) < adapter.getTestStatesEventIndex(s1t2finished));
 			assert.ok(adapter.getTestStatesEventIndex(s1t2finished) < adapter.getTestStatesEventIndex(s1finished));
@@ -375,8 +371,8 @@ describe('Test Catch2 Framework Load', function () {
 				type: 'test',
 				state: 'passed',
 				test: s2t1,
-				decorations: undefined,
-				message: 'Duration: 0.00037 second(s).\n'
+				decorations: [],
+				message: '⏱ Duration: 0.00037 second(s).\n'
 			};
 			assert.ok(adapter.getTestStatesEventIndex(s2t1running) < adapter.getTestStatesEventIndex(s2t1finished));
 			assert.ok(adapter.getTestStatesEventIndex(s2t1finished) < adapter.getTestStatesEventIndex(s2finished));
@@ -396,8 +392,7 @@ describe('Test Catch2 Framework Load', function () {
 				state: 'failed',
 				test: s2t3,
 				decorations: [{ line: 20, message: '-> false' }],
-				message:
-					'Duration: 0.000178 second(s).\n>>> "s2t3" at line 19 -> REQUIRE at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+				message: '⏱ Duration: 0.000178 second(s).\n>>> "s2t3" at line 19 -> REQUIRE at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
 			};
 			assert.ok(adapter.getTestStatesEventIndex(s2t3running) < adapter.getTestStatesEventIndex(s2t3finished));
 			assert.ok(adapter.getTestStatesEventIndex(s2t3finished) < adapter.getTestStatesEventIndex(s2finished));
@@ -428,8 +423,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s1t1,
-					decorations: undefined,
-					message: 'Duration: 0.000112 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.000112 second(s).\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' }
@@ -450,8 +445,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s2t2,
-					decorations: undefined,
-					message: 'Duration: 0.001294 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.001294 second(s).\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite2 },
 				{ type: 'finished' }
@@ -473,8 +468,7 @@ describe('Test Catch2 Framework Load', function () {
 					state: 'failed',
 					test: s2t3,
 					decorations: [{ line: 20, message: '-> false' }],
-					message:
-						'Duration: 0.000596 second(s).\n>>> "s2t3" at line 19 -> REQUIRE at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+					message: '⏱ Duration: 0.000596 second(s).\n>>> "s2t3" at line 19 -> REQUIRE at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite2 },
 				{ type: 'finished' }
@@ -501,8 +495,7 @@ describe('Test Catch2 Framework Load', function () {
 					state: 'failed',
 					test: s2t3,
 					decorations: [{ line: 20, message: '-> false' }],
-					message:
-						'Duration: 0.000596 second(s).\n>>> "s2t3" at line 19 -> REQUIRE at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+					message: '⏱ Duration: 0.000596 second(s).\n>>> "s2t3" at line 19 -> REQUIRE at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite2 },
 				{ type: 'finished' }
@@ -523,16 +516,15 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s1t1,
-					decorations: undefined,
-					message: 'Duration: 0.000132 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.000132 second(s).\n'
 				},
 				{ type: 'test', state: 'running', test: s1t2 }, {
 					type: 'test',
 					state: 'failed',
 					test: s1t2,
 					decorations: [{ line: 14, message: '-> false' }],
-					message:
-						'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+					message: '⏱ Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' }
@@ -554,16 +546,15 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s1t1,
-					decorations: undefined,
-					message: 'Duration: 0.000132 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.000132 second(s).\n'
 				},
 				{ type: 'test', state: 'running', test: s1t2 }, {
 					type: 'test',
 					state: 'failed',
 					test: s1t2,
 					decorations: [{ line: 14, message: '-> false' }],
-					message:
-						'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+					message: '⏱ Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'suite', state: 'running', suite: suite2 },
@@ -571,8 +562,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s2t2,
-					decorations: undefined,
-					message: 'Duration: 0.001294 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.001294 second(s).\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite2 },
 				{ type: 'finished' }
@@ -601,7 +592,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'failed',
 					test: s1t1,
-					message: 'Fatal error: (Wrong Catch2 xml output.)\nError: 1\n'
+					decorations: [],
+					message: '😱 Fatal error: (Wrong Catch2 xml output.)\nError: 1\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' }
@@ -617,8 +609,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s1t1,
-					decorations: undefined,
-					message: 'Duration: 0.000112 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.000112 second(s).\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' }
@@ -646,7 +638,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'failed',
 					test: s1t1,
-					message: 'Fatal error: (Wrong Catch2 xml output.)\nError: \'SIGTERM\'\n'
+					decorations: [],
+					message: '😱 Fatal error: (Wrong Catch2 xml output.)\nError: \'SIGTERM\'\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' }
@@ -663,8 +656,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s1t1,
-					decorations: undefined,
-					message: 'Duration: 0.000112 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.000112 second(s).\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' }
@@ -739,7 +732,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'failed',
 					test: s1t1,
-					message: 'Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": 3 second(s).\n'
+					decorations: [],
+					message: '⌛️ Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": 3 second(s).\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' }
@@ -1034,8 +1028,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s1t1,
-					decorations: undefined,
-					message: 'Duration: 0.000132 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.000132 second(s).\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' },
@@ -1047,8 +1041,7 @@ describe('Test Catch2 Framework Load', function () {
 					state: 'failed',
 					test: s1t2,
 					decorations: [{ line: 14, message: '-> false' }],
-					message:
-						'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+					message: '⏱ Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' },
@@ -1088,8 +1081,7 @@ describe('Test Catch2 Framework Load', function () {
 						state: 'failed',
 						test: s1t2,
 						decorations: [{ line: 14, message: '-> false' }],
-						message:
-							'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+						message: '⏱ Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
 					},
 					{ type: 'suite', state: 'completed', suite: suite1 },
 					{ type: 'finished' },
@@ -1223,8 +1215,7 @@ describe('Test Catch2 Framework Load', function () {
 					state: 'failed',
 					test: s1t2,
 					decorations: [{ line: 14, message: '-> false' }],
-					message:
-						'Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+					message: '⏱ Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 -> REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' },
@@ -1235,8 +1226,8 @@ describe('Test Catch2 Framework Load', function () {
 					type: 'test',
 					state: 'passed',
 					test: s1t1,
-					decorations: undefined,
-					message: 'Duration: 0.000132 second(s).\n'
+					decorations: [],
+					message: '⏱ Duration: 0.000132 second(s).\n'
 				},
 				{ type: 'suite', state: 'completed', suite: suite1 },
 				{ type: 'finished' },

@@ -10,6 +10,7 @@ import { SpawnOptions } from 'child_process';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { inspect } from 'util';
 import { SharedVariables } from './SharedVariables';
+import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 
 export class Catch2TestInfo extends AbstractTestInfo {
 	constructor(
@@ -50,8 +51,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
 		return debugParams;
 	}
 
-	parseAndProcessTestCase(xmlStr: string, rngSeed: number | undefined):
+	parseAndProcessTestCase(xmlStr: string, rngSeed: number | undefined, runInfo: RunningTestExecutableInfo):
 		TestEvent {
+		if (runInfo.timeout !== undefined) {
+			return this.getTimeoutEvent(runInfo.timeout);
+		}
+
 		let res: any = undefined;
 		new xml2js.Parser({ explicitArray: true })
 			.parseString(xmlStr, (err: any, result: any) => {
@@ -62,33 +67,15 @@ export class Catch2TestInfo extends AbstractTestInfo {
 				}
 			});
 
-		return this._processXmlTagTestCase(res.TestCase, rngSeed);
-	}
+		const testEvent = this.getFailedEventBase();
 
-	private _processXmlTagTestCase(testCase: any, rngSeed: number | undefined):
-		TestEvent {
-		try {
-			const testEvent: TestEvent = {
-				type: 'test',
-				test: this,
-				state: 'failed',
-				message: '',
-				decorations: []
-			};
-
-			if (rngSeed) {
-				testEvent.message += 'Randomness seeded to: ' + rngSeed.toString() + '.\n';
-			}
-
-			this._processXmlTagTestCaseInner(testCase, testEvent);
-
-			if (testEvent.message === '') testEvent.message = '';
-			if (testEvent.decorations!.length == 0) testEvent.decorations = undefined;
-
-			return testEvent;
-		} catch (e) {
-			throw e;
+		if (rngSeed) {
+			testEvent.message += '🔀 Randomness seeded to: ' + rngSeed.toString() + '.\n';
 		}
+
+		this._processXmlTagTestCaseInner(res.TestCase, testEvent);
+
+		return testEvent;
 	}
 
 	private _processXmlTagTestCaseInner(testCase: any, testEvent: TestEvent):
@@ -96,7 +83,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 		const title = '>>> "' + testCase.$.name + '" at line ' + testCase.$.line;
 
 		if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
-			testEvent.message += 'Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
+			testEvent.message += '⏱ Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
 		}
 
 		this._processInfoWarningAndFailureTags(testCase, title, testEvent);

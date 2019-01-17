@@ -69,7 +69,7 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
 	findRouteToTestById(id: string): (AbstractTestSuiteInfoBase | AbstractTestInfo)[] | undefined {
 		for (let i = 0; i < this.children.length; ++i) {
 			const res = this.children[i].findRouteToTestById(id);
-			if (res) return [this, ...res];
+			if (res !== undefined) return [this, ...res];
 		}
 		return undefined;
 	}
@@ -101,7 +101,7 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
 	findTestInfoInArray(array: (AbstractTestSuiteInfoBase | AbstractTestInfo)[], pred: (v: AbstractTestInfo) => boolean) {
 		for (let i = 0; i < array.length; i++) {
 			const res = array[i].findTestInfo(pred);
-			if (res) return res;
+			if (res !== undefined) return res;
 		}
 		return undefined;
 	}

@@ -39,6 +39,22 @@ export abstract class AbstractTestInfo implements TestInfo {
     return { type: 'test', test: this, state: 'skipped' };
   }
 
+  getTimeoutEvent(milisec: number): TestEvent {
+    const ev = this.getFailedEventBase();
+    ev.message += '⌛️ Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": ' + milisec / 1000 + ' second(s).\n';
+    return ev;
+  }
+
+  getFailedEventBase(): TestEvent {
+    return {
+      type: 'test',
+      test: this,
+      state: 'failed',
+      message: '', //TODO: complicated because of tests: '🧪 Executable: ' + this.execPath + '\n',
+      decorations: []
+    };
+  }
+
   findRouteToTestById(id: string): AbstractTestInfo[] | undefined {
     return this.id === id ? [this] : undefined;
   }

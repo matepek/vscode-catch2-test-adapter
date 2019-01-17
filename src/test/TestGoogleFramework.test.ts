@@ -46,6 +46,29 @@ describe('Test Google Framework', function () {
 		await promisify(setTimeout)(1000);
 	})
 
+	it('loads gtest1 from output because there is xml parsing error', async function () {
+		this.slow(500);
+		await settings.updateConfig('executables', example1.gtest1.execPath);
+
+		imitation.spawnStub.withArgs(example1.gtest1.execPath,
+			sinon.match((args: string[]) => { return args[0] === '--gtest_list_tests' }))
+			.callsFake(function () {
+				return new ChildProcessStub(example1.gtest1.gtest_list_tests_output);
+			});
+
+		imitation.fsReadFileSyncStub
+			.withArgs(sinon.match(/.*tmp_gtest_output_.+_\.xml\.tmp/), 'utf8')
+			.returns('not an xml');
+
+		adapter = new TestAdapter();
+
+		await adapter.load();
+
+		assert.equal(adapter.testLoadsEvents.length, 2);
+		assert.equal(adapter.rootSuite.children.length, 1);
+		assert.equal(adapter.suite1.children.length, 5);
+	})
+
 	describe('load gtest1', function () {
 		let adapter: TestAdapter;
 
@@ -93,6 +116,7 @@ describe('Test Google Framework', function () {
 					type: 'test',
 					state: 'passed',
 					test: get(0, 3, 0),
+					decorations: [],
 					message: [
 						'[ RUN      ] TestCas1.test1',
 						'[       OK ] TestCas1.test1 (0 ms)',
@@ -352,6 +376,7 @@ describe('Test Google Framework', function () {
 					type: 'test',
 					state: 'passed',
 					test: get(0, 3, 0),
+					decorations: [],
 					message: [
 						'[ RUN      ] TestCas1.test1',
 						'[       OK ] TestCas1.test1 (0 ms)',

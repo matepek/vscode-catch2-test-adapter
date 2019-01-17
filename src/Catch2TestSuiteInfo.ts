@@ -9,9 +9,10 @@ import * as xml2js from 'xml2js';
 
 import { Catch2TestInfo } from './Catch2TestInfo';
 import * as c2fs from './FsWrapper';
-import { AbstractTestSuiteInfo, AbstractTestSuiteInfoRunInfo } from './AbstractTestSuiteInfo';
+import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
+import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 
 export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 	children: Catch2TestInfo[] = [];
@@ -142,7 +143,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 		return execParams;
 	}
 
-	protected _handleProcess(runInfo: AbstractTestSuiteInfoRunInfo): Promise<void> {
+	protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
 		const data = new class {
 			buffer: string = '';
 			inTestCase: boolean = false;
@@ -214,11 +215,9 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 							this._shared.log.info('Test ', data.currentChild.testNameFull, 'has finished.');
 							try {
 								const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
-									testCaseXml, data.rngSeed);
+									testCaseXml, data.rngSeed, runInfo);
 								if (!this._shared.isEnabledSourceDecoration)
 									ev.decorations = undefined;
-								if (runInfo.timeout)
-									ev.message = this._getTimeoutMessage(runInfo.timeout);
 								this._shared.testStatesEmitter.fire(ev);
 								data.processedTestCases.push(data.currentChild);
 							} catch (e) {
@@ -269,15 +268,12 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 				if (data.inTestCase) {
 					if (data.currentChild !== undefined) {
 						this._shared.log.warn('data.currentChild !== undefined: ', data);
-						const ev: TestEvent = {
-							type: 'test',
-							test: data.currentChild!,
-							state: 'failed',
-						};
+						let ev: TestEvent;
 						if (runInfo.timeout !== undefined) {
-							ev.message = this._getTimeoutMessage(runInfo.timeout);
+							ev = data.currentChild.getTimeoutEvent(runInfo.timeout);
 						} else {
-							ev.message = 'Fatal error: (Wrong Catch2 xml output.)\nError: ' + inspect(codeOrReason) + '\n';
+							ev = data.currentChild.getFailedEventBase();
+							ev.message = '😱 Fatal error: (Wrong Catch2 xml output.)\nError: ' + inspect(codeOrReason) + '\n';
 						}
 						this._shared.testStatesEmitter.fire(ev);
 					} else {
@@ -325,7 +321,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 							if (currentChild === undefined) break;
 
 							try {
-								const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed);
+								const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
 								events.push(ev);
 							} catch (e) {
 								this._shared.log.error('parsing and processing test: ' + testCaseXml);
