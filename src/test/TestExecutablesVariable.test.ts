@@ -6,11 +6,10 @@ import * as path from 'path';
 import * as assert from 'assert';
 import { TestAdapter, Imitation, settings } from './TestCommon';
 import { TestLoadFinishedEvent } from 'vscode-test-adapter-api';
-import { promisify } from 'util';
 
 ///
 
-describe('Load Executables With Value', function () {
+describe(path.basename(__filename), function () {
 	this.slow(500);
 
 	let imitation: Imitation;
@@ -22,7 +21,6 @@ describe('Load Executables With Value', function () {
 
 	beforeEach(function () {
 		adapter = new TestAdapter();
-		return promisify(setTimeout)(1000);
 	})
 
 	afterEach(function () {

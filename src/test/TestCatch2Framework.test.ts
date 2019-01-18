@@ -6,14 +6,14 @@ import * as path from 'path';
 import * as fse from 'fs-extra';
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { inspect, promisify } from 'util';
+import { inspect } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
 import { TestAdapter, Imitation, waitFor, settings, isWin, ChildProcessStub, FileSystemWatcherStub } from './TestCommon';
 
 ///
 
-describe('Test Catch2 Framework', function () {
+describe(path.basename(__filename), function () {
 
   let imitation: Imitation;
   let adapter: TestAdapter | undefined = undefined;
@@ -38,14 +38,12 @@ describe('Test Catch2 Framework', function () {
 
     // reset config can cause problem with fse.removeSync(dotVscodePath);
     await settings.resetConfig();
-    return promisify(setTimeout)(2000);
   })
 
   afterEach(async function () {
     this.timeout(8000);
     if (adapter)
       await adapter.waitAndDispose(this);
-    return promisify(setTimeout)(1000);
   })
 
   specify('resolving relative defaultCwd', async function () {

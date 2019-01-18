@@ -238,7 +238,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   debug(tests: string[]): Promise<void> {
     if (this._mainTaskQueue.size > 0) {
       this._log.info(__filename + '. Debug is busy');
-      throw 'The adapter is busy. Try it again a bit later.';
+      throw Error('The adapter is busy. Try it again a bit later.');
     }
 
     this._log.info('Debugging');
@@ -296,7 +296,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }
 
       if (!template) {
-        throw 'For debugging \'catch2TestExplorer.debugConfigTemplate\' should be set.';
+        throw Error('For debugging \'catch2TestExplorer.debugConfigTemplate\' should be set.');
       }
 
       template = Object.assign({ 'name': "${label} (${suiteLabel})" }, template);

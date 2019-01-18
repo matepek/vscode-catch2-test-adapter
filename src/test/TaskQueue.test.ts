@@ -4,10 +4,11 @@
 
 import * as assert from 'assert';
 import { promisify } from 'util';
+import * as path from 'path';
 
 import { TaskQueue } from '../TaskQueue';
 
-describe('TaskQueue', function () {
+describe(path.basename(__filename), function () {
   async function waitFor(
     test: Mocha.Context, condition: Function, timeout: number = 1000) {
     const start = Date.now();
@@ -66,7 +67,7 @@ describe('TaskQueue', function () {
     const nodeD = new TaskQueue([node1, node2], 'nodeD');
 
     it('add:depends before', async function () {
-      this.slow(150);
+      this.slow(300);
       let startD: Function;
       let hasRunDatOnce = false;
       nodeD.then(() => {

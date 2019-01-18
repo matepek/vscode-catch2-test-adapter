@@ -11,7 +11,7 @@ import * as vscode from 'vscode';
 import { spawnAsync, statAsync } from '../FsWrapper';
 import { ChildProcessStub } from './TestCommon';
 
-describe('FsWrapper.spawnAsync', function () {
+describe(path.basename(__filename), function () {
   it('echoes', async function () {
     const isWin = process.platform === 'win32';
     const opt: SpawnOptions = isWin ? { shell: true } : {};

@@ -4,16 +4,16 @@
 
 import * as fse from 'fs-extra';
 import * as assert from 'assert';
+import * as path from 'path';
 import * as sinon from 'sinon';
 import { TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
-import { promisify } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
 import { TestAdapter, Imitation, settings, ChildProcessStub } from './TestCommon';
 
 ///
 
-describe('Test Google Framework', function () {
+describe(path.basename(__filename), function () {
 
 	let imitation: Imitation;
 	let adapter: TestAdapter | undefined = undefined;
@@ -36,14 +36,12 @@ describe('Test Google Framework', function () {
 
 		// reset config can cause problem with fse.removeSync(dotVscodePath);
 		await settings.resetConfig();
-		await promisify(setTimeout)(1000);
 	})
 
 	afterEach(async function () {
 		this.timeout(8000);
 		if (adapter)
 			await adapter.waitAndDispose(this);
-		await promisify(setTimeout)(1000);
 	})
 
 	it('loads gtest1 from output because there is xml parsing error', async function () {
