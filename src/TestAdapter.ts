@@ -199,7 +199,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     );
 
     return this._mainTaskQueue.then(() => {
-      this._testsEmitter.fire(<TestLoadStartedEvent>{ type: 'started' });
+      this._testsEmitter.fire({ type: 'started' });
 
       return this._rootSuite.load(this._getExecutables(config, this._rootSuite))
         .then(

@@ -15,6 +15,7 @@ import { SharedVariables } from './SharedVariables';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { AbstractTestInfo } from './AbstractTestInfo';
 
 
 export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
@@ -99,8 +100,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 							if (test.$.hasOwnProperty('value_param'))
 								valueParam = test.$.value_param;
 
-							const old = this.findTestInfoInArray(oldGroupChildren,
-								v => { return v.testNameFull === testNameFull; });
+							const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameFull === testNameFull);
 
 							group.addChild(new GoogleTestInfo(
 								this._shared,
@@ -156,8 +156,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 							const testNameFull = testGroupNameWithDot + testName;
 
-							const old = this.findTestInfoInArray(oldGroupChildren,
-								v => { return v.testNameFull === testNameFull; });
+							const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameFull === testNameFull);
 
 							group.addChild(new GoogleTestInfo(
 								this._shared,
@@ -238,14 +237,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 						const testNameFull: string = m[1];
 
 						data.beforeFirstTestCase = false;
-						data.currentChild = <GoogleTestInfo>this.findTestInfo(v => {
-							return v.testNameFull == testNameFull;
-						});
+						data.currentChild = this.findTestInfo(v => v.testNameFull == testNameFull);
 
 						if (data.currentChild !== undefined) {
 							this._shared.log.info('Test', data.currentChild.testNameFull, 'has started.');
-							const ev = data.currentChild.getStartEvent();
-							this._shared.testStatesEmitter.fire(ev);
+							this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
 						} else {
 							this._shared.log.warn('TestCase not found in children: ' + testNameFull);
 						}
@@ -355,9 +351,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 							const testNameFull = m[1];
 
-							const currentChild = <GoogleTestInfo>this.findTestInfo(v => {
-								return v.testNameFull == testNameFull;
-							});
+							const currentChild = this.findTestInfo(v => v.testNameFull == testNameFull);
 							if (currentChild === undefined) break;
 							try {
 								const ev = currentChild.parseAndProcessTestCase(testCase, runInfo);
@@ -376,6 +370,10 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 	}
 
 	addChild(group: GoogleTestGroupSuiteInfo) { super.addChild(group); }
+
+	findTestInfo(pred: (v: GoogleTestInfo) => boolean): GoogleTestInfo | undefined {
+		return <GoogleTestInfo>super.findTestInfo(<(vv: AbstractTestInfo) => boolean>pred);
+	}
 }
 
 class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {

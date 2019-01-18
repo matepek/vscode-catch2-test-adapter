@@ -197,8 +197,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
 						if (data.currentChild !== undefined) {
 							this._shared.log.info('Test', data.currentChild.testNameFull, 'has started.');
-							const ev = data.currentChild.getStartEvent();
-							this._shared.testStatesEmitter.fire(ev);
+							this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
 						} else {
 							this._shared.log.error('TestCase not found in children: ' + name);
 						}
@@ -217,7 +216,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 								const ev: TestEvent = data.currentChild.parseAndProcessTestCase(
 									testCaseXml, data.rngSeed, runInfo);
 								if (!this._shared.isEnabledSourceDecoration)
-									ev.decorations = undefined;
+									ev.decorations = [];
 								this._shared.testStatesEmitter.fire(ev);
 								data.processedTestCases.push(data.currentChild);
 							} catch (e) {

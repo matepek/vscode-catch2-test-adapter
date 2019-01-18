@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.14]
+
+### Fixed
+
+- a bug related to Google Test framework's test list loading. ([Issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/55))
+
 ## [2.3.13] - 2019-01-16
 
 Sorting has been change to alphabetic order.

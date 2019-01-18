@@ -115,7 +115,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
   }
 
   uniquifySuiteLabels() {
-    const uniqueNames: Map<string /* name */, AbstractTestSuiteInfo[]> = new Map();
+    const uniqueNames = new Map<string /* name */, AbstractTestSuiteInfo[]>();
 
     for (const suite of this.children) {
       const suites = uniqueNames.get(suite.origLabel);
