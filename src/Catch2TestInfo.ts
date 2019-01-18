@@ -137,7 +137,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 				testEvent.message += '>>> Failure: ' + failure._.trim() + ' <<<\n';
 				testEvent.decorations!.push({
 					line: Number(failure.$.line) - 1 /*It looks vscode works like this.*/,
-					message: '-> ' + failure._.split(EOL)
+					message: '⬅️ ' + failure._.split(EOL)
 						.map((l: string) => l.trim())
 						.filter((l: string) => l.length > 0)
 						.join('; ')
@@ -162,7 +162,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 					testEvent.decorations!.push({
 						line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
 						message:
-							'-> ' + expr.Expanded.map((x: string) => x.trim()).join('; ')
+							'⬅️ ' + expr.Expanded.map((x: string) => x.trim()).join('; ')
 					});
 				} catch (error) {
 					this._shared.log.error(error);

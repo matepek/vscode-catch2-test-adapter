@@ -127,7 +127,7 @@ describe('Test Google Framework', function () {
 					type: 'test',
 					state: 'failed',
 					test: get(0, 3, 1),
-					decorations: [{ line: 18, message: "Actual: false;  Expected: true;" }],
+					decorations: [{ line: 18, message: "⬅️ Actual: false;  Expected: true;" }],
 					message: [
 						"[ RUN      ] TestCas1.test2",
 						"gtest.cpp:19: Failure",
@@ -145,12 +145,12 @@ describe('Test Google Framework', function () {
 					state: 'failed',
 					test: get(0, 4, 0),
 					decorations: [
-						{ line: 23, message: "Actual: false;  Expected: true;" },
-						{ line: 24, message: "Actual: true;  Expected: false;" },
-						{ line: 25, message: "<-- failure" },
-						{ line: 26, message: "Expected: (1) != (1), actual: 1 vs 1" },
-						{ line: 27, message: "Expected: (1) < (1), actual: 1 vs 1" },
-						{ line: 28, message: "Expected: (1) > (1), actual: 1 vs 1" },
+						{ line: 23, message: "⬅️ Actual: false;  Expected: true;" },
+						{ line: 24, message: "⬅️ Actual: true;  Expected: false;" },
+						{ line: 25, message: "⬅️ failure" },
+						{ line: 26, message: "⬅️ Expected: (1) != (1), actual: 1 vs 1" },
+						{ line: 27, message: "⬅️ Expected: (1) < (1), actual: 1 vs 1" },
+						{ line: 28, message: "⬅️ Expected: (1) > (1), actual: 1 vs 1" },
 					],
 					message: [
 						'[ RUN      ] TestCas2.test1',
@@ -181,8 +181,8 @@ describe('Test Google Framework', function () {
 					state: 'failed',
 					test: get(0, 4, 1),
 					decorations: [
-						{ line: 31, message: "Actual: false;  Expected: true;" },
-						{ line: 35, message: "Expected: magic_func() doesn't generate new fatal failures in the current thread.;    Actual: it does." },
+						{ line: 31, message: "⬅️ Actual: false;  Expected: true;" },
+						{ line: 35, message: "⬅️ Expected: magic_func() doesn't generate new fatal failures in the current thread.;    Actual: it does." },
 					],
 					message: [
 						'[ RUN      ] TestCas2.test2',
@@ -204,7 +204,7 @@ describe('Test Google Framework', function () {
 					state: 'failed',
 					test: get(0, 0, 0),
 					decorations: [
-						{ line: 69, message: "<-- failure" },
+						{ line: 69, message: "⬅️ failure" },
 					],
 					message: [
 						'[ RUN      ] MockTestCase.expect1',
@@ -221,7 +221,7 @@ describe('Test Google Framework', function () {
 					state: 'failed',
 					test: get(0, 0, 1),
 					decorations: [
-						{ line: 77, message: "<-- failure" },
+						{ line: 77, message: "⬅️ failure" },
 					],
 					message: [
 						'[ RUN      ] MockTestCase.expect2',
@@ -251,7 +251,7 @@ describe('Test Google Framework', function () {
 					state: 'failed',
 					test: get(0, 1, 0),
 					decorations: [
-						{ line: 40, message: "<-- failure" },
+						{ line: 40, message: "⬅️ failure" },
 					],
 					message: [
 						'[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
@@ -269,7 +269,7 @@ describe('Test Google Framework', function () {
 					state: 'failed',
 					test: get(0, 1, 1),
 					decorations: [
-						{ line: 40, message: "<-- failure" },
+						{ line: 40, message: "⬅️ failure" },
 					],
 					message: [
 						'[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/1',
@@ -287,7 +287,7 @@ describe('Test Google Framework', function () {
 					state: 'failed',
 					test: get(0, 1, 2),
 					decorations: [
-						{ line: 41, message: "<-- failure" },
+						{ line: 41, message: "⬅️ failure" },
 					],
 					message: [
 						'[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/0',
@@ -305,7 +305,7 @@ describe('Test Google Framework', function () {
 					state: 'failed',
 					test: get(0, 1, 3),
 					decorations: [
-						{ line: 41, message: "<-- failure" },
+						{ line: 41, message: "⬅️ failure" },
 					],
 					message: [
 						'[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/1',
@@ -325,7 +325,7 @@ describe('Test Google Framework', function () {
 					state: 'failed',
 					test: get(0, 2, 0),
 					decorations: [
-						{ line: 40, message: "<-- failure" },
+						{ line: 40, message: "⬅️ failure" },
 					],
 					message: [
 						'[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails1/0',
@@ -343,7 +343,7 @@ describe('Test Google Framework', function () {
 					state: 'failed',
 					test: get(0, 2, 1),
 					decorations: [
-						{ line: 41, message: "<-- failure" },
+						{ line: 41, message: "⬅️ failure" },
 					],
 					message: [
 						'[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails2/0',
@@ -403,7 +403,7 @@ describe('Test Google Framework', function () {
 					state: 'failed',
 					test: get(0, 1, 0),
 					decorations: [
-						{ line: 40, message: "<-- failure" },
+						{ line: 40, message: "⬅️ failure" },
 					],
 					message: [
 						'[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
