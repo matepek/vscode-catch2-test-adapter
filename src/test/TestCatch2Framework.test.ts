@@ -164,7 +164,7 @@ describe('Test Catch2 Framework', function () {
         state: 'failed',
         test: s1t2,
         decorations: [{ line: 14, message: '⬅️ false' }],
-        message: '⏱ Duration: 0.000204 second(s).\n>>> "s1t2" at line 13 ➡️ REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n<<<\n\n'
+        message: '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ REQUIRE at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n'
       },
       { type: 'suite', state: 'completed', suite: adapter.suite1 },
       { type: 'finished' },
