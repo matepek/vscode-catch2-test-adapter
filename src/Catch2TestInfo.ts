@@ -151,7 +151,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 			for (let j = 0; j < xml.Expression.length; ++j) {
 				const expr = xml.Expression[j];
 				try {
-					testEvent.message += title + ' -> '
+					testEvent.message += title + ' ➡️ '
 						+ (expr.$.type ? expr.$.type : '<unknown>')
 						+ ' at line ' + expr.$.line + ':\n'
 						+ '  Original:\n    '
@@ -178,7 +178,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 			for (let j = 0; j < xml.Section.length; ++j) {
 				const section = xml.Section[j];
 				try {
-					title += ' -> "' + section.$.name + '" at line ' + section.$.line;
+					title += ' ➡️ "' + section.$.name + '" at line ' + section.$.line;
 
 					this._processInfoWarningAndFailureTags(xml, title, testEvent);
 
@@ -199,11 +199,11 @@ export class Catch2TestInfo extends AbstractTestInfo {
 				for (let j = 0; j < expr.FatalErrorCondition.length; ++j) {
 					const fatal = expr.FatalErrorCondition[j];
 
-					testEvent.message += title + ' -> at line ' + expr.$.line + ':\n';
+					testEvent.message += title + ' ➡️ Fatal Error at line ' + expr.$.line + ':\n';
 					if (fatal.hasOwnProperty('_')) {
-						testEvent.message += '  Fatal error: ' + fatal._.trim() + '\n';
+						testEvent.message += '  Error: ' + fatal._.trim() + '\n';
 					} else {
-						testEvent.message += '  Unknown fatal error: ' + inspect(fatal) + '\n';
+						testEvent.message += '  Error: unknown: ' + inspect(fatal) + '\n';
 					}
 					testEvent.message += '<<<\n\n';
 				}

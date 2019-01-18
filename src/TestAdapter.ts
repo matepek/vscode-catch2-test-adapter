@@ -262,7 +262,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const testInfo = <AbstractTestInfo>route[route.length - 1];
     route.pop();
-    const suiteLabels = route.map(s => s.label).join(' -> ');
+    const suiteLabels = route.map(s => s.label).join(' ➡️ ');
 
     this._log.info('testInfo: ', testInfo, tests);
 
