@@ -9,11 +9,14 @@ import { TestEvent } from 'vscode-test-adapter-api';
 
 import { GoogleTestInfo } from './GoogleTestInfo';
 import * as c2fs from './FsWrapper';
-import { AbstractTestSuiteInfo, AbstractTestSuiteInfoRunInfo } from './AbstractTestSuiteInfo';
+import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { Parser } from 'xml2js';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
+import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { AbstractTestInfo } from './AbstractTestInfo';
+
 
 export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 	children: GoogleTestGroupSuiteInfo[] = [];
@@ -61,7 +64,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 				}
 				try {
 					const testOutputStr = fs.readFileSync(tmpFilePath, 'utf8');
+
 					let xml: any = undefined;
+
 					new Parser({ explicitArray: true }).parseString(testOutputStr, (err: any, result: any) => {
 						if (err) {
 							this._shared.log.error(err.toString());
@@ -95,8 +100,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 							if (test.$.hasOwnProperty('value_param'))
 								valueParam = test.$.value_param;
 
-							const old = this.findTestInfoInArray(oldGroupChildren,
-								v => { return v.testNameFull === testNameFull; });
+							const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameFull === testNameFull);
 
 							group.addChild(new GoogleTestInfo(
 								this._shared,
@@ -112,7 +116,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 					}
 
 				} catch (e) {
-					this._shared.log.error('Couldn\'t parse output file. It is trying to parse the output: ', googleTestListOutput);
+					this._shared.log.error('Couldn\'t parse output file. It is trying to parse the output: ', googleTestListOutput, e);
 
 					this.children = [];
 
@@ -121,6 +125,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 					while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
 
 					if (lines.length == 0) throw Error('Wrong test list.');
+
+					// gtest_main.cc
+					if (lines[0].startsWith('Running main() from')) lines.shift();
 
 					for (let i = 0; i < lines.length;) {
 						if (lines[i][0] == ' ')
@@ -149,8 +156,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 							const testNameFull = testGroupNameWithDot + testName;
 
-							const old = this.findTestInfoInArray(oldGroupChildren,
-								v => { return v.testNameFull === testNameFull; });
+							const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameFull === testNameFull);
 
 							group.addChild(new GoogleTestInfo(
 								this._shared,
@@ -188,7 +194,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 		return execParams;
 	}
 
-	protected _handleProcess(runInfo: AbstractTestSuiteInfoRunInfo): Promise<void> {
+	protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
 		const data = new class {
 			buffer: string = '';
 			inTestCase: boolean = false;
@@ -231,14 +237,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 						const testNameFull: string = m[1];
 
 						data.beforeFirstTestCase = false;
-						data.currentChild = <GoogleTestInfo>this.findTestInfo(v => {
-							return v.testNameFull == testNameFull;
-						});
+						data.currentChild = this.findTestInfo(v => v.testNameFull == testNameFull);
 
 						if (data.currentChild !== undefined) {
 							this._shared.log.info('Test', data.currentChild.testNameFull, 'has started.');
-							const ev = data.currentChild.getStartEvent();
-							this._shared.testStatesEmitter.fire(ev);
+							this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
 						} else {
 							this._shared.log.warn('TestCase not found in children: ' + testNameFull);
 						}
@@ -254,11 +257,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 						if (data.currentChild !== undefined) {
 							this._shared.log.info('Test ', data.currentChild.testNameFull, 'has finished.');
 							try {
-								const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase);
+								const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, runInfo);
 								if (!this._shared.isEnabledSourceDecoration)
 									ev.decorations = undefined;
-								if (runInfo.timeout)
-									ev.message = this._getTimeoutMessage(runInfo.timeout);
 								this._shared.testStatesEmitter.fire(ev);
 								data.processedTestCases.push(data.currentChild);
 							} catch (e) {
@@ -305,26 +306,26 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 				this._shared.log.warn(runInfo, reason, this, data);
 				return reason;
 			}).then((codeOrReason: number | string | any) => {
-				if (data.group) {
-					this._shared.testStatesEmitter.fire({ type: 'suite', suite: data.group, state: 'completed' });
-				}
 				if (data.inTestCase) {
 					if (data.currentChild !== undefined) {
 						this._shared.log.warn('data.currentChild !== undefined: ', data);
-						const ev: TestEvent = {
-							type: 'test',
-							test: data.currentChild!,
-							state: 'failed',
-						};
-						if (runInfo.timeout != undefined) {
-							ev.message = this._getTimeoutMessage(runInfo.timeout);
+
+						let ev: TestEvent;
+						if (runInfo.timeout !== undefined) {
+							ev = data.currentChild.getTimeoutEvent(runInfo.timeout);
 						} else {
-							ev.message = 'Fatal error: (Wrong Google Test output.)\nError: ' + inspect(codeOrReason) + '\n';
+							ev = data.currentChild.getFailedEventBase();
+							ev.message = '😱 Fatal error: (Wrong Google Test output.)\nError: ' + inspect(codeOrReason) + '\n';
 						}
+
 						this._shared.testStatesEmitter.fire(ev);
 					} else {
 						this._shared.log.warn('data.inTestCase: ', data);
 					}
+				}
+
+				if (data.group) {
+					this._shared.testStatesEmitter.fire({ type: 'suite', suite: data.group, state: 'completed' });
 				}
 
 				const isTestRemoved = (runInfo.timeout == undefined)
@@ -350,12 +351,10 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 							const testNameFull = m[1];
 
-							const currentChild = <GoogleTestInfo>this.findTestInfo(v => {
-								return v.testNameFull == testNameFull;
-							});
+							const currentChild = this.findTestInfo(v => v.testNameFull == testNameFull);
 							if (currentChild === undefined) break;
 							try {
-								const ev = currentChild.parseAndProcessTestCase(testCase);
+								const ev = currentChild.parseAndProcessTestCase(testCase, runInfo);
 								events.push(ev);
 							} catch (e) {
 								this._shared.log.error('parsing and processing test: ' + testCase);
@@ -371,6 +370,10 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 	}
 
 	addChild(group: GoogleTestGroupSuiteInfo) { super.addChild(group); }
+
+	findTestInfo(pred: (v: GoogleTestInfo) => boolean): GoogleTestInfo | undefined {
+		return <GoogleTestInfo>super.findTestInfo(<(vv: AbstractTestInfo) => boolean>pred);
+	}
 }
 
 class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {

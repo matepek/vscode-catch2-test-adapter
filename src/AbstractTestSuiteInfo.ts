@@ -6,11 +6,12 @@ import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { AbstractTestInfo } from './AbstractTestInfo';
 import * as c2fs from './FsWrapper';
+import { AbstractTestInfo } from './AbstractTestInfo';
+import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
-import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
+import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 
 export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
@@ -30,7 +31,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   protected abstract _getRunParams(childrenToRun: Set<AbstractTestInfo>): string[];
 
-  protected abstract _handleProcess(runInfo: AbstractTestSuiteInfoRunInfo): Promise<void>;
+  protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
 
   cancel(): void {
     this._shared.log.info('canceled:', this.id, this.label, this._process != undefined);
@@ -77,7 +78,10 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
    * @param childrenToRun If it is empty, it means run all.
    */
   private _runInner(childrenToRun: Set<AbstractTestInfo>): Promise<void> {
-    if (this._killed) return Promise.reject(Error('Test was killed.'));
+    if (this._killed) {
+      this._shared.log.info('test was canceled:', this);
+      return Promise.resolve();
+    }
 
     const execParams = this._getRunParams(childrenToRun);
 
@@ -91,17 +95,16 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     this._process = spawn(this.execPath, execParams, this.execOptions);
 
-    const runInfo: AbstractTestSuiteInfoRunInfo = {
+    const runInfo: RunningTestExecutableInfo = {
       process: this._process,
       childrenToRun: childrenToRun,
       timeout: undefined,
       timeoutWatcherTrigger: () => { },
+      startTime: Date.now(),
     };
 
     this._shared.log.info('proc started');
     {
-      const startTime = Date.now();
-
       const killIfTimeouts = (): Promise<void> => {
         return new Promise<vscode.Disposable>(resolve => {
           const conn = this._shared.onDidChangeExecRunningTimeout(() => {
@@ -111,7 +114,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
           runInfo.timeoutWatcherTrigger = () => { resolve(conn); };
 
           if (this._shared.execRunningTimeout !== null) {
-            const elapsed = Date.now() - startTime;
+            const elapsed = Date.now() - runInfo.startTime;
             const left = this._shared.execRunningTimeout - elapsed;
             if (left <= 0) resolve(conn);
             else setTimeout(resolve, left, conn);
@@ -121,7 +124,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
           if (runInfo.process === undefined) {
             return Promise.resolve();
           } else if (this._shared.execRunningTimeout !== null
-            && Date.now() - startTime > this._shared.execRunningTimeout) {
+            && Date.now() - runInfo.startTime > this._shared.execRunningTimeout) {
             runInfo.process.kill();
             runInfo.timeout = this._shared.execRunningTimeout;
             return Promise.resolve();
@@ -172,16 +175,4 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     }
     return filePath;
   }
-
-  protected _getTimeoutMessage(milisec: number): string {
-    return 'Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": '
-      + milisec / 1000 + ' second(s).\n';
-  }
-}
-
-export interface AbstractTestSuiteInfoRunInfo {
-  process: ChildProcess | undefined;
-  childrenToRun: Set<AbstractTestInfo>;
-  timeout: number | undefined;
-  timeoutWatcherTrigger: () => void;
 }

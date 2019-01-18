@@ -7,6 +7,7 @@ import { SpawnOptions } from 'child_process';
 
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { SharedVariables } from './SharedVariables';
+import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 
 export class GoogleTestInfo extends AbstractTestInfo {
 	constructor(
@@ -37,14 +38,14 @@ export class GoogleTestInfo extends AbstractTestInfo {
 		return debugParams;
 	}
 
-	parseAndProcessTestCase(output: string): TestEvent {
-		const ev: TestEvent = {
-			type: 'test',
-			test: this,
-			state: 'failed',
-			decorations: [],
-			message: output,
-		};
+	parseAndProcessTestCase(output: string, runInfo: RunningTestExecutableInfo): TestEvent {
+		if (runInfo.timeout !== undefined) {
+			return this.getTimeoutEvent(runInfo.timeout);
+		}
+
+		const ev = this.getFailedEventBase();
+
+		ev.message += output;
 
 		const lines = output.split(/\r?\n/);
 
@@ -62,22 +63,21 @@ export class GoogleTestInfo extends AbstractTestInfo {
 				if (i + 2 < lines.length - 1
 					&& lines[i + 1].startsWith('Expected: ')
 					&& lines[i + 2].startsWith('  Actual: ')) {
-					ev.decorations!.push({ line: lineNumber, message: lines[i + 1] + ';  ' + lines[i + 2] });
+					ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1] + ';  ' + lines[i + 2] });
 				} else if (i + 1 < lines.length - 1
 					&& lines[i + 1].startsWith('Expected: ')) {
-					ev.decorations!.push({ line: lineNumber, message: lines[i + 1] });
+					ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1] });
 				} else if (i + 3 < lines.length - 1
 					&& lines[i + 1].startsWith('Value of: ')
 					&& lines[i + 2].startsWith('  Actual: ')
 					&& lines[i + 3].startsWith('Expected: ')) {
-					ev.decorations!.push({ line: lineNumber, message: lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';' });
+					ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';' });
 				} else {
-					ev.decorations!.push({ line: lineNumber, message: '<-- failure' });
+					ev.decorations!.push({ line: lineNumber, message: '⬅️ failure' });
 				}
 			}
 		}
 
-		if (ev.decorations!.length == 0) delete ev.decorations;
 		return ev;
 	}
 }

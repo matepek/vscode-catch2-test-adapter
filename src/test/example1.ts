@@ -2148,6 +2148,7 @@ For more detailed usage please see the project docs
       vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'gtest1')).fsPath;
 
     readonly gtest_list_tests_output = [
+      'Running main() from ...',
       'TestCas1.',
       '  test1',
       '  test2',

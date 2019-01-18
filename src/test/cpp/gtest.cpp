@@ -1,7 +1,7 @@
 // g++ -g -std=c++17 -isystem googletest/googletest/include -pthread
 //   gtest.cpp libgtest.a -o gtest3
 
-// g++ -g -std=c++17 -isystem googletest/googletest/include -isystem googletest/googlmock/include \
+// g++ -g -std=c++17 -isystem googletest/googletest/include -isystem googletest/googlemock/include \
     -pthread ../vscode-catch2-test-adapter/src/test/cpp/gtest.cpp libgmock.a -o gtest.exe
 
 // Google Test
