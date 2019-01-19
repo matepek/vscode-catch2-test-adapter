@@ -35,7 +35,7 @@ describe(path.basename(__filename), function () {
 	beforeEach(async function () {
 		this.timeout(8000);
 
-		imitation.reset();
+		imitation.resetToCallThrough();
 		watchers = example1.initImitation(imitation);
 
 		await settings.resetConfig(); // reset config can cause problem with fse.removeSync(dotVscodePath);
@@ -65,7 +65,7 @@ describe(path.basename(__filename), function () {
 		adapter.testLoadsEvents.pop();
 		adapter.testLoadsEvents.pop();
 
-		root = adapter.rootSuite;
+		root = adapter.root;
 
 		suite1 = undefined;
 		s1t1 = undefined;

@@ -6,7 +6,6 @@ import * as fse from 'fs-extra';
 import * as assert from 'assert';
 import * as path from 'path';
 import * as sinon from 'sinon';
-import { TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
 import { EOL } from 'os';
 import { example1 } from './example1';
 import { TestAdapter, Imitation, settings, ChildProcessStub } from './TestCommon';
@@ -31,7 +30,7 @@ describe(path.basename(__filename), function () {
 		this.timeout(8000);
 		adapter = undefined;
 
-		imitation.reset();
+		imitation.resetToCallThrough();
 		example1.initImitation(imitation);
 
 		// reset config can cause problem with fse.removeSync(dotVscodePath);
@@ -63,7 +62,7 @@ describe(path.basename(__filename), function () {
 		await adapter.load();
 
 		assert.equal(adapter.testLoadsEvents.length, 2);
-		assert.equal(adapter.rootSuite.children.length, 1);
+		assert.equal(adapter.root.children.length, 1);
 		assert.equal(adapter.suite1.children.length, 5);
 	})
 
@@ -88,43 +87,33 @@ describe(path.basename(__filename), function () {
 			await adapter.load();
 
 			assert.equal(adapter.testLoadsEvents.length, 2);
-			assert.equal(adapter.rootSuite.children.length, 1);
+			assert.equal(adapter.root.children.length, 1);
 			assert.equal(adapter.suite1.children.length, 5);
 		})
-
-		function get(...index: number[]) {
-			let res: TestSuiteInfo | TestInfo = adapter.rootSuite;
-			for (let i = 0; i < index.length; i++) {
-				res = (<TestSuiteInfo>res).children[index[i]];
-			}
-			return res;
-		}
 
 		specify('run all', async function () {
 			this.slow(500);
 
-			await adapter.run([adapter.rootSuite.id]);
-
 			const expected = [
-				{ type: 'started', tests: [adapter.rootSuite.id] },
-				{ type: 'suite', state: 'running', suite: get(0) },
-				{ type: 'suite', state: 'running', suite: get(0, 3) },
-				{ type: 'test', state: 'running', test: get(0, 3, 0) },
+				{ type: 'started', tests: [adapter.root.id] },
+				{ type: 'suite', state: 'running', suite: adapter.get(0) },
+				{ type: 'suite', state: 'running', suite: adapter.get(0, 3) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 3, 0) },
 				{
 					type: 'test',
 					state: 'passed',
-					test: get(0, 3, 0),
+					test: adapter.get(0, 3, 0),
 					decorations: [],
 					message: [
 						'[ RUN      ] TestCas1.test1',
 						'[       OK ] TestCas1.test1 (0 ms)',
 					].join(EOL)
 				},
-				{ type: 'test', state: 'running', test: get(0, 3, 1) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 3, 1) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 3, 1),
+					test: adapter.get(0, 3, 1),
 					decorations: [{ line: 18, message: "⬅️ Actual: false;  Expected: true;" }],
 					message: [
 						"[ RUN      ] TestCas1.test2",
@@ -135,13 +124,13 @@ describe(path.basename(__filename), function () {
 						"[  FAILED  ] TestCas1.test2 (0 ms)",
 					].join(EOL),
 				},
-				{ type: 'suite', state: 'completed', suite: get(0, 3) },
-				{ type: 'suite', state: 'running', suite: get(0, 4) },
-				{ type: 'test', state: 'running', test: get(0, 4, 0) },
+				{ type: 'suite', state: 'completed', suite: adapter.get(0, 3) },
+				{ type: 'suite', state: 'running', suite: adapter.get(0, 4) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 4, 0) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 4, 0),
+					test: adapter.get(0, 4, 0),
 					decorations: [
 						{ line: 23, message: "⬅️ Actual: false;  Expected: true;" },
 						{ line: 24, message: "⬅️ Actual: true;  Expected: false;" },
@@ -173,11 +162,11 @@ describe(path.basename(__filename), function () {
 						'[  FAILED  ] TestCas2.test1 (1 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: get(0, 4, 1) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 4, 1) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 4, 1),
+					test: adapter.get(0, 4, 1),
 					decorations: [
 						{ line: 31, message: "⬅️ Actual: false;  Expected: true;" },
 						{ line: 35, message: "⬅️ Expected: magic_func() doesn't generate new fatal failures in the current thread.;    Actual: it does." },
@@ -194,13 +183,13 @@ describe(path.basename(__filename), function () {
 						'[  FAILED  ] TestCas2.test2 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'suite', state: 'completed', suite: get(0, 4) },
-				{ type: 'suite', state: 'running', suite: get(0, 0) },
-				{ type: 'test', state: 'running', test: get(0, 0, 0) },
+				{ type: 'suite', state: 'completed', suite: adapter.get(0, 4) },
+				{ type: 'suite', state: 'running', suite: adapter.get(0, 0) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 0, 0) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 0, 0),
+					test: adapter.get(0, 0, 0),
 					decorations: [
 						{ line: 69, message: "⬅️ failure" },
 					],
@@ -213,11 +202,11 @@ describe(path.basename(__filename), function () {
 						'[  FAILED  ] MockTestCase.expect1 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: get(0, 0, 1) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 0, 1) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 0, 1),
+					test: adapter.get(0, 0, 1),
 					decorations: [
 						{ line: 77, message: "⬅️ failure" },
 					],
@@ -241,13 +230,13 @@ describe(path.basename(__filename), function () {
 						'[  FAILED  ] MockTestCase.expect2 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'suite', state: 'completed', suite: get(0, 0) },
-				{ type: 'suite', state: 'running', suite: get(0, 1) },
-				{ type: 'test', state: 'running', test: get(0, 1, 0) },
+				{ type: 'suite', state: 'completed', suite: adapter.get(0, 0) },
+				{ type: 'suite', state: 'running', suite: adapter.get(0, 1) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 1, 0) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 1, 0),
+					test: adapter.get(0, 1, 0),
 					decorations: [
 						{ line: 40, message: "⬅️ failure" },
 					],
@@ -261,11 +250,11 @@ describe(path.basename(__filename), function () {
 						'[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: get(0, 1, 1) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 1, 1) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 1, 1),
+					test: adapter.get(0, 1, 1),
 					decorations: [
 						{ line: 40, message: "⬅️ failure" },
 					],
@@ -279,11 +268,11 @@ describe(path.basename(__filename), function () {
 						'[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: get(0, 1, 2) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 1, 2) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 1, 2),
+					test: adapter.get(0, 1, 2),
 					decorations: [
 						{ line: 41, message: "⬅️ failure" },
 					],
@@ -297,11 +286,11 @@ describe(path.basename(__filename), function () {
 						'[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2 (1 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: get(0, 1, 3) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 1, 3) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 1, 3),
+					test: adapter.get(0, 1, 3),
 					decorations: [
 						{ line: 41, message: "⬅️ failure" },
 					],
@@ -315,13 +304,13 @@ describe(path.basename(__filename), function () {
 						'[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'suite', state: 'completed', suite: get(0, 1) },
-				{ type: 'suite', state: 'running', suite: get(0, 2) },
-				{ type: 'test', state: 'running', test: get(0, 2, 0) },
+				{ type: 'suite', state: 'completed', suite: adapter.get(0, 1) },
+				{ type: 'suite', state: 'running', suite: adapter.get(0, 2) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 2, 0) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 2, 0),
+					test: adapter.get(0, 2, 0),
 					decorations: [
 						{ line: 40, message: "⬅️ failure" },
 					],
@@ -335,11 +324,11 @@ describe(path.basename(__filename), function () {
 						'[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'test', state: 'running', test: get(0, 2, 1) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 2, 1) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 2, 1),
+					test: adapter.get(0, 2, 1),
 					decorations: [
 						{ line: 41, message: "⬅️ failure" },
 					],
@@ -353,53 +342,56 @@ describe(path.basename(__filename), function () {
 						'[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'suite', state: 'completed', suite: get(0, 2) },
-				{ type: 'suite', state: 'completed', suite: get(0) },
+				{ type: 'suite', state: 'completed', suite: adapter.get(0, 2) },
+				{ type: 'suite', state: 'completed', suite: adapter.get(0) },
 				{ type: 'finished' },
 			];
+
+			await adapter.run([adapter.root.id]);
+
 			assert.deepStrictEqual(adapter.testStatesEvents, expected);
 		})
 
 		specify('run first', async function () {
 			this.slow(500);
 
-			await adapter.run([get(0, 3, 0).id]);
-
-			assert.deepStrictEqual(adapter.testStatesEvents, [
-				{ type: 'started', tests: [get(0, 3, 0).id] },
-				{ type: 'suite', state: 'running', suite: get(0) },
-				{ type: 'suite', state: 'running', suite: get(0, 3) },
-				{ type: 'test', state: 'running', test: get(0, 3, 0) },
+			const expected = [
+				{ type: 'started', tests: [adapter.get(0, 3, 0).id] },
+				{ type: 'suite', state: 'running', suite: adapter.get(0) },
+				{ type: 'suite', state: 'running', suite: adapter.get(0, 3) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 3, 0) },
 				{
 					type: 'test',
 					state: 'passed',
-					test: get(0, 3, 0),
+					test: adapter.get(0, 3, 0),
 					decorations: [],
 					message: [
 						'[ RUN      ] TestCas1.test1',
 						'[       OK ] TestCas1.test1 (0 ms)',
 					].join(EOL)
 				},
-				{ type: 'suite', state: 'completed', suite: get(0, 3) },
-				{ type: 'suite', state: 'completed', suite: get(0) },
+				{ type: 'suite', state: 'completed', suite: adapter.get(0, 3) },
+				{ type: 'suite', state: 'completed', suite: adapter.get(0) },
 				{ type: 'finished' },
-			]);
+			];
+
+			await adapter.run([adapter.get(0, 3, 0).id]);
+
+			assert.deepStrictEqual(adapter.testStatesEvents, expected);
 		})
 
 		specify('run param', async function () {
 			this.slow(500);
 
-			await adapter.run([get(0, 1, 0).id]);
-
-			assert.deepStrictEqual(adapter.testStatesEvents, [
-				{ type: 'started', tests: [get(0, 1, 0).id] },
-				{ type: 'suite', state: 'running', suite: get(0) },
-				{ type: 'suite', state: 'running', suite: get(0, 1) },
-				{ type: 'test', state: 'running', test: get(0, 1, 0) },
+			const expected = [
+				{ type: 'started', tests: [adapter.get(0, 1, 0).id] },
+				{ type: 'suite', state: 'running', suite: adapter.get(0) },
+				{ type: 'suite', state: 'running', suite: adapter.get(0, 1) },
+				{ type: 'test', state: 'running', test: adapter.get(0, 1, 0) },
 				{
 					type: 'test',
 					state: 'failed',
-					test: get(0, 1, 0),
+					test: adapter.get(0, 1, 0),
 					decorations: [
 						{ line: 40, message: "⬅️ failure" },
 					],
@@ -413,10 +405,14 @@ describe(path.basename(__filename), function () {
 						'[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
 					].join(EOL),
 				},
-				{ type: 'suite', state: 'completed', suite: get(0, 1) },
-				{ type: 'suite', state: 'completed', suite: get(0) },
+				{ type: 'suite', state: 'completed', suite: adapter.get(0, 1) },
+				{ type: 'suite', state: 'completed', suite: adapter.get(0) },
 				{ type: 'finished' },
-			]);
+			];
+
+			await adapter.run([adapter.get(0, 1, 0).id]);
+
+			assert.deepStrictEqual(adapter.testStatesEvents, expected);
 		})
 	})
 })

@@ -22,6 +22,7 @@ import {
 	TestRunStartedEvent,
 	TestSuiteEvent,
 	TestSuiteInfo,
+	TestInfo,
 } from 'vscode-test-adapter-api';
 
 import * as my from '../TestAdapter';
@@ -91,11 +92,11 @@ export class Imitation {
 	readonly fsReadFileSyncStub: sinon.SinonStub<any[], any> = <any>this.sinonSandbox.stub(fs, 'readFileSync').named('fsReadFileSync');
 	readonly vsFindFilesStub: sinon.SinonStub<[vscode.GlobPattern | sinon.SinonMatcher], Thenable<vscode.Uri[]>> = <sinon.SinonStub<[vscode.GlobPattern], Thenable<vscode.Uri[]>>>this.sinonSandbox.stub(vscode.workspace, 'findFiles').named('vsFindFilesStub');
 
-	constructor() { this.reset(); }
+	constructor() { this.resetToCallThrough(); }
 
 	restore() { this.sinonSandbox.restore(); }
 
-	reset() {
+	resetToCallThrough() {
 		this.sinonSandbox.reset();
 		this.spawnStub.callThrough();
 		this.vsfsWatchStub.callThrough();
@@ -208,18 +209,20 @@ export class TestAdapter extends my.TestAdapter {
 		}
 	}
 
-	get rootSuite(): TestSuiteInfo { return (<any>this)._rootSuite; }
+	get root(): TestSuiteInfo { return (<any>this)._rootSuite; }
 
-	getSuite(index: number) {
-		assert.ok(this.rootSuite.children.length > index);
-		assert.strictEqual(this.rootSuite.children[index].type, 'suite');
-		return <TestSuiteInfo>this.rootSuite.children[index];
+	get(...index: number[]) {
+		let res: TestSuiteInfo | TestInfo = this.root;
+		for (let i = 0; i < index.length; i++) {
+			res = (<TestSuiteInfo>res).children[index[i]];
+		}
+		return res;
 	}
 
-	get suite1() { return this.getSuite(0); }
-	get suite2() { return this.getSuite(1); }
-	get suite3() { return this.getSuite(2); }
-	get suite4() { return this.getSuite(3); }
+	get suite1() { return <TestSuiteInfo>this.get(0); }
+	get suite2() { return <TestSuiteInfo>this.get(1); }
+	get suite3() { return <TestSuiteInfo>this.get(2); }
+	get suite4() { return <TestSuiteInfo>this.get(3); }
 
 	getTestStatesEventIndex(searchFor: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent) {
 		const i = this.testStatesEvents.findIndex(
@@ -243,7 +246,7 @@ export class TestAdapter extends my.TestAdapter {
 		assert.equal(this.testLoadsEvents[this.testLoadsEvents.length - 1].type, 'finished');
 		const e = <TestLoadFinishedEvent>this.testLoadsEvents[this.testLoadsEvents.length - 1];
 		assert.ok(e.suite !== undefined);
-		assert.strictEqual(e.suite, this.rootSuite);
+		assert.strictEqual(e.suite, this.root);
 		return e.suite!;
 	}
 }

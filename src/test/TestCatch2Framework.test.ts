@@ -33,7 +33,7 @@ describe(path.basename(__filename), function () {
     this.timeout(8000);
     adapter = undefined;
 
-    imitation.reset();
+    imitation.resetToCallThrough();
     watchers = example1.initImitation(imitation);
 
     // reset config can cause problem with fse.removeSync(dotVscodePath);
@@ -136,12 +136,12 @@ describe(path.basename(__filename), function () {
 
     assert.equal(adapter.testLoadsEvents.length, 2);
 
-    assert.equal(adapter.rootSuite.children.length, 1);
+    assert.equal(adapter.root.children.length, 1);
     assert.equal(adapter.suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
     const s1t2 = adapter.suite1.children[0];
 
     const stateEvents = adapter.testStatesEvents.length;
-    await adapter.run([adapter.rootSuite.id]);
+    await adapter.run([adapter.root.id]);
 
     await waitFor(this, () => {
       return adapter!.suite1.children.length == 2;
@@ -154,7 +154,7 @@ describe(path.basename(__filename), function () {
     });
 
     assert.deepStrictEqual(adapter.testStatesEvents, [
-      { type: 'started', tests: [adapter.rootSuite.id] },
+      { type: 'started', tests: [adapter.root.id] },
       { type: 'suite', state: 'running', suite: adapter.suite1 },
       { type: 'test', state: 'running', test: s1t2 },
       {
@@ -199,7 +199,7 @@ describe(path.basename(__filename), function () {
 
     await adapter.load();
 
-    assert.equal(adapter.rootSuite.children.length, 1);
+    assert.equal(adapter.root.children.length, 1);
 
     const suite1 = adapter.suite1;
     assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
@@ -214,7 +214,7 @@ describe(path.basename(__filename), function () {
     adapter = new TestAdapter();
 
     await adapter.load();
-    assert.strictEqual(adapter.rootSuite.children.length, 1);
+    assert.strictEqual(adapter.root.children.length, 1);
   })
 
   specify(
@@ -230,7 +230,7 @@ describe(path.basename(__filename), function () {
         'dummy error for testing (should be handled)');
 
       await adapter.load();
-      assert.strictEqual(adapter.rootSuite.children.length, 1);
+      assert.strictEqual(adapter.root.children.length, 1);
     })
 
   specify(
@@ -264,7 +264,7 @@ describe(path.basename(__filename), function () {
 
       await adapter.load();
       assert.equal(adapter.testLoadsEvents.length, 2);
-      assert.strictEqual(adapter.rootSuite.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
 
       assert.ok(watchers.has(execPath2CopyPath));
       const watcher = watchers.get(execPath2CopyPath)!;
@@ -324,7 +324,7 @@ describe(path.basename(__filename), function () {
 
       await adapter.load();
 
-      assert.strictEqual(adapter.rootSuite.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
 
       assert.ok(watchers.has(execPath2CopyPath));
       const watcher = watchers.get(execPath2CopyPath)!;
@@ -351,7 +351,7 @@ describe(path.basename(__filename), function () {
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 0);
+    assert.strictEqual(adapter.root.children.length, 0);
   })
 
   specify('variable substitution with executables={...}', async function () {
@@ -412,8 +412,8 @@ describe(path.basename(__filename), function () {
 
     await adapter.load();
 
-    assert.equal(adapter.rootSuite.children.length, 1);
-    assert.equal(adapter.rootSuite.children[0].type, 'suite');
+    assert.equal(adapter.root.children.length, 1);
+    assert.equal(adapter.root.children[0].type, 'suite');
 
     assert.equal(adapter.suite1.label, expectStr);
     assert.equal(adapter.suite1.children.length, 3);
@@ -434,13 +434,13 @@ describe(path.basename(__filename), function () {
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 2);
+    assert.strictEqual(adapter.root.children.length, 2);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 2);
+    assert.strictEqual(adapter.root.children.length, 2);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
   })
@@ -456,13 +456,13 @@ describe(path.basename(__filename), function () {
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 2);
+    assert.strictEqual(adapter.root.children.length, 2);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 2);
+    assert.strictEqual(adapter.root.children.length, 2);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
   })
@@ -480,14 +480,14 @@ describe(path.basename(__filename), function () {
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 3);
+    assert.strictEqual(adapter.root.children.length, 3);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
     assert.strictEqual(adapter.suite3.label, '3) dup');
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 3);
+    assert.strictEqual(adapter.root.children.length, 3);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
     assert.strictEqual(adapter.suite3.label, '3) dup');
@@ -509,12 +509,12 @@ describe(path.basename(__filename), function () {
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 1);
+    assert.strictEqual(adapter.root.children.length, 1);
     assert.strictEqual(adapter.suite1.label, 'name1 execPath1');
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 1);
+    assert.strictEqual(adapter.root.children.length, 1);
     assert.strictEqual(adapter.suite1.label, 'name1 execPath1');
   })
 })

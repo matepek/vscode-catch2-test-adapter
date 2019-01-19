@@ -118,10 +118,10 @@ describe(path.basename(__filename), function () {
 
       adapter = new TestAdapter();
       await adapter.load();
-      assert.strictEqual(adapter.rootSuite.children.length, 3);
+      assert.strictEqual(adapter.root.children.length, 3);
 
       const eventCount = adapter.testStatesEvents.length;
-      await adapter.run([adapter.rootSuite.id]);
+      await adapter.run([adapter.root.id]);
       assert.strictEqual(
         adapter.testStatesEvents.length, eventCount + 86, inspect(adapter.testStatesEvents));
     })
@@ -145,28 +145,28 @@ describe(path.basename(__filename), function () {
       });
 
       await adapter.load();
-      assert.strictEqual(adapter.rootSuite.children.length, 0);
+      assert.strictEqual(adapter.root.children.length, 0);
       assert.strictEqual(autorunCounter, 0);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
         return copy('../suite1.exe', 'out/suite1.exe');
       });
 
-      assert.strictEqual(adapter.rootSuite.children.length, 1);
+      assert.strictEqual(adapter.root.children.length, 1);
       assert.strictEqual(autorunCounter, 0);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
         return copy('../suite2.exe', 'out/sub/suite2X.exe');
       });
 
-      assert.strictEqual(adapter.rootSuite.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
       assert.strictEqual(autorunCounter, 0);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
         return copy('../suite2.exe', 'out/sub/suite2.exe');
       });
 
-      assert.strictEqual(adapter.rootSuite.children.length, 3);
+      assert.strictEqual(adapter.root.children.length, 3);
       assert.strictEqual(autorunCounter, 0);
 
       await settings.updateConfig('defaultWatchTimeoutSec', 1);
@@ -175,11 +175,11 @@ describe(path.basename(__filename), function () {
         return fse.unlink(inCpp('out/sub/suite2X.exe').fsPath);
       });
 
-      assert.strictEqual(adapter.rootSuite.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
       assert.strictEqual(autorunCounter, 0);
 
       const eventCount = adapter.testStatesEvents.length;
-      await adapter.run([adapter.rootSuite.id]);
+      await adapter.run([adapter.root.id]);
       assert.strictEqual(adapter.testStatesEvents.length, eventCount + 16);
       assert.strictEqual(autorunCounter, 0);
     })
