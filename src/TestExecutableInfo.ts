@@ -148,10 +148,12 @@ export class TestExecutableInfo implements vscode.Disposable {
       resolvedCwd = path.normalize(vscode.Uri.file(resolvedCwd).fsPath);
     } catch (e) { this._shared.log.error(e); }
 
-    let resolvedEnv: { [prop: string]: string } = this._env;
+    let resolvedEnv: { [prop: string]: string } = {};
     try {
-      resolvedEnv = resolveVariables(this._env, varToValue);
-    } catch (e) { this._shared.log.error(__filename, e); }
+      Object.assign(resolvedEnv, process.env);
+      Object.assign(resolvedEnv, this._shared.defaultEnv);
+      Object.assign(resolvedEnv, resolveVariables(this._env, varToValue));
+    } catch (e) { this._shared.log.error('resolvedEnv', e); }
 
     return new TestSuiteInfoFactory(
       this._shared,
