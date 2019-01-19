@@ -22,17 +22,6 @@ describe(path.basename(__filename), function () {
     assert.equal(r.status, 0);
   })
 
-  it.skip('sleeps', async function () {
-    this.timeout(1100);
-    this.slow(1050);
-    if (process.platform === 'darwin') {
-      const r = await spawnAsync('sleep', ['1']);
-      assert.equal(r.stdout, '');
-      assert.equal(r.output.length, 0);
-      assert.equal(r.status, 0);
-    }
-  })
-
   it('not existing', function () {
     let hasErr = false;
     return spawnAsync('notexisting.exe')
@@ -152,13 +141,16 @@ describe('ChildProcessStub', function () {
     });
   })
 
-  it.skip('should works2', async function () {
+  it('should works2', async function () {
+    this.timeout(700);
+    this.slow(600);
     const cp = new ChildProcessStub();
     let output: string = '';
     cp.stdout.on('data', (d: string) => {
       output += d;
     });
     cp.write('alma');
+    setTimeout(() => { cp.close(); }, 500);
     await new Promise(resolve => {
       cp.on('close', resolve);
     }).then(() => {

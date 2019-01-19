@@ -214,6 +214,8 @@ export class TestAdapter extends my.TestAdapter {
 	get(...index: number[]) {
 		let res: TestSuiteInfo | TestInfo = this.root;
 		for (let i = 0; i < index.length; i++) {
+			assert.strictEqual(res.type, 'suite');
+			assert.ok((<TestSuiteInfo>res).children.length > index[i], index[i].toString());
 			res = (<TestSuiteInfo>res).children[index[i]];
 		}
 		return res;
