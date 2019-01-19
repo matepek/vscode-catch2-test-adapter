@@ -58,12 +58,16 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 				if (googleTestListOutput.stderr) {
 					this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
 					this.label = '⚠️ ' + this.label;
-					this.addChild(new GoogleTestGroupSuiteInfo(
-						this._shared, '⚠️ ' + googleTestListOutput.stderr.split('\n')[0].trim()));
+					this.addChild(new GoogleTestGroupSuiteInfo(this._shared, '⚠️ ' + googleTestListOutput.stderr.split('\n')[0].trim()));
 					return;
 				}
 				try {
 					const testOutputStr = fs.readFileSync(tmpFilePath, 'utf8');
+
+					fs.unlink(tmpFilePath, (err: any) => {
+						if (err)
+							this._shared.log.error('Couldn\'t remove tmpFilePath: ' + tmpFilePath, err);
+					});
 
 					let xml: any = undefined;
 
@@ -74,11 +78,6 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 						} else {
 							xml = result;
 						}
-					});
-
-					fs.unlink(tmpFilePath, (err: any) => {
-						if (err)
-							this._shared.log.error('Couldn\'t remove tmpFilePath: ' + tmpFilePath, err);
 					});
 
 					for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
@@ -127,12 +126,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 					if (lines.length == 0) throw Error('Wrong test list.');
 
 					// gtest_main.cc
-					if (lines[0].startsWith('Running main() from')) lines.shift();
+					while (lines.length > 0 && lines[0].match(/^[A-z0-9_-]+\.$/) === null) lines.shift();
 
 					for (let i = 0; i < lines.length;) {
 						if (lines[i][0] == ' ')
-							this._shared.log.error(
-								'Wrong test list output format: ' + lines.toString());
+							this._shared.log.error('Wrong test list output format: ' + lines.toString());
 
 						const testGroupNameWithDot = lines[i++];
 						const suiteName = testGroupNameWithDot.substr(0, testGroupNameWithDot.length - 1);

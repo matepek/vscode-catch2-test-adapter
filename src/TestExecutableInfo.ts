@@ -43,22 +43,25 @@ export class TestExecutableInfo implements vscode.Disposable {
     const absPatternAsUri = vscode.Uri.file(absPattern);
     const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
     const isPartOfWs = !relativeToWs.startsWith('..');
+    const relativeToWsPosix = relativeToWs.split('\\').join('/');
+
+    this._shared.log.info('TestExecutableInfo:load', this._pattern, wsUri.fsPath,
+      isAbsolute, absPattern, relativeToWs, isPartOfWs, relativeToWsPosix);
 
     if (isAbsolute && isPartOfWs)
-      this._shared.log.info('Absolute path is used for workspace directory:', this);
+      this._shared.log.warn('Absolute path is used for workspace directory. This is unnecessary, but it should work.');
     if (this._pattern.indexOf('\\') != -1)
-      this._shared.log.warn('Pattern contains backslash character:', this._pattern);
+      this._shared.log.warn('Pattern contains backslash character.');
 
     let fileUris: vscode.Uri[] = [];
 
     if (isPartOfWs) {
       try {
-        const relativeToWsPosix = relativeToWs.split('\\').join('/');
         const relativePattern = new vscode.RelativePattern(this._shared.workspaceFolder, relativeToWsPosix);
         fileUris = await vscode.workspace.findFiles(relativePattern, null, 10000);
 
         if (fileUris.length === 10000) {
-          this._shared.log.error('vscode.workspace.findFiles reached it\'s limit.', fileUris.map(u => u.fsPath));
+          this._shared.log.error('vscode.workspace.findFiles reached it\'s limit. Probablt pattern is not specific enough.', fileUris.map(u => u.fsPath));
         }
 
         // abs path string or vscode.RelativePattern is required.
@@ -97,8 +100,7 @@ export class TestExecutableInfo implements vscode.Disposable {
   }
 
   private _createSuiteByUri(file: vscode.Uri): Promise<AbstractTestSuiteInfo> {
-    const wsUri = this._shared.workspaceFolder.uri;
-    const relPath = path.relative(wsUri.fsPath, file.fsPath);
+    const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, file.fsPath);
 
     let varToValue: [string, string][] = [];
     try {
