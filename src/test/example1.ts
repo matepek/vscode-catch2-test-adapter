@@ -2133,10 +2133,10 @@ For more detailed usage please see the project docs
   };
 
   assertWithoutChildren(root: TestSuiteInfo, uniqeIdContainer?: Set<string>) {
-    assert.equal(root.type, 'suite');
-    assert.ok(root.label.endsWith(' (Catch2 and Google Test Explorer)'), root.label);
-    assert.equal(root.file, undefined);
-    assert.equal(root.line, undefined);
+    assert.strictEqual(root.type, 'suite');
+    assert.strictEqual(root.label, 'Catch2 and Google tests');
+    assert.strictEqual(root.file, undefined);
+    assert.strictEqual(root.line, undefined);
     if (uniqeIdContainer != undefined) {
       assert.ok(!uniqeIdContainer.has(root.id));
       uniqeIdContainer.add(root.id);

@@ -238,7 +238,7 @@ export class TestAdapter extends my.TestAdapter {
 		return i;
 	}
 
-	async doAndWaitForReloadEvent(context: Mocha.Context, action: Function): Promise<TestSuiteInfo> {
+	async doAndWaitForReloadEvent(context: Mocha.Context, action: Function): Promise<TestSuiteInfo | undefined> {
 		const origCount = this.testLoadsEvents.length;
 		await action();
 		await waitFor(context, () => {
@@ -247,9 +247,12 @@ export class TestAdapter extends my.TestAdapter {
 		assert.equal(this.testLoadsEvents.length, origCount + 2, action.toString());
 		assert.equal(this.testLoadsEvents[this.testLoadsEvents.length - 1].type, 'finished');
 		const e = <TestLoadFinishedEvent>this.testLoadsEvents[this.testLoadsEvents.length - 1];
-		assert.ok(e.suite !== undefined);
-		assert.strictEqual(e.suite, this.root);
-		return e.suite!;
+		if (e.suite) {
+			assert.strictEqual(e.suite, this.root);
+		} else {
+			assert.deepStrictEqual([], this.root.children);
+		}
+		return e.suite;
 	}
 }
 

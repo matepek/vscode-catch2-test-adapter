@@ -270,7 +270,7 @@ describe(path.basename(__filename), function () {
       const watcher = watchers.get(execPath2CopyPath)!;
 
       let start: number = 0;
-      const newRoot = await adapter.doAndWaitForReloadEvent(this, () => {
+      await adapter.doAndWaitForReloadEvent(this, () => {
         imitation.fsStatStub.withArgs(execPath2CopyPath)
           .callsFake(imitation.handleStatFileNotExists);
         start = Date.now();
@@ -288,7 +288,7 @@ describe(path.basename(__filename), function () {
 
       assert.equal(adapter.testLoadsEvents.length, 4);
 
-      assert.equal(newRoot.children.length, 2);
+      assert.equal(adapter.root.children.length, 2);
       assert.ok(3000 < elapsed, inspect(elapsed));
       assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
     });
@@ -330,7 +330,7 @@ describe(path.basename(__filename), function () {
       const watcher = watchers.get(execPath2CopyPath)!;
 
       let start: number = 0;
-      const newRoot = await adapter.doAndWaitForReloadEvent(this, async () => {
+      await adapter.doAndWaitForReloadEvent(this, async () => {
         imitation.fsStatStub.withArgs(execPath2CopyPath)
           .callsFake(imitation.handleStatFileNotExists);
         start = Date.now();
@@ -338,7 +338,7 @@ describe(path.basename(__filename), function () {
       });
       const elapsed = Date.now() - start;
 
-      assert.equal(newRoot.children.length, 1);
+      assert.equal(adapter.root.children.length, 1);
       assert.ok(watchTimeout * 1000 < elapsed, inspect(elapsed));
       assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
     })

@@ -57,11 +57,17 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._mainTaskQueue.then(() => {
         this._testsEmitter.fire({ type: 'started' });
         return Promise.resolve().then(task).then(() => {
-          this._testsEmitter.fire({ type: 'finished', suite: this._rootSuite });
+          this._testsEmitter.fire({
+            type: 'finished',
+            suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined
+          });
         }, (reason: any) => {
           this._log.error(__filename, reason);
           debugger;
-          this._testsEmitter.fire({ type: 'finished', suite: this._rootSuite });
+          this._testsEmitter.fire({
+            type: 'finished',
+            suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined
+          });
         });
       });
     }));
@@ -206,8 +212,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       return this._rootSuite.load(this._getExecutables(config, this._rootSuite))
         .then(
           () => {
-            this._testsEmitter.fire(
-              { type: 'finished', suite: this._rootSuite });
+            this._testsEmitter.fire({
+              type: 'finished',
+              suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined
+            });
           },
           (e: any) => {
             this._testsEmitter.fire({
