@@ -66,7 +66,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 					fs.unlink(tmpFilePath, (err: any) => {
 						if (err)
-							this._shared.log.error('Couldn\'t remove tmpFilePath: ' + tmpFilePath, err);
+							this._shared.log.warn('Couldn\'t remove tmpFilePath: ' + tmpFilePath, err);
 					});
 
 					let xml: any = undefined;
@@ -121,37 +121,43 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 					let lines = googleTestListOutput.stdout.split(/\r?\n/);
 
-					while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
+					const testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.$/;
+					const testRe = /^  ([A-z][\/A-z0-9_\-]*)(?:\s+(# GetParam\(\) = \s*(.+)))?$/;
 
-					if (lines.length == 0) throw Error('Wrong test list.');
+					let lineCount = lines.length;
+
+					while (lineCount > 0 && lines[lineCount - 1].match(testRe) === null)
+						lineCount--;
+
+					let lineNum = 0;
 
 					// gtest_main.cc
-					while (lines.length > 0 && lines[0].match(/^[A-z0-9_-]+\.$/) === null) lines.shift();
+					while (lineCount > lineNum && lines[lineNum].match(testGroupRe) === null)
+						lineNum++;
 
-					for (let i = 0; i < lines.length;) {
-						if (lines[i][0] == ' ')
-							this._shared.log.error('Wrong test list output format: ' + lines.toString());
+					if (lineCount - lineNum === 0) throw Error('Wrong test list.');
 
-						const testGroupNameWithDot = lines[i++];
-						const suiteName = testGroupNameWithDot.substr(0, testGroupNameWithDot.length - 1);
+					let testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
+
+					while (testGroupMatch) {
+						lineNum++;
+
+						const testGroupNameWithDot = testGroupMatch[0];
+						const suiteName = testGroupMatch[1];
 
 						const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
 						const oldGroupId = oldGroup ? oldGroup.id : undefined;
 						const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
 						const group = new GoogleTestGroupSuiteInfo(this._shared, suiteName, oldGroupId);
-						this.addChild(group);
 
-						while (i < lines.length && lines[i].startsWith('  ')) {
-							let testName = lines[i].trim();
-							let valueParam: string | undefined = undefined;
-							const getParamStr = '# GetParam() =';
-							const hash = testName.indexOf(getParamStr);
-							if (hash != -1) {
-								valueParam = testName.substr(hash + getParamStr.length).trim();
-								testName = testName.substr(0, hash).trim();
-							}
+						let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 
+						while (testMatch) {
+							lineNum++;
+
+							const testName = testMatch[1];
+							const valueParam: string | undefined = testMatch[3];
 							const testNameFull = testGroupNameWithDot + testName;
 
 							const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameFull === testNameFull);
@@ -166,8 +172,16 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 								undefined,
 								this.execPath,
 								this.execOptions));
-							++i;
+
+							testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 						}
+
+						if (group.children.length > 0)
+							this.addChild(group);
+						else
+							this._shared.log.error('group without test', this, group, lines);
+
+						testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
 					}
 				}
 			});

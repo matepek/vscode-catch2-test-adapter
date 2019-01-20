@@ -327,7 +327,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
             if (!debugSessionStarted || !currentSession) {
               return Promise.reject(
-                'Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate"' +
+                'Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate. "' +
                 + debugSessionStarted + '; ' + currentSession);
             }
 
@@ -452,17 +452,17 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           try {
             executables.push(createFromObject(configExe));
           } catch (e) {
-            this._log.error(e);
+            this._log.warn(e);
           }
         } else {
           this._log.error('_getExecutables', configExe, i);
         }
       }
-    } else if (configExecs instanceof Object) {
+    } else if (typeof configExecs === 'object') {
       try {
         executables.push(createFromObject(configExecs));
       } catch (e) {
-        this._log.error(e);
+        this._log.warn(e);
       }
     } else {
       throw 'Config error: wrong type: executables';

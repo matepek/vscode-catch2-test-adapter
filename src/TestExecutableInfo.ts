@@ -89,7 +89,7 @@ export class TestExecutableInfo implements vscode.Disposable {
             this._executables.set(file.fsPath, suite);
           }
         }, (reason: any) => {
-          this._shared.log.error('Couldn\'t load executable:', reason, suite);
+          this._shared.log.warn('Couldn\'t load executable:', reason, suite);
         });
       }, (reason: any) => {
         this._shared.log.info('Not a test executable:', file.fsPath, 'reason:', reason);

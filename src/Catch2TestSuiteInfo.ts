@@ -199,7 +199,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 							this._shared.log.info('Test', data.currentChild.testNameFull, 'has started.');
 							this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
 						} else {
-							this._shared.log.error('TestCase not found in children: ' + name);
+							this._shared.log.warn('TestCase not found in children: ' + name);
 						}
 
 						data.buffer = data.buffer.substr(b);
