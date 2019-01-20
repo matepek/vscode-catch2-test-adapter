@@ -39,8 +39,7 @@ describe('Load Executables With Value', function () {
 		assert.equal(adapter.testLoadsEvents[0].type, 'started');
 		assert.equal(adapter.testLoadsEvents[1].type, 'finished');
 		const suite = (<TestLoadFinishedEvent>adapter.testLoadsEvents[1]).suite;
-		assert.notStrictEqual(suite, undefined);
-		assert.equal(suite!.children.length, 0);
+		assert.strictEqual(suite, undefined);
 	})
 
 	specify('../a/first', async function () {

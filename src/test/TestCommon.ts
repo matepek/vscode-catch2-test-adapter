@@ -242,8 +242,12 @@ export class TestAdapter extends my.TestAdapter {
 		assert.equal(this.testLoadsEvents.length, origCount + 2, action.toString());
 		assert.equal(this.testLoadsEvents[this.testLoadsEvents.length - 1].type, 'finished');
 		const e = <TestLoadFinishedEvent>this.testLoadsEvents[this.testLoadsEvents.length - 1];
-		assert.ok(e.suite !== undefined);
-		assert.strictEqual(e.suite, this.rootSuite);
+		if (e.suite) {
+			assert.ok(e.suite !== undefined);
+			assert.strictEqual(e.suite, this.rootSuite);
+		} else {
+			assert.equal(this.rootSuite.children.length, 0);
+		}
 		return e.suite!;
 	}
 }
