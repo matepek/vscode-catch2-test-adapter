@@ -5,12 +5,10 @@
 import * as path from 'path';
 import * as assert from 'assert';
 import { TestAdapter, Imitation, settings } from './TestCommon';
-import { TestLoadFinishedEvent } from 'vscode-test-adapter-api';
-import { promisify } from 'util';
 
 ///
 
-describe('Load Executables With Value', function () {
+describe(path.basename(__filename), function () {
 	this.slow(500);
 
 	let imitation: Imitation;
@@ -22,10 +20,10 @@ describe('Load Executables With Value', function () {
 
 	beforeEach(function () {
 		adapter = new TestAdapter();
-		return promisify(setTimeout)(1000);
 	})
 
 	afterEach(function () {
+		imitation.resetToCallThrough();
 		return adapter.waitAndDispose(this);
 	})
 
@@ -35,12 +33,7 @@ describe('Load Executables With Value', function () {
 
 	specify('empty config', async function () {
 		await adapter.load();
-		assert.equal(adapter.testLoadsEvents.length, 2);
-		assert.equal(adapter.testLoadsEvents[0].type, 'started');
-		assert.equal(adapter.testLoadsEvents[1].type, 'finished');
-		const suite = (<TestLoadFinishedEvent>adapter.testLoadsEvents[1]).suite;
-		assert.notStrictEqual(suite, undefined);
-		assert.equal(suite!.children.length, 0);
+		assert.equal(adapter.root.children.length, 0);
 	})
 
 	specify('../a/first', async function () {
@@ -51,25 +44,25 @@ describe('Load Executables With Value', function () {
 		assert.strictEqual(withArgs.callCount, count);
 	})
 
-	specify('../<workspaceFolder>/first', async function () {
-		await settings.updateConfig('executables', '../' + path.basename(settings.workspaceFolderUri.fsPath) + '/first');
-		const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('first'));
+	specify('../<workspaceFolder>/second', async function () {
+		await settings.updateConfig('executables', '../' + path.basename(settings.workspaceFolderUri.fsPath) + '/second');
+		const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('second'));
 		const count = withArgs.callCount;
 		await adapter.load();
 		assert.strictEqual(withArgs.callCount, count + 1);
 	})
 
-	specify('./first', async function () {
-		await settings.updateConfig('executables', './first');
-		const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('first'));
+	specify('./third', async function () {
+		await settings.updateConfig('executables', './third');
+		const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('third'));
 		const count = withArgs.callCount;
 		await adapter.load();
 		assert.strictEqual(withArgs.callCount, count + 1);
 	})
 
-	specify('./a/b/../../first', async function () {
-		await settings.updateConfig('executables', './a/b/../../first');
-		const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('first'));
+	specify('./a/b/../../fourth', async function () {
+		await settings.updateConfig('executables', './a/b/../../fourth');
+		const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('fourth'));
 		const count = withArgs.callCount;
 		await adapter.load();
 		assert.strictEqual(withArgs.callCount, count + 1);

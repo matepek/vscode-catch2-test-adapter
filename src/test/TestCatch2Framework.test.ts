@@ -6,14 +6,14 @@ import * as path from 'path';
 import * as fse from 'fs-extra';
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { inspect, promisify } from 'util';
+import { inspect } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
 import { TestAdapter, Imitation, waitFor, settings, isWin, ChildProcessStub, FileSystemWatcherStub } from './TestCommon';
 
 ///
 
-describe('Test Catch2 Framework', function () {
+describe(path.basename(__filename), function () {
 
   let imitation: Imitation;
   let adapter: TestAdapter | undefined = undefined;
@@ -33,19 +33,17 @@ describe('Test Catch2 Framework', function () {
     this.timeout(8000);
     adapter = undefined;
 
-    imitation.reset();
+    imitation.resetToCallThrough();
     watchers = example1.initImitation(imitation);
 
     // reset config can cause problem with fse.removeSync(dotVscodePath);
     await settings.resetConfig();
-    return promisify(setTimeout)(2000);
   })
 
   afterEach(async function () {
     this.timeout(8000);
     if (adapter)
       await adapter.waitAndDispose(this);
-    return promisify(setTimeout)(1000);
   })
 
   specify('resolving relative defaultCwd', async function () {
@@ -138,12 +136,12 @@ describe('Test Catch2 Framework', function () {
 
     assert.equal(adapter.testLoadsEvents.length, 2);
 
-    assert.equal(adapter.rootSuite.children.length, 1);
+    assert.equal(adapter.root.children.length, 1);
     assert.equal(adapter.suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
     const s1t2 = adapter.suite1.children[0];
 
     const stateEvents = adapter.testStatesEvents.length;
-    await adapter.run([adapter.rootSuite.id]);
+    await adapter.run([adapter.root.id]);
 
     await waitFor(this, () => {
       return adapter!.suite1.children.length == 2;
@@ -156,7 +154,7 @@ describe('Test Catch2 Framework', function () {
     });
 
     assert.deepStrictEqual(adapter.testStatesEvents, [
-      { type: 'started', tests: [adapter.rootSuite.id] },
+      { type: 'started', tests: [adapter.root.id] },
       { type: 'suite', state: 'running', suite: adapter.suite1 },
       { type: 'test', state: 'running', test: s1t2 },
       {
@@ -201,7 +199,7 @@ describe('Test Catch2 Framework', function () {
 
     await adapter.load();
 
-    assert.equal(adapter.rootSuite.children.length, 1);
+    assert.equal(adapter.root.children.length, 1);
 
     const suite1 = adapter.suite1;
     assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
@@ -216,7 +214,7 @@ describe('Test Catch2 Framework', function () {
     adapter = new TestAdapter();
 
     await adapter.load();
-    assert.strictEqual(adapter.rootSuite.children.length, 1);
+    assert.strictEqual(adapter.root.children.length, 1);
   })
 
   specify(
@@ -232,7 +230,7 @@ describe('Test Catch2 Framework', function () {
         'dummy error for testing (should be handled)');
 
       await adapter.load();
-      assert.strictEqual(adapter.rootSuite.children.length, 1);
+      assert.strictEqual(adapter.root.children.length, 1);
     })
 
   specify(
@@ -266,13 +264,13 @@ describe('Test Catch2 Framework', function () {
 
       await adapter.load();
       assert.equal(adapter.testLoadsEvents.length, 2);
-      assert.strictEqual(adapter.rootSuite.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
 
       assert.ok(watchers.has(execPath2CopyPath));
       const watcher = watchers.get(execPath2CopyPath)!;
 
       let start: number = 0;
-      const newRoot = await adapter.doAndWaitForReloadEvent(this, () => {
+      await adapter.doAndWaitForReloadEvent(this, () => {
         imitation.fsStatStub.withArgs(execPath2CopyPath)
           .callsFake(imitation.handleStatFileNotExists);
         start = Date.now();
@@ -290,7 +288,7 @@ describe('Test Catch2 Framework', function () {
 
       assert.equal(adapter.testLoadsEvents.length, 4);
 
-      assert.equal(newRoot.children.length, 2);
+      assert.equal(adapter.root.children.length, 2);
       assert.ok(3000 < elapsed, inspect(elapsed));
       assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
     });
@@ -326,13 +324,13 @@ describe('Test Catch2 Framework', function () {
 
       await adapter.load();
 
-      assert.strictEqual(adapter.rootSuite.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
 
       assert.ok(watchers.has(execPath2CopyPath));
       const watcher = watchers.get(execPath2CopyPath)!;
 
       let start: number = 0;
-      const newRoot = await adapter.doAndWaitForReloadEvent(this, async () => {
+      await adapter.doAndWaitForReloadEvent(this, async () => {
         imitation.fsStatStub.withArgs(execPath2CopyPath)
           .callsFake(imitation.handleStatFileNotExists);
         start = Date.now();
@@ -340,7 +338,7 @@ describe('Test Catch2 Framework', function () {
       });
       const elapsed = Date.now() - start;
 
-      assert.equal(newRoot.children.length, 1);
+      assert.equal(adapter.root.children.length, 1);
       assert.ok(watchTimeout * 1000 < elapsed, inspect(elapsed));
       assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
     })
@@ -353,7 +351,7 @@ describe('Test Catch2 Framework', function () {
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 0);
+    assert.strictEqual(adapter.root.children.length, 0);
   })
 
   specify('variable substitution with executables={...}', async function () {
@@ -414,8 +412,8 @@ describe('Test Catch2 Framework', function () {
 
     await adapter.load();
 
-    assert.equal(adapter.rootSuite.children.length, 1);
-    assert.equal(adapter.rootSuite.children[0].type, 'suite');
+    assert.equal(adapter.root.children.length, 1);
+    assert.equal(adapter.root.children[0].type, 'suite');
 
     assert.equal(adapter.suite1.label, expectStr);
     assert.equal(adapter.suite1.children.length, 3);
@@ -436,13 +434,13 @@ describe('Test Catch2 Framework', function () {
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 2);
+    assert.strictEqual(adapter.root.children.length, 2);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 2);
+    assert.strictEqual(adapter.root.children.length, 2);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
   })
@@ -458,13 +456,13 @@ describe('Test Catch2 Framework', function () {
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 2);
+    assert.strictEqual(adapter.root.children.length, 2);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 2);
+    assert.strictEqual(adapter.root.children.length, 2);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
   })
@@ -482,14 +480,14 @@ describe('Test Catch2 Framework', function () {
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 3);
+    assert.strictEqual(adapter.root.children.length, 3);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
     assert.strictEqual(adapter.suite3.label, '3) dup');
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 3);
+    assert.strictEqual(adapter.root.children.length, 3);
     assert.strictEqual(adapter.suite1.label, '1) dup');
     assert.strictEqual(adapter.suite2.label, '2) dup');
     assert.strictEqual(adapter.suite3.label, '3) dup');
@@ -511,12 +509,12 @@ describe('Test Catch2 Framework', function () {
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 1);
+    assert.strictEqual(adapter.root.children.length, 1);
     assert.strictEqual(adapter.suite1.label, 'name1 execPath1');
 
     await adapter.load();
 
-    assert.strictEqual(adapter.rootSuite.children.length, 1);
+    assert.strictEqual(adapter.root.children.length, 1);
     assert.strictEqual(adapter.suite1.label, 'name1 execPath1');
   })
 })

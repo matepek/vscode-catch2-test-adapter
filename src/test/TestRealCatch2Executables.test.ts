@@ -8,9 +8,8 @@ import * as fse from 'fs-extra';
 import * as path from 'path';
 import { inspect, promisify } from 'util';
 import * as vscode from 'vscode';
-import { TestSuiteInfo } from 'vscode-test-adapter-api';
 
-import { TestAdapter, settings, isWin } from './TestCommon';
+import { TestAdapter, settings, isWin, waitFor } from './TestCommon';
 import * as c2fs from '../FsWrapper';
 
 ///
@@ -23,7 +22,7 @@ function inCpp(relPath: string) {
 
 ///
 
-describe('Real Catch2 executables', function () {
+describe(path.basename(__filename), function () {
   async function compile(source: vscode.Uri, output: vscode.Uri) {
     if (isWin) {
       let vcvarsall: vscode.Uri | undefined;
@@ -94,9 +93,7 @@ describe('Real Catch2 executables', function () {
   })
 
   function copy(from: string, to: string) {
-    return fse.copy(
-      vscode.Uri.file(path.join(cppUri.fsPath, from)).fsPath,
-      vscode.Uri.file(path.join(cppUri.fsPath, to)).fsPath);
+    return fse.copy(inCpp(from).fsPath, inCpp(to).fsPath);
   }
 
   context('example1', function () {
@@ -115,12 +112,16 @@ describe('Real Catch2 executables', function () {
       await copy('../suite2.exe', 'out/suite2.exe');
       await copy('../suite3.exe', 'out/suite3.exe');
 
+      await waitFor(this, () => { return fse.existsSync(inCpp('out/suite1.exe').fsPath); });
+      await waitFor(this, () => { return fse.existsSync(inCpp('out/suite2.exe').fsPath); });
+      await waitFor(this, () => { return fse.existsSync(inCpp('out/suite3.exe').fsPath); });
+
       adapter = new TestAdapter();
       await adapter.load();
-      assert.strictEqual(adapter.rootSuite.children.length, 3);
+      assert.strictEqual(adapter.root.children.length, 3);
 
       const eventCount = adapter.testStatesEvents.length;
-      await adapter.run([adapter.rootSuite.id]);
+      await adapter.run([adapter.root.id]);
       assert.strictEqual(
         adapter.testStatesEvents.length, eventCount + 86, inspect(adapter.testStatesEvents));
     })
@@ -144,28 +145,28 @@ describe('Real Catch2 executables', function () {
       });
 
       await adapter.load();
-      assert.strictEqual(adapter.rootSuite.children.length, 0);
+      assert.strictEqual(adapter.root.children.length, 0);
       assert.strictEqual(autorunCounter, 0);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
         return copy('../suite1.exe', 'out/suite1.exe');
       });
 
-      assert.strictEqual(adapter.rootSuite.children.length, 1);
+      assert.strictEqual(adapter.root.children.length, 1);
       assert.strictEqual(autorunCounter, 0);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
         return copy('../suite2.exe', 'out/sub/suite2X.exe');
       });
 
-      assert.strictEqual(adapter.rootSuite.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
       assert.strictEqual(autorunCounter, 0);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
         return copy('../suite2.exe', 'out/sub/suite2.exe');
       });
 
-      assert.strictEqual(adapter.rootSuite.children.length, 3);
+      assert.strictEqual(adapter.root.children.length, 3);
       assert.strictEqual(autorunCounter, 0);
 
       await settings.updateConfig('defaultWatchTimeoutSec', 1);
@@ -174,35 +175,13 @@ describe('Real Catch2 executables', function () {
         return fse.unlink(inCpp('out/sub/suite2X.exe').fsPath);
       });
 
-      assert.strictEqual(adapter.rootSuite.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
       assert.strictEqual(autorunCounter, 0);
 
       const eventCount = adapter.testStatesEvents.length;
-      await adapter.run([adapter.rootSuite.id]);
+      await adapter.run([adapter.root.id]);
       assert.strictEqual(adapter.testStatesEvents.length, eventCount + 16);
       assert.strictEqual(autorunCounter, 0);
-    })
-
-    it.skip('should be debugged', async function () {
-      if (process.env['TRAVIS'] == 'true') this.skip();
-      this.timeout(8000);
-      this.slow(2000);
-      await settings.updateConfig(
-        'executables', [{
-          'name': '${baseFilename}',
-          'pattern': 'cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*',
-          'cwd': '${workspaceFolder}/cpp',
-        }]);
-
-      await copy('../suite1.exe', 'out/suite1.exe');
-
-      adapter = new TestAdapter();
-      await adapter.load();
-      assert.strictEqual(adapter.rootSuite.children.length, 1);
-      const suite = <TestSuiteInfo>adapter.rootSuite.children[0];
-      assert.ok(suite.children.length > 0);
-
-      await adapter.debug([suite.children[0].id]);
     })
   })
 })

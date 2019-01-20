@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.15]
+
+### Changed
+
+- In case of multiple adapters or workspace folders,
+  if there are no tests in a particular workspace folder it won't be shown in the Test Explorer.
+
 ## [2.3.14] - 2019-01-18
 
 ### Fixed

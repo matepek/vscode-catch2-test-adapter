@@ -3,10 +3,11 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 export class TaskQueue {
-  constructor(depends: Iterable<TaskQueue> = [],
-    public readonly name?: string) {
-    this._depends = [...depends];
-    // TODO check circular dependency
+  constructor(depends: Iterable<TaskQueue> = [], public readonly name?: string) {
+    for (const dep of depends) {
+      this._checkCircle(dep);
+      this._depends.push(dep);
+    }
   }
 
   empty(): boolean {
@@ -39,12 +40,21 @@ export class TaskQueue {
 
   dependsOn(depends: Iterable<TaskQueue>): void {
     for (const dep of depends) {
+      this._checkCircle(dep);
       this._depends.push(dep);
     }
-    // TODO check circular dependency
   }
 
   private _count: number = 0;
   private _queue: Promise<void> = Promise.resolve();
-  private readonly _depends: Array<TaskQueue>;
+  private readonly _depends: Array<TaskQueue> = [];
+
+  private _checkCircle(tq: TaskQueue) {
+    if (tq === this)
+      throw Error('circle');
+
+    for (let i = 0; i < tq._depends.length; i++) {
+      this._checkCircle(tq._depends[i]);
+    }
+  }
 }

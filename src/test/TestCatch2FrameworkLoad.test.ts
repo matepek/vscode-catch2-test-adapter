@@ -15,7 +15,7 @@ import { TestAdapter, Imitation, waitFor, settings, ChildProcessStub, FileSystem
 
 ///
 
-describe('Test Catch2 Framework Load', function () {
+describe(path.basename(__filename), function () {
 	this.slow(1000);
 
 	let imitation: Imitation;
@@ -35,13 +35,11 @@ describe('Test Catch2 Framework Load', function () {
 	beforeEach(async function () {
 		this.timeout(8000);
 
-		imitation.reset();
+		imitation.resetToCallThrough();
 		watchers = example1.initImitation(imitation);
 
 		await settings.resetConfig(); // reset config can cause problem with fse.removeSync(dotVscodePath);
 		await settings.updateConfig('workerMaxNumber', 3);
-
-		return promisify(setTimeout)(2000);
 	})
 
 	afterEach(async function () {
@@ -49,8 +47,6 @@ describe('Test Catch2 Framework Load', function () {
 
 		await adapter.waitAndDispose(this);
 		uniqueIdC.clear();
-
-		return promisify(setTimeout)(1000);
 	})
 
 	let root: TestSuiteInfo;
@@ -69,7 +65,7 @@ describe('Test Catch2 Framework Load', function () {
 		adapter.testLoadsEvents.pop();
 		adapter.testLoadsEvents.pop();
 
-		root = adapter.rootSuite;
+		root = adapter.root;
 
 		suite1 = undefined;
 		s1t1 = undefined;
@@ -1390,4 +1386,61 @@ describe('Test Catch2 Framework Load', function () {
 				}
 			})
 		})
+
+	context('vscode.debug', function () {
+
+		let startDebuggingStub: sinon.SinonStub<[vscode.WorkspaceFolder | undefined, string | vscode.DebugConfiguration], Thenable<boolean>>;
+
+		beforeEach(function () {
+			startDebuggingStub = imitation.sinonSandbox.stub(vscode.debug, 'startDebugging');
+			startDebuggingStub.throws();
+		})
+
+		afterEach(function () {
+			startDebuggingStub.restore();
+		})
+
+		it('should be debugged', async function () {
+			await settings.updateConfig(
+				'executables', [{
+					'name': 'X${baseFilename}',
+					'pattern': "execPath1",
+					'cwd': '${workspaceFolder}/cpp',
+					'env': { 'C2TESTVAR': 'c2testval' }
+				}]);
+
+			await settings.updateConfig(
+				'debugConfigTemplate', {
+					label: '${label}',
+					suiteLabel: '${suiteLabel}',
+					exec: '${exec}',
+					args: '${args}',
+					cwd: '${cwd}',
+					envObj: '${envObj}',
+				});
+
+			adapter = new TestAdapter();
+
+			await adapter.load();
+
+			startDebuggingStub.onFirstCall().resolves(true);
+
+			try {
+				await adapter.debug([adapter.suite1.children[0].id]);
+			} catch (e) {
+				//skip
+			}
+
+			const debugConfig: any = startDebuggingStub.firstCall.args[1];
+
+			assert.deepStrictEqual(debugConfig.args, ['s1t1', '--reporter', 'console', '--break']);
+			assert.deepStrictEqual(debugConfig.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cpp'));
+			assert.deepStrictEqual(debugConfig.exec, example1.suite1.execPath);
+			assert.deepStrictEqual(debugConfig.label, 's1t1');
+			assert.deepStrictEqual(debugConfig.name, 's1t1 (XexecPath1)');
+			assert.deepStrictEqual(debugConfig.request, 'launch');
+			assert.deepStrictEqual(debugConfig.suiteLabel, 'XexecPath1');
+			assert.deepStrictEqual(debugConfig.envObj.C2TESTVAR, 'c2testval');
+		})
+	})
 })

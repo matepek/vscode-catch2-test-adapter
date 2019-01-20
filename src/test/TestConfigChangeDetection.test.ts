@@ -4,10 +4,10 @@
 
 import * as assert from 'assert';
 
+import * as path from 'path';
 import { TestAdapter, settings } from './TestCommon';
-import { promisify } from 'util';
 
-describe('Config Change Detection', function () {
+describe(path.basename(__filename), function () {
 	this.timeout(5000);
 	this.slow(300);
 
@@ -25,18 +25,17 @@ describe('Config Change Detection', function () {
 		this.timeout(8000);
 		await adapter.waitAndDispose(this);
 		await settings.resetConfig();
-		return promisify(setTimeout)(500);
 	})
 
 	it('defaultEnv', function () {
-		this.slow(500);
+		this.slow(1000);
 		return adapter.doAndWaitForReloadEvent(this, () => {
 			return settings.updateConfig('defaultEnv', { 'APPLE': 'apple' });
 		});
 	})
 
 	it('defaultCwd', function () {
-		this.slow(500);
+		this.slow(600);
 		return adapter.doAndWaitForReloadEvent(this, () => {
 			return settings.updateConfig('defaultCwd', 'apple/peach');
 		});

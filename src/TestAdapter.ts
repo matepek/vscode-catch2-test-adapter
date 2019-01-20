@@ -57,11 +57,17 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._mainTaskQueue.then(() => {
         this._testsEmitter.fire({ type: 'started' });
         return Promise.resolve().then(task).then(() => {
-          this._testsEmitter.fire({ type: 'finished', suite: this._rootSuite });
+          this._testsEmitter.fire({
+            type: 'finished',
+            suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined
+          });
         }, (reason: any) => {
           this._log.error(__filename, reason);
           debugger;
-          this._testsEmitter.fire({ type: 'finished', suite: this._rootSuite });
+          this._testsEmitter.fire({
+            type: 'finished',
+            suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined
+          });
         });
       });
     }));
@@ -95,6 +101,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
     }));
 
+    const config = this._getConfiguration();
+
     this._disposables.push(
       vscode.workspace.onDidChangeConfiguration(configChange => {
         if (configChange.affectsConfiguration(
@@ -103,11 +111,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             'catch2TestExplorer.defaultCwd', this.workspaceFolder.uri) ||
           configChange.affectsConfiguration(
             'catch2TestExplorer.executables', this.workspaceFolder.uri)) {
+          this._shared.defaultEnv = this._getDefaultEnvironmentVariables(config);
           this.load();
         }
       }));
-
-    const config = this._getConfiguration();
 
     this._shared = new SharedVariables(
       this._log,
@@ -120,6 +127,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),
       this._getDefaultNoThrow(config),
+      this._getDefaultEnvironmentVariables(config),
     );
     this._disposables.push(this._shared);
 
@@ -204,8 +212,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       return this._rootSuite.load(this._getExecutables(config, this._rootSuite))
         .then(
           () => {
-            this._testsEmitter.fire(
-              { type: 'finished', suite: this._rootSuite });
+            this._testsEmitter.fire({
+              type: 'finished',
+              suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined
+            });
           },
           (e: any) => {
             this._testsEmitter.fire({
@@ -238,7 +248,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   debug(tests: string[]): Promise<void> {
     if (this._mainTaskQueue.size > 0) {
       this._log.info(__filename + '. Debug is busy');
-      throw 'The adapter is busy. Try it again a bit later.';
+      throw Error('The adapter is busy. Try it again a bit later.');
     }
 
     this._log.info('Debugging');
@@ -296,7 +306,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }
 
       if (!template) {
-        throw 'For debugging \'catch2TestExplorer.debugConfigTemplate\' should be set.';
+        throw Error('For debugging \'catch2TestExplorer.debugConfigTemplate\' should be set.');
       }
 
       template = Object.assign({ 'name': "${label} (${suiteLabel})" }, template);
@@ -325,7 +335,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
             if (!debugSessionStarted || !currentSession) {
               return Promise.reject(
-                'Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate"' +
+                'Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate. "' +
                 + debugSessionStarted + '; ' + currentSession);
             }
 
@@ -396,40 +406,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return r !== null && r > 0 ? r * 1000 : null;
   }
 
-  private _getGlobalAndDefaultEnvironmentVariables(
-    config: vscode.WorkspaceConfiguration): { [prop: string]: string | undefined } {
-    const processEnv = process.env;
-    const configEnv: { [prop: string]: any } = config.get('defaultEnv') || {};
-
-    const resultEnv = { ...processEnv };
-
-    for (const prop in configEnv) {
-      const val = configEnv[prop];
-      if (val === undefined || val === null) {
-        delete resultEnv.prop;
-      } else {
-        resultEnv[prop] = resolveVariables(String(val), this._variableToValue);
-      }
-    }
-
-    return resultEnv;
-  }
-
-  private _getGlobalAndCurrentEnvironmentVariables(
-    configEnv: { [prop: string]: any }): { [prop: string]: any } {
-    const processEnv = process.env;
-    const resultEnv = { ...processEnv };
-
-    for (const prop in configEnv) {
-      const val = configEnv[prop];
-      if (val === undefined || val === null) {
-        delete resultEnv.prop;
-      } else {
-        resultEnv[prop] = resolveVariables(String(val), this._variableToValue);
-      }
-    }
-
-    return resultEnv;
+  private _getDefaultEnvironmentVariables(config: vscode.WorkspaceConfiguration): { [prop: string]: string } {
+    return config.get('defaultEnv', {});
   }
 
   private _getEnableSourceDecoration(config: vscode.WorkspaceConfiguration):
@@ -445,25 +423,22 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     let executables: TestExecutableInfo[] = [];
 
     const configExecs: undefined | string | string[] | { [prop: string]: any } |
-      { [prop: string]: any }[] = config.get('executables');
+      ({ [prop: string]: any } | string)[] = config.get('executables');
 
     const createFromObject = (obj: { [prop: string]: any }): TestExecutableInfo => {
-      const name: string | undefined = obj.hasOwnProperty('name') ? obj.name : undefined;
+      const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 
       let pattern: string = '';
-      if (obj.hasOwnProperty('pattern') && typeof obj.pattern == 'string')
+      if (typeof obj.pattern == 'string')
         pattern = obj.pattern;
-      else if (obj.hasOwnProperty('path') && typeof obj.path == 'string')
+      else if (typeof obj.path == 'string')
         pattern = obj.path;
       else
         throw Error('Error: pattern property is required.');
 
-      const cwd: string =
-        obj.hasOwnProperty('cwd') ? obj.cwd : globalWorkingDirectory;
+      const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : globalWorkingDirectory;
 
-      const env: { [prop: string]: any } = obj.hasOwnProperty('env') ?
-        this._getGlobalAndCurrentEnvironmentVariables(obj.env) :
-        this._getGlobalAndDefaultEnvironmentVariables(config);
+      const env: { [prop: string]: any } = typeof obj.env === 'object' ? obj.env : {};
 
       return new TestExecutableInfo(this._shared, rootSuite, name, pattern, cwd, env, this._variableToValue);
     };
@@ -471,31 +446,31 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     if (typeof configExecs === 'string') {
       if (configExecs.length == 0) return [];
       executables.push(new TestExecutableInfo(this._shared,
-        rootSuite, undefined, configExecs, globalWorkingDirectory,
-        this._getGlobalAndDefaultEnvironmentVariables(config), this._variableToValue));
+        rootSuite, undefined, configExecs, globalWorkingDirectory, {}, this._variableToValue));
     } else if (Array.isArray(configExecs)) {
       for (var i = 0; i < configExecs.length; ++i) {
         const configExe = configExecs[i];
-        if (typeof configExe == 'string') {
+        if (typeof configExe === 'string') {
           const configExecsName = String(configExe);
           if (configExecsName.length > 0) {
             executables.push(new TestExecutableInfo(this._shared,
-              rootSuite, undefined, configExecsName, globalWorkingDirectory,
-              this._getGlobalAndDefaultEnvironmentVariables(config), this._variableToValue));
+              rootSuite, undefined, configExecsName, globalWorkingDirectory, {}, this._variableToValue));
           }
-        } else {
+        } else if (typeof configExe === 'object') {
           try {
             executables.push(createFromObject(configExe));
           } catch (e) {
-            this._log.error(e);
+            this._log.warn(e);
           }
+        } else {
+          this._log.error('_getExecutables', configExe, i);
         }
       }
-    } else if (configExecs instanceof Object) {
+    } else if (typeof configExecs === 'object') {
       try {
         executables.push(createFromObject(configExecs));
       } catch (e) {
-        this._log.error(e);
+        this._log.warn(e);
       }
     } else {
       throw 'Config error: wrong type: executables';
