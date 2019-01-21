@@ -2,7 +2,6 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { SpawnOptions } from 'child_process';
 import * as c2fs from './FsWrapper';
 import { Catch2TestSuiteInfo } from './Catch2TestSuiteInfo';
 import { GoogleTestSuiteInfo } from './GoogleTestSuiteInfo';
@@ -13,7 +12,7 @@ export class TestSuiteInfoFactory {
 		private readonly _shared: SharedVariables,
 		private readonly _label: string,
 		private readonly _execPath: string,
-		private readonly _execOptions: SpawnOptions
+		private readonly _execOptions: c2fs.SpawnOptions
 	) { }
 
 	create(): Promise<Catch2TestSuiteInfo | GoogleTestSuiteInfo> {
@@ -34,7 +33,7 @@ export class TestSuiteInfoFactory {
 		return TestSuiteInfoFactory.determineTestTypeOfExecutable(this._execPath, this._execOptions);
 	}
 
-	static determineTestTypeOfExecutable(execPath: string, execOptions: SpawnOptions):
+	static determineTestTypeOfExecutable(execPath: string, execOptions: c2fs.SpawnOptions):
 		Promise<{ type: 'catch2' | 'google' | undefined; version: [number, number, number]; }> {
 		return c2fs.spawnAsync(execPath, ['--help'], execOptions)
 			.then((res): any => {

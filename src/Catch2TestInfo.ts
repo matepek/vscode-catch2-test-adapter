@@ -5,8 +5,8 @@
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { EOL } from 'os';
-import { SpawnOptions } from 'child_process';
 
+import { SpawnOptions } from './FsWrapper';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { inspect } from 'util';
 import { SharedVariables } from './SharedVariables';

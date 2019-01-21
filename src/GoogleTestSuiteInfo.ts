@@ -2,7 +2,6 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { SpawnOptions } from 'child_process';
 import * as fs from 'fs';
 import { inspect } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
@@ -25,7 +24,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 		shared: SharedVariables,
 		origLabel: string,
 		execPath: string,
-		execOptions: SpawnOptions) {
+		execOptions: c2fs.SpawnOptions) {
 		super(shared, origLabel, execPath, execOptions);
 	}
 
@@ -41,7 +40,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 	private _reloadGoogleTests(): Promise<void> {
 		const tmpFilePath = (this.execOptions.cwd || '.')
-			+ '/tmp_gtest_output_' + Math.random().toString(36) + '_.xml.tmp';
+			+ '/tmp_gtest_output_' + Math.random().toString(36) + '.xml.tmp';
 		return c2fs
 			.spawnAsync(
 				this.execPath,
@@ -115,7 +114,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 					}
 
 				} catch (e) {
-					this._shared.log.error('Couldn\'t parse output file. It is trying to parse the output: ', googleTestListOutput, e);
+					this._shared.log.error('Couldn\'t parse output file. It is trying to parse the output: ', googleTestListOutput, 'Catched:', e);
 
 					this.children = [];
 

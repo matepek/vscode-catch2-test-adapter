@@ -2,7 +2,7 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { ChildProcess, spawn, SpawnOptions } from 'child_process';
+import * as child_process from 'child_process';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
@@ -16,13 +16,13 @@ import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   private _killed: boolean = false;
-  private _process: ChildProcess | undefined = undefined;
+  private _process: child_process.ChildProcess | undefined = undefined;
 
   constructor(
     shared: SharedVariables,
     origLabel: string,
     public readonly execPath: string,
-    public readonly execOptions: SpawnOptions,
+    public readonly execOptions: c2fs.SpawnOptions,
   ) {
     super(shared, origLabel);
   }
@@ -93,7 +93,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       this.sendSkippedChildrenEvents();
     }
 
-    this._process = spawn(this.execPath, execParams, this.execOptions);
+    this._process = child_process.spawn(this.execPath, execParams, this.execOptions);
 
     const runInfo: RunningTestExecutableInfo = {
       process: this._process,

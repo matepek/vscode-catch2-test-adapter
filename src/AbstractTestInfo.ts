@@ -3,8 +3,8 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
-import { SpawnOptions } from 'child_process';
 
+import { SpawnOptions } from './FsWrapper';
 import { generateUniqueId } from './IdGenerator';
 import { SharedVariables } from './SharedVariables';
 

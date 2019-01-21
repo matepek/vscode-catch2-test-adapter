@@ -5,38 +5,38 @@
 import * as cp from 'child_process';
 import * as fs from 'fs';
 
-export type SpawnReturns = cp.SpawnSyncReturns<string>;
+export interface SpawnReturns extends cp.SpawnSyncReturns<string> { };
+export interface SpawnOptions extends cp.SpawnOptions { };
 
 export function spawnAsync(
   cmd: string, args?: string[],
-  options?: cp.SpawnOptions): Promise<SpawnReturns> {
+  options?: SpawnOptions): Promise<SpawnReturns> {
   return new Promise((resolve, reject) => {
     const ret: SpawnReturns = {
       pid: 0,
-      output: ['', ''],
+      output: [<string><unknown>null, '', ''],
       stdout: '',
       stderr: '',
       status: 0,
-      signal: '',
-      error: new Error()
+      signal: <string><unknown>null,
+      error: <Error><unknown>undefined,
     };
     const command = cp.spawn(cmd, args, options);
     ret.pid = command.pid;
     command.stdout.on('data', function (data) {
       ret.stdout += data;
-      ret.output[0] = ret.stdout;
+      ret.output[1] = ret.stdout;
     });
     command.stderr.on('data', function (data) {
       ret.stderr += data;
-      ret.output[1] = ret.stderr;
+      ret.output[2] = ret.stderr;
     });
     command.on('error', function (err: Error) {
       ret.error = err;
-      reject(ret);
+      reject(err);
     });
     command.on('close', function (code) {
       ret.status = code;
-      ret.error = new Error('code: ' + String(code));
       resolve(ret)
     });
   })

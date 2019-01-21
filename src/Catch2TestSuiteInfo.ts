@@ -2,7 +2,6 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { SpawnOptions } from 'child_process';
 import { inspect } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
@@ -21,7 +20,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 		shared: SharedVariables,
 		origLabel: string,
 		execPath: string,
-		execOptions: SpawnOptions,
+		execOptions: c2fs.SpawnOptions,
 		private _catch2Version: [number, number, number] | undefined) {
 		super(shared, origLabel, execPath, execOptions);
 	}
