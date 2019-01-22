@@ -114,7 +114,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 					}
 
 				} catch (e) {
-					this._shared.log.error('Couldn\'t parse output file. It is trying to parse the output: ', googleTestListOutput, 'Catched:', e);
+					this._shared.log.warn('Couldn\'t parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output: ', googleTestListOutput, 'Catched:', e);
 
 					this.children = [];
 

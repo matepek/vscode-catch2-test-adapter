@@ -23,7 +23,7 @@ describe(path.basename(__filename), function () {
 	})
 
 	after(function () {
-		imitation.sinonSandbox.restore();
+		imitation.restore();
 	})
 
 	beforeEach(async function () {

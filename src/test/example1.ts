@@ -17,7 +17,7 @@ export const example1 = new class {
       assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>) {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
-        assert.equal(test.file, 'suite1.cpp');
+        assert.equal(test.file, path.join(settings.workspaceFolderUri.fsPath, 'suite1.cpp'));
         assert.equal(test.line, 7 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
         if (uniqeIdContainer != undefined) {
@@ -64,7 +64,7 @@ export const example1 = new class {
       assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>) {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
-        assert.equal(test.file, 'suite1.cpp');
+        assert.equal(test.file, path.join(settings.workspaceFolderUri.fsPath, 'suite1.cpp'));
         assert.equal(test.line, 13 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
         if (uniqeIdContainer != undefined) {
@@ -193,7 +193,7 @@ export const example1 = new class {
       uniqeIdContainer?: Set<string>) {
       assert.equal(suite.type, 'suite');
       assert.equal(suite.label, label);
-      assert.equal(suite.file, 'suite1.cpp');
+      assert.equal(suite.file, path.join(settings.workspaceFolderUri.fsPath, 'suite1.cpp'));
       assert.equal(suite.line, 0);
       assert.equal(suite.children.length, 2);
       assert.equal(childLabels.length, suite.children.length);
@@ -217,7 +217,7 @@ export const example1 = new class {
       assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>) {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
-        assert.equal(test.file, 'suite2.cpp');
+        assert.equal(test.file, path.join(settings.workspaceFolderUri.fsPath, 'suite2.cpp'));
         assert.equal(test.line, 7 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
         if (uniqeIdContainer != undefined) {
@@ -264,7 +264,7 @@ export const example1 = new class {
       assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>) {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
-        assert.equal(test.file, 'suite2.cpp');
+        assert.equal(test.file, path.join(settings.workspaceFolderUri.fsPath, 'suite2.cpp'));
         assert.equal(test.line, 13 - 1);
         assert.ok(test.skipped === true);
         if (uniqeIdContainer != undefined) {
@@ -311,7 +311,7 @@ export const example1 = new class {
       assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>) {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
-        assert.equal(test.file, 'suite2.cpp');
+        assert.equal(test.file, path.join(settings.workspaceFolderUri.fsPath, 'suite2.cpp'));
         assert.equal(test.line, 19 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
         if (uniqeIdContainer != undefined) {
@@ -374,7 +374,7 @@ export const example1 = new class {
       uniqeIdContainer?: Set<string>) {
       assert.equal(suite.type, 'suite');
       assert.equal(suite.label, label);
-      assert.equal(suite.file, 'suite2.cpp');
+      assert.equal(suite.file, path.join(settings.workspaceFolderUri.fsPath, 'suite2.cpp'));
       assert.equal(suite.line, 0);
       assert.equal(suite.children.length, 3);
       assert.equal(childLabels.length, suite.children.length);

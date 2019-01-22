@@ -151,28 +151,31 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   }
 
   protected _findFilePath(matchedPath: string): string {
-    let filePath = matchedPath;
     try {
-      filePath = path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
-      if (!c2fs.existsSync(filePath) && this.execOptions.cwd) {
+      let filePath = path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
+      if (c2fs.existsSync(filePath))
+        return filePath;
+
+      if (this.execOptions.cwd) {
         filePath = path.join(this.execOptions.cwd, matchedPath);
+        if (c2fs.existsSync(filePath))
+          return filePath;
       }
-      if (!c2fs.existsSync(filePath)) {
-        let parent = path.dirname(this.execPath);
-        filePath = path.join(parent, matchedPath);
-        let parentParent = path.dirname(parent);
-        while (!c2fs.existsSync(filePath) && parent != parentParent) {
+
+      {
+        let parent: string;
+        let parentParent = path.dirname(this.execPath);
+        do {
           parent = parentParent;
-          filePath = path.join(parent, matchedPath);
           parentParent = path.dirname(parent);
-        }
+
+          filePath = path.join(parent, matchedPath);
+          if (c2fs.existsSync(filePath))
+            return filePath;
+        } while (parent != parentParent);
       }
-      if (!c2fs.existsSync(filePath)) {
-        filePath = matchedPath;
-      }
-    } catch (e) {
-      filePath = path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
+    } finally {
+      return path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
     }
-    return filePath;
   }
 }
