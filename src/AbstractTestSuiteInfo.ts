@@ -36,12 +36,17 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   cancel(): void {
     this._shared.log.info('canceled:', this.id, this.label, this._process != undefined);
 
-    this._killed = true;
-
     if (this._process != undefined) {
-      this._process.kill();
-      this._process = undefined;
+      if (!this._killed) {
+        this._process.kill();
+      } else {
+        // Sometimes apps try to handle kill but it happens that it hangs in case of Catch2. 
+        // The second click on the cancel button should send a more serious signal. ☠️
+        this._process.kill('SIGKILL');
+      }
     }
+
+    this._killed = true;
   }
 
   run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
@@ -145,6 +150,8 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
         this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
         this._process = undefined;
+
+        //this will stop the timeout-wathcer
         runInfo.process = undefined;
         runInfo.timeoutWatcherTrigger();
       });

@@ -26,6 +26,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 	}
 
 	reloadChildren(): Promise<void> {
+		this._shared.log.info('reloadChildren', this.label);
 		return TestSuiteInfoFactory.determineTestTypeOfExecutable(this.execPath, this.execOptions)
 			.then((testInfo) => {
 				if (testInfo.type === 'catch2') {

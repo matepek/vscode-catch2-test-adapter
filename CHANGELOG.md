@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.16]
+
+### Added
+
+- sending `SIGKILL` in case of cancel.
+
 ## [2.3.15] - 2019-01-20
 
 ### Changed
