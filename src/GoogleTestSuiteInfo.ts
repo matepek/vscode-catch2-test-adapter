@@ -57,8 +57,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 				if (googleTestListOutput.stderr) {
 					this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
-					this.label = '⚠️ ' + this.label;
-					this.addChild(new GoogleTestGroupSuiteInfo(this._shared, '⚠️ ' + googleTestListOutput.stderr.split('\n')[0].trim()));
+					const test = new GoogleTestInfo(this._shared, undefined, '<dummy>', '⚠️ Check the test output message for details ⚠️', '', undefined, undefined, this.execPath, this.execOptions);
+					super.addChild(test);
+					this._shared.sendTestEventEmitter.fire([{ type: 'test', test: test, state: 'errored', message: googleTestListOutput.stderr }]);
 					return;
 				}
 				try {

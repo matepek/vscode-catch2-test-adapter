@@ -55,8 +55,8 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
 				if (catch2TestListOutput.stderr) {
 					this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr: ', catch2TestListOutput);
-					this.label = '⚠️ ' + this.label;
-					this._createCatch2TestInfo(undefined, '⚠️ ' + catch2TestListOutput.stderr.split('\n')[0].trim(), '', [], '', 0);
+					const test = this._createCatch2TestInfo(undefined, '⚠️ Check the test output message for details ⚠️', '', [], '', 0);
+					this._shared.sendTestEventEmitter.fire([{ type: 'test', test: test, state: 'errored', message: catch2TestListOutput.stderr }]);
 					return;
 				}
 
@@ -69,8 +69,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 				// first line: 'Matching test cases:'
 				for (let i = 1; i < lines.length - 1;) {
 					if (lines[i][0] != ' ')
-						this._shared.log.error(
-							'Wrong test list output format: ' + lines.toString());
+						this._shared.log.error('Wrong test list output format: ' + lines.toString());
 
 					const testNameFull = lines[i++].substr(2);
 

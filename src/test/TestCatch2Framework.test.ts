@@ -187,7 +187,7 @@ describe(path.basename(__filename), function () {
 
     adapter = new TestAdapter();
 
-    const testListOutput = [
+    const testListErrOutput = [
       'error: TEST_CASE( "biggest rectangle" ) already defined.',
       '  First seen at ../Task/biggest_rectangle.cpp:46',
       '  Redefined at ../Task/biggest_rectangle.cpp:102',
@@ -195,17 +195,28 @@ describe(path.basename(__filename), function () {
     const withArgs = imitation.spawnStub.withArgs(
       example1.suite1.execPath, example1.suite1.outputs[1][0]);
     withArgs.onCall(withArgs.callCount)
-      .returns(new ChildProcessStub('Matching test cases:' + EOL, undefined, testListOutput.join(EOL)));
+      .returns(new ChildProcessStub('Matching test cases:' + EOL, undefined, testListErrOutput.join(EOL)));
 
     await adapter.load();
 
     assert.equal(adapter.root.children.length, 1);
 
     const suite1 = adapter.suite1;
-    assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
+    assert.equal(suite1.children.length, 1, inspect([testListErrOutput, adapter.testLoadsEvents]));
 
-    assert.strictEqual(suite1.label, '⚠️ execPath1.exe');
-    assert.strictEqual(suite1.children[0].label, '⚠️ error: TEST_CASE( "biggest rectangle" ) already defined.');
+    assert.strictEqual(suite1.label, 'execPath1.exe');
+    assert.strictEqual(suite1.children[0].label, '⚠️ Check the test output message for details ⚠️');
+
+    await waitFor(this, () => {
+      return adapter!.testStatesEvents.length == 6;
+    });
+
+    assert.deepStrictEqual(adapter.testStatesEvents[3], {
+      message: testListErrOutput.join(EOL),
+      state: 'errored',
+      test: suite1.children[0],
+      type: 'test'
+    });
   })
 
   specify('load executables=<full path of execPath1>', async function () {
