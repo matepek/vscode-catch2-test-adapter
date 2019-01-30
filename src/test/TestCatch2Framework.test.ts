@@ -204,7 +204,7 @@ describe(path.basename(__filename), function () {
     const suite1 = adapter.suite1;
     assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
 
-    assert.strictEqual(suite1.label, '⚠️ execPath1');
+    assert.strictEqual(suite1.label, '⚠️ execPath1.exe');
     assert.strictEqual(suite1.children[0].label, '⚠️ error: TEST_CASE( "biggest rectangle" ) already defined.');
   })
 
@@ -218,10 +218,10 @@ describe(path.basename(__filename), function () {
   })
 
   specify(
-    'load executables=["execPath1", "./execPath2"] with error',
+    'load executables=["execPath1.exe", "./execPath2.exe"] with error',
     async function () {
       this.slow(500);
-      await settings.updateConfig('executables', ['execPath1', './execPath2']);
+      await settings.updateConfig('executables', ['execPath1.exe', './execPath2.exe']);
       adapter = new TestAdapter();
 
       const withArgs = imitation.spawnStub.withArgs(
@@ -234,14 +234,14 @@ describe(path.basename(__filename), function () {
     })
 
   specify(
-    'load executables=["execPath1", "execPath2Copy"]; delete; sleep 3; create',
+    'load executables=["execPath1.exe", "execPath2Copy.exe"]; delete; sleep 3; create',
     async function () {
       const watchTimeout = 6;
       await settings.updateConfig('defaultWatchTimeoutSec', watchTimeout);
       this.timeout(watchTimeout * 1000 + 2500 /* because of 'delay' */);
       this.slow(watchTimeout * 1000 + 2500 /* because of 'delay' */);
       const execPath2CopyPath =
-        path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy');
+        path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
       for (let scenario of example1.suite2.outputs) {
         imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0])
@@ -250,8 +250,8 @@ describe(path.basename(__filename), function () {
           });
       }
 
-      imitation.fsStatStub.withArgs(execPath2CopyPath)
-        .callsFake(imitation.handleStatFileExists);
+      imitation.fsAccessStub.withArgs(execPath2CopyPath)
+        .callsFake(imitation.handleAccessFileExists);
 
       imitation.vsfsWatchStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
         .callsFake(imitation.createCreateFSWatcherHandler(watchers));
@@ -259,7 +259,7 @@ describe(path.basename(__filename), function () {
       imitation.vsFindFilesStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
         .resolves([vscode.Uri.file(execPath2CopyPath)]);
 
-      await settings.updateConfig('executables', ['execPath1', 'execPath2Copy']);
+      await settings.updateConfig('executables', ['execPath1.exe', 'execPath2Copy.exe']);
       adapter = new TestAdapter();
 
       await adapter.load();
@@ -271,16 +271,16 @@ describe(path.basename(__filename), function () {
 
       let start: number = 0;
       await adapter.doAndWaitForReloadEvent(this, () => {
-        imitation.fsStatStub.withArgs(execPath2CopyPath)
-          .callsFake(imitation.handleStatFileNotExists);
+        imitation.fsAccessStub.withArgs(execPath2CopyPath)
+          .callsFake(imitation.handleAccessFileNotExists);
         start = Date.now();
         watcher.sendDelete();
         setTimeout(() => {
           assert.equal(adapter!.testLoadsEvents.length, 2);
         }, 1500);
         setTimeout(() => {
-          imitation.fsStatStub.withArgs(execPath2CopyPath)
-            .callsFake(imitation.handleStatFileExists);
+          imitation.fsAccessStub.withArgs(execPath2CopyPath)
+            .callsFake(imitation.handleAccessFileExists);
           watcher.sendCreate();
         }, 3000);
       });
@@ -294,14 +294,14 @@ describe(path.basename(__filename), function () {
     });
 
   specify(
-    'load executables=["execPath1", "execPath2Copy"]; delete second',
+    'load executables=["execPath1.exe", "execPath2Copy.exe"]; delete second',
     async function () {
       const watchTimeout = 5;
       await settings.updateConfig('defaultWatchTimeoutSec', watchTimeout);
       this.timeout(watchTimeout * 1000 + 6500 /* because of 'delay' */);
       this.slow(watchTimeout * 1000 + 3500 /* because of 'delay' */);
       const execPath2CopyPath =
-        path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy');
+        path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
       for (let scenario of example1.suite2.outputs) {
         imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0])
@@ -310,8 +310,8 @@ describe(path.basename(__filename), function () {
           });
       }
 
-      imitation.fsStatStub.withArgs(execPath2CopyPath)
-        .callsFake(imitation.handleStatFileExists);
+      imitation.fsAccessStub.withArgs(execPath2CopyPath)
+        .callsFake(imitation.handleAccessFileExists);
 
       imitation.vsfsWatchStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
         .callsFake(imitation.createCreateFSWatcherHandler(watchers));
@@ -319,7 +319,7 @@ describe(path.basename(__filename), function () {
       imitation.vsFindFilesStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
         .resolves([vscode.Uri.file(execPath2CopyPath)]);
 
-      await settings.updateConfig('executables', ['execPath1', 'execPath2Copy']);
+      await settings.updateConfig('executables', ['execPath1.exe', 'execPath2Copy.exe']);
       adapter = new TestAdapter();
 
       await adapter.load();
@@ -331,8 +331,8 @@ describe(path.basename(__filename), function () {
 
       let start: number = 0;
       await adapter.doAndWaitForReloadEvent(this, async () => {
-        imitation.fsStatStub.withArgs(execPath2CopyPath)
-          .callsFake(imitation.handleStatFileNotExists);
+        imitation.fsAccessStub.withArgs(execPath2CopyPath)
+          .callsFake(imitation.handleAccessFileNotExists);
         start = Date.now();
         watcher.sendDelete();
       });
@@ -400,7 +400,7 @@ describe(path.basename(__filename), function () {
       return new ChildProcessStub(example1.suite2.t1.outputs[0][1]);
     });
 
-    imitation.fsStatStub.withArgs(execPath2CopyPath).callsFake(imitation.handleStatFileExists);
+    imitation.fsAccessStub.withArgs(execPath2CopyPath).callsFake(imitation.handleAccessFileExists);
 
     imitation.vsfsWatchStub.withArgs(imitation.createVscodeRelativePatternMatcher(execPath2CopyRelPath))
       .callsFake(imitation.createCreateFSWatcherHandler(watchers));
@@ -510,11 +510,11 @@ describe(path.basename(__filename), function () {
     await adapter.load();
 
     assert.strictEqual(adapter.root.children.length, 1);
-    assert.strictEqual(adapter.suite1.label, 'name1 execPath1');
+    assert.strictEqual(adapter.suite1.label, 'name1 execPath1.exe');
 
     await adapter.load();
 
     assert.strictEqual(adapter.root.children.length, 1);
-    assert.strictEqual(adapter.suite1.label, 'name1 execPath1');
+    assert.strictEqual(adapter.suite1.label, 'name1 execPath1.exe');
   })
 })

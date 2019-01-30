@@ -10,7 +10,7 @@ import { Imitation, settings, FileSystemWatcherStub, ChildProcessStub } from './
 export const example1 = new class {
   readonly suite1 = new class {
     readonly execPath =
-      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath1')).fsPath;
+      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath1.exe')).fsPath;
 
     readonly t1 = new class {
       readonly fullTestName = 's1t1';
@@ -210,7 +210,7 @@ export const example1 = new class {
 
   readonly suite2 = new class {
     readonly execPath =
-      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath2')).fsPath;
+      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath2.exe')).fsPath;
 
     readonly t1 = new class {
       readonly fullTestName = 's2t1';
@@ -462,7 +462,7 @@ export const example1 = new class {
 
   readonly suite3 = new class {
     readonly execPath =
-      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath3')).fsPath;
+      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath3.exe')).fsPath;
 
     readonly outputs: [string[], string][] = [
 
@@ -2392,7 +2392,7 @@ For more detailed usage please see the project docs
         });
       }
 
-      imitation.fsStatStub.withArgs(suite[0]).callsFake(imitation.handleStatFileExists);
+      imitation.fsAccessStub.withArgs(suite[0]).callsFake(imitation.handleAccessFileExists);
 
       imitation.vsfsWatchStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(suite[0]))
         .callsFake(imitation.createCreateFSWatcherHandler(watchers));

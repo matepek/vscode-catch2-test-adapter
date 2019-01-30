@@ -17,37 +17,38 @@ export class TestSuiteInfoFactory {
 
 	create(): Promise<Catch2TestSuiteInfo | GoogleTestSuiteInfo> {
 		return this._determineTestTypeOfExecutable()
-			.then((framework: { type: 'catch2' | 'google' | undefined; version: [number, number, number]; }) => {
+			.then((framework: { type: 'catch2' | 'google'; version: [number, number, number]; }) => {
 				if (framework.type === 'google')
 					return new GoogleTestSuiteInfo(this._shared, this._label, this._execPath, this._execOptions);
 				else if (framework.type === 'catch2')
 					return new Catch2TestSuiteInfo(this._shared, this._label, this._execPath, this._execOptions,
 						[framework.version[0], framework.version[1], framework.version[2]]);
 				else
-					throw Error('TestSuiteInfoFactory: create:' + this._execPath + ': not test executable.');
+					throw Error('Unknown error:' + framework.type);
 			});
 	}
 
 	private _determineTestTypeOfExecutable():
-		Promise<{ type: 'catch2' | 'google' | undefined; version: [number, number, number]; }> {
+		Promise<{ type: 'catch2' | 'google'; version: [number, number, number]; }> {
 		return TestSuiteInfoFactory.determineTestTypeOfExecutable(this._execPath, this._execOptions);
 	}
 
 	static determineTestTypeOfExecutable(execPath: string, execOptions: c2fs.SpawnOptions):
-		Promise<{ type: 'catch2' | 'google' | undefined; version: [number, number, number]; }> {
-		return c2fs.spawnAsync(execPath, ['--help'], execOptions)
-			.then((res): any => {
-				const catch2 = res.stdout.match(/Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/);
-				if (catch2 && catch2.length == 4) {
-					return { type: 'catch2', version: [Number(catch2[1]), Number(catch2[2]), Number(catch2[3])] };
-				}
-				const google = res.stdout.match(/This program contains tests written using Google Test./);
-				if (google) {
-					return { type: 'google', version: [0, 0, 0] };
-				}
-				return { type: undefined, version: [0, 0, 0] };
-			}).catch(() => {
-				return { type: undefined, version: [0, 0, 0] };
-			});
+		Promise<{ type: 'catch2' | 'google'; version: [number, number, number]; }> {
+
+		return c2fs.accessAsync(execPath, c2fs.ExecutableFlag).then(() => {
+			return c2fs.spawnAsync(execPath, ['--help'], execOptions, 5000)
+				.then((res): any => {
+					const catch2 = res.stdout.match(/Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/);
+					if (catch2 && catch2.length == 4) {
+						return { type: 'catch2', version: [Number(catch2[1]), Number(catch2[2]), Number(catch2[3])] };
+					}
+					const google = res.stdout.match(/This program contains tests written using Google Test./);
+					if (google) {
+						return { type: 'google', version: [0, 0, 0] };
+					}
+					throw new Error('Not a supported test executable.');
+				});
+		});
 	}
 }

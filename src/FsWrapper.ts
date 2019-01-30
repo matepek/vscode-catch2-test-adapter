@@ -10,7 +10,7 @@ export interface SpawnOptions extends cp.SpawnOptions { };
 
 export function spawnAsync(
   cmd: string, args?: string[],
-  options?: SpawnOptions): Promise<SpawnReturns> {
+  options?: SpawnOptions, timeout?: number): Promise<SpawnReturns> {
   return new Promise((resolve, reject) => {
     const ret: SpawnReturns = {
       pid: 0,
@@ -21,7 +21,9 @@ export function spawnAsync(
       signal: <string><unknown>null,
       error: <Error><unknown>undefined,
     };
+
     const command = cp.spawn(cmd, args, options);
+
     ret.pid = command.pid;
     command.stdout.on('data', function (data) {
       ret.stdout += data;
@@ -39,27 +41,35 @@ export function spawnAsync(
       ret.status = code;
       resolve(ret)
     });
+
+    if (timeout !== undefined && timeout > 0) {
+      setTimeout(() => {
+        command.kill('SIGKILL');
+        reject(new Error('FsWrapper.spawnAsync timeout: ' + timeout));
+      }, timeout);
+    }
   })
 }
 
-export type Stats = fs.Stats;
+export const ExecutableFlag = fs.constants.X_OK;
+export const ExistsFlag = fs.constants.F_OK;
 
-export function statAsync(path: string): Promise<Stats> {
-  return new Promise<Stats>((resolve, reject) => {
-    fs.stat(
-      path, (err: NodeJS.ErrnoException | null, stats: fs.Stats | undefined) => {
-        if (stats)
-          resolve(stats);
-        else
-          reject(err);
-      });
+export function accessAsync(path: string, flag: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    fs.access(path, flag, (err: Error) => {
+      if (err) reject(err);
+      else resolve();
+    });
   });
 }
 
-export function existsAsync(path: string): Promise<boolean> {
-  return statAsync(path).then(
+export function isExecutableAsync(path: string): Promise<boolean> {
+  return accessAsync(path, ExecutableFlag).then(
     () => {
-      return true;
+      if (process.platform === 'win32')
+        return path.endsWith('.exe');
+      else
+        return true;
     },
     () => {
       return false;

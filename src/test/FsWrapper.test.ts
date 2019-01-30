@@ -8,7 +8,7 @@ import { EOL } from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { spawnAsync, statAsync, SpawnOptions } from '../FsWrapper';
+import { spawnAsync, SpawnOptions, accessAsync, ExistsFlag } from '../FsWrapper';
 import { ChildProcessStub, isWin } from './TestCommon';
 
 ///
@@ -102,21 +102,21 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function () {
   })
 })
 
-describe('FsWrapper.statAsync', function () {
+describe('FsWrapper.accessAsync', function () {
   it('doesnt exists', async function () {
     try {
-      await statAsync('notexists');
-      assert.ok(false);
+      await accessAsync('notexists', ExistsFlag);
+      assert.fail('should throw');
     } catch (e) {
-      assert.equal(e.code, 'ENOENT');
-      assert.notEqual(e.errno, 0);
     }
   })
 
-  it('exists', async function () {
-    const res = await statAsync(__filename);
-    assert.ok(res.isFile());
-    assert.ok(!res.isDirectory());
+  it('exists file', async function () {
+    await accessAsync(__filename, ExistsFlag);
+  })
+
+  it('exists dir', async function () {
+    await accessAsync(path.dirname(__filename), ExistsFlag);
   })
 })
 

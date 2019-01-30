@@ -49,7 +49,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 					"--gtest_list_tests",
 					"--gtest_output=xml:" + tmpFilePath
 				],
-				this.execOptions)
+				this.execOptions, 5000)
 			.then((googleTestListOutput) => {
 				const oldChildren = this.children;
 				this.children = [];

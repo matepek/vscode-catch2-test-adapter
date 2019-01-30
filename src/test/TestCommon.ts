@@ -88,7 +88,7 @@ export class Imitation {
 
 	readonly spawnStub: sinon.SinonStub<any[], any> = <any>this.sinonSandbox.stub(child_process, 'spawn').named('spawnStub');
 	readonly vsfsWatchStub: sinon.SinonStub<any[], any> = <any>this.sinonSandbox.stub(vscode.workspace, 'createFileSystemWatcher').named('vscode.createFileSystemWatcher');
-	readonly fsStatStub: sinon.SinonStub<any[], any> = <any>this.sinonSandbox.stub(fs, 'stat').named('fsStat');
+	readonly fsAccessStub: sinon.SinonStub<any[], any> = <any>this.sinonSandbox.stub(fs, 'access').named('access');
 	readonly fsReadFileSyncStub: sinon.SinonStub<any[], any> = <any>this.sinonSandbox.stub(fs, 'readFileSync').named('fsReadFileSync');
 	readonly vsFindFilesStub: sinon.SinonStub<[vscode.GlobPattern | sinon.SinonMatcher], Thenable<vscode.Uri[]>> = <sinon.SinonStub<[vscode.GlobPattern], Thenable<vscode.Uri[]>>>this.sinonSandbox.stub(vscode.workspace, 'findFiles').named('vsFindFilesStub');
 
@@ -100,7 +100,7 @@ export class Imitation {
 		this.sinonSandbox.reset();
 		this.spawnStub.callThrough();
 		this.vsfsWatchStub.callThrough();
-		this.fsStatStub.callThrough();
+		this.fsAccessStub.callThrough();
 		this.fsReadFileSyncStub.callThrough();
 		this.vsFindFilesStub.callThrough();
 	}
@@ -117,32 +117,24 @@ export class Imitation {
 			path.relative(settings.workspaceFolderUri.fsPath, p));
 	}
 
-	handleStatFileExists(
+	handleAccessFileExists(
 		path: string,
-		cb: (err: NodeJS.ErrnoException | null, stats: fs.Stats | undefined) =>
+		flag: number,
+		cb: (err: NodeJS.ErrnoException | null) =>
 			void) {
-		cb(null, <fs.Stats>{
-			isFile() {
-				return true;
-			},
-			isDirectory() {
-				return false;
-			}
-		});
+		cb(null);
 	}
 
-	handleStatFileNotExists(
+	handleAccessFileNotExists(
 		path: string,
-		cb: (err: NodeJS.ErrnoException | null | any, stats: fs.Stats | undefined) =>
-			void) {
+		cb: (err: NodeJS.ErrnoException | null | any) => void) {
 		cb({
 			code: 'ENOENT',
 			errno: -2,
 			message: 'ENOENT',
 			path: path,
 			syscall: 'stat'
-		},
-			undefined);
+		});
 	}
 
 	createCreateFSWatcherHandler(watchers: Map<string, FileSystemWatcherStub>) {

@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- sending `SIGKILL` in case of cancel.
+- sending `SIGKILL` in case of second cancel. (Clicking onto the cancel button after the first cancel wasn's succesful.)
 
 ## [2.3.15] - 2019-01-20
 

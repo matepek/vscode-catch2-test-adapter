@@ -83,16 +83,22 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     for (let i = 0; i < fileUris.length; i++) {
       const file = fileUris[i];
-      await this._createSuiteByUri(file).then((suite: AbstractTestSuiteInfo) => {
-        return suite.reloadChildren().then(() => {
-          if (this._rootSuite.insertChild(suite, false/* called later */)) {
-            this._executables.set(file.fsPath, suite);
-          }
+      this._shared.log.info('Checking file for tests:', file.fsPath);
+
+      await c2fs.accessAsync(file.fsPath, c2fs.ExecutableFlag).then(() => {
+        return this._createSuiteByUri(file).then((suite: AbstractTestSuiteInfo) => {
+          return suite.reloadChildren().then(() => {
+            if (this._rootSuite.insertChild(suite, false/* called later */)) {
+              this._executables.set(file.fsPath, suite);
+            }
+          }, (reason: any) => {
+            this._shared.log.warn('Couldn\'t load executable:', reason, suite);
+          });
         }, (reason: any) => {
-          this._shared.log.warn('Couldn\'t load executable:', reason, suite);
+          this._shared.log.warn('Not a test executable:', file.fsPath, 'reason:', reason);
         });
       }, (reason: any) => {
-        this._shared.log.info('Not a test executable:', file.fsPath, 'reason:', reason);
+        this._shared.log.info('Not an executable:', file.fsPath, reason);
       });
     }
 
@@ -205,7 +211,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         });
       } else {
         return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
-          return c2fs.existsAsync(uri.fsPath).then((exists: boolean) => {
+          return c2fs.isExecutableAsync(uri.fsPath).then((exists: boolean) => {
             return x(suite, exists, Math.min(delay * 2, 2000));
           });
         });
