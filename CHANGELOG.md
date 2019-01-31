@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.3.16]
+## [2.3.16] - 2019-01-31
 
 This version probalby contains stability imporvements ✌️, but in case it doesn't work on all platforms as I expect,
 you can downgrade it in the vscode's extension manager and please file an issue about the bug. 🙏
