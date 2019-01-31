@@ -2,7 +2,6 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { SpawnOptions } from 'child_process';
 import * as fs from 'fs';
 import { inspect } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
@@ -25,11 +24,12 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 		shared: SharedVariables,
 		origLabel: string,
 		execPath: string,
-		execOptions: SpawnOptions) {
+		execOptions: c2fs.SpawnOptions) {
 		super(shared, origLabel, execPath, execOptions);
 	}
 
 	reloadChildren(): Promise<void> {
+		this._shared.log.info('reloadChildren', this.label);
 		return TestSuiteInfoFactory.determineTestTypeOfExecutable(this.execPath, this.execOptions)
 			.then((testInfo) => {
 				if (testInfo.type === 'google') {
@@ -41,7 +41,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 	private _reloadGoogleTests(): Promise<void> {
 		const tmpFilePath = (this.execOptions.cwd || '.')
-			+ '/tmp_gtest_output_' + Math.random().toString(36) + '_.xml.tmp';
+			+ '/tmp_gtest_output_' + Math.random().toString(36) + '.xml.tmp';
 		return c2fs
 			.spawnAsync(
 				this.execPath,
@@ -49,7 +49,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 					"--gtest_list_tests",
 					"--gtest_output=xml:" + tmpFilePath
 				],
-				this.execOptions)
+				this.execOptions, 5000)
 			.then((googleTestListOutput) => {
 				const oldChildren = this.children;
 				this.children = [];
@@ -57,8 +57,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 				if (googleTestListOutput.stderr) {
 					this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
-					this.label = '⚠️ ' + this.label;
-					this.addChild(new GoogleTestGroupSuiteInfo(this._shared, '⚠️ ' + googleTestListOutput.stderr.split('\n')[0].trim()));
+					const test = new GoogleTestInfo(this._shared, undefined, '<dummy>', '⚠️ Check the test output message for details ⚠️', '', undefined, undefined, this.execPath, this.execOptions);
+					super.addChild(test);
+					this._shared.sendTestEventEmitter.fire([{ type: 'test', test: test, state: 'errored', message: googleTestListOutput.stderr }]);
 					return;
 				}
 				try {
@@ -115,7 +116,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 					}
 
 				} catch (e) {
-					this._shared.log.error('Couldn\'t parse output file. It is trying to parse the output: ', googleTestListOutput, e);
+					this._shared.log.warn('Couldn\'t parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output: ', googleTestListOutput, 'Catched:', e);
 
 					this.children = [];
 

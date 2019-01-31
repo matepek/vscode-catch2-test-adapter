@@ -28,7 +28,8 @@ describe(path.basename(__filename), function () {
 	})
 
 	after(function () {
-		imitation.sinonSandbox.restore();
+		imitation.restore();
+		return settings.resetConfig();
 	})
 
 	specify('empty config', async function () {
@@ -49,7 +50,7 @@ describe(path.basename(__filename), function () {
 		const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('second'));
 		const count = withArgs.callCount;
 		await adapter.load();
-		assert.strictEqual(withArgs.callCount, count + 1);
+		assert.ok(withArgs.callCount > count);
 	})
 
 	specify('./third', async function () {
@@ -57,7 +58,7 @@ describe(path.basename(__filename), function () {
 		const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('third'));
 		const count = withArgs.callCount;
 		await adapter.load();
-		assert.strictEqual(withArgs.callCount, count + 1);
+		assert.ok(withArgs.callCount > count);
 	})
 
 	specify('./a/b/../../fourth', async function () {
@@ -65,7 +66,7 @@ describe(path.basename(__filename), function () {
 		const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('fourth'));
 		const count = withArgs.callCount;
 		await adapter.load();
-		assert.strictEqual(withArgs.callCount, count + 1);
+		assert.ok(withArgs.callCount > count);
 	})
 
 	specify('cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*', async function () {
@@ -73,6 +74,6 @@ describe(path.basename(__filename), function () {
 		const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*'));
 		const count = withArgs.callCount;
 		await adapter.load();
-		assert.strictEqual(withArgs.callCount, count + 1);
+		assert.ok(withArgs.callCount > count);
 	})
 })

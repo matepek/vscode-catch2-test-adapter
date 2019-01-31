@@ -29,7 +29,7 @@ describe(path.basename(__filename), function () {
 	})
 
 	after(function () {
-		imitation.sinonSandbox.restore();
+		imitation.restore();
 	})
 
 	beforeEach(async function () {
@@ -78,19 +78,19 @@ describe(path.basename(__filename), function () {
 		example1.assertWithoutChildren(root, uniqueIdC);
 	}
 
-	context('executables="execPath1"', function () {
+	context('executables="execPath1.exe"', function () {
 		beforeEach(function () {
 			this.timeout(8000);
-			return settings.updateConfig('executables', 'execPath1');
+			return settings.updateConfig('executables', 'execPath1.exe');
 		})
 
 		async function loadAdapterAndAssert() {
 			await loadAdapter();
-			assert.deepStrictEqual(settings.getConfig().get<any>('executables'), 'execPath1');
+			assert.deepStrictEqual(settings.getConfig().get<any>('executables'), 'execPath1.exe');
 			assert.equal(root.children.length, 1);
 
 			suite1 = adapter.suite1;
-			example1.suite1.assert('execPath1', ['s1t1', 's1t2'], suite1, uniqueIdC);
+			example1.suite1.assert('execPath1.exe', ['s1t1', 's1t2'], suite1, uniqueIdC);
 
 			assert.equal(suite1.children.length, 2);
 			assert.equal(suite1.children[0].type, 'test');
@@ -110,7 +110,7 @@ describe(path.basename(__filename), function () {
 
 		it('should run s1t1 with success', async function () {
 			await loadAdapterAndAssert();
-			assert.equal(settings.getConfig().get<any>('executables'), 'execPath1');
+			assert.equal(settings.getConfig().get<any>('executables'), 'execPath1.exe');
 			await adapter.run([s1t1.id]);
 			const expected = [
 				{ type: 'started', tests: [s1t1.id] },
@@ -256,7 +256,7 @@ describe(path.basename(__filename), function () {
 		})
 	})
 
-	context('executables=["execPath1", "execPath2"]', function () {
+	context('executables=["execPath1.exe", "execPath2.exe"]', function () {
 		let suite1Watcher: FileSystemWatcherStub;
 
 		async function loadAdapterAndAssert() {
@@ -293,15 +293,15 @@ describe(path.basename(__filename), function () {
 			suite1Watcher = watchers.get(example1.suite1.execPath)!;
 
 			example1.suite1.assert(
-				'execPath1', ['s1t1', 's1t2'], suite1, uniqueIdC);
+				'execPath1.exe', ['s1t1', 's1t2'], suite1, uniqueIdC);
 
 			example1.suite2.assert(
-				'execPath2', ['s2t1', 's2t2 [.]', 's2t3'], suite2, uniqueIdC);
+				'execPath2.exe', ['s2t1', 's2t2 [.]', 's2t3'], suite2, uniqueIdC);
 		}
 
 		beforeEach(function () {
 			this.timeout(10000);
-			return settings.updateConfig('executables', ['execPath1', 'execPath2']);
+			return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe']);
 		})
 
 		it('test variables are fine, suite1 and suite1 are loaded',
@@ -1331,12 +1331,12 @@ describe(path.basename(__filename), function () {
 	})
 
 	context(
-		'executables=["execPath1", "execPath2", "execPath3"]',
+		'executables=["execPath1.exe", "execPath2.exe", "execPath3.exe"]',
 		async function () {
 			beforeEach(function () {
 				this.timeout(8000);
 				return settings.updateConfig(
-					'executables', ['execPath1', 'execPath2', 'execPath3']);
+					'executables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);
 			})
 
 			it('run suite3 one-by-one', async function () {
@@ -1404,7 +1404,7 @@ describe(path.basename(__filename), function () {
 			await settings.updateConfig(
 				'executables', [{
 					'name': 'X${baseFilename}',
-					'pattern': "execPath1",
+					'pattern': "execPath1.exe",
 					'cwd': '${workspaceFolder}/cpp',
 					'env': { 'C2TESTVAR': 'c2testval' }
 				}]);

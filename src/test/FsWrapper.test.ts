@@ -3,22 +3,25 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import * as assert from 'assert';
-import { SpawnOptions } from 'child_process';
+import * as child_process from 'child_process';
 import { EOL } from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { spawnAsync, statAsync } from '../FsWrapper';
-import { ChildProcessStub } from './TestCommon';
+import { spawnAsync, SpawnOptions, accessAsync, ExistsFlag } from '../FsWrapper';
+import { ChildProcessStub, isWin } from './TestCommon';
 
-describe(path.basename(__filename), function () {
+///
+
+describe('FsWrapper.spawnAsync', function () {
   it('echoes', async function () {
     const isWin = process.platform === 'win32';
     const opt: SpawnOptions = isWin ? { shell: true } : {};
     const r = await spawnAsync('echo', ['apple'], opt);
     assert.equal(r.stdout, 'apple' + EOL);
-    assert.equal(r.output.length, 2);
-    assert.equal(r.output[0], 'apple' + EOL);
+    assert.equal(r.output.length, 3);
+    assert.equal(r.output[1], 'apple' + EOL);
+    assert.equal(r.output[2], '');
     assert.equal(r.status, 0);
   })
 
@@ -38,21 +41,82 @@ describe(path.basename(__filename), function () {
   })
 })
 
-describe('FsWrapper.statAsync', function () {
+describe('fs.spawn vs FsWrapper.spawnAsync', function () {
+  function compare(actual: any, expected: any) {
+    assert.deepStrictEqual(actual.signal, expected.signal);
+    assert.deepStrictEqual(actual.status, expected.status);
+    assert.deepStrictEqual(actual.output, expected.output);
+    assert.deepStrictEqual(actual.stdout, expected.stdout);
+    assert.deepStrictEqual(actual.output, expected.output);
+    assert.deepStrictEqual(actual.stderr, expected.stderr);
+    assert.deepStrictEqual(actual.error, expected.error);
+  }
+
+  it('echo apple', async function () {
+    const fsRes = child_process.spawnSync('echo', ['apple'], { encoding: 'utf8' });
+    assert.strictEqual(fsRes.signal, null);
+    assert.strictEqual(fsRes.status, 0);
+    assert.strictEqual(fsRes.output[1].trim(), 'apple');
+    assert.strictEqual(fsRes.stdout.trim(), 'apple');
+    assert.strictEqual(fsRes.output[2], '');
+    assert.strictEqual(fsRes.stderr, '');
+    assert.strictEqual(fsRes.error, undefined);
+
+    return spawnAsync('echo', ['apple']).then((res) => {
+      compare(res, fsRes);
+    });
+  })
+
+  if (!isWin) {
+    it('ls --wrongparam', async function () {
+      const fsRes = child_process.spawnSync('ls', ['--wrongparam'], { encoding: 'utf8' });
+      assert.strictEqual(fsRes.signal, null);
+      assert.notStrictEqual(fsRes.status, 0);
+      assert.strictEqual(fsRes.error, undefined);
+
+      assert.ok(typeof fsRes.output[1] === 'string');
+      assert.ok(typeof fsRes.stdout === 'string');
+      assert.ok(typeof fsRes.output[2] === 'string');
+      assert.ok(typeof fsRes.stderr === 'string');
+
+      return spawnAsync('ls', ['--wrongparam']).then((res) => {
+        compare(res, fsRes);
+      });
+    })
+  }
+
+  it('<not existing>', async function () {
+    const fsRes = child_process.spawnSync('fnksdlfnlskfdn', [], { encoding: 'utf8' });
+    assert.strictEqual(fsRes.signal, null);
+    assert.strictEqual(fsRes.status, null);
+    assert.strictEqual(fsRes.output, null);
+    assert.strictEqual(fsRes.stdout, null);
+    assert.strictEqual(fsRes.stderr, null);
+    assert.ok(fsRes.error instanceof Error, fsRes.error);
+
+    return spawnAsync('fnksdlfnlskfdn', ['']).then(() => {
+      assert.fail();
+    }, (err) => {
+      assert.ok(err instanceof Error);
+    });
+  })
+})
+
+describe('FsWrapper.accessAsync', function () {
   it('doesnt exists', async function () {
     try {
-      await statAsync('notexists');
-      assert.ok(false);
+      await accessAsync('notexists', ExistsFlag);
+      assert.fail('should throw');
     } catch (e) {
-      assert.equal(e.code, 'ENOENT');
-      assert.notEqual(e.errno, 0);
     }
   })
 
-  it('exists', async function () {
-    const res = await statAsync(__filename);
-    assert.ok(res.isFile());
-    assert.ok(!res.isDirectory());
+  it('exists file', async function () {
+    await accessAsync(__filename, ExistsFlag);
+  })
+
+  it('exists dir', async function () {
+    await accessAsync(path.dirname(__filename), ExistsFlag);
   })
 })
 

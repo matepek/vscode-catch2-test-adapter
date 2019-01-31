@@ -2,7 +2,6 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { SpawnOptions } from 'child_process';
 import { inspect } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
@@ -21,12 +20,13 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 		shared: SharedVariables,
 		origLabel: string,
 		execPath: string,
-		execOptions: SpawnOptions,
+		execOptions: c2fs.SpawnOptions,
 		private _catch2Version: [number, number, number] | undefined) {
 		super(shared, origLabel, execPath, execOptions);
 	}
 
 	reloadChildren(): Promise<void> {
+		this._shared.log.info('reloadChildren', this.label);
 		return TestSuiteInfoFactory.determineTestTypeOfExecutable(this.execPath, this.execOptions)
 			.then((testInfo) => {
 				if (testInfo.type === 'catch2') {
@@ -47,7 +47,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 					"[.],*", "--verbosity", "high", "--list-tests",
 					"--use-colour", "no"
 				],
-				this.execOptions)
+				this.execOptions, 5000)
 			.then((catch2TestListOutput) => {
 				const oldChildren = this.children;
 				this.children = [];
@@ -55,8 +55,8 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
 				if (catch2TestListOutput.stderr) {
 					this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr: ', catch2TestListOutput);
-					this.label = '⚠️ ' + this.label;
-					this._createCatch2TestInfo(undefined, '⚠️ ' + catch2TestListOutput.stderr.split('\n')[0].trim(), '', [], '', 0);
+					const test = this._createCatch2TestInfo(undefined, '⚠️ Check the test output message for details ⚠️', '', [], '', 0);
+					this._shared.sendTestEventEmitter.fire([{ type: 'test', test: test, state: 'errored', message: catch2TestListOutput.stderr }]);
 					return;
 				}
 
@@ -69,8 +69,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 				// first line: 'Matching test cases:'
 				for (let i = 1; i < lines.length - 1;) {
 					if (lines[i][0] != ' ')
-						this._shared.log.error(
-							'Wrong test list output format: ' + lines.toString());
+						this._shared.log.error('Wrong test list output format: ' + lines.toString());
 
 					const testNameFull = lines[i++].substr(2);
 

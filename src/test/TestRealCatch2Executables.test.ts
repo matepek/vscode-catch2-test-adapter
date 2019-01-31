@@ -59,19 +59,19 @@ describe(path.basename(__filename), function () {
       ].join('" "') + '"');
     }
     await promisify(setTimeout)(500);
-    assert.ok(await c2fs.existsAsync(output.fsPath));
+    assert.ok(await c2fs.isExecutableAsync(output.fsPath));
   }
 
   before(async function () {
     this.timeout(82000);
 
-    if (!await c2fs.existsAsync(inCpp('../suite1.exe').fsPath))
+    if (!await c2fs.isExecutableAsync(inCpp('../suite1.exe').fsPath))
       await compile(inCpp('../../../src/test/cpp/suite1.cpp'), inCpp('../suite1.exe'));
 
-    if (!await c2fs.existsAsync(inCpp('../suite2.exe').fsPath))
+    if (!await c2fs.isExecutableAsync(inCpp('../suite2.exe').fsPath))
       await compile(inCpp('../../../src/test/cpp/suite2.cpp'), inCpp('../suite2.exe'));
 
-    if (!await c2fs.existsAsync(inCpp('../suite3.exe').fsPath))
+    if (!await c2fs.isExecutableAsync(inCpp('../suite3.exe').fsPath))
       await compile(inCpp('../../../src/test/cpp/suite3.cpp'), inCpp('../suite3.exe'));
   })
 
@@ -99,6 +99,9 @@ describe(path.basename(__filename), function () {
   context('example1', function () {
     it('should be found and run withouth error', async function () {
       if (process.env['TRAVIS'] == 'true') this.skip();
+      if (process.env['nodejs_version'] != 'LTS'
+        || process.env['platform'] != 'x64') this.skip();
+
       this.timeout(8000);
       this.slow(2000);
       await settings.updateConfig(
@@ -128,6 +131,9 @@ describe(path.basename(__filename), function () {
 
     it('should be notified by watcher', async function () {
       if (process.env['TRAVIS'] == 'true') this.skip();
+      if (process.env['nodejs_version'] != 'LTS'
+        || process.env['platform'] != 'x64') this.skip();
+
       this.timeout(8000);
       this.slow(4000);
       await settings.updateConfig(

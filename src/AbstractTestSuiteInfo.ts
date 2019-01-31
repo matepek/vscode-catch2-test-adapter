@@ -2,7 +2,7 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { ChildProcess, spawn, SpawnOptions } from 'child_process';
+import * as child_process from 'child_process';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
@@ -16,13 +16,13 @@ import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   private _killed: boolean = false;
-  private _process: ChildProcess | undefined = undefined;
+  private _process: child_process.ChildProcess | undefined = undefined;
 
   constructor(
     shared: SharedVariables,
     origLabel: string,
     public readonly execPath: string,
-    public readonly execOptions: SpawnOptions,
+    public readonly execOptions: c2fs.SpawnOptions,
   ) {
     super(shared, origLabel);
   }
@@ -36,12 +36,17 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   cancel(): void {
     this._shared.log.info('canceled:', this.id, this.label, this._process != undefined);
 
-    this._killed = true;
-
     if (this._process != undefined) {
-      this._process.kill();
-      this._process = undefined;
+      if (!this._killed) {
+        this._process.kill();
+      } else {
+        // Sometimes apps try to handle kill but it happens that it hangs in case of Catch2. 
+        // The second click on the cancel button should send a more serious signal. ☠️
+        this._process.kill('SIGKILL');
+      }
     }
+
+    this._killed = true;
   }
 
   run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
@@ -93,7 +98,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       this.sendSkippedChildrenEvents();
     }
 
-    this._process = spawn(this.execPath, execParams, this.execOptions);
+    this._process = child_process.spawn(this.execPath, execParams, this.execOptions);
 
     const runInfo: RunningTestExecutableInfo = {
       process: this._process,
@@ -145,34 +150,39 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
         this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
         this._process = undefined;
+
+        //this will stop the timeout-wathcer
         runInfo.process = undefined;
         runInfo.timeoutWatcherTrigger();
       });
   }
 
   protected _findFilePath(matchedPath: string): string {
-    let filePath = matchedPath;
     try {
-      filePath = path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
-      if (!c2fs.existsSync(filePath) && this.execOptions.cwd) {
+      let filePath = path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
+      if (c2fs.existsSync(filePath))
+        return filePath;
+
+      if (this.execOptions.cwd) {
         filePath = path.join(this.execOptions.cwd, matchedPath);
+        if (c2fs.existsSync(filePath))
+          return filePath;
       }
-      if (!c2fs.existsSync(filePath)) {
-        let parent = path.dirname(this.execPath);
-        filePath = path.join(parent, matchedPath);
-        let parentParent = path.dirname(parent);
-        while (!c2fs.existsSync(filePath) && parent != parentParent) {
+
+      {
+        let parent: string;
+        let parentParent = path.dirname(this.execPath);
+        do {
           parent = parentParent;
-          filePath = path.join(parent, matchedPath);
           parentParent = path.dirname(parent);
-        }
+
+          filePath = path.join(parent, matchedPath);
+          if (c2fs.existsSync(filePath))
+            return filePath;
+        } while (parent != parentParent);
       }
-      if (!c2fs.existsSync(filePath)) {
-        filePath = matchedPath;
-      }
-    } catch (e) {
-      filePath = path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
+    } finally {
+      return path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
     }
-    return filePath;
   }
 }

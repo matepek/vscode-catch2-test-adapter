@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.16]
+
+This version probalby contains stability imporvements ✌️, but in case it doesn't work on all platforms as I expect,
+you can downgrade it in the vscode's extension manager and please file an issue about the bug. 🙏
+
+**REMARK**: A list of non-executable extensions are hard-coded: `['py', 'sh', 'cmake', 'deb', 'o', 'so', 'rpm', 'tar', 'gz', 'php', 'ko']`.
+And on Windows everything is filtred what is not ends with `.exe`;
+
+### Added
+
+- sending `SIGKILL` in case of second cancel. (Clicking onto the cancel button after the first cancel wasn's succesful.)
+
 ## [2.3.15] - 2019-01-20
 
 ### Changed

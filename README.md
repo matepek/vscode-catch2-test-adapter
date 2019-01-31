@@ -156,10 +156,4 @@ Example:
 - Remove deprecated `catch2TestExplorer.enableSourceDecoration`.
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture
 
-## Contribution
-
-Any contribution is welcome.
-
-- Create a pull request.
-- Report a bug.
-- Tell me about your desired features.
+## [Contribution guideline here](CONTRIBUTING.md)
