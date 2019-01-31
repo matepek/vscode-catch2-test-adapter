@@ -2145,7 +2145,7 @@ For more detailed usage please see the project docs
 
   readonly gtest1 = new class {
     readonly execPath =
-      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'gtest1')).fsPath;
+      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'gtest1.exe')).fsPath;
 
     readonly gtest_list_tests_output = [
       'Running main() from ...',

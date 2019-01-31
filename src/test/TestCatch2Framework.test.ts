@@ -369,7 +369,7 @@ describe(path.basename(__filename), function () {
     this.timeout(8000);
     this.slow(500);
     const wsPath = settings.workspaceFolderUri.fsPath;
-    const execPath2CopyRelPath = 'foo/bar/base.second.first';
+    const execPath2CopyRelPath = 'foo/bar/base.second.exe';
     const execPath2CopyPath = path.join(wsPath, execPath2CopyRelPath);
 
     const envArray: [string, string][] = [
@@ -377,9 +377,9 @@ describe(path.basename(__filename), function () {
       ['${relPath}', path.normalize(execPath2CopyRelPath)],
       ['${absDirpath}', path.join(wsPath, 'foo/bar')],
       ['${relDirpath}', path.normalize('foo/bar')],
-      ['${filename}', 'base.second.first'],
+      ['${filename}', 'base.second.exe'],
       ['${baseFilename}', 'base.second'],
-      ['${extFilename}', '.first'],
+      ['${extFilename}', '.exe'],
       ['${base2Filename}', 'base'],
       ['${ext2Filename}', '.second'],
       ['${base3Filename}', 'base'],

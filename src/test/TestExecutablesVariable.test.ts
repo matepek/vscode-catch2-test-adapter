@@ -29,6 +29,7 @@ describe(path.basename(__filename), function () {
 
 	after(function () {
 		imitation.restore();
+		return settings.resetConfig();
 	})
 
 	specify('empty config', async function () {

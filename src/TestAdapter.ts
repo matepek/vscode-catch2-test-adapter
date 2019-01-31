@@ -392,12 +392,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   private _getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
-    return Math.max(1, config.get<number>('workerMaxNumber', 1));
+    const res = Math.max(1, config.get<number>('workerMaxNumber', 1));
+    this._log.info('workerMaxNumber:', res);
+    return res;
   }
 
   private _getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration):
     number {
-    return config.get<number>('defaultWatchTimeoutSec', 10) * 1000;
+    const res = config.get<number>('defaultWatchTimeoutSec', 10) * 1000;
+    this._log.info('defaultWatchTimeoutSec:', res);
+    return res;
   }
 
   private _getDefaultExecRunningTimeout(config: vscode.WorkspaceConfiguration):
@@ -424,6 +428,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const configExecs: undefined | string | string[] | { [prop: string]: any } |
       ({ [prop: string]: any } | string)[] = config.get('executables');
+
+    this._log.info('executables:', configExecs);
 
     const createFromObject = (obj: { [prop: string]: any }): TestExecutableInfo => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
@@ -473,7 +479,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         this._log.warn(e);
       }
     } else {
-      throw 'Config error: wrong type: executables';
+      this._log.error('executables couldn\'t be recognised:', executables);
+      throw new Error('Config error: wrong type: executables');
     }
 
     return executables;

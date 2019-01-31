@@ -54,7 +54,7 @@ describe(path.basename(__filename), function () {
 			});
 
 		imitation.fsReadFileSyncStub
-			.withArgs(sinon.match(/.*tmp_gtest_output_.+_\.xml\.tmp/), 'utf8')
+			.withArgs(sinon.match(/.*tmp_gtest_output_.+\.xml\.tmp/), 'utf8')
 			.returns('not an xml');
 
 		adapter = new TestAdapter();
@@ -79,7 +79,7 @@ describe(path.basename(__filename), function () {
 				});
 
 			imitation.fsReadFileSyncStub
-				.withArgs(sinon.match(/.*tmp_gtest_output_.+_\.xml\.tmp/), 'utf8')
+				.withArgs(sinon.match(/.*tmp_gtest_output_.+\.xml\.tmp/), 'utf8')
 				.returns(example1.gtest1.gtest_list_tests_output_xml);
 
 			adapter = new TestAdapter();

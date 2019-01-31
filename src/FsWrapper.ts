@@ -4,6 +4,7 @@
 
 import * as cp from 'child_process';
 import * as fs from 'fs';
+import * as path from 'path';
 
 export interface SpawnReturns extends cp.SpawnSyncReturns<string> { };
 export interface SpawnOptions extends cp.SpawnOptions { };
@@ -54,20 +55,20 @@ export function spawnAsync(
 export const ExecutableFlag = fs.constants.X_OK;
 export const ExistsFlag = fs.constants.F_OK;
 
-export function accessAsync(path: string, flag: number): Promise<void> {
+export function accessAsync(filePath: string, flag: number): Promise<void> {
   return new Promise((resolve, reject) => {
-    fs.access(path, flag, (err: Error) => {
+    fs.access(filePath, flag, (err: Error) => {
       if (err) reject(err);
       else resolve();
     });
   });
 }
 
-export function isExecutableAsync(path: string): Promise<boolean> {
-  return accessAsync(path, ExecutableFlag).then(
+export function isExecutableAsync(filePath: string): Promise<boolean> {
+  return accessAsync(filePath, ExecutableFlag).then(
     () => {
       if (process.platform === 'win32')
-        return path.endsWith('.exe');
+        return filePath.endsWith('.exe');
       else
         return true;
     },
@@ -76,6 +77,19 @@ export function isExecutableAsync(path: string): Promise<boolean> {
     });
 }
 
-export function existsSync(path: string): boolean {
-  return fs.existsSync(path);
+// https://askubuntu.com/questions/156392/what-is-the-equivalent-of-an-exe-file
+const nativeExacutableExtensionFilter =
+  new Set(['py', 'sh', 'cmake', 'deb', 'o', 'so', 'rpm', 'tar', 'gz', 'php', 'ko']);
+
+export function isNativeExecutableAsync(filePath: string): Promise<boolean> {
+  const ext = path.extname(filePath);
+  if (nativeExacutableExtensionFilter.has(ext)) {
+    return Promise.resolve(false);
+  } else {
+    return isExecutableAsync(filePath);
+  }
+}
+
+export function existsSync(filePath: string): boolean {
+  return fs.existsSync(filePath);
 }
