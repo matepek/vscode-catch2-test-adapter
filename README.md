@@ -49,6 +49,11 @@ If it is an object it can contains the following properties:
 can contains _search-pattern_ if it points somewhere inside of the workspace folder.
 Otherwise it only can point to an executable (No _search-pattern_!).
 
+**Note** that there is a mechanism which will filter out every possible executable which:
+
+- on windows: NOT ends with `.exe`.
+- on other platforms: ends with one of the following: `'py', 'sh', 'cmake', 'deb', 'o', 'so', 'rpm', 'tar', 'gz', 'php', 'ko'`.
+
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
 | Variable                | Description                                                                     |
