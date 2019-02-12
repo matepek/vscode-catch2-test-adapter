@@ -13,7 +13,7 @@ This version probalby contains stability imporvements ✌️, but in case it doe
 you can downgrade it in the vscode's extension manager and please file an issue about the bug. 🙏
 
 **REMARK**: A list of non-executable extensions are hard-coded: `['py', 'sh', 'cmake', 'deb', 'o', 'so', 'rpm', 'tar', 'gz', 'php', 'ko']`.
-And on Windows everything is filtred what is not ends with `.exe`;
+And on Windows everything is filtered what is not ends with `.exe`;
 
 ### Added
 

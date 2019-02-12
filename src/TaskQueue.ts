@@ -26,8 +26,12 @@ export class TaskQueue {
     task: (() => TResult1 | PromiseLike<TResult1>)): Promise<TResult1> {
     this._count++;
 
-    const depends = this._depends.map(v => v._queue);
-    depends.push(this._queue);
+    const depends: Promise<void>[] = [];
+    depends[this._depends.length] = this._queue;
+
+    for (let i = 0; i < this._depends.length; ++i) {
+      depends[i] = this._depends[i]._queue;
+    }
 
     const current = Promise.all(depends).then(task);
 
@@ -41,7 +45,10 @@ export class TaskQueue {
   dependsOn(depends: Iterable<TaskQueue>): void {
     for (const dep of depends) {
       this._checkCircle(dep);
-      this._depends.push(dep);
+    }
+    for (const dep of depends) {
+      if (this._depends.indexOf(dep) == -1)
+        this._depends.push(dep);
     }
   }
 

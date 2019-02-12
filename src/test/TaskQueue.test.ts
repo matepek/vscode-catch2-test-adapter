@@ -20,6 +20,30 @@ describe(path.basename(__filename), function () {
     return c;
   }
 
+  context('a<--b<--c', function () {
+    const a = new TaskQueue(undefined, 'a');
+    const b = new TaskQueue([a], 'b');
+    const c = new TaskQueue([b], 'c');
+
+    it('a<--c', function () {
+      c.dependsOn([a]);
+    })
+
+    it('$x<--$x throws', function () {
+      assert.throws(() => { a.dependsOn([a]); });
+      assert.throws(() => { b.dependsOn([b]); });
+      assert.throws(() => { c.dependsOn([c]); });
+    })
+
+    it('c<--b throws', function () {
+      assert.throws(() => { b.dependsOn([c]); });
+    })
+
+    it('c<--a throws', function () {
+      assert.throws(() => { a.dependsOn([c]); });
+    })
+  })
+
   it('promise practice 1', async function () {
     let resolve: Function;
     let second = false;

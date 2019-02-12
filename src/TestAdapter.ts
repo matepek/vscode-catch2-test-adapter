@@ -38,7 +38,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
 
-  private _shared: SharedVariables;
+  private readonly _shared: SharedVariables;
   private _rootSuite: RootTestSuiteInfo;
 
   constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
@@ -66,6 +66,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           debugger;
           this._testsEmitter.fire({
             type: 'finished',
+            errorMessage: inspect(reason),
             suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined
           });
         });
@@ -129,7 +130,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._getDefaultNoThrow(config),
       this._getDefaultEnvironmentVariables(config),
     );
-    this._disposables.push(this._shared);
 
     this._disposables.push(
       vscode.workspace.onDidChangeConfiguration(configChange => {
@@ -179,6 +179,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   dispose() {
     this._disposables.forEach(d => d.dispose());
+    this._shared.dispose();
     this._rootSuite.dispose();
     this._log.dispose();
   }
@@ -455,28 +456,28 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         rootSuite, undefined, configExecs, globalWorkingDirectory, {}, this._variableToValue));
     } else if (Array.isArray(configExecs)) {
       for (var i = 0; i < configExecs.length; ++i) {
-        const configExe = configExecs[i];
-        if (typeof configExe === 'string') {
-          const configExecsName = String(configExe);
+        const configExec = configExecs[i];
+        if (typeof configExec === 'string') {
+          const configExecsName = String(configExec);
           if (configExecsName.length > 0) {
             executables.push(new TestExecutableInfo(this._shared,
               rootSuite, undefined, configExecsName, globalWorkingDirectory, {}, this._variableToValue));
           }
-        } else if (typeof configExe === 'object') {
+        } else if (typeof configExec === 'object') {
           try {
-            executables.push(createFromObject(configExe));
+            executables.push(createFromObject(configExec));
           } catch (e) {
-            this._log.warn(e);
+            this._log.warn(e, configExec);
           }
         } else {
-          this._log.error('_getExecutables', configExe, i);
+          this._log.error('_getExecutables', configExec, i);
         }
       }
     } else if (typeof configExecs === 'object') {
       try {
         executables.push(createFromObject(configExecs));
       } catch (e) {
-        this._log.warn(e);
+        this._log.warn(e, configExecs);
       }
     } else {
       this._log.error('executables couldn\'t be recognised:', executables);

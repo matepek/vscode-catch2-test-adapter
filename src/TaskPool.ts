@@ -17,8 +17,7 @@ export class TaskPool {
 
     this._maxTaskCount = value;
 
-    while (this._waitingTasks.length > 0 && this._acquire())
-      this._waitingTasks.shift()!();
+    this._startIfCanAqure();
   }
 
   scheduleTask<TResult>(task: () => TResult | PromiseLike<TResult>): Promise<TResult> {
@@ -51,6 +50,10 @@ export class TaskPool {
   private _release(): void {
     this._runningTaskCount--;
 
+    this._startIfCanAqure();
+  }
+
+  private _startIfCanAqure() {
     while (this._waitingTasks.length > 0 && this._acquire())
       this._waitingTasks.shift()!();
   }
