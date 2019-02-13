@@ -38,13 +38,14 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     if (this._process != undefined) {
       if (!this._killed) {
         this._process.kill();
-        this._killed = true;
       } else {
         // Sometimes apps try to handle kill but it happens that it hangs in case of Catch2. 
         // The second click on the 'cancel button' sends a more serious signal. ☠️
         this._process.kill('SIGKILL');
       }
     }
+
+    this._killed = true;
   }
 
   run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
@@ -177,31 +178,51 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   }
 
   protected _findFilePath(matchedPath: string): string {
-    try {
-      let filePath = path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
-      if (c2fs.existsSync(filePath))
-        return filePath;
+    if (path.isAbsolute(matchedPath))
+      return matchedPath;
 
-      if (this.execOptions.cwd) {
-        filePath = path.join(this.execOptions.cwd, matchedPath);
+    try {
+      let parent: string;
+      let parentParent = path.dirname(this.execPath);
+      do {
+        parent = parentParent;
+        parentParent = path.dirname(parent);
+
+        const filePath = path.join(parent, matchedPath);
         if (c2fs.existsSync(filePath))
           return filePath;
-      }
+      } while (parent != parentParent);
+    } catch{ }
 
-      {
+    if (this.execOptions.cwd && !this.execPath.startsWith(this.execOptions.cwd))
+      try {
         let parent: string;
-        let parentParent = path.dirname(this.execPath);
+        let parentParent = this.execOptions.cwd;
         do {
           parent = parentParent;
           parentParent = path.dirname(parent);
 
-          filePath = path.join(parent, matchedPath);
+          const filePath = path.join(parent, matchedPath);
           if (c2fs.existsSync(filePath))
             return filePath;
         } while (parent != parentParent);
-      }
-    } finally {
-      return path.join(this._shared.workspaceFolder.uri.fsPath, matchedPath);
-    }
+      } catch{ }
+
+    if (!this.execPath.startsWith(this._shared.workspaceFolder.uri.fsPath)
+      && (!this.execOptions.cwd || !this.execOptions.cwd.startsWith(this._shared.workspaceFolder.uri.fsPath)))
+      try {
+        let parent: string;
+        let parentParent = this._shared.workspaceFolder.uri.fsPath;
+        do {
+          parent = parentParent;
+          parentParent = path.dirname(parent);
+
+          const filePath = path.join(parent, matchedPath);
+          if (c2fs.existsSync(filePath))
+            return filePath;
+        } while (parent != parentParent);
+      } catch{ }
+
+    return matchedPath;
   }
 }
