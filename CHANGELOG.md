@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.17]
+
+Stability improvements.
+
+A list of non-executable extensions has been extended to:
+`'c', 'cmake', 'cpp', 'cxx', 'deb', 'dir', 'gz', 'h', 'hpp', 'hxx', 'ko', 'log', 'o', 'php', 'py', 'rpm', 'sh', 'so', 'tar', 'txt'`
+
 ## [2.3.16] - 2019-01-31
 
 This version probalby contains stability imporvements ✌️, but in case it doesn't work on all platforms as I expect,

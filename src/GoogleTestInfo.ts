@@ -39,7 +39,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
 	}
 
 	parseAndProcessTestCase(output: string, runInfo: RunningTestExecutableInfo): TestEvent {
-		if (runInfo.timeout !== undefined) {
+		if (runInfo.timeout !== null) {
 			return this.getTimeoutEvent(runInfo.timeout);
 		}
 

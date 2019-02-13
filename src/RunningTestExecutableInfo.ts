@@ -8,8 +8,7 @@ import { AbstractTestInfo } from './AbstractTestInfo';
 
 export interface RunningTestExecutableInfo {
 	process: ChildProcess | undefined;
-	childrenToRun: Set<AbstractTestInfo>;
-	timeout: number | undefined;
-	timeoutWatcherTrigger: () => void;
+	childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>;
+	timeout: number | null;
 	startTime: number;
 }

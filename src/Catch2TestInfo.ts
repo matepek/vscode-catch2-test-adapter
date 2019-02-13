@@ -53,7 +53,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
 	parseAndProcessTestCase(xmlStr: string, rngSeed: number | undefined, runInfo: RunningTestExecutableInfo):
 		TestEvent {
-		if (runInfo.timeout !== undefined) {
+		if (runInfo.timeout !== null) {
 			return this.getTimeoutEvent(runInfo.timeout);
 		}
 

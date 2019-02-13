@@ -119,10 +119,10 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 		return test;
 	}
 
-	protected _getRunParams(childrenToRun: Set<Catch2TestInfo>): string[] {
+	protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<Catch2TestInfo>): string[] {
 		const execParams: string[] = [];
 
-		if (childrenToRun.size != 0) {
+		if (childrenToRun !== 'runAllTestsExceptSkipped') {
 			const testNames = [...childrenToRun].map(c => c.getEscapedTestName());
 			execParams.push(testNames.join(','));
 		}
@@ -234,6 +234,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 					}
 				} while (data.buffer.length > 0 && --invariant > 0);
 				if (invariant == 0) {
+					this._shared.log.error('invariant==0', this, runInfo, data);
 					runInfo.process && runInfo.process.kill();
 					reject('Possible infinite loop of this extension');
 				}
@@ -244,11 +245,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 				processChunk(xml);
 			});
 
-			runInfo.process!.on('error', (err: Error) => {
-				reject(err);
-			});
-
-			runInfo.process!.on('close', (code: number | null, signal: string | null) => {
+			runInfo.process!.once('close', (code: number | null, signal: string | null) => {
 				if (code !== null && code !== undefined)
 					resolve(code);
 				if (signal !== null && signal !== undefined)
@@ -259,7 +256,6 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
 		}).catch(
 			(reason: any) => {
-				runInfo.process && runInfo.process.kill();
 				this._shared.log.warn(runInfo, reason, this, data);
 				return reason;
 			}).then((codeOrReason: number | string | any) => {
@@ -267,7 +263,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 					if (data.currentChild !== undefined) {
 						this._shared.log.warn('data.currentChild !== undefined: ', data);
 						let ev: TestEvent;
-						if (runInfo.timeout !== undefined) {
+						if (runInfo.timeout !== null) {
 							ev = data.currentChild.getTimeoutEvent(runInfo.timeout);
 						} else {
 							ev = data.currentChild.getFailedEventBase();
@@ -279,10 +275,10 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 					}
 				}
 
-				const isTestRemoved = (runInfo.childrenToRun.size == 0 &&
+				const isTestRemoved = (runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
 					this.children.filter(c => !c.skipped).length >
 					data.processedTestCases.length) ||
-					(runInfo.childrenToRun.size != 0 && data.processedTestCases.length == 0);
+					(runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0);
 
 				if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
 					new Promise<void>((resolve, reject) => {

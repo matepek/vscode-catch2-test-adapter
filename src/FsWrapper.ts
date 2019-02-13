@@ -66,10 +66,9 @@ export function spawnAsync(
   })
 }
 
-export const ExecutableFlag = fs.constants.X_OK;
-export const ExistsFlag = fs.constants.F_OK;
+const ExecutableFlag = fs.constants.X_OK;
 
-export function accessAsync(filePath: string, flag: number): Promise<void> {
+function accessAsync(filePath: string, flag: number): Promise<void> {
   return new Promise((resolve, reject) => {
     fs.access(filePath, flag, (err: Error) => {
       if (err) reject(err);
@@ -78,29 +77,25 @@ export function accessAsync(filePath: string, flag: number): Promise<void> {
   });
 }
 
-export function isExecutableAsync(filePath: string): Promise<boolean> {
-  return accessAsync(filePath, ExecutableFlag).then(
-    () => {
-      if (process.platform === 'win32')
-        return filePath.endsWith('.exe');
-      else
-        return true;
-    },
-    () => {
-      return false;
-    });
-}
-
 // https://askubuntu.com/questions/156392/what-is-the-equivalent-of-an-exe-file
 const nativeExacutableExtensionFilter =
-  new Set(['py', 'sh', 'cmake', 'deb', 'o', 'so', 'rpm', 'tar', 'gz', 'php', 'ko']);
+  new Set([
+    'c', 'cmake', 'cpp', 'cxx', 'deb', 'dir', 'gz', 'h', 'hpp', 'hxx', 'ko', 'log', 'o', 'php', 'py', 'rpm', 'sh', 'so', 'tar', 'txt',
+  ]);
 
-export function isNativeExecutableAsync(filePath: string): Promise<boolean> {
+export function isNativeExecutableAsync(filePath: string): Promise<void> {
   const ext = path.extname(filePath);
-  if (nativeExacutableExtensionFilter.has(ext)) {
-    return Promise.resolve(false);
+  if (process.platform === 'win32') {
+    if (filePath.endsWith('.exe'))
+      return accessAsync(filePath, ExecutableFlag);
+    else
+      return Promise.reject(new Error('Not a native executable extension on win32: ' + filePath));
   } else {
-    return isExecutableAsync(filePath);
+    if (nativeExacutableExtensionFilter.has(ext)) {
+      return Promise.reject(new Error('Not a native executable (filtered because of its extension): ' + filePath));
+    } else {
+      return accessAsync(filePath, ExecutableFlag);
+    }
   }
 }
 

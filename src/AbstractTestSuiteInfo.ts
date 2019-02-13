@@ -4,7 +4,6 @@
 
 import * as child_process from 'child_process';
 import * as path from 'path';
-import * as vscode from 'vscode';
 
 import * as c2fs from './FsWrapper';
 import { AbstractTestInfo } from './AbstractTestInfo';
@@ -29,7 +28,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   abstract reloadChildren(): Promise<void>;
 
-  protected abstract _getRunParams(childrenToRun: Set<AbstractTestInfo>): string[];
+  protected abstract _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): string[];
 
   protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
 
@@ -39,24 +38,24 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     if (this._process != undefined) {
       if (!this._killed) {
         this._process.kill();
+        this._killed = true;
       } else {
         // Sometimes apps try to handle kill but it happens that it hangs in case of Catch2. 
-        // The second click on the cancel button should send a more serious signal. ☠️
+        // The second click on the 'cancel button' sends a more serious signal. ☠️
         this._process.kill('SIGKILL');
       }
     }
-
-    this._killed = true;
   }
 
   run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
     this._killed = false;
     this._process = undefined;
 
-    const childrenToRun = new Set<AbstractTestInfo>();
-    const runAll = tests.delete(this.id);
+    const childrenToRun = tests.delete(this.id)
+      ? 'runAllTestsExceptSkipped'
+      : new Set<AbstractTestInfo>();
 
-    if (runAll) {
+    if (childrenToRun === 'runAllTestsExceptSkipped') {
       this.enumerateDescendants(v => { tests.delete(v.id); });
     }
     else {
@@ -79,10 +78,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     return taskPool.scheduleTask(() => { return this._runInner(childrenToRun); });
   }
 
-  /**
-   * @param childrenToRun If it is empty, it means run all.
-   */
-  private _runInner(childrenToRun: Set<AbstractTestInfo>): Promise<void> {
+  private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): Promise<void> {
     if (this._killed) {
       this._shared.log.info('test was canceled:', this);
       return Promise.resolve();
@@ -94,51 +90,77 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'running' });
 
-    if (childrenToRun.size === 0) {
+    if (childrenToRun === 'runAllTestsExceptSkipped') {
       this.sendSkippedChildrenEvents();
     }
 
-    this._process = child_process.spawn(this.execPath, execParams, this.execOptions);
+    const process = child_process.spawn(this.execPath, execParams, this.execOptions);
+    this._process = process;
+
+    this._shared.log.info('proc started');
+
+    process.on('error', (err: Error) => {
+      this._shared.log.error('process error event', this, err);
+    });
 
     const runInfo: RunningTestExecutableInfo = {
-      process: this._process,
+      process: process,
       childrenToRun: childrenToRun,
-      timeout: undefined,
-      timeoutWatcherTrigger: () => { },
+      timeout: null,
       startTime: Date.now(),
     };
 
-    this._shared.log.info('proc started');
     {
-      const killIfTimeouts = (): Promise<void> => {
-        return new Promise<vscode.Disposable>(resolve => {
-          const conn = this._shared.onDidChangeExecRunningTimeout(() => {
-            resolve(conn);
-          });
+      let trigger: (cause: 'timeoutValueChanged' | 'close' | 'timeout') => void;
 
-          runInfo.timeoutWatcherTrigger = () => { resolve(conn); };
+      const changeConn = this._shared.onDidChangeExecRunningTimeout(() => { trigger('timeoutValueChanged'); });
+
+      process.once('close', () => {
+        runInfo.process = undefined;
+        trigger('close');
+      });
+
+      const shedule = (): Promise<void> => {
+        return new Promise<'timeoutValueChanged' | 'close' | 'timeout'>(resolve => {
+          trigger = resolve;
 
           if (this._shared.execRunningTimeout !== null) {
             const elapsed = Date.now() - runInfo.startTime;
-            const left = this._shared.execRunningTimeout - elapsed;
-            if (left <= 0) resolve(conn);
-            else setTimeout(resolve, left, conn);
+            const left = Math.max(0, this._shared.execRunningTimeout - elapsed);
+            setTimeout(resolve, left, 'timeout');
           }
-        }).then((conn: vscode.Disposable) => {
-          conn.dispose();
-          if (runInfo.process === undefined) {
+        }).then((cause) => {
+          if (cause === 'close') {
             return Promise.resolve();
-          } else if (this._shared.execRunningTimeout !== null
-            && Date.now() - runInfo.startTime > this._shared.execRunningTimeout) {
-            runInfo.process.kill();
-            runInfo.timeout = this._shared.execRunningTimeout;
-            return Promise.resolve();
-          } else {
-            return killIfTimeouts();
+          }
+          else if (cause === 'timeout') {
+            return new Promise<boolean>(resolve => {
+              if (runInfo.process) {
+                runInfo.process.once('close', () => { resolve(true); });
+                setTimeout(resolve, 5000, false); // process has 5 secs to handle SIGTERM
+
+                runInfo.process.kill();
+                runInfo.timeout = this._shared.execRunningTimeout;
+              } else {
+                resolve(true);
+              }
+            }).then((couldKill: boolean) => {
+              if (!couldKill && runInfo.process)
+                runInfo.process.kill('SIGKILL');
+            });
+          }
+          else if (cause === 'timeoutValueChanged') {
+            return shedule();
+          }
+          else {
+            throw new Error('unknown case: ' + cause);
           }
         });
       };
-      killIfTimeouts();
+
+      shedule().then(() => {
+        changeConn.dispose();
+      });
     }
 
     return this._handleProcess(runInfo)
@@ -149,11 +171,8 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
         this._shared.log.info('proc finished:', this.execPath);
         this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
-        this._process = undefined;
-
-        //this will stop the timeout-wathcer
-        runInfo.process = undefined;
-        runInfo.timeoutWatcherTrigger();
+        if (this._process === process)
+          this._process = undefined;
       });
   }
 
