@@ -288,7 +288,9 @@ export class ChildProcessStub extends EventEmitter {
 		}
 	}
 
-	kill() {
+	kill(signal?: string) {
+		if (signal === undefined) signal = 'SIGTERM';
+		this.emit('close', null, signal);
 		this.stdout.push(null);
 		this.stderr.push(null);
 	}

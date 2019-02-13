@@ -85,7 +85,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       const file = fileUris[i];
       this._shared.log.info('Checking file for tests:', file.fsPath);
 
-      await c2fs.accessAsync(file.fsPath, c2fs.ExecutableFlag).then(() => {
+      await c2fs.isNativeExecutableAsync(file.fsPath).then(() => {
         return this._createSuiteByUri(file).then((suite: AbstractTestSuiteInfo) => {
           return suite.reloadChildren().then(() => {
             if (this._rootSuite.insertChild(suite, false/* called later */)) {
@@ -211,9 +211,9 @@ export class TestExecutableInfo implements vscode.Disposable {
         });
       } else {
         return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
-          return c2fs.isNativeExecutableAsync(uri.fsPath).then((isExecutable: boolean) => {
-            return x(suite, isExecutable, Math.min(delay * 2, 2000));
-          });
+          return c2fs.isNativeExecutableAsync(uri.fsPath)
+            .then(() => true, () => false)
+            .then((isExec) => x(suite, isExec, Math.min(delay * 2, 2000)));
         });
       }
     };

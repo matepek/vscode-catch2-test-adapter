@@ -188,10 +188,10 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 			});
 	}
 
-	protected _getRunParams(childrenToRun: Set<GoogleTestInfo>): string[] {
+	protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<GoogleTestInfo>): string[] {
 		const execParams: string[] = ['--gtest_color=no'];
 
-		if (childrenToRun.size != 0) {
+		if (childrenToRun !== 'runAllTestsExceptSkipped') {
 			const testNames = [...childrenToRun].map(c => c.testNameFull);
 
 			execParams.push('--gtest_filter=' + testNames.join(':'));
@@ -291,6 +291,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 					}
 				} while (data.buffer.length > 0 && --invariant > 0);
 				if (invariant == 0) {
+					this._shared.log.error('invariant==0', this, runInfo, data);
 					runInfo.process && runInfo.process.kill();
 					reject('Possible infinite loop of this extension');
 				}
@@ -300,11 +301,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 				processChunk(chunk.toLocaleString());
 			});
 
-			runInfo.process!.on('error', (err: Error) => {
-				reject(err);
-			});
-
-			runInfo.process!.on('close', (code: number | null, signal: string | null) => {
+			runInfo.process!.once('close', (code: number | null, signal: string | null) => {
 				if (code !== null && code !== undefined)
 					resolve(code);
 				if (signal !== null && signal !== undefined)
@@ -315,7 +312,6 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 		}).catch(
 			(reason: any) => {
-				runInfo.process && runInfo.process.kill();
 				this._shared.log.warn(runInfo, reason, this, data);
 				return reason;
 			}).then((codeOrReason: number | string | any) => {
@@ -324,7 +320,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 						this._shared.log.warn('data.currentChild !== undefined: ', data);
 
 						let ev: TestEvent;
-						if (runInfo.timeout !== undefined) {
+						if (runInfo.timeout !== null) {
 							ev = data.currentChild.getTimeoutEvent(runInfo.timeout);
 						} else {
 							ev = data.currentChild.getFailedEventBase();
@@ -342,9 +338,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 				}
 
 				const isTestRemoved = (runInfo.timeout == undefined)
-					&& ((runInfo.childrenToRun.size == 0
+					&& ((runInfo.childrenToRun === 'runAllTestsExceptSkipped'
 						&& this.getTestInfoCount(false) > data.processedTestCases.length)
-						|| (runInfo.childrenToRun.size != 0 && data.processedTestCases.length == 0));
+						|| (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
 
 				if (data.unprocessedTestCases.length > 0 || isTestRemoved) {
 					new Promise<void>((resolve, reject) => {

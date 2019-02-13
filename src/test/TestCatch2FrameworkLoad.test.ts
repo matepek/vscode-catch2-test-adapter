@@ -667,8 +667,8 @@ describe(path.basename(__filename), function () {
 			await loadAdapterAndAssert();
 			const withArgs = imitation.spawnStub.withArgs(
 				example1.suite1.execPath, example1.suite1.t1.outputs[0][0]);
-			const cp = new ChildProcessStub(undefined, 'SIGTERM');
-			const spyKill = <sinon.SinonSpy<never, void>>sinon.spy(cp, 'kill');
+			const cp = new ChildProcessStub();
+			const spyKill = <sinon.SinonSpy<[string?], void>>sinon.spy(cp, 'kill');
 			cp.write('<?xml version="1.0" encoding="UTF-8"?><Catch name="suite1">'); // no close
 			withArgs.onCall(withArgs.callCount).returns(cp);
 
@@ -676,7 +676,7 @@ describe(path.basename(__filename), function () {
 			await adapter.run([s1t1.id]);
 			const elapsed = Date.now() - start;
 			assert.ok(3000 <= elapsed && elapsed <= 5000, elapsed.toString());
-			assert.strictEqual(spyKill.callCount, 2);
+			assert.deepStrictEqual(spyKill.getCalls().map(c => c.args), [[]]);
 
 			cp.close();
 
@@ -699,7 +699,7 @@ describe(path.basename(__filename), function () {
 			await loadAdapterAndAssert();
 			const withArgs = imitation.spawnStub.withArgs(
 				example1.suite1.execPath, example1.suite1.t1.outputs[0][0]);
-			const cp = new ChildProcessStub(undefined, 'SIGTERM');
+			const cp = new ChildProcessStub();
 			const spyKill = <sinon.SinonSpy<never, void>>sinon.spy(cp, 'kill');
 			cp.write(['<?xml version="1.0" encoding="UTF-8"?>',
 				'<Catch name="suite1">',
@@ -712,7 +712,7 @@ describe(path.basename(__filename), function () {
 			await adapter.run([s1t1.id]);
 			const elapsed = Date.now() - start;
 			assert.ok(3000 <= elapsed && elapsed <= 5000, elapsed.toString());
-			assert.strictEqual(spyKill.callCount, 2);
+			assert.deepStrictEqual(spyKill.getCalls().map(c => c.args), [[]]);
 
 			cp.close();
 

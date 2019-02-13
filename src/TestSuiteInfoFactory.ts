@@ -36,21 +36,20 @@ export class TestSuiteInfoFactory {
 	static determineTestTypeOfExecutable(execPath: string, execOptions: c2fs.SpawnOptions):
 		Promise<{ type: 'catch2' | 'google'; version: [number, number, number]; }> {
 
-		return c2fs.isNativeExecutableAsync(execPath).then((isExecutable: boolean) => {
-			if (!isExecutable)
-				throw new Error('Not an executable: ' + execPath);
-			return c2fs.spawnAsync(execPath, ['--help'], execOptions, 5000)
-				.then((res): any => {
-					const catch2 = res.stdout.match(/Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/);
-					if (catch2 && catch2.length == 4) {
-						return { type: 'catch2', version: [Number(catch2[1]), Number(catch2[2]), Number(catch2[3])] };
-					}
-					const google = res.stdout.match(/This program contains tests written using Google Test./);
-					if (google) {
-						return { type: 'google', version: [0, 0, 0] };
-					}
-					throw new Error('Not a supported test executable: ' + execPath);
-				});
-		});
+		return c2fs.isNativeExecutableAsync(execPath)
+			.then(() => {
+				return c2fs.spawnAsync(execPath, ['--help'], execOptions, 5000)
+					.then((res): any => {
+						const catch2 = res.stdout.match(/Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/);
+						if (catch2 && catch2.length == 4) {
+							return { type: 'catch2', version: [Number(catch2[1]), Number(catch2[2]), Number(catch2[3])] };
+						}
+						const google = res.stdout.match(/This program contains tests written using Google Test./);
+						if (google) {
+							return { type: 'google', version: [0, 0, 0] };
+						}
+						throw new Error('Not a supported test executable: ' + execPath + '\n output: ' + res);
+					});
+			});
 	}
 }

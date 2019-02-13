@@ -17,13 +17,13 @@ import * as c2fs from '../FsWrapper';
 const cppUri = vscode.Uri.file(path.join(settings.workspaceFolderUri.fsPath, 'cpp'));
 
 function inCpp(relPath: string) {
-  return vscode.Uri.file(path.join(cppUri.fsPath, relPath));
+  return vscode.Uri.file(path.join(cppUri.fsPath, relPath)).fsPath;
 }
 
 ///
 
 describe(path.basename(__filename), function () {
-  async function compile(source: vscode.Uri, output: vscode.Uri) {
+  async function compile(source: string, output: string) {
     if (isWin) {
       let vcvarsall: vscode.Uri | undefined;
       if (process.env['C2AVCVA']) { // local testing
@@ -37,9 +37,9 @@ describe(path.basename(__filename), function () {
       const command = '"' + vcvarsall!.fsPath + '" x86 && ' + [
         'cl.exe',
         '/EHsc',
-        '/I"' + path.dirname(source.fsPath) + '"',
-        '/Fe"' + output.fsPath + '"',
-        '"' + source.fsPath + '"',
+        '/I"' + path.dirname(source) + '"',
+        '/Fe"' + output + '"',
+        '"' + source + '"',
       ].join(' ');
       await promisify(cp.exec)(command);
     } else {
@@ -49,30 +49,30 @@ describe(path.basename(__filename), function () {
         'c++',
         '-std=c++11',
         '-o',
-        output.fsPath,
-        source.fsPath,
+        output,
+        source,
       ].join('" "') + '"');
       await promisify(cp.exec)('"' + [
         'chmod',
         '+x',
-        output.fsPath,
+        output,
       ].join('" "') + '"');
     }
     await promisify(setTimeout)(500);
-    assert.ok(await c2fs.isExecutableAsync(output.fsPath));
+    await c2fs.isNativeExecutableAsync(output).catch(() => { assert.fail(); });
   }
 
   before(async function () {
     this.timeout(82000);
 
-    if (!await c2fs.isExecutableAsync(inCpp('../suite1.exe').fsPath))
-      await compile(inCpp('../../../src/test/cpp/suite1.cpp'), inCpp('../suite1.exe'));
+    await c2fs.isNativeExecutableAsync(inCpp('../suite1.exe'))
+      .catch(() => compile(inCpp('../../../src/test/cpp/suite1.cpp'), inCpp('../suite1.exe')));
 
-    if (!await c2fs.isExecutableAsync(inCpp('../suite2.exe').fsPath))
-      await compile(inCpp('../../../src/test/cpp/suite2.cpp'), inCpp('../suite2.exe'));
+    await c2fs.isNativeExecutableAsync(inCpp('../suite2.exe'))
+      .catch(() => compile(inCpp('../../../src/test/cpp/suite2.cpp'), inCpp('../suite2.exe')));
 
-    if (!await c2fs.isExecutableAsync(inCpp('../suite3.exe').fsPath))
-      await compile(inCpp('../../../src/test/cpp/suite3.cpp'), inCpp('../suite3.exe'));
+    await c2fs.isNativeExecutableAsync(inCpp('../suite3.exe'))
+      .catch(() => compile(inCpp('../../../src/test/cpp/suite3.cpp'), inCpp('../suite3.exe')));
   })
 
   beforeEach(async function () {
@@ -93,7 +93,7 @@ describe(path.basename(__filename), function () {
   })
 
   function copy(from: string, to: string) {
-    return fse.copy(inCpp(from).fsPath, inCpp(to).fsPath);
+    return fse.copy(inCpp(from), inCpp(to));
   }
 
   context('example1', function () {
@@ -115,9 +115,9 @@ describe(path.basename(__filename), function () {
       await copy('../suite2.exe', 'out/suite2.exe');
       await copy('../suite3.exe', 'out/suite3.exe');
 
-      await waitFor(this, () => { return fse.existsSync(inCpp('out/suite1.exe').fsPath); });
-      await waitFor(this, () => { return fse.existsSync(inCpp('out/suite2.exe').fsPath); });
-      await waitFor(this, () => { return fse.existsSync(inCpp('out/suite3.exe').fsPath); });
+      await waitFor(this, () => { return fse.existsSync(inCpp('out/suite1.exe')); });
+      await waitFor(this, () => { return fse.existsSync(inCpp('out/suite2.exe')); });
+      await waitFor(this, () => { return fse.existsSync(inCpp('out/suite3.exe')); });
 
       adapter = new TestAdapter();
       await adapter.load();
@@ -178,7 +178,7 @@ describe(path.basename(__filename), function () {
       await settings.updateConfig('defaultWatchTimeoutSec', 1);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
-        return fse.unlink(inCpp('out/sub/suite2X.exe').fsPath);
+        return fse.unlink(inCpp('out/sub/suite2X.exe'));
       });
 
       assert.strictEqual(adapter.root.children.length, 2);
