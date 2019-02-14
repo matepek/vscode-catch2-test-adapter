@@ -8,9 +8,7 @@ env:
     
 language: node_js
 
-node_js:
-  - "8"
-  - "11"
+node_js: "10"
 
 os:
   - osx
@@ -39,7 +37,7 @@ deploy:
   script: bash src/repo_scripts/deploy.sh
   on:
     condition: "$TRAVIS_OS_NAME = osx"
-    node_js: "8"
+    node_js: "11"
     repo: matepek/vscode-catch2-test-adapter
     branch: master
     tags: false
