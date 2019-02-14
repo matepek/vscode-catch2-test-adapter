@@ -22,4 +22,6 @@ test_script:
   - npm test --silent
 
 on_failure:
-  - type .\out\test\testlogs.txt
+  - dir .\out\test
+  - type .\out\test\FailedTestLogs\log_*.txt
+  #- type .\out\test\alltestlogs.txt

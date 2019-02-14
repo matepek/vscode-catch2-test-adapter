@@ -74,7 +74,6 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
 					new Parser({ explicitArray: true }).parseString(testOutputStr, (err: any, result: any) => {
 						if (err) {
-							this._shared.log.error(err.toString());
 							throw err;
 						} else {
 							xml = result;
@@ -116,7 +115,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 					}
 
 				} catch (e) {
-					this._shared.log.warn('Couldn\'t parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output: ', googleTestListOutput, 'Catched:', e);
+					this._shared.log.warn('Couldn\'t parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output:', googleTestListOutput, 'Catched:', e);
 
 					this.children = [];
 

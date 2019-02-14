@@ -14,7 +14,7 @@
   "prettier.jsxBracketSameLine": true,
   "editor.formatOnSave": true,
   "files.associations": {
-    "*.txt": "cpp"
+    "catch.hpp.txt": "cpp"
   },
   "editor.formatOnSaveTimeout": 3000
 }

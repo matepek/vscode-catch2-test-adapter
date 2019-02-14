@@ -20,7 +20,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     private readonly _name: string | undefined,
     private readonly _pattern: string,
     private readonly _cwd: string,
-    private readonly _env: { [prop: string]: any },
+    private readonly _env: { [prop: string]: any } | undefined,
     private readonly _variableToValue: [string, string][],
   ) { }
 
@@ -78,6 +78,8 @@ export class TestExecutableInfo implements vscode.Disposable {
         this._shared.log.error(e, this);
       }
     } else {
+      if (absPatternAsUri.fsPath.match(/(\*|\{|\}|\[|\])/) !== null)
+        this._shared.log.warn('absPatternAsUri MAYBE contains pattern, but pattern won\'t work outside of the workspaceFolder:', absPatternAsUri);
       fileUris.push(absPatternAsUri);
     }
 
@@ -138,10 +140,11 @@ export class TestExecutableInfo implements vscode.Disposable {
     if (this._name) {
       try {
         resolvedLabel = resolveVariables(this._name, varToValue);
+        varToValue.push(['${name}', resolvedLabel]);
 
         if (resolvedLabel.match(/\$\{.*\}/))
           this._shared.log.warn('Possibly unresolved variable: ' + resolvedLabel);
-      } catch (e) { this._shared.log.error(__filename, e); }
+      } catch (e) { this._shared.log.error('resolvedLabel', e); }
     }
 
     let resolvedCwd = this._cwd;
@@ -152,13 +155,17 @@ export class TestExecutableInfo implements vscode.Disposable {
         this._shared.log.warn('Possibly unresolved variable: ' + resolvedCwd);
 
       resolvedCwd = path.normalize(vscode.Uri.file(resolvedCwd).fsPath);
-    } catch (e) { this._shared.log.error(e); }
+
+      varToValue.push(['${cwd}', resolvedCwd]);
+    } catch (e) { this._shared.log.error('resolvedCwd', e); }
 
     let resolvedEnv: { [prop: string]: string } = {};
     try {
       Object.assign(resolvedEnv, process.env);
       Object.assign(resolvedEnv, this._shared.defaultEnv);
-      Object.assign(resolvedEnv, resolveVariables(this._env, varToValue));
+      if (this._env)
+        Object.assign(resolvedEnv, this._env);
+      resolvedEnv = resolveVariables(resolvedEnv, varToValue);
     } catch (e) { this._shared.log.error('resolvedEnv', e); }
 
     return new TestSuiteInfoFactory(

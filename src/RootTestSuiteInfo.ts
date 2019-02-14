@@ -60,7 +60,9 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     const ps: Promise<void>[] = [];
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i];
-      ps.push(child.run(testSet, this._taskPool));
+      ps.push(child.run(testSet, this._taskPool).catch((err => {
+        this._shared.log.error('RootTestSuite.run.for.child', child.label, err);
+      })));
     }
 
     if (testSet.size > 0) {
@@ -68,7 +70,8 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     }
 
     return Promise.all(ps).catch(e => {
-      this._shared.log.error(__filename, e);
+      this._shared.log.error('everything should be handled');
+      debugger;
     }).then(() => {
       this._shared.testStatesEmitter.fire({ type: 'finished' });
     });
@@ -85,7 +88,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     {// we want to filter the situation when 2 patterns match the same file
       const other = this.children.find((s: AbstractTestSuiteInfo) => { return suite.execPath == s.execPath; })
       if (other) {
-        this._shared.log.warn('execPath duplication: suite is skipped', suite, other);
+        this._shared.log.warn('execPath duplication: suite is skipped:', suite.execPath, suite.origLabel, other.origLabel);
         return false;
       }
     }

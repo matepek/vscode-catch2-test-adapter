@@ -14,7 +14,8 @@ describe(path.basename(__filename), function () {
 	let imitation: Imitation;
 	let adapter: TestAdapter;
 
-	before(function () {
+	before(async function () {
+		await settings.resetConfig();
 		imitation = new Imitation();
 	})
 

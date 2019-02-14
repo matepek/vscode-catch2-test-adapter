@@ -59,10 +59,8 @@ export namespace settings {
 		Object.keys(properties).forEach(key => {
 			assert.ok(key.startsWith('catch2TestExplorer.'));
 			const k = key.substr('catch2TestExplorer.'.length);
-			if (k == 'logfile') return;
-			t = t.then(function () {
-				return getConfig().update(k, undefined);
-			});
+			if (k !== 'logfile') // don't want to override this
+				t = t.then(() => { return getConfig().update(k, undefined); });
 		});
 		return t;
 	}

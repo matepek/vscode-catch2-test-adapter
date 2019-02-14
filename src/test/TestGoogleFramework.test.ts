@@ -26,15 +26,14 @@ describe(path.basename(__filename), function () {
 		imitation.restore();
 	})
 
-	beforeEach(async function () {
+	beforeEach(function () {
 		this.timeout(8000);
 		adapter = undefined;
 
 		imitation.resetToCallThrough();
 		example1.initImitation(imitation);
 
-		// reset config can cause problem with fse.removeSync(dotVscodePath);
-		await settings.resetConfig();
+		return settings.resetConfig();
 	})
 
 	afterEach(async function () {
@@ -47,6 +46,8 @@ describe(path.basename(__filename), function () {
 		this.slow(500);
 		await settings.updateConfig('executables', example1.gtest1.execPath);
 
+		adapter = new TestAdapter();
+
 		imitation.spawnStub.withArgs(example1.gtest1.execPath,
 			sinon.match((args: string[]) => { return args[0] === '--gtest_list_tests' }))
 			.callsFake(function () {
@@ -57,8 +58,6 @@ describe(path.basename(__filename), function () {
 			.withArgs(sinon.match(/.*tmp_gtest_output_.+\.xml\.tmp/), 'utf8')
 			.returns('not an xml');
 
-		adapter = new TestAdapter();
-
 		await adapter.load();
 
 		assert.equal(adapter.testLoadsEvents.length, 2);
@@ -67,6 +66,7 @@ describe(path.basename(__filename), function () {
 	})
 
 	describe('load gtest1', function () {
+
 		let adapter: TestAdapter;
 
 		beforeEach(async function () {
@@ -89,6 +89,10 @@ describe(path.basename(__filename), function () {
 			assert.equal(adapter.testLoadsEvents.length, 2);
 			assert.equal(adapter.root.children.length, 1);
 			assert.equal(adapter.suite1.children.length, 5);
+		})
+
+		afterEach(function () {
+			return adapter.waitAndDispose(this);
 		})
 
 		specify('run all', async function () {

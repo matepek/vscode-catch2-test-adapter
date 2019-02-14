@@ -30,7 +30,9 @@ script:
   - npm test --silent
 
 after_failure:
-  - cat ./out/test/testlogs.txt
+  - ls -all ./out/test
+  - cat ./out/test/FailedTestLogs/log_*.txt
+  #- cat ./out/test/alltestlogs.txt
 
 deploy:
   provider: script

@@ -27,6 +27,7 @@ describe(path.basename(__filename), function () {
 
   after(function () {
     imitation.restore();
+    return settings.resetConfig();
   })
 
   beforeEach(async function () {
@@ -52,18 +53,19 @@ describe(path.basename(__filename), function () {
     await settings.updateConfig('defaultCwd', 'defaultCwdStr');
     adapter = new TestAdapter();
 
-    let assertNoError = false;
+    let exception: Error | undefined = undefined;
     const spawnWithArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
     spawnWithArgs.callsFake(function (p: string, args: string[], ops: any) {
-      assert.strictEqual(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'defaultCwdStr'));
-      assertNoError = true;
-      return new ChildProcessStub(example1.suite1.outputs[1][1]);
+      try {
+        assert.strictEqual(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'defaultCwdStr'));
+        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+      } catch (e) { exception = e; throw e; }
     });
 
     const callCount = spawnWithArgs.callCount;
     await adapter.load();
     assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
-    assert.ok(assertNoError);
+    assert.strictEqual(exception, undefined);
   })
 
   specify('resolving absolute defaultCwd', async function () {
@@ -77,23 +79,24 @@ describe(path.basename(__filename), function () {
 
     adapter = new TestAdapter();
 
-    let assertNoError = false;
+    let exception: Error | undefined = undefined;
     let cwd = '';
     const spawnWithArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
     spawnWithArgs.callsFake(function (p: string, args: string[], ops: any) {
-      cwd = ops.cwd;
-      if (isWin)
-        assert.strictEqual(ops.cwd, 'c:\\defaultCwdStr');
-      else
-        assert.strictEqual(ops.cwd, '/defaultCwdStr');
-      assertNoError = true; // this is necessary because it handles errors
-      return new ChildProcessStub(example1.suite1.outputs[1][1]);
+      try {
+        cwd = ops.cwd;
+        if (isWin)
+          assert.strictEqual(ops.cwd, 'c:\\defaultCwdStr');
+        else
+          assert.strictEqual(ops.cwd, '/defaultCwdStr');
+        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+      } catch (e) { exception = e; throw e; }
     });
 
     const callCount = spawnWithArgs.callCount;
     await adapter.load();
     assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
-    assert.ok(assertNoError, cwd);
+    assert.strictEqual(exception, undefined, cwd);
   })
 
   specify('using defaultEnv', async function () {
@@ -103,19 +106,20 @@ describe(path.basename(__filename), function () {
 
     adapter = new TestAdapter();
 
-    let assertNoError = false;
+    let exception: Error | undefined = undefined;
     const spawnWithArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
     spawnWithArgs.callsFake(function (p: string, args: string[], ops: any) {
-      assert.ok(ops.env.hasOwnProperty('ENVTEST'));
-      assert.equal(ops.env.ENVTEST, 'envtest');
-      assertNoError = true; // this is necessary because it handles errors
-      return new ChildProcessStub(example1.suite1.outputs[1][1]);
+      try {
+        assert.ok(ops.env.hasOwnProperty('ENVTEST'));
+        assert.equal(ops.env.ENVTEST, 'envtest');
+        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+      } catch (e) { exception = e; throw e; }
     });
 
     const callCount = spawnWithArgs.callCount;
     await adapter.load();
     assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
-    assert.ok(assertNoError);
+    assert.strictEqual(exception, undefined);
   })
 
   specify('arriving <TestCase> for missing TestInfo', async function () {
@@ -403,12 +407,15 @@ describe(path.basename(__filename), function () {
           return new ChildProcessStub(scenario[1]);
         });
     }
+    let exception: Error | undefined = undefined;
     const spawnWithArgs = imitation.spawnStub.withArgs(execPath2CopyPath, example1.suite2.t1.outputs[0][0]);
     spawnWithArgs.callsFake(function (p: string, args: string[], ops: any) {
-      assert.equal(ops.cwd, expectStr);
-      assert.ok(ops.env.hasOwnProperty('C2TESTVARS'));
-      assert.equal(ops.env.C2TESTVARS, expectStr);
-      return new ChildProcessStub(example1.suite2.t1.outputs[0][1]);
+      try {
+        assert.equal(ops.cwd, expectStr);
+        assert.ok(ops.env.hasOwnProperty('C2TESTVARS'));
+        assert.equal(ops.env.C2TESTVARS, expectStr);
+        return new ChildProcessStub(example1.suite2.t1.outputs[0][1]);
+      } catch (e) { exception = e; throw e; }
     });
 
     imitation.fsAccessStub.withArgs(execPath2CopyPath).callsFake(imitation.handleAccessFileExists);
@@ -432,6 +439,7 @@ describe(path.basename(__filename), function () {
     const callCount = spawnWithArgs.callCount;
     await adapter.run([adapter.suite1.children[0].id]);
     assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
+    assert.strictEqual(exception, undefined);
   })
 
   specify('duplicated suite names from different pattern', async function () {

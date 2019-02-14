@@ -14,8 +14,8 @@ import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 
 export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
-  private _killed: boolean = false;
-  private _process: child_process.ChildProcess | undefined = undefined;
+  private _canceled: boolean = false;
+  private _runInfo: RunningTestExecutableInfo | undefined = undefined;
 
   constructor(
     shared: SharedVariables,
@@ -33,24 +33,20 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
 
   cancel(): void {
-    this._shared.log.info('canceled:', this.id, this.label, this._process != undefined);
+    this._shared.log.info('canceled:', this.id, this.label, this._runInfo);
 
-    if (this._process != undefined) {
-      if (!this._killed) {
-        this._process.kill();
-      } else {
-        // Sometimes apps try to handle kill but it happens that it hangs in case of Catch2. 
-        // The second click on the 'cancel button' sends a more serious signal. ☠️
-        this._process.kill('SIGKILL');
-      }
-    }
+    this._runInfo && this._runInfo.killProcess();
 
-    this._killed = true;
+    this._canceled = true;
   }
 
   run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
-    this._killed = false;
-    this._process = undefined;
+    this._canceled = false;
+
+    if (this._runInfo) {
+      this._shared.log.error('runInfo should be undefined', this._runInfo);
+      this._runInfo = undefined;
+    }
 
     const childrenToRun = tests.delete(this.id)
       ? 'runAllTestsExceptSkipped'
@@ -76,15 +72,16 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       if (childrenToRun.size == 0) return Promise.resolve();
     }
 
-    return taskPool.scheduleTask(() => { return this._runInner(childrenToRun); });
+    return taskPool.scheduleTask(() => {
+      if (this._canceled) {
+        this._shared.log.info('test was canceled:', this);
+        return Promise.resolve();
+      }
+      return this._runInner(childrenToRun);
+    });
   }
 
   private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): Promise<void> {
-    if (this._killed) {
-      this._shared.log.info('test was canceled:', this);
-      return Promise.resolve();
-    }
-
     const execParams = this._getRunParams(childrenToRun);
 
     this._shared.log.info('proc starting: ', this.execPath, execParams);
@@ -95,34 +92,27 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       this.sendSkippedChildrenEvents();
     }
 
-    const process = child_process.spawn(this.execPath, execParams, this.execOptions);
-    this._process = process;
+    const runInfo = new RunningTestExecutableInfo(
+      child_process.spawn(this.execPath, execParams, this.execOptions),
+      childrenToRun);
+
+    this._runInfo = runInfo;
 
     this._shared.log.info('proc started');
 
-    process.on('error', (err: Error) => {
-      this._shared.log.error('process error event', this, err);
+    runInfo.process.on('error', (err: Error) => {
+      this._shared.log.error('process error event', err, this);
     });
 
-    const runInfo: RunningTestExecutableInfo = {
-      process: process,
-      childrenToRun: childrenToRun,
-      timeout: null,
-      startTime: Date.now(),
-    };
-
     {
-      let trigger: (cause: 'timeoutValueChanged' | 'close' | 'timeout') => void;
+      let trigger: (cause: 'reschedule' | 'closed' | 'timeout') => void;
 
-      const changeConn = this._shared.onDidChangeExecRunningTimeout(() => { trigger('timeoutValueChanged'); });
+      const changeConn = this._shared.onDidChangeExecRunningTimeout(() => { trigger('reschedule'); });
 
-      process.once('close', () => {
-        runInfo.process = undefined;
-        trigger('close');
-      });
+      runInfo.process.once('close', () => { trigger('closed'); });
 
       const shedule = (): Promise<void> => {
-        return new Promise<'timeoutValueChanged' | 'close' | 'timeout'>(resolve => {
+        return new Promise<'reschedule' | 'closed' | 'timeout'>(resolve => {
           trigger = resolve;
 
           if (this._shared.execRunningTimeout !== null) {
@@ -131,26 +121,14 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
             setTimeout(resolve, left, 'timeout');
           }
         }).then((cause) => {
-          if (cause === 'close') {
+          if (cause === 'closed') {
             return Promise.resolve();
           }
           else if (cause === 'timeout') {
-            return new Promise<boolean>(resolve => {
-              if (runInfo.process) {
-                runInfo.process.once('close', () => { resolve(true); });
-                setTimeout(resolve, 5000, false); // process has 5 secs to handle SIGTERM
-
-                runInfo.process.kill();
-                runInfo.timeout = this._shared.execRunningTimeout;
-              } else {
-                resolve(true);
-              }
-            }).then((couldKill: boolean) => {
-              if (!couldKill && runInfo.process)
-                runInfo.process.kill('SIGKILL');
-            });
+            runInfo.killProcess(this._shared.execRunningTimeout);
+            return Promise.resolve();
           }
-          else if (cause === 'timeoutValueChanged') {
+          else if (cause === 'reschedule') {
             return shedule();
           }
           else {
@@ -172,8 +150,10 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
         this._shared.log.info('proc finished:', this.execPath);
         this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
-        if (this._process === process)
-          this._process = undefined;
+        if (this._runInfo !== runInfo) {
+          this._shared.log.error('assertion: shouldn\'t be here', this._runInfo, runInfo);
+        }
+        this._runInfo = undefined;
       });
   }
 

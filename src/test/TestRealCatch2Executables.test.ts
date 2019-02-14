@@ -78,6 +78,7 @@ describe(path.basename(__filename), function () {
   beforeEach(async function () {
     await fse.remove(cppUri.fsPath);
     await fse.mkdirp(cppUri.fsPath);
+    await settings.resetConfig();
   })
 
   let adapter: TestAdapter;
@@ -85,11 +86,11 @@ describe(path.basename(__filename), function () {
   afterEach(async function () {
     this.timeout(8000);
     await adapter.waitAndDispose(this);
-    await settings.resetConfig();
   })
 
   after(async function () {
     await fse.remove(cppUri.fsPath);
+    await settings.resetConfig();
   })
 
   function copy(from: string, to: string) {
@@ -98,9 +99,8 @@ describe(path.basename(__filename), function () {
 
   context('example1', function () {
     it('should be found and run withouth error', async function () {
-      if (process.env['TRAVIS'] == 'true') this.skip();
-      if (process.env['nodejs_version'] != 'LTS'
-        || process.env['platform'] != 'x64') this.skip();
+      if (process.env['TRAVIS'] == 'true')
+        this.skip();
 
       this.timeout(8000);
       this.slow(2000);
@@ -130,9 +130,8 @@ describe(path.basename(__filename), function () {
     })
 
     it('should be notified by watcher', async function () {
-      if (process.env['TRAVIS'] == 'true') this.skip();
-      if (process.env['nodejs_version'] != 'LTS'
-        || process.env['platform'] != 'x64') this.skip();
+      if (process.env['TRAVIS'] == 'true')
+        this.skip();
 
       this.timeout(8000);
       this.slow(4000);

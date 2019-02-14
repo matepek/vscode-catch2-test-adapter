@@ -17,7 +17,7 @@ and [Google Test](https://github.com/google/googletest) tests using the
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `catch2TestExplorer.executables`              | The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. Details: [below](#catch2TestExplorer.executables) |
 | `catch2TestExplorer.defaultCwd`               | The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in "executables". (Resolves: \${workspaceFolder})       |
-| `catch2TestExplorer.defaultEnv`               | Default environment variables to be set when running the tests, if it isn't provided in 'executables'. (Resolves: \${workspaceFolder})                                       |
+| `catch2TestExplorer.defaultEnv`               | Environment variables to be set when running the tests. (Resolves: `${absPath}`, `${absPath}`, etc.)                                                                         |
 | `catch2TestExplorer.debugConfigTemplate`      | Set the necessary debug configuraitons and the debug button will work. Details: [below](#catch2TestExplorer.debugConfigTemplate)                                             |
 | `catch2TestExplorer.debugBreakOnFailure`      | Debugger breaks on failure while debugging the test. Catch2: --break; Google Test: --gtest_break_on_failure;                                                                 |
 | `catch2TestExplorer.defaultNoThrow`           | Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow                                                       |
@@ -57,21 +57,24 @@ Otherwise it only can point to an executable (No _search-pattern_!).
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
-| Variable                | Description                                                                     |
-| ----------------------- | ------------------------------------------------------------------------------- |
-| `${absPath}`            | Absolute path of the test executable                                            |
-| `${relPath}`            | Relative path of the test executable to the workspace folder                    |
-| `${absDirpath}`         | Absolute path of the test executable's parent directory                         |
-| `${relDirpath}`         | Relative path of the test executable's parent directory to the workspace folder |
-| `${filename}`           | Filename (Path withouth directories, "d/a.b.c" => "a.b.c")                      |
-| `${baseFilename}`       | Filename without extension ("d/a.b.c" => "a.b")                                 |
-| `${extFilename}`        | Filename extension. ("d/a.b.c" => ".c")                                         |
-| `${base2Filename}`      | Filename without second extension ("d/a.b.c" => "a")                            |
-| `${ext2Filename}`       | Filename's second level extension. ("d/a.b.c" => ".b")                          |
-| `${base3Filename}`      | Filename without third extension ("d/a.b.c" => "a")                             |
-| `${ext3Filename}`       | Filename's third level extension. ("d/a.b.c" => "")                             |
-| `${workspaceDirectory}` | (You can only guess once.)                                                      |
-| `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                |
+| Variable                | Description                                                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `${absPath}`            | Absolute path of the test executable                                                                                                |
+| `${relPath}`            | Relative path of the test executable to the workspace folder                                                                        |
+| `${absDirpath}`         | Absolute path of the test executable's parent directory                                                                             |
+| `${relDirpath}`         | Relative path of the test executable's parent directory to the workspace folder                                                     |
+| `${filename}`           | Filename (Path withouth directories, "d/a.b.c" => "a.b.c")                                                                          |
+| `${baseFilename}`       | Filename without extension ("d/a.b.c" => "a.b")                                                                                     |
+| `${extFilename}`        | Filename extension. ("d/a.b.c" => ".c")                                                                                             |
+| `${base2Filename}`      | Filename without second extension ("d/a.b.c" => "a")                                                                                |
+| `${ext2Filename}`       | Filename's second level extension. ("d/a.b.c" => ".b")                                                                              |
+| `${base3Filename}`      | Filename without third extension ("d/a.b.c" => "a")                                                                                 |
+| `${ext3Filename}`       | Filename's third level extension. ("d/a.b.c" => "")                                                                                 |
+| `${workspaceDirectory}` | (You can only guess once.)                                                                                                          |
+| `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                                                                    |
+| `${workspaceName}`      | Workspace name can be custom in case of [`multi-root-workspaces`](https://code.visualstudio.com/docs/editor/multi-root-workspaces). |
+| `${name}`               | The resolved `executables`'s name. Can be used only in `cwd` and `env`.                                                             |
+| `${cwd}`                | The resolved `executables`'s cwd. Can be used only in `env`.                                                                        |
 
 #### Examples:
 

@@ -13,11 +13,8 @@ describe(path.basename(__filename), function () {
 
 	let adapter: TestAdapter;
 
-	before(async function () {
+	beforeEach(async function () {
 		await settings.resetConfig();
-	})
-
-	beforeEach(function () {
 		adapter = new TestAdapter();
 	})
 
@@ -25,6 +22,11 @@ describe(path.basename(__filename), function () {
 		this.timeout(8000);
 		await adapter.waitAndDispose(this);
 		await settings.resetConfig();
+	})
+
+	after(function () {
+		this.timeout(8000);
+		return settings.resetConfig();
 	})
 
 	it('defaultEnv', function () {

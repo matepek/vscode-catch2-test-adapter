@@ -27,7 +27,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private readonly _variableToValue: [string, string][] = [
     ['${workspaceDirectory}', this.workspaceFolder.uri.fsPath],
-    ['${workspaceFolder}', this.workspaceFolder.uri.fsPath]
+    ['${workspaceFolder}', this.workspaceFolder.uri.fsPath],
+    ['${workspaceName}', this.workspaceFolder.name],
   ];
 
   // because we always want to return with the current rootSuite suite
@@ -44,9 +45,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
     this._log = new util.Log('catch2TestExplorer', this.workspaceFolder,
       'Test Explorer: ' + this.workspaceFolder.name, { showProxy: true, depth: 3 });
-    this._disposables.push(this._log);
 
-    this._log.info('info:', process.platform, process.version, process.versions, vscode.version);
+    this._log.info('info:', this.workspaceFolder, process.platform,
+      process.version, process.versions, vscode.version);
+
+    this._disposables.push(vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      this._variableToValue[2][1] = this.workspaceFolder.name;
+    }));
 
     this._disposables.push(this._testsEmitter);
     this._disposables.push(this._testStatesEmitter);
@@ -172,16 +177,19 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         }
       }));
 
-    this._rootSuite = new RootTestSuiteInfo(this._shared,
-      this._getWorkerMaxNumber(config)
-    );
+    this._rootSuite = new RootTestSuiteInfo(this._shared, 1);
   }
 
   dispose() {
-    this._disposables.forEach(d => d.dispose());
-    this._shared.dispose();
-    this._rootSuite.dispose();
-    this._log.dispose();
+    this._log.info('dispose: ', this.workspaceFolder);
+
+    this._disposables.forEach(d => { try { d.dispose() } catch (e) { this._log.error('dispose', e, d); } });
+
+    try { this._shared.dispose(); } catch (e) { this._log.error('dispose', e, this._shared); }
+
+    try { this._rootSuite.dispose(); } catch (e) { this._log.error('dispose', e, this._rootSuite); }
+
+    try { this._log.dispose(); } catch (e) { this._log.error('dispose', e, this._log); }
   }
 
   get testStates(): vscode.Event<TestRunStartedEvent | TestRunFinishedEvent |
@@ -198,7 +206,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   load(): Promise<void> {
-    this.cancel();
+    this._log.info('load called');
+    this._mainTaskQueue.size > 0 && this.cancel();
+
     const config = this._getConfiguration();
 
     this._rootSuite.dispose();
@@ -208,17 +218,23 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     );
 
     return this._mainTaskQueue.then(() => {
+      this._log.info('load started');
+
       this._testsEmitter.fire({ type: 'started' });
 
       return this._rootSuite.load(this._getExecutables(config, this._rootSuite))
         .then(
           () => {
+            this._log.info('load finished', this._rootSuite.children.length);
+
             this._testsEmitter.fire({
               type: 'finished',
               suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined
             });
           },
           (e: any) => {
+            this._log.info('load finished with error:', e);
+
             this._testsEmitter.fire({
               type: 'finished',
               suite: undefined,
@@ -336,7 +352,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
             if (!debugSessionStarted || !currentSession) {
               return Promise.reject(
-                'Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate. "' +
+                'Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate"; ' +
                 + debugSessionStarted + '; ' + currentSession);
             }
 
@@ -445,7 +461,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : globalWorkingDirectory;
 
-      const env: { [prop: string]: any } = typeof obj.env === 'object' ? obj.env : {};
+      const env: { [prop: string]: any } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
 
       return new TestExecutableInfo(this._shared, rootSuite, name, pattern, cwd, env, this._variableToValue);
     };
@@ -453,7 +469,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     if (typeof configExecs === 'string') {
       if (configExecs.length == 0) return [];
       executables.push(new TestExecutableInfo(this._shared,
-        rootSuite, undefined, configExecs, globalWorkingDirectory, {}, this._variableToValue));
+        rootSuite, undefined, configExecs, globalWorkingDirectory, undefined, this._variableToValue));
     } else if (Array.isArray(configExecs)) {
       for (var i = 0; i < configExecs.length; ++i) {
         const configExec = configExecs[i];
@@ -461,7 +477,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           const configExecsName = String(configExec);
           if (configExecsName.length > 0) {
             executables.push(new TestExecutableInfo(this._shared,
-              rootSuite, undefined, configExecsName, globalWorkingDirectory, {}, this._variableToValue));
+              rootSuite, undefined, configExecsName, globalWorkingDirectory, undefined, this._variableToValue));
           }
         } else if (typeof configExec === 'object') {
           try {

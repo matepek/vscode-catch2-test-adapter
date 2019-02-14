@@ -30,6 +30,7 @@ describe(path.basename(__filename), function () {
 
 	after(function () {
 		imitation.restore();
+		return settings.resetConfig();
 	})
 
 	beforeEach(async function () {
@@ -1263,17 +1264,20 @@ describe(path.basename(__filename), function () {
 			this.timeout(8000);
 			await settings.updateConfig(
 				'executables', [{
-					name: '${relDirpath}/${filename} (${absDirpath})',
+					name: '${baseFilename}',
 					path: 'execPath{1,2}',
-					cwd: '${workspaceFolder}/cwd',
+					cwd: '${workspaceFolder}/cwd/${baseFilename}',
 					env: {
 						C2LOCALTESTENV: 'c2localtestenv',
-						C2OVERRIDETESTENV: 'c2overridetestenv-l'
+						C2OVERRIDETESTENV: 'c2overridetestenv-l',
+						C2LOCALCWDANDNAME: '${cwd}-${name}',
 					}
 				}]);
 			await settings.updateConfig('defaultEnv', {
-				'C2GLOBALTESTENV': 'c2globaltestenv',
-				'C2OVERRIDETESTENV': 'c2overridetestenv-g',
+				C2GLOBALTESTENV: 'c2globaltestenv',
+				C2OVERRIDETESTENV: 'c2overridetestenv-g',
+				C2CWDANDNAME: '${cwd}-${name}',
+				C2WORKSPACENAME: '${workspaceName}',
 			});
 
 			imitation.vsfsWatchStub
@@ -1291,41 +1295,53 @@ describe(path.basename(__filename), function () {
 		})
 
 		it('should get execution options', async function () {
+			await loadAdapter();
 			{
-				await loadAdapter();
+				let exception: Error | undefined = undefined;
 				const withArgs = imitation.spawnStub.withArgs(
 					example1.suite1.execPath, example1.suite1.outputs[2][0]);
 				withArgs.onCall(withArgs.callCount)
 					.callsFake((p: string, args: string[], ops: any) => {
-						assert.equal(
-							ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd'));
-						assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
-						assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
-						assert.equal(
-							ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-						return new ChildProcessStub(example1.suite1.outputs[2][1]);
+						try {
+							assert.equal(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath1'));
+							assert.equal(ops.env.C2GLOBALTESTENV, 'c2globaltestenv');
+							assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
+							assert.equal(ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
+							assert.equal(ops.env.C2CWDANDNAME, ops.cwd + '-' + 'execPath1');
+							assert.equal(ops.env.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath1');
+							assert.equal(ops.env.C2WORKSPACENAME, 'test');
+
+							return new ChildProcessStub(example1.suite1.outputs[2][1]);
+						} catch (e) { exception = e; throw e; }
 					});
 
 				const cc = withArgs.callCount;
 				await adapter.run([root.id]);
 				assert.equal(withArgs.callCount, cc + 1);
+				assert.strictEqual(exception, undefined);
 			}
 			{
+				let exception: Error | undefined = undefined;
 				const withArgs = imitation.spawnStub.withArgs(
 					example1.suite2.execPath, example1.suite2.outputs[2][0]);
 				withArgs.onCall(withArgs.callCount)
 					.callsFake((p: string, args: string[], ops: any) => {
-						assert.equal(
-							ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd'));
-						assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
-						assert.ok(!ops.env.hasOwnProperty('C2GLOBALTESTENV'));
-						assert.equal(
-							ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-						return new ChildProcessStub(example1.suite2.outputs[2][1]);
+						try {
+							assert.equal(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath2'));
+							assert.equal(ops.env.C2GLOBALTESTENV, 'c2globaltestenv');
+							assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
+							assert.equal(ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
+							assert.equal(ops.env.C2CWDANDNAME, ops.cwd + '-' + 'execPath2');
+							assert.equal(ops.env.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath2');
+							assert.equal(ops.env.C2WORKSPACENAME, 'test');
+
+							return new ChildProcessStub(example1.suite2.outputs[2][1]);
+						} catch (e) { exception = e; throw e; }
 					});
 				const cc = withArgs.callCount;
 				await adapter.run([root.id]);
 				assert.equal(withArgs.callCount, cc + 1);
+				assert.strictEqual(exception, undefined);
 			}
 		})
 	})
