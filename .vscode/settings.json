@@ -4,17 +4,29 @@
     "node_modules": true,
     "out": true
   },
-  "editor.insertSpaces": false,
+  "editor.insertSpaces": true,
   "editor.tabSize": 2,
   "[json]": {
     "editor.insertSpaces": true,
     "editor.tabSize": 2
   },
-  "prettier.printWidth": 100,
-  "prettier.jsxBracketSameLine": true,
-  "editor.formatOnSave": true,
   "files.associations": {
     "catch.hpp.txt": "cpp"
   },
-  "editor.formatOnSaveTimeout": 3000
+  "editor.formatOnSaveTimeout": 3000,
+  "eslint.autoFixOnSave": true,
+  "eslint.validate": [
+    "javascript",
+    {
+      "language": "typescript",
+      "autoFix": true
+    }
+  ],
+  "editor.formatOnSave": true,
+  "[javascript]": {
+    "editor.formatOnSave": false,
+  },
+  "[typescript]": {
+    "editor.formatOnSave": false,
+  }
 }

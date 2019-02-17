@@ -12,7 +12,7 @@ export function resolveVariables(value: any, varValue: [string, any][]): any {
     }
     return value;
   } else if (Array.isArray(value)) {
-    return (<any[]>value).map((v: any) => resolveVariables(v, varValue));
+    return (value as any[]).map((v: any) => resolveVariables(v, varValue));
   } else if (typeof value == 'object') {
     const newValue: any = {};
     for (const prop in value) {

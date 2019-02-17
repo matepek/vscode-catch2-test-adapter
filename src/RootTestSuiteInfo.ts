@@ -4,35 +4,36 @@
 
 import * as vscode from 'vscode';
 
-import { TestExecutableInfo } from './TestExecutableInfo'
+import { TestExecutableInfo } from './TestExecutableInfo';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { AbstractTestInfo } from './AbstractTestInfo';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 
 export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vscode.Disposable {
-  readonly children: AbstractTestSuiteInfo[] = [];
+  public readonly children: AbstractTestSuiteInfo[] = [];
   private readonly _executables: TestExecutableInfo[] = [];
   private readonly _taskPool: TaskPool;
 
-  constructor(shared: SharedVariables, workerMaxNumber: number) {
+  public constructor(shared: SharedVariables, workerMaxNumber: number) {
     super(shared, 'Catch2 and Google tests');
     this._taskPool = new TaskPool(workerMaxNumber);
   }
 
-  dispose() {
+  public dispose(): void {
     this._executables.forEach(e => e.dispose());
   }
 
-  set workerMaxNumber(workerMaxNumber: number) {
+  public set workerMaxNumber(workerMaxNumber: number) {
     this._taskPool.maxTaskCount = workerMaxNumber;
   }
 
-  cancel(): void {
+  public cancel(): void {
     this.children.forEach(c => c.cancel());
   }
 
-  async load(executables: TestExecutableInfo[]) {
+  public async load(executables: TestExecutableInfo[]): Promise<void> {
     for (let i = 0; i < executables.length; i++) {
       const executable = executables[i];
       try {
@@ -44,7 +45,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     }
   }
 
-  run(tests: string[]): Promise<void> {
+  public run(tests: string[]): Promise<void> {
     this._shared.testStatesEmitter.fire({ type: 'started', tests: tests });
 
     // everybody should remove what they use from it.
@@ -60,35 +61,46 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     const ps: Promise<void>[] = [];
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i];
-      ps.push(child.run(testSet, this._taskPool).catch((err => {
-        this._shared.log.error('RootTestSuite.run.for.child', child.label, err);
-      })));
+      ps.push(
+        child.run(testSet, this._taskPool).catch(err => {
+          this._shared.log.error('RootTestSuite.run.for.child', child.label, err);
+        }),
+      );
     }
 
     if (testSet.size > 0) {
       this._shared.log.error('Some tests have remained: ', testSet);
     }
 
-    return Promise.all(ps).catch(e => {
-      this._shared.log.error('everything should be handled');
-      debugger;
-    }).then(() => {
-      this._shared.testStatesEmitter.fire({ type: 'finished' });
-    });
+    return Promise.all(ps)
+      .catch((e: Error) => {
+        this._shared.log.error('everything should be handled', e);
+        debugger;
+      })
+      .then(() => {
+        this._shared.testStatesEmitter.fire({ type: 'finished' });
+      });
   }
 
-  hasChild(suite: AbstractTestSuiteInfo): boolean {
+  public hasChild(suite: AbstractTestSuiteInfo): boolean {
     return this.children.indexOf(suite) != -1;
   }
 
-  insertChild(suite: AbstractTestSuiteInfo, uniquifyLabels: boolean): boolean {
-    if (this.hasChild(suite))
-      return false;
+  public insertChild(suite: AbstractTestSuiteInfo, uniquifyLabels: boolean): boolean {
+    if (this.hasChild(suite)) return false;
 
-    {// we want to filter the situation when 2 patterns match the same file
-      const other = this.children.find((s: AbstractTestSuiteInfo) => { return suite.execPath == s.execPath; })
+    {
+      // we want to filter the situation when 2 patterns match the same file
+      const other = this.children.find((s: AbstractTestSuiteInfo) => {
+        return suite.execPath == s.execPath;
+      });
       if (other) {
-        this._shared.log.warn('execPath duplication: suite is skipped:', suite.execPath, suite.origLabel, other.origLabel);
+        this._shared.log.warn(
+          'execPath duplication: suite is skipped:',
+          suite.execPath,
+          suite.origLabel,
+          other.origLabel,
+        );
         return false;
       }
     }
@@ -100,14 +112,14 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     return true;
   }
 
-  addChild(suite: AbstractTestSuiteInfo) {
+  public addChild(suite: AbstractTestSuiteInfo): void {
     super.addChild(suite);
 
     this.file = undefined;
     this.line = undefined;
   }
 
-  removeChild(child: AbstractTestSuiteInfo): boolean {
+  public removeChild(child: AbstractTestSuiteInfo): boolean {
     const i = this.children.findIndex(val => val.id == child.id);
     if (i != -1) {
       this.children.splice(i, 1);
@@ -117,7 +129,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     return false;
   }
 
-  uniquifySuiteLabels() {
+  public uniquifySuiteLabels(): void {
     const uniqueNames = new Map<string /* name */, AbstractTestSuiteInfo[]>();
 
     for (const suite of this.children) {
@@ -139,7 +151,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     }
   }
 
-  findRouteToTestById(id: string) {
+  public findRouteToTestById(id: string): (AbstractTestSuiteInfoBase | AbstractTestInfo)[] | undefined {
     const res = super.findRouteToTestById(id);
     if (res !== undefined) res.shift(); // remove Root/this
     return res;

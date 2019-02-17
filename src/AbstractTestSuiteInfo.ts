@@ -2,7 +2,7 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import * as child_process from 'child_process';
+import * as cp from 'child_process';
 import * as path from 'path';
 
 import * as c2fs from './FsWrapper';
@@ -13,11 +13,10 @@ import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 
 export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
-
   private _canceled: boolean = false;
   private _runInfo: RunningTestExecutableInfo | undefined = undefined;
 
-  constructor(
+  public constructor(
     shared: SharedVariables,
     origLabel: string,
     public readonly execPath: string,
@@ -32,7 +31,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
 
-  cancel(): void {
+  public cancel(): void {
     this._shared.log.info('canceled:', this.id, this.label, this._runInfo);
 
     this._runInfo && this._runInfo.killProcess();
@@ -40,7 +39,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     this._canceled = true;
   }
 
-  run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
+  public run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
     this._canceled = false;
 
     if (this._runInfo) {
@@ -48,24 +47,26 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       this._runInfo = undefined;
     }
 
-    const childrenToRun = tests.delete(this.id)
-      ? 'runAllTestsExceptSkipped'
-      : new Set<AbstractTestInfo>();
+    const childrenToRun = tests.delete(this.id) ? 'runAllTestsExceptSkipped' : new Set<AbstractTestInfo>();
 
     if (childrenToRun === 'runAllTestsExceptSkipped') {
-      this.enumerateDescendants(v => { tests.delete(v.id); });
-    }
-    else {
+      this.enumerateDescendants(v => {
+        tests.delete(v.id);
+      });
+    } else {
       this.enumerateDescendants((v: AbstractTestSuiteInfoBase | AbstractTestInfo) => {
         const explicitlyIn = tests.delete(v.id);
         if (explicitlyIn) {
           if (v instanceof AbstractTestInfo) {
             childrenToRun.add(v);
+          } else if (v instanceof AbstractTestSuiteInfoBase) {
+            v.enumerateTestInfos(vv => {
+              childrenToRun.add(vv);
+            });
+          } else {
+            this._shared.log.error('unknown case', v, this);
+            debugger;
           }
-          else if (v instanceof AbstractTestSuiteInfoBase) {
-            v.enumerateTestInfos(vv => { childrenToRun.add(vv); });
-          }
-          else { this._shared.log.error('unknown case', v, this); debugger; }
         }
       });
 
@@ -92,9 +93,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       this.sendSkippedChildrenEvents();
     }
 
-    const runInfo = new RunningTestExecutableInfo(
-      child_process.spawn(this.execPath, execParams, this.execOptions),
-      childrenToRun);
+    const runInfo = new RunningTestExecutableInfo(cp.spawn(this.execPath, execParams, this.execOptions), childrenToRun);
 
     this._runInfo = runInfo;
 
@@ -107,9 +106,13 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     {
       let trigger: (cause: 'reschedule' | 'closed' | 'timeout') => void;
 
-      const changeConn = this._shared.onDidChangeExecRunningTimeout(() => { trigger('reschedule'); });
+      const changeConn = this._shared.onDidChangeExecRunningTimeout(() => {
+        trigger('reschedule');
+      });
 
-      runInfo.process.once('close', () => { trigger('closed'); });
+      runInfo.process.once('close', () => {
+        trigger('closed');
+      });
 
       const shedule = (): Promise<void> => {
         return new Promise<'reschedule' | 'closed' | 'timeout'>(resolve => {
@@ -120,18 +123,15 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
             const left = Math.max(0, this._shared.execRunningTimeout - elapsed);
             setTimeout(resolve, left, 'timeout');
           }
-        }).then((cause) => {
+        }).then(cause => {
           if (cause === 'closed') {
             return Promise.resolve();
-          }
-          else if (cause === 'timeout') {
+          } else if (cause === 'timeout') {
             runInfo.killProcess(this._shared.execRunningTimeout);
             return Promise.resolve();
-          }
-          else if (cause === 'reschedule') {
+          } else if (cause === 'reschedule') {
             return shedule();
-          }
-          else {
+          } else {
             throw new Error('unknown case: ' + cause);
           }
         });
@@ -143,7 +143,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     }
 
     return this._handleProcess(runInfo)
-      .catch((reason: any) => {
+      .catch((reason: Error) => {
         this._shared.log.error(reason);
       })
       .then(() => {
@@ -151,15 +151,14 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
         this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
 
         if (this._runInfo !== runInfo) {
-          this._shared.log.error('assertion: shouldn\'t be here', this._runInfo, runInfo);
+          this._shared.log.error("assertion: shouldn't be here", this._runInfo, runInfo);
         }
         this._runInfo = undefined;
       });
   }
 
   protected _findFilePath(matchedPath: string): string {
-    if (path.isAbsolute(matchedPath))
-      return matchedPath;
+    if (path.isAbsolute(matchedPath)) return matchedPath;
 
     try {
       let parent: string;
@@ -169,10 +168,9 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
         parentParent = path.dirname(parent);
 
         const filePath = path.join(parent, matchedPath);
-        if (c2fs.existsSync(filePath))
-          return filePath;
+        if (c2fs.existsSync(filePath)) return filePath;
       } while (parent != parentParent);
-    } catch{ }
+    } catch {}
 
     if (this.execOptions.cwd && !this.execPath.startsWith(this.execOptions.cwd))
       try {
@@ -183,13 +181,14 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
           parentParent = path.dirname(parent);
 
           const filePath = path.join(parent, matchedPath);
-          if (c2fs.existsSync(filePath))
-            return filePath;
+          if (c2fs.existsSync(filePath)) return filePath;
         } while (parent != parentParent);
-      } catch{ }
+      } catch {}
 
-    if (!this.execPath.startsWith(this._shared.workspaceFolder.uri.fsPath)
-      && (!this.execOptions.cwd || !this.execOptions.cwd.startsWith(this._shared.workspaceFolder.uri.fsPath)))
+    if (
+      !this.execPath.startsWith(this._shared.workspaceFolder.uri.fsPath) &&
+      (!this.execOptions.cwd || !this.execOptions.cwd.startsWith(this._shared.workspaceFolder.uri.fsPath))
+    )
       try {
         let parent: string;
         let parentParent = this._shared.workspaceFolder.uri.fsPath;
@@ -198,10 +197,9 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
           parentParent = path.dirname(parent);
 
           const filePath = path.join(parent, matchedPath);
-          if (c2fs.existsSync(filePath))
-            return filePath;
+          if (c2fs.existsSync(filePath)) return filePath;
         } while (parent != parentParent);
-      } catch{ }
+      } catch {}
 
     return matchedPath;
   }
