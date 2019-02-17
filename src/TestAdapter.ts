@@ -293,56 +293,25 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._log.info('testInfo: ', testInfo, tests);
 
-    const getDebugConfiguration = (): vscode.DebugConfiguration => {
-      const config = this._getConfiguration();
+    const config = this._getConfiguration();
 
-      let template = this._getDebugConfigurationTemplate(config);
+    const template = this._getDebugConfigurationTemplate(config);
 
-      if (template !== null) {
-        //skip
-      } else if (vscode.extensions.getExtension("vadimcn.vscode-lldb")) {
-        template = {
-          "type": "cppdbg",
-          "MIMode": "lldb",
-          "program": "${exec}",
-          "args": "${args}",
-          "cwd": "${cwd}",
-          "env": "${envObj}"
-        };
-      } else if (vscode.extensions.getExtension("ms-vscode.cpptools")) {
-        // documentation says debug"environment" = [{...}] but that doesn't work
-        template = {
-          "type": "cppvsdbg",
-          "linux": { "type": "cppdbg", "MIMode": "gdb" },
-          "osx": { "type": "cppdbg", "MIMode": "lldb" },
-          "program": "${exec}",
-          "args": "${args}",
-          "cwd": "${cwd}",
-          "env": "${envObj}"
-        };
-      }
+    const argsArray = testInfo.getDebugParams(this._getDebugBreakOnFailure(config));
 
-      if (!template) {
-        throw Error('For debugging \'catch2TestExplorer.debugConfigTemplate\' should be set.');
-      }
+    const debugConfig = resolveVariables(template, [
+      ...this._variableToValue,
+      ["${suitelabel}", suiteLabels],
+      ["${suiteLabel}", suiteLabels],
+      ["${label}", testInfo.label],
+      ["${exec}", testInfo.execPath],
+      ["${args}", argsArray],
+      ["${argsStr}", '"' + argsArray.join('" "') + '"'],
+      ["${cwd}", testInfo.execOptions.cwd!],
+      ["${envObj}", testInfo.execOptions.env!],
+    ]);
 
-      template = Object.assign({ 'name': "${label} (${suiteLabel})" }, template);
-      template = Object.assign({ 'request': "launch" }, template);
-
-      return resolveVariables(template, [
-        ...this._variableToValue,
-        ["${suitelabel}", suiteLabels],
-        ["${suiteLabel}", suiteLabels],
-        ["${label}", testInfo.label],
-        ["${exec}", testInfo.execPath],
-        ["${args}", testInfo.getDebugParams(this._getDebugBreakOnFailure(config))],
-        ["${cwd}", testInfo.execOptions.cwd!],
-        ["${envObj}", testInfo.execOptions.env!],
-      ]);
-    };
-
-    const debugConfig = getDebugConfiguration();
-    this._log.info('Debug config: ', debugConfig);
+    this._log.info('Debug: resolved catch2TestExplorer.debugConfigTemplate:', debugConfig);
 
     return this._mainTaskQueue.then(
       () => {
@@ -374,13 +343,67 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
   }
 
+  private _getDebugConfigurationTemplate(config: vscode.WorkspaceConfiguration): vscode.DebugConfiguration {
+    const templateFromConfig = config.get<object | null>('debugConfigTemplate', null);
+
+    const template: vscode.DebugConfiguration = Object.assign({
+      'name': "${label} (${suiteLabel})",
+      'request': "launch",
+      'type': "cppdbg"
+    }, templateFromConfig ? templateFromConfig : {});
+
+    if (templateFromConfig === null) {
+      if (vscode.extensions.getExtension("vadimcn.vscode-lldb")) {
+        Object.assign(template, {
+          "type": "cppdbg",
+          "MIMode": "lldb",
+          "program": "${exec}",
+          "args": "${args}",
+          "cwd": "${cwd}",
+          "env": "${envObj}",
+        });
+      }
+      else if (vscode.extensions.getExtension("webfreak.debug")) {
+        Object.assign(template, {
+          "type": "gdb",
+          "target": "${exec}",
+          "arguments": "${argsStr}",
+          "cwd": "${cwd}",
+          "env": "${envObj}",
+          "valuesFormatting": "prettyPrinters"
+        });
+
+        if (process.platform === 'darwin') {
+          template.type = 'lldb-mi';
+          // Note: for LLDB you need to have lldb-mi in your PATH
+          // If you are on OS X you can add lldb-mi to your path using ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi /usr/local/bin/lldb-mi if you have Xcode.
+          template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
+        }
+      }
+      else if (vscode.extensions.getExtension("ms-vscode.cpptools")) {
+        // documentation says debug"environment" = [{...}] but that doesn't work
+        Object.assign(template, {
+          "type": "cppvsdbg",
+          "linux": { "type": "cppdbg", "MIMode": "gdb" },
+          "osx": { "type": "cppdbg", "MIMode": "lldb" },
+          "windows": { "type": "cppvsdbg" },
+          "program": "${exec}",
+          "args": "${args}",
+          "cwd": "${cwd}",
+          "env": "${envObj}"
+        });
+      }
+      else {
+        throw Error('For debugging \'catch2TestExplorer.debugConfigTemplate\' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it');
+      }
+    }
+
+    return template;
+  }
+
   private _getConfiguration(): vscode.WorkspaceConfiguration {
     return vscode.workspace.getConfiguration(
       'catch2TestExplorer', this.workspaceFolder.uri);
-  }
-
-  private _getDebugConfigurationTemplate(config: vscode.WorkspaceConfiguration) {
-    return config.get<object | null>('debugConfigTemplate', null);
   }
 
   private _getDebugBreakOnFailure(config: vscode.WorkspaceConfiguration):

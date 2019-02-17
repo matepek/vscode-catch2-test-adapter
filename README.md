@@ -25,6 +25,7 @@ and [Google Test](https://github.com/google/googletest) tests using the
 | `catch2TestExplorer.defaultWatchTimeoutSec`   | Test executables are being watched. In case of one compiles too much this variable can help with it. Unit: second. It applies instantly.                                     |
 | `catch2TestExplorer.defaultRunningTimeoutSec` | Test executable is running in a process. In case of an inifinite loop, it will run forever, unless this parameter is set. It applies instantly.                              |
 | `catch2TestExplorer.workerMaxNumber`          | The variable maximize the number of the parallel test execution. It applies instantly.                                                                                       |
+| `catch2TestExplorer.logpanel`                 | For debugging. Enabling it could slow down your vscode.                                                                                                                      |
 | `testExplorer.errorDecoration`                | Show error messages from test failures as decorations in the editor. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                  |
 | `testExplorer.gutterDecoration`               | Show the state of each test in the editor using Gutter Decorations. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                   |
 | `testExplorer.codeLens`                       | Show a CodeLens above each test or suite for running or debugging the tests. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                          |
@@ -57,24 +58,24 @@ Otherwise it only can point to an executable (No _search-pattern_!).
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
-| Variable                | Description                                                                                                                         |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `${absPath}`            | Absolute path of the test executable                                                                                                |
-| `${relPath}`            | Relative path of the test executable to the workspace folder                                                                        |
-| `${absDirpath}`         | Absolute path of the test executable's parent directory                                                                             |
-| `${relDirpath}`         | Relative path of the test executable's parent directory to the workspace folder                                                     |
-| `${filename}`           | Filename (Path withouth directories, "d/a.b.c" => "a.b.c")                                                                          |
-| `${baseFilename}`       | Filename without extension ("d/a.b.c" => "a.b")                                                                                     |
-| `${extFilename}`        | Filename extension. ("d/a.b.c" => ".c")                                                                                             |
-| `${base2Filename}`      | Filename without second extension ("d/a.b.c" => "a")                                                                                |
-| `${ext2Filename}`       | Filename's second level extension. ("d/a.b.c" => ".b")                                                                              |
-| `${base3Filename}`      | Filename without third extension ("d/a.b.c" => "a")                                                                                 |
-| `${ext3Filename}`       | Filename's third level extension. ("d/a.b.c" => "")                                                                                 |
-| `${workspaceDirectory}` | (You can only guess once.)                                                                                                          |
-| `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                                                                    |
-| `${workspaceName}`      | Workspace name can be custom in case of [`multi-root-workspaces`](https://code.visualstudio.com/docs/editor/multi-root-workspaces). |
-| `${name}`               | The resolved `executables`'s name. Can be used only in `cwd` and `env`.                                                             |
-| `${cwd}`                | The resolved `executables`'s cwd. Can be used only in `env`.                                                                        |
+| Variable                | Description                                                                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `${absPath}`            | Absolute path of the test executable                                                                                                                |
+| `${relPath}`            | Relative path of the test executable to the workspace folder                                                                                        |
+| `${absDirpath}`         | Absolute path of the test executable's parent directory                                                                                             |
+| `${relDirpath}`         | Relative path of the test executable's parent directory to the workspace folder                                                                     |
+| `${filename}`           | Filename (Path withouth directories, "d/a.b.c" => "a.b.c")                                                                                          |
+| `${baseFilename}`       | Filename without extension ("d/a.b.c" => "a.b")                                                                                                     |
+| `${extFilename}`        | Filename extension. ("d/a.b.c" => ".c")                                                                                                             |
+| `${base2Filename}`      | Filename without second extension ("d/a.b.c" => "a")                                                                                                |
+| `${ext2Filename}`       | Filename's second level extension. ("d/a.b.c" => ".b")                                                                                              |
+| `${base3Filename}`      | Filename without third extension ("d/a.b.c" => "a")                                                                                                 |
+| `${ext3Filename}`       | Filename's third level extension. ("d/a.b.c" => "")                                                                                                 |
+| `${workspaceDirectory}` | (You can only guess once.)                                                                                                                          |
+| `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                                                                                    |
+| `${workspaceName}`      | Workspace name can be custom in case of [`workspace file`](https://code.visualstudio.com/docs/editor/multi-root-workspaces#_workspace-file-schema). |
+| `${name}`               | The resolved `executables`'s name. Can be used only in `cwd` and `env`.                                                                             |
+| `${cwd}`                | The resolved `executables`'s cwd. Can be used only in `env`.                                                                                        |
 
 #### Examples:
 
@@ -115,32 +116,20 @@ Otherwise it only can point to an executable (No _search-pattern_!).
 ### catch2TestExplorer.debugConfigTemplate
 
 If `catch2TestExplorer.debugConfigTemplate` value is `null` (default),
-it will look after `vadimcn.vscode-lldb` and `ms-vscode.cpptools` extensions.
+it will look after `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools` extensions.
 If it founds one of it, it will use it automatically.
+
+**Remark**: This feature to work automatically (value:`null`) has a lot of requirements which are not listed here.
+If it works it is good for you.
+If it isn't.. I suggest to create your own `"catch2TestExplorer.debugConfigTemplate"` template.
+If you read the _Related documents_ and still have a question feel free to open an issue.
 
 #### or user can manually fill it
 
-See [here](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations) for details.
-
-Usable variables:
-
-| Variable name   | Value meaning                                                | Type                    |
-| --------------- | ------------------------------------------------------------ | ----------------------- |
-| `${label}`      | The name of the test. Same as in the Test Explorer.          | string                  |
-| `${suiteLabel}` | The name of parent suite test. Same as in the Test Explorer. | string                  |
-| `${exec}`       | The path of the executable.                                  | string                  |
-| `${args}`       | The arguments for the executable.                            | string[]                |
-| `${cwd}`        | The current working directory for execution.                 | string                  |
-| `${envObj}`     | The environment variables as object properties.              | { [prop: string]: any } |
-
-These variables will be substituted when a DebugConfiguration is created.
-
-Note that `name` and `request` are filled, if they are undefined, so it is not necessary to set them.
-
-Example:
+in settings.json like:
 
 ```json
-{
+"catch2TestExplorer.debugConfigTemplate": {
   "type": "cppdbg",
   "MIMode": "lldb",
   "program": "${exec}",
@@ -150,6 +139,32 @@ Example:
   "externalConsole": false
 }
 ```
+
+Related documents:
+
+- About [VSCode launch config](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations)
+- About [vadimcn.vscode-lldb extension](https://github.com/vadimcn/vscode-lldb#quick-start)
+- About [webfreak.debug extension](https://github.com/WebFreak001/code-debug/blob/master/README.md)
+- About [ms-vscode.cpptools](https://github.com/Microsoft/vscode-cpptools/blob/master/Code%20Samples/SampleClangProject/.vscode/launch.json)
+
+Usable variables:
+
+| Variable name   | Value meaning                                                | Type                    |
+| --------------- | ------------------------------------------------------------ | ----------------------- |
+| `${label}`      | The name of the test. Same as in the Test Explorer.          | string                  |
+| `${suiteLabel}` | The name of parent suite test. Same as in the Test Explorer. | string                  |
+| `${exec}`       | The path of the executable.                                  | string                  |
+| `${args}`       | The arguments for the executable.                            | string[]                |
+| `${argsStr}`    | Concatenated arguments for the executable.                   | string                  |
+| `${cwd}`        | The current working directory for execution.                 | string                  |
+| `${envObj}`     | The environment variables as object properties.              | { [prop: string]: any } |
+
+These variables will be substituted when a DebugConfiguration is created.
+
+Note that `name` and `request` are filled, if they are undefined, so it is not necessary to set them.
+`type` is necessary.
+
+For debugging use `catch2TestExplorer.logpanel: true`.
 
 ## License
 

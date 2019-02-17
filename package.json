@@ -175,13 +175,13 @@
           "scope": "resource"
         },
         "catch2TestExplorer.logpanel": {
-          "description": "Create a new output channel and write the log messages there.",
+          "description": "Creates a new output channel and write the log messages there.",
           "type": "boolean",
           "default": false,
           "scope": "resource"
         },
         "catch2TestExplorer.logfile": {
-          "description": "Write the log message into the given file.",
+          "description": "Writes the log message into the given file.",
           "type": [
             "string",
             "null"
