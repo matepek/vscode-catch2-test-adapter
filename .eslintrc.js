@@ -30,8 +30,7 @@ module.exports = {
 
         //TODO
         "@typescript-eslint/no-explicit-any": "off",
-        "@typescript-eslint/no-namespace": "off",
-
+    
         "@typescript-eslint/camelcase": "warn",
         "prettier/prettier": 'warn',
     },

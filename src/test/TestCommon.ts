@@ -32,25 +32,26 @@ import * as my from '../TestAdapter';
 export const isWin = process.platform === 'win32';
 
 ///
+assert.notStrictEqual(vscode.workspace.workspaceFolders, undefined);
+assert.equal(vscode.workspace.workspaceFolders!.length, 1);
 
-export namespace settings {
-  assert.notStrictEqual(vscode.workspace.workspaceFolders, undefined);
-  assert.equal(vscode.workspace.workspaceFolders!.length, 1);
+export const settings = new class {
+  public constructor() {}
 
-  export const workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
-  export const workspaceFolder = vscode.workspace.getWorkspaceFolder(workspaceFolderUri)!;
-  export const dotVscodePath = path.join(workspaceFolderUri.fsPath, '.vscode');
+  public readonly workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
+  public readonly workspaceFolder = vscode.workspace.getWorkspaceFolder(this.workspaceFolderUri)!;
+  public readonly dotVscodePath = path.join(this.workspaceFolderUri.fsPath, '.vscode');
 
-  export function getConfig(): vscode.WorkspaceConfiguration {
-    return vscode.workspace.getConfiguration('catch2TestExplorer', workspaceFolderUri);
+  public getConfig(): vscode.WorkspaceConfiguration {
+    return vscode.workspace.getConfiguration('catch2TestExplorer', this.workspaceFolderUri);
   }
 
-  export function updateConfig(key: string, value: any): Thenable<void> {
-    return getConfig().update(key, value);
+  public updateConfig(key: string, value: any): Thenable<void> {
+    return this.getConfig().update(key, value);
   }
 
-  export function resetConfig(): Thenable<void> {
-    const packageJson = fse.readJSONSync(path.join(workspaceFolderUri.fsPath, '../..', 'package.json'));
+  public resetConfig(): Thenable<void> {
+    const packageJson = fse.readJSONSync(path.join(this.workspaceFolderUri.fsPath, '../..', 'package.json'));
     const properties: { [prop: string]: any }[] = packageJson['contributes']['configuration']['properties'];
     let t: Thenable<void> = Promise.resolve();
     Object.keys(properties).forEach(key => {
@@ -59,12 +60,12 @@ export namespace settings {
       if (k !== 'logfile')
         // don't want to override this
         t = t.then(() => {
-          return getConfig().update(k, undefined);
+          return this.getConfig().update(k, undefined);
         });
     });
     return t;
   }
-}
+}();
 
 export async function waitFor(context: Mocha.Context, condition: Function, timeout?: number): Promise<void> {
   if (timeout === undefined) timeout = context.timeout();
