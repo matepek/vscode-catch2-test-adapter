@@ -85,7 +85,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): Promise<void> {
     const execParams = this._getRunParams(childrenToRun);
 
-    this._shared.log.info('proc starting: ', this.execPath, execParams);
+    this._shared.log.info('proc starting: ', this.origLabel);
 
     this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'running' });
 
@@ -97,10 +97,10 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     this._runInfo = runInfo;
 
-    this._shared.log.info('proc started');
+    this._shared.log.info('proc started:', this.origLabel, this.execPath, execParams, this.execOptions.cwd);
 
     runInfo.process.on('error', (err: Error) => {
-      this._shared.log.error('process error event', err, this);
+      this._shared.log.error('process error event:', err, this);
     });
 
     {
@@ -110,7 +110,8 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
         trigger('reschedule');
       });
 
-      runInfo.process.once('close', () => {
+      runInfo.process.once('close', (...args) => {
+        this._shared.log.info('proc close:', this.origLabel, args);
         trigger('closed');
       });
 
