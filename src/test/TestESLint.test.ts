@@ -3,10 +3,9 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import * as path from 'path';
-import * as lint from 'mocha-eslint';
 
 describe(path.basename(__filename), function() {
-  lint('src/*.ts', {
+  require('mocha-eslint')('src/**/*.ts', {
     // Specify style of output
     formatter: 'compact', // Defaults to `stylish`
 
@@ -23,6 +22,6 @@ describe(path.basename(__filename), function() {
     strict: true, // Defaults to `false`, only notify the warnings
 
     // Specify the mocha context in which to run tests
-    contextName: 'eslint src/*.ts', // Defaults to `eslint`, but can be any string
+    contextName: 'eslint src/**/*.ts', // Defaults to `eslint`, but can be any string
   });
 });

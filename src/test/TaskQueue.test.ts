@@ -8,9 +8,8 @@ import * as path from 'path';
 
 import { TaskQueue } from '../TaskQueue';
 
-describe(path.basename(__filename), function () {
-  async function waitFor(
-    test: Mocha.Context, condition: Function, timeout: number = 1000) {
+describe(path.basename(__filename), function() {
+  async function waitFor(test: Mocha.Context, condition: Function, timeout: number = 1000): Promise<void> {
     const start = Date.now();
     let c = await condition();
     while (!c && (Date.now() - start < timeout || !test.enableTimeouts())) {
@@ -20,31 +19,41 @@ describe(path.basename(__filename), function () {
     return c;
   }
 
-  context('a<--b<--c', function () {
+  context('a<--b<--c', function() {
     const a = new TaskQueue(undefined, 'a');
     const b = new TaskQueue([a], 'b');
     const c = new TaskQueue([b], 'c');
 
-    it('a<--c', function () {
+    it('a<--c', function() {
       c.dependsOn([a]);
-    })
+    });
 
-    it('$x<--$x throws', function () {
-      assert.throws(() => { a.dependsOn([a]); });
-      assert.throws(() => { b.dependsOn([b]); });
-      assert.throws(() => { c.dependsOn([c]); });
-    })
+    it('$x<--$x throws', function() {
+      assert.throws(() => {
+        a.dependsOn([a]);
+      });
+      assert.throws(() => {
+        b.dependsOn([b]);
+      });
+      assert.throws(() => {
+        c.dependsOn([c]);
+      });
+    });
 
-    it('c<--b throws', function () {
-      assert.throws(() => { b.dependsOn([c]); });
-    })
+    it('c<--b throws', function() {
+      assert.throws(() => {
+        b.dependsOn([c]);
+      });
+    });
 
-    it('c<--a throws', function () {
-      assert.throws(() => { a.dependsOn([c]); });
-    })
-  })
+    it('c<--a throws', function() {
+      assert.throws(() => {
+        a.dependsOn([c]);
+      });
+    });
+  });
 
-  it('promise practice 1', async function () {
+  it('promise practice 1', async function() {
     let resolve: Function;
     let second = false;
     new Promise(r => {
@@ -61,7 +70,7 @@ describe(path.basename(__filename), function () {
     assert.ok(second);
   });
 
-  it('promise practice 2', async function () {
+  it('promise practice 2', async function() {
     let resolve: Function;
     let second = false;
     const p = new Promise(r => {
@@ -81,7 +90,7 @@ describe(path.basename(__filename), function () {
     assert.ok(second);
   });
 
-  context('example 1', function () {
+  context('example 1', function() {
     /**
      *  node1 <___ node
      *  node2 <___/
@@ -90,7 +99,7 @@ describe(path.basename(__filename), function () {
     const node2 = new TaskQueue([], 'node2');
     const nodeD = new TaskQueue([node1, node2], 'nodeD');
 
-    it('add:depends before', async function () {
+    it('add:depends before', async function() {
       this.slow(300);
       let startD: Function;
       let hasRunDatOnce = false;
@@ -138,17 +147,23 @@ describe(path.basename(__filename), function () {
 
       await promisify(setTimeout)(20);
 
-      assert.ok(await waitFor(this, async () => {
-        return hasRunDatOnce;
-      }));
+      assert.ok(
+        await waitFor(this, async () => {
+          return hasRunDatOnce;
+        }),
+      );
       assert.equal(nodeD.size, 1);
-      assert.ok(await waitFor(this, async () => {
-        return hasRun1atOnce;
-      }));
+      assert.ok(
+        await waitFor(this, async () => {
+          return hasRun1atOnce;
+        }),
+      );
       assert.equal(node1.size, 2);
-      assert.ok(await waitFor(this, async () => {
-        return hasRun2atOnce;
-      }));
+      assert.ok(
+        await waitFor(this, async () => {
+          return hasRun2atOnce;
+        }),
+      );
       assert.equal(node2.size, 2);
 
       let hasRunD2second = false;
@@ -168,9 +183,11 @@ describe(path.basename(__filename), function () {
 
       start1!();
       await promisify(setTimeout)(20);
-      assert.ok(await waitFor(this, async () => {
-        return hasRun1afterStart;
-      }));
+      assert.ok(
+        await waitFor(this, async () => {
+          return hasRun1afterStart;
+        }),
+      );
       assert.equal(node1.size, 0);
       assert.equal(node2.size, 2);
       assert.equal(nodeD.size, 1);
@@ -179,14 +196,18 @@ describe(path.basename(__filename), function () {
 
       start2!();
       await promisify(setTimeout)(20);
-      assert.ok(await waitFor(this, async () => {
-        return hasRun2afterStart;
-      }));
+      assert.ok(
+        await waitFor(this, async () => {
+          return hasRun2afterStart;
+        }),
+      );
       assert.equal(node2.size, 0);
 
-      assert.ok(await waitFor(this, async () => {
-        return hasRunD2second;
-      }));
+      assert.ok(
+        await waitFor(this, async () => {
+          return hasRunD2second;
+        }),
+      );
       assert.equal(nodeD.size, 0);
     });
   });
