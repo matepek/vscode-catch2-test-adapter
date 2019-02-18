@@ -59,13 +59,13 @@ describe(path.basename(__filename), function() {
   });
 
   let root: TestSuiteInfo;
-  let suite1: TestSuiteInfo | any;
-  let s1t1: TestInfo | any;
-  let s1t2: TestInfo | any;
-  let suite2: TestSuiteInfo | any;
-  let s2t1: TestInfo | any;
-  let s2t2: TestInfo | any;
-  let s2t3: TestInfo | any;
+  let suite1: TestSuiteInfo;
+  let s1t1: TestInfo;
+  let s1t2: TestInfo;
+  let suite2: TestSuiteInfo;
+  let s2t1: TestInfo;
+  let s2t2: TestInfo;
+  let s2t3: TestInfo;
 
   async function loadAdapter(): Promise<void> {
     adapter = new TestAdapter();
@@ -76,13 +76,13 @@ describe(path.basename(__filename), function() {
 
     root = adapter.root;
 
-    suite1 = undefined;
-    s1t1 = undefined;
-    s1t2 = undefined;
-    suite2 = undefined;
-    s2t1 = undefined;
-    s2t2 = undefined;
-    s2t3 = undefined;
+    suite1 = (undefined as unknown) as TestSuiteInfo;
+    s1t1 = (undefined as unknown) as TestInfo;
+    s1t2 = (undefined as unknown) as TestInfo;
+    suite2 = (undefined as unknown) as TestSuiteInfo;
+    s2t1 = (undefined as unknown) as TestInfo;
+    s2t2 = (undefined as unknown) as TestInfo;
+    s2t3 = (undefined as unknown) as TestInfo;
 
     example1.assertWithoutChildren(root, uniqueIdC);
   }
@@ -95,7 +95,7 @@ describe(path.basename(__filename), function() {
 
     async function loadAdapterAndAssert(): Promise<void> {
       await loadAdapter();
-      assert.deepStrictEqual(settings.getConfig().get<any>('executables'), 'execPath1.exe');
+      assert.deepStrictEqual(settings.getConfig().get<string>('executables'), 'execPath1.exe');
       assert.equal(root.children.length, 1);
 
       suite1 = adapter.suite1;
@@ -120,7 +120,7 @@ describe(path.basename(__filename), function() {
 
     it('should run s1t1 with success', async function() {
       await loadAdapterAndAssert();
-      assert.equal(settings.getConfig().get<any>('executables'), 'execPath1.exe');
+      assert.deepStrictEqual(settings.getConfig().get<string>('executables'), 'execPath1.exe');
       await adapter.run([s1t1.id]);
       const expected = [
         { type: 'started', tests: [s1t1.id] },
@@ -1004,9 +1004,9 @@ describe(path.basename(__filename), function() {
 
       assert.strictEqual(adapter.testLoadsEvents.length, testLoadEventCount + 2);
       assert.strictEqual(suite1.children.length, 2);
-      s1t1 = suite1.children[0];
+      s1t1 = suite1.children[0] as TestInfo;
       assert.strictEqual(s1t1.label, 's1t1');
-      s1t2 = suite1.children[1];
+      s1t2 = suite1.children[1] as TestInfo;
       assert.strictEqual(s1t2.label, 's1t2');
 
       assert.deepStrictEqual(adapter.testStatesEvents, [
@@ -1196,7 +1196,7 @@ describe(path.basename(__filename), function() {
 
       assert.strictEqual(suite1.children.length, 2);
       assert.strictEqual(suite1.children[0].label, 's1-t1');
-      s1t1 = suite1.children[0];
+      s1t1 = suite1.children[0] as TestInfo;
 
       const expected = [
         { type: 'started', tests: [suite1.id] },
@@ -1298,22 +1298,24 @@ describe(path.basename(__filename), function() {
       {
         let exception: Error | undefined = undefined;
         const withArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[2][0]);
-        withArgs.onCall(withArgs.callCount).callsFake((p: string, args: string[], ops: any) => {
-          try {
-            assert.equal(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath1'));
-            assert.equal(ops.env.C2GLOBALTESTENV, 'c2globaltestenv');
-            assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
-            assert.equal(ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-            assert.equal(ops.env.C2CWDANDNAME, ops.cwd + '-' + 'execPath1');
-            assert.equal(ops.env.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath1');
-            assert.equal(ops.env.C2WORKSPACENAME, 'test');
+        withArgs
+          .onCall(withArgs.callCount)
+          .callsFake((p: string, args: string[], ops: { [prop: string]: { [prop: string]: string } }) => {
+            try {
+              assert.equal(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath1'));
+              assert.equal(ops.env.C2GLOBALTESTENV, 'c2globaltestenv');
+              assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
+              assert.equal(ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
+              assert.equal(ops.env.C2CWDANDNAME, ops.cwd + '-' + 'execPath1');
+              assert.equal(ops.env.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath1');
+              assert.equal(ops.env.C2WORKSPACENAME, 'test');
 
-            return new ChildProcessStub(example1.suite1.outputs[2][1]);
-          } catch (e) {
-            exception = e;
-            throw e;
-          }
-        });
+              return new ChildProcessStub(example1.suite1.outputs[2][1]);
+            } catch (e) {
+              exception = e;
+              throw e;
+            }
+          });
 
         const cc = withArgs.callCount;
         await adapter.run([root.id]);
@@ -1323,22 +1325,24 @@ describe(path.basename(__filename), function() {
       {
         let exception: Error | undefined = undefined;
         const withArgs = imitation.spawnStub.withArgs(example1.suite2.execPath, example1.suite2.outputs[2][0]);
-        withArgs.onCall(withArgs.callCount).callsFake((p: string, args: string[], ops: any) => {
-          try {
-            assert.equal(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath2'));
-            assert.equal(ops.env.C2GLOBALTESTENV, 'c2globaltestenv');
-            assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
-            assert.equal(ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-            assert.equal(ops.env.C2CWDANDNAME, ops.cwd + '-' + 'execPath2');
-            assert.equal(ops.env.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath2');
-            assert.equal(ops.env.C2WORKSPACENAME, 'test');
+        withArgs
+          .onCall(withArgs.callCount)
+          .callsFake((p: string, args: string[], ops: { [prop: string]: { [prop: string]: string } }) => {
+            try {
+              assert.equal(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath2'));
+              assert.equal(ops.env.C2GLOBALTESTENV, 'c2globaltestenv');
+              assert.equal(ops.env.C2LOCALTESTENV, 'c2localtestenv');
+              assert.equal(ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
+              assert.equal(ops.env.C2CWDANDNAME, ops.cwd + '-' + 'execPath2');
+              assert.equal(ops.env.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath2');
+              assert.equal(ops.env.C2WORKSPACENAME, 'test');
 
-            return new ChildProcessStub(example1.suite2.outputs[2][1]);
-          } catch (e) {
-            exception = e;
-            throw e;
-          }
-        });
+              return new ChildProcessStub(example1.suite2.outputs[2][1]);
+            } catch (e) {
+              exception = e;
+              throw e;
+            }
+          });
         const cc = withArgs.callCount;
         await adapter.run([root.id]);
         assert.equal(withArgs.callCount, cc + 1);
@@ -1443,7 +1447,7 @@ describe(path.basename(__filename), function() {
         //skip
       }
 
-      const debugConfig: any = startDebuggingStub.firstCall.args[1];
+      const debugConfig = startDebuggingStub.firstCall.args[1] as vscode.DebugConfiguration;
 
       assert.deepStrictEqual(debugConfig.args, ['s1t1', '--reporter', 'console', '--break']);
       assert.deepStrictEqual(debugConfig.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cpp'));

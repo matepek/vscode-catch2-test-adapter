@@ -285,7 +285,7 @@ main(process.argv.slice(2)).then(
   () => {
     process.exit(0);
   },
-  (err: any) => {
+  (err: Error) => {
     console.error('Unhandled error under deployment.', err);
     process.exit(-1);
   },

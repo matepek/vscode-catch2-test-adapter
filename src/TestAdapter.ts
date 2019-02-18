@@ -84,7 +84,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                   suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
                 });
               },
-              (reason: any) => {
+              (reason: Error) => {
                 this._log.error(__filename, reason);
                 debugger;
                 this._testsEmitter.fire({
@@ -254,7 +254,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
           });
         },
-        (e: any) => {
+        (e: Error) => {
           this._log.info('load finished with error:', e);
 
           this._testsEmitter.fire({
@@ -277,7 +277,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
 
     return this._mainTaskQueue.then(() => {
-      return this._rootSuite.run(tests).catch((reason: any) => {
+      return this._rootSuite.run(tests).catch((reason: Error) => {
         this._log.error(reason);
       });
     });
@@ -360,7 +360,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             });
           });
         })
-        .then(undefined, (reason: any) => {
+        .then(undefined, (reason: Error) => {
           this._log.error(reason);
           throw reason;
         });
@@ -487,12 +487,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       | undefined
       | string
       | string[]
-      | { [prop: string]: any }
-      | ({ [prop: string]: any } | string)[] = config.get('executables');
+      | { [prop: string]: string }
+      | ({ [prop: string]: string } | string)[] = config.get('executables');
 
     this._log.info('executables:', configExecs);
 
-    const createFromObject = (obj: { [prop: string]: any }): TestExecutableInfo => {
+    const createFromObject = (obj: { [prop: string]: string }): TestExecutableInfo => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 
       let pattern = '';
@@ -502,7 +502,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : globalWorkingDirectory;
 
-      const env: { [prop: string]: any } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
+      const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
 
       return new TestExecutableInfo(this._shared, rootSuite, name, pattern, cwd, env, this._variableToValue);
     };

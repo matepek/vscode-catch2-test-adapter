@@ -20,7 +20,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     private readonly _name: string | undefined,
     private readonly _pattern: string,
     private readonly _cwd: string,
-    private readonly _env: { [prop: string]: any } | undefined,
+    private readonly _env: { [prop: string]: string } | undefined,
     private readonly _variableToValue: [string, string][],
   ) {}
 
@@ -236,7 +236,7 @@ export class TestExecutableInfo implements vscode.Disposable {
               })
               .then(resolve, reject);
           });
-        }).catch((reason: any) => {
+        }).catch((reason: Error) => {
           this._shared.log.warn('Problem under reloadChildren:', reason, uri.fsPath, suite);
           return x(suite, false, Math.min(delay * 2, 2000));
         });
@@ -258,7 +258,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         (s: AbstractTestSuiteInfo) => {
           x(s, false, 64);
         },
-        (reason: any) => {
+        (reason: Error) => {
           this._shared.log.info("couldn't add: " + uri.fsPath, 'reson:', reason);
         },
       );

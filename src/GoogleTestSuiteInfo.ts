@@ -80,7 +80,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             if (err) this._shared.log.warn("Couldn't remove tmpFilePath: " + tmpFilePath, err);
           });
 
-          let xml: any | undefined = undefined;
+          interface XmlObject {
+            [prop: string]: any; //eslint-disable-line
+          }
+
+          let xml: XmlObject = {};
 
           new Parser({ explicitArray: true }).parseString(testOutputStr, (err: Error, result: object) => {
             if (err) {
@@ -235,7 +239,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
     const testBeginRe = /^\[ RUN      \] ((.+)\.(.+))$/m;
 
-    return new Promise<number | string | any>((resolve, reject) => {
+    return new Promise<number | string>((resolve, reject) => {
       const processChunk = (chunk: string): void => {
         data.buffer = data.buffer + chunk;
         let invariant = 99999;
@@ -318,11 +322,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         else reject('unknown');
       });
     })
-      .catch((reason: any) => {
+      .catch((reason: Error) => {
         this._shared.log.warn(runInfo, reason, this, data);
         return reason;
       })
-      .then((codeOrReason: number | string | any) => {
+      .then((codeOrReason: number | string | Error) => {
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
             this._shared.log.warn('data.currentChild !== undefined: ', data);
@@ -381,7 +385,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               }
               events.length && this._shared.sendTestEventEmitter.fire(events);
             },
-            (reason: any) => {
+            (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.
               this._shared.log.error('reloading-error: ', reason);
             },

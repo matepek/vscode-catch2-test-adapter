@@ -8,7 +8,7 @@ import { EOL } from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { spawnAsync, SpawnOptions } from '../FsWrapper';
+import { spawnAsync, SpawnOptions, SpawnReturns } from '../FsWrapper';
 import { ChildProcessStub, isWin } from './TestCommon';
 
 ///
@@ -43,7 +43,7 @@ describe('FsWrapper.spawnAsync', function() {
 });
 
 describe('fs.spawn vs FsWrapper.spawnAsync', function() {
-  function compare(actual: any, expected: any): void {
+  function compare(actual: SpawnReturns, expected: cp.SpawnSyncReturns<string>): void {
     assert.deepStrictEqual(actual.signal, expected.signal);
     assert.deepStrictEqual(actual.status, expected.status);
     assert.deepStrictEqual(actual.output, expected.output);

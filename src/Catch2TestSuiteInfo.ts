@@ -13,6 +13,10 @@ import { SharedVariables } from './SharedVariables';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 
+interface XmlObject {
+  [prop: string]: any; //eslint-disable-line
+}
+
 export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
   public children: Catch2TestInfo[] = [];
 
@@ -178,7 +182,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
     const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
 
-    return new Promise<number | string | any>((resolve, reject) => {
+    return new Promise<number | string>((resolve, reject) => {
       const processChunk = (chunk: string): void => {
         data.buffer = data.buffer + chunk;
         let invariant = 99999;
@@ -193,14 +197,17 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
             data.inTestCase = true;
 
             let name = '';
-            new xml2js.Parser({ explicitArray: true }).parseString(m[0] + '</TestCase>', (err: any, result: any) => {
-              if (err) {
-                this._shared.log.error(err.toString());
-                throw err;
-              } else {
-                name = result.TestCase.$.name;
-              }
-            });
+            new xml2js.Parser({ explicitArray: true }).parseString(
+              m[0] + '</TestCase>',
+              (err: Error, result: XmlObject) => {
+                if (err) {
+                  this._shared.log.error(err.toString());
+                  throw err;
+                } else {
+                  name = result.TestCase.$.name;
+                }
+              },
+            );
 
             if (data.beforeFirstTestCase) {
               const ri = data.buffer.match(/<Randomness\s+seed="([0-9]+)"\s*\/?>/);
@@ -268,11 +275,11 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         else reject('unknown');
       });
     })
-      .catch((reason: any) => {
+      .catch((reason: Error) => {
         this._shared.log.warn(runInfo, reason, this, data);
         return reason;
       })
-      .then((codeOrReason: number | string | any) => {
+      .then((codeOrReason: number | string | Error) => {
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
             this._shared.log.warn('data.currentChild !== undefined: ', data);
@@ -314,7 +321,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
                 let name: string | undefined = undefined;
                 new xml2js.Parser({ explicitArray: true }).parseString(
                   m[0] + '</TestCase>',
-                  (err: any, result: any) => {
+                  (err: Error, result: XmlObject) => {
                     if (err) {
                       this._shared.log.error(err.toString());
                     } else {
@@ -339,7 +346,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
               }
               events.length && this._shared.sendTestEventEmitter.fire(events);
             },
-            (reason: any) => {
+            (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.
               this._shared.log.error('reloading-error: ', reason);
             },
