@@ -59,6 +59,7 @@
     "prettier": "^1.16.4",
     "eslint-config-prettier": "^4.0.0",
     "eslint-plugin-prettier": "^3.0.1",
+    "mocha-eslint": "^5.0.0",
     "@types/chai": "^4.1.7",
     "@types/deep-equal": "^1.0.1",
     "@types/entities": "^1.1.0",
