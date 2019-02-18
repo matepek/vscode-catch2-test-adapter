@@ -7,67 +7,69 @@ import * as assert from 'assert';
 import * as path from 'path';
 import { TestAdapter, settings } from './TestCommon';
 
-describe(path.basename(__filename), function () {
-	this.timeout(5000);
-	this.slow(300);
+describe(path.basename(__filename), function() {
+  this.timeout(5000);
+  this.slow(300);
 
-	let adapter: TestAdapter;
+  let adapter: TestAdapter;
 
-	before(async function () {
-		await settings.resetConfig();
-	})
+  beforeEach(async function() {
+    await settings.resetConfig();
+    adapter = new TestAdapter();
+  });
 
-	beforeEach(function () {
-		adapter = new TestAdapter();
-	})
+  afterEach(async function() {
+    this.timeout(8000);
+    await adapter.waitAndDispose(this);
+    await settings.resetConfig();
+  });
 
-	afterEach(async function () {
-		this.timeout(8000);
-		await adapter.waitAndDispose(this);
-		await settings.resetConfig();
-	})
+  after(function() {
+    this.timeout(8000);
+    return settings.resetConfig();
+  });
 
-	it('defaultEnv', function () {
-		this.slow(1000);
-		return adapter.doAndWaitForReloadEvent(this, () => {
-			return settings.updateConfig('defaultEnv', { 'APPLE': 'apple' });
-		});
-	})
+  it('defaultEnv', function() {
+    this.slow(1000);
+    return adapter.doAndWaitForReloadEvent(this, () => {
+      return settings.updateConfig('defaultEnv', { APPLE: 'apple' });
+    });
+  });
 
-	it('defaultCwd', function () {
-		this.slow(600);
-		return adapter.doAndWaitForReloadEvent(this, () => {
-			return settings.updateConfig('defaultCwd', 'apple/peach');
-		});
-	})
+  it('defaultCwd', function() {
+    this.slow(600);
+    return adapter.doAndWaitForReloadEvent(this, () => {
+      return settings.updateConfig('defaultCwd', 'apple/peach');
+    });
+  });
 
-	it('enableSourceDecoration', function () {
-		return settings.updateConfig('enableSourceDecoration', false).then(function () {
-			assert.ok(!(<any>adapter)._shared.isEnabledSourceDecoration);
-		});
-	})
+  it('enableSourceDecoration', function() {
+    return settings.updateConfig('enableSourceDecoration', false).then(function() {
+      assert.ok(!(adapter as any)._shared.isEnabledSourceDecoration);
+    });
+  });
 
-	it('defaultRngSeed', function () {
-		return settings.updateConfig('defaultRngSeed', 987).then(function () {
-			assert.equal((<any>adapter)._shared.rngSeed, 987);
-		});
-	})
+  it('defaultRngSeed', function() {
+    return settings.updateConfig('defaultRngSeed', 987).then(function() {
+      assert.equal((adapter as any)._shared.rngSeed, 987);
+    });
+  });
 
-	it('defaultWatchTimeoutSec', function () {
-		return settings.updateConfig('defaultWatchTimeoutSec', 9876).then(function () {
-			assert.equal((<any>adapter)._shared.execWatchTimeout, 9876000);
-		});
-	})
+  it('defaultWatchTimeoutSec', function() {
+    return settings.updateConfig('defaultWatchTimeoutSec', 9876).then(function() {
+      assert.equal((adapter as any)._shared.execWatchTimeout, 9876000);
+    });
+  });
 
-	it('defaultRunningTimeoutSec', function () {
-		return settings.updateConfig('defaultRunningTimeoutSec', 8765).then(function () {
-			assert.equal((<any>adapter)._shared.execRunningTimeout, 8765000);
-		});
-	})
+  it('defaultRunningTimeoutSec', function() {
+    return settings.updateConfig('defaultRunningTimeoutSec', 8765).then(function() {
+      assert.equal((adapter as any)._shared.execRunningTimeout, 8765000);
+    });
+  });
 
-	it('defaultNoThrow', function () {
-		return settings.updateConfig('defaultNoThrow', true).then(function () {
-			assert.equal((<any>adapter)._shared.isNoThrow, true);
-		});
-	})
-})
+  it('defaultNoThrow', function() {
+    return settings.updateConfig('defaultNoThrow', true).then(function() {
+      assert.equal((adapter as any)._shared.isNoThrow, true);
+    });
+  });
+});

@@ -8,13 +8,12 @@ import { Imitation, settings, FileSystemWatcherStub, ChildProcessStub } from './
 ///
 
 export const example1 = new class {
-  readonly suite1 = new class {
-    readonly execPath =
-      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath1.exe')).fsPath;
+  public readonly suite1 = new class {
+    public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath1.exe')).fsPath;
 
-    readonly t1 = new class {
-      readonly fullTestName = 's1t1';
-      assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>) {
+    public readonly t1 = new class {
+      public readonly fullTestName = 's1t1';
+      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(test.file, 'suite1.cpp');
@@ -24,9 +23,9 @@ export const example1 = new class {
           assert.ok(!uniqeIdContainer.has(test.id));
           uniqeIdContainer.add(test.id);
         }
-      };
+      }
 
-      readonly outputs: [string[], string][] = [
+      public readonly outputs: [string[], string][] = [
         [
           ['s1t1', '--reporter', 'xml', '--durations', 'yes'],
           `<?xml version="1.0" encoding="UTF-8"?>
@@ -38,12 +37,10 @@ export const example1 = new class {
                 <OverallResults successes="1" failures="0" expectedFailures="0"/>
               </Group>
               <OverallResults successes="1" failures="0" expectedFailures="0"/>
-            </Catch>`
+            </Catch>`,
         ],
         [
-          [
-            's1t1', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'
-          ],
+          ['s1t1', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
           `<?xml version="1.0" encoding="UTF-8"?>
             <Catch name="suite1">
               <Randomness seed="2"/>
@@ -54,14 +51,14 @@ export const example1 = new class {
                 <OverallResults successes="1" failures="0" expectedFailures="0"/>
               </Group>
               <OverallResults successes="1" failures="0" expectedFailures="0"/>
-            </Catch>`
+            </Catch>`,
         ],
       ];
-    };
+    }();
 
-    readonly t2 = new class {
-      readonly fullTestName = 's1t2';
-      assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>) {
+    public readonly t2 = new class {
+      public readonly fullTestName = 's1t2';
+      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(test.file, 'suite1.cpp');
@@ -71,9 +68,9 @@ export const example1 = new class {
           assert.ok(!uniqeIdContainer.has(test.id));
           uniqeIdContainer.add(test.id);
         }
-      };
+      }
 
-      readonly outputs: [string[], string][] = [
+      public readonly outputs: [string[], string][] = [
         [
           ['s1t2', '--reporter', 'xml', '--durations', 'yes'],
           `<?xml version="1.0" encoding="UTF-8"?>
@@ -93,12 +90,10 @@ export const example1 = new class {
                 <OverallResults successes="0" failures="1" expectedFailures="0"/>
               </Group>
               <OverallResults successes="0" failures="1" expectedFailures="0"/>
-            </Catch>`
+            </Catch>`,
         ],
         [
-          [
-            's1t2', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'
-          ],
+          ['s1t2', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
           `<?xml version="1.0" encoding="UTF-8"?>
             <Catch name="suite1">
               <Randomness seed="2"/>
@@ -117,23 +112,23 @@ export const example1 = new class {
                 <OverallResults successes="0" failures="1" expectedFailures="0"/>
               </Group>
               <OverallResults successes="0" failures="1" expectedFailures="0"/>
-            </Catch>`
-        ]
+            </Catch>`,
+        ],
       ];
-    };
+    }();
 
-    readonly outputs: [string[], string][] = [
+    public readonly outputs: [string[], string][] = [
       [['--help'], 'Catch v2.4.1'],
       [
         ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
         'Matching test cases:\n' +
-        '  s1t1\n' +
-        '    suite1.cpp:7\n' +
-        '    tag1\n' +
-        '  s1t2\n' +
-        '    suite1.cpp:13\n' +
-        '    tag1\n' +
-        '2 matching test cases\n\n'
+          '  s1t1\n' +
+          '    suite1.cpp:7\n' +
+          '    tag1\n' +
+          '  s1t2\n' +
+          '    suite1.cpp:13\n' +
+          '    tag1\n' +
+          '2 matching test cases\n\n',
       ],
       [
         ['--reporter', 'xml', '--durations', 'yes'],
@@ -157,7 +152,7 @@ export const example1 = new class {
               <OverallResults successes="1" failures="1" expectedFailures="0"/>
             </Group>
             <OverallResults successes="1" failures="1" expectedFailures="0"/>
-          </Catch>`
+          </Catch>`,
       ],
       [
         ['--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
@@ -182,39 +177,34 @@ export const example1 = new class {
               <OverallResults successes="1" failures="1" expectedFailures="0"/>
             </Group>
             <OverallResults successes="1" failures="1" expectedFailures="0"/>
-          </Catch>`
+          </Catch>`,
       ],
       ...this.t1.outputs,
       ...this.t2.outputs,
     ];
 
-    assert(
-      label: string, childLabels: string[], suite: TestSuiteInfo,
-      uniqeIdContainer?: Set<string>) {
+    public assert(label: string, childLabels: string[], suite: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
       assert.equal(suite.type, 'suite');
       assert.equal(suite.label, label);
       assert.equal(suite.file, 'suite1.cpp');
       assert.equal(suite.line, 0);
       assert.equal(suite.children.length, 2);
       assert.equal(childLabels.length, suite.children.length);
-      this.t1.assert(
-        childLabels[0], <TestInfo>suite.children[0], uniqeIdContainer);
-      this.t2.assert(
-        childLabels[1], <TestInfo>suite.children[1], uniqeIdContainer);
+      this.t1.assert(childLabels[0], suite.children[0] as TestInfo, uniqeIdContainer);
+      this.t2.assert(childLabels[1], suite.children[1] as TestInfo, uniqeIdContainer);
       if (uniqeIdContainer != undefined) {
         assert.ok(!uniqeIdContainer.has(suite.id));
         uniqeIdContainer.add(suite.id);
       }
     }
-  };
+  }();
 
-  readonly suite2 = new class {
-    readonly execPath =
-      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath2.exe')).fsPath;
+  public readonly suite2 = new class {
+    public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath2.exe')).fsPath;
 
-    readonly t1 = new class {
-      readonly fullTestName = 's2t1';
-      assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>) {
+    public readonly t1 = new class {
+      public readonly fullTestName = 's2t1';
+      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(test.file, 'suite2.cpp');
@@ -226,7 +216,7 @@ export const example1 = new class {
         }
       }
 
-      readonly outputs: [string[], string][] = [
+      public readonly outputs: [string[], string][] = [
         [
           ['s2t1', '--reporter', 'xml', '--durations', 'yes'],
           `<?xml version="1.0" encoding="UTF-8"?>
@@ -238,12 +228,10 @@ export const example1 = new class {
               <OverallResults successes="1" failures="0" expectedFailures="0"/>
             </Group>
             <OverallResults successes="1" failures="0" expectedFailures="0"/>
-          </Catch>`
+          </Catch>`,
         ],
         [
-          [
-            's2t1', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'
-          ],
+          ['s2t1', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
           `<?xml version="1.0" encoding="UTF-8"?>
           <Catch name="suite2">
             <Randomness seed="2"/>
@@ -254,14 +242,14 @@ export const example1 = new class {
               <OverallResults successes="1" failures="0" expectedFailures="0"/>
             </Group>
             <OverallResults successes="1" failures="0" expectedFailures="0"/>
-          </Catch>`
-        ]
+          </Catch>`,
+        ],
       ];
-    };
+    }();
 
-    readonly t2 = new class {
-      readonly fullTestName = 's2t2';
-      assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>) {
+    public readonly t2 = new class {
+      public readonly fullTestName = 's2t2';
+      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(test.file, 'suite2.cpp');
@@ -273,7 +261,7 @@ export const example1 = new class {
         }
       }
 
-      readonly outputs: [string[], string][] = [
+      public readonly outputs: [string[], string][] = [
         [
           ['s2t2', '--reporter', 'xml', '--durations', 'yes'],
           `<?xml version="1.0" encoding="UTF-8"?>
@@ -285,12 +273,10 @@ export const example1 = new class {
                 <OverallResults successes="1" failures="0" expectedFailures="0"/>
               </Group>
               <OverallResults successes="1" failures="0" expectedFailures="0"/>
-            </Catch>`
+            </Catch>`,
         ],
         [
-          [
-            's2t2', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'
-          ],
+          ['s2t2', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
           `<?xml version="1.0" encoding="UTF-8"?>
             <Catch name="suite2">
               <Randomness seed="2"/>
@@ -301,14 +287,14 @@ export const example1 = new class {
                 <OverallResults successes="1" failures="0" expectedFailures="0"/>
               </Group>
               <OverallResults successes="1" failures="0" expectedFailures="0"/>
-            </Catch>`
-        ]
+            </Catch>`,
+        ],
       ];
-    };
+    }();
 
-    readonly t3 = new class {
-      readonly fullTestName = 's2t3';
-      assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>) {
+    public readonly t3 = new class {
+      public readonly fullTestName = 's2t3';
+      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(test.file, 'suite2.cpp');
@@ -320,7 +306,7 @@ export const example1 = new class {
         }
       }
 
-      readonly outputs: [string[], string][] = [
+      public readonly outputs: [string[], string][] = [
         [
           ['s2t3', '--reporter', 'xml', '--durations', 'yes'],
           `<?xml version="1.0" encoding="UTF-8"?>
@@ -340,12 +326,10 @@ export const example1 = new class {
                 <OverallResults successes="0" failures="1" expectedFailures="0"/>
               </Group>
               <OverallResults successes="0" failures="1" expectedFailures="0"/>
-            </Catch>`
+            </Catch>`,
         ],
         [
-          [
-            's2t3', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'
-          ],
+          ['s2t3', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
           `<?xml version="1.0" encoding="UTF-8"?>
             <Catch name="suite2">
               <Randomness seed="2"/>
@@ -364,48 +348,43 @@ export const example1 = new class {
                 <OverallResults successes="0" failures="1" expectedFailures="0"/>
               </Group>
               <OverallResults successes="0" failures="1" expectedFailures="0"/>
-            </Catch>`
-        ]
+            </Catch>`,
+        ],
       ];
-    };
+    }();
 
-    assert(
-      label: string, childLabels: string[], suite: TestSuiteInfo,
-      uniqeIdContainer?: Set<string>) {
+    public assert(label: string, childLabels: string[], suite: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
       assert.equal(suite.type, 'suite');
       assert.equal(suite.label, label);
       assert.equal(suite.file, 'suite2.cpp');
       assert.equal(suite.line, 0);
       assert.equal(suite.children.length, 3);
       assert.equal(childLabels.length, suite.children.length);
-      this.t1.assert(
-        childLabels[0], <TestInfo>suite.children[0], uniqeIdContainer);
-      this.t2.assert(
-        childLabels[1], <TestInfo>suite.children[1], uniqeIdContainer);
-      this.t3.assert(
-        childLabels[2], <TestInfo>suite.children[2], uniqeIdContainer);
+      this.t1.assert(childLabels[0], suite.children[0] as TestInfo, uniqeIdContainer);
+      this.t2.assert(childLabels[1], suite.children[1] as TestInfo, uniqeIdContainer);
+      this.t3.assert(childLabels[2], suite.children[2] as TestInfo, uniqeIdContainer);
       if (uniqeIdContainer != undefined) {
         assert.ok(!uniqeIdContainer.has(suite.id));
         uniqeIdContainer.add(suite.id);
       }
     }
 
-    readonly outputs: [string[], string][] = [
+    public readonly outputs: [string[], string][] = [
       [['--help'], 'Catch v2.4.1'],
       [
         ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
         'Matching test cases:\n' +
-        '  s2t1\n' +
-        '    suite2.cpp:7\n' +
-        '    tag1\n' +
-        '  s2t2\n' +
-        '    suite2.cpp:13\n' +
-        '    tag1\n' +
-        '      [.]\n' +
-        '  s2t3\n' +
-        '    suite2.cpp:19\n' +
-        '    tag1\n' +
-        '3 matching test cases\n\n'
+          '  s2t1\n' +
+          '    suite2.cpp:7\n' +
+          '    tag1\n' +
+          '  s2t2\n' +
+          '    suite2.cpp:13\n' +
+          '    tag1\n' +
+          '      [.]\n' +
+          '  s2t3\n' +
+          '    suite2.cpp:19\n' +
+          '    tag1\n' +
+          '3 matching test cases\n\n',
       ],
       [
         ['--reporter', 'xml', '--durations', 'yes'],
@@ -429,7 +408,7 @@ export const example1 = new class {
               <OverallResults successes="1" failures="1" expectedFailures="0"/>
             </Group>
             <OverallResults successes="1" failures="1" expectedFailures="0"/>
-          </Catch>`
+          </Catch>`,
       ],
       [
         ['--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
@@ -454,20 +433,21 @@ export const example1 = new class {
               <OverallResults successes="1" failures="1" expectedFailures="0"/>
             </Group>
             <OverallResults successes="1" failures="1" expectedFailures="0"/>
-          </Catch>`
+          </Catch>`,
       ],
-      ...this.t1.outputs, ...this.t2.outputs, ...this.t3.outputs
+      ...this.t1.outputs,
+      ...this.t2.outputs,
+      ...this.t3.outputs,
     ];
-  };
+  }();
 
-  readonly suite3 = new class {
-    readonly execPath =
-      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath3.exe')).fsPath;
+  public readonly suite3 = new class {
+    public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath3.exe')).fsPath;
 
-    readonly outputs: [string[], string][] = [
-
+    public readonly outputs: [string[], string][] = [
       [
-        ['--help'], `
+        ['--help'],
+        `
 Catch v2.4.1
 usage:
   suite3 [<test name|pattern|tags> ... ] options
@@ -511,7 +491,7 @@ where options are:
 
 For more detailed usage please see the project docs
 
-`
+`,
       ],
       [
         ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
@@ -617,7 +597,7 @@ For more detailed usage please see the project docs
     (NO DESCRIPTION)
 34 matching test cases
 
-`
+`,
       ],
       [
         ['--reporter', 'xml', '--durations', 'yes'],
@@ -785,7 +765,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="2" failures="2" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
@@ -954,7 +934,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="2" failures="2" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['test name\\,with\\,colon', '--reporter', 'xml', '--durations', 'yes'],
@@ -968,7 +948,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="1" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['*test name with space ', '--reporter', 'xml', '--durations', 'yes'],
@@ -982,7 +962,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="1" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['SECTION tree', '--reporter', 'xml', '--durations', 'yes'],
@@ -1054,7 +1034,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="2" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec ! char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1068,7 +1048,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec @ char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1082,7 +1062,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec # char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1096,7 +1076,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec $ char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1110,7 +1090,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec % char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1124,7 +1104,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec ^ char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1138,7 +1118,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec & char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1152,7 +1132,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec \\* char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1166,10 +1146,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        ['spec \(a\) char', '--reporter', 'xml', '--durations', 'yes'],
+        ['spec (a) char', '--reporter', 'xml', '--durations', 'yes'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Group name="suite3">
@@ -1180,7 +1160,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec {a} char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1194,7 +1174,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec \\[a] char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1208,7 +1188,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec ; char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1222,10 +1202,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        ['spec \' char', '--reporter', 'xml', '--durations', 'yes'],
+        ["spec ' char", '--reporter', 'xml', '--durations', 'yes'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Group name="suite3">
@@ -1236,7 +1216,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec \\ char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1250,7 +1230,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec \\, char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1264,7 +1244,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec . char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1278,7 +1258,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec / char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1292,7 +1272,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec < char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1306,7 +1286,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec > char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1320,7 +1300,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec ? char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1334,7 +1314,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec - char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1348,7 +1328,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec = char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1362,7 +1342,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec _ char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1376,7 +1356,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec + char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1390,7 +1370,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec ~ char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1404,10 +1384,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        ['spec \` char', '--reporter', 'xml', '--durations', 'yes'],
+        ['spec ` char', '--reporter', 'xml', '--durations', 'yes'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Group name="suite3">
@@ -1418,7 +1398,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec § char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1432,7 +1412,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec ± char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1446,7 +1426,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec " char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1460,7 +1440,7 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
         ['spec | char', '--reporter', 'xml', '--durations', 'yes'],
@@ -1474,13 +1454,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'test name\,with\,colon', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['test name,with,colon', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1492,13 +1469,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="1" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          '*test name with space ', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['*test name with space ', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1510,13 +1484,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="1" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'SECTION tree', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['SECTION tree', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1586,13 +1557,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="2" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec ! char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec ! char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1604,13 +1572,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec @ char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec @ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1622,13 +1587,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec # char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec # char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1640,13 +1602,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec $ char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec $ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1658,13 +1617,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec % char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec % char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1676,13 +1632,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec ^ char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec ^ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1694,13 +1647,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec & char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec & char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1712,13 +1662,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec \\* char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec \\* char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1730,13 +1677,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec \(a\) char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec (a) char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1748,13 +1692,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec {a} char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec {a} char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1766,13 +1707,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec \\[a] char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec \\[a] char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1784,13 +1722,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec ; char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec ; char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1802,13 +1737,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec \' char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ["spec ' char", '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1820,13 +1752,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec \\\\ char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec \\\\ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1838,13 +1767,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec \\, char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec \\, char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1856,13 +1782,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec . char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec . char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1874,13 +1797,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec / char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec / char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1892,13 +1812,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec < char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec < char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1910,13 +1827,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec > char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec > char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1928,13 +1842,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec ? char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec ? char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1946,13 +1857,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec - char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec - char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1964,13 +1872,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec = char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec = char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1982,13 +1887,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec _ char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec _ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -2000,13 +1902,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec + char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec + char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -2018,13 +1917,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec ~ char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec ~ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -2036,13 +1932,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec \` char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec ` char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -2054,13 +1947,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec § char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec § char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -2072,13 +1962,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec ± char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec ± char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -2090,13 +1977,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec " char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec " char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -2108,13 +1992,10 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
       [
-        [
-          'spec | char', '--reporter', 'xml', '--durations', 'yes',
-          '--rng-seed', '2'
-        ],
+        ['spec | char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -2126,13 +2007,12 @@ For more detailed usage please see the project docs
   </Group>
   <OverallResults successes="0" failures="0" expectedFailures="0"/>
 </Catch>
-`
+`,
       ],
-
     ];
-  };
+  }();
 
-  assertWithoutChildren(root: TestSuiteInfo, uniqeIdContainer?: Set<string>) {
+  public assertWithoutChildren(root: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
     assert.strictEqual(root.type, 'suite');
     assert.strictEqual(root.label, 'Catch2 and Google tests');
     assert.strictEqual(root.file, undefined);
@@ -2141,13 +2021,12 @@ For more detailed usage please see the project docs
       assert.ok(!uniqeIdContainer.has(root.id));
       uniqeIdContainer.add(root.id);
     }
-  };
+  }
 
-  readonly gtest1 = new class {
-    readonly execPath =
-      vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'gtest1.exe')).fsPath;
+  public readonly gtest1 = new class {
+    public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'gtest1.exe')).fsPath;
 
-    readonly gtest_list_tests_output = [
+    public readonly gtest_list_tests_output = [
       'Running main() from ...',
       'TestCas1.',
       '  test1',
@@ -2169,7 +2048,7 @@ For more detailed usage please see the project docs
       '',
     ].join(EOL);
 
-    readonly gtest_list_tests_output_xml = `<?xml version="1.0" encoding="UTF-8"?>
+    public readonly gtest_list_tests_output_xml = `<?xml version="1.0" encoding="UTF-8"?>
     <testsuites tests="12" name="AllTests">
       <testsuite name="TestCas1" tests="2">
         <testcase name="test1" file="gtest.cpp" line="11" />
@@ -2195,206 +2074,221 @@ For more detailed usage please see the project docs
       </testsuite>
     </testsuites>`;
 
-    readonly outputs: [string[], string][] = [
+    public readonly outputs: [string[], string][] = [
       [['--help'], 'This program contains tests written using Google Test. Yo'],
-      [['--gtest_color=no'], [
-        '[==========] Running 12 tests from 5 test cases.',
-        '[----------] Global test environment set-up.',
-        '[----------] 2 tests from TestCas1',
-        '[ RUN      ] TestCas1.test1',
-        '[       OK ] TestCas1.test1 (0 ms)',
-        '[ RUN      ] TestCas1.test2',
-        'gtest.cpp:19: Failure',
-        'Value of: 1 == 2',
-        '  Actual: false',
-        'Expected: true',
-        '[  FAILED  ] TestCas1.test2 (0 ms)',
-        '[----------] 2 tests from TestCas1 (0 ms total)',
-        '',
-        '[----------] 2 tests from TestCas2',
-        '[ RUN      ] TestCas2.test1',
-        'gtest.cpp:24: Failure',
-        'Value of: 1 != 1',
-        '  Actual: false',
-        'Expected: true',
-        'gtest.cpp:25: Failure',
-        'Value of: 1 == 1',
-        '  Actual: true',
-        'Expected: false',
-        'gtest.cpp:26: Failure',
-        'Expected equality of these values:',
-        '  1',
-        '  2',
-        'gtest.cpp:27: Failure',
-        'Expected: (1) != (1), actual: 1 vs 1',
-        'gtest.cpp:28: Failure',
-        'Expected: (1) < (1), actual: 1 vs 1',
-        'gtest.cpp:29: Failure',
-        'Expected: (1) > (1), actual: 1 vs 1',
-        '[  FAILED  ] TestCas2.test1 (1 ms)',
-        '[ RUN      ] TestCas2.test2',
-        'gtest.cpp:32: Failure',
-        'Value of: false',
-        '  Actual: false',
-        'Expected: true',
-        'gtest.cpp:36: Failure',
-        'Expected: magic_func() doesn\'t generate new fatal failures in the current thread.',
-        '  Actual: it does.',
-        '[  FAILED  ] TestCas2.test2 (0 ms)',
-        '[----------] 2 tests from TestCas2 (1 ms total)',
-        '',
-        '[----------] 2 tests from MockTestCase',
-        '[ RUN      ] MockTestCase.expect1',
-        'gtest.cpp:70: Failure',
-        'Actual function call count doesn\'t match EXPECT_CALL(foo, GetSize())...',
-        '         Expected: to be called once',
-        '           Actual: never called - unsatisfied and active',
-        '[  FAILED  ] MockTestCase.expect1 (0 ms)',
-        '[ RUN      ] MockTestCase.expect2',
-        'unknown file: Failure',
-        '',
-        'Unexpected mock function call - returning directly.',
-        '    Function call: Describe(3)',
-        'Google Mock tried the following 1 expectation, but it didn\'t match: ',
-        '',
-        'gtest.cpp:78: EXPECT_CALL(foo, Describe(4))...',
-        '  Expected arg #0: is equal to 4',
-        '           Actual: 3',
-        '         Expected: to be called once',
-        '           Actual: never called - unsatisfied and active',
-        'gtest.cpp:78: Failure',
-        'Actual function call count doesn\'t match EXPECT_CALL(foo, Describe(4))...',
-        '         Expected: to be called once',
-        '           Actual: never called - unsatisfied and active',
-        '[  FAILED  ] MockTestCase.expect2 (0 ms)',
-        '[----------] 2 tests from MockTestCase (0 ms total)',
-        '',
-        '[----------] 4 tests from PrintingFailingParams1/FailingParamTest',
-        '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
-        'gtest.cpp:41: Failure',
-        'Expected equality of these values:',
-        '  1',
-        '  GetParam()',
-        '    Which is: 2',
-        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
-        '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/1',
-        'gtest.cpp:41: Failure',
-        'Expected equality of these values:',
-        '  1',
-        '  GetParam()',
-        '    Which is: 3',
-        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3 (0 ms)',
-        '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/0',
-        'gtest.cpp:42: Failure',
-        'Expected equality of these values:',
-        '  1',
-        '  GetParam()',
-        '    Which is: 2',
-        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2 (1 ms)',
-        '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/1',
-        'gtest.cpp:42: Failure',
-        'Expected equality of these values:',
-        '  1',
-        '  GetParam()',
-        '    Which is: 3',
-        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3 (0 ms)',
-        '[----------] 4 tests from PrintingFailingParams1/FailingParamTest (1 ms total)',
-        '',
-        '[----------] 2 tests from PrintingFailingParams2/FailingParamTest',
-        '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails1/0',
-        'gtest.cpp:41: Failure',
-        'Expected equality of these values:',
-        '  1',
-        '  GetParam()',
-        '    Which is: 3',
-        '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3 (0 ms)',
-        '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails2/0',
-        'gtest.cpp:42: Failure',
-        'Expected equality of these values:',
-        '  1',
-        '  GetParam()',
-        '    Which is: 3',
-        '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3 (0 ms)',
-        '[----------] 2 tests from PrintingFailingParams2/FailingParamTest (0 ms total)',
-        '',
-        '[----------] Global test environment tear-down',
-        '[==========] 12 tests from 5 test cases ran. (2 ms total)',
-        '[  PASSED  ] 1 test.',
-        '[  FAILED  ] 11 tests, listed below:',
-        '[  FAILED  ] TestCas1.test2',
-        '[  FAILED  ] TestCas2.test1',
-        '[  FAILED  ] TestCas2.test2',
-        '[  FAILED  ] MockTestCase.expect1',
-        '[  FAILED  ] MockTestCase.expect2',
-        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2',
-        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3',
-        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2',
-        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3',
-        '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3',
-        '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3',
-        '',
-        '11 FAILED TESTS',
-        ''].join(EOL)],
-      [["--gtest_color=no", "--gtest_filter=TestCas1.test1", "--gtest_also_run_disabled_tests"], [
-        'Note: Google Test filter = TestCas1.test1',
-        '[==========] Running 1 test from 1 test case.',
-        '[----------] Global test environment set-up.',
-        '[----------] 1 test from TestCas1',
-        '[ RUN      ] TestCas1.test1',
-        '[       OK ] TestCas1.test1 (0 ms)',
-        '[----------] 1 test from TestCas1 (0 ms total)',
-        '',
-        '[----------] Global test environment tear-down',
-        '[==========] 1 test from 1 test case ran. (1 ms total)',
-        '[  PASSED  ] 1 test.',
-        '',
-      ].join(EOL)],
-      [["--gtest_color=no", "--gtest_filter=PrintingFailingParams1/FailingParamTest.Fails1/0", "--gtest_also_run_disabled_tests"], [
-        'Note: Google Test filter = PrintingFailingParams1/FailingParamTest.Fails1/0',
-        '[==========] Running 1 test from 1 test case.',
-        '[----------] Global test environment set-up.',
-        '[----------] 1 test from PrintingFailingParams1/FailingParamTest',
-        '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
-        'gtest.cpp:41: Failure',
-        'Expected equality of these values:',
-        '  1',
-        '  GetParam()',
-        '    Which is: 2',
-        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
-        '[----------] 1 test from PrintingFailingParams1/FailingParamTest (0 ms total)',
-        '',
-        '[----------] Global test environment tear-down',
-        '[==========] 1 test from 1 test case ran. (1 ms total)',
-        '[  PASSED  ] 0 tests.',
-        '[  FAILED  ] 1 test, listed below:',
-        '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2',
-        '',
-        ' 1 FAILED TEST',
-        '',
-      ].join(EOL)]
+      [
+        ['--gtest_color=no'],
+        [
+          '[==========] Running 12 tests from 5 test cases.',
+          '[----------] Global test environment set-up.',
+          '[----------] 2 tests from TestCas1',
+          '[ RUN      ] TestCas1.test1',
+          '[       OK ] TestCas1.test1 (0 ms)',
+          '[ RUN      ] TestCas1.test2',
+          'gtest.cpp:19: Failure',
+          'Value of: 1 == 2',
+          '  Actual: false',
+          'Expected: true',
+          '[  FAILED  ] TestCas1.test2 (0 ms)',
+          '[----------] 2 tests from TestCas1 (0 ms total)',
+          '',
+          '[----------] 2 tests from TestCas2',
+          '[ RUN      ] TestCas2.test1',
+          'gtest.cpp:24: Failure',
+          'Value of: 1 != 1',
+          '  Actual: false',
+          'Expected: true',
+          'gtest.cpp:25: Failure',
+          'Value of: 1 == 1',
+          '  Actual: true',
+          'Expected: false',
+          'gtest.cpp:26: Failure',
+          'Expected equality of these values:',
+          '  1',
+          '  2',
+          'gtest.cpp:27: Failure',
+          'Expected: (1) != (1), actual: 1 vs 1',
+          'gtest.cpp:28: Failure',
+          'Expected: (1) < (1), actual: 1 vs 1',
+          'gtest.cpp:29: Failure',
+          'Expected: (1) > (1), actual: 1 vs 1',
+          '[  FAILED  ] TestCas2.test1 (1 ms)',
+          '[ RUN      ] TestCas2.test2',
+          'gtest.cpp:32: Failure',
+          'Value of: false',
+          '  Actual: false',
+          'Expected: true',
+          'gtest.cpp:36: Failure',
+          "Expected: magic_func() doesn't generate new fatal failures in the current thread.",
+          '  Actual: it does.',
+          '[  FAILED  ] TestCas2.test2 (0 ms)',
+          '[----------] 2 tests from TestCas2 (1 ms total)',
+          '',
+          '[----------] 2 tests from MockTestCase',
+          '[ RUN      ] MockTestCase.expect1',
+          'gtest.cpp:70: Failure',
+          "Actual function call count doesn't match EXPECT_CALL(foo, GetSize())...",
+          '         Expected: to be called once',
+          '           Actual: never called - unsatisfied and active',
+          '[  FAILED  ] MockTestCase.expect1 (0 ms)',
+          '[ RUN      ] MockTestCase.expect2',
+          'unknown file: Failure',
+          '',
+          'Unexpected mock function call - returning directly.',
+          '    Function call: Describe(3)',
+          "Google Mock tried the following 1 expectation, but it didn't match: ",
+          '',
+          'gtest.cpp:78: EXPECT_CALL(foo, Describe(4))...',
+          '  Expected arg #0: is equal to 4',
+          '           Actual: 3',
+          '         Expected: to be called once',
+          '           Actual: never called - unsatisfied and active',
+          'gtest.cpp:78: Failure',
+          "Actual function call count doesn't match EXPECT_CALL(foo, Describe(4))...",
+          '         Expected: to be called once',
+          '           Actual: never called - unsatisfied and active',
+          '[  FAILED  ] MockTestCase.expect2 (0 ms)',
+          '[----------] 2 tests from MockTestCase (0 ms total)',
+          '',
+          '[----------] 4 tests from PrintingFailingParams1/FailingParamTest',
+          '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
+          'gtest.cpp:41: Failure',
+          'Expected equality of these values:',
+          '  1',
+          '  GetParam()',
+          '    Which is: 2',
+          '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
+          '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/1',
+          'gtest.cpp:41: Failure',
+          'Expected equality of these values:',
+          '  1',
+          '  GetParam()',
+          '    Which is: 3',
+          '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3 (0 ms)',
+          '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/0',
+          'gtest.cpp:42: Failure',
+          'Expected equality of these values:',
+          '  1',
+          '  GetParam()',
+          '    Which is: 2',
+          '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2 (1 ms)',
+          '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/1',
+          'gtest.cpp:42: Failure',
+          'Expected equality of these values:',
+          '  1',
+          '  GetParam()',
+          '    Which is: 3',
+          '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3 (0 ms)',
+          '[----------] 4 tests from PrintingFailingParams1/FailingParamTest (1 ms total)',
+          '',
+          '[----------] 2 tests from PrintingFailingParams2/FailingParamTest',
+          '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails1/0',
+          'gtest.cpp:41: Failure',
+          'Expected equality of these values:',
+          '  1',
+          '  GetParam()',
+          '    Which is: 3',
+          '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3 (0 ms)',
+          '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails2/0',
+          'gtest.cpp:42: Failure',
+          'Expected equality of these values:',
+          '  1',
+          '  GetParam()',
+          '    Which is: 3',
+          '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3 (0 ms)',
+          '[----------] 2 tests from PrintingFailingParams2/FailingParamTest (0 ms total)',
+          '',
+          '[----------] Global test environment tear-down',
+          '[==========] 12 tests from 5 test cases ran. (2 ms total)',
+          '[  PASSED  ] 1 test.',
+          '[  FAILED  ] 11 tests, listed below:',
+          '[  FAILED  ] TestCas1.test2',
+          '[  FAILED  ] TestCas2.test1',
+          '[  FAILED  ] TestCas2.test2',
+          '[  FAILED  ] MockTestCase.expect1',
+          '[  FAILED  ] MockTestCase.expect2',
+          '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2',
+          '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3',
+          '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2',
+          '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3',
+          '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3',
+          '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3',
+          '',
+          '11 FAILED TESTS',
+          '',
+        ].join(EOL),
+      ],
+      [
+        ['--gtest_color=no', '--gtest_filter=TestCas1.test1', '--gtest_also_run_disabled_tests'],
+        [
+          'Note: Google Test filter = TestCas1.test1',
+          '[==========] Running 1 test from 1 test case.',
+          '[----------] Global test environment set-up.',
+          '[----------] 1 test from TestCas1',
+          '[ RUN      ] TestCas1.test1',
+          '[       OK ] TestCas1.test1 (0 ms)',
+          '[----------] 1 test from TestCas1 (0 ms total)',
+          '',
+          '[----------] Global test environment tear-down',
+          '[==========] 1 test from 1 test case ran. (1 ms total)',
+          '[  PASSED  ] 1 test.',
+          '',
+        ].join(EOL),
+      ],
+      [
+        [
+          '--gtest_color=no',
+          '--gtest_filter=PrintingFailingParams1/FailingParamTest.Fails1/0',
+          '--gtest_also_run_disabled_tests',
+        ],
+        [
+          'Note: Google Test filter = PrintingFailingParams1/FailingParamTest.Fails1/0',
+          '[==========] Running 1 test from 1 test case.',
+          '[----------] Global test environment set-up.',
+          '[----------] 1 test from PrintingFailingParams1/FailingParamTest',
+          '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
+          'gtest.cpp:41: Failure',
+          'Expected equality of these values:',
+          '  1',
+          '  GetParam()',
+          '    Which is: 2',
+          '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
+          '[----------] 1 test from PrintingFailingParams1/FailingParamTest (0 ms total)',
+          '',
+          '[----------] Global test environment tear-down',
+          '[==========] 1 test from 1 test case ran. (1 ms total)',
+          '[  PASSED  ] 0 tests.',
+          '[  FAILED  ] 1 test, listed below:',
+          '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2',
+          '',
+          ' 1 FAILED TEST',
+          '',
+        ].join(EOL),
+      ],
     ];
-  };
+  }();
 
-  readonly outputs: [string, [string[], string][]][] = [
+  public readonly outputs: [string, [string[], string][]][] = [
     [this.suite1.execPath, this.suite1.outputs],
     [this.suite2.execPath, this.suite2.outputs],
     [this.suite3.execPath, this.suite3.outputs],
     [this.gtest1.execPath, this.gtest1.outputs],
   ];
 
-  initImitation(imitation: Imitation): Map<string, FileSystemWatcherStub> {
+  public initImitation(imitation: Imitation): Map<string, FileSystemWatcherStub> {
     const watchers: Map<string, FileSystemWatcherStub> = new Map();
 
     for (let suite of this.outputs) {
       for (let scenario of suite[1]) {
-        imitation.spawnStub.withArgs(suite[0], scenario[0]).callsFake(function () {
+        imitation.spawnStub.withArgs(suite[0], scenario[0]).callsFake(function() {
           return new ChildProcessStub(scenario[1]);
         });
       }
 
       imitation.fsAccessStub.withArgs(suite[0]).callsFake(imitation.handleAccessFileExists);
 
-      imitation.vsfsWatchStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(suite[0]))
+      imitation.vsfsWatchStub
+        .withArgs(imitation.createAbsVscodeRelativePatternMatcher(suite[0]))
         .callsFake(imitation.createCreateFSWatcherHandler(watchers));
     }
 
@@ -2402,8 +2296,7 @@ For more detailed usage please see the project docs
     for (let p of this.outputs) {
       const parent = vscode.Uri.file(path.dirname(p[0])).fsPath;
       let children: vscode.Uri[] = [];
-      if (dirContent.has(parent))
-        children = dirContent.get(parent)!;
+      if (dirContent.has(parent)) children = dirContent.get(parent)!;
       else {
         dirContent.set(parent, children);
       }
@@ -2414,12 +2307,10 @@ For more detailed usage please see the project docs
       assert.equal(settings.workspaceFolderUri.fsPath, k);
       imitation.vsFindFilesStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(k)).resolves(v);
       for (const p of v) {
-        imitation.vsFindFilesStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(p.fsPath)).resolves([
-          p
-        ]);
+        imitation.vsFindFilesStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(p.fsPath)).resolves([p]);
       }
     });
 
     return watchers;
   }
-};
+}();

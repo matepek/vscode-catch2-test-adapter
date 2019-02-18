@@ -8,9 +8,7 @@ env:
     
 language: node_js
 
-node_js:
-  - "8"
-  - "11"
+node_js: "10"
 
 os:
   - osx
@@ -32,14 +30,16 @@ script:
   - npm test --silent
 
 after_failure:
-  - cat ./out/test/testlogs.txt
+  - ls -all ./out/test
+  - cat ./out/test/FailedTestLogs/log_*.txt
+  #- cat ./out/test/alltestlogs.txt
 
 deploy:
   provider: script
   script: bash src/repo_scripts/deploy.sh
   on:
     condition: "$TRAVIS_OS_NAME = osx"
-    node_js: "8"
+    node_js: "11"
     repo: matepek/vscode-catch2-test-adapter
     branch: master
     tags: false

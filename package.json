@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.3.17",
+  "version": "2.3.18",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -49,10 +49,17 @@
     "entities": "^1.1.2",
     "tslib": "^1.9.3",
     "vscode-test-adapter-api": "^1.2.0",
-    "vscode-test-adapter-util": "^0.6.1",
+    "vscode-test-adapter-util": "^0.6.3",
     "xml2js": "^0.4.19"
   },
   "devDependencies": {
+    "eslint": "^5.14.0",
+    "@typescript-eslint/parser": "^1.3.0",
+    "@typescript-eslint/eslint-plugin": "^1.3.0",
+    "prettier": "^1.16.4",
+    "eslint-config-prettier": "^4.0.0",
+    "eslint-plugin-prettier": "^3.0.1",
+    "mocha-eslint": "^5.0.0",
     "@types/chai": "^4.1.7",
     "@types/deep-equal": "^1.0.1",
     "@types/entities": "^1.1.0",
@@ -175,13 +182,13 @@
           "scope": "resource"
         },
         "catch2TestExplorer.logpanel": {
-          "description": "Create a new output channel and write the log messages there.",
+          "description": "Creates a new output channel and write the log messages there.",
           "type": "boolean",
           "default": false,
           "scope": "resource"
         },
         "catch2TestExplorer.logfile": {
-          "description": "Write the log message into the given file.",
+          "description": "Writes the log message into the given file.",
           "type": [
             "string",
             "null"

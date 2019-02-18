@@ -6,9 +6,7 @@ platform:
   - x64
 
 environment:
-  matrix:
-    - nodejs_version: LTS
-    - nodejs_version: Current
+  nodejs_version: "10"
 
 install:
   - ps: Install-Product node $env:nodejs_version
@@ -24,4 +22,6 @@ test_script:
   - npm test --silent
 
 on_failure:
-  - type .\out\test\testlogs.txt
+  - dir .\out\test
+  - type .\out\test\FailedTestLogs\log_*.txt
+  #- type .\out\test\alltestlogs.txt

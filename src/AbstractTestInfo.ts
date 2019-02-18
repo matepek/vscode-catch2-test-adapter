@@ -9,11 +9,11 @@ import { generateUniqueId } from './IdGenerator';
 import { SharedVariables } from './SharedVariables';
 
 export abstract class AbstractTestInfo implements TestInfo {
-  readonly type: 'test' = 'test';
-  readonly id: string;
-  readonly origLabel: string;
+  public readonly type: 'test' = 'test';
+  public readonly id: string;
+  public readonly origLabel: string;
 
-  constructor(
+  protected constructor(
     protected readonly _shared: SharedVariables,
     id: string | undefined,
     public readonly testNameFull: string,
@@ -22,7 +22,7 @@ export abstract class AbstractTestInfo implements TestInfo {
     public readonly file: string | undefined,
     public readonly line: number | undefined,
     public readonly execPath: string,
-    public readonly execOptions: SpawnOptions
+    public readonly execOptions: SpawnOptions,
   ) {
     this.id = id ? id : generateUniqueId();
     this.origLabel = label;
@@ -31,39 +31,39 @@ export abstract class AbstractTestInfo implements TestInfo {
 
   abstract getDebugParams(breakOnFailure: boolean): string[];
 
-  getStartEvent(): TestEvent {
+  public getStartEvent(): TestEvent {
     return { type: 'test', test: this, state: 'running' };
   }
 
-  getSkippedEvent(): TestEvent {
+  public getSkippedEvent(): TestEvent {
     return { type: 'test', test: this, state: 'skipped' };
   }
 
-  getTimeoutEvent(milisec: number): TestEvent {
+  public getTimeoutEvent(milisec: number): TestEvent {
     const ev = this.getFailedEventBase();
     ev.message += '⌛️ Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": ' + milisec / 1000 + ' second(s).\n';
     return ev;
   }
 
-  getFailedEventBase(): TestEvent {
+  public getFailedEventBase(): TestEvent {
     return {
       type: 'test',
       test: this,
       state: 'failed',
       message: '', //TODO: complicated because of tests: '🧪 Executable: ' + this.execPath + '\n',
-      decorations: []
+      decorations: [],
     };
   }
 
-  findRouteToTestById(id: string): AbstractTestInfo[] | undefined {
+  public findRouteToTestById(id: string): AbstractTestInfo[] | undefined {
     return this.id === id ? [this] : undefined;
   }
 
-  enumerateTestInfos(fn: (v: (AbstractTestInfo)) => void) {
+  public enumerateTestInfos(fn: (v: AbstractTestInfo) => void): void {
     fn(this);
   }
 
-  findTestInfo(pred: (v: (AbstractTestInfo)) => boolean): AbstractTestInfo | undefined {
+  public findTestInfo(pred: (v: AbstractTestInfo) => boolean): AbstractTestInfo | undefined {
     return pred(this) ? this : undefined;
   }
 }
