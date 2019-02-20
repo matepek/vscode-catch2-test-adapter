@@ -1430,7 +1430,9 @@ describe(path.basename(__filename), function() {
         label: '${label}',
         suiteLabel: '${suiteLabel}',
         exec: '${exec}',
-        args: '${args}',
+        args: '${argsArray}',
+        argsArray: '${argsArray}',
+        argsStr: '${argsStr}',
         cwd: '${cwd}',
         envObj: '${envObj}',
       });
@@ -1449,7 +1451,11 @@ describe(path.basename(__filename), function() {
 
       const debugConfig = startDebuggingStub.firstCall.args[1] as vscode.DebugConfiguration;
 
-      assert.deepStrictEqual(debugConfig.args, ['s1t1', '--reporter', 'console', '--break']);
+      const expectedArgs = ['s1t1', '--reporter', 'console', '--break'];
+
+      assert.deepStrictEqual(debugConfig.args, expectedArgs);
+      assert.deepStrictEqual(debugConfig.argsArray, expectedArgs);
+      assert.deepStrictEqual(debugConfig.argsStr, '"' + expectedArgs.join('" "') + '"');
       assert.deepStrictEqual(debugConfig.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cpp'));
       assert.deepStrictEqual(debugConfig.exec, example1.suite1.execPath);
       assert.deepStrictEqual(debugConfig.label, 's1t1');

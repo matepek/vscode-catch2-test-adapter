@@ -91,7 +91,7 @@ describe(path.basename(__filename), function() {
     spawnWithArgs.callsFake(function(p: string, args: string[], ops: { [prop: string]: string }) {
       try {
         cwd = ops.cwd;
-        if (isWin) assert.strictEqual(ops.cwd, 'c:\\defaultCwdStr');
+        if (isWin) assert.strictEqual(ops.cwd, 'C:\\defaultCwdStr');
         else assert.strictEqual(ops.cwd, '/defaultCwdStr');
         return new ChildProcessStub(example1.suite1.outputs[1][1]);
       } catch (e) {

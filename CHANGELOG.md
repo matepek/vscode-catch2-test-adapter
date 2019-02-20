@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.19]
+
+### Added
+
+- config scheme validation is much better
+
 ## [2.3.18] - 2019-02-18
 
 ### Fixed

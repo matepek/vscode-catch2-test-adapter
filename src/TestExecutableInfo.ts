@@ -19,7 +19,9 @@ export class TestExecutableInfo implements vscode.Disposable {
     private readonly _rootSuite: RootTestSuiteInfo,
     private readonly _name: string | undefined,
     private readonly _pattern: string,
-    private readonly _cwd: string,
+    private readonly _defaultCwd: string,
+    private readonly _cwd: string | undefined,
+    private readonly _defaultEnv: { [prop: string]: string },
     private readonly _env: { [prop: string]: string } | undefined,
     private readonly _variableToValue: [string, string][],
   ) {}
@@ -145,6 +147,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         ['${absDirpath}', path.dirname(file.fsPath)],
         ['${relDirpath}', path.dirname(relPath)],
         ['${filename}', filename],
+        ['${parentDirname}', path.basename(path.dirname(file.fsPath))],
         ['${extFilename}', extFilename],
         ['${baseFilename}', baseFilename],
         ['${ext2Filename}', ext2Filename],
@@ -157,24 +160,25 @@ export class TestExecutableInfo implements vscode.Disposable {
     }
 
     let resolvedLabel = relPath;
-    if (this._name) {
-      try {
-        resolvedLabel = resolveVariables(this._name, varToValue);
-        varToValue.push(['${name}', resolvedLabel]);
+    try {
+      if (this._name) resolvedLabel = resolveVariables(this._name, varToValue);
 
-        if (resolvedLabel.match(/\$\{.*\}/)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedLabel);
-      } catch (e) {
-        this._shared.log.error('resolvedLabel', e);
-      }
+      if (resolvedLabel.match(/\$\{.*\}/)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedLabel);
+
+      varToValue.push(['${name}', resolvedLabel]);
+    } catch (e) {
+      this._shared.log.error('resolvedLabel', e);
     }
 
-    let resolvedCwd = this._cwd;
+    let resolvedCwd = this._defaultCwd;
     try {
-      resolvedCwd = resolveVariables(this._cwd, varToValue);
+      if (this._cwd) resolvedCwd = this._cwd;
+
+      resolvedCwd = resolveVariables(resolvedCwd, varToValue);
 
       if (resolvedCwd.match(/\$\{.*\}/)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedCwd);
 
-      resolvedCwd = path.normalize(vscode.Uri.file(resolvedCwd).fsPath);
+      resolvedCwd = path.resolve(this._shared.workspaceFolder.uri.fsPath, resolvedCwd);
 
       varToValue.push(['${cwd}', resolvedCwd]);
     } catch (e) {
@@ -184,8 +188,10 @@ export class TestExecutableInfo implements vscode.Disposable {
     let resolvedEnv: { [prop: string]: string } = {};
     try {
       Object.assign(resolvedEnv, process.env);
-      Object.assign(resolvedEnv, this._shared.defaultEnv);
+      Object.assign(resolvedEnv, this._defaultEnv);
+
       if (this._env) Object.assign(resolvedEnv, this._env);
+
       resolvedEnv = resolveVariables(resolvedEnv, varToValue);
     } catch (e) {
       this._shared.log.error('resolvedEnv', e);

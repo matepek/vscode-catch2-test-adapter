@@ -8,14 +8,14 @@ import * as path from 'path';
 import * as readline from 'readline';
 import { settings } from './TestCommon';
 
-// this file has a special name, because we want to run it at last
+///
 
 const aggregatedLogFilePath = path.join(settings.workspaceFolderUri.fsPath, 'alltestlogs.txt');
 const failedTestLogDir = path.join(settings.workspaceFolderUri.fsPath, 'FailedTestLogs');
 let counter = 1;
 let currentLogfilePath: string;
 
-// this "global" before will run before all tests
+// this "global" before. it will run before all tests
 before(function() {
   fse.removeSync(aggregatedLogFilePath);
   fse.removeSync(failedTestLogDir);
@@ -33,16 +33,14 @@ beforeEach(function() {
 });
 
 afterEach(async function() {
+  this.timeout(2000);
   {
     // append the aggregated log file
     const r = fse.createReadStream(currentLogfilePath);
     const w = fse.createWriteStream(aggregatedLogFilePath, { flags: 'a' });
     r.pipe(w);
 
-    await new Promise<void>(resolve => {
-      w.on('close', resolve);
-    });
-    w.close();
+    await new Promise<void>(resolve => w.on('close', resolve));
   }
 
   // remove passed or skipped test logs
@@ -51,29 +49,29 @@ afterEach(async function() {
   }
 });
 
-///
+after(async function() {
+  this.timeout(2000);
 
-describe(path.basename(__filename), function() {
-  it('checks logfile content', async function() {
-    this.timeout(2000);
+  let warningCount = 0;
+  const errorLines: string[] = [];
+
+  {
     const inputStream = fse.createReadStream(aggregatedLogFilePath);
     const inputLineStream = readline.createInterface(inputStream);
 
-    let warningCount = 0;
-    const errorLines: string[] = [];
-
-    await new Promise<void>(resolve => {
-      inputLineStream.on('line', (line: string) => {
-        const index = line.indexOf('[ERROR]');
-        if (index != -1) {
-          errorLines.push(line.substr(index));
-        } else if (line.substr(26, 6) === '[WARN]') {
-          ++warningCount;
-        }
-      });
-      inputLineStream.on('close', resolve);
+    inputLineStream.on('line', (line: string) => {
+      const index = line.indexOf('[ERROR]');
+      if (index != -1) {
+        errorLines.push(line.substr(index));
+      } else if (line.substr(26, 6) === '[WARN]') {
+        ++warningCount;
+      }
     });
 
+    await new Promise<void>(resolve => inputLineStream.on('close', resolve));
+  }
+
+  if (errorLines.length >= 3) {
     // so the deal is that we dont expect more errors than these
     assert.deepStrictEqual(
       errorLines,
@@ -87,5 +85,5 @@ describe(path.basename(__filename), function() {
       ],
       warningCount.toString(),
     );
-  });
+  }
 });

@@ -14,24 +14,24 @@ and [Google Test](https://github.com/google/googletest) tests using the
 
 ## Configuration
 
-| Property                                      | Description                                                                                                                                                                  |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `catch2TestExplorer.executables`              | The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. Details: [below](#catch2TestExplorer.executables) |
-| `catch2TestExplorer.defaultCwd`               | The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in "executables". (Resolves: \${workspaceFolder})       |
-| `catch2TestExplorer.defaultEnv`               | Environment variables to be set when running the tests. (Resolves: `${absPath}`, `${absPath}`, etc.)                                                                         |
-| `catch2TestExplorer.debugConfigTemplate`      | Set the necessary debug configuraitons and the debug button will work. Details: [below](#catch2TestExplorer.debugConfigTemplate)                                             |
-| `catch2TestExplorer.debugBreakOnFailure`      | Debugger breaks on failure while debugging the test. Catch2: --break; Google Test: --gtest_break_on_failure;                                                                 |
-| `catch2TestExplorer.defaultNoThrow`           | Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow                                                       |
-| `catch2TestExplorer.defaultRngSeed`           | Catch2: `--rng-seed <number> or "time"`; Google Test: `--gtest_random_seed=<number>`;                                                                                        |
-| `catch2TestExplorer.defaultWatchTimeoutSec`   | Test executables are being watched. In case of one compiles too much this variable can help with it. Unit: second. It applies instantly.                                     |
-| `catch2TestExplorer.defaultRunningTimeoutSec` | Test executable is running in a process. In case of an inifinite loop, it will run forever, unless this parameter is set. It applies instantly.                              |
-| `catch2TestExplorer.workerMaxNumber`          | The variable maximize the number of the parallel test execution. It applies instantly.                                                                                       |
-| `catch2TestExplorer.logpanel`                 | For debugging. Enabling it could slow down your vscode.                                                                                                                      |
-| `testExplorer.errorDecoration`                | Show error messages from test failures as decorations in the editor. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                  |
-| `testExplorer.gutterDecoration`               | Show the state of each test in the editor using Gutter Decorations. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                   |
-| `testExplorer.codeLens`                       | Show a CodeLens above each test or suite for running or debugging the tests. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                          |
-| `testExplorer.onStart`                        | Retire or reset all test states whenever a test run is started. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                       |
-| `testExplorer.onReload`                       | Retire or reset all test states whenever the test tree is reloaded. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                   |
+| Property                                      | Description                                                                                                                                                                                                               |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `catch2TestExplorer.executables`              | The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerexecutables) |
+| `catch2TestExplorer.defaultCwd`               | The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in "executables". (It resolves variables.)                                                           |
+| `catch2TestExplorer.defaultEnv`               | Environment variables to be set when running the tests. (It resolves variables.)                                                                                                                                          |
+| `catch2TestExplorer.debugConfigTemplate`      | Set the necessary debug configuraitons and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)                                             |
+| `catch2TestExplorer.debugBreakOnFailure`      | Debugger breaks on failure while debugging the test. Catch2: --break; Google Test: --gtest_break_on_failure;                                                                                                              |
+| `catch2TestExplorer.defaultNoThrow`           | Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow                                                                                                    |
+| `catch2TestExplorer.defaultRngSeed`           | Catch2: `--rng-seed (<integer> or "time")`; Google Test: `--gtest_random_seed=<integer>;`                                                                                                                                 |
+| `catch2TestExplorer.defaultWatchTimeoutSec`   | Test executables are being watched (only inside the workspace directory). In case of one compiles too much this variable can help with it.                                                                                |
+| `catch2TestExplorer.defaultRunningTimeoutSec` | Test executable is running in a process. In case of an inifinite loop, it will run forever, unless this parameter is set. It applies instantly.                                                                           |
+| `catch2TestExplorer.workerMaxNumber`          | The variable maximize the number of the parallel test execution. It applies instantly.                                                                                                                                    |
+| `catch2TestExplorer.logpanel`                 | Creates a new output channel and write the log messages there. For debugging. Enabling it could slow down your vscode.                                                                                                    |
+| `testExplorer.errorDecoration`                | Show error messages from test failures as decorations in the editor. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                               |
+| `testExplorer.gutterDecoration`               | Show the state of each test in the editor using Gutter Decorations. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                                |
+| `testExplorer.codeLens`                       | Show a CodeLens above each test or suite for running or debugging the tests. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                       |
+| `testExplorer.onStart`                        | Retire or reset all test states whenever a test run is started. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                                    |
+| `testExplorer.onReload`                       | Retire or reset all test states whenever the test tree is reloaded. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                                |
 
 ### catch2TestExplorer.executables
 
@@ -39,13 +39,12 @@ This variable can be string, an array of strings, an array of objects or an arra
 
 If it is an object it can contains the following properties:
 
-| Property  |            | Description                                                                                                                                                                                                                                                                                                                   |
-| --------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`    | (optional) | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                                                                                                               |
-| `pattern` | (requierd) | A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test[1-9]*` |
-| `path`    | (alias)    | Alias of `pattern`.                                                                                                                                                                                                                                                                                                           |
-| `cwd`     | (optional) | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                       |
-| `env`     | (optional) | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                               |
+| Property  | Description                                                                                                                                                                                                                                                                                                                   |            |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `name`    | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                                                                                                               | (optional) |
+| `pattern` | A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test[1-9]*` | (requierd) |
+| `cwd`     | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                       | (optional) |
+| `env`     | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                               | (optional) |
 
 **Remark**: The `pattern` (or the `executables` used as string or an array of strings)
 can contains _search-pattern_ if it points somewhere inside of the workspace folder.
@@ -150,15 +149,15 @@ Related documents:
 
 Usable variables:
 
-| Variable name   | Value meaning                                                | Type                    |
-| --------------- | ------------------------------------------------------------ | ----------------------- |
-| `${label}`      | The name of the test. Same as in the Test Explorer.          | string                  |
-| `${suiteLabel}` | The name of parent suite test. Same as in the Test Explorer. | string                  |
-| `${exec}`       | The path of the executable.                                  | string                  |
-| `${args}`       | The arguments for the executable.                            | string[]                |
-| `${argsStr}`    | Concatenated arguments for the executable.                   | string                  |
-| `${cwd}`        | The current working directory for execution.                 | string                  |
-| `${envObj}`     | The environment variables as object properties.              | { [prop: string]: any } |
+| Variable name   | Value meaning                                                | Type                       |
+| --------------- | ------------------------------------------------------------ | -------------------------- |
+| `${label}`      | The name of the test. Same as in the Test Explorer.          | string                     |
+| `${suiteLabel}` | The name of parent suite test. Same as in the Test Explorer. | string                     |
+| `${exec}`       | The path of the executable.                                  | string                     |
+| `${argsArray}`  | The arguments for the executable.                            | string[]                   |
+| `${argsStr}`    | Concatenated arguments for the executable.                   | string                     |
+| `${cwd}`        | The current working directory for execution.                 | string                     |
+| `${envObj}`     | The environment variables as object properties.              | { [prop: string]: string } |
 
 These variables will be substituted when a DebugConfiguration is created.
 

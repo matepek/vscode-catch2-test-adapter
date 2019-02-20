@@ -28,9 +28,7 @@ module.exports = {
         "@typescript-eslint/no-non-null-assertion": "off",
         "@typescript-eslint/no-parameter-properties": "off",
 
-        //TODO
         "@typescript-eslint/no-explicit-any": "error",
-    
         "@typescript-eslint/camelcase": "warn",
         "prettier/prettier": 'warn',
     },
