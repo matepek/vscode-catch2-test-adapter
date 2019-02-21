@@ -12,10 +12,30 @@ import { settings } from './TestCommon';
 
 const aggregatedLogFilePath = path.join(settings.workspaceFolderUri.fsPath, 'alltestlogs.txt');
 const failedTestLogDir = path.join(settings.workspaceFolderUri.fsPath, 'FailedTestLogs');
+
 let counter = 1;
 let currentLogfilePath: string;
 
-// this "global" before. it will run before all tests
+const expectedErrorLines = new Map<string /* test */, Set<string>>([
+  [
+    'TestCatch2FrameworkLoad.test.js -> executables="execPath1.exe" -> should run with not existing test id',
+    new Set(["[ERROR] Some tests have remained:  Set { 'not existing id' }"]),
+  ],
+  [
+    'TestCatch2FrameworkLoad.test.js -> executables=["execPath1.exe", "execPath2.exe"] -> should run with not existing test id',
+    new Set(["[ERROR] Some tests have remained:  Set { 'not existing id' }"]),
+  ],
+  [
+    'TestCatch2FrameworkLoad.test.js -> vscode.debug -> should be debugged',
+    new Set([
+      '[ERROR] Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate"; 1; undefined',
+    ]),
+  ],
+]);
+
+///
+
+// this is "global". it will run before every test
 before(function() {
   fse.removeSync(aggregatedLogFilePath);
   fse.removeSync(failedTestLogDir);
@@ -34,56 +54,46 @@ beforeEach(function() {
 
 afterEach(async function() {
   this.timeout(2000);
-  {
-    // append the aggregated log file
-    const r = fse.createReadStream(currentLogfilePath);
-    const w = fse.createWriteStream(aggregatedLogFilePath, { flags: 'a' });
-    r.pipe(w);
 
-    await new Promise<void>(resolve => w.on('close', resolve));
-  }
+  // function(){
+  //   // append the aggregated log file
+  //   const r = fse.createReadStream(currentLogfilePath);
+  //   const w = fse.createWriteStream(aggregatedLogFilePath, { flags: 'a' });
+  //   r.pipe(w);
+  //   await new Promise<void>(resolve => w.on('close', resolve));
+  // }();
 
-  // remove passed or skipped test logs
-  if (this.currentTest && this.currentTest.state !== 'failed') {
-    fse.removeSync(currentLogfilePath);
-  }
-});
-
-after(async function() {
-  this.timeout(2000);
-
-  let warningCount = 0;
-  const errorLines: string[] = [];
+  assert.notStrictEqual(this.currentTest, undefined);
+  const currentTest = this.currentTest!;
+  const title = currentTest.titlePath().join(' -> ');
 
   {
-    const inputStream = fse.createReadStream(aggregatedLogFilePath);
-    const inputLineStream = readline.createInterface(inputStream);
+    const inputLineStream = readline.createInterface(fse.createReadStream(currentLogfilePath));
+
+    const exceptions: Error[] = [];
 
     inputLineStream.on('line', (line: string) => {
-      const index = line.indexOf('[ERROR]');
-      if (index != -1) {
-        errorLines.push(line.substr(index));
-      } else if (line.substr(26, 6) === '[WARN]') {
-        ++warningCount;
+      try {
+        const index = line.indexOf('[ERROR]');
+        if (index != -1) {
+          const error = line.substr(index);
+          const expectedErrorsInTest = expectedErrorLines.get(title);
+          assert.notStrictEqual(expectedErrorsInTest, undefined, title + ': ' + error);
+          assert.ok(expectedErrorsInTest!.has(error), title + ': ' + error);
+        } else if (line.substr(26, 6) === '[WARN]') {
+          // we could test this once
+        }
+      } catch (e) {
+        exceptions.push(e);
       }
     });
 
     await new Promise<void>(resolve => inputLineStream.on('close', resolve));
+    assert.deepStrictEqual(exceptions, []);
   }
 
-  if (errorLines.length >= 3) {
-    // so the deal is that we dont expect more errors than these
-    assert.deepStrictEqual(
-      errorLines,
-      [
-        // test: 'should run with not existing test id'
-        "[ERROR] Some tests have remained:  Set { 'not existing id' }",
-        // test: 'should run with not existing test id'
-        "[ERROR] Some tests have remained:  Set { 'not existing id' }",
-        // test: 'should be debugged'
-        '[ERROR] Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate"; 1; undefined',
-      ],
-      warningCount.toString(),
-    );
+  // removing passed or skipped test logs
+  if (this.currentTest && this.currentTest.state !== 'failed') {
+    fse.removeSync(currentLogfilePath);
   }
 });
