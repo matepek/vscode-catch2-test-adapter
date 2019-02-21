@@ -12,6 +12,10 @@ import { inspect } from 'util';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 
+interface XmlObject {
+  [prop: string]: any; //eslint-disable-line
+}
+
 export class Catch2TestInfo extends AbstractTestInfo {
   public constructor(
     shared: SharedVariables,
@@ -64,8 +68,8 @@ export class Catch2TestInfo extends AbstractTestInfo {
       return this.getTimeoutEvent(runInfo.timeout);
     }
 
-    let res: any = undefined;
-    new xml2js.Parser({ explicitArray: true }).parseString(xmlStr, (err: any, result: any) => {
+    let res: XmlObject = {};
+    new xml2js.Parser({ explicitArray: true }).parseString(xmlStr, (err: Error, result: XmlObject) => {
       if (err) {
         throw err;
       } else {
@@ -84,7 +88,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     return testEvent;
   }
 
-  private _processXmlTagTestCaseInner(testCase: any, testEvent: TestEvent): void {
+  private _processXmlTagTestCaseInner(testCase: XmlObject, testEvent: TestEvent): void {
     const title = '⬇️⬇️⬇️ "' + testCase.$.name + '" at line ' + testCase.$.line;
 
     if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
@@ -122,7 +126,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processInfoWarningAndFailureTags(xml: any, title: string, testEvent: TestEvent): void {
+  private _processInfoWarningAndFailureTags(xml: XmlObject, title: string, testEvent: TestEvent): void {
     if (xml.hasOwnProperty('Info')) {
       for (let j = 0; j < xml.Info.length; ++j) {
         const info = xml.Info[j];
@@ -152,7 +156,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processXmlTagExpressions(xml: any, title: string, testEvent: TestEvent): void {
+  private _processXmlTagExpressions(xml: XmlObject, title: string, testEvent: TestEvent): void {
     if (xml.hasOwnProperty('Expression')) {
       for (let j = 0; j < xml.Expression.length; ++j) {
         const expr = xml.Expression[j];
@@ -183,7 +187,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processXmlTagSections(xml: any, title: string, testEvent: TestEvent): void {
+  private _processXmlTagSections(xml: XmlObject, title: string, testEvent: TestEvent): void {
     if (xml.hasOwnProperty('Section')) {
       for (let j = 0; j < xml.Section.length; ++j) {
         const section = xml.Section[j];
@@ -202,7 +206,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processXmlTagFatalErrorConditions(expr: any, title: string, testEvent: TestEvent): void {
+  private _processXmlTagFatalErrorConditions(expr: XmlObject, title: string, testEvent: TestEvent): void {
     if (expr.hasOwnProperty('FatalErrorCondition')) {
       try {
         for (let j = 0; j < expr.FatalErrorCondition.length; ++j) {

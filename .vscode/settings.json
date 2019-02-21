@@ -28,5 +28,6 @@
   },
   "[typescript]": {
     "editor.formatOnSave": false,
-  }
+  },
+  "prettier.eslintIntegration": true
 }

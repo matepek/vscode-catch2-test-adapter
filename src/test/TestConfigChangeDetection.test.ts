@@ -45,31 +45,31 @@ describe(path.basename(__filename), function() {
 
   it('enableSourceDecoration', function() {
     return settings.updateConfig('enableSourceDecoration', false).then(function() {
-      assert.ok(!(adapter as any)._shared.isEnabledSourceDecoration);
+      assert.ok(!(adapter as any /* eslint-disable-line */)._shared.isEnabledSourceDecoration);
     });
   });
 
   it('defaultRngSeed', function() {
     return settings.updateConfig('defaultRngSeed', 987).then(function() {
-      assert.equal((adapter as any)._shared.rngSeed, 987);
+      assert.equal((adapter as any /* eslint-disable-line */)._shared.rngSeed, 987);
     });
   });
 
   it('defaultWatchTimeoutSec', function() {
     return settings.updateConfig('defaultWatchTimeoutSec', 9876).then(function() {
-      assert.equal((adapter as any)._shared.execWatchTimeout, 9876000);
+      assert.equal((adapter as any /* eslint-disable-line */)._shared.execWatchTimeout, 9876000);
     });
   });
 
   it('defaultRunningTimeoutSec', function() {
     return settings.updateConfig('defaultRunningTimeoutSec', 8765).then(function() {
-      assert.equal((adapter as any)._shared.execRunningTimeout, 8765000);
+      assert.equal((adapter as any /* eslint-disable-line */)._shared.execRunningTimeout, 8765000);
     });
   });
 
   it('defaultNoThrow', function() {
     return settings.updateConfig('defaultNoThrow', true).then(function() {
-      assert.equal((adapter as any)._shared.isNoThrow, true);
+      assert.equal((adapter as any /* eslint-disable-line */)._shared.isNoThrow, true);
     });
   });
 });

@@ -2,7 +2,6 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import * as path from 'path';
 import { inspect } from 'util';
 import * as vscode from 'vscode';
 import {
@@ -84,7 +83,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                   suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
                 });
               },
-              (reason: any) => {
+              (reason: Error) => {
                 this._log.error(__filename, reason);
                 debugger;
                 this._testsEmitter.fire({
@@ -139,7 +138,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           configChange.affectsConfiguration('catch2TestExplorer.defaultCwd', this.workspaceFolder.uri) ||
           configChange.affectsConfiguration('catch2TestExplorer.executables', this.workspaceFolder.uri)
         ) {
-          this._shared.defaultEnv = this._getDefaultEnvironmentVariables(config);
           this.load();
         }
       }),
@@ -156,7 +154,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),
       this._getDefaultNoThrow(config),
-      this._getDefaultEnvironmentVariables(config),
     );
 
     this._disposables.push(
@@ -254,7 +251,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
           });
         },
-        (e: any) => {
+        (e: Error) => {
           this._log.info('load finished with error:', e);
 
           this._testsEmitter.fire({
@@ -277,7 +274,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
 
     return this._mainTaskQueue.then(() => {
-      return this._rootSuite.run(tests).catch((reason: any) => {
+      return this._rootSuite.run(tests).catch((reason: Error) => {
         this._log.error(reason);
       });
     });
@@ -322,11 +319,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const debugConfig = resolveVariables(template, [
       ...this._variableToValue,
-      ['${suitelabel}', suiteLabels],
+      ['${suitelabel}', suiteLabels], // deprecated
       ['${suiteLabel}', suiteLabels],
       ['${label}', testInfo.label],
       ['${exec}', testInfo.execPath],
-      ['${args}', argsArray],
+      ['${args}', argsArray], // depricated
+      ['${argsArray}', argsArray],
       ['${argsStr}', '"' + argsArray.join('" "') + '"'],
       ['${cwd}', testInfo.execOptions.cwd!],
       ['${envObj}', testInfo.execOptions.env!],
@@ -360,7 +358,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             });
           });
         })
-        .then(undefined, (reason: any) => {
+        .then(undefined, (reason: Error) => {
           this._log.error(reason);
           throw reason;
         });
@@ -441,12 +439,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private _getDefaultCwd(config: vscode.WorkspaceConfiguration): string {
     const dirname = this.workspaceFolder.uri.fsPath;
-    const cwd = resolveVariables(config.get<string>('defaultCwd', dirname), this._variableToValue);
-    if (path.isAbsolute(cwd)) {
-      return cwd;
-    } else {
-      return path.resolve(this.workspaceFolder.uri.fsPath, cwd);
-    }
+    return config.get<string>('defaultCwd', dirname);
+  }
+
+  private _getDefaultEnvironmentVariables(config: vscode.WorkspaceConfiguration): { [prop: string]: string } {
+    return config.get('defaultEnv', {});
   }
 
   private _getDefaultRngSeed(config: vscode.WorkspaceConfiguration): string | number | null {
@@ -470,16 +467,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return r !== null && r > 0 ? r * 1000 : null;
   }
 
-  private _getDefaultEnvironmentVariables(config: vscode.WorkspaceConfiguration): { [prop: string]: string } {
-    return config.get('defaultEnv', {});
-  }
-
   private _getEnableSourceDecoration(config: vscode.WorkspaceConfiguration): boolean {
     return config.get<boolean>('enableSourceDecoration', true);
   }
 
   private _getExecutables(config: vscode.WorkspaceConfiguration, rootSuite: RootTestSuiteInfo): TestExecutableInfo[] {
-    const globalWorkingDirectory = this._getDefaultCwd(config);
+    const defaultCwd = this._getDefaultCwd(config);
+    const defaultEnv = this._getDefaultEnvironmentVariables(config);
 
     let executables: TestExecutableInfo[] = [];
 
@@ -487,12 +481,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       | undefined
       | string
       | string[]
-      | { [prop: string]: any }
-      | ({ [prop: string]: any } | string)[] = config.get('executables');
+      | { [prop: string]: string }
+      | ({ [prop: string]: string } | string)[] = config.get('executables');
 
     this._log.info('executables:', configExecs);
 
-    const createFromObject = (obj: { [prop: string]: any }): TestExecutableInfo => {
+    const createFromObject = (obj: { [prop: string]: string }): TestExecutableInfo => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 
       let pattern = '';
@@ -500,11 +494,21 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       else if (typeof obj.path == 'string') pattern = obj.path;
       else throw Error('Error: pattern property is required.');
 
-      const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : globalWorkingDirectory;
+      const cwd: string | undefined = typeof obj.cwd === 'string' ? obj.cwd : undefined;
 
-      const env: { [prop: string]: any } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
+      const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
 
-      return new TestExecutableInfo(this._shared, rootSuite, name, pattern, cwd, env, this._variableToValue);
+      return new TestExecutableInfo(
+        this._shared,
+        rootSuite,
+        name,
+        pattern,
+        defaultCwd,
+        cwd,
+        defaultEnv,
+        env,
+        this._variableToValue,
+      );
     };
 
     if (typeof configExecs === 'string') {
@@ -515,7 +519,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           rootSuite,
           undefined,
           configExecs,
-          globalWorkingDirectory,
+          defaultCwd,
+          undefined,
+          defaultEnv,
           undefined,
           this._variableToValue,
         ),
@@ -532,7 +538,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                 rootSuite,
                 undefined,
                 configExecsName,
-                globalWorkingDirectory,
+                defaultCwd,
+                undefined,
+                defaultEnv,
                 undefined,
                 this._variableToValue,
               ),

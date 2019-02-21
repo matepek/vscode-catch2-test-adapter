@@ -60,7 +60,7 @@ describe(path.basename(__filename), function() {
 
     let exception: Error | undefined = undefined;
     const spawnWithArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
-    spawnWithArgs.callsFake(function(p: string, args: string[], ops: any) {
+    spawnWithArgs.callsFake(function(p: string, args: string[], ops: { [prop: string]: string }) {
       try {
         assert.strictEqual(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'defaultCwdStr'));
         return new ChildProcessStub(example1.suite1.outputs[1][1]);
@@ -88,10 +88,10 @@ describe(path.basename(__filename), function() {
     let exception: Error | undefined = undefined;
     let cwd = '';
     const spawnWithArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
-    spawnWithArgs.callsFake(function(p: string, args: string[], ops: any) {
+    spawnWithArgs.callsFake(function(p: string, args: string[], ops: { [prop: string]: string }) {
       try {
         cwd = ops.cwd;
-        if (isWin) assert.strictEqual(ops.cwd, 'c:\\defaultCwdStr');
+        if (isWin) assert.strictEqual(ops.cwd, 'C:\\defaultCwdStr');
         else assert.strictEqual(ops.cwd, '/defaultCwdStr');
         return new ChildProcessStub(example1.suite1.outputs[1][1]);
       } catch (e) {
@@ -115,7 +115,7 @@ describe(path.basename(__filename), function() {
 
     let exception: Error | undefined = undefined;
     const spawnWithArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
-    spawnWithArgs.callsFake(function(p: string, args: string[], ops: any) {
+    spawnWithArgs.callsFake(function(p: string, args: string[], ops: { [prop: string]: { [prop: string]: string } }) {
       try {
         assert.ok(ops.env.hasOwnProperty('ENVTEST'));
         assert.equal(ops.env.ENVTEST, 'envtest');
@@ -413,7 +413,7 @@ describe(path.basename(__filename), function() {
     }
     let exception: Error | undefined = undefined;
     const spawnWithArgs = imitation.spawnStub.withArgs(execPath2CopyPath, example1.suite2.t1.outputs[0][0]);
-    spawnWithArgs.callsFake(function(p: string, args: string[], ops: any) {
+    spawnWithArgs.callsFake(function(p: string, args: string[], ops: { [prop: string]: { [prop: string]: string } }) {
       try {
         assert.equal(ops.cwd, expectStr);
         assert.ok(ops.env.hasOwnProperty('C2TESTVARS'));

@@ -80,7 +80,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             if (err) this._shared.log.warn("Couldn't remove tmpFilePath: " + tmpFilePath, err);
           });
 
-          let xml: any | undefined = undefined;
+          interface XmlObject {
+            [prop: string]: any; //eslint-disable-line
+          }
+
+          let xml: XmlObject = {};
 
           new Parser({ explicitArray: true }).parseString(testOutputStr, (err: Error, result: object) => {
             if (err) {
@@ -235,7 +239,13 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
     const testBeginRe = /^\[ RUN      \] ((.+)\.(.+))$/m;
 
-    return new Promise<number | string | any>((resolve, reject) => {
+    interface ProcessResult {
+      exitCode?: number;
+      signal?: string;
+      error?: Error;
+    }
+
+    return new Promise<ProcessResult>(resolve => {
       const processChunk = (chunk: string): void => {
         data.buffer = data.buffer + chunk;
         let invariant = 99999;
@@ -289,7 +299,13 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
                 this._shared.testStatesEmitter.fire(ev);
                 data.processedTestCases.push(data.currentChild);
               } catch (e) {
-                this._shared.log.error('parsing and processing test: ' + data.currentChild.label);
+                this._shared.log.error('parsing and processing test', e, data);
+                this._shared.testStatesEmitter.fire({
+                  type: 'test',
+                  test: data.currentChild,
+                  state: 'errored',
+                  message: '😱 Unexpected error under parsing output !! Error: ' + inspect(e) + '\n',
+                });
               }
             } else {
               this._shared.log.info('Test case found without TestInfo: ', this, '; ' + testCase);
@@ -303,8 +319,8 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         } while (data.buffer.length > 0 && --invariant > 0);
         if (invariant == 0) {
           this._shared.log.error('invariant==0', this, runInfo, data);
-          runInfo.process && runInfo.process.kill();
-          reject('Possible infinite loop of this extension');
+          resolve({ error: new Error('Possible infinite loop of this extension') });
+          runInfo.killProcess();
         }
       };
 
@@ -313,26 +329,33 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
       });
 
       runInfo.process!.once('close', (code: number | null, signal: string | null) => {
-        if (code !== null && code !== undefined) resolve(code);
-        if (signal !== null && signal !== undefined) reject(signal);
-        else reject('unknown');
+        if (code) resolve({ exitCode: code });
+        else if (signal) resolve({ signal: signal });
+        else resolve({ error: new Error('unknown sfngvdlfkgn') });
       });
     })
-      .catch((reason: any) => {
-        this._shared.log.warn(runInfo, reason, this, data);
-        return reason;
+      .catch((reason: Error) => {
+        this._shared.log.error(runInfo, reason, this, data);
+        return { error: reason };
       })
-      .then((codeOrReason: number | string | any) => {
+      .then((result: ProcessResult) => {
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
             this._shared.log.warn('data.currentChild !== undefined: ', data);
 
             let ev: TestEvent;
+
             if (runInfo.timeout !== null) {
               ev = data.currentChild.getTimeoutEvent(runInfo.timeout);
             } else {
               ev = data.currentChild.getFailedEventBase();
-              ev.message = '😱 Fatal error: (Wrong Google Test output.)\nError: ' + inspect(codeOrReason) + '\n';
+
+              ev.message = '😱 Unexpected error !!\n';
+
+              if (result.error) {
+                ev.state = 'errored';
+                ev.message += 'Error: ' + inspect(result.error);
+              }
             }
 
             this._shared.testStatesEmitter.fire(ev);
@@ -381,7 +404,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               }
               events.length && this._shared.sendTestEventEmitter.fire(events);
             },
-            (reason: any) => {
+            (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.
               this._shared.log.error('reloading-error: ', reason);
             },

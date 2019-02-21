@@ -46,13 +46,14 @@ export const settings = new class {
     return vscode.workspace.getConfiguration('catch2TestExplorer', this.workspaceFolderUri);
   }
 
+  // eslint-disable-next-line
   public updateConfig(key: string, value: any): Thenable<void> {
     return this.getConfig().update(key, value);
   }
 
   public resetConfig(): Thenable<void> {
     const packageJson = fse.readJSONSync(path.join(this.workspaceFolderUri.fsPath, '../..', 'package.json'));
-    const properties: { [prop: string]: any }[] = packageJson['contributes']['configuration']['properties'];
+    const properties: { [prop: string]: string }[] = packageJson['contributes']['configuration']['properties'];
     let t: Thenable<void> = Promise.resolve();
     Object.keys(properties).forEach(key => {
       assert.ok(key.startsWith('catch2TestExplorer.'));
@@ -122,15 +123,15 @@ export class FileSystemWatcherStub implements vscode.FileSystemWatcher {
 export class Imitation {
   public readonly sinonSandbox = sinon.createSandbox();
 
-  public readonly spawnStub = this.sinonSandbox.stub(cp, 'spawn').named('spawnStub') as sinon.SinonStub<any[], any>;
+  public readonly spawnStub = this.sinonSandbox.stub(cp, 'spawn').named('spawnStub') as sinon.SinonStub<any[], any>; // eslint-disable-line
 
   public readonly vsfsWatchStub = this.sinonSandbox
     .stub(vscode.workspace, 'createFileSystemWatcher')
-    .named('vscode.createFileSystemWatcher') as sinon.SinonStub<any[], any>;
+    .named('vscode.createFileSystemWatcher') as sinon.SinonStub<any[], any>; // eslint-disable-line
 
-  public readonly fsAccessStub = this.sinonSandbox.stub(fs, 'access').named('access') as sinon.SinonStub<any[], any>;
+  public readonly fsAccessStub = this.sinonSandbox.stub(fs, 'access').named('access') as sinon.SinonStub<any[], any>; // eslint-disable-line
 
-  public readonly fsReadFileSyncStub = this.sinonSandbox.stub(fs, 'readFileSync').named('fsReadFileSync') as any;
+  public readonly fsReadFileSyncStub = this.sinonSandbox.stub(fs, 'readFileSync').named('fsReadFileSync') as any; // eslint-disable-line
 
   public readonly vsFindFilesStub = this.sinonSandbox
     .stub(vscode.workspace, 'findFiles')
@@ -168,7 +169,7 @@ export class Imitation {
     cb(null);
   }
 
-  public handleAccessFileNotExists(path: string, cb: (err: NodeJS.ErrnoException | null | any) => void): void {
+  public handleAccessFileNotExists(path: string, cb: (err: NodeJS.ErrnoException | null | {}) => void): void {
     cb({
       code: 'ENOENT',
       errno: -2,
@@ -234,7 +235,7 @@ export class TestAdapter extends my.TestAdapter {
 
   public async waitAndDispose(context: Mocha.Context): Promise<void> {
     await waitFor(context, () => {
-      return (this as any)._mainTaskQueue._count == 0;
+      return (this as any /* eslint-disable-line */)._mainTaskQueue._count == 0;
     });
 
     super.dispose();
@@ -256,7 +257,7 @@ export class TestAdapter extends my.TestAdapter {
   }
 
   public get root(): TestSuiteInfo {
-    return (this as any)._rootSuite;
+    return (this as any /* eslint-disable-line */)._rootSuite;
   }
 
   public get(...index: number[]): TestSuiteInfo | TestInfo {
