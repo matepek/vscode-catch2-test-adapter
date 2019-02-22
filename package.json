@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.3.19",
+  "version": "2.3.20",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -73,9 +73,9 @@
     "prettier": "^1.16.4",
     "request-promise": "4.2.2",
     "sinon": "^7.2.4",
-    "typescript": "^3.3.3",
+    "typescript": "^3.3.3333",
     "vsce": "^1.57.1",
-    "vscode": "^1.1.29"
+    "vscode": "^1.1.30"
   },
   "engines": {
     "vscode": "^1.23.0"
@@ -91,6 +91,17 @@
       "properties": {
         "catch2TestExplorer.executables": {
           "markdownDescription": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerexecutables)",
+          "scope": "resource",
+          "default": [
+            {
+              "name": "${filename} (${relDirpath})",
+              "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+              "cwd": "${absDirpath}",
+              "env": {
+                "C2TESTEXECUTABLEPATH": "${absPath}"
+              }
+            }
+          ],
           "oneOf": [
             {
               "type": "array",
@@ -342,23 +353,13 @@
               "type": "string",
               "minLength": 1
             }
-          ],
-          "default": [
-            {
-              "name": "${filename} (${relDirpath})",
-              "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
-              "cwd": "${absDirpath}",
-              "env": {
-                "C2TESTEXECUTABLEPATH": "${absPath}"
-              }
-            }
-          ],
-          "scope": "resource"
+          ]
         },
         "catch2TestExplorer.defaultCwd": {
           "markdownDescription": "The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in \"executables\". (It resolves variables.)",
-          "default": "${absDirpath}",
           "scope": "resource",
+          "type": "string",
+          "default": "${absDirpath}",
           "anyOf": [
             {
               "type": "string",
@@ -422,7 +423,9 @@
           "scope": "resource"
         },
         "catch2TestExplorer.defaultRngSeed": {
-          "markdownDescription": "Catch2: `--rng-seed (<integer> or \"time\")`; Google Test: `--gtest_random_seed=<integer>;`",
+          "markdownDescription": "Shuffles the tests with the given random. Catch2: [--rng-seed (<integer> or 'time')](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed); Google Test: [--gtest_random_seed=<integer>](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#shuffling-the-tests);",
+          "scope": "resource",
+          "default": null,
           "oneOf": [
             {
               "type": "integer",
@@ -437,50 +440,39 @@
                 "time"
               ]
             }
-          ],
-          "default": null,
-          "scope": "resource"
+          ]
         },
         "catch2TestExplorer.defaultWatchTimeoutSec": {
-          "markdownDescription": "Test executables are being watched (only inside the workspace directory). In case of one compiles too much this variable can help with it.",
-          "type": [
-            "integer"
-          ],
+          "markdownDescription": "Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.",
+          "scope": "resource",
+          "type": "integer",
           "default": 10,
-          "minimum": 1,
-          "scope": "resource"
+          "minimum": 1
         },
         "catch2TestExplorer.defaultRunningTimeoutSec": {
-          "markdownDescription": "Test executable is running in a process. In case of an inifinite loop, it will run forever, unless this parameter is set. It applies instantly.",
-          "oneOf": [
-            {
-              "type": "integer",
-              "minimum": 1
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "scope": "resource"
+          "markdownDescription": "Test executable is running in a process. In case of an inifinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
+          "scope": "resource",
+          "type": "integer",
+          "default": 0,
+          "minimum": -1
         },
         "catch2TestExplorer.workerMaxNumber": {
           "markdownDescription": "The variable maximize the number of the parallel test execution. It applies instantly.",
+          "scope": "resource",
           "type": "integer",
           "default": 1,
-          "minimum": 1,
-          "scope": "resource"
+          "minimum": 1
         },
         "catch2TestExplorer.enableSourceDecoration": {
           "deprecationMessage": "Deprecated! Use 'testExplorer.errorDecoration' instead.",
+          "scope": "resource",
           "type": "boolean",
-          "default": true,
-          "scope": "resource"
+          "default": true
         },
         "catch2TestExplorer.debugConfigTemplate": {
           "markdownDescription": "Set the necessary debug configuraitons and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",
-          "default": null,
           "scope": "resource",
+          "default": null,
           "oneOf": [
             {
               "type": "object",
@@ -527,30 +519,27 @@
         },
         "catch2TestExplorer.debugBreakOnFailure": {
           "markdownDescription": "Debugger breaks on failure while debugging the test. Catch2: --break; Google Test: --gtest_break_on_failure;",
+          "scope": "resource",
           "type": "boolean",
-          "default": true,
-          "scope": "resource"
+          "default": true
         },
         "catch2TestExplorer.defaultNoThrow": {
           "markdownDescription": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow",
+          "scope": "resource",
           "type": "boolean",
-          "default": false,
-          "scope": "resource"
+          "default": false
         },
         "catch2TestExplorer.logpanel": {
           "markdownDescription": "Creates a new output channel and write the log messages there. For debugging. Enabling it could slow down your vscode.",
+          "scope": "resource",
           "type": "boolean",
-          "default": false,
-          "scope": "resource"
+          "default": false
         },
         "catch2TestExplorer.logfile": {
-          "markdownDescription": "Writes the log message into the given file.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null,
-          "scope": "resource"
+          "markdownDescription": "Writes the log message into the given file. Emty string means: disabled",
+          "scope": "resource",
+          "type": "string",
+          "default": ""
         }
       }
     }

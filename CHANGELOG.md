@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.20]
+
+### Fixed
+
+- `catch2TestExplorer.defaultRngSeed`, which didn't work at all.
+
 ## [2.3.19] - 2019-02-21
 
 ### Added

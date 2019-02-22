@@ -40,7 +40,7 @@ export const example1 = new class {
             </Catch>`,
         ],
         [
-          ['s1t1', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+          ['s1t1', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
           `<?xml version="1.0" encoding="UTF-8"?>
             <Catch name="suite1">
               <Randomness seed="2"/>
@@ -93,7 +93,7 @@ export const example1 = new class {
             </Catch>`,
         ],
         [
-          ['s1t2', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+          ['s1t2', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
           `<?xml version="1.0" encoding="UTF-8"?>
             <Catch name="suite1">
               <Randomness seed="2"/>
@@ -155,7 +155,7 @@ export const example1 = new class {
           </Catch>`,
       ],
       [
-        ['--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
           <Catch name="suite1">
             <Randomness seed="2"/>
@@ -231,7 +231,7 @@ export const example1 = new class {
           </Catch>`,
         ],
         [
-          ['s2t1', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+          ['s2t1', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
           `<?xml version="1.0" encoding="UTF-8"?>
           <Catch name="suite2">
             <Randomness seed="2"/>
@@ -276,7 +276,7 @@ export const example1 = new class {
             </Catch>`,
         ],
         [
-          ['s2t2', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+          ['s2t2', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
           `<?xml version="1.0" encoding="UTF-8"?>
             <Catch name="suite2">
               <Randomness seed="2"/>
@@ -329,7 +329,7 @@ export const example1 = new class {
             </Catch>`,
         ],
         [
-          ['s2t3', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+          ['s2t3', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
           `<?xml version="1.0" encoding="UTF-8"?>
             <Catch name="suite2">
               <Randomness seed="2"/>
@@ -411,7 +411,7 @@ export const example1 = new class {
           </Catch>`,
       ],
       [
-        ['--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
           <Catch name="suite2">
             <Randomness seed="2"/>
@@ -768,7 +768,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1457,7 +1457,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['test name,with,colon', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['test name,with,colon', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1472,7 +1472,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['*test name with space ', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['*test name with space ', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1487,7 +1487,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['SECTION tree', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['SECTION tree', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1560,7 +1560,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec ! char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec ! char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1575,7 +1575,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec @ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec @ char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1590,7 +1590,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec # char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec # char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1605,7 +1605,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec $ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec $ char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1620,7 +1620,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec % char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec % char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1635,7 +1635,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec ^ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec ^ char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1650,7 +1650,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec & char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec & char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1665,7 +1665,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec \\* char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec \\* char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1680,7 +1680,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec (a) char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec (a) char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1695,7 +1695,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec {a} char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec {a} char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1710,7 +1710,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec \\[a] char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec \\[a] char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1725,7 +1725,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec ; char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec ; char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1740,7 +1740,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ["spec ' char", '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ["spec ' char", '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1755,7 +1755,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec \\\\ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec \\\\ char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1770,7 +1770,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec \\, char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec \\, char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1785,7 +1785,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec . char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec . char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1800,7 +1800,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec / char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec / char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1815,7 +1815,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec < char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec < char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1830,7 +1830,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec > char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec > char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1845,7 +1845,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec ? char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec ? char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1860,7 +1860,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec - char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec - char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1875,7 +1875,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec = char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec = char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1890,7 +1890,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec _ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec _ char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1905,7 +1905,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec + char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec + char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1920,7 +1920,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec ~ char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec ~ char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1935,7 +1935,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec ` char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec ` char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1950,7 +1950,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec § char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec § char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1965,7 +1965,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec ± char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec ± char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1980,7 +1980,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec " char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec " char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -1995,7 +1995,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec | char', '--reporter', 'xml', '--durations', 'yes', '--rng-seed', '2'],
+        ['spec | char', '--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>

@@ -162,6 +162,8 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     if (this._shared.isNoThrow) execParams.push('--nothrow');
 
     if (this._shared.rngSeed !== null) {
+      execParams.push('--order');
+      execParams.push('rand');
       execParams.push('--rng-seed');
       execParams.push(this._shared.rngSeed.toString());
     }

@@ -218,6 +218,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     }
 
     if (this._shared.rngSeed !== null) {
+      execParams.push('--gtest_shuffle');
       execParams.push(
         '--gtest_random_seed=' + (this._shared.rngSeed === 'time' ? '0' : this._shared.rngSeed.toString()),
       );
