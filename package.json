@@ -536,7 +536,7 @@
           "default": false
         },
         "catch2TestExplorer.logfile": {
-          "markdownDescription": "Writes the log message into the given file. Emty string means: disabled",
+          "markdownDescription": "Writes the log message into the given file. Empty means disabled.",
           "scope": "resource",
           "type": "string",
           "default": ""

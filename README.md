@@ -54,7 +54,7 @@ Otherwise it only can point to an executable (No _search-pattern_!).
 
 - on windows: NOT ends with `.exe`.
 - on other platforms: ends with one of the following:
-  `'c', 'cmake', 'cpp', 'cxx', 'deb', 'dir', 'gz', 'h', 'hpp', 'hxx', 'ko', 'log', 'o', 'php', 'py', 'rpm', 'sh', 'so', 'tar', 'txt'`.
+  `'.c', '.cmake', '.cpp', '.cxx', '.deb', '.dir', '.gz', '.h', '.hpp', '.hxx', '.ko', '.log', '.o', '.php', '.py', '.rpm', '.sh', '.so', '.tar', '.txt'`.
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
