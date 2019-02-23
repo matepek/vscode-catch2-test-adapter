@@ -977,9 +977,9 @@ describe(path.basename(__filename), function() {
       await adapter.load();
 
       assert.equal(adapter.testLoadsEvents.length, 2);
-      root = (adapter.testLoadsEvents[adapter.testLoadsEvents.length - 1] as TestLoadFinishedEvent).suite!;
+      root = adapter.root;
       assert.equal(root.children.length, 2);
-      suite1 = root.children[0] as TestSuiteInfo;
+      suite1 = adapter.suite1;
 
       assert.strictEqual(suite1.children.length, 0);
 

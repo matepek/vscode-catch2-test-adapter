@@ -33,6 +33,9 @@ and [Google Test](https://github.com/google/googletest) tests using the
 | `testExplorer.onStart`                        | Retire or reset all test states whenever a test run is started. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                                                                                                                              |
 | `testExplorer.onReload`                       | Retire or reset all test states whenever the test tree is reloaded. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                                                                                                                          |
 
+**Note** that this extension is built upon the Test Explorer
+so it's [configuration](https://github.com/hbenl/vscode-test-explorer#configuration) and [commands](https://github.com/hbenl/vscode-test-explorer#commands) can be used.
+
 ### catch2TestExplorer.executables
 
 This variable can be string, an array of strings, an array of objects or an array of strings and objects.
