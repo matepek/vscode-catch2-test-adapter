@@ -17,10 +17,17 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
   public children: (AbstractTestSuiteInfoBase | AbstractTestInfo)[] = [];
   public file?: string;
   public line?: number;
+  public tooltip?: string;
 
-  public constructor(protected readonly _shared: SharedVariables, public readonly origLabel: string, id?: string) {
+  public constructor(
+    protected readonly _shared: SharedVariables,
+    public readonly origLabel: string,
+    id: string | undefined,
+    tooltip?: string,
+  ) {
     this.label = origLabel;
     this.id = id ? id : generateUniqueId();
+    this.tooltip = tooltip;
   }
 
   public sendSkippedChildrenEvents(): void {
@@ -55,13 +62,7 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
       this.line = undefined;
     }
 
-    let i = this.children.findIndex((v: AbstractTestSuiteInfoBase | AbstractTestInfo) => {
-      return child.origLabel.localeCompare(v.origLabel) < 0;
-    });
-
-    if (i == -1) i = this.children.length;
-
-    this.children.splice(i, 0, child);
+    this.children.push(child);
   }
 
   public findRouteToTestById(id: string): (AbstractTestSuiteInfoBase | AbstractTestInfo)[] | undefined {

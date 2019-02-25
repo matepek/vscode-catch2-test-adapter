@@ -106,20 +106,20 @@ describe(path.basename(__filename), function() {
       const expected = [
         { type: 'started', tests: [adapter.root.id] },
         { type: 'suite', state: 'running', suite: adapter.get(0) },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 3) },
-        { type: 'test', state: 'running', test: adapter.get(0, 3, 0) },
+        { type: 'suite', state: 'running', suite: adapter.get(0, 0) },
+        { type: 'test', state: 'running', test: adapter.get(0, 0, 0) },
         {
           type: 'test',
           state: 'passed',
-          test: adapter.get(0, 3, 0),
+          test: adapter.get(0, 0, 0),
           decorations: [],
           message: ['[ RUN      ] TestCas1.test1', '[       OK ] TestCas1.test1 (0 ms)'].join(EOL),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 3, 1) },
+        { type: 'test', state: 'running', test: adapter.get(0, 0, 1) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 3, 1),
+          test: adapter.get(0, 0, 1),
           decorations: [{ line: 18, message: '⬅️ Actual: false;  Expected: true;' }],
           message: [
             '[ RUN      ] TestCas1.test2',
@@ -130,13 +130,13 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] TestCas1.test2 (0 ms)',
           ].join(EOL),
         },
-        { type: 'suite', state: 'completed', suite: adapter.get(0, 3) },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 4) },
-        { type: 'test', state: 'running', test: adapter.get(0, 4, 0) },
+        { type: 'suite', state: 'completed', suite: adapter.get(0, 0) },
+        { type: 'suite', state: 'running', suite: adapter.get(0, 1) },
+        { type: 'test', state: 'running', test: adapter.get(0, 1, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 4, 0),
+          test: adapter.get(0, 1, 0),
           decorations: [
             { line: 23, message: '⬅️ Actual: false;  Expected: true;' },
             { line: 24, message: '⬅️ Actual: true;  Expected: false;' },
@@ -168,11 +168,11 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] TestCas2.test1 (1 ms)',
           ].join(EOL),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 4, 1) },
+        { type: 'test', state: 'running', test: adapter.get(0, 1, 1) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 4, 1),
+          test: adapter.get(0, 1, 1),
           decorations: [
             { line: 31, message: '⬅️ Actual: false;  Expected: true;' },
             {
@@ -193,13 +193,13 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] TestCas2.test2 (0 ms)',
           ].join(EOL),
         },
-        { type: 'suite', state: 'completed', suite: adapter.get(0, 4) },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 0) },
-        { type: 'test', state: 'running', test: adapter.get(0, 0, 0) },
+        { type: 'suite', state: 'completed', suite: adapter.get(0, 1) },
+        { type: 'suite', state: 'running', suite: adapter.get(0, 2) },
+        { type: 'test', state: 'running', test: adapter.get(0, 2, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 0, 0),
+          test: adapter.get(0, 2, 0),
           decorations: [{ line: 69, message: '⬅️ failure' }],
           message: [
             '[ RUN      ] MockTestCase.expect1',
@@ -210,11 +210,11 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] MockTestCase.expect1 (0 ms)',
           ].join(EOL),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 0, 1) },
+        { type: 'test', state: 'running', test: adapter.get(0, 2, 1) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 0, 1),
+          test: adapter.get(0, 2, 1),
           decorations: [{ line: 77, message: '⬅️ failure' }],
           message: [
             '[ RUN      ] MockTestCase.expect2',
@@ -236,13 +236,13 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] MockTestCase.expect2 (0 ms)',
           ].join(EOL),
         },
-        { type: 'suite', state: 'completed', suite: adapter.get(0, 0) },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 1) },
-        { type: 'test', state: 'running', test: adapter.get(0, 1, 0) },
+        { type: 'suite', state: 'completed', suite: adapter.get(0, 2) },
+        { type: 'suite', state: 'running', suite: adapter.get(0, 3) },
+        { type: 'test', state: 'running', test: adapter.get(0, 3, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 1, 0),
+          test: adapter.get(0, 3, 0),
           decorations: [{ line: 40, message: '⬅️ failure' }],
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
@@ -254,11 +254,11 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
           ].join(EOL),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 1, 1) },
+        { type: 'test', state: 'running', test: adapter.get(0, 3, 1) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 1, 1),
+          test: adapter.get(0, 3, 1),
           decorations: [{ line: 40, message: '⬅️ failure' }],
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/1',
@@ -270,11 +270,11 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3 (0 ms)',
           ].join(EOL),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 1, 2) },
+        { type: 'test', state: 'running', test: adapter.get(0, 3, 2) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 1, 2),
+          test: adapter.get(0, 3, 2),
           decorations: [{ line: 41, message: '⬅️ failure' }],
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/0',
@@ -286,11 +286,11 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2 (1 ms)',
           ].join(EOL),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 1, 3) },
+        { type: 'test', state: 'running', test: adapter.get(0, 3, 3) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 1, 3),
+          test: adapter.get(0, 3, 3),
           decorations: [{ line: 41, message: '⬅️ failure' }],
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/1',
@@ -302,13 +302,13 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3 (0 ms)',
           ].join(EOL),
         },
-        { type: 'suite', state: 'completed', suite: adapter.get(0, 1) },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 2) },
-        { type: 'test', state: 'running', test: adapter.get(0, 2, 0) },
+        { type: 'suite', state: 'completed', suite: adapter.get(0, 3) },
+        { type: 'suite', state: 'running', suite: adapter.get(0, 4) },
+        { type: 'test', state: 'running', test: adapter.get(0, 4, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 2, 0),
+          test: adapter.get(0, 4, 0),
           decorations: [{ line: 40, message: '⬅️ failure' }],
           message: [
             '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails1/0',
@@ -320,11 +320,11 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3 (0 ms)',
           ].join(EOL),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 2, 1) },
+        { type: 'test', state: 'running', test: adapter.get(0, 4, 1) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 2, 1),
+          test: adapter.get(0, 4, 1),
           decorations: [{ line: 41, message: '⬅️ failure' }],
           message: [
             '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails2/0',
@@ -336,7 +336,7 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3 (0 ms)',
           ].join(EOL),
         },
-        { type: 'suite', state: 'completed', suite: adapter.get(0, 2) },
+        { type: 'suite', state: 'completed', suite: adapter.get(0, 4) },
         { type: 'suite', state: 'completed', suite: adapter.get(0) },
         { type: 'finished' },
       ];
@@ -350,23 +350,23 @@ describe(path.basename(__filename), function() {
       this.slow(500);
 
       const expected = [
-        { type: 'started', tests: [adapter.get(0, 3, 0).id] },
+        { type: 'started', tests: [adapter.get(0, 0, 0).id] },
         { type: 'suite', state: 'running', suite: adapter.get(0) },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 3) },
-        { type: 'test', state: 'running', test: adapter.get(0, 3, 0) },
+        { type: 'suite', state: 'running', suite: adapter.get(0, 0) },
+        { type: 'test', state: 'running', test: adapter.get(0, 0, 0) },
         {
           type: 'test',
           state: 'passed',
-          test: adapter.get(0, 3, 0),
+          test: adapter.get(0, 0, 0),
           decorations: [],
           message: ['[ RUN      ] TestCas1.test1', '[       OK ] TestCas1.test1 (0 ms)'].join(EOL),
         },
-        { type: 'suite', state: 'completed', suite: adapter.get(0, 3) },
+        { type: 'suite', state: 'completed', suite: adapter.get(0, 0) },
         { type: 'suite', state: 'completed', suite: adapter.get(0) },
         { type: 'finished' },
       ];
 
-      await adapter.run([adapter.get(0, 3, 0).id]);
+      await adapter.run([adapter.get(0, 0, 0).id]);
 
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
     });
@@ -375,14 +375,14 @@ describe(path.basename(__filename), function() {
       this.slow(500);
 
       const expected = [
-        { type: 'started', tests: [adapter.get(0, 1, 0).id] },
+        { type: 'started', tests: [adapter.get(0, 3, 0).id] },
         { type: 'suite', state: 'running', suite: adapter.get(0) },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 1) },
-        { type: 'test', state: 'running', test: adapter.get(0, 1, 0) },
+        { type: 'suite', state: 'running', suite: adapter.get(0, 3) },
+        { type: 'test', state: 'running', test: adapter.get(0, 3, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 1, 0),
+          test: adapter.get(0, 3, 0),
           decorations: [{ line: 40, message: '⬅️ failure' }],
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
@@ -394,12 +394,12 @@ describe(path.basename(__filename), function() {
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
           ].join(EOL),
         },
-        { type: 'suite', state: 'completed', suite: adapter.get(0, 1) },
+        { type: 'suite', state: 'completed', suite: adapter.get(0, 3) },
         { type: 'suite', state: 'completed', suite: adapter.get(0) },
         { type: 'finished' },
       ];
 
-      await adapter.run([adapter.get(0, 1, 0).id]);
+      await adapter.run([adapter.get(0, 3, 0).id]);
 
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
     });

@@ -9,7 +9,6 @@ import * as vscode from 'vscode';
 import * as sinon from 'sinon';
 import {
   TestEvent,
-  TestLoadFinishedEvent,
   TestRunFinishedEvent,
   TestRunStartedEvent,
   TestSuiteEvent,

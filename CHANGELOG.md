@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.21]
+
+### Added
+
+- `testExplorer.sort`, so I removed my logic. If you want the old ordering set this to `byLabelWithSuitesFirst`.
+- tooltip: it will show more info about the suites and tests
+
 ## [2.3.20] - 2019-02-22
 
 ### Fixed
