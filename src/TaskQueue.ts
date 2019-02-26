@@ -25,22 +25,18 @@ export class TaskQueue {
   public then<TResult1>(task: () => TResult1 | PromiseLike<TResult1>): Promise<TResult1> {
     this._count++;
 
-    const depends: Promise<void>[] = [];
+    const depends: Promise<any>[] = []; //eslint-disable-line
     depends[this._depends.length] = this._queue;
 
     for (let i = 0; i < this._depends.length; ++i) {
       depends[i] = this._depends[i]._queue;
     }
 
-    const current = Promise.all(depends).then(task);
+    this._queue = Promise.all(depends)
+      .then(task)
+      .finally(() => this._count--);
 
-    const decr = (): void => {
-      this._count--;
-    };
-
-    this._queue = current.then(decr, decr);
-
-    return current;
+    return this._queue;
   }
 
   public dependsOn(depends: Iterable<TaskQueue>): void {
@@ -53,7 +49,7 @@ export class TaskQueue {
   }
 
   private _count: number = 0;
-  private _queue: Promise<void> = Promise.resolve();
+  private _queue: Promise<any> = Promise.resolve(); //eslint-disable-line
   private readonly _depends: TaskQueue[] = [];
 
   private _checkCircle(tq: TaskQueue): void {

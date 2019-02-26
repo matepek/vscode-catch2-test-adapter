@@ -24,13 +24,7 @@ export class TaskPool {
       else this._waitingTasks.push(resolve);
     }).then(task);
 
-    const release = (): void => {
-      this._release();
-    };
-
-    p.then(release, release);
-
-    return p;
+    return p.finally(() => this._release());
   }
 
   private _runningTaskCount: number = 0;
