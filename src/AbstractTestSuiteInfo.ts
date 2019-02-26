@@ -22,7 +22,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     public readonly execPath: string,
     public readonly execOptions: c2fs.SpawnOptions,
   ) {
-    super(shared, origLabel);
+    super(shared, origLabel, undefined, execPath);
   }
 
   abstract reloadChildren(): Promise<void>;
@@ -93,11 +93,14 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       this.sendSkippedChildrenEvents();
     }
 
-    const runInfo = new RunningTestExecutableInfo(cp.spawn(this.execPath, execParams, this.execOptions), childrenToRun);
+    const execOptions = Object.assign({}, this.execOptions);
+    execOptions.env = Object.assign({}, Object.assign(process.env, execOptions.env));
+
+    const runInfo = new RunningTestExecutableInfo(cp.spawn(this.execPath, execParams, execOptions), childrenToRun);
 
     this._runInfo = runInfo;
 
-    this._shared.log.info('proc started:', this.origLabel, this.execPath, execParams, this.execOptions.cwd);
+    this._shared.log.info('proc started:', this.origLabel, this.execPath, execParams, this.execOptions);
 
     runInfo.process.on('error', (err: Error) => {
       this._shared.log.error('process error event:', err, this);

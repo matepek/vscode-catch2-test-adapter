@@ -187,7 +187,6 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     let resolvedEnv: { [prop: string]: string } = {};
     try {
-      Object.assign(resolvedEnv, process.env);
       Object.assign(resolvedEnv, this._defaultEnv);
 
       if (this._env) Object.assign(resolvedEnv, this._env);

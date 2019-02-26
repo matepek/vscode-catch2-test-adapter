@@ -9,7 +9,6 @@ import * as vscode from 'vscode';
 import * as sinon from 'sinon';
 import {
   TestEvent,
-  TestLoadFinishedEvent,
   TestRunFinishedEvent,
   TestRunStartedEvent,
   TestSuiteEvent,
@@ -977,9 +976,9 @@ describe(path.basename(__filename), function() {
       await adapter.load();
 
       assert.equal(adapter.testLoadsEvents.length, 2);
-      root = (adapter.testLoadsEvents[adapter.testLoadsEvents.length - 1] as TestLoadFinishedEvent).suite!;
+      root = adapter.root;
       assert.equal(root.children.length, 2);
-      suite1 = root.children[0] as TestSuiteInfo;
+      suite1 = adapter.suite1;
 
       assert.strictEqual(suite1.children.length, 0);
 
@@ -1358,6 +1357,7 @@ describe(path.basename(__filename), function() {
     });
 
     it('run suite3 one-by-one', async function() {
+      this.timeout(5000);
       await loadAdapter();
       assert.equal(root.children.length, 3);
       assert.equal(root.children[0].type, 'suite');

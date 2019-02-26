@@ -76,12 +76,33 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
         while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
 
-        if (lines.length == 0) throw Error('Wrong test list.');
+        lines.shift(); // first line: 'Matching test cases:'
+        lines.pop(); // last line: '[0-9]+ matching test cases'
 
-        // first line: 'Matching test cases:'
-        for (let i = 1; i < lines.length - 1; ) {
-          if (lines[i][0] != ' ') this._shared.log.error('Wrong test list output format: ' + lines.toString());
+        for (let i = 0; i < lines.length; ) {
+          if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format: ' + lines.toString());
 
+          if (lines[i].startsWith('    ')) {
+            this._shared.log.warn('Probably too long test name: ' + lines);
+            this.children = [];
+            const test = this._createCatch2TestInfo(
+              undefined,
+              '⚠️ Check the test output message for details ⚠️',
+              '',
+              [],
+              '',
+              0,
+            );
+            this._shared.sendTestEventEmitter.fire([
+              {
+                type: 'test',
+                test: test,
+                state: 'errored',
+                message: '⚠️ Probably too long test name!\n🛠 Try to define: #define CATCH_CONFIG_CONSOLE_WIDTH 300)',
+              },
+            ]);
+            return;
+          }
           const testNameFull = lines[i++].substr(2);
 
           let filePath = '';
@@ -101,7 +122,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
           if (description.startsWith('(NO DESCRIPTION)')) description = '';
 
           let tags: string[] = [];
-          if (lines[i].length > 6 && lines[i][6] === '[') {
+          if (i < lines.length && lines[i].length > 6 && lines[i][6] === '[') {
             tags = lines[i].trim().split(']');
             tags.pop();
             for (let j = 0; j < tags.length; ++j) tags[j] += ']';

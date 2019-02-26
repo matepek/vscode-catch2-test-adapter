@@ -32,6 +32,10 @@ and [Google Test](https://github.com/google/googletest) tests using the
 | `testExplorer.codeLens`                       | Show a CodeLens above each test or suite for running or debugging the tests. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                                                                                                                 |
 | `testExplorer.onStart`                        | Retire or reset all test states whenever a test run is started. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                                                                                                                              |
 | `testExplorer.onReload`                       | Retire or reset all test states whenever the test tree is reloaded. [Details](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                                                                                                                          |
+| `testExplorer.sort`                           | Sort the tests and suites by label or location. If this is not set (or set to null), they will be shown in the order that they were received from the adapter                                                                                                                                                       |
+
+**Note** that this extension is built upon the Test Explorer
+so it's [configuration](https://github.com/hbenl/vscode-test-explorer#configuration) and [commands](https://github.com/hbenl/vscode-test-explorer#commands) can be used.
 
 ### catch2TestExplorer.executables
 
