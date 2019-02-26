@@ -1357,6 +1357,7 @@ describe(path.basename(__filename), function() {
     });
 
     it('run suite3 one-by-one', async function() {
+      this.timeout(5000);
       await loadAdapter();
       assert.equal(root.children.length, 3);
       assert.equal(root.children[0].type, 'suite');
