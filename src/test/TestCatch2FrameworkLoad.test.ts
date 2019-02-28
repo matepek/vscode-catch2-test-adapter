@@ -620,6 +620,9 @@ describe(path.basename(__filename), function() {
 
       // this tests the sinon stubs too
       await adapter.run([s1t1.id]);
+
+      s1t1 = adapter.get(0, 0) as TestInfo;
+
       assert.deepStrictEqual(adapter.testStatesEvents, [
         ...expected,
         { type: 'started', tests: [s1t1.id] },
@@ -667,6 +670,8 @@ describe(path.basename(__filename), function() {
 
       // this tests the sinon stubs too
       await adapter.run([s1t1.id]);
+
+      s1t1 = adapter.get(0, 0) as TestInfo;
 
       assert.deepStrictEqual(adapter.testStatesEvents, [
         ...expected,

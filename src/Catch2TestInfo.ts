@@ -16,7 +16,7 @@ interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-class Frame {
+class Section {
   public constructor(name: string, filename: string, line: number) {
     this.name = name;
     this.filename = filename;
@@ -26,11 +26,7 @@ class Frame {
   public readonly name: string;
   public readonly filename: string;
   public readonly line: number;
-}
-
-function getTitle(stack: Frame[]): string {
-  if (stack.length == 0) throw new Error('stack should contains at least 1 frame');
-  return '⬇️⬇️⬇️ ' + stack.map(f => '"' + f.name + '" at line ' + f.line).join(' ➡️ ');
+  public readonly children: Section[] = [];
 }
 
 export class Catch2TestInfo extends AbstractTestInfo {
@@ -58,6 +54,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
       execPath,
       execOptions,
     );
+  }
+
+  private _sections: undefined | Section[] = undefined;
+
+  public get sections(): undefined | Section[] {
+    return this._sections;
   }
 
   public getEscapedTestName(): string {
@@ -106,19 +108,21 @@ export class Catch2TestInfo extends AbstractTestInfo {
   }
 
   private _processXmlTagTestCaseInner(testCase: XmlObject, testEvent: TestEvent): void {
-    const stack: Frame[] = [new Frame(testCase.$.name, testCase.$.filename, testCase.$.line)];
+    const title: Section = new Section(testCase.$.name, testCase.$.filename, testCase.$.line);
 
     if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
       testEvent.message += '⏱ Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
     }
 
-    this._processInfoWarningAndFailureTags(testCase, stack, testEvent);
+    this._processInfoWarningAndFailureTags(testCase, title, [], testEvent);
 
-    this._processXmlTagExpressions(testCase, stack, testEvent);
+    this._processXmlTagExpressions(testCase, title, [], testEvent);
 
-    this._processXmlTagSections(testCase, stack, testEvent);
+    this._processXmlTagSections(testCase, title, [], testEvent, title);
 
-    this._processXmlTagFatalErrorConditions(testCase, stack, testEvent);
+    if (this._sections === undefined) this._sections = title.children;
+
+    this._processXmlTagFatalErrorConditions(testCase, title, [], testEvent);
 
     if (testCase.OverallResult[0].hasOwnProperty('StdOut')) {
       testEvent.message += '⬇️⬇️⬇️ std::cout:';
@@ -143,7 +147,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processInfoWarningAndFailureTags(xml: XmlObject, stack: Frame[], testEvent: TestEvent): void {
+  private _processInfoWarningAndFailureTags(
+    xml: XmlObject,
+    title: Section,
+    stack: Section[],
+    testEvent: TestEvent,
+  ): void {
     if (xml.hasOwnProperty('Info')) {
       for (let j = 0; j < xml.Info.length; ++j) {
         const info = xml.Info[j];
@@ -173,50 +182,55 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processXmlTagExpressions(xml: XmlObject, stack: Frame[], testEvent: TestEvent): void {
+  private _processXmlTagExpressions(xml: XmlObject, title: Section, stack: Section[], testEvent: TestEvent): void {
     if (xml.hasOwnProperty('Expression')) {
       for (let j = 0; j < xml.Expression.length; ++j) {
+        const expr = xml.Expression[j];
         try {
-          const expr = xml.Expression[j];
-          const currStack = stack.concat(
-            new Frame(expr.$.type ? expr.$.type : '<unknown>', expr.$.filename, expr.$.line),
-          );
-          try {
-            testEvent.message +=
-              getTitle(currStack) +
-              ':\n  Original:\n    ' +
-              expr.Original.map((x: string) => x.trim()).join('; ') +
-              '\n  Expanded:\n    ' +
-              expr.Expanded.map((x: string) => x.trim()).join('; ') +
-              '\n' +
-              '⬆️⬆️⬆️\n\n';
-            testEvent.decorations!.push({
-              line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
-              message: '⬅️ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
-            });
-          } catch (error) {
-            this._shared.log.error(error);
-          }
-          this._processXmlTagFatalErrorConditions(expr, currStack, testEvent);
+          testEvent.message +=
+            this._getTitle(
+              title,
+              stack,
+              new Section(expr.$.type ? expr.$.type : '<unknown>', expr.$.filename, expr.$.line),
+            ) +
+            ':\n  Original:\n    ' +
+            expr.Original.map((x: string) => x.trim()).join('; ') +
+            '\n  Expanded:\n    ' +
+            expr.Expanded.map((x: string) => x.trim()).join('; ') +
+            '\n' +
+            '⬆️⬆️⬆️\n\n';
+          testEvent.decorations!.push({
+            line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
+            message: '⬅️ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
+          });
         } catch (error) {
           this._shared.log.error(error);
         }
+        this._processXmlTagFatalErrorConditions(expr, title, stack, testEvent);
       }
     }
   }
 
-  private _processXmlTagSections(xml: XmlObject, stack: Frame[], testEvent: TestEvent): void {
+  private _processXmlTagSections(
+    xml: XmlObject,
+    title: Section,
+    stack: Section[],
+    testEvent: TestEvent,
+    parentSection: Section,
+  ): void {
     if (xml.hasOwnProperty('Section')) {
       for (let j = 0; j < xml.Section.length; ++j) {
         const section = xml.Section[j];
         try {
-          const currStack = stack.concat(new Frame(section.$.name, section.$.filename, section.$.line));
+          const currSection = new Section(section.$.name, section.$.filename, section.$.line);
+          parentSection.children.push(currSection);
+          const currStack = stack.concat(currSection);
 
-          this._processInfoWarningAndFailureTags(xml, currStack, testEvent);
+          this._processInfoWarningAndFailureTags(xml, title, currStack, testEvent);
 
-          this._processXmlTagExpressions(section, currStack, testEvent);
+          this._processXmlTagExpressions(section, title, currStack, testEvent);
 
-          this._processXmlTagSections(section, currStack, testEvent);
+          this._processXmlTagSections(section, title, currStack, testEvent, currSection);
         } catch (error) {
           this._shared.log.error(error);
         }
@@ -224,14 +238,19 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processXmlTagFatalErrorConditions(expr: XmlObject, stack: Frame[], testEvent: TestEvent): void {
+  private _processXmlTagFatalErrorConditions(
+    expr: XmlObject,
+    title: Section,
+    stack: Section[],
+    testEvent: TestEvent,
+  ): void {
     if (expr.hasOwnProperty('FatalErrorCondition')) {
       try {
         for (let j = 0; j < expr.FatalErrorCondition.length; ++j) {
           const fatal = expr.FatalErrorCondition[j];
-          const currStack = stack.concat(new Frame('Fatal Error', expr.$.filename, expr.$.line));
 
-          testEvent.message += getTitle(currStack) + ':\n';
+          testEvent.message +=
+            this._getTitle(title, stack, new Section('Fatal Error', expr.$.filename, expr.$.line)) + ':\n';
           if (fatal.hasOwnProperty('_')) {
             testEvent.message += '  Error: ' + fatal._.trim() + '\n';
           } else {
@@ -245,4 +264,30 @@ export class Catch2TestInfo extends AbstractTestInfo {
       }
     }
   }
+
+  private _getTitle(title: Section, stack: Section[], suffix: Section): string {
+    return (
+      '⬇️⬇️⬇️ ' +
+      [title]
+        .concat(stack, suffix)
+        .map((f: Section) => '"' + f.name + '" at line ' + f.line)
+        .join(' ➡️ ')
+    );
+  }
+
+  // private _getExecParamStr(stack: Section[]): string {
+  //   return (
+  //     '{ "exec": ' +
+  //     this.execPath +
+  //     '",\n' +
+  //     '  "cwd":  "' +
+  //     this.execOptions.cwd +
+  //     '"\n' +
+  //     '  "args": ["' +
+  //     this.getEscapedTestName().replace('"', '\\"') +
+  //     '"' +
+  //     stack.map(f => ', "-c", "' + f.name.replace('"', '\\"') + '"').join('') +
+  //     '] }'
+  //   );
+  // }
 }

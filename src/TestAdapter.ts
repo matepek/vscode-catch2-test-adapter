@@ -280,7 +280,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     });
   }
 
-  public debug(tests: string[]): Promise<void> {
+  public async debug(tests: string[]): Promise<void> {
     if (this._mainTaskQueue.size > 0) {
       this._log.info(__filename + '. Debug is busy');
       throw Error('The adapter is busy. Try it again a bit later.');
@@ -316,6 +316,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const template = this._getDebugConfigurationTemplate(config);
 
     const argsArray = testInfo.getDebugParams(this._getDebugBreakOnFailure(config));
+    // if (testInfo instanceof Catch2TestInfo) {
+    //   const sections = testInfo.sections;
+    //   if (sections && sections.length > 0) {
+    //     const items: vscode.QuickPickItem[] = [];
+    //     sections.forEach(s => {
+    //       items.push({ label: s.name }); //TODO
+    //     });
+    //     const pick = await vscode.window.showQuickPick(items);
+    //   }
+    // }
 
     const debugConfig = resolveVariables(template, [
       ...this._variableToValue,

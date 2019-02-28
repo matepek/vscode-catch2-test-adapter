@@ -49,7 +49,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         this.execPath,
         ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
         this.execOptions,
-        5000,
+        20000,
       )
       .then(catch2TestListOutput => {
         const oldChildren = this.children;
