@@ -16,6 +16,23 @@ interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
+class Frame {
+  public constructor(name: string, filename: string, line: number) {
+    this.name = name;
+    this.filename = filename;
+    this.line = line;
+  }
+
+  public readonly name: string;
+  public readonly filename: string;
+  public readonly line: number;
+}
+
+function getTitle(stack: Frame[]): string {
+  if (stack.length == 0) throw new Error('stack should contains at least 1 frame');
+  return '⬇️⬇️⬇️ ' + stack.map(f => '"' + f.name + '" at line ' + f.line).join(' ➡️ ');
+}
+
 export class Catch2TestInfo extends AbstractTestInfo {
   public constructor(
     shared: SharedVariables,
@@ -89,19 +106,19 @@ export class Catch2TestInfo extends AbstractTestInfo {
   }
 
   private _processXmlTagTestCaseInner(testCase: XmlObject, testEvent: TestEvent): void {
-    const title = '⬇️⬇️⬇️ "' + testCase.$.name + '" at line ' + testCase.$.line;
+    const stack: Frame[] = [new Frame(testCase.$.name, testCase.$.filename, testCase.$.line)];
 
     if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
       testEvent.message += '⏱ Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
     }
 
-    this._processInfoWarningAndFailureTags(testCase, title, testEvent);
+    this._processInfoWarningAndFailureTags(testCase, stack, testEvent);
 
-    this._processXmlTagExpressions(testCase, title, testEvent);
+    this._processXmlTagExpressions(testCase, stack, testEvent);
 
-    this._processXmlTagSections(testCase, title, testEvent);
+    this._processXmlTagSections(testCase, stack, testEvent);
 
-    this._processXmlTagFatalErrorConditions(testCase, title, testEvent);
+    this._processXmlTagFatalErrorConditions(testCase, stack, testEvent);
 
     if (testCase.OverallResult[0].hasOwnProperty('StdOut')) {
       testEvent.message += '⬇️⬇️⬇️ std::cout:';
@@ -126,7 +143,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processInfoWarningAndFailureTags(xml: XmlObject, title: string, testEvent: TestEvent): void {
+  private _processInfoWarningAndFailureTags(xml: XmlObject, stack: Frame[], testEvent: TestEvent): void {
     if (xml.hasOwnProperty('Info')) {
       for (let j = 0; j < xml.Info.length; ++j) {
         const info = xml.Info[j];
@@ -156,49 +173,50 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processXmlTagExpressions(xml: XmlObject, title: string, testEvent: TestEvent): void {
+  private _processXmlTagExpressions(xml: XmlObject, stack: Frame[], testEvent: TestEvent): void {
     if (xml.hasOwnProperty('Expression')) {
       for (let j = 0; j < xml.Expression.length; ++j) {
-        const expr = xml.Expression[j];
         try {
-          testEvent.message +=
-            title +
-            ' ➡️ ' +
-            (expr.$.type ? expr.$.type : '<unknown>') +
-            ' at line ' +
-            expr.$.line +
-            ':\n' +
-            '  Original:\n    ' +
-            expr.Original.map((x: string) => x.trim()).join('; ') +
-            '\n' +
-            '  Expanded:\n    ' +
-            expr.Expanded.map((x: string) => x.trim()).join('; ') +
-            '\n' +
-            '⬆️⬆️⬆️\n\n';
-          testEvent.decorations!.push({
-            line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
-            message: '⬅️ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
-          });
+          const expr = xml.Expression[j];
+          const currStack = stack.concat(
+            new Frame(expr.$.type ? expr.$.type : '<unknown>', expr.$.filename, expr.$.line),
+          );
+          try {
+            testEvent.message +=
+              getTitle(currStack) +
+              ':\n  Original:\n    ' +
+              expr.Original.map((x: string) => x.trim()).join('; ') +
+              '\n  Expanded:\n    ' +
+              expr.Expanded.map((x: string) => x.trim()).join('; ') +
+              '\n' +
+              '⬆️⬆️⬆️\n\n';
+            testEvent.decorations!.push({
+              line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
+              message: '⬅️ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
+            });
+          } catch (error) {
+            this._shared.log.error(error);
+          }
+          this._processXmlTagFatalErrorConditions(expr, currStack, testEvent);
         } catch (error) {
           this._shared.log.error(error);
         }
-        this._processXmlTagFatalErrorConditions(expr, title, testEvent);
       }
     }
   }
 
-  private _processXmlTagSections(xml: XmlObject, title: string, testEvent: TestEvent): void {
+  private _processXmlTagSections(xml: XmlObject, stack: Frame[], testEvent: TestEvent): void {
     if (xml.hasOwnProperty('Section')) {
       for (let j = 0; j < xml.Section.length; ++j) {
         const section = xml.Section[j];
         try {
-          title += ' ➡️ "' + section.$.name + '" at line ' + section.$.line;
+          const currStack = stack.concat(new Frame(section.$.name, section.$.filename, section.$.line));
 
-          this._processInfoWarningAndFailureTags(xml, title, testEvent);
+          this._processInfoWarningAndFailureTags(xml, currStack, testEvent);
 
-          this._processXmlTagExpressions(section, title, testEvent);
+          this._processXmlTagExpressions(section, currStack, testEvent);
 
-          this._processXmlTagSections(section, title, testEvent);
+          this._processXmlTagSections(section, currStack, testEvent);
         } catch (error) {
           this._shared.log.error(error);
         }
@@ -206,13 +224,14 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processXmlTagFatalErrorConditions(expr: XmlObject, title: string, testEvent: TestEvent): void {
+  private _processXmlTagFatalErrorConditions(expr: XmlObject, stack: Frame[], testEvent: TestEvent): void {
     if (expr.hasOwnProperty('FatalErrorCondition')) {
       try {
         for (let j = 0; j < expr.FatalErrorCondition.length; ++j) {
           const fatal = expr.FatalErrorCondition[j];
+          const currStack = stack.concat(new Frame('Fatal Error', expr.$.filename, expr.$.line));
 
-          testEvent.message += title + ' ➡️ Fatal Error at line ' + expr.$.line + ':\n';
+          testEvent.message += getTitle(currStack) + ':\n';
           if (fatal.hasOwnProperty('_')) {
             testEvent.message += '  Error: ' + fatal._.trim() + '\n';
           } else {
