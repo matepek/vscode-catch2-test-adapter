@@ -23,6 +23,7 @@ import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
+import { Catch2Section, Catch2TestInfo } from './Catch2TestInfo';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: util.Log;
@@ -280,7 +281,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     });
   }
 
-  public debug(tests: string[]): Promise<void> {
+  public async debug(tests: string[]): Promise<void> {
     if (this._mainTaskQueue.size > 0) {
       this._log.info(__filename + '. Debug is busy');
       throw Error('The adapter is busy. Try it again a bit later.');
@@ -317,6 +318,56 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const argsArray = testInfo.getDebugParams(this._getDebugBreakOnFailure(config));
 
+    if (testInfo instanceof Catch2TestInfo) {
+      const sections = testInfo.sections;
+      if (sections && sections.length > 0) {
+        interface QuickPickItem extends vscode.QuickPickItem {
+          sectionStack: Catch2Section[];
+        }
+
+        const items: QuickPickItem[] = [
+          {
+            label: testInfo.origLabel,
+            sectionStack: [],
+            description: 'Select the section combo you wish to debug or choose this to debug all of it.',
+          },
+        ];
+
+        const traverse = (
+          stack: Catch2Section[],
+          section: Catch2Section,
+          hasNextStack: boolean[],
+          hasNext: boolean,
+        ): void => {
+          const currStack = stack.concat(section);
+          const space = '\u3000';
+          let label = hasNextStack.map(h => (h ? '┃' : space)).join('');
+          label += hasNext ? '┣' : '┗';
+          label += section.name;
+
+          items.push({
+            label: label,
+            description: section.failed ? '❌' : '✅',
+            sectionStack: currStack,
+          });
+
+          for (let i = 0; i < section.children.length; ++i)
+            traverse(currStack, section.children[i], hasNextStack.concat(hasNext), i < section.children.length - 1);
+        };
+
+        for (let i = 0; i < sections.length; ++i) traverse([], sections[i], [], i < sections.length - 1);
+
+        const pick = await vscode.window.showQuickPick(items);
+
+        if (pick === undefined) return Promise.resolve();
+
+        pick.sectionStack.forEach(s => {
+          argsArray.push('-c');
+          argsArray.push(s.name);
+        });
+      }
+    }
+
     const debugConfig = resolveVariables(template, [
       ...this._variableToValue,
       ['${suitelabel}', suiteLabels], // deprecated
@@ -327,7 +378,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ['${argsArray}', argsArray],
       ['${argsStr}', '"' + argsArray.join('" "') + '"'],
       ['${cwd}', testInfo.execOptions.cwd!],
-      ['${envObj}', testInfo.execOptions.env!],
+      ['${envObj}', Object.assign(Object.assign({}, process.env), testInfo.execOptions.env!)],
     ]);
 
     this._log.info('Debug: resolved catch2TestExplorer.debugConfigTemplate:', debugConfig);

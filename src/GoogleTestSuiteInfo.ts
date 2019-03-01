@@ -48,7 +48,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
   private _reloadGoogleTests(): Promise<void> {
     const tmpFilePath = (this.execOptions.cwd || '.') + '/tmp_gtest_output_' + Math.random().toString(36) + '.xml.tmp';
     return c2fs
-      .spawnAsync(this.execPath, ['--gtest_list_tests', '--gtest_output=xml:' + tmpFilePath], this.execOptions, 5000)
+      .spawnAsync(this.execPath, ['--gtest_list_tests', '--gtest_output=xml:' + tmpFilePath], this.execOptions, 30000)
       .then(googleTestListOutput => {
         const oldChildren = this.children;
         this.children = [];
@@ -60,7 +60,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             this._shared,
             undefined,
             '<dummy>',
-            '⚠️ Check the test output message for details ⚠️',
+            'Check the test output message for details ⚠️',
             '',
             undefined,
             undefined,

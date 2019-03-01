@@ -7,12 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.22]
+
+### Changed
+
+- the test list parser timeout from 5 to 30 seconds.
+
+### Added
+
+- section picker for debugging.
+
+### Fixed
+
+- a bug related to env variables in case of debugging.
+
 ## [2.3.21] - 2019-02-26
 
 ### Added
 
 - `testExplorer.sort`, so I removed my logic. If you want the old ordering set this to `byLabelWithSuitesFirst`.
-- tooltip: it will show more info about the suites and tests
+- tooltip: it will show more info about the suites and tests.
 
 ## [2.3.20] - 2019-02-22
 

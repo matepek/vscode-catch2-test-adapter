@@ -49,7 +49,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         this.execPath,
         ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
         this.execOptions,
-        5000,
+        30000,
       )
       .then(catch2TestListOutput => {
         const oldChildren = this.children;
@@ -58,13 +58,18 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
         if (catch2TestListOutput.stderr) {
           this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr: ', catch2TestListOutput);
-          const test = this._createCatch2TestInfo(
-            undefined,
-            '⚠️ Check the test output message for details ⚠️',
-            '',
-            [],
-            '',
-            0,
+          const test = this.addChild(
+            new Catch2TestInfo(
+              this._shared,
+              undefined,
+              'Check the test output message for details ⚠️',
+              '',
+              [],
+              '',
+              0,
+              this.execPath,
+              this.execOptions,
+            ),
           );
           this._shared.sendTestEventEmitter.fire([
             { type: 'test', test: test, state: 'errored', message: catch2TestListOutput.stderr },
@@ -85,20 +90,29 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
           if (lines[i].startsWith('    ')) {
             this._shared.log.warn('Probably too long test name: ' + lines);
             this.children = [];
-            const test = this._createCatch2TestInfo(
-              undefined,
-              '⚠️ Check the test output message for details ⚠️',
-              '',
-              [],
-              '',
-              0,
+            const test = this.addChild(
+              new Catch2TestInfo(
+                this._shared,
+                undefined,
+                'Check the test output message for details ⚠️',
+                '',
+                [],
+                '',
+                0,
+                this.execPath,
+                this.execOptions,
+              ),
             );
             this._shared.sendTestEventEmitter.fire([
               {
                 type: 'test',
                 test: test,
                 state: 'errored',
-                message: '⚠️ Probably too long test name!\n🛠 Try to define: #define CATCH_CONFIG_CONSOLE_WIDTH 300)',
+                message: [
+                  '⚠️ Probably too long test name or the test name starts with space characters!',
+                  '🛠 - Try to define: #define CATCH_CONFIG_CONSOLE_WIDTH 300)',
+                  '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
+                ].join('\n'),
               },
             ]);
             return;
@@ -130,41 +144,23 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
           }
 
           const index = oldChildren.findIndex(c => c.testNameFull == testNameFull);
-          this._createCatch2TestInfo(
-            index != -1 ? oldChildren[index].id : undefined,
-            testNameFull,
-            description,
-            tags,
-            filePath,
-            line - 1,
+
+          this.addChild(
+            new Catch2TestInfo(
+              this._shared,
+              index != -1 ? oldChildren[index].id : undefined,
+              testNameFull,
+              description,
+              tags,
+              filePath,
+              line - 1,
+              this.execPath,
+              this.execOptions,
+              index != -1 ? oldChildren[index].sections : undefined,
+            ),
           );
         }
       });
-  }
-
-  private _createCatch2TestInfo(
-    id: string | undefined,
-    testName: string,
-    description: string,
-    tags: string[],
-    file: string,
-    line: number,
-  ): Catch2TestInfo {
-    const test = new Catch2TestInfo(
-      this._shared,
-      id,
-      testName,
-      description,
-      tags,
-      file,
-      line,
-      this.execPath,
-      this.execOptions,
-    );
-
-    this.addChild(test);
-
-    return test;
   }
 
   protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<Catch2TestInfo>): string[] {
@@ -398,7 +394,8 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       });
   }
 
-  public addChild(test: Catch2TestInfo): void {
+  public addChild(test: Catch2TestInfo): Catch2TestInfo {
     super.addChild(test);
+    return test;
   }
 }
