@@ -60,7 +60,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             this._shared,
             undefined,
             '<dummy>',
-            '⚠️ Check the test output message for details ⚠️',
+            'Check the test output message for details ⚠️',
             '',
             undefined,
             undefined,

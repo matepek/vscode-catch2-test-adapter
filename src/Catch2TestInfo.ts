@@ -16,7 +16,7 @@ interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-class Section {
+export class Catch2Section {
   public constructor(name: string, filename: string, line: number) {
     this.name = name;
     this.filename = filename;
@@ -26,7 +26,8 @@ class Section {
   public readonly name: string;
   public readonly filename: string;
   public readonly line: number;
-  public readonly children: Section[] = [];
+  public readonly children: Catch2Section[] = [];
+  public failed: boolean = false;
 }
 
 export class Catch2TestInfo extends AbstractTestInfo {
@@ -40,6 +41,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     line: number,
     execPath: string,
     execOptions: SpawnOptions,
+    sections?: Catch2Section[],
   ) {
     super(
       shared,
@@ -54,11 +56,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
       execPath,
       execOptions,
     );
+    this._sections = sections;
   }
 
-  private _sections: undefined | Section[] = undefined;
+  private _sections: undefined | Catch2Section[];
 
-  public get sections(): undefined | Section[] {
+  public get sections(): undefined | Catch2Section[] {
     return this._sections;
   }
 
@@ -108,7 +111,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
   }
 
   private _processXmlTagTestCaseInner(testCase: XmlObject, testEvent: TestEvent): void {
-    const title: Section = new Section(testCase.$.name, testCase.$.filename, testCase.$.line);
+    const title: Catch2Section = new Catch2Section(testCase.$.name, testCase.$.filename, testCase.$.line);
 
     if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
       testEvent.message += '⏱ Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
@@ -120,7 +123,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     this._processXmlTagSections(testCase, title, [], testEvent, title);
 
-    if (this._sections === undefined) this._sections = title.children;
+    this._sections = title.children;
 
     this._processXmlTagFatalErrorConditions(testCase, title, [], testEvent);
 
@@ -149,8 +152,8 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
   private _processInfoWarningAndFailureTags(
     xml: XmlObject,
-    title: Section,
-    stack: Section[],
+    title: Catch2Section,
+    stack: Catch2Section[],
     testEvent: TestEvent,
   ): void {
     if (xml.hasOwnProperty('Info')) {
@@ -182,7 +185,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processXmlTagExpressions(xml: XmlObject, title: Section, stack: Section[], testEvent: TestEvent): void {
+  private _processXmlTagExpressions(
+    xml: XmlObject,
+    title: Catch2Section,
+    stack: Catch2Section[],
+    testEvent: TestEvent,
+  ): void {
     if (xml.hasOwnProperty('Expression')) {
       for (let j = 0; j < xml.Expression.length; ++j) {
         const expr = xml.Expression[j];
@@ -191,7 +199,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
             this._getTitle(
               title,
               stack,
-              new Section(expr.$.type ? expr.$.type : '<unknown>', expr.$.filename, expr.$.line),
+              new Catch2Section(expr.$.type ? expr.$.type : '<unknown>', expr.$.filename, expr.$.line),
             ) +
             ':\n  Original:\n    ' +
             expr.Original.map((x: string) => x.trim()).join('; ') +
@@ -213,17 +221,32 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
   private _processXmlTagSections(
     xml: XmlObject,
-    title: Section,
-    stack: Section[],
+    title: Catch2Section,
+    stack: Catch2Section[],
     testEvent: TestEvent,
-    parentSection: Section,
+    parentSection: Catch2Section,
   ): void {
     if (xml.hasOwnProperty('Section')) {
       for (let j = 0; j < xml.Section.length; ++j) {
         const section = xml.Section[j];
         try {
-          const currSection = new Section(section.$.name, section.$.filename, section.$.line);
-          parentSection.children.push(currSection);
+          let currSection = parentSection.children.find(
+            v => v.name === section.$.name && v.filename === section.$.filename && v.line === section.$.line,
+          );
+
+          if (currSection === undefined) {
+            currSection = new Catch2Section(section.$.name, section.$.filename, section.$.line);
+            parentSection.children.push(currSection);
+          }
+
+          if (
+            section.OverallResults &&
+            section.OverallResults.length > 0 &&
+            section.OverallResults[0].$.failures !== '0'
+          ) {
+            currSection.failed = true;
+          }
+
           const currStack = stack.concat(currSection);
 
           this._processInfoWarningAndFailureTags(xml, title, currStack, testEvent);
@@ -240,8 +263,8 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
   private _processXmlTagFatalErrorConditions(
     expr: XmlObject,
-    title: Section,
-    stack: Section[],
+    title: Catch2Section,
+    stack: Catch2Section[],
     testEvent: TestEvent,
   ): void {
     if (expr.hasOwnProperty('FatalErrorCondition')) {
@@ -250,7 +273,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
           const fatal = expr.FatalErrorCondition[j];
 
           testEvent.message +=
-            this._getTitle(title, stack, new Section('Fatal Error', expr.$.filename, expr.$.line)) + ':\n';
+            this._getTitle(title, stack, new Catch2Section('Fatal Error', expr.$.filename, expr.$.line)) + ':\n';
           if (fatal.hasOwnProperty('_')) {
             testEvent.message += '  Error: ' + fatal._.trim() + '\n';
           } else {
@@ -265,12 +288,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _getTitle(title: Section, stack: Section[], suffix: Section): string {
+  private _getTitle(title: Catch2Section, stack: Catch2Section[], suffix: Catch2Section): string {
     return (
       '⬇️⬇️⬇️ ' +
       [title]
         .concat(stack, suffix)
-        .map((f: Section) => '"' + f.name + '" at line ' + f.line)
+        .map((f: Catch2Section) => '"' + f.name + '" at line ' + f.line)
         .join(' ➡️ ')
     );
   }

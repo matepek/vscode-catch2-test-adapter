@@ -219,7 +219,7 @@ describe(path.basename(__filename), function() {
     assert.equal(suite1.children.length, 1, inspect([testListErrOutput, adapter.testLoadsEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
-    assert.strictEqual(suite1.children[0].label, '⚠️ Check the test output message for details ⚠️');
+    assert.strictEqual(suite1.children[0].label, 'Check the test output message for details ⚠️');
 
     await waitFor(this, () => {
       return adapter!.testStatesEvents.length == 6;
