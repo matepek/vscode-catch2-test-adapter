@@ -92,7 +92,7 @@ describe(path.basename(__filename), function() {
 
   context('example 1', function() {
     /**
-     *  node1 <___ node
+     *  node1 <___ nodeD
      *  node2 <___/
      */
     const node1 = new TaskQueue([], 'node1');
@@ -145,7 +145,7 @@ describe(path.basename(__filename), function() {
       assert.ok(!hasRun1atOnce);
       assert.ok(!hasRun2atOnce);
 
-      await promisify(setTimeout)(20);
+      await promisify(setTimeout)(40);
 
       assert.ok(
         await waitFor(this, async () => {

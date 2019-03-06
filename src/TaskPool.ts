@@ -19,12 +19,12 @@ export class TaskPool {
   }
 
   public scheduleTask<TResult>(task: () => TResult | PromiseLike<TResult>): Promise<TResult> {
-    const p = new Promise<void>(resolve => {
+    return new Promise<void>(resolve => {
       if (this._acquire()) resolve();
       else this._waitingTasks.push(resolve);
-    }).then(task);
-
-    return p.finally(() => this._release());
+    })
+      .then(task)
+      .finally(() => this._release());
   }
 
   private _runningTaskCount: number = 0;

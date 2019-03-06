@@ -23,20 +23,22 @@ export class TaskQueue {
   }
 
   public then<TResult1>(task: () => TResult1 | PromiseLike<TResult1>): Promise<TResult1> {
-    this._count++;
+    ++this._count;
 
-    const depends: Promise<any>[] = []; //eslint-disable-line
-    depends[this._depends.length] = this._queue;
+    let current: Promise<any> = this._queue; //eslint-disable-line
 
-    for (let i = 0; i < this._depends.length; ++i) {
-      depends[i] = this._depends[i]._queue;
+    if (this._depends.length > 0) {
+      const depends = this._depends.map(tq => tq._queue);
+      current = current.then(() => {
+        return Promise.all(depends);
+      });
     }
 
-    this._queue = Promise.all(depends)
-      .then(task)
-      .finally(() => this._count--);
+    current = current.then(task).finally(() => --this._count);
 
-    return this._queue;
+    this._queue = current.catch(() => {});
+
+    return current;
   }
 
   public dependsOn(depends: Iterable<TaskQueue>): void {
@@ -44,7 +46,7 @@ export class TaskQueue {
       this._checkCircle(dep);
     }
     for (const dep of depends) {
-      if (this._depends.indexOf(dep) == -1) this._depends.push(dep);
+      if (this._depends.indexOf(dep) === -1) this._depends.push(dep);
     }
   }
 
