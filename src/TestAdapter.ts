@@ -18,7 +18,7 @@ import * as api from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { resolveVariables } from './Helpers';
+import { resolveVariables } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
@@ -374,9 +374,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ['${suiteLabel}', suiteLabels],
       ['${label}', testInfo.label],
       ['${exec}', testInfo.execPath],
-      ['${args}', argsArray], // depricated
+      ['${args}', argsArray], // deprecated
       ['${argsArray}', argsArray],
-      ['${argsStr}', '"' + argsArray.join('" "') + '"'],
+      ['${argsStr}', '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"'],
       ['${cwd}', testInfo.execOptions.cwd!],
       ['${envObj}', Object.assign(Object.assign({}, process.env), testInfo.execOptions.env!)],
     ]);

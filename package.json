@@ -112,7 +112,7 @@
                     "type": "object",
                     "properties": {
                       "pattern": {
-                        "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test[1-9]*`",
+                        "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** (🚫\"`\\`\"; ✅\"`/`\"; [Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)).",
                         "anyOf": [
                           {
                             "type": "string",
@@ -225,7 +225,7 @@
                     ]
                   },
                   {
-                    "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test[1-9]*`",
+                    "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** (🚫\"`\\`\"; ✅\"`/`\"; [Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)).",
                     "type": "string",
                     "minLength": 1
                   }
@@ -236,7 +236,7 @@
               "type": "object",
               "properties": {
                 "pattern": {
-                  "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test[1-9]*`",
+                  "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** (🚫\"`\\`\"; ✅\"`/`\"; [Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)).",
                   "anyOf": [
                     {
                       "type": "string",
@@ -349,7 +349,7 @@
               ]
             },
             {
-              "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test[1-9]*`",
+              "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** (🚫\"`\\`\"; ✅\"`/`\"; [Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)).",
               "type": "string",
               "minLength": 1
             }

@@ -5,7 +5,7 @@
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 
 import { SpawnOptions } from './FsWrapper';
-import { generateUniqueId } from './IdGenerator';
+import { generateUniqueId } from './Util';
 import { SharedVariables } from './SharedVariables';
 
 export abstract class AbstractTestInfo implements TestInfo {

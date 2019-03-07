@@ -266,7 +266,6 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
                 data.group = group;
                 this._shared.testStatesEmitter.fire({ type: 'suite', suite: group, state: 'running' });
-                group.sendSkippedChildrenEvents();
               }
             } else {
               this._shared.log.error('should have found group', this, groupName);

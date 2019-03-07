@@ -25,3 +25,9 @@ export function resolveVariables(value: any, varValue: [string, any][]): any {
   }
   return value;
 }
+
+let uidCounter = 0;
+
+export function generateUniqueId(): string {
+  return (++uidCounter).toString();
+}

@@ -89,10 +89,6 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'running' });
 
-    if (childrenToRun === 'runAllTestsExceptSkipped') {
-      this.sendSkippedChildrenEvents();
-    }
-
     const execOptions = Object.assign({}, this.execOptions);
     execOptions.env = Object.assign({}, Object.assign(process.env, execOptions.env));
 

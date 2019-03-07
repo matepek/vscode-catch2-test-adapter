@@ -35,24 +35,36 @@ and [Google Test](https://github.com/google/googletest) tests using the
 | `testExplorer.sort`                           | Sort the tests and suites by label or location. If this is not set (or set to null), they will be shown in the order that they were received from the adapter                                                                                                                                                       |
 
 **Note** that this extension is built upon the Test Explorer
-so it's [configuration](https://github.com/hbenl/vscode-test-explorer#configuration) and [commands](https://github.com/hbenl/vscode-test-explorer#commands) can be used.
+so it's [configuration](https://github.com/hbenl/vscode-test-explorer#configuration)
+and [commands](https://github.com/hbenl/vscode-test-explorer#commands) can be used.
 
 ### catch2TestExplorer.executables
 
-This variable can be string, an array of strings, an array of objects or an array of strings and objects.
+This variable can be
+
+- a string (ex.: `"out/**/*test.exe"`),
+- an array of strings (ex.: `[ "out/debug/*test.exe", "out/optimized/*test.exe" ]`),
+- an array of objects (ex.: `{ "pattern": "out/**/*test.exe" }`) or
+- an array of strings and objects (ex.: `[ { "pattern": "out/debug/*test.exe" }, { "pattern": "out/optimized/*test.exe" } ]`).
 
 If it is an object it can contains the following properties:
 
-| Property  | Description                                                                                                                                                                                                                                                                                                                   |            |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| `name`    | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                                                                                                               | (optional) |
-| `pattern` | A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). Example: `{build,out}/**/test[1-9]*` | (requierd) |
-| `cwd`     | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                       | (optional) |
-| `env`     | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                               | (optional) |
+| Property  | Description                                                                                                                                                                                                                                                                                                             |            |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `name`    | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                                                                                                         | (optional) |
+| `pattern` | A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** (🚫"`\`"; ✅"`/`"; [Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). | (requierd) |
+| `cwd`     | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                 | (optional) |
+| `env`     | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                         | (optional) |
 
 **Remark**: The `pattern` (or the `executables` used as string or an array of strings)
-can contains _search-pattern_ if it points somewhere inside of the workspace folder.
-Otherwise it only can point to an executable (No _search-pattern_!).
+can contains [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)
+if it points somewhere inside of the workspace folder.
+Otherwise it only can point to an executable (No _search-pattern_!) with a relative or absolute path
+(ex.: `[ "../../p1/out/test.exe", "/home/rick/repo/p1/out/test", "C:/repo/p1/out/test.exe" ]`).
+
+Test executables and `pattern`s are being watched (only inside the workspace directory).
+In case of one recompiles it will try to preserve the test states.
+If compilation reaches timeout it will drop the suite (`catch2TestExplorer.defaultWatchTimeoutSec`).
 
 **Note** that there is a mechanism which will filter out every possible executable which:
 
@@ -68,13 +80,13 @@ Otherwise it only can point to an executable (No _search-pattern_!).
 | `${relPath}`            | Relative path of the test executable to the workspace folder                                                                                        |
 | `${absDirpath}`         | Absolute path of the test executable's parent directory                                                                                             |
 | `${relDirpath}`         | Relative path of the test executable's parent directory to the workspace folder                                                                     |
-| `${filename}`           | Filename (Path withouth directories, "d/a.b.c" => "a.b.c")                                                                                          |
-| `${baseFilename}`       | Filename without extension ("d/a.b.c" => "a.b")                                                                                                     |
-| `${extFilename}`        | Filename extension. ("d/a.b.c" => ".c")                                                                                                             |
-| `${base2Filename}`      | Filename without second extension ("d/a.b.c" => "a")                                                                                                |
-| `${ext2Filename}`       | Filename's second level extension. ("d/a.b.c" => ".b")                                                                                              |
-| `${base3Filename}`      | Filename without third extension ("d/a.b.c" => "a")                                                                                                 |
-| `${ext3Filename}`       | Filename's third level extension. ("d/a.b.c" => "")                                                                                                 |
+| `${filename}`           | Filename (Path withouth directories; "`d/a.b.c`" => "`a.b.c`")                                                                                      |
+| `${baseFilename}`       | Filename without extension ("`d/a.b.c`" => "`a.b`")                                                                                                 |
+| `${extFilename}`        | Filename extension. ("`d/a.b.c`" => "`.c`")                                                                                                         |
+| `${base2Filename}`      | Filename without second extension ("`d/a.b.c`" => "`a`")                                                                                            |
+| `${ext2Filename}`       | Filename's second level extension. ("`d/a.b.c`" => "`.b`")                                                                                          |
+| `${base3Filename}`      | Filename without third extension ("`d/a.b.c`" => "`a`")                                                                                             |
+| `${ext3Filename}`       | Filename's third level extension. ("`d/a.b.c`" => "")                                                                                               |
 | `${workspaceDirectory}` | (You can only guess once.)                                                                                                                          |
 | `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                                                                                    |
 | `${workspaceName}`      | Workspace name can be custom in case of [`workspace file`](https://code.visualstudio.com/docs/editor/multi-root-workspaces#_workspace-file-schema). |
@@ -120,17 +132,19 @@ Otherwise it only can point to an executable (No _search-pattern_!).
 ### catch2TestExplorer.debugConfigTemplate
 
 If `catch2TestExplorer.debugConfigTemplate` value is `null` (default),
-it will look after `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools` extensions.
+it will look after [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start),
+[`webfreak.debug`](https://github.com/WebFreak001/code-debug) and
+[`ms-vscode.cpptools`](https://github.com/Microsoft/vscode-cpptools) extensions.
 If it founds one of it, it will use it automatically.
 
-**Remark**: This feature to work automatically (value:`null`) has a lot of requirements which are not listed here.
+**Remark**: This feature to work automatically (value: `null`) has a lot of requirements which are not listed here.
 If it works it is good for you.
 If it isn't.. I suggest to create your own `"catch2TestExplorer.debugConfigTemplate"` template.
 If you read the _Related documents_ and still have a question feel free to open an issue.
 
 #### or user can manually fill it
 
-in settings.json like:
+For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) add something like this to settings.json:
 
 ```json
 "catch2TestExplorer.debugConfigTemplate": {
@@ -148,8 +162,8 @@ Related documents:
 
 - About [VSCode launch config](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations)
 - About [vadimcn.vscode-lldb extension](https://github.com/vadimcn/vscode-lldb#quick-start)
-- About [webfreak.debug extension](https://github.com/WebFreak001/code-debug/blob/master/README.md)
-- About [ms-vscode.cpptools](https://github.com/Microsoft/vscode-cpptools/blob/master/Code%20Samples/SampleClangProject/.vscode/launch.json)
+- About [webfreak.debug extension](https://github.com/WebFreak001/code-debug)
+- About [ms-vscode.cpptools](https://github.com/Microsoft/vscode-cpptools)
 
 Usable variables:
 
@@ -177,7 +191,8 @@ For debugging use `catch2TestExplorer.logpanel: true`.
 ## Known issues
 
 - (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
-- (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures. Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
+- (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures.
+  Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
 
 ## TODOs
 
