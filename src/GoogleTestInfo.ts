@@ -4,7 +4,6 @@
 
 import { TestEvent } from 'vscode-test-adapter-api';
 
-import { SpawnOptions } from './FsWrapper';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
@@ -18,8 +17,6 @@ export class GoogleTestInfo extends AbstractTestInfo {
     valueParam: string | undefined,
     file: string | undefined,
     line: number | undefined,
-    execPath: string,
-    execOptions: SpawnOptions,
   ) {
     super(
       shared,
@@ -29,8 +26,6 @@ export class GoogleTestInfo extends AbstractTestInfo {
       testNameFull.startsWith('DISABLED_') || testNameFull.indexOf('.DISABLED_') != -1,
       file,
       line,
-      execPath,
-      execOptions,
     );
   }
 

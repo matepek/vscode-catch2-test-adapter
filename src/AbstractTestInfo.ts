@@ -4,8 +4,7 @@
 
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 
-import { SpawnOptions } from './FsWrapper';
-import { generateUniqueId } from './IdGenerator';
+import { generateUniqueId } from './Util';
 import { SharedVariables } from './SharedVariables';
 
 export abstract class AbstractTestInfo implements TestInfo {
@@ -22,12 +21,11 @@ export abstract class AbstractTestInfo implements TestInfo {
     public readonly skipped: boolean,
     public readonly file: string | undefined,
     public readonly line: number | undefined,
-    public readonly execPath: string,
-    public readonly execOptions: SpawnOptions,
+    tooltip?: string,
   ) {
     this.id = id ? id : generateUniqueId();
     this.origLabel = label;
-    this.tooltip = testNameFull;
+    this.tooltip = 'Name: ' + testNameFull + (tooltip ? '\n' + tooltip : '');
     if (line && line < 0) throw Error('line smaller than zero');
   }
 
@@ -52,7 +50,7 @@ export abstract class AbstractTestInfo implements TestInfo {
       type: 'test',
       test: this,
       state: 'failed',
-      message: '', //TODO: complicated because of tests: '🧪 Executable: ' + this.execPath + '\n',
+      message: '',
       decorations: [],
     };
   }

@@ -123,7 +123,7 @@ describe(path.basename(__filename), function() {
 
       const eventCount = adapter.testStatesEvents.length;
       await adapter.run([adapter.root.id]);
-      assert.strictEqual(adapter.testStatesEvents.length, eventCount + 86, inspect(adapter.testStatesEvents));
+      assert.strictEqual(adapter.testStatesEvents.length, eventCount + 84, inspect(adapter.testStatesEvents));
     });
 
     it('should be notified by watcher', async function() {
@@ -182,7 +182,7 @@ describe(path.basename(__filename), function() {
 
       const eventCount = adapter.testStatesEvents.length;
       await adapter.run([adapter.root.id]);
-      assert.strictEqual(adapter.testStatesEvents.length, eventCount + 16);
+      assert.strictEqual(adapter.testStatesEvents.length, eventCount + 14);
       assert.strictEqual(autorunCounter, 0);
     });
   });

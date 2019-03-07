@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- doesn't send skipped events for skipped tests: This will preserve
+- in case of Google Test 'DISABLED\_' prefix is removed from the label. The icon indicates it anyway.
+
 ## [2.3.22] - 2019-03-01
 
 ### Changed

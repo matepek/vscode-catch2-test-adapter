@@ -383,13 +383,6 @@ describe(path.basename(__filename), function() {
       assert.ok(adapter.getTestStatesEventIndex(s2t1running) < adapter.getTestStatesEventIndex(s2t1finished));
       assert.ok(adapter.getTestStatesEventIndex(s2t1finished) < adapter.getTestStatesEventIndex(s2finished));
 
-      const s2t2running: TestEvent = { type: 'test', state: 'running', test: s2t2 };
-      assert.ok(adapter.getTestStatesEventIndex(s2running) < adapter.getTestStatesEventIndex(s2t2running));
-
-      const s2t2finished: TestEvent = { type: 'test', state: 'skipped', test: s2t2 };
-      assert.ok(adapter.getTestStatesEventIndex(s2t2running) < adapter.getTestStatesEventIndex(s2t2finished));
-      assert.ok(adapter.getTestStatesEventIndex(s2t2finished) < adapter.getTestStatesEventIndex(s2finished));
-
       const s2t3running: TestEvent = { type: 'test', state: 'running', test: s2t3 };
       assert.ok(adapter.getTestStatesEventIndex(s2running) < adapter.getTestStatesEventIndex(s2t3running));
 
@@ -408,7 +401,7 @@ describe(path.basename(__filename), function() {
       assert.ok(adapter.getTestStatesEventIndex(s1finished) < adapter.getTestStatesEventIndex(finished));
       assert.ok(adapter.getTestStatesEventIndex(s2finished) < adapter.getTestStatesEventIndex(finished));
 
-      assert.equal(adapter.testStatesEvents.length, 16, inspect(adapter.testStatesEvents));
+      assert.equal(adapter.testStatesEvents.length, 14, inspect(adapter.testStatesEvents));
     });
 
     it('should run with not existing test id', async function() {
@@ -809,18 +802,11 @@ describe(path.basename(__filename), function() {
       assert.ok(adapter.getTestStatesEventIndex(running) < adapter.getTestStatesEventIndex(s1running));
       assert.ok(adapter.getTestStatesEventIndex(s2running) < adapter.getTestStatesEventIndex(s2finished));
 
-      const s2t2running: TestEvent = { type: 'test', state: 'running', test: s2t2 };
-      assert.ok(adapter.getTestStatesEventIndex(s2running) < adapter.getTestStatesEventIndex(s2t2running));
-
-      const s2t2finished: TestEvent = { type: 'test', state: 'skipped', test: s2t2 };
-      assert.ok(adapter.getTestStatesEventIndex(s2t2running) < adapter.getTestStatesEventIndex(s2t2finished));
-      assert.ok(adapter.getTestStatesEventIndex(s2t2finished) < adapter.getTestStatesEventIndex(s2finished));
-
       const finished: TestRunFinishedEvent = { type: 'finished' };
       assert.ok(adapter.getTestStatesEventIndex(s1finished) < adapter.getTestStatesEventIndex(finished));
       assert.ok(adapter.getTestStatesEventIndex(s2finished) < adapter.getTestStatesEventIndex(finished));
 
-      assert.equal(adapter.testStatesEvents.length, 16, inspect(adapter.testStatesEvents));
+      assert.equal(adapter.testStatesEvents.length, 14, inspect(adapter.testStatesEvents));
     });
 
     it('cancels after run finished', async function() {

@@ -18,12 +18,13 @@ import * as api from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { resolveVariables } from './Helpers';
+import { resolveVariables } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { Catch2Section, Catch2TestInfo } from './Catch2TestInfo';
+import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: util.Log;
@@ -310,6 +311,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     route.pop();
     const suiteLabels = route.map(s => s.label).join(' ➡️ ');
 
+    const testSuite = route.find(v => v instanceof AbstractTestSuiteInfo);
+    if (testSuite === undefined || !(testSuite instanceof AbstractTestSuiteInfo))
+      throw Error('Unexpected error. Should have AbstractTestSuiteInfo parent.');
+
     this._log.info('testInfo: ', testInfo, tests);
 
     const config = this._getConfiguration();
@@ -373,12 +378,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ['${suitelabel}', suiteLabels], // deprecated
       ['${suiteLabel}', suiteLabels],
       ['${label}', testInfo.label],
-      ['${exec}', testInfo.execPath],
-      ['${args}', argsArray], // depricated
+      ['${exec}', testSuite.execPath],
+      ['${args}', argsArray], // deprecated
       ['${argsArray}', argsArray],
-      ['${argsStr}', '"' + argsArray.join('" "') + '"'],
-      ['${cwd}', testInfo.execOptions.cwd!],
-      ['${envObj}', Object.assign(Object.assign({}, process.env), testInfo.execOptions.env!)],
+      ['${argsStr}', '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"'],
+      ['${cwd}', testSuite.execOptions.cwd!],
+      ['${envObj}', Object.assign(Object.assign({}, process.env), testSuite.execOptions.env!)],
     ]);
 
     this._log.info('Debug: resolved catch2TestExplorer.debugConfigTemplate:', debugConfig);

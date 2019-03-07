@@ -4,7 +4,7 @@
 
 import { TestSuiteInfo } from 'vscode-test-adapter-api';
 
-import { generateUniqueId } from './IdGenerator';
+import { generateUniqueId } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
 
@@ -28,24 +28,6 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     this.label = origLabel;
     this.id = id ? id : generateUniqueId();
     this.tooltip = tooltip;
-  }
-
-  public sendSkippedChildrenEvents(): void {
-    for (let i = 0; i < this.children.length; i++) {
-      const child = this.children[i];
-      if (child instanceof AbstractTestInfo) {
-        if (child.skipped) {
-          this._shared.log.info('test is skipped:', child.label);
-          this._shared.testStatesEmitter.fire(child.getStartEvent());
-          this._shared.testStatesEmitter.fire(child.getSkippedEvent());
-        }
-      } else if (child instanceof AbstractTestSuiteInfoBase) {
-        // skip
-      } else {
-        this._shared.log.error('unexpected case', child, this);
-        debugger;
-      }
-    }
   }
 
   public addChild(child: AbstractTestSuiteInfoBase | AbstractTestInfo): void {

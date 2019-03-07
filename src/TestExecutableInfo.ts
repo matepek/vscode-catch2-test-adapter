@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import * as c2fs from './FsWrapper';
-import { resolveVariables } from './Helpers';
+import { resolveVariables } from './Util';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { SharedVariables } from './SharedVariables';
 
