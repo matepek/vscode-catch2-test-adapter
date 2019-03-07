@@ -64,8 +64,6 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             '',
             undefined,
             undefined,
-            this.execPath,
-            this.execOptions,
           );
           super.addChild(test);
           this._shared.sendTestEventEmitter.fire([
@@ -123,8 +121,6 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
                   valueParam,
                   this._findFilePath(test.$.file),
                   test.$.line - 1,
-                  this.execPath,
-                  this.execOptions,
                 ),
               );
             }
@@ -189,8 +185,6 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
                   valueParam,
                   undefined,
                   undefined,
-                  this.execPath,
-                  this.execOptions,
                 ),
               );
 

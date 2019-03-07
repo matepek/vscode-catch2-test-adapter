@@ -6,7 +6,6 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { EOL } from 'os';
 
-import { SpawnOptions } from './FsWrapper';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { inspect } from 'util';
 import { SharedVariables } from './SharedVariables';
@@ -39,8 +38,6 @@ export class Catch2TestInfo extends AbstractTestInfo {
     tags: string[],
     file: string,
     line: number,
-    execPath: string,
-    execOptions: SpawnOptions,
     sections?: Catch2Section[],
   ) {
     super(
@@ -53,8 +50,6 @@ export class Catch2TestInfo extends AbstractTestInfo {
       }) || testNameFull.startsWith('./'),
       file,
       line,
-      execPath,
-      execOptions,
       description ? 'Description: ' + description : '',
     );
     this._sections = sections;

@@ -59,17 +59,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         if (catch2TestListOutput.stderr) {
           this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr: ', catch2TestListOutput);
           const test = this.addChild(
-            new Catch2TestInfo(
-              this._shared,
-              undefined,
-              'Check the test output message for details ⚠️',
-              '',
-              [],
-              '',
-              0,
-              this.execPath,
-              this.execOptions,
-            ),
+            new Catch2TestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
           );
           this._shared.sendTestEventEmitter.fire([
             { type: 'test', test: test, state: 'errored', message: catch2TestListOutput.stderr },
@@ -99,8 +89,6 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
                 [],
                 '',
                 0,
-                this.execPath,
-                this.execOptions,
               ),
             );
             this._shared.sendTestEventEmitter.fire([
@@ -154,8 +142,6 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
               tags,
               filePath,
               line - 1,
-              this.execPath,
-              this.execOptions,
               index != -1 ? oldChildren[index].sections : undefined,
             ),
           );
