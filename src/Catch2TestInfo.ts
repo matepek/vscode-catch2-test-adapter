@@ -55,6 +55,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
       line,
       execPath,
       execOptions,
+      description ? 'Description: ' + description : '',
     );
     this._sections = sections;
   }

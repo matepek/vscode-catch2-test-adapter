@@ -24,10 +24,11 @@ export abstract class AbstractTestInfo implements TestInfo {
     public readonly line: number | undefined,
     public readonly execPath: string,
     public readonly execOptions: SpawnOptions,
+    tooltip?: string,
   ) {
     this.id = id ? id : generateUniqueId();
     this.origLabel = label;
-    this.tooltip = testNameFull;
+    this.tooltip = 'Name: ' + testNameFull + (tooltip ? '\n' + tooltip : '');
     if (line && line < 0) throw Error('line smaller than zero');
   }
 

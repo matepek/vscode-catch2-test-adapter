@@ -107,8 +107,8 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
             for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
               const test = xml.testsuites.testsuite[i].testcase[j];
-              const testName = test.$.name;
-              const testNameFull = suiteName + '.' + testName;
+              const testName = test.$.name.startsWith('DISABLED_') ? test.$.name.substr(9) : test.$.name;
+              const testNameFull = suiteName + '.' + test.$.name;
               let valueParam: string | undefined = undefined;
               if (test.$.hasOwnProperty('value_param')) valueParam = test.$.value_param;
 
@@ -174,9 +174,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             while (testMatch) {
               lineNum++;
 
-              const testName = testMatch[1];
+              const testName = testMatch[1].startsWith('DISABLED_') ? testMatch[1].substr(9) : testMatch[1];
               const valueParam: string | undefined = testMatch[3];
-              const testNameFull = testGroupNameWithDot + testName;
+              const testNameFull = testGroupNameWithDot + testMatch[1];
 
               const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameFull === testNameFull);
 
