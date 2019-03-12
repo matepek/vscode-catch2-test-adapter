@@ -74,7 +74,6 @@ export class Catch2TestInfo extends AbstractTestInfo {
     t = t.replace(/\[/g, '\\[');
     t = t.replace(/\*/g, '\\*');
     if (t.startsWith(' ')) t = '*' + t.trimLeft();
-    if (t.endsWith(' ')) t = t.trimRight() + '*';
     return t;
   }
 
