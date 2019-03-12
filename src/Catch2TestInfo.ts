@@ -15,7 +15,13 @@ interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-export class Catch2Section {
+interface Frame {
+  name: string;
+  filename: string;
+  line: number;
+}
+
+export class Catch2Section implements Frame {
   public constructor(name: string, filename: string, line: number) {
     this.name = name;
     this.filename = filename;
@@ -62,12 +68,13 @@ export class Catch2TestInfo extends AbstractTestInfo {
   }
 
   public getEscapedTestName(): string {
-    /*',' has special meaning */
+    /* ',' has special meaning */
     let t = this.testNameFull;
     t = t.replace(/,/g, '\\,');
     t = t.replace(/\[/g, '\\[');
     t = t.replace(/\*/g, '\\*');
-    if (t.startsWith(' ')) t = '*' + t.substr(1);
+    if (t.startsWith(' ')) t = '*' + t.trimLeft();
+    if (t.endsWith(' ')) t = t.trimRight() + '*';
     return t;
   }
 
@@ -148,7 +155,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
   private _processInfoWarningAndFailureTags(
     xml: XmlObject,
-    title: Catch2Section,
+    title: Frame,
     stack: Catch2Section[],
     testEvent: TestEvent,
   ): void {
@@ -162,6 +169,17 @@ export class Catch2TestInfo extends AbstractTestInfo {
       for (let j = 0; j < xml.Warning.length; ++j) {
         const warning = xml.Warning[j];
         testEvent.message += '⬇️⬇️⬇️ Warning: ' + warning.trim() + ' ⬆️⬆️⬆️\n';
+        testEvent.decorations!.push({
+          line: Number(warning.$.line) - 1 /*It looks vscode works like this.*/,
+          message:
+            '⬅️ ' +
+            warning._.split(EOL)
+              .map((l: string) => l.trim())
+              .filter((l: string) => l.length > 0)
+              .join('; ')
+              .substr(0, 20),
+          hover: warning._,
+        });
       }
     }
     if (xml.hasOwnProperty('Failure')) {
@@ -175,28 +193,25 @@ export class Catch2TestInfo extends AbstractTestInfo {
             failure._.split(EOL)
               .map((l: string) => l.trim())
               .filter((l: string) => l.length > 0)
-              .join('; '),
+              .join('; ')
+              .substr(0, 20),
+          hover: failure._,
         });
       }
     }
   }
 
-  private _processXmlTagExpressions(
-    xml: XmlObject,
-    title: Catch2Section,
-    stack: Catch2Section[],
-    testEvent: TestEvent,
-  ): void {
+  private _processXmlTagExpressions(xml: XmlObject, title: Frame, stack: Catch2Section[], testEvent: TestEvent): void {
     if (xml.hasOwnProperty('Expression')) {
       for (let j = 0; j < xml.Expression.length; ++j) {
         const expr = xml.Expression[j];
         try {
           testEvent.message +=
-            this._getTitle(
-              title,
-              stack,
-              new Catch2Section(expr.$.type ? expr.$.type : '<unknown>', expr.$.filename, expr.$.line),
-            ) +
+            this._getTitle(title, stack, {
+              name: expr.$.type ? expr.$.type : '<unknown>',
+              filename: expr.$.filename,
+              line: expr.$.line,
+            }) +
             ':\n  Original:\n    ' +
             expr.Original.map((x: string) => x.trim()).join('; ') +
             '\n  Expanded:\n    ' +
@@ -217,7 +232,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
   private _processXmlTagSections(
     xml: XmlObject,
-    title: Catch2Section,
+    title: Frame,
     stack: Catch2Section[],
     testEvent: TestEvent,
     parentSection: Catch2Section,
@@ -259,7 +274,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
   private _processXmlTagFatalErrorConditions(
     expr: XmlObject,
-    title: Catch2Section,
+    title: Frame,
     stack: Catch2Section[],
     testEvent: TestEvent,
   ): void {
@@ -269,7 +284,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
           const fatal = expr.FatalErrorCondition[j];
 
           testEvent.message +=
-            this._getTitle(title, stack, new Catch2Section('Fatal Error', expr.$.filename, expr.$.line)) + ':\n';
+            this._getTitle(title, stack, { name: 'Fatal Error', filename: expr.$.filename, line: expr.$.line }) + ':\n';
           if (fatal.hasOwnProperty('_')) {
             testEvent.message += '  Error: ' + fatal._.trim() + '\n';
           } else {
@@ -284,29 +299,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _getTitle(title: Catch2Section, stack: Catch2Section[], suffix: Catch2Section): string {
-    return (
-      '⬇️⬇️⬇️ ' +
-      [title]
-        .concat(stack, suffix)
-        .map((f: Catch2Section) => '"' + f.name + '" at line ' + f.line)
-        .join(' ➡️ ')
-    );
+  private _getTitle(title: Frame, stack: Frame[], suffix: Frame): string {
+    return '⬇️⬇️⬇️ ' + [title, ...stack, suffix].map((f: Frame) => '"' + f.name + '" at line ' + f.line).join(' ➡️ ');
   }
-
-  // private _getExecParamStr(stack: Section[]): string {
-  //   return (
-  //     '{ "exec": ' +
-  //     this.execPath +
-  //     '",\n' +
-  //     '  "cwd":  "' +
-  //     this.execOptions.cwd +
-  //     '"\n' +
-  //     '  "args": ["' +
-  //     this.getEscapedTestName().replace('"', '\\"') +
-  //     '"' +
-  //     stack.map(f => ', "-c", "' + f.name.replace('"', '\\"') + '"').join('') +
-  //     '] }'
-  //   );
-  // }
 }
