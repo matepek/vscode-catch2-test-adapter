@@ -43,9 +43,9 @@ and [commands](https://github.com/hbenl/vscode-test-explorer#commands) can be us
 This variable can be
 
 - a string (ex.: `"out/**/*test.exe"`),
-- an array of strings (ex.: `[ "out/debug/*test.exe", "out/optimized/*test.exe" ]`),
-- an array of objects (ex.: `{ "pattern": "out/**/*test.exe" }`) or
-- an array of strings and objects (ex.: `[ { "pattern": "out/debug/*test.exe" }, { "pattern": "out/optimized/*test.exe" } ]`).
+- an array of strings (ex.: `[ "out/debug/*test.exe", ... ]`),
+- an array of objects (ex.: `[ { "pattern": "out/**/*test.exe" }, ... ]`) or
+- an array of strings and objects (ex.: `[ "out/debug/*test.exe", { "pattern": "out/optimized/*test.exe" } ]`).
 
 If it is an object it can contains the following properties:
 

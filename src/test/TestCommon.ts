@@ -47,11 +47,15 @@ export const settings = new class {
   }
 
   // eslint-disable-next-line
-  public updateConfig(key: string, value: any): Thenable<void> {
-    return this.getConfig().update(key, value);
+  public updateConfig(key: string, value: any): Promise<void> {
+    return new Promise(r =>
+      this.getConfig()
+        .update(key, value)
+        .then(r),
+    );
   }
 
-  public resetConfig(): Thenable<void> {
+  public resetConfig(): Promise<void> {
     const packageJson = fse.readJSONSync(path.join(this.workspaceFolderUri.fsPath, '../..', 'package.json'));
     const properties: { [prop: string]: string }[] = packageJson['contributes']['configuration']['properties'];
     let t: Thenable<void> = Promise.resolve();
@@ -64,7 +68,7 @@ export const settings = new class {
           return this.getConfig().update(k, undefined);
         });
     });
-    return t;
+    return new Promise(r => t.then(r));
   }
 }();
 

@@ -76,7 +76,11 @@ afterEach(async function() {
       try {
         const index = line.indexOf('[ERROR]');
         if (index != -1) {
-          const error = line.substr(index);
+          const error = line
+            .substr(index)
+            .split(']')
+            .filter((v, i) => i !== 1)
+            .join(']');
           const expectedErrorsInTest = expectedErrorLines.get(title);
           assert.notStrictEqual(expectedErrorsInTest, undefined, title + ': ' + error);
           assert.ok(expectedErrorsInTest!.has(error), title + ': ' + error);

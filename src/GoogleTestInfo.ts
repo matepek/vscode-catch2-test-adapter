@@ -40,46 +40,55 @@ export class GoogleTestInfo extends AbstractTestInfo {
       return this.getTimeoutEvent(runInfo.timeout);
     }
 
-    const ev = this.getFailedEventBase();
+    try {
+      const ev = this.getFailedEventBase();
 
-    ev.message += output;
+      ev.message += output;
 
-    const lines = output.split(/\r?\n/);
+      const lines = output.split(/\r?\n/);
 
-    if (lines.length < 2) throw Error('unexpected');
+      if (lines.length < 2) throw new Error('unexpected');
 
-    if (lines[lines.length - 1].startsWith('[       OK ]')) ev.state = 'passed';
+      if (lines[lines.length - 1].startsWith('[       OK ]')) ev.state = 'passed';
 
-    const failure = /^(.+):([0-9]+): Failure$/;
+      const failure = /^(.+):([0-9]+): Failure$/;
 
-    for (let i = 1; i < lines.length - 1; ++i) {
-      const m = lines[i].match(failure);
-      if (m !== null) {
-        const lineNumber = Number(m[2]) - 1 /*It looks vscode works like this.*/;
-        if (
-          i + 2 < lines.length - 1 &&
-          lines[i + 1].startsWith('Expected: ') &&
-          lines[i + 2].startsWith('  Actual: ')
-        ) {
-          ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1] + ';  ' + lines[i + 2] });
-        } else if (i + 1 < lines.length - 1 && lines[i + 1].startsWith('Expected: ')) {
-          ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1] });
-        } else if (
-          i + 3 < lines.length - 1 &&
-          lines[i + 1].startsWith('Value of: ') &&
-          lines[i + 2].startsWith('  Actual: ') &&
-          lines[i + 3].startsWith('Expected: ')
-        ) {
-          ev.decorations!.push({
-            line: lineNumber,
-            message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';',
-          });
-        } else {
-          ev.decorations!.push({ line: lineNumber, message: '⬅️ failure' });
+      for (let i = 1; i < lines.length - 1; ++i) {
+        const m = lines[i].match(failure);
+        if (m !== null) {
+          const lineNumber = Number(m[2]) - 1 /*It looks vscode works like this.*/;
+          if (
+            i + 2 < lines.length - 1 &&
+            lines[i + 1].startsWith('Expected: ') &&
+            lines[i + 2].startsWith('  Actual: ')
+          ) {
+            ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1] + ';  ' + lines[i + 2] });
+          } else if (i + 1 < lines.length - 1 && lines[i + 1].startsWith('Expected: ')) {
+            ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1] });
+          } else if (
+            i + 3 < lines.length - 1 &&
+            lines[i + 1].startsWith('Value of: ') &&
+            lines[i + 2].startsWith('  Actual: ') &&
+            lines[i + 3].startsWith('Expected: ')
+          ) {
+            ev.decorations!.push({
+              line: lineNumber,
+              message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';',
+            });
+          } else {
+            ev.decorations!.push({ line: lineNumber, message: '⬅️ failure' });
+          }
         }
       }
-    }
 
-    return ev;
+      return ev;
+    } catch (e) {
+      this._shared.log.error(__filename, e, output);
+
+      const ev = this.getFailedEventBase();
+      ev.message = 'Unexpected error: ' + e.toString();
+
+      return e;
+    }
   }
 }

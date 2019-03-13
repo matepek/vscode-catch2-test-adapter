@@ -57,6 +57,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this.workspaceFolder,
       'Test Explorer: ' + this.workspaceFolder.name,
       { showProxy: true, depth: 3 },
+      true,
     );
 
     this._log.info('info:', this.workspaceFolder, process.platform, process.version, process.versions, vscode.version);

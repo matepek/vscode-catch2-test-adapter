@@ -3,7 +3,7 @@ export class TaskPool {
    * @param maxTaskCount Has to be bigger than 0 or `undefined`.
    */
   public constructor(private _maxTaskCount: number | undefined) {
-    if (_maxTaskCount != undefined && _maxTaskCount < 1) throw Error('invalid maxTaskCount: ' + _maxTaskCount);
+    if (_maxTaskCount !== undefined && _maxTaskCount < 1) throw Error('invalid maxTaskCount: ' + _maxTaskCount);
   }
 
   public get maxTaskCount(): number | undefined {
@@ -11,7 +11,7 @@ export class TaskPool {
   }
 
   public set maxTaskCount(value: number | undefined) {
-    if (value != undefined && value < 1) throw Error('invalid maxTaskCount: ' + value);
+    if (value !== undefined && value < 1) throw Error('invalid maxTaskCount: ' + value);
 
     this._maxTaskCount = value;
 
