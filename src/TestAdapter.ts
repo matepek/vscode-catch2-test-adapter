@@ -18,7 +18,7 @@ import * as api from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { resolveVariables } from './Util';
+import { resolveVariables, generateUniqueId } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
@@ -387,32 +387,41 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ['${envObj}', Object.assign(Object.assign({}, process.env), testSuite.execOptions.env!)],
     ]);
 
+    // we dont know better :(
+    // https://github.com/Microsoft/vscode/issues/70125
+    const magicValueKey = 'magic variable  🤦🏼‍♂️';
+    const magicValue = generateUniqueId();
+    debugConfig[magicValueKey] = magicValue;
+
     this._log.info('Debug: resolved catch2TestExplorer.debugConfigTemplate:', debugConfig);
+
+    const terminated = new Promise<vscode.DebugSession>(resolve => {
+      const conn = vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
+        const session2 = (session as unknown) as { configuration: { [prop: string]: string } };
+        if (session2.configuration && session2.configuration[magicValueKey] === magicValue) {
+          resolve(session);
+          conn.dispose();
+        }
+      });
+    });
 
     return this._mainTaskQueue.then(() => {
       return vscode.debug
         .startDebugging(this.workspaceFolder, debugConfig)
         .then((debugSessionStarted: boolean) => {
-          const currentSession = vscode.debug.activeDebugSession;
-
-          if (!debugSessionStarted || !currentSession) {
+          if (!debugSessionStarted) {
             return Promise.reject(
-              'Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate"; ' +
-                +debugSessionStarted +
-                '; ' +
-                currentSession,
+              new Error(
+                'Failed starting the debug session. ' +
+                  'Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
+              ),
             );
           }
 
           this._log.info('debugSessionStarted');
 
-          return new Promise<void>(resolve => {
-            const subscription = vscode.debug.onDidTerminateDebugSession(session => {
-              if (currentSession != session) return;
-              this._log.info('Debug session ended.');
-              resolve();
-              subscription.dispose();
-            });
+          return terminated.finally(() => {
+            this._log.info('debugSessionTerminated');
           });
         })
         .then(undefined, (reason: Error) => {

@@ -28,7 +28,7 @@ const expectedErrorLines = new Map<string /* test */, Set<string>>([
   [
     'TestCatch2FrameworkLoad.test.js -> vscode.debug -> should be debugged',
     new Set([
-      '[ERROR] Failed starting the debug session - aborting. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate"; 1; undefined',
+      '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
     ]),
   ],
 ]);

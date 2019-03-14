@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.24]
+
+### Fixed
+
+- a bug related to debugging (https://github.com/Microsoft/vscode/issues/70125).
+
+### Changed
+
+- test suite loading order from now is not deterministic. One can set `testExplorer.sort` for ordering.
+
 ## [2.3.23] - 2019-03-14
 
 ### Changed

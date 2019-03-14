@@ -13,7 +13,7 @@ import { SharedVariables } from './SharedVariables';
 
 export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vscode.Disposable {
   public readonly children: AbstractTestSuiteInfo[] = [];
-  private readonly _executables: TestExecutableInfo[] = [];
+  private _executables: TestExecutableInfo[] = [];
   private readonly _taskPool: TaskPool;
 
   public constructor(shared: SharedVariables, workerMaxNumber: number) {
@@ -33,16 +33,12 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     this.children.forEach(c => c.cancel());
   }
 
-  public async load(executables: TestExecutableInfo[]): Promise<void> {
-    for (let i = 0; i < executables.length; i++) {
-      const executable = executables[i];
-      try {
-        await executable.load();
-        this._executables.push(executable);
-      } catch (e) {
-        this._shared.log.error(e, i, executables);
-      }
-    }
+  public load(executables: TestExecutableInfo[]): Promise<void> {
+    this._executables.forEach(e => e.dispose());
+
+    this._executables = executables;
+
+    return Promise.all(executables.map(v => v.load().catch(e => this._shared.log.error(e, v)))).then(() => {});
   }
 
   public run(tests: string[]): Promise<void> {

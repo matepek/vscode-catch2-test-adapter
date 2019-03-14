@@ -94,35 +94,41 @@ export class TestExecutableInfo implements vscode.Disposable {
       fileUris.push(absPatternAsUri);
     }
 
+    const suiteCreationAndLoadingTasks: Promise<void>[] = [];
+
     for (let i = 0; i < fileUris.length; i++) {
       const file = fileUris[i];
       this._shared.log.info('Checking file for tests:', file.fsPath);
 
-      await c2fs.isNativeExecutableAsync(file.fsPath).then(
-        () => {
-          return this._createSuiteByUri(file).then(
-            (suite: AbstractTestSuiteInfo) => {
-              return suite.reloadChildren().then(
-                () => {
-                  if (this._rootSuite.insertChild(suite, false /* called later */)) {
-                    this._executables.set(file.fsPath, suite);
-                  }
-                },
-                (reason: Error) => {
-                  this._shared.log.warn("Couldn't load executable:", reason, suite);
-                },
-              );
-            },
-            (reason: Error) => {
-              this._shared.log.warn('Not a test executable:', file.fsPath, 'reason:', reason);
-            },
-          );
-        },
-        (reason: Error) => {
-          this._shared.log.info('Not an executable:', file.fsPath, reason);
-        },
+      suiteCreationAndLoadingTasks.push(
+        c2fs.isNativeExecutableAsync(file.fsPath).then(
+          () => {
+            return this._createSuiteByUri(file).then(
+              (suite: AbstractTestSuiteInfo) => {
+                return suite.reloadChildren().then(
+                  () => {
+                    if (this._rootSuite.insertChild(suite, false /* called later */)) {
+                      this._executables.set(file.fsPath, suite);
+                    }
+                  },
+                  (reason: Error) => {
+                    this._shared.log.warn("Couldn't load executable:", reason, suite);
+                  },
+                );
+              },
+              (reason: Error) => {
+                this._shared.log.warn('Not a test executable:', file.fsPath, 'reason:', reason);
+              },
+            );
+          },
+          (reason: Error) => {
+            this._shared.log.info('Not an executable:', file.fsPath, reason);
+          },
+        ),
       );
     }
+
+    await Promise.all(suiteCreationAndLoadingTasks);
 
     this._rootSuite.uniquifySuiteLabels();
   }
