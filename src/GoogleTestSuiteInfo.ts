@@ -138,7 +138,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           let lines = googleTestListOutput.stdout.split(/\r?\n/);
 
           const testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.$/;
-          const testRe = /^  ([A-z][\/A-z0-9_\-]*)(?:\s+(# GetParam\(\) = \s*(.+)))?$/;
+          const testRe = /^  ([A-z0-9][\/A-z0-9_\-]*)(?:\s+(# GetParam\(\) = \s*(.+)))?$/;
 
           let lineCount = lines.length;
 
