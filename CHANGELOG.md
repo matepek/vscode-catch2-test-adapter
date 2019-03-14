@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - doesn't send skipped events for skipped tests: This will preserve
 - in case of Google Test 'DISABLED\_' prefix is removed from the label. The icon indicates it anyway.
+- it seems Google Test's test names first character can be a digit.
 
 ## [2.3.22] - 2019-03-01
 
