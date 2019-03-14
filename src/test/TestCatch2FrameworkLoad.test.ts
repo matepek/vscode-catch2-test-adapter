@@ -1432,7 +1432,7 @@ describe(path.basename(__filename), function() {
 
       await adapter.load();
 
-      startDebuggingStub.onFirstCall().resolves(true);
+      startDebuggingStub.onFirstCall().resolves(false);
 
       try {
         await adapter.debug([adapter.suite1.children[0].id]);

@@ -15,8 +15,10 @@ describe(path.basename(__filename), function() {
   let adapter: TestAdapter;
 
   before(async function() {
-    await settings.resetConfig();
+    this.timeout(4000);
+
     imitation = new Imitation();
+    await settings.resetConfig();
   });
 
   beforeEach(function() {
