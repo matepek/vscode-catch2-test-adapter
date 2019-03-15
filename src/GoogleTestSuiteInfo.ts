@@ -80,16 +80,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
         const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameFull === testNameFull);
 
+        const file = test.$.file ? this._findFilePath(test.$.file) : undefined;
+        const line = test.$.line ? test.$.line - 1 : undefined;
+
         group.addChild(
-          new GoogleTestInfo(
-            this._shared,
-            old ? old.id : undefined,
-            testNameFull,
-            testName,
-            valueParam,
-            this._findFilePath(test.$.file),
-            test.$.line - 1,
-          ),
+          new GoogleTestInfo(this._shared, old ? old.id : undefined, testNameFull, testName, valueParam, file, line),
         );
       }
     }
