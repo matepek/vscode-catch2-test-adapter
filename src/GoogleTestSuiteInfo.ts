@@ -3,7 +3,7 @@
 // public domain. The author hereby disclaims copyright to this source code.
 
 import * as fs from 'fs';
-import { inspect } from 'util';
+import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
 import { GoogleTestInfo } from './GoogleTestInfo';
@@ -45,11 +45,78 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     });
   }
 
-  private _reloadGoogleTests(): Promise<void> {
-    const tmpFilePath = (this.execOptions.cwd || '.') + '/tmp_gtest_output_' + Math.random().toString(36) + '.xml.tmp';
+  private _reloadFromXml(xmlStr: string, oldChildren: GoogleTestGroupSuiteInfo[]): void {
+    interface XmlObject {
+      [prop: string]: any; //eslint-disable-line
+    }
+
+    let xml: XmlObject = {};
+
+    new Parser({ explicitArray: true }).parseString(xmlStr, (err: Error, result: object) => {
+      if (err) {
+        throw err;
+      } else {
+        xml = result;
+      }
+    });
+
+    for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
+      const suiteName = xml.testsuites.testsuite[i].$.name;
+
+      const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
+      const oldGroupId = oldGroup ? oldGroup.id : undefined;
+      const oldGroupChildren = oldGroup ? oldGroup.children : [];
+
+      // we need the oldGroup.id because that preserves the node's expanded/collapsed state
+      const group = new GoogleTestGroupSuiteInfo(this._shared, suiteName, oldGroupId);
+      this.addChild(group);
+
+      for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
+        const test = xml.testsuites.testsuite[i].testcase[j];
+        const testName = test.$.name.startsWith('DISABLED_') ? test.$.name.substr(9) : test.$.name;
+        const testNameFull = suiteName + '.' + test.$.name;
+        let valueParam: string | undefined = undefined;
+        if (test.$.hasOwnProperty('value_param')) valueParam = test.$.value_param;
+
+        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameFull === testNameFull);
+
+        const file = test.$.file ? this._findFilePath(test.$.file) : undefined;
+        const line = test.$.line ? test.$.line - 1 : undefined;
+
+        group.addChild(
+          new GoogleTestInfo(this._shared, old ? old.id : undefined, testNameFull, testName, valueParam, file, line),
+        );
+      }
+    }
+  }
+
+  private async _reloadGoogleTests(): Promise<void> {
+    const oldChildren = this.children;
+    this.children = [];
+    this.label = this.origLabel;
+
+    const cacheFile = this.execPath + '.cache.xml';
+
+    if (this._shared.enabledTestListCaching) {
+      try {
+        const cacheStat = await promisify(fs.stat)(cacheFile);
+        const execStat = await promisify(fs.stat)(this.execPath);
+
+        if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
+          this._shared.log.info('loading from cache: ', cacheFile);
+          const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
+
+          this._reloadFromXml(xmlStr, oldChildren);
+          return Promise.resolve();
+        }
+      } catch (e) {
+        this._shared.log.warn('coudnt use cache', e);
+      }
+    }
+
     return c2fs
-      .spawnAsync(this.execPath, ['--gtest_list_tests', '--gtest_output=xml:' + tmpFilePath], this.execOptions, 30000)
-      .then(googleTestListOutput => {
+      .spawnAsync(this.execPath, ['--gtest_list_tests', '--gtest_output=xml:' + cacheFile], this.execOptions, 30000)
+      .then(async googleTestListOutput => {
         const oldChildren = this.children;
         this.children = [];
         this.label = this.origLabel;
@@ -71,60 +138,17 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           ]);
           return;
         }
+
         try {
-          const testOutputStr = fs.readFileSync(tmpFilePath, 'utf8');
+          const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          fs.unlink(tmpFilePath, (err: Error) => {
-            if (err) this._shared.log.warn("Couldn't remove tmpFilePath: " + tmpFilePath, err);
-          });
+          this._reloadFromXml(xmlStr, oldChildren);
 
-          interface XmlObject {
-            [prop: string]: any; //eslint-disable-line
+          if (!this._shared.enabledTestListCaching) {
+            fs.unlink(cacheFile, (err: Error) => err && this._shared.log.warn("Couldn't remove: " + cacheFile, err));
           }
 
-          let xml: XmlObject = {};
-
-          new Parser({ explicitArray: true }).parseString(testOutputStr, (err: Error, result: object) => {
-            if (err) {
-              throw err;
-            } else {
-              xml = result;
-            }
-          });
-
-          for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
-            const suiteName = xml.testsuites.testsuite[i].$.name;
-
-            const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
-            const oldGroupId = oldGroup ? oldGroup.id : undefined;
-            const oldGroupChildren = oldGroup ? oldGroup.children : [];
-
-            // we need the oldGroup.id because that preserves the node's expanded/collapsed state
-            const group = new GoogleTestGroupSuiteInfo(this._shared, suiteName, oldGroupId);
-            this.addChild(group);
-
-            for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
-              const test = xml.testsuites.testsuite[i].testcase[j];
-              const testName = test.$.name.startsWith('DISABLED_') ? test.$.name.substr(9) : test.$.name;
-              const testNameFull = suiteName + '.' + test.$.name;
-              let valueParam: string | undefined = undefined;
-              if (test.$.hasOwnProperty('value_param')) valueParam = test.$.value_param;
-
-              const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameFull === testNameFull);
-
-              group.addChild(
-                new GoogleTestInfo(
-                  this._shared,
-                  old ? old.id : undefined,
-                  testNameFull,
-                  testName,
-                  valueParam,
-                  this._findFilePath(test.$.file),
-                  test.$.line - 1,
-                ),
-              );
-            }
-          }
+          return;
         } catch (e) {
           this._shared.log.warn(
             "Couldn't parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output:",

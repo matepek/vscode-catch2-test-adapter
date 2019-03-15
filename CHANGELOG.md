@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.25]
+
+### Added
+
+- experimental feature: `catch2TestExplorer.enableTestListCaching`
+
+### Changed
+
+- scripts like `.py`, `.sh`, `.js` are allowed for those who are using wrappers. [Related issue.](https://github.com/matepek/vscode-catch2-test-adapter/issues/73)
+
 ## [2.3.24] - 2019-03-14
 
 ### Fixed

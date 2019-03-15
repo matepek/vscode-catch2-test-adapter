@@ -2,7 +2,8 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { inspect } from 'util';
+import * as fs from 'fs';
+import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
@@ -43,7 +44,104 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     });
   }
 
-  private _reloadCatch2Tests(): Promise<void> {
+  private _reloadFromString(testListOutput: string, oldChildren: Catch2TestInfo[]): void {
+    let lines = testListOutput.split(/\r?\n/);
+
+    while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
+
+    lines.shift(); // first line: 'Matching test cases:'
+    lines.pop(); // last line: '[0-9]+ matching test cases'
+
+    for (let i = 0; i < lines.length; ) {
+      if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format: ' + lines.toString());
+
+      if (lines[i].startsWith('    ')) {
+        this._shared.log.warn('Probably too long test name: ' + lines);
+        this.children = [];
+        const test = this.addChild(
+          new Catch2TestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
+        );
+        this._shared.sendTestEventEmitter.fire([
+          {
+            type: 'test',
+            test: test,
+            state: 'errored',
+            message: [
+              '⚠️ Probably too long test name or the test name starts with space characters!',
+              '🛠 - Try to define: #define CATCH_CONFIG_CONSOLE_WIDTH 300)',
+              '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
+            ].join('\n'),
+          },
+        ]);
+        return;
+      }
+      const testNameFull = lines[i++].substr(2);
+
+      let filePath = '';
+      let line = 1;
+      {
+        const fileLine = lines[i++].substr(4);
+        const match = fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
+
+        if (match && match.length == 5) {
+          const matchedPath = match[1] ? match[1] : match[3];
+          filePath = this._findFilePath(matchedPath);
+          line = Number(match[2] ? match[2] : match[4]);
+        }
+      }
+
+      let description = lines[i++].substr(4);
+      if (description.startsWith('(NO DESCRIPTION)')) description = '';
+
+      let tags: string[] = [];
+      if (i < lines.length && lines[i].length > 6 && lines[i][6] === '[') {
+        tags = lines[i].trim().split(']');
+        tags.pop();
+        for (let j = 0; j < tags.length; ++j) tags[j] += ']';
+        ++i;
+      }
+
+      const index = oldChildren.findIndex(c => c.testNameFull == testNameFull);
+
+      this.addChild(
+        new Catch2TestInfo(
+          this._shared,
+          index != -1 ? oldChildren[index].id : undefined,
+          testNameFull,
+          description,
+          tags,
+          filePath,
+          line - 1,
+          index != -1 ? oldChildren[index].sections : undefined,
+        ),
+      );
+    }
+  }
+
+  private async _reloadCatch2Tests(): Promise<void> {
+    const oldChildren = this.children;
+    this.children = [];
+    this.label = this.origLabel;
+
+    const cacheFile = this.execPath + '.cache.txt';
+
+    if (this._shared.enabledTestListCaching) {
+      try {
+        const cacheStat = await promisify(fs.stat)(cacheFile);
+        const execStat = await promisify(fs.stat)(this.execPath);
+
+        if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
+          this._shared.log.info('loading from cache: ', cacheFile);
+          const content = await promisify(fs.readFile)(cacheFile, 'utf8');
+
+          this._reloadFromString(content, oldChildren);
+          return Promise.resolve();
+        }
+      } catch (e) {
+        this._shared.log.warn('coudnt use cache', e);
+      }
+    }
+
     return c2fs
       .spawnAsync(
         this.execPath,
@@ -52,10 +150,6 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         30000,
       )
       .then(catch2TestListOutput => {
-        const oldChildren = this.children;
-        this.children = [];
-        this.label = this.origLabel;
-
         if (catch2TestListOutput.stderr) {
           this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr: ', catch2TestListOutput);
           const test = this.addChild(
@@ -64,88 +158,17 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
           this._shared.sendTestEventEmitter.fire([
             { type: 'test', test: test, state: 'errored', message: catch2TestListOutput.stderr },
           ]);
-          return;
+          return Promise.resolve();
         }
 
-        let lines = catch2TestListOutput.stdout.split(/\r?\n/);
+        this._reloadFromString(catch2TestListOutput.stdout, oldChildren);
 
-        while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
-
-        lines.shift(); // first line: 'Matching test cases:'
-        lines.pop(); // last line: '[0-9]+ matching test cases'
-
-        for (let i = 0; i < lines.length; ) {
-          if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format: ' + lines.toString());
-
-          if (lines[i].startsWith('    ')) {
-            this._shared.log.warn('Probably too long test name: ' + lines);
-            this.children = [];
-            const test = this.addChild(
-              new Catch2TestInfo(
-                this._shared,
-                undefined,
-                'Check the test output message for details ⚠️',
-                '',
-                [],
-                '',
-                0,
-              ),
-            );
-            this._shared.sendTestEventEmitter.fire([
-              {
-                type: 'test',
-                test: test,
-                state: 'errored',
-                message: [
-                  '⚠️ Probably too long test name or the test name starts with space characters!',
-                  '🛠 - Try to define: #define CATCH_CONFIG_CONSOLE_WIDTH 300)',
-                  '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
-                ].join('\n'),
-              },
-            ]);
-            return;
-          }
-          const testNameFull = lines[i++].substr(2);
-
-          let filePath = '';
-          let line = 1;
-          {
-            const fileLine = lines[i++].substr(4);
-            const match = fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
-
-            if (match && match.length == 5) {
-              const matchedPath = match[1] ? match[1] : match[3];
-              filePath = this._findFilePath(matchedPath);
-              line = Number(match[2] ? match[2] : match[4]);
-            }
-          }
-
-          let description = lines[i++].substr(4);
-          if (description.startsWith('(NO DESCRIPTION)')) description = '';
-
-          let tags: string[] = [];
-          if (i < lines.length && lines[i].length > 6 && lines[i][6] === '[') {
-            tags = lines[i].trim().split(']');
-            tags.pop();
-            for (let j = 0; j < tags.length; ++j) tags[j] += ']';
-            ++i;
-          }
-
-          const index = oldChildren.findIndex(c => c.testNameFull == testNameFull);
-
-          this.addChild(
-            new Catch2TestInfo(
-              this._shared,
-              index != -1 ? oldChildren[index].id : undefined,
-              testNameFull,
-              description,
-              tags,
-              filePath,
-              line - 1,
-              index != -1 ? oldChildren[index].sections : undefined,
-            ),
+        if (this._shared.enabledTestListCaching) {
+          return promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>
+            this._shared.log.warn('couldnt write cache file:', err),
           );
         }
+        return Promise.resolve();
       });
   }
 
