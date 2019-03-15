@@ -217,11 +217,11 @@ export class TestExecutableInfo implements vscode.Disposable {
     const x = (suite: AbstractTestSuiteInfo, exists: boolean, delay: number): Promise<void> => {
       let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
       if (lastEventArrivedAt === undefined) {
-        this._shared.log.error('assert in ' + __filename);
+        this._shared.log.error('assert');
         debugger;
         return Promise.resolve();
       } else if (Date.now() - lastEventArrivedAt! > this._shared.execWatchTimeout) {
-        this._shared.log.info('refresh timeout: ' + uri.fsPath);
+        this._shared.log.info('refresh timeout:', uri.fsPath);
         this._lastEventArrivedAt.delete(uri.fsPath);
         if (this._rootSuite.hasChild(suite)) {
           return new Promise<void>(resolve => {

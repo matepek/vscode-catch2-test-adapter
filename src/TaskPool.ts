@@ -46,6 +46,8 @@ export class TaskPool {
   }
 
   private _startIfCanAqure(): void {
-    while (this._waitingTasks.length > 0 && this._acquire()) this._waitingTasks.shift()!();
+    while (this._waitingTasks.length > 0 && this._acquire()) {
+      this._waitingTasks.shift()!();
+    }
   }
 }

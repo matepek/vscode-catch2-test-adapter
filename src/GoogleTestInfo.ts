@@ -83,7 +83,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
 
       return ev;
     } catch (e) {
-      this._shared.log.error(__filename, e, output);
+      this._shared.log.error(e, output);
 
       const ev = this.getFailedEventBase();
       ev.message = 'Unexpected error: ' + e.toString();
