@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.3.24",
+  "version": "2.3.25-dev",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -540,6 +540,12 @@
           "scope": "resource",
           "type": "string",
           "default": ""
+        },
+        "catch2TestExplorer.enableTestListCaching": {
+          "markdownDescription": "(Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.) (Click [here](http://bit.ly/2HFcAC6), if you think it is a useful feature!)",
+          "scope": "resource",
+          "type": "boolean",
+          "default": false
         }
       }
     }

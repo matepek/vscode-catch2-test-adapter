@@ -157,6 +157,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),
       this._getDefaultNoThrow(config),
+      this._getEnableTestListCaching(config),
     );
 
     this._disposables.push(
@@ -181,6 +182,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.workerMaxNumber', this.workspaceFolder.uri)) {
           this._rootSuite.workerMaxNumber = this._getWorkerMaxNumber(this._getConfiguration());
+        }
+        if (configChange.affectsConfiguration('catch2TestExplorer.enableTestListCaching', this.workspaceFolder.uri)) {
+          this._shared.enabledTestListCaching = this._getEnableTestListCaching(this._getConfiguration());
         }
       }),
     );
@@ -395,40 +399,41 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._log.info('Debug: resolved catch2TestExplorer.debugConfigTemplate:', debugConfig);
 
-    const terminated = new Promise<vscode.DebugSession>(resolve => {
-      const conn = vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
-        const session2 = (session as unknown) as { configuration: { [prop: string]: string } };
-        if (session2.configuration && session2.configuration[magicValueKey] === magicValue) {
-          resolve(session);
-          conn.dispose();
-        }
-      });
-    });
-
-    return this._mainTaskQueue.then(() => {
-      return vscode.debug
-        .startDebugging(this.workspaceFolder, debugConfig)
-        .then((debugSessionStarted: boolean) => {
-          if (!debugSessionStarted) {
-            return Promise.reject(
-              new Error(
-                'Failed starting the debug session. ' +
-                  'Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
-              ),
-            );
-          }
-
-          this._log.info('debugSessionStarted');
-
-          return terminated.finally(() => {
-            this._log.info('debugSessionTerminated');
+    return this._mainTaskQueue
+      .then(async () => {
+        let terminateConn: vscode.Disposable | undefined;
+        const terminated = new Promise<void>(resolve => {
+          terminateConn = vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
+            const session2 = (session as unknown) as { configuration: { [prop: string]: string } };
+            if (session2.configuration && session2.configuration[magicValueKey] === magicValue) {
+              resolve();
+              terminateConn && terminateConn.dispose();
+            }
           });
-        })
-        .then(undefined, (reason: Error) => {
-          this._log.error(reason);
-          throw reason;
+        }).finally(() => {
+          this._log.info('debugSessionTerminated');
         });
-    });
+
+        const debugSessionStarted = await vscode.debug.startDebugging(this.workspaceFolder, debugConfig);
+
+        if (!debugSessionStarted) {
+          terminateConn && terminateConn.dispose();
+          return Promise.reject(
+            new Error(
+              'Failed starting the debug session. ' +
+                'Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
+            ),
+          );
+        }
+
+        this._log.info('debugSessionStarted');
+
+        return terminated;
+      })
+      .catch(err => {
+        this._log.error(err);
+        throw err;
+      });
   }
 
   private _getDebugConfigurationTemplate(config: vscode.WorkspaceConfiguration): vscode.DebugConfiguration {
@@ -531,6 +536,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private _getDefaultExecRunningTimeout(config: vscode.WorkspaceConfiguration): null | number {
     const r = config.get<null | number>('defaultRunningTimeoutSec', null);
     return r !== null && r > 0 ? r * 1000 : null;
+  }
+
+  private _getEnableTestListCaching(config: vscode.WorkspaceConfiguration): boolean {
+    return config.get<boolean>('enableTestListCaching', false);
   }
 
   private _getEnableSourceDecoration(config: vscode.WorkspaceConfiguration): boolean {

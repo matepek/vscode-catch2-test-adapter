@@ -22,6 +22,7 @@ export class SharedVariables implements vscode.Disposable {
     public execWatchTimeout: number,
     private _execRunningTimeout: null | number,
     public isNoThrow: boolean,
+    public enabledTestListCaching: boolean,
   ) {}
 
   public dispose(): void {
