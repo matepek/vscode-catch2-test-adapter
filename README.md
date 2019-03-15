@@ -71,7 +71,7 @@ If compilation reaches timeout it will drop the suite (`catch2TestExplorer.defau
 
 - on windows: NOT ends with `.exe`.
 - on other platforms: ends with one of the following:
-  `'.c', '.cmake', '.cpp', '.cxx', '.deb', '.dir', '.gz', '.h', '.hpp', '.hxx', '.ko', '.log', '.o', '.php', '.py', '.rpm', '.sh', '.so', '.tar', '.txt'`.
+  `'.c', '.cmake', '.cpp', '.cxx', '.deb', '.dir', '.gz', '.h', '.hpp', '.hxx', '.ko', '.log', '.o', '.php', '.rpm', '.so', '.tar', '.txt'`.
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
