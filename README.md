@@ -57,7 +57,7 @@ If it is an object it can contains the following properties:
 | `cwd`     | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                 | (optional) |
 | `env`     | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                         | (optional) |
 
-**Remark**: The `pattern` (or the `executables` used as string or an array of strings)
+The `pattern` (or the `executables` used as string or an array of strings)
 can contains [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)
 if it points somewhere inside of the workspace folder.
 Otherwise it only can point to an executable (No _search-pattern_!) with a relative or absolute path
@@ -72,6 +72,12 @@ If compilation reaches timeout it will drop the suite (`catch2TestExplorer.defau
 - on windows: NOT ends with `.exe`.
 - on other platforms: ends with one of the following:
   `'.c', '.cmake', '.cpp', '.cxx', '.deb', '.dir', '.gz', '.h', '.hpp', '.hxx', '.ko', '.log', '.o', '.php', '.rpm', '.so', '.tar', '.txt'`.
+
+It won't filter out `'.sh'`, `'.py'` (etc.) files, so that could be used for wrappers.
+
+If the pattern is too general like `out/**/*test*`, it could cause unexpected executable or script execution (with `--help` argument)
+which would not just increase the test-loading duration but also could have other unexpeced effects.
+I suggest to have a stricter file-name convention and a corresponding pattern like `out/**/*.test.*` or `out/**/Test.*`
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
