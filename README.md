@@ -204,6 +204,7 @@ For debugging use `catch2TestExplorer.logpanel: true`.
 ## TODOs
 
 - Remove deprecated `catch2TestExplorer.enableSourceDecoration`.
-- Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture
+- Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip
+- Update this readme because of the effects of the new fswatcher.
 
 ## [Contribution guideline here](CONTRIBUTING.md)

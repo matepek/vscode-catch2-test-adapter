@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - support for `GTEST_SKIP()`.
+- (experimental) glob pattern for patterns outside the workspace directory
+- (experimental) watcher for executables outside the workspace directory
 
 ### Fixed
 

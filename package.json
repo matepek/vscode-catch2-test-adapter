@@ -46,6 +46,7 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
+    "chokidar": "^2.1.2",
     "entities": "^1.1.2",
     "tslib": "^1.9.3",
     "vscode-test-adapter-api": "^1.5.0",
