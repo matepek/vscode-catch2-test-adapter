@@ -50,6 +50,12 @@ export class GoogleTestInfo extends AbstractTestInfo {
       if (lines.length < 2) throw new Error('unexpected');
 
       if (lines[lines.length - 1].startsWith('[       OK ]')) ev.state = 'passed';
+      else if (lines[lines.length - 1].startsWith('[  FAILED  ]')) ev.state = 'failed';
+      else if (lines[lines.length - 1].startsWith('[  SKIPPED ]')) ev.state = 'skipped';
+      else {
+        this._shared.log.error('unexpected token:', lines[lines.length - 1]);
+        ev.state = 'errored';
+      }
 
       const failure = /^(.+):([0-9]+): Failure$/;
 

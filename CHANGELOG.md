@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.26]
+
+### Added
+
+- support for `GTEST_SKIP()`.
+
+### Fixed
+
+- a bug which caused to run all tests of a suite including the skipped ones too
+
 ## [2.3.25] - 2019-03-15
 
 ### Added
