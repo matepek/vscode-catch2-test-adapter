@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.27]
+
+### Fixed
+
+- a bug related to abs-path watcher (`chokidar`).
+
 ## [2.3.26] - 2019-03-18
 
 ### Added

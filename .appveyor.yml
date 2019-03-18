@@ -24,4 +24,3 @@ test_script:
 on_failure:
   - dir .\out\test
   - type .\out\test\FailedTestLogs\log_*.txt
-  #- type .\out\test\alltestlogs.txt
