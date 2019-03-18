@@ -101,6 +101,13 @@ export class TestExecutableInfo implements vscode.Disposable {
           ignorePermissionErrors: true,
         });
 
+        this._absWatcherReady = new Promise(resolve => {
+          this._absWatcher!.once('ready', resolve);
+        });
+
+        // getWatched works after the ready event
+        await this._absWatcherReady;
+
         this._absWatcher.on('all', (event: string, filePath: string) => {
           this._shared.log.info('absWacher all event:', event, filePath);
           this._handleEverything(vscode.Uri.file(filePath));
@@ -109,13 +116,6 @@ export class TestExecutableInfo implements vscode.Disposable {
         this._absWatcher.on('error', (...args: any[]) => { // eslint-disable-line
           this._shared.log.error('absWacher error:', args);
         });
-
-        this._absWatcherReady = new Promise(resolve => {
-          this._absWatcher!.once('ready', resolve);
-        });
-
-        // getWatched works after the ready event
-        await this._absWatcherReady;
 
         const watched = this._absWatcher.getWatched();
 
