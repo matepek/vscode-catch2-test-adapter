@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.28]
+
+### Changed
+
+- fswatcher library has been replaced: `chokidar` -> `gaze`.
+  There were some problem with it on OSX. Don't care, threw it out.
+
 ## [2.3.27] - 2019-03-18
 
 ### Fixed
