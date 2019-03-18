@@ -5,6 +5,7 @@
 import * as path from 'path';
 import { promisify } from 'util';
 import * as vscode from 'vscode';
+import * as chokidar from 'chokidar';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
@@ -30,11 +31,18 @@ export class TestExecutableInfo implements vscode.Disposable {
 
   private _watcher: vscode.FileSystemWatcher | undefined = undefined;
 
+  private _absWatcher: chokidar.FSWatcher | undefined = undefined;
+  private _absWatcherReady: Promise<void> = Promise.resolve();
+
   private readonly _executables: Map<string /*fsPath*/, AbstractTestSuiteInfo> = new Map();
 
   private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
   public dispose(): void {
+    // we only can close it after it is ready. (empiric)
+    this._absWatcherReady.then(() => {
+      this._absWatcher && this._absWatcher.close();
+    });
     this._disposables.forEach(d => d.dispose());
   }
 
@@ -48,7 +56,6 @@ export class TestExecutableInfo implements vscode.Disposable {
     const relativeToWsPosix = relativeToWs.split('\\').join('/');
 
     this._shared.log.info(
-      'TestExecutableInfo:load',
       this._pattern,
       wsUri.fsPath,
       isAbsolute,
@@ -86,12 +93,41 @@ export class TestExecutableInfo implements vscode.Disposable {
         this._shared.log.error(e, this);
       }
     } else {
-      if (absPatternAsUri.fsPath.match(/(\*|\{|\}|\[|\])/) !== null)
-        this._shared.log.warn(
-          "absPatternAsUri MAYBE contains pattern, but pattern won't work outside of the workspaceFolder:",
-          absPatternAsUri,
-        );
-      fileUris.push(absPatternAsUri);
+      this._shared.log.info('absPath is used', absPatternAsUri.fsPath);
+      try {
+        this._absWatcher = chokidar.watch(absPatternAsUri.fsPath, {
+          ignoreInitial: true,
+          awaitWriteFinish: true,
+          ignorePermissionErrors: true,
+        });
+
+        this._absWatcher.on('all', (event: string, filePath: string) => {
+          this._shared.log.info('absWacher all event:', event, filePath);
+          this._handleEverything(vscode.Uri.file(filePath));
+        });
+
+        this._absWatcher.on('error', (...args: any[]) => { // eslint-disable-line
+          this._shared.log.error('absWacher error:', args);
+        });
+
+        this._absWatcherReady = new Promise(resolve => {
+          this._absWatcher!.once('ready', resolve);
+        });
+
+        // getWatched works after the ready event
+        await this._absWatcherReady;
+
+        const watched = this._absWatcher.getWatched();
+
+        for (const dir in watched) {
+          for (const filename of watched[dir]) {
+            fileUris.push(vscode.Uri.file(path.join(dir, filename)));
+          }
+        }
+      } catch (e) {
+        this._shared.log.error(e, this);
+        fileUris.push(absPatternAsUri);
+      }
     }
 
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];
@@ -217,11 +253,11 @@ export class TestExecutableInfo implements vscode.Disposable {
     const x = (suite: AbstractTestSuiteInfo, exists: boolean, delay: number): Promise<void> => {
       let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
       if (lastEventArrivedAt === undefined) {
-        this._shared.log.error('assert in ' + __filename);
+        this._shared.log.error('assert');
         debugger;
         return Promise.resolve();
-      } else if (Date.now() - lastEventArrivedAt! > this._shared.execWatchTimeout) {
-        this._shared.log.info('refresh timeout: ' + uri.fsPath);
+      } else if (Date.now() - lastEventArrivedAt > this._shared.execWatchTimeout) {
+        this._shared.log.info('refresh timeout:', uri.fsPath);
         this._lastEventArrivedAt.delete(uri.fsPath);
         if (this._rootSuite.hasChild(suite)) {
           return new Promise<void>(resolve => {

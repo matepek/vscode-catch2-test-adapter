@@ -87,7 +87,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                 });
               },
               (reason: Error) => {
-                this._log.error(__filename, reason);
+                this._log.error(reason);
                 debugger;
                 this._testsEmitter.fire({
                   type: 'finished',
@@ -277,7 +277,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   public run(tests: string[]): Promise<void> {
     if (this._mainTaskQueue.size > 0) {
-      this._log.info(__filename + '. Run is busy');
+      this._log.info('Run is busy');
     }
 
     return this._mainTaskQueue.then(() => {
@@ -289,7 +289,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   public async debug(tests: string[]): Promise<void> {
     if (this._mainTaskQueue.size > 0) {
-      this._log.info(__filename + '. Debug is busy');
+      this._log.info('Debug is busy');
       throw Error('The adapter is busy. Try it again a bit later.');
     }
 

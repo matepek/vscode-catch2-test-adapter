@@ -70,8 +70,8 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
 
     return Promise.all(ps)
       .catch((e: Error) => {
-        this._shared.log.error('everything should be handled', e);
         debugger;
+        this._shared.log.error('everything should be handled', e);
       })
       .then(() => {
         this._shared.testStatesEmitter.fire({ type: 'finished' });

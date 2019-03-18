@@ -248,7 +248,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
   protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
     const data = new class {
       public buffer: string = '';
-      public inTestCase: boolean = false;
+      public currentTestCaseNameFull: string | undefined = undefined;
       public currentChild: GoogleTestInfo | undefined = undefined;
       public group: GoogleTestGroupSuiteInfo | undefined = undefined;
       public beforeFirstTestCase: boolean = true;
@@ -269,11 +269,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         data.buffer = data.buffer + chunk;
         let invariant = 99999;
         do {
-          if (!data.inTestCase) {
+          if (data.currentTestCaseNameFull === undefined) {
             const m = data.buffer.match(testBeginRe);
             if (m == null) return;
 
-            data.inTestCase = true;
+            data.currentTestCaseNameFull = m[1];
 
             const groupName = m[2];
             const group = this.children.find(c => c.label == groupName);
@@ -289,21 +289,23 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               this._shared.log.error('should have found group', this, groupName);
             }
 
-            const testNameFull: string = m[1];
-
             data.beforeFirstTestCase = false;
-            data.currentChild = this.findTestInfo(v => v.testNameFull == testNameFull);
+            data.currentChild = this.findTestInfo(v => v.testNameFull == data.currentTestCaseNameFull);
 
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test', data.currentChild.testNameFull, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
-              this._shared.log.warn('TestCase not found in children: ' + testNameFull);
+              this._shared.log.warn('TestCase not found in children:', data.currentTestCaseNameFull);
             }
 
             data.buffer = data.buffer.substr(m.index!);
           } else {
-            const testEndRe = /^(?:\[       OK \]|\[  FAILED  \]) .+$/m;
+            const testEndRe = new RegExp(
+              '^(?!\\[ RUN      \\])\\[..........\\] ' + data.currentTestCaseNameFull.replace('.', '\\.') + '.*$',
+              'm',
+            );
+
             const m = data.buffer.match(testEndRe);
             if (m == null) return;
 
@@ -330,7 +332,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               data.unprocessedTestCases.push(testCase);
             }
 
-            data.inTestCase = false;
+            data.currentTestCaseNameFull = undefined;
             data.currentChild = undefined;
             data.buffer = data.buffer.substr(m.index! + m[0].length);
           }
@@ -357,7 +359,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         return { error: reason };
       })
       .then((result: ProcessResult) => {
-        if (data.inTestCase) {
+        if (data.currentTestCaseNameFull !== undefined) {
           if (data.currentChild !== undefined) {
             this._shared.log.warn('data.currentChild !== undefined: ', data);
 

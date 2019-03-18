@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.3.25",
+  "version": "2.3.26",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -46,6 +46,7 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
+    "chokidar": "^2.1.2",
     "entities": "^1.1.2",
     "tslib": "^1.9.3",
     "vscode-test-adapter-api": "^1.5.0",

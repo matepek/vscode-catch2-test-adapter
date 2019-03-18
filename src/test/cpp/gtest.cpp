@@ -6,7 +6,7 @@
 
 // Google Test
 
-#include "googletest/googletest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 GTEST_TEST(TestCas1, test1) {
   //
@@ -17,6 +17,16 @@ GTEST_TEST(TestCas1, test2) {
   //
   ASSERT_TRUE(1 == 1);
   ASSERT_TRUE(1 == 2);
+}
+
+GTEST_TEST(TestCas1, DISABLED_test3) {
+  //
+  ASSERT_TRUE(1 == 1);
+}
+
+GTEST_TEST(TestCas1, test4) {
+  GTEST_SKIP();
+  ASSERT_TRUE(1 == 1);
 }
 
 GTEST_TEST(TestCas2, test1) {
@@ -49,7 +59,7 @@ INSTANTIATE_TEST_CASE_P(PrintingFailingParams2, FailingParamTest,
 
 // Google Mock
 
-#include "googletest/googlemock/include/gmock/gmock.h"
+#include "gmock/gmock.h"
 
 using ::testing::Return;
 

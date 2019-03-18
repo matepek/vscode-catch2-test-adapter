@@ -61,7 +61,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
             childrenToRun.add(v);
           } else if (v instanceof AbstractTestSuiteInfoBase) {
             v.enumerateTestInfos(vv => {
-              childrenToRun.add(vv);
+              if (!vv.skipped) childrenToRun.add(vv);
             });
           } else {
             this._shared.log.error('unknown case', v, this);
