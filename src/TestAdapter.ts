@@ -393,7 +393,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     // we dont know better :(
     // https://github.com/Microsoft/vscode/issues/70125
-    const magicValueKey = 'magic variable  🤦🏼‍♂️';
+    const magicValueKey = 'magic variable  🤦🏼‍';
     const magicValue = generateUniqueId();
     debugConfig[magicValueKey] = magicValue;
 

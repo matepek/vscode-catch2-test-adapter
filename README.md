@@ -43,27 +43,22 @@ and [commands](https://github.com/hbenl/vscode-test-explorer#commands) can be us
 
 This variable can be
 
-- a string (ex.: `"out/**/*test.exe"`),
-- an array of strings (ex.: `[ "out/debug/*test.exe", ... ]`),
-- an array of objects (ex.: `[ { "pattern": "out/**/*test.exe" }, ... ]`) or
-- an array of strings and objects (ex.: `[ "out/debug/*test.exe", { "pattern": "out/optimized/*test.exe" } ]`).
+- a string (ex.: `"out/**/*test.exe"`) or
+- an array of strings and objects (ex.: `[ "debug/*test.exe", { "pattern": "release/*test.exe" }, ... ]`).
 
 If it is an object it can contains the following properties:
 
-| Property  | Description                                                                                                                                                                                                                                                                                                             |            |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| `name`    | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                                                                                                         | (optional) |
-| `pattern` | A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** (🚫"`\`"; ✅"`/`"; [Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)). | (requierd) |
-| `cwd`     | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                 | (optional) |
-| `env`     | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                                                                         | (optional) |
+| Property  | Description                                                                                                                                                                                           |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`    | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                       |
+| `pattern` | A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required) |
+| `cwd`     | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                               |
+| `env`     | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                       |
 
 The `pattern` (or the `executables` used as string or an array of strings)
-can contains [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)
-if it points somewhere inside of the workspace folder.
-Otherwise it only can point to an executable (No _search-pattern_!) with a relative or absolute path
-(ex.: `[ "../../p1/out/test.exe", "/home/rick/repo/p1/out/test", "C:/repo/p1/out/test.exe" ]`).
+can contains [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
 
-Test executables and `pattern`s are being watched (only inside the workspace directory).
+Test executables and `pattern`s are being watched.
 In case of one recompiles it will try to preserve the test states.
 If compilation reaches timeout it will drop the suite (`catch2TestExplorer.defaultWatchTimeoutSec`).
 
@@ -139,10 +134,14 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 ### catch2TestExplorer.debugConfigTemplate
 
 If `catch2TestExplorer.debugConfigTemplate` value is `null` (default),
-it will look after [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start),
-[`webfreak.debug`](https://github.com/WebFreak001/code-debug) and
-[`ms-vscode.cpptools`](https://github.com/Microsoft/vscode-cpptools) extensions.
-If it founds one of it, it will use it automatically.
+it will look after
+
+1. [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start),
+2. [`webfreak.debug`](https://github.com/WebFreak001/code-debug),
+3. [`ms-vscode.cpptools`](https://github.com/Microsoft/vscode-cpptools)
+
+extensions in order. If it founds one of it, it will use it automatically.
+For further details check [VSCode launch config](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations).
 
 **Remark**: This feature to work automatically (value: `null`) has a lot of requirements which are not listed here.
 If it works it is good for you.
@@ -165,31 +164,22 @@ For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) 
 }
 ```
 
-Related documents:
+#### Usable variables:
 
-- About [VSCode launch config](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations)
-- About [vadimcn.vscode-lldb extension](https://github.com/vadimcn/vscode-lldb#quick-start)
-- About [webfreak.debug extension](https://github.com/WebFreak001/code-debug)
-- About [ms-vscode.cpptools](https://github.com/Microsoft/vscode-cpptools)
-
-Usable variables:
-
-| Variable name   | Value meaning                                                | Type                       |
-| --------------- | ------------------------------------------------------------ | -------------------------- |
-| `${label}`      | The name of the test. Same as in the Test Explorer.          | string                     |
-| `${suiteLabel}` | The name of parent suite test. Same as in the Test Explorer. | string                     |
-| `${exec}`       | The path of the executable.                                  | string                     |
-| `${argsArray}`  | The arguments for the executable.                            | string[]                   |
-| `${argsStr}`    | Concatenated arguments for the executable.                   | string                     |
-| `${cwd}`        | The current working directory for execution.                 | string                     |
-| `${envObj}`     | The environment variables as object properties.              | { [prop: string]: string } |
+| Variable name   | Value meaning                                                        | Type                       |
+| --------------- | -------------------------------------------------------------------- | -------------------------- |
+| `${label}`      | The name of the test. Same as in the Test Explorer.                  | string                     |
+| `${suiteLabel}` | The name of parent suites of the test. Same as in the Test Explorer. | string                     |
+| `${exec}`       | The path of the executable.                                          | string                     |
+| `${argsArray}`  | The arguments for the executable.                                    | string[]                   |
+| `${argsStr}`    | Concatenated arguments for the executable.                           | string                     |
+| `${cwd}`        | The current working directory for execution.                         | string                     |
+| `${envObj}`     | The environment variables as object properties.                      | { [prop: string]: string } |
 
 These variables will be substituted when a DebugConfiguration is created.
 
 Note that `name` and `request` are filled, if they are undefined, so it is not necessary to set them.
 `type` is necessary.
-
-For debugging use `catch2TestExplorer.logpanel: true`.
 
 ## License
 
@@ -201,10 +191,11 @@ For debugging use `catch2TestExplorer.logpanel: true`.
 - (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures.
   Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
 
+For solving issues use: `catch2TestExplorer.logpanel: true` and check the output window.
+
 ## TODOs
 
 - Remove deprecated `catch2TestExplorer.enableSourceDecoration`.
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip
-- Update this readme because of the effects of the new fswatcher.
 
 ## [Contribution guideline here](CONTRIBUTING.md)

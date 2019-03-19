@@ -113,7 +113,7 @@
                     "type": "object",
                     "properties": {
                       "pattern": {
-                        "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** (🚫\"`\\`\"; ✅\"`/`\"; [Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)).",
+                        "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
                         "anyOf": [
                           {
                             "type": "string",
@@ -226,7 +226,7 @@
                     ]
                   },
                   {
-                    "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** (🚫\"`\\`\"; ✅\"`/`\"; [Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)).",
+                    "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
                     "type": "string",
                     "minLength": 1
                   }
@@ -237,7 +237,7 @@
               "type": "object",
               "properties": {
                 "pattern": {
-                  "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** (🚫\"`\\`\"; ✅\"`/`\"; [Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)).",
+                  "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
                   "anyOf": [
                     {
                       "type": "string",
@@ -350,7 +350,7 @@
               ]
             },
             {
-              "description": "A relative pattern (to workspace (also it has to be inside the workspace folder)) or an absolute file-path (this case it can be outside of the workspace folder too). ⚠️**Avoid backslash!** (🚫\"`\\`\"; ✅\"`/`\"; [Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)).",
+              "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
               "type": "string",
               "minLength": 1
             }
