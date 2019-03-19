@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.3.27",
+  "version": "2.3.28-dev",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -463,12 +463,6 @@
           "type": "integer",
           "default": 1,
           "minimum": 1
-        },
-        "catch2TestExplorer.enableSourceDecoration": {
-          "deprecationMessage": "Deprecated! Use 'testExplorer.errorDecoration' instead.",
-          "scope": "resource",
-          "type": "boolean",
-          "default": true
         },
         "catch2TestExplorer.debugConfigTemplate": {
           "markdownDescription": "Set the necessary debug configuraitons and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",

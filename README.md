@@ -195,7 +195,6 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 
 ## TODOs
 
-- Remove deprecated `catch2TestExplorer.enableSourceDecoration`.
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip
 
 ## [Contribution guideline here](CONTRIBUTING.md)

@@ -275,7 +275,6 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
               this._shared.log.info('Test ', data.currentChild.testNameFull, 'has finished.');
               try {
                 const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
-                if (!this._shared.isEnabledSourceDecoration) ev.decorations = [];
                 data.processedTestCases.push(data.currentChild);
                 this._shared.testStatesEmitter.fire(ev);
               } catch (e) {
