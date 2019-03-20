@@ -48,7 +48,7 @@ describe(path.basename(__filename), function() {
       const keys = Object.keys(properties);
 
       keys.forEach(key => {
-        if (key === 'catch2TestExplorer.logfile' || key === 'catch2TestExplorer.enableSourceDecoration') {
+        if (key === 'catch2TestExplorer.logfile') {
           // skip
         } else {
           assert.strictEqual(findDescriptionInReadmeTable(key), properties[key]['markdownDescription'], key);

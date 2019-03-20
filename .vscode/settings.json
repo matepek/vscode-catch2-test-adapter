@@ -1,6 +1,7 @@
 {
   "files.exclude": {
     ".git": true,
+    ".vscode-test": true,
     "node_modules": true,
     "out": true
   },
@@ -24,10 +25,10 @@
   ],
   "editor.formatOnSave": true,
   "[javascript]": {
-    "editor.formatOnSave": false,
+    "editor.formatOnSave": false
   },
   "[typescript]": {
-    "editor.formatOnSave": false,
+    "editor.formatOnSave": false
   },
   "prettier.eslintIntegration": true
 }

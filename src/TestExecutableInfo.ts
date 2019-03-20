@@ -5,7 +5,6 @@
 import * as path from 'path';
 import { promisify } from 'util';
 import * as vscode from 'vscode';
-import * as chokidar from 'chokidar';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
@@ -31,7 +30,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
   private _watcher: vscode.FileSystemWatcher | undefined = undefined;
 
-  private _absWatcher: chokidar.FSWatcher | undefined = undefined;
+  private _absWatcher: any = undefined; // eslint-disable-line
   private _absWatcherReady: Promise<void> = Promise.resolve();
 
   private readonly _executables: Map<string /*fsPath*/, AbstractTestSuiteInfo> = new Map();
@@ -95,33 +94,36 @@ export class TestExecutableInfo implements vscode.Disposable {
     } else {
       this._shared.log.info('absPath is used', absPatternAsUri.fsPath);
       try {
-        this._absWatcher = chokidar.watch(absPatternAsUri.fsPath, {
-          ignoreInitial: true,
-          awaitWriteFinish: true,
-          ignorePermissionErrors: true,
-        });
-
         this._absWatcherReady = new Promise(resolve => {
-          this._absWatcher!.once('ready', resolve);
+          // eslint-disable-next-line
+          require('gaze')(absPatternAsUri.fsPath, (err: any, watcher: any) => {
+            resolve();
+
+            if (err) {
+              this._shared.log.error('coudnt init gaze:', err);
+              return;
+            }
+
+            this._absWatcher = watcher;
+
+            watcher.on('error', (...args: any[]) => { // eslint-disable-line
+              this._shared.log.error('absWacher error:', args);
+            });
+
+            watcher.on('all', (event: string, filePath: string) => {
+              this._shared.log.info('absWacher all event:', event, filePath);
+              this._handleEverything(vscode.Uri.file(filePath));
+            });
+          });
         });
 
-        // getWatched works after the ready event
         await this._absWatcherReady;
 
-        this._absWatcher.on('all', (event: string, filePath: string) => {
-          this._shared.log.info('absWacher all event:', event, filePath);
-          this._handleEverything(vscode.Uri.file(filePath));
-        });
-
-        this._absWatcher.on('error', (...args: any[]) => { // eslint-disable-line
-          this._shared.log.error('absWacher error:', args);
-        });
-
-        const watched = this._absWatcher.getWatched();
+        const watched = this._absWatcher.watched();
 
         for (const dir in watched) {
-          for (const filename of watched[dir]) {
-            fileUris.push(vscode.Uri.file(path.join(dir, filename)));
+          for (const file of watched[dir]) {
+            fileUris.push(vscode.Uri.file(file));
           }
         }
       } catch (e) {

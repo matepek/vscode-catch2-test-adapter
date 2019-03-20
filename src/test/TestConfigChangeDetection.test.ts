@@ -43,12 +43,6 @@ describe(path.basename(__filename), function() {
     });
   });
 
-  it('enableSourceDecoration', function() {
-    return settings.updateConfig('enableSourceDecoration', false).then(function() {
-      assert.ok(!(adapter as any /* eslint-disable-line */)._shared.isEnabledSourceDecoration);
-    });
-  });
-
   it('defaultRngSeed', function() {
     return settings.updateConfig('defaultRngSeed', 987).then(function() {
       assert.equal((adapter as any /* eslint-disable-line */)._shared.rngSeed, 987);

@@ -315,7 +315,6 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               this._shared.log.info('Test ', data.currentChild.testNameFull, 'has finished.');
               try {
                 const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, runInfo);
-                if (!this._shared.isEnabledSourceDecoration) ev.decorations = undefined;
                 this._shared.testStatesEmitter.fire(ev);
                 data.processedTestCases.push(data.currentChild);
               } catch (e) {

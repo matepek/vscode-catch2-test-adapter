@@ -152,7 +152,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._testStatesEmitter,
       this._loadWithTaskEmitter,
       this._sendTestEventEmitter,
-      this._getEnableSourceDecoration(config),
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),
@@ -162,9 +161,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(
       vscode.workspace.onDidChangeConfiguration(configChange => {
-        if (configChange.affectsConfiguration('catch2TestExplorer.enableSourceDecoration', this.workspaceFolder.uri)) {
-          this._shared.isEnabledSourceDecoration = this._getEnableSourceDecoration(this._getConfiguration());
-        }
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultRngSeed', this.workspaceFolder.uri)) {
           this._shared.rngSeed = this._getDefaultRngSeed(this._getConfiguration());
           this._autorunEmitter.fire();
@@ -393,7 +389,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     // we dont know better :(
     // https://github.com/Microsoft/vscode/issues/70125
-    const magicValueKey = 'magic variable  🤦🏼‍♂️';
+    const magicValueKey = 'magic variable  🤦🏼‍';
     const magicValue = generateUniqueId();
     debugConfig[magicValueKey] = magicValue;
 
@@ -540,10 +536,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private _getEnableTestListCaching(config: vscode.WorkspaceConfiguration): boolean {
     return config.get<boolean>('enableTestListCaching', false);
-  }
-
-  private _getEnableSourceDecoration(config: vscode.WorkspaceConfiguration): boolean {
-    return config.get<boolean>('enableSourceDecoration', true);
   }
 
   private _getExecutables(config: vscode.WorkspaceConfiguration, rootSuite: RootTestSuiteInfo): TestExecutableInfo[] {
