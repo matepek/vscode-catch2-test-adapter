@@ -63,8 +63,8 @@
     "@types/request-promise": "4.1.42",
     "@types/sinon": "^5.0.7",
     "@types/xml2js": "^0.4.3",
-    "@typescript-eslint/eslint-plugin": "^1.4.2",
-    "@typescript-eslint/parser": "^1.4.2",
+    "@typescript-eslint/eslint-plugin": "^1.5.0",
+    "@typescript-eslint/parser": "^1.5.0",
     "deep-equal": "^1.0.1",
     "eslint": "^5.15.2",
     "eslint-config-prettier": "^4.1.0",
@@ -76,7 +76,7 @@
     "sinon": "^7.2.7",
     "typescript": "^3.3.3333",
     "vsce": "^1.58.0",
-    "vscode": "^1.1.30"
+    "vscode": "1.1.30"
   },
   "engines": {
     "vscode": "^1.23.0"
