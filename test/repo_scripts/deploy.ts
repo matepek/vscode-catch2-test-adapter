@@ -260,6 +260,16 @@ function main(argv: string[]): Promise<void> {
     return Promise.resolve();
   }
 
+  if (process.env['TRAVIS_OS_NAME'] !== 'osx') {
+    console.log('not osx, skipping deployment');
+    return Promise.resolve();
+  }
+
+  if (process.env['VSCODE_VERSION'] !== '') {
+    console.log('not the latest vscode version, skipping deployment');
+    return Promise.resolve();
+  }
+
   return updateChangelog().then((info: Info | undefined) => {
     if (info != undefined) {
       return Promise.resolve(info!)

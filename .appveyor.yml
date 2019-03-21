@@ -19,8 +19,7 @@ install:
 build: off
 
 test_script:
-  - npm test --silent
+  - npm test
 
 on_failure:
-  - dir .\out\test
-  - type .\out\test\FailedTestLogs\log_*.txt
+  - type .\test-fixtures\empty\FailedTestLogs\log_*.txt

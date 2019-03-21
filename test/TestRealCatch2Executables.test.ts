@@ -10,7 +10,7 @@ import { inspect, promisify } from 'util';
 import * as vscode from 'vscode';
 
 import { TestAdapter, settings, isWin, waitFor } from './TestCommon';
-import * as c2fs from '../FsWrapper';
+import * as c2fs from '../src/FsWrapper';
 
 ///
 
@@ -56,15 +56,15 @@ describe(path.basename(__filename), function() {
 
     await c2fs
       .isNativeExecutableAsync(inCpp('../suite1.exe'))
-      .catch(() => compile(inCpp('../../../src/test/cpp/suite1.cpp'), inCpp('../suite1.exe')));
+      .catch(() => compile(path.join(__dirname, '../../test/cpp/suite1.cpp'), inCpp('../suite1.exe')));
 
     await c2fs
       .isNativeExecutableAsync(inCpp('../suite2.exe'))
-      .catch(() => compile(inCpp('../../../src/test/cpp/suite2.cpp'), inCpp('../suite2.exe')));
+      .catch(() => compile(path.join(__dirname, '../../test/cpp/suite2.cpp'), inCpp('../suite2.exe')));
 
     await c2fs
       .isNativeExecutableAsync(inCpp('../suite3.exe'))
-      .catch(() => compile(inCpp('../../../src/test/cpp/suite3.cpp'), inCpp('../suite3.exe')));
+      .catch(() => compile(path.join(__dirname, '../../test/cpp/suite3.cpp'), inCpp('../suite3.exe')));
   });
 
   beforeEach(async function() {

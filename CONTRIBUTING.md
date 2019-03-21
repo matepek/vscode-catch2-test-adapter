@@ -12,3 +12,16 @@ Any contribution is welcome.
 npm install
 npm test
 ```
+
+It is recommended to create a push hook:
+
+**.git/hooks/pre-push** file:
+
+```bash
+#!/bin/sh
+echo "pre-push hook:"
+set -e -x
+npm audit
+npm rum compile
+npx mocha ./out/test/TestDocumentation.test.js ./out/test/TestESLint.test.js
+```
