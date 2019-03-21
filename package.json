@@ -37,8 +37,8 @@
     "watch": "tsc -watch -p ./tsconfig.json",
     "rebuild": "npm run clean && npm run build",
     "package": "vsce package",
-    "publish": "vsce publish",
     "vscode:prepublish": "tsc -p ./tsconfig.json",
+    "deploy": "node ./out/test/repo_scripts/deploy.js",
     "test": "node ./out/test/runTests.js"
   },
   "extensionDependencies": [
