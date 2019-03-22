@@ -35,7 +35,7 @@ script:
   - npm test
 
 after_failure:
-  - cat ./test-fixtures/empty/FailedTestLogs/log_*.txt
+  - cat ./out/tmp/workspaceFolder/FailedTestLogs/log_*.txt
 
 jobs:
   include:
