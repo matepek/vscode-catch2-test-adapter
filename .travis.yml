@@ -42,5 +42,5 @@ jobs:
     - stage: deploy
       script: npm run deploy
       # https://docs.travis-ci.com/user/conditions-v1
-      if: branch = master && tag IS blank && repo = matepek/vscode-catch2-test-adapter
+      if: branch = master && type = push && tag IS blank && repo = matepek/vscode-catch2-test-adapter
 
