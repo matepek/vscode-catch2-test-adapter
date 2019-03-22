@@ -325,8 +325,6 @@ async function main(argv: string[]): Promise<void> {
 
   if (process.env['VSCODE_VERSION'] !== 'latest') throw new Error('Not the latest vscode version, skipping..');
 
-  await waitForAppveyorTestsToBeFinished();
-
   const info = updateChangelog();
 
   if (info === undefined) {
@@ -336,6 +334,8 @@ async function main(argv: string[]): Promise<void> {
 
     const packagePath = await createPackage(info);
 
+    await waitForAppveyorTestsToBeFinished(); // now we should wait
+
     await gitPush();
 
     await createGithubRelease(info, packagePath);
@@ -344,7 +344,7 @@ async function main(argv: string[]): Promise<void> {
 
     console.log('Deployment has finished.');
   } else {
-    console.log('No deployment has happened.');
+    console.log('Nothing new in CHANGELOG.md; No deployment has happened.');
   }
 }
 
