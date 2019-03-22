@@ -120,7 +120,7 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
     }
     assert.notStrictEqual(build, undefined);
 
-    const timeout = 30 * 60 * 1000;
+    const timeout = 40 * 60 * 1000;
     const version = build.version;
     let status = build.status;
 
@@ -130,7 +130,7 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
     while (queuedOrRunning(status) && Date.now() - start < timeout) {
       console.log('Waiting for Appveyor:', version, status);
 
-      await promisify(setTimeout)(10000);
+      await promisify(setTimeout)(20000);
 
       const response = await requestP.get({
         url: 'https://ci.appveyor.com/api/projects/' + githubRepoFullId + '/build/' + version,
