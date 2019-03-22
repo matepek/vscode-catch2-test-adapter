@@ -2,11 +2,14 @@ image:
   - Visual Studio 2017
 
 platform:
-  - x86
   - x64
 
 environment:
   nodejs_version: "10"
+
+  matrix:
+    - VSCODE_VERSION: "latest"
+    - VSCODE_VERSION: "1.31.0"
 
 install:
   - ps: Install-Product node $env:nodejs_version
@@ -19,8 +22,7 @@ install:
 build: off
 
 test_script:
-  - npm test --silent
+  - npm test
 
 on_failure:
-  - dir .\out\test
-  - type .\out\test\FailedTestLogs\log_*.txt
+  - type .\out\tmp\workspaceFolder\FailedTestLogs\log_*.txt

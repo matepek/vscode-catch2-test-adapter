@@ -25,7 +25,7 @@ import {
   TestInfo,
 } from 'vscode-test-adapter-api';
 
-import * as my from '../TestAdapter';
+import * as my from '../src/TestAdapter';
 
 ///
 
@@ -56,7 +56,7 @@ export const settings = new class {
   }
 
   public resetConfig(): Promise<void> {
-    const packageJson = fse.readJSONSync(path.join(this.workspaceFolderUri.fsPath, '../..', 'package.json'));
+    const packageJson = fse.readJSONSync(path.join(__dirname, '../..', 'package.json'));
     const properties: { [prop: string]: string }[] = packageJson['contributes']['configuration']['properties'];
     let t: Thenable<void> = Promise.resolve();
     Object.keys(properties).forEach(key => {

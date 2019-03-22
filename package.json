@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.3.28",
+  "version": "2.3.29-dev",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -28,19 +28,18 @@
     "unit test",
     "c++"
   ],
-  "main": "out/main.js",
+  "main": "out/src/main.js",
   "scripts": {
     "postinstall": "node ./node_modules/vscode/bin/install",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
     "clean": "rimraf out node_modules vscode-catch2-test-adapter-*.vsix",
-    "compile": "tsc -p ./tsconfig.test.json",
-    "compile-production": "tsc -p ./tsconfig.production.json",
-    "watch": "tsc -watch -p ./tsconfig.test.json",
+    "compile": "tsc -p ./tsconfig.json",
+    "watch": "tsc -watch -p ./tsconfig.json",
     "rebuild": "npm run clean && npm run build",
     "package": "vsce package",
-    "publish": "vsce publish",
-    "vscode:prepublish": "tsc -p ./tsconfig.production.json",
-    "test": "node ./node_modules/vscode/bin/test"
+    "vscode:prepublish": "tsc -p ./tsconfig.json",
+    "deploy": "node ./out/test/repo_scripts/deploy.js",
+    "test": "node ./out/test/runTests.js"
   },
   "extensionDependencies": [
     "hbenl.vscode-test-explorer"
@@ -66,7 +65,7 @@
     "@typescript-eslint/eslint-plugin": "^1.5.0",
     "@typescript-eslint/parser": "^1.5.0",
     "deep-equal": "^1.0.1",
-    "eslint": "^5.15.2",
+    "eslint": "^5.15.3",
     "eslint-config-prettier": "^4.1.0",
     "eslint-plugin-prettier": "^3.0.1",
     "fs-extra": "^7.0.1",
@@ -76,7 +75,8 @@
     "sinon": "^7.2.7",
     "typescript": "^3.3.3333",
     "vsce": "^1.58.0",
-    "vscode": "1.1.30"
+    "vscode": "1.1.30",
+    "vscode-test": "0.1.5"
   },
   "engines": {
     "vscode": "^1.23.0"

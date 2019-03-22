@@ -1298,7 +1298,7 @@ describe(path.basename(__filename), function() {
               assert.equal(ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
               assert.equal(ops.env.C2CWDANDNAME, ops.cwd + '-' + 'execPath1');
               assert.equal(ops.env.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath1');
-              assert.equal(ops.env.C2WORKSPACENAME, 'test');
+              assert.equal(ops.env.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
 
               return new ChildProcessStub(example1.suite1.outputs[2][1]);
             } catch (e) {
@@ -1325,7 +1325,7 @@ describe(path.basename(__filename), function() {
               assert.equal(ops.env.C2OVERRIDETESTENV, 'c2overridetestenv-l');
               assert.equal(ops.env.C2CWDANDNAME, ops.cwd + '-' + 'execPath2');
               assert.equal(ops.env.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath2');
-              assert.equal(ops.env.C2WORKSPACENAME, 'test');
+              assert.equal(ops.env.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
 
               return new ChildProcessStub(example1.suite2.outputs[2][1]);
             } catch (e) {
