@@ -95,7 +95,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
         absWatcher.on('all', (event: string, filePath: string) => {
           this._shared.log.info('gaze all event:', event, filePath);
-          this._handleEverything(vscode.Uri.file(filePath));
+          this._handleEverything(filePath);
         });
 
         const filePaths = await absWatcher.watched();
@@ -118,7 +118,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       suiteCreationAndLoadingTasks.push(
         c2fs.isNativeExecutableAsync(file.fsPath).then(
           () => {
-            return this._createSuiteByUri(file).then(
+            return this._createSuiteByUri(file.fsPath).then(
               (suite: AbstractTestSuiteInfo) => {
                 return suite.reloadChildren().then(
                   () => {
@@ -148,12 +148,12 @@ export class TestExecutableInfo implements vscode.Disposable {
     this._rootSuite.uniquifySuiteLabels();
   }
 
-  private _createSuiteByUri(file: vscode.Uri): Promise<AbstractTestSuiteInfo> {
-    const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, file.fsPath);
+  private _createSuiteByUri(filePath: string): Promise<AbstractTestSuiteInfo> {
+    const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
     let varToValue: [string, string][] = [];
     try {
-      const filename = path.basename(file.fsPath);
+      const filename = path.basename(filePath);
       const extFilename = path.extname(filename);
       const baseFilename = path.basename(filename, extFilename);
       const ext2Filename = path.extname(baseFilename);
@@ -163,12 +163,12 @@ export class TestExecutableInfo implements vscode.Disposable {
 
       varToValue = [
         ...this._variableToValue,
-        ['${absPath}', file.fsPath],
+        ['${absPath}', filePath],
         ['${relPath}', relPath],
-        ['${absDirpath}', path.dirname(file.fsPath)],
+        ['${absDirpath}', path.dirname(filePath)],
         ['${relDirpath}', path.dirname(relPath)],
         ['${filename}', filename],
-        ['${parentDirname}', path.basename(path.dirname(file.fsPath))],
+        ['${parentDirname}', path.basename(path.dirname(filePath))],
         ['${extFilename}', extFilename],
         ['${baseFilename}', baseFilename],
         ['${ext2Filename}', ext2Filename],
@@ -217,31 +217,31 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.error('resolvedEnv', e);
     }
 
-    return new TestSuiteInfoFactory(this._shared, resolvedLabel, file.fsPath, {
+    return new TestSuiteInfoFactory(this._shared, resolvedLabel, filePath, {
       cwd: resolvedCwd,
       env: resolvedEnv,
     }).create();
   }
 
-  private _handleEverything(uri: vscode.Uri): void {
-    const isRunning = this._lastEventArrivedAt.get(uri.fsPath) !== undefined;
+  private _handleEverything(filePath: string): void {
+    const isRunning = this._lastEventArrivedAt.get(filePath) !== undefined;
     if (isRunning) return;
 
-    this._lastEventArrivedAt.set(uri.fsPath, Date.now());
+    this._lastEventArrivedAt.set(filePath, Date.now());
 
     const x = (suite: AbstractTestSuiteInfo, exists: boolean, delay: number): Promise<void> => {
-      let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
+      let lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
       if (lastEventArrivedAt === undefined) {
         this._shared.log.error('assert');
         debugger;
         return Promise.resolve();
       } else if (Date.now() - lastEventArrivedAt > this._shared.execWatchTimeout) {
-        this._shared.log.info('refresh timeout:', uri.fsPath);
-        this._lastEventArrivedAt.delete(uri.fsPath);
+        this._shared.log.info('refresh timeout:', filePath);
+        this._lastEventArrivedAt.delete(filePath);
         if (this._rootSuite.hasChild(suite)) {
           return new Promise<void>(resolve => {
             this._shared.loadWithTaskEmitter.fire(() => {
-              this._executables.delete(uri.fsPath);
+              this._executables.delete(filePath);
               this._rootSuite.removeChild(suite);
               resolve();
             });
@@ -256,36 +256,36 @@ export class TestExecutableInfo implements vscode.Disposable {
               .reloadChildren()
               .then(() => {
                 if (this._rootSuite.insertChild(suite, true)) {
-                  this._executables.set(uri.fsPath, suite);
+                  this._executables.set(filePath, suite);
                 }
-                this._lastEventArrivedAt.delete(uri.fsPath);
+                this._lastEventArrivedAt.delete(filePath);
               })
               .then(resolve, reject);
           });
         }).catch((reason: Error) => {
-          this._shared.log.warn('Problem under reloadChildren:', reason, uri.fsPath, suite);
+          this._shared.log.warn('Problem under reloadChildren:', reason, filePath, suite);
           return x(suite, false, Math.min(delay * 2, 2000));
         });
       } else {
         return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
           return c2fs
-            .isNativeExecutableAsync(uri.fsPath)
+            .isNativeExecutableAsync(filePath)
             .then(() => true, () => false)
             .then(isExec => x(suite, isExec, Math.min(delay * 2, 2000)));
         });
       }
     };
 
-    let suite = this._executables.get(uri.fsPath);
+    let suite = this._executables.get(filePath);
 
     if (suite == undefined) {
-      this._shared.log.info('new suite: ' + uri.fsPath);
-      this._createSuiteByUri(uri).then(
+      this._shared.log.info('new suite: ' + filePath);
+      this._createSuiteByUri(filePath).then(
         (s: AbstractTestSuiteInfo) => {
           x(s, false, 64);
         },
         (reason: Error) => {
-          this._shared.log.info("couldn't add: " + uri.fsPath, 'reson:', reason);
+          this._shared.log.info("couldn't add: " + filePath, 'reson:', reason);
         },
       );
     } else {
@@ -295,16 +295,16 @@ export class TestExecutableInfo implements vscode.Disposable {
 
   private _handleCreate(uri: vscode.Uri): void {
     this._shared.log.info('create event: ' + uri.fsPath);
-    return this._handleEverything(uri);
+    return this._handleEverything(uri.fsPath);
   }
 
   private _handleChange(uri: vscode.Uri): void {
     this._shared.log.info('change event: ' + uri.fsPath);
-    return this._handleEverything(uri);
+    return this._handleEverything(uri.fsPath);
   }
 
   private _handleDelete(uri: vscode.Uri): void {
     this._shared.log.info('delete event: ' + uri.fsPath);
-    return this._handleEverything(uri);
+    return this._handleEverything(uri.fsPath);
   }
 }
