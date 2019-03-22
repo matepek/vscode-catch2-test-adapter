@@ -313,15 +313,15 @@ async function main(argv: string[]): Promise<void> {
 
   // pre-checks
   assert.strictEqual(path.basename(process.cwd()), githubRepoId);
-  assert.ok(!process.env['GITHUB_API_KEY']);
-  assert.ok(!process.env['VSCE_PAT']);
-  assert.ok(!process.env['APPVEYOR_TOKEN']);
+  assert.ok(process.env['GITHUB_API_KEY']);
+  assert.ok(process.env['VSCE_PAT']);
+  assert.ok(process.env['APPVEYOR_TOKEN']);
 
   if (!process.env['TRAVIS_BRANCH']) throw new Error('Not a branch, skipping..');
 
   if (process.env['TRAVIS_PULL_REQUEST'] !== 'false') throw new Error("Shouldn't be a PR, skipping..");
 
-  if (process.env['TRAVIS_OS_NAME'] !== 'osx') throw new Error('Not osx, skipping..');
+  if (process.env['TRAVIS_OS_NAME'] !== 'linux') throw new Error('Not osx, skipping..');
 
   if (process.env['VSCODE_VERSION'] !== 'latest') throw new Error('Not the latest vscode version, skipping..');
 

@@ -16,8 +16,8 @@ language: node_js
 node_js: "10"
 
 os:
-  - osx
   - linux
+  - osx
 
 before_install:
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
