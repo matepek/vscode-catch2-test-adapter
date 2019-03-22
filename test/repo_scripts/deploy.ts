@@ -94,6 +94,68 @@ function updateChangelog(): Promise<Info | undefined> {
   });
 }
 
+async function waitForAppveyorTestsToBeFinished(): Promise<void> {
+  try {
+    assert.ok(process.env['APPVEYOR_TOKEN']);
+    assert.ok(process.env['TRAVIS_COMMIT']);
+
+    console.log('Checking Appveyor job with commit:', process.env['TRAVIS_COMMIT']);
+
+    const response = await requestP.get({
+      url: 'https://ci.appveyor.com/api/projects/' + githubRepoFullId + '/history?recordsNumber=50',
+      headers: { Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'], 'Content-Type': 'application/json' },
+    });
+
+    const responseJson = JSON.parse(response.toString());
+    let build;
+    for (const b of responseJson.builds) {
+      if (b.commitId === process.env['TRAVIS_COMMIT']) {
+        build = b;
+        break;
+      }
+    }
+    assert.notStrictEqual(build, undefined);
+
+    const timeout = 30 * 60 * 1000;
+    const version = build.version;
+    let status = build.status;
+
+    const queuedOrRunning = (status: string): boolean => status === 'running' || status === 'queued';
+
+    const start = Date.now();
+    while (queuedOrRunning(status) && Date.now() - start < timeout) {
+      console.log('Waiting for Appveyor:', version, status);
+
+      await promisify(setTimeout)(10000);
+
+      const response = await requestP.get({
+        url: 'https://ci.appveyor.com/api/projects/' + githubRepoFullId + '/build/' + version,
+        headers: { Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'], 'Content-Type': 'application/json' },
+      });
+      const responseJson = JSON.parse(response.toString());
+
+      status = responseJson.build.status;
+
+      if (status === 'running') {
+        const filteredJobs = responseJson.build.jobs.filter((j: { status: string }) => !queuedOrRunning(j.status));
+        if (filteredJobs.length > 0) {
+          throw new Error('Appveyor job status: ' + filteredJobs[0].status);
+        }
+      }
+    }
+
+    if (status === 'success') {
+      return Promise.resolve();
+    } else if (Date.now() - start > timeout) {
+      throw new Error('Appveyor timeout has been reached: ' + timeout);
+    } else {
+      throw new Error('Appveyor status: ' + status);
+    }
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
+
 function updatePackageJson(info: Info): Promise<Info> {
   console.log('Parsing package.json');
   return promisify(fs.readFile)('package.json').then(packageJsonBuffer => {
@@ -270,23 +332,25 @@ function main(argv: string[]): Promise<void> {
     return Promise.resolve();
   }
 
-  return updateChangelog().then((info: Info | undefined) => {
-    if (info != undefined) {
-      return Promise.resolve(info!)
-        .then(updatePackageJson)
-        .then(gitCommitAndTag)
-        .then(createPackage)
-        .then(gitPush)
-        .then(createGithubRelease)
-        .then(publishPackage)
-        .then(() => {
-          console.log('deploying is finished');
-        });
-    } else {
-      console.log('No deployment has happened.');
-      return Promise.resolve();
-    }
-  });
+  return waitForAppveyorTestsToBeFinished()
+    .then(updateChangelog)
+    .then((info: Info | undefined) => {
+      if (info != undefined) {
+        return Promise.resolve(info!)
+          .then(updatePackageJson)
+          .then(gitCommitAndTag)
+          .then(createPackage)
+          .then(gitPush)
+          .then(createGithubRelease)
+          .then(publishPackage)
+          .then(() => {
+            console.log('deploying is finished');
+          });
+      } else {
+        console.log('No deployment has happened.');
+        return Promise.resolve();
+      }
+    });
 }
 
 ///
