@@ -26,6 +26,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
       testNameFull.startsWith('DISABLED_') || testNameFull.indexOf('.DISABLED_') != -1,
       file,
       line,
+      undefined,
     );
   }
 
@@ -55,6 +56,11 @@ export class GoogleTestInfo extends AbstractTestInfo {
       else {
         this._shared.log.error('unexpected token:', lines[lines.length - 1]);
         ev.state = 'errored';
+      }
+
+      {
+        const m = lines[lines.length - 1].match(/\(([0-9]+) ms\)$/);
+        if (m) this._extendDescriptionAndTooltip(ev, Number(m[1]));
       }
 
       const failure = /^(.+):([0-9]+): Failure$/;

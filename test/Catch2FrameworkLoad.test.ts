@@ -130,7 +130,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s1t1,
           decorations: [],
+          description: '(0ms)',
           message: '⏱ Duration: 0.000112 second(s).\n',
+          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'suite', state: 'completed', suite: suite1 },
         { type: 'finished' },
@@ -153,7 +155,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s1t1,
           decorations: [],
+          description: '(0ms)',
           message: '⏱ Duration: 0.000132 second(s).\n',
+          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: s1t2 },
         {
@@ -163,6 +167,8 @@ describe(path.basename(__filename), function() {
           decorations: [
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
+          description: '(0ms)',
+          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
@@ -187,7 +193,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s1t1,
           decorations: [],
+          description: '(0ms)',
           message: '⏱ Duration: 0.000132 second(s).\n',
+          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: s1t2 },
         {
@@ -197,6 +205,8 @@ describe(path.basename(__filename), function() {
           decorations: [
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
+          description: '(0ms)',
+          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
@@ -229,7 +239,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s1t1,
           decorations: [],
+          description: '(0ms)',
           message: '⏱ Duration: 0.000112 second(s).\n',
+          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'suite', state: 'completed', suite: suite1 },
         { type: 'finished' },
@@ -259,7 +271,9 @@ describe(path.basename(__filename), function() {
             state: 'passed',
             test: s1t1,
             decorations: [],
+            description: '(0ms)',
             message: '🔀 Randomness seeded to: 2.\n⏱ Duration: 0.000327 second(s).\n',
+            tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
           },
           { type: 'suite', state: 'completed', suite: suite1 },
           { type: 'finished' },
@@ -355,7 +369,9 @@ describe(path.basename(__filename), function() {
         state: 'passed',
         test: s1t1,
         decorations: [],
+        description: '(0ms)',
         message: '⏱ Duration: 0.000132 second(s).\n',
+        tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
       };
       assert.ok(adapter.getTestStatesEventIndex(s1t1running) < adapter.getTestStatesEventIndex(s1t1finished));
       assert.ok(adapter.getTestStatesEventIndex(s1t1finished) < adapter.getTestStatesEventIndex(s1finished));
@@ -370,6 +386,8 @@ describe(path.basename(__filename), function() {
         decorations: [
           { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
         ],
+        description: '(0ms)',
+        tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
         message:
           '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
       };
@@ -385,6 +403,8 @@ describe(path.basename(__filename), function() {
         test: s2t1,
         decorations: [],
         message: '⏱ Duration: 0.00037 second(s).\n',
+        description: '(0ms)',
+        tooltip: 'Name: s2t1\nDescription: tag1\n⏱ 0ms',
       };
       assert.ok(adapter.getTestStatesEventIndex(s2t1running) < adapter.getTestStatesEventIndex(s2t1finished));
       assert.ok(adapter.getTestStatesEventIndex(s2t1finished) < adapter.getTestStatesEventIndex(s2finished));
@@ -399,6 +419,8 @@ describe(path.basename(__filename), function() {
         decorations: [
           { line: 20, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
         ],
+        description: '(0ms)',
+        tooltip: 'Name: s2t3\nDescription: tag1\n⏱ 0ms',
         message:
           '⏱ Duration: 0.000178 second(s).\n⬇️⬇️⬇️ "s2t3" at line 19 ➡️ "REQUIRE" at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
       };
@@ -434,7 +456,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s1t1,
           decorations: [],
+          description: '(0ms)',
           message: '⏱ Duration: 0.000112 second(s).\n',
+          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'suite', state: 'completed', suite: suite1 },
         { type: 'finished' },
@@ -457,7 +481,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s2t2,
           decorations: [],
+          description: '(1ms)',
           message: '⏱ Duration: 0.001294 second(s).\n',
+          tooltip: 'Name: s2t2\nDescription: tag1\n⏱ 1ms',
         },
         { type: 'suite', state: 'completed', suite: suite2 },
         { type: 'finished' },
@@ -482,8 +508,10 @@ describe(path.basename(__filename), function() {
           decorations: [
             { line: 20, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
+          description: '(0ms)',
           message:
             '⏱ Duration: 0.000596 second(s).\n⬇️⬇️⬇️ "s2t3" at line 19 ➡️ "REQUIRE" at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
+          tooltip: 'Name: s2t3\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'suite', state: 'completed', suite: suite2 },
         { type: 'finished' },
@@ -511,8 +539,10 @@ describe(path.basename(__filename), function() {
           decorations: [
             { line: 20, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
+          description: '(0ms)',
           message:
             '⏱ Duration: 0.000596 second(s).\n⬇️⬇️⬇️ "s2t3" at line 19 ➡️ "REQUIRE" at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
+          tooltip: 'Name: s2t3\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'suite', state: 'completed', suite: suite2 },
         { type: 'finished' },
@@ -535,7 +565,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s1t1,
           decorations: [],
+          description: '(0ms)',
           message: '⏱ Duration: 0.000132 second(s).\n',
+          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: s1t2 },
         {
@@ -545,6 +577,8 @@ describe(path.basename(__filename), function() {
           decorations: [
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
+          description: '(0ms)',
+          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
@@ -570,6 +604,8 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s1t1,
           decorations: [],
+          description: '(0ms)',
+          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
           message: '⏱ Duration: 0.000132 second(s).\n',
         },
         { type: 'test', state: 'running', test: s1t2 },
@@ -580,6 +616,8 @@ describe(path.basename(__filename), function() {
           decorations: [
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
+          description: '(0ms)',
+          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
@@ -591,7 +629,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s2t2,
           decorations: [],
+          description: '(1ms)',
           message: '⏱ Duration: 0.001294 second(s).\n',
+          tooltip: 'Name: s2t2\nDescription: tag1\n⏱ 1ms',
         },
         { type: 'suite', state: 'completed', suite: suite2 },
         { type: 'finished' },
@@ -642,7 +682,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s1t1,
           decorations: [],
+          description: '(0ms)',
           message: '⏱ Duration: 0.000112 second(s).\n',
+          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'suite', state: 'completed', suite: suite1 },
         { type: 'finished' },
@@ -692,7 +734,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s1t1,
           decorations: [],
+          description: '(0ms)',
           message: '⏱ Duration: 0.000112 second(s).\n',
+          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'suite', state: 'completed', suite: suite1 },
         { type: 'finished' },
@@ -1025,7 +1069,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s1t1,
           decorations: [],
+          description: '(0ms)',
           message: '⏱ Duration: 0.000132 second(s).\n',
+          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'suite', state: 'completed', suite: suite1 },
         { type: 'finished' },
@@ -1039,6 +1085,8 @@ describe(path.basename(__filename), function() {
           decorations: [
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
+          description: '(0ms)',
+          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
@@ -1079,6 +1127,8 @@ describe(path.basename(__filename), function() {
           decorations: [
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
+          description: '(0ms)',
+          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
@@ -1219,6 +1269,8 @@ describe(path.basename(__filename), function() {
           decorations: [
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
+          description: '(0ms)',
+          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
@@ -1232,7 +1284,9 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s1t1,
           decorations: [],
+          description: '(0ms)',
           message: '⏱ Duration: 0.000132 second(s).\n',
+          tooltip: 'Name: s1-t1\nDescription: tag1\n⏱ 0ms',
         },
         { type: 'suite', state: 'completed', suite: suite1 },
         { type: 'finished' },

@@ -168,6 +168,8 @@ describe(path.basename(__filename), function() {
         decorations: [
           { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
         ],
+        description: '(0ms)',
+        tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
         message:
           '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
       },
@@ -181,7 +183,9 @@ describe(path.basename(__filename), function() {
         state: 'passed',
         test: s1t1,
         decorations: [],
+        description: '(0ms)',
         message: '⏱ Duration: 0.000132 second(s).\n',
+        tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
       },
       { type: 'suite', state: 'completed', suite: adapter.suite1 },
       { type: 'finished' },

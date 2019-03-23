@@ -11,6 +11,7 @@ export abstract class AbstractTestInfo implements TestInfo {
   public readonly type: 'test' = 'test';
   public readonly id: string;
   public readonly origLabel: string;
+  public readonly description: string = '';
   public readonly tooltip: string;
 
   protected constructor(
@@ -21,7 +22,7 @@ export abstract class AbstractTestInfo implements TestInfo {
     public readonly skipped: boolean,
     public readonly file: string | undefined,
     public readonly line: number | undefined,
-    tooltip?: string,
+    tooltip: string | undefined,
   ) {
     this.id = id ? id : generateUniqueId();
     this.origLabel = label;
@@ -53,6 +54,21 @@ export abstract class AbstractTestInfo implements TestInfo {
       message: '',
       decorations: [],
     };
+  }
+
+  protected _extendDescriptionAndTooltip(ev: TestEvent, durationInMilisec: number): void {
+    const minute = Math.floor(durationInMilisec / 60000);
+    const sec = Math.floor((durationInMilisec - minute * 60000) / 1000);
+    const miliSec = durationInMilisec - minute * 60000 - sec * 1000;
+
+    let durationArr = [[minute, 'm'], [sec, 's'], [miliSec, 'ms']].filter(v => v[0]);
+
+    if (durationArr.length === 0) durationArr.push([0, 'ms']);
+
+    const durationStr = durationArr.map(v => v[0].toString() + v[1]).join(' ');
+
+    ev.description = this.description + (this.description ? ' ' : '') + '(' + durationStr + ')';
+    ev.tooltip = this.tooltip + (this.tooltip ? '\n' : '') + '⏱ ' + durationStr;
   }
 
   public findRouteToTestById(id: string): AbstractTestInfo[] | undefined {

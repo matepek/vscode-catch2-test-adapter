@@ -112,6 +112,8 @@ describe(path.basename(__filename), function() {
           type: 'test',
           state: 'passed',
           test: adapter.get(0, 0, 0),
+          description: '(0ms)',
+          tooltip: 'Name: TestCas1.test1\n⏱ 0ms',
           decorations: [],
           message: ['[ RUN      ] TestCas1.test1', '[       OK ] TestCas1.test1 (0 ms)'].join(EOL),
         },
@@ -127,6 +129,8 @@ describe(path.basename(__filename), function() {
               hover: 'Value of: 1 == 2\n  Actual: false\nExpected: true',
             },
           ],
+          description: '(0ms)',
+          tooltip: 'Name: TestCas1.test2\n⏱ 0ms',
           message: [
             '[ RUN      ] TestCas1.test2',
             'gtest.cpp:19: Failure',
@@ -171,6 +175,8 @@ describe(path.basename(__filename), function() {
               hover: 'Expected: (1) > (1), actual: 1 vs 1',
             },
           ],
+          description: '(1ms)',
+          tooltip: 'Name: TestCas2.test1\n⏱ 1ms',
           message: [
             '[ RUN      ] TestCas2.test1',
             'gtest.cpp:24: Failure',
@@ -213,6 +219,8 @@ describe(path.basename(__filename), function() {
                 "Expected: magic_func() doesn't generate new fatal failures in the current thread.\n  Actual: it does.",
             },
           ],
+          description: '(0ms)',
+          tooltip: 'Name: TestCas2.test2\n⏱ 0ms',
           message: [
             '[ RUN      ] TestCas2.test2',
             'gtest.cpp:32: Failure',
@@ -233,6 +241,8 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 2, 0),
           decorations: [{ line: 69, message: '⬅️ failure', hover: '' }],
+          description: '(0ms)',
+          tooltip: 'Name: MockTestCase.expect1\n⏱ 0ms',
           message: [
             '[ RUN      ] MockTestCase.expect1',
             'gtest.cpp:70: Failure',
@@ -248,6 +258,8 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 2, 1),
           decorations: [{ line: 77, message: '⬅️ failure', hover: '' }],
+          description: '(0ms)',
+          tooltip: 'Name: MockTestCase.expect2\n⏱ 0ms',
           message: [
             '[ RUN      ] MockTestCase.expect2',
             'unknown file: Failure',
@@ -276,6 +288,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 3, 0),
           decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
+          description: '(0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
             'gtest.cpp:41: Failure',
@@ -285,6 +298,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 2',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
           ].join(EOL),
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/0\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 3, 1) },
         {
@@ -292,6 +306,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 3, 1),
           decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
+          description: '(0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/1',
             'gtest.cpp:41: Failure',
@@ -301,6 +316,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3 (0 ms)',
           ].join(EOL),
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/1\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 3, 2) },
         {
@@ -308,6 +324,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 3, 2),
           decorations: [{ line: 41, message: '⬅️ failure', hover: '' }],
+          description: '(1ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/0',
             'gtest.cpp:42: Failure',
@@ -317,6 +334,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 2',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2 (1 ms)',
           ].join(EOL),
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails2/0\n⏱ 1ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 3, 3) },
         {
@@ -324,6 +342,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 3, 3),
           decorations: [{ line: 41, message: '⬅️ failure', hover: '' }],
+          description: '(0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/1',
             'gtest.cpp:42: Failure',
@@ -333,6 +352,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3 (0 ms)',
           ].join(EOL),
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails2/1\n⏱ 0ms',
         },
         { type: 'suite', state: 'completed', suite: adapter.get(0, 3) },
         { type: 'suite', state: 'running', suite: adapter.get(0, 4) },
@@ -342,6 +362,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 4, 0),
           decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
+          description: '(0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails1/0',
             'gtest.cpp:41: Failure',
@@ -351,6 +372,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3 (0 ms)',
           ].join(EOL),
+          tooltip: 'Name: PrintingFailingParams2/FailingParamTest.Fails1/0\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 4, 1) },
         {
@@ -358,6 +380,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 4, 1),
           decorations: [{ line: 41, message: '⬅️ failure', hover: '' }],
+          description: '(0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails2/0',
             'gtest.cpp:42: Failure',
@@ -367,6 +390,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3 (0 ms)',
           ].join(EOL),
+          tooltip: 'Name: PrintingFailingParams2/FailingParamTest.Fails2/0\n⏱ 0ms',
         },
         { type: 'suite', state: 'completed', suite: adapter.get(0, 4) },
         { type: 'suite', state: 'completed', suite: adapter.get(0) },
@@ -391,6 +415,8 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: adapter.get(0, 0, 0),
           decorations: [],
+          description: '(0ms)',
+          tooltip: 'Name: TestCas1.test1\n⏱ 0ms',
           message: ['[ RUN      ] TestCas1.test1', '[       OK ] TestCas1.test1 (0 ms)'].join(EOL),
         },
         { type: 'suite', state: 'completed', suite: adapter.get(0, 0) },
@@ -416,6 +442,8 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 3, 0),
           decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
+          description: '(0ms)',
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/0\n⏱ 0ms',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
             'gtest.cpp:41: Failure',

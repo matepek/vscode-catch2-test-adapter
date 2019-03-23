@@ -40,7 +40,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     shared: SharedVariables,
     id: string | undefined,
     testNameFull: string,
-    description: string,
+    catch2Description: string,
     tags: string[],
     file: string,
     line: number,
@@ -56,7 +56,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
       }) || testNameFull.startsWith('./'),
       file,
       line,
-      description ? 'Description: ' + description : '',
+      catch2Description ? 'Description: ' + catch2Description : '',
     );
     this._sections = sections;
   }
@@ -117,6 +117,10 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
       testEvent.message += '⏱ Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
+      this._extendDescriptionAndTooltip(
+        testEvent,
+        Math.floor(Number(testCase.OverallResult[0].$.durationInSeconds) * 1000),
+      );
     }
 
     this._processInfoWarningAndFailureTags(testCase, title, [], testEvent);
