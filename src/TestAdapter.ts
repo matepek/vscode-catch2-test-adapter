@@ -565,6 +565,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
 
+      const dependsOn: string[] = Array.isArray(obj.dependsOn) ? obj.dependsOn : [];
+
       return new TestExecutableInfo(
         this._shared,
         rootSuite,
@@ -575,6 +577,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         defaultEnv,
         env,
         this._variableToValue,
+        dependsOn,
       );
     };
 
@@ -591,6 +594,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           defaultEnv,
           undefined,
           this._variableToValue,
+          [],
         ),
       );
     } else if (Array.isArray(configExecs)) {
@@ -610,6 +614,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                 defaultEnv,
                 undefined,
                 this._variableToValue,
+                [],
               ),
             );
           }

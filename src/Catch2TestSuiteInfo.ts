@@ -8,7 +8,7 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import { Catch2TestInfo } from './Catch2TestInfo';
-import * as c2fs from './FsWrapper';
+import * as c2fs from './FSWrapper';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';

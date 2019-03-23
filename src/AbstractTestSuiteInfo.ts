@@ -5,7 +5,7 @@
 import * as cp from 'child_process';
 import * as path from 'path';
 
-import * as c2fs from './FsWrapper';
+import * as c2fs from './FSWrapper';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { TaskPool } from './TaskPool';

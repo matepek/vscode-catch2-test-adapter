@@ -196,5 +196,6 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 ## TODOs
 
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip
+- executable's dependsOn property
 
 ## [Contribution guideline here](CONTRIBUTING.md)

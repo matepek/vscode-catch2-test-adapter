@@ -8,8 +8,8 @@ import { EOL } from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { spawnAsync, SpawnOptions, SpawnReturns } from '../src/FsWrapper';
-import { ChildProcessStub, isWin } from './TestCommon';
+import { spawnAsync, SpawnOptions, SpawnReturns } from '../src/FSWrapper';
+import { ChildProcessStub, isWin } from './Common';
 
 ///
 

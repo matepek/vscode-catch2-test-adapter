@@ -9,15 +9,7 @@ import * as vscode from 'vscode';
 import { inspect } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import {
-  TestAdapter,
-  Imitation,
-  waitFor,
-  settings,
-  isWin,
-  ChildProcessStub,
-  FileSystemWatcherStub,
-} from './TestCommon';
+import { TestAdapter, Imitation, waitFor, settings, isWin, ChildProcessStub, FileSystemWatcherStub } from './Common';
 
 ///
 

@@ -6,7 +6,7 @@ import * as assert from 'assert';
 import * as fse from 'fs-extra';
 import * as path from 'path';
 import * as readline from 'readline';
-import { settings } from './TestCommon';
+import { settings } from './Common';
 
 ///
 
@@ -18,15 +18,15 @@ let currentLogfilePath: string;
 
 const expectedErrorLines = new Map<string /* test */, Set<string>>([
   [
-    'TestCatch2FrameworkLoad.test.js -> executables="execPath1.exe" -> should run with not existing test id',
+    'Catch2FrameworkLoad.test.js -> executables="execPath1.exe" -> should run with not existing test id',
     new Set(["[ERROR] Some tests have remained:  Set { 'not existing id' }"]),
   ],
   [
-    'TestCatch2FrameworkLoad.test.js -> executables=["execPath1.exe", "execPath2.exe"] -> should run with not existing test id',
+    'Catch2FrameworkLoad.test.js -> executables=["execPath1.exe", "execPath2.exe"] -> should run with not existing test id',
     new Set(["[ERROR] Some tests have remained:  Set { 'not existing id' }"]),
   ],
   [
-    'TestCatch2FrameworkLoad.test.js -> vscode.debug -> should be debugged',
+    'Catch2FrameworkLoad.test.js -> vscode.debug -> should be debugged',
     new Set([
       '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
     ]),

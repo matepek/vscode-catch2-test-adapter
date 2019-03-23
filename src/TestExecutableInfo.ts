@@ -8,11 +8,11 @@ import * as vscode from 'vscode';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
-import * as c2fs from './FsWrapper';
+import * as c2fs from './FSWrapper';
 import { resolveVariables } from './Util';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { SharedVariables } from './SharedVariables';
-import { GazeWrapper } from './GazeWrapper';
+import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
 
 export class TestExecutableInfo implements vscode.Disposable {
   public constructor(
@@ -25,11 +25,12 @@ export class TestExecutableInfo implements vscode.Disposable {
     private readonly _defaultEnv: { [prop: string]: string },
     private readonly _env: { [prop: string]: string } | undefined,
     private readonly _variableToValue: [string, string][],
-  ) {}
+    private readonly _dependsOn: string[],
+  ) {
+    this._dependsOn; //TODO
+  }
 
   private _disposables: vscode.Disposable[] = [];
-
-  private _watcher: vscode.FileSystemWatcher | undefined = undefined;
 
   private readonly _executables: Map<string /*fsPath*/, AbstractTestSuiteInfo> = new Map();
 
@@ -60,70 +61,54 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     if (isAbsolute && isPartOfWs)
       this._shared.log.warn('Absolute path is used for workspace directory. This is unnecessary, but it should work.');
+
     if (this._pattern.indexOf('\\') != -1) this._shared.log.warn('Pattern contains backslash character.');
 
-    let fileUris: vscode.Uri[] = [];
+    let execWatcher: FSWatcher | undefined = undefined;
 
-    if (isPartOfWs) {
-      try {
-        const relativePattern = new vscode.RelativePattern(this._shared.workspaceFolder, relativeToWsPosix);
-        fileUris = await vscode.workspace.findFiles(relativePattern, null, 10000);
-
-        if (fileUris.length === 10000) {
-          this._shared.log.error(
-            "vscode.workspace.findFiles reached it's limit. Probablt pattern is not specific enough.",
-            fileUris.map(u => u.fsPath),
-          );
-        }
-
-        // abs path string or vscode.RelativePattern is required.
-        this._watcher = vscode.workspace.createFileSystemWatcher(relativePattern, false, false, false);
-        this._disposables.push(this._watcher);
-        this._disposables.push(this._watcher.onDidCreate(this._handleCreate, this));
-        this._disposables.push(this._watcher.onDidChange(this._handleChange, this));
-        this._disposables.push(this._watcher.onDidDelete(this._handleDelete, this));
-      } catch (e) {
-        this._shared.log.error(e, this);
+    try {
+      if (isPartOfWs) {
+        execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, relativeToWsPosix);
+      } else {
+        execWatcher = new GazeWrapper([absPatternAsUri.fsPath]);
       }
-    } else {
-      this._shared.log.info('absPath is used', absPatternAsUri.fsPath);
-      try {
-        const absWatcher = new GazeWrapper([absPatternAsUri.fsPath]);
-        this._disposables.push(absWatcher);
+      this._disposables.push(execWatcher);
+    } catch (e) {
+      this._shared.log.error("Coudn't watch pattern", e);
+    }
 
-        absWatcher.on('error', (e: Error) => this._shared.log.error('gaze:', e));
+    let filePaths: string[] = [];
 
-        absWatcher.on('all', (event: string, filePath: string) => {
-          this._shared.log.info('gaze all event:', event, filePath);
-          this._handleEverything(filePath);
+    try {
+      if (execWatcher) {
+        filePaths = await execWatcher.watched();
+
+        execWatcher.onError((err: Error) => this._shared.log.error('fs error:', err));
+
+        execWatcher.onAll(fsPath => {
+          this._shared.log.info('fs event:', fsPath);
+          this._handleEverything(fsPath);
         });
-
-        const filePaths = await absWatcher.watched();
-
-        for (const file of filePaths) {
-          fileUris.push(vscode.Uri.file(file));
-        }
-      } catch (e) {
-        this._shared.log.error(e, this);
-        fileUris.push(absPatternAsUri);
       }
+    } catch (e) {
+      this._shared.log.error(e);
     }
 
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];
 
-    for (let i = 0; i < fileUris.length; i++) {
-      const file = fileUris[i];
-      this._shared.log.info('Checking file for tests:', file.fsPath);
+    for (let i = 0; i < filePaths.length; i++) {
+      const file = filePaths[i];
+      this._shared.log.info('Checking file for tests:', file);
 
       suiteCreationAndLoadingTasks.push(
-        c2fs.isNativeExecutableAsync(file.fsPath).then(
+        c2fs.isNativeExecutableAsync(file).then(
           () => {
-            return this._createSuiteByUri(file.fsPath).then(
+            return this._createSuiteByUri(file).then(
               (suite: AbstractTestSuiteInfo) => {
                 return suite.reloadChildren().then(
                   () => {
                     if (this._rootSuite.insertChild(suite, false /* called later */)) {
-                      this._executables.set(file.fsPath, suite);
+                      this._executables.set(file, suite);
                     }
                   },
                   (reason: Error) => {
@@ -132,12 +117,12 @@ export class TestExecutableInfo implements vscode.Disposable {
                 );
               },
               (reason: Error) => {
-                this._shared.log.warn('Not a test executable:', file.fsPath, 'reason:', reason);
+                this._shared.log.warn('Not a test executable:', file, 'reason:', reason);
               },
             );
           },
           (reason: Error) => {
-            this._shared.log.info('Not an executable:', file.fsPath, reason);
+            this._shared.log.info('Not an executable:', file, reason);
           },
         ),
       );
@@ -291,20 +276,5 @@ export class TestExecutableInfo implements vscode.Disposable {
     } else {
       x(suite!, false, 64);
     }
-  }
-
-  private _handleCreate(uri: vscode.Uri): void {
-    this._shared.log.info('create event: ' + uri.fsPath);
-    return this._handleEverything(uri.fsPath);
-  }
-
-  private _handleChange(uri: vscode.Uri): void {
-    this._shared.log.info('change event: ' + uri.fsPath);
-    return this._handleEverything(uri.fsPath);
-  }
-
-  private _handleDelete(uri: vscode.Uri): void {
-    this._shared.log.info('delete event: ' + uri.fsPath);
-    return this._handleEverything(uri.fsPath);
   }
 }

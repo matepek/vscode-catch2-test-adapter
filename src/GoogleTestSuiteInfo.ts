@@ -7,7 +7,7 @@ import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
 import { GoogleTestInfo } from './GoogleTestInfo';
-import * as c2fs from './FsWrapper';
+import * as c2fs from './FSWrapper';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { Parser } from 'xml2js';

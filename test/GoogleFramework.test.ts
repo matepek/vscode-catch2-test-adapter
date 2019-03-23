@@ -8,7 +8,7 @@ import * as path from 'path';
 import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, settings, ChildProcessStub } from './TestCommon';
+import { TestAdapter, Imitation, settings, ChildProcessStub } from './Common';
 
 ///
 
