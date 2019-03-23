@@ -165,7 +165,9 @@ describe(path.basename(__filename), function() {
         type: 'test',
         state: 'failed',
         test: s1t2,
-        decorations: [{ line: 14, message: '⬅️ false' }],
+        decorations: [
+          { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
+        ],
         message:
           '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
       },

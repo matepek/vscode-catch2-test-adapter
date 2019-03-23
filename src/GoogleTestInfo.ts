@@ -68,9 +68,13 @@ export class GoogleTestInfo extends AbstractTestInfo {
             lines[i + 1].startsWith('Expected: ') &&
             lines[i + 2].startsWith('  Actual: ')
           ) {
-            ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1] + ';  ' + lines[i + 2] });
+            ev.decorations!.push({
+              line: lineNumber,
+              message: '⬅️ ' + lines[i + 1] + ';  ' + lines[i + 2],
+              hover: [lines[i + 1], lines[i + 2]].join('\n'),
+            });
           } else if (i + 1 < lines.length - 1 && lines[i + 1].startsWith('Expected: ')) {
-            ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1] });
+            ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1], hover: lines[i + 1] });
           } else if (
             i + 3 < lines.length - 1 &&
             lines[i + 1].startsWith('Value of: ') &&
@@ -80,9 +84,10 @@ export class GoogleTestInfo extends AbstractTestInfo {
             ev.decorations!.push({
               line: lineNumber,
               message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';',
+              hover: [lines[i + 1], lines[i + 2], lines[i + 3]].join('\n'),
             });
           } else {
-            ev.decorations!.push({ line: lineNumber, message: '⬅️ failure' });
+            ev.decorations!.push({ line: lineNumber, message: '⬅️ failure', hover: '' });
           }
         }
       }

@@ -205,21 +205,26 @@ export class Catch2TestInfo extends AbstractTestInfo {
       for (let j = 0; j < xml.Expression.length; ++j) {
         const expr = xml.Expression[j];
         try {
+          const message =
+            '  Original:\n    ' +
+            expr.Original.map((x: string) => x.trim()).join('; ') +
+            '\n  Expanded:\n    ' +
+            expr.Expanded.map((x: string) => x.trim()).join('; ');
+
           testEvent.message +=
             this._getTitle(title, stack, {
               name: expr.$.type ? expr.$.type : '<unknown>',
               filename: expr.$.filename,
               line: expr.$.line,
             }) +
-            ':\n  Original:\n    ' +
-            expr.Original.map((x: string) => x.trim()).join('; ') +
-            '\n  Expanded:\n    ' +
-            expr.Expanded.map((x: string) => x.trim()).join('; ') +
+            ':\n' +
+            message +
             '\n' +
             '⬆️⬆️⬆️\n\n';
           testEvent.decorations!.push({
             line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
             message: '⬅️ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
+            hover: message,
           });
         } catch (error) {
           this._shared.log.error(error);
