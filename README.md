@@ -48,12 +48,13 @@ This variable can be
 
 If it is an object it can contains the following properties:
 
-| Property  | Description                                                                                                                                                                                           |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`    | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                       |
-| `pattern` | A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required) |
-| `cwd`     | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                               |
-| `env`     | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                       |
+| Property    | Description                                                                                                                                                                                                                       |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`      | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                   |
+| `pattern`   | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required)                      |
+| `cwd`       | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                           |
+| `env`       | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                   |
+| `dependsOn` | (Experimental) Array of _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ it will run the related executables. |
 
 The `pattern` (or the `executables` used as string or an array of strings)
 can contains [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
@@ -73,6 +74,10 @@ It won't filter out `'.sh'`, `'.py'` (etc.) files, so that could be used for wra
 If the pattern is too general like `out/**/*test*`, it could cause unexpected executable or script execution (with `--help` argument)
 which would not just increase the test-loading duration but also could have other unexpeced effects.
 I suggest to have a stricter file-name convention and a corresponding pattern like `out/**/*.test.*` or `out/**/Test.*`
+
+**Remark** that `dependsOn` is experimental and only works well with paths inside of the workspace directory.
+Also note that if it is set, it will run the related tests automatically. It accumulates events for 2 seconds and run the related tests.
+Stupid logic, will be improved in the future.
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 

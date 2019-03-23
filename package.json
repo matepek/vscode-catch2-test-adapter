@@ -113,7 +113,7 @@
                     "type": "object",
                     "properties": {
                       "pattern": {
-                        "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
+                        "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
                         "anyOf": [
                           {
                             "type": "string",
@@ -218,6 +218,14 @@
                             }
                           ]
                         }
+                      },
+                      "dependsOn": {
+                        "type": "array",
+                        "description": "(Experimental) Array of _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ it will run the related executables.",
+                        "additionalItems": {
+                          "type": "string",
+                          "minLength": 1
+                        }
                       }
                     },
                     "additionalProperties": false,
@@ -226,7 +234,7 @@
                     ]
                   },
                   {
-                    "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
+                    "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
                     "type": "string",
                     "minLength": 1
                   }
@@ -237,7 +245,7 @@
               "type": "object",
               "properties": {
                 "pattern": {
-                  "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
+                  "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
                   "anyOf": [
                     {
                       "type": "string",
@@ -342,6 +350,14 @@
                       }
                     ]
                   }
+                },
+                "dependsOn": {
+                  "type": "array",
+                  "description": "(Experimental) Array of _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ it will run the related executables.",
+                  "additionalItems": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 }
               },
               "additionalProperties": false,
@@ -350,7 +366,7 @@
               ]
             },
             {
-              "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
+              "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
               "type": "string",
               "minLength": 1
             }

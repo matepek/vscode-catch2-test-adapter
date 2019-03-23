@@ -45,6 +45,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
 
+  private readonly _sendAutorunEmitter = new vscode.EventEmitter<IterableIterator<AbstractTestSuiteInfo>>();
+
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
 
@@ -132,6 +134,31 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
+    this._disposables.push(this._sendAutorunEmitter);
+    {
+      const idBuffer = new Set<string>();
+      this._disposables.push(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        this._sendAutorunEmitter.event((infos: IterableIterator<AbstractTestSuiteInfo>) => {
+          const hasScheduled = idBuffer.size > 0;
+
+          for (const info of infos) {
+            idBuffer.add(info.id);
+          }
+
+          if (!hasScheduled && idBuffer.size > 0) {
+            setTimeout(() => {
+              const ids = [...idBuffer.values()];
+
+              idBuffer.clear();
+
+              this.run(ids);
+            }, 2000);
+          }
+        }),
+      );
+    }
+
     const config = this._getConfiguration();
 
     this._disposables.push(
@@ -152,6 +179,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._testStatesEmitter,
       this._loadWithTaskEmitter,
       this._sendTestEventEmitter,
+      this._sendAutorunEmitter,
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),

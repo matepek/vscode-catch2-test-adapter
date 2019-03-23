@@ -26,9 +26,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     private readonly _env: { [prop: string]: string } | undefined,
     private readonly _variableToValue: [string, string][],
     private readonly _dependsOn: string[],
-  ) {
-    this._dependsOn; //TODO
-  }
+  ) {}
 
   private _disposables: vscode.Disposable[] = [];
 
@@ -41,57 +39,40 @@ export class TestExecutableInfo implements vscode.Disposable {
   }
 
   public async load(): Promise<void> {
-    const wsUri = this._shared.workspaceFolder.uri;
-    const isAbsolute = path.isAbsolute(this._pattern);
-    const absPattern = isAbsolute ? path.normalize(this._pattern) : path.join(wsUri.fsPath, this._pattern);
-    const absPatternAsUri = vscode.Uri.file(absPattern);
-    const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
-    const isPartOfWs = !relativeToWs.startsWith('..');
-    const relativeToWsPosix = relativeToWs.split('\\').join('/');
+    const pattern = this._patternProcessor(this._pattern);
 
-    this._shared.log.info(
-      this._pattern,
-      wsUri.fsPath,
-      isAbsolute,
-      absPattern,
-      relativeToWs,
-      isPartOfWs,
-      relativeToWsPosix,
-    );
+    this._shared.log.info('pattern', pattern);
 
-    if (isAbsolute && isPartOfWs)
+    if (pattern.isAbsolute && pattern.isPartOfWs)
       this._shared.log.warn('Absolute path is used for workspace directory. This is unnecessary, but it should work.');
 
     if (this._pattern.indexOf('\\') != -1) this._shared.log.warn('Pattern contains backslash character.');
 
-    let execWatcher: FSWatcher | undefined = undefined;
-
-    try {
-      if (isPartOfWs) {
-        execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, relativeToWsPosix);
-      } else {
-        execWatcher = new GazeWrapper([absPatternAsUri.fsPath]);
-      }
-      this._disposables.push(execWatcher);
-    } catch (e) {
-      this._shared.log.error("Coudn't watch pattern", e);
-    }
-
     let filePaths: string[] = [];
 
+    let execWatcher: FSWatcher | undefined = undefined;
     try {
-      if (execWatcher) {
-        filePaths = await execWatcher.watched();
-
-        execWatcher.onError((err: Error) => this._shared.log.error('fs error:', err));
-
-        execWatcher.onAll(fsPath => {
-          this._shared.log.info('fs event:', fsPath);
-          this._handleEverything(fsPath);
-        });
+      if (pattern.isPartOfWs) {
+        execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.relativeToWsPosix);
+      } else {
+        execWatcher = new GazeWrapper([pattern.absPattern]);
       }
+
+      filePaths = await execWatcher.watched();
+
+      execWatcher.onError((err: Error) => this._shared.log.error('watcher error:', err));
+
+      execWatcher.onAll(fsPath => {
+        this._shared.log.info('watcher event:', fsPath);
+        this._handleEverything(fsPath);
+      });
+
+      this._disposables.push(execWatcher);
     } catch (e) {
-      this._shared.log.error(e);
+      execWatcher && execWatcher.dispose();
+      filePaths.push(this._pattern);
+
+      this._shared.log.error("Coudn't watch pattern", e);
     }
 
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];
@@ -131,6 +112,68 @@ export class TestExecutableInfo implements vscode.Disposable {
     await Promise.all(suiteCreationAndLoadingTasks);
 
     this._rootSuite.uniquifySuiteLabels();
+
+    if (this._dependsOn.length > 0) {
+      try {
+        // gaze can handle more patterns at once
+        const absPatterns: string[] = [];
+
+        for (const pattern of this._dependsOn) {
+          const p = this._patternProcessor(pattern);
+          if (p.isPartOfWs) {
+            const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.relativeToWsPosix);
+            this._disposables.push(w);
+
+            w.onError((e: Error) => this._shared.log.error('dependsOn watcher:', e, p));
+
+            w.onAll(fsPath => {
+              this._shared.log.info('dependsOn watcher event:', fsPath);
+              this._shared.autorunEmitter.fire(this._executables.values());
+            });
+          } else {
+            absPatterns.push(p.absPattern);
+          }
+        }
+
+        if (absPatterns.length > 0) {
+          const w = new GazeWrapper(absPatterns);
+          this._disposables.push(w);
+
+          w.onError((e: Error) => this._shared.log.error('dependsOn watcher:', e, absPatterns));
+
+          w.onAll(fsPath => {
+            this._shared.log.info('dependsOn watcher event:', fsPath);
+            this._shared.autorunEmitter.fire(this._executables.values());
+          });
+        }
+      } catch (e) {
+        this._shared.log.error('dependsOn error:', e);
+      }
+    }
+  }
+
+  private _patternProcessor(
+    pattern: string,
+  ): {
+    isAbsolute: boolean;
+    absPattern: string;
+    relativeToWs: string;
+    isPartOfWs: boolean;
+    relativeToWsPosix: string;
+  } {
+    const isAbsolute = path.isAbsolute(pattern);
+    const absPattern = isAbsolute
+      ? vscode.Uri.file(path.normalize(pattern)).fsPath
+      : vscode.Uri.file(path.join(this._shared.workspaceFolder.uri.fsPath, pattern)).fsPath;
+    const relativeToWs = path.relative(this._shared.workspaceFolder.uri.fsPath, absPattern);
+
+    return {
+      isAbsolute,
+      absPattern,
+      relativeToWs,
+      isPartOfWs: !relativeToWs.startsWith('..'),
+      relativeToWsPosix: relativeToWs.split('\\').join('/'),
+    };
   }
 
   private _createSuiteByUri(filePath: string): Promise<AbstractTestSuiteInfo> {

@@ -5,6 +5,7 @@
 import { Log } from 'vscode-test-adapter-util';
 import * as vscode from 'vscode';
 import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
+import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 
 export class SharedVariables implements vscode.Disposable {
   private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
@@ -17,6 +18,7 @@ export class SharedVariables implements vscode.Disposable {
     >,
     public readonly loadWithTaskEmitter: vscode.EventEmitter<() => void | PromiseLike<void>>,
     public readonly sendTestEventEmitter: vscode.EventEmitter<TestEvent[]>,
+    public readonly autorunEmitter: vscode.EventEmitter<IterableIterator<AbstractTestSuiteInfo>>,
     public rngSeed: string | number | null,
     public execWatchTimeout: number,
     private _execRunningTimeout: null | number,
