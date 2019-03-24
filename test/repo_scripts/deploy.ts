@@ -273,7 +273,7 @@ async function createGithubRelease(info: Info, packagePath: string): Promise<voi
       url: 'https://api.github.com/repos/' + githubRepoFullId + '/releases',
       headers: { 'User-Agent': githubOwnerId + '-deploy.js' },
       json: {
-        tag_name: info.vver,// eslint-disable-line
+        tag_name: info.vver, // eslint-disable-line
         name: info.full,
         body: 'See [CHANGELOG.md](CHANGELOG.md) for details.',
       },
@@ -325,9 +325,9 @@ async function main(argv: string[]): Promise<void> {
 
   if (process.env['VSCODE_VERSION'] !== 'latest') throw new Error('Not the latest vscode version, skipping..');
 
-  const info = updateChangelog();
+  const info = await updateChangelog();
 
-  if (info === undefined) {
+  if (info !== undefined) {
     await updatePackageJson(info);
 
     await gitCommitAndTag(info);
