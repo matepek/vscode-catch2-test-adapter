@@ -39,7 +39,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
   public constructor(
     shared: SharedVariables,
     id: string | undefined,
-    testNameFull: string,
+    testNameAsId: string,
     catch2Description: string,
     tags: string[],
     file: string,
@@ -49,11 +49,11 @@ export class Catch2TestInfo extends AbstractTestInfo {
     super(
       shared,
       id,
-      testNameFull,
-      testNameFull + (tags.length > 0 ? ' ' + tags.join('') : ''),
+      testNameAsId,
+      testNameAsId + (tags.length > 0 ? ' ' + tags.join('') : ''),
       tags.some((v: string) => {
         return v.startsWith('[.') || v == '[hide]';
-      }) || testNameFull.startsWith('./'),
+      }) || testNameAsId.startsWith('./'),
       file,
       line,
       catch2Description ? 'Description: ' + catch2Description : '',
@@ -69,7 +69,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
   public getEscapedTestName(): string {
     /* ',' has special meaning */
-    let t = this.testNameFull;
+    let t = this.testNameAsId;
     t = t.replace(/,/g, '\\,');
     t = t.replace(/\[/g, '\\[');
     t = t.replace(/\*/g, '\\*');

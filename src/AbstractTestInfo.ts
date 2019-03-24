@@ -17,7 +17,7 @@ export abstract class AbstractTestInfo implements TestInfo {
   protected constructor(
     protected readonly _shared: SharedVariables,
     id: string | undefined,
-    public readonly testNameFull: string,
+    public readonly testNameAsId: string,
     public readonly label: string,
     public readonly skipped: boolean,
     public readonly file: string | undefined,
@@ -26,7 +26,7 @@ export abstract class AbstractTestInfo implements TestInfo {
   ) {
     this.id = id ? id : generateUniqueId();
     this.origLabel = label;
-    this.tooltip = 'Name: ' + testNameFull + (tooltip ? '\n' + tooltip : '');
+    this.tooltip = 'Name: ' + testNameAsId + (tooltip ? '\n' + tooltip : '');
     if (line && line < 0) throw Error('line smaller than zero');
   }
 

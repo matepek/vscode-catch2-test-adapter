@@ -12,7 +12,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
   public constructor(
     shared: SharedVariables,
     id: string | undefined,
-    testNameFull: string,
+    testNameAsId: string,
     label: string,
     valueParam: string | undefined,
     file: string | undefined,
@@ -21,9 +21,9 @@ export class GoogleTestInfo extends AbstractTestInfo {
     super(
       shared,
       id,
-      testNameFull,
+      testNameAsId,
       label + (valueParam ? ' # GetParam() = ' + valueParam : ''),
-      testNameFull.startsWith('DISABLED_') || testNameFull.indexOf('.DISABLED_') != -1,
+      testNameAsId.startsWith('DISABLED_') || testNameAsId.indexOf('.DISABLED_') != -1,
       file,
       line,
       undefined,
@@ -31,7 +31,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
   }
 
   public getDebugParams(breakOnFailure: boolean): string[] {
-    const debugParams: string[] = ['--gtest_color=no', '--gtest_filter=' + this.testNameFull];
+    const debugParams: string[] = ['--gtest_color=no', '--gtest_filter=' + this.testNameAsId];
     if (breakOnFailure) debugParams.push('--gtest_break_on_failure');
     return debugParams;
   }

@@ -80,17 +80,17 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
         const test = xml.testsuites.testsuite[i].testcase[j];
         const testName = test.$.name.startsWith('DISABLED_') ? test.$.name.substr(9) : test.$.name;
-        const testNameFull = suiteName + '.' + test.$.name;
+        const testNameAsId = suiteName + '.' + test.$.name;
         let valueParam: string | undefined = undefined;
         if (test.$.hasOwnProperty('value_param')) valueParam = test.$.value_param;
 
-        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameFull === testNameFull);
+        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
 
         const file = test.$.file ? this._findFilePath(test.$.file) : undefined;
         const line = test.$.line ? test.$.line - 1 : undefined;
 
         group.addChild(
-          new GoogleTestInfo(this._shared, old ? old.id : undefined, testNameFull, testName, valueParam, file, line),
+          new GoogleTestInfo(this._shared, old ? old.id : undefined, testNameAsId, testName, valueParam, file, line),
         );
       }
     }
@@ -202,15 +202,15 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
               const testName = testMatch[1].startsWith('DISABLED_') ? testMatch[1].substr(9) : testMatch[1];
               const valueParam: string | undefined = testMatch[3];
-              const testNameFull = testGroupNameWithDot + testMatch[1];
+              const testNameAsId = testGroupNameWithDot + testMatch[1];
 
-              const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameFull === testNameFull);
+              const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
 
               group.addChild(
                 new GoogleTestInfo(
                   this._shared,
                   old ? old.id : undefined,
-                  testNameFull,
+                  testNameAsId,
                   testName,
                   valueParam,
                   undefined,
@@ -234,7 +234,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     const execParams: string[] = ['--gtest_color=no'];
 
     if (childrenToRun !== 'runAllTestsExceptSkipped') {
-      const testNames = [...childrenToRun].map(c => c.testNameFull);
+      const testNames = [...childrenToRun].map(c => c.testNameAsId);
 
       execParams.push('--gtest_filter=' + testNames.join(':'));
 
@@ -296,10 +296,10 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             }
 
             data.beforeFirstTestCase = false;
-            data.currentChild = this.findTestInfo(v => v.testNameFull == data.currentTestCaseNameFull);
+            data.currentChild = this.findTestInfo(v => v.testNameAsId == data.currentTestCaseNameFull);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test', data.currentChild.testNameFull, 'has started.');
+              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
               this._shared.log.warn('TestCase not found in children:', data.currentTestCaseNameFull);
@@ -318,7 +318,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             const testCase = data.buffer.substring(0, m.index! + m[0].length);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testNameFull, 'has finished.');
+              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
                 const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, runInfo);
                 this._shared.testStatesEmitter.fire(ev);
@@ -416,9 +416,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
                 const m = testCase.match(testBeginRe);
                 if (m == null) break;
 
-                const testNameFull = m[1];
+                const testNameAsId = m[1];
 
-                const currentChild = this.findTestInfo(v => v.testNameFull == testNameFull);
+                const currentChild = this.findTestInfo(v => v.testNameAsId == testNameAsId);
                 if (currentChild === undefined) break;
                 try {
                   const ev = currentChild.parseAndProcessTestCase(testCase, runInfo);
