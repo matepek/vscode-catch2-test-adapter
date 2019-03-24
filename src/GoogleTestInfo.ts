@@ -38,7 +38,9 @@ export class GoogleTestInfo extends AbstractTestInfo {
 
   public parseAndProcessTestCase(output: string, runInfo: RunningTestExecutableInfo): TestEvent {
     if (runInfo.timeout !== null) {
-      return this.getTimeoutEvent(runInfo.timeout);
+      const ev = this.getTimeoutEvent(runInfo.timeout);
+      this.lastRunState = ev.state;
+      return ev;
     }
 
     try {
@@ -57,6 +59,8 @@ export class GoogleTestInfo extends AbstractTestInfo {
         this._shared.log.error('unexpected token:', lines[lines.length - 1]);
         ev.state = 'errored';
       }
+
+      this.lastRunState = ev.state;
 
       {
         const m = lines[lines.length - 1].match(/\(([0-9]+) ms\)$/);

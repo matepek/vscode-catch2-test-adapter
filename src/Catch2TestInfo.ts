@@ -89,7 +89,9 @@ export class Catch2TestInfo extends AbstractTestInfo {
     runInfo: RunningTestExecutableInfo,
   ): TestEvent {
     if (runInfo.timeout !== null) {
-      return this.getTimeoutEvent(runInfo.timeout);
+      const ev = this.getTimeoutEvent(runInfo.timeout);
+      this.lastRunState = ev.state;
+      return ev;
     }
 
     let res: XmlObject = {};
@@ -108,6 +110,8 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
 
     this._processXmlTagTestCaseInner(res.TestCase, testEvent);
+
+    this.lastRunState = testEvent.state;
 
     return testEvent;
   }

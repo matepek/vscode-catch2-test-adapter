@@ -2,7 +2,7 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { TestSuiteInfo } from 'vscode-test-adapter-api';
+import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
 
 import { generateUniqueId } from './Util';
 import { SharedVariables } from './SharedVariables';
@@ -17,18 +17,63 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
   public children: (AbstractTestSuiteInfoBase | AbstractTestInfo)[] = [];
   public file?: string;
   public line?: number;
-  public tooltip?: string;
+  private _tooltip: string;
 
   public constructor(
     protected readonly _shared: SharedVariables,
     public label: string,
-    public readonly description: string | undefined,
+    public description: string | undefined,
     id: string | undefined,
-    tooltip?: string,
   ) {
     this.origLabel = label;
     this.id = id ? id : generateUniqueId();
-    this.tooltip = tooltip;
+    this._tooltip = 'Name: ' + this.origLabel + (description ? '\nDescription: ' + description : '');
+  }
+
+  public get tooltip(): string {
+    return this._tooltip;
+  }
+
+  public getRunningEvent(): TestSuiteEvent {
+    return { type: 'suite', suite: this, state: 'running' };
+  }
+
+  public getCompletedEvent(): TestSuiteEvent {
+    let testCount = 0;
+    let durationSum: number | undefined = undefined;
+    const stateStat: { [prop: string]: number } = {};
+
+    this.enumerateTestInfos((test: AbstractTestInfo) => {
+      testCount++;
+      if (test.lastRunMilisec !== undefined) durationSum = (durationSum ? durationSum : 0) + test.lastRunMilisec;
+      if (test.lastRunState) {
+        if (test.lastRunState in stateStat) stateStat[test.lastRunState]++;
+        else stateStat[test.lastRunState] = 1;
+      }
+    });
+
+    let description: string | undefined = undefined;
+    let tooltip: string | undefined = undefined;
+
+    if (durationSum !== undefined) {
+      const durationStr = AbstractTestInfo.milisecToStr(durationSum);
+
+      description = '(' + durationStr + ') ' + (this.description ? this.description : '');
+
+      tooltip =
+        this.tooltip +
+        '\n\n' +
+        'Tests: ' +
+        testCount +
+        '\n' +
+        Object.keys(stateStat)
+          .map(state => '  - ' + state + ': ' + stateStat[state])
+          .join('\n') +
+        '\n\n⏱ ' +
+        durationStr;
+    }
+
+    return { type: 'suite', suite: this, state: 'completed', description, tooltip };
   }
 
   public addChild(child: AbstractTestSuiteInfoBase | AbstractTestInfo): void {

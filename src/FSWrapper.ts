@@ -104,7 +104,7 @@ const nativeExacutableExtensionFilter = new Set([
   '.tar',
   '.txt',
 ]);
-
+//TODO ends with '/' filter
 export function isNativeExecutableAsync(filePath: string): Promise<void> {
   const ext = path.extname(filePath);
   if (process.platform === 'win32') {

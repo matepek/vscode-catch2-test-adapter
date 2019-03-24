@@ -338,6 +338,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
               }
             }
 
+            data.currentChild.lastRunState = ev.state;
             this._shared.testStatesEmitter.fire(ev);
           } else {
             this._shared.log.warn('data.inTestCase: ', data);
@@ -345,9 +346,10 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         }
 
         const isTestRemoved =
-          (runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
-            this.children.filter(c => !c.skipped).length > data.processedTestCases.length) ||
-          (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0);
+          runInfo.timeout === null &&
+          ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
+            this.getTestInfoCount(false) > data.processedTestCases.length) ||
+            (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
 
         if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
           new Promise<void>((resolve, reject) => {

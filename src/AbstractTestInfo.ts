@@ -14,6 +14,9 @@ export abstract class AbstractTestInfo implements TestInfo {
   public readonly description: string = '';
   public readonly tooltip: string;
 
+  public lastRunState: string | undefined = undefined;
+  public lastRunMilisec: number | undefined = undefined;
+
   protected constructor(
     protected readonly _shared: SharedVariables,
     id: string | undefined,
@@ -26,7 +29,7 @@ export abstract class AbstractTestInfo implements TestInfo {
   ) {
     this.id = id ? id : generateUniqueId();
     this.origLabel = label;
-    this.tooltip = 'Name: ' + testNameAsId + (tooltip ? '\n' + tooltip : '');
+    this.tooltip = 'Name: ' + testNameAsId + (tooltip ? '\n\n' + tooltip : '');
     if (line && line < 0) throw Error('line smaller than zero');
   }
 
@@ -43,6 +46,7 @@ export abstract class AbstractTestInfo implements TestInfo {
   public getTimeoutEvent(milisec: number): TestEvent {
     const ev = this.getFailedEventBase();
     ev.message += '⌛️ Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": ' + milisec / 1000 + ' second(s).\n';
+    ev.state = 'errored';
     return ev;
   }
 
@@ -56,7 +60,7 @@ export abstract class AbstractTestInfo implements TestInfo {
     };
   }
 
-  protected _extendDescriptionAndTooltip(ev: TestEvent, durationInMilisec: number): void {
+  public static milisecToStr(durationInMilisec: number): string {
     const minute = Math.floor(durationInMilisec / 60000);
     const sec = Math.floor((durationInMilisec - minute * 60000) / 1000);
     const miliSec = durationInMilisec - minute * 60000 - sec * 1000;
@@ -65,10 +69,16 @@ export abstract class AbstractTestInfo implements TestInfo {
 
     if (durationArr.length === 0) durationArr.push([0, 'ms']);
 
-    const durationStr = durationArr.map(v => v[0].toString() + v[1]).join(' ');
+    return durationArr.map(v => v[0].toString() + v[1]).join(' ');
+  }
+
+  protected _extendDescriptionAndTooltip(ev: TestEvent, durationInMilisec: number): void {
+    this.lastRunMilisec = durationInMilisec;
+
+    const durationStr = AbstractTestInfo.milisecToStr(durationInMilisec);
 
     ev.description = this.description + (this.description ? ' ' : '') + '(' + durationStr + ')';
-    ev.tooltip = this.tooltip + (this.tooltip ? '\n' : '') + '⏱ ' + durationStr;
+    ev.tooltip = this.tooltip + (this.tooltip ? '\n\n' : '') + '⏱ ' + durationStr;
   }
 
   public findRouteToTestById(id: string): AbstractTestInfo[] | undefined {

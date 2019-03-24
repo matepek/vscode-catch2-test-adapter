@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import { inspect, promisify } from 'util';
-import { TestEvent } from 'vscode-test-adapter-api';
+import { TestEvent, TestSuiteEvent } from 'vscode-test-adapter-api';
 
 import { GoogleTestInfo } from './GoogleTestInfo';
 import * as c2fs from './FSWrapper';
@@ -19,8 +19,8 @@ import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
   public children: GoogleTestInfo[] = [];
 
-  public constructor(shared: SharedVariables, origLabel: string, id?: string) {
-    super(shared, origLabel, undefined, id);
+  public constructor(shared: SharedVariables, label: string, id?: string) {
+    super(shared, label, undefined, id);
   }
 
   public addChild(test: GoogleTestInfo): void {
@@ -285,11 +285,10 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             const group = this.children.find(c => c.label == groupName);
             if (group) {
               if (data.group !== group) {
-                if (data.group)
-                  this._shared.testStatesEmitter.fire({ type: 'suite', suite: data.group, state: 'completed' });
+                if (data.group) this._shared.testStatesEmitter.fire(data.group.getCompletedEvent());
 
                 data.group = group;
-                this._shared.testStatesEmitter.fire({ type: 'suite', suite: group, state: 'running' });
+                this._shared.testStatesEmitter.fire(group.getRunningEvent());
               }
             } else {
               this._shared.log.error('should have found group', this, groupName);
@@ -321,10 +320,15 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
                 const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, runInfo);
+
                 this._shared.testStatesEmitter.fire(ev);
+
                 data.processedTestCases.push(data.currentChild);
               } catch (e) {
                 this._shared.log.error('parsing and processing test', e, data);
+
+                data.currentChild.lastRunState = 'errored';
+
                 this._shared.testStatesEmitter.fire({
                   type: 'test',
                   test: data.currentChild,
@@ -383,6 +387,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               }
             }
 
+            data.currentChild.lastRunState = ev.state;
             this._shared.testStatesEmitter.fire(ev);
           } else {
             this._shared.log.warn('data.inTestCase: ', data);
@@ -390,11 +395,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         }
 
         if (data.group) {
-          this._shared.testStatesEmitter.fire({ type: 'suite', suite: data.group, state: 'completed' });
+          this._shared.testStatesEmitter.fire(data.group.getCompletedEvent());
         }
 
         const isTestRemoved =
-          runInfo.timeout == undefined &&
+          runInfo.timeout === null &&
           ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
             this.getTestInfoCount(false) > data.processedTestCases.length) ||
             (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
