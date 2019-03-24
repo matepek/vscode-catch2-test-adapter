@@ -125,7 +125,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
       testEvent.message += '⏱ Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
       this._extendDescriptionAndTooltip(
         testEvent,
-        Math.floor(Number(testCase.OverallResult[0].$.durationInSeconds) * 1000),
+        Math.round(Number(testCase.OverallResult[0].$.durationInSeconds) * 1000),
       );
     }
 

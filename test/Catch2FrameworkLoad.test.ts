@@ -571,18 +571,18 @@ describe(path.basename(__filename), function() {
           decorations: [
             { line: 20, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
-          description: '(0ms)',
+          description: '(1ms)',
           message:
             '⏱ Duration: 0.000596 second(s).\n⬇️⬇️⬇️ "s2t3" at line 19 ➡️ "REQUIRE" at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
-          tooltip: 'Name: s2t3\nDescription: tag1\n\n⏱ 0ms',
+          tooltip: 'Name: s2t3\nDescription: tag1\n\n⏱ 1ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: '(0ms) ./',
+          description: '(1ms) ./',
           tooltip:
-            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n\n⏱ 0ms',
+            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n\n⏱ 1ms',
         },
         { type: 'finished' },
       ];
@@ -609,18 +609,18 @@ describe(path.basename(__filename), function() {
           decorations: [
             { line: 20, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
-          description: '(0ms)',
+          description: '(1ms)',
           message:
             '⏱ Duration: 0.000596 second(s).\n⬇️⬇️⬇️ "s2t3" at line 19 ➡️ "REQUIRE" at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
-          tooltip: 'Name: s2t3\nDescription: tag1\n\n⏱ 0ms',
+          tooltip: 'Name: s2t3\nDescription: tag1\n\n⏱ 1ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: '(0ms) ./',
+          description: '(1ms) ./',
           tooltip:
-            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n\n⏱ 0ms',
+            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n\n⏱ 1ms',
         },
         { type: 'finished' },
       ];
