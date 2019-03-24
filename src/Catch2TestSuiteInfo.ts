@@ -23,12 +23,13 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
   public constructor(
     shared: SharedVariables,
-    origLabel: string,
+    label: string,
+    desciption: string | undefined,
     execPath: string,
     execOptions: c2fs.SpawnOptions,
     private _catch2Version: [number, number, number] | undefined,
   ) {
-    super(shared, origLabel, execPath, execOptions);
+    super(shared, label, desciption, execPath, execOptions);
   }
 
   public reloadChildren(): Promise<void> {

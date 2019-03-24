@@ -13,7 +13,7 @@ import { AbstractTestInfo } from './AbstractTestInfo';
 export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
   public readonly type: 'suite' = 'suite';
   public readonly id: string;
-  public label: string;
+  public readonly origLabel: string;
   public children: (AbstractTestSuiteInfoBase | AbstractTestInfo)[] = [];
   public file?: string;
   public line?: number;
@@ -21,11 +21,12 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
 
   public constructor(
     protected readonly _shared: SharedVariables,
-    public readonly origLabel: string,
+    public label: string,
+    public readonly description: string | undefined,
     id: string | undefined,
     tooltip?: string,
   ) {
-    this.label = origLabel;
+    this.origLabel = label;
     this.id = id ? id : generateUniqueId();
     this.tooltip = tooltip;
   }

@@ -136,25 +136,42 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(this._sendAutorunEmitter);
     {
-      const idBuffer = new Set<string>();
+      const retireDelayInSec = 2; // it should be a config
+
+      const data = new class {
+        public idBuffer: Set<string> = new Set();
+        public lastArrivedAt: number | undefined = undefined; // undefined means: not scheduled
+      }();
+
+      const s = (): void => {
+        if (data.lastArrivedAt === undefined) return; // shouldn't be here
+
+        if (Date.now() - data.lastArrivedAt >= retireDelayInSec * 1000) {
+          const ids = [...data.idBuffer.values()];
+
+          data.idBuffer = new Set();
+          data.lastArrivedAt = undefined;
+
+          if (ids.length > 0) this.run(ids);
+        } else {
+          setTimeout(s, retireDelayInSec * 1000 - (Date.now() - data.lastArrivedAt));
+        }
+      };
+
       this._disposables.push(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        this._sendAutorunEmitter.event((infos: IterableIterator<AbstractTestSuiteInfo>) => {
-          const hasScheduled = idBuffer.size > 0;
-
-          for (const info of infos) {
-            idBuffer.add(info.id);
+        this._sendAutorunEmitter.event((tests: IterableIterator<AbstractTestSuiteInfo>) => {
+          if (data.idBuffer !== undefined) {
+            for (const test of tests) {
+              data.idBuffer.add(test.id);
+            }
           }
 
-          if (!hasScheduled && idBuffer.size > 0) {
-            setTimeout(() => {
-              const ids = [...idBuffer.values()];
-
-              idBuffer.clear();
-
-              this.run(ids);
-            }, 2000);
+          if (data.lastArrivedAt === undefined) {
+            setTimeout(s, retireDelayInSec);
           }
+
+          data.lastArrivedAt = Date.now();
         }),
       );
     }
@@ -584,21 +601,26 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const createFromObject = (obj: { [prop: string]: string }): TestExecutableInfo => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 
+      const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
+
       let pattern = '';
-      if (typeof obj.pattern == 'string') pattern = obj.pattern;
-      else if (typeof obj.path == 'string') pattern = obj.path;
-      else throw Error('Error: pattern property is required.');
+      {
+        if (typeof obj.pattern == 'string') pattern = obj.pattern;
+        else if (typeof obj.path == 'string') pattern = obj.path;
+        else throw Error('Error: pattern property is required.');
+      }
 
       const cwd: string | undefined = typeof obj.cwd === 'string' ? obj.cwd : undefined;
 
       const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
 
-      const dependsOn: string[] = Array.isArray(obj.dependsOn) ? obj.dependsOn : [];
+      const dependsOn: string[] = Array.isArray(obj.dependsOn) ? obj.dependsOn.filter(v => typeof v === 'string') : [];
 
       return new TestExecutableInfo(
         this._shared,
         rootSuite,
         name,
+        description,
         pattern,
         defaultCwd,
         cwd,
@@ -615,6 +637,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         new TestExecutableInfo(
           this._shared,
           rootSuite,
+          undefined,
           undefined,
           configExecs,
           defaultCwd,
@@ -635,6 +658,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
               new TestExecutableInfo(
                 this._shared,
                 rootSuite,
+                undefined,
                 undefined,
                 configExecsName,
                 defaultCwd,

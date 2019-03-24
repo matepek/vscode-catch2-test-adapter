@@ -18,11 +18,12 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   public constructor(
     shared: SharedVariables,
-    origLabel: string,
+    label: string,
+    desciption: string | undefined,
     public readonly execPath: string,
     public readonly execOptions: c2fs.SpawnOptions,
   ) {
-    super(shared, origLabel, undefined, execPath);
+    super(shared, label, desciption, undefined, execPath);
   }
 
   abstract reloadChildren(): Promise<void>;

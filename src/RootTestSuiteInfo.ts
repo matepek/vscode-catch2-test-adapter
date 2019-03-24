@@ -17,7 +17,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
   private readonly _taskPool: TaskPool;
 
   public constructor(shared: SharedVariables, workerMaxNumber: number) {
-    super(shared, 'Catch2 and Google tests', undefined);
+    super(shared, 'Catch2 and Google tests', undefined, undefined);
     this._taskPool = new TaskPool(workerMaxNumber);
   }
 

@@ -19,6 +19,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     private readonly _shared: SharedVariables,
     private readonly _rootSuite: RootTestSuiteInfo,
     private readonly _name: string | undefined,
+    private readonly _description: string | undefined,
     private readonly _pattern: string,
     private readonly _defaultCwd: string,
     private readonly _cwd: string | undefined,
@@ -208,15 +209,35 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.error(e);
     }
 
-    let resolvedLabel = relPath;
+    let resolvedName = relPath;
     try {
-      if (this._name) resolvedLabel = resolveVariables(this._name, varToValue);
+      if (this._name) resolvedName = resolveVariables(this._name, varToValue);
+      else if (!this._description) resolvedName = resolveVariables('${filename}', varToValue);
 
-      if (resolvedLabel.match(/\$\{.*\}/)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedLabel);
+      if (resolvedName.match(/\$\{.*\}/)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedName);
 
-      varToValue.push(['${name}', resolvedLabel]);
+      varToValue.push(['${name}', resolvedName]);
     } catch (e) {
       this._shared.log.error('resolvedLabel', e);
+    }
+
+    let resolvedDescription: string | undefined = undefined;
+    try {
+      if (this._description) {
+        resolvedDescription = resolveVariables(this._description, varToValue);
+
+        if (resolvedDescription.match(/\$\{.*\}/))
+          this._shared.log.warn('Possibly unresolved variable: ' + resolvedDescription);
+
+        varToValue.push(['${description}', resolvedDescription]);
+      } else if (!this._name) {
+        resolvedDescription = resolveVariables('${relDirpath}/', varToValue);
+        varToValue.push(['${description}', resolvedDescription]);
+      } else {
+        varToValue.push(['${description}', '']);
+      }
+    } catch (e) {
+      this._shared.log.error('resolvedDescription', e);
     }
 
     let resolvedCwd = this._defaultCwd;
@@ -245,7 +266,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.error('resolvedEnv', e);
     }
 
-    return new TestSuiteInfoFactory(this._shared, resolvedLabel, filePath, {
+    return new TestSuiteInfoFactory(this._shared, resolvedName, resolvedDescription, filePath, {
       cwd: resolvedCwd,
       env: resolvedEnv,
     }).create();

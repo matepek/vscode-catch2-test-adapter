@@ -134,26 +134,29 @@
                           {
                             "type": "string",
                             "enum": [
-                              "${filename} (${relDirpath})",
-                              "${absPath}",
-                              "${relPath}",
-                              "${absDirpath}",
-                              "${relDirpath}",
                               "${filename}",
-                              "${baseFilename}",
-                              "${extFilename}",
-                              "${base2Filename}",
-                              "${ext2Filename}",
-                              "${base3Filename}",
-                              "${ext3Filename}",
-                              "${workspaceDirectory}",
-                              "${workspaceFolder}",
-                              "${workspaceName}"
+                              "${relPath}",
+                              "${absPath}"
                             ]
                           },
                           {
                             "type": "string",
                             "minLength": 1
+                          }
+                        ]
+                      },
+                      "description": {
+                        "description": "A less prominent text after the `name`. Can contains variables related to `pattern`.",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "${relDirpath}/",
+                              "${absDirpath}"
+                            ]
+                          },
+                          {
+                            "type": "string"
                           }
                         ]
                       },
@@ -163,21 +166,10 @@
                           {
                             "type": "string",
                             "enum": [
-                              "${absPath}",
-                              "${relPath}",
                               "${absDirpath}",
                               "${relDirpath}",
-                              "${filename}",
-                              "${baseFilename}",
-                              "${extFilename}",
-                              "${base2Filename}",
-                              "${ext2Filename}",
-                              "${base3Filename}",
-                              "${ext3Filename}",
                               "${workspaceDirectory}",
-                              "${workspaceFolder}",
-                              "${workspaceName}",
-                              "${name}"
+                              "${workspaceFolder}"
                             ]
                           },
                           {
@@ -209,6 +201,7 @@
                                 "${workspaceFolder}",
                                 "${workspaceName}",
                                 "${name}",
+                                "${description}",
                                 "${cwd}"
                               ]
                             },
@@ -266,26 +259,29 @@
                     {
                       "type": "string",
                       "enum": [
-                        "${filename} (${relDirpath})",
-                        "${absPath}",
-                        "${relPath}",
-                        "${absDirpath}",
-                        "${relDirpath}",
                         "${filename}",
-                        "${baseFilename}",
-                        "${extFilename}",
-                        "${base2Filename}",
-                        "${ext2Filename}",
-                        "${base3Filename}",
-                        "${ext3Filename}",
-                        "${workspaceDirectory}",
-                        "${workspaceFolder}",
-                        "${workspaceName}"
+                        "${relPath}",
+                        "${absPath}"
                       ]
                     },
                     {
                       "type": "string",
                       "minLength": 1
+                    }
+                  ]
+                },
+                "description": {
+                  "description": "A less prominent text after the `name`. Can contains variables related to `pattern`.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "${relDirpath}/",
+                        "${absDirpath}"
+                      ]
+                    },
+                    {
+                      "type": "string"
                     }
                   ]
                 },
@@ -295,21 +291,10 @@
                     {
                       "type": "string",
                       "enum": [
-                        "${absPath}",
-                        "${relPath}",
                         "${absDirpath}",
                         "${relDirpath}",
-                        "${filename}",
-                        "${baseFilename}",
-                        "${extFilename}",
-                        "${base2Filename}",
-                        "${ext2Filename}",
-                        "${base3Filename}",
-                        "${ext3Filename}",
                         "${workspaceDirectory}",
-                        "${workspaceFolder}",
-                        "${workspaceName}",
-                        "${name}"
+                        "${workspaceFolder}"
                       ]
                     },
                     {
@@ -341,6 +326,7 @@
                           "${workspaceFolder}",
                           "${workspaceName}",
                           "${name}",
+                          "${description}",
                           "${cwd}"
                         ]
                       },
@@ -381,21 +367,10 @@
             {
               "type": "string",
               "enum": [
-                "${absPath}",
-                "${relPath}",
                 "${absDirpath}",
                 "${relDirpath}",
-                "${filename}",
-                "${baseFilename}",
-                "${extFilename}",
-                "${base2Filename}",
-                "${ext2Filename}",
-                "${base3Filename}",
-                "${ext3Filename}",
                 "${workspaceDirectory}",
-                "${workspaceFolder}",
-                "${workspaceName}",
-                "${name}"
+                "${workspaceFolder}"
               ]
             },
             {
@@ -427,6 +402,7 @@
                   "${workspaceFolder}",
                   "${workspaceName}",
                   "${name}",
+                  "${description}",
                   "${cwd}"
                 ]
               },

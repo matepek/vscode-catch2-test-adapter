@@ -20,7 +20,7 @@ class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
   public children: GoogleTestInfo[] = [];
 
   public constructor(shared: SharedVariables, origLabel: string, id?: string) {
-    super(shared, origLabel, id);
+    super(shared, origLabel, undefined, id);
   }
 
   public addChild(test: GoogleTestInfo): void {
@@ -31,8 +31,14 @@ class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
 export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
   public children: GoogleTestGroupSuiteInfo[] = [];
 
-  public constructor(shared: SharedVariables, origLabel: string, execPath: string, execOptions: c2fs.SpawnOptions) {
-    super(shared, origLabel, execPath, execOptions);
+  public constructor(
+    shared: SharedVariables,
+    label: string,
+    desciption: string | undefined,
+    execPath: string,
+    execOptions: c2fs.SpawnOptions,
+  ) {
+    super(shared, label, desciption, execPath, execOptions);
   }
 
   public reloadChildren(): Promise<void> {
