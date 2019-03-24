@@ -4,7 +4,7 @@
 
 import * as path from 'path';
 import * as assert from 'assert';
-import { TestAdapter, Imitation, settings } from './TestCommon';
+import { TestAdapter, Imitation, settings } from './Common';
 
 ///
 

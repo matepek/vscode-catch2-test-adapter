@@ -9,8 +9,8 @@ import * as path from 'path';
 import { inspect, promisify } from 'util';
 import * as vscode from 'vscode';
 
-import { TestAdapter, settings, isWin, waitFor } from './TestCommon';
-import * as c2fs from '../src/FsWrapper';
+import { TestAdapter, settings, isWin, waitFor } from './Common';
+import * as c2fs from '../src/FSWrapper';
 
 ///
 

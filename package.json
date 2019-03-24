@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.3.29-dev",
+  "version": "2.4.0-dev",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -48,7 +48,7 @@
     "entities": "^1.1.2",
     "gaze": "^1.1.3",
     "tslib": "^1.9.3",
-    "vscode-test-adapter-api": "^1.5.0",
+    "vscode-test-adapter-api": "^1.6.0",
     "vscode-test-adapter-util": "^0.6.4",
     "xml2js": "^0.4.19"
   },
@@ -58,7 +58,7 @@
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^5.0.5",
     "@types/mocha": "^5.2.6",
-    "@types/node": "^10.14.1",
+    "@types/node": "^10.14.3",
     "@types/request-promise": "4.1.42",
     "@types/sinon": "^5.0.7",
     "@types/xml2js": "^0.4.3",
@@ -95,7 +95,8 @@
           "scope": "resource",
           "default": [
             {
-              "name": "${filename} (${relDirpath})",
+              "name": "${filename}",
+              "description": "${relDirpath}/",
               "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
               "cwd": "${absDirpath}",
               "env": {
@@ -113,7 +114,7 @@
                     "type": "object",
                     "properties": {
                       "pattern": {
-                        "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
+                        "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
                         "anyOf": [
                           {
                             "type": "string",
@@ -134,26 +135,29 @@
                           {
                             "type": "string",
                             "enum": [
-                              "${filename} (${relDirpath})",
-                              "${absPath}",
-                              "${relPath}",
-                              "${absDirpath}",
-                              "${relDirpath}",
                               "${filename}",
-                              "${baseFilename}",
-                              "${extFilename}",
-                              "${base2Filename}",
-                              "${ext2Filename}",
-                              "${base3Filename}",
-                              "${ext3Filename}",
-                              "${workspaceDirectory}",
-                              "${workspaceFolder}",
-                              "${workspaceName}"
+                              "${relPath}",
+                              "${absPath}"
                             ]
                           },
                           {
                             "type": "string",
                             "minLength": 1
+                          }
+                        ]
+                      },
+                      "description": {
+                        "description": "A less prominent text after the `name`. Can contains variables related to `pattern`.",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "${relDirpath}/",
+                              "${absDirpath}/"
+                            ]
+                          },
+                          {
+                            "type": "string"
                           }
                         ]
                       },
@@ -163,21 +167,10 @@
                           {
                             "type": "string",
                             "enum": [
-                              "${absPath}",
-                              "${relPath}",
                               "${absDirpath}",
                               "${relDirpath}",
-                              "${filename}",
-                              "${baseFilename}",
-                              "${extFilename}",
-                              "${base2Filename}",
-                              "${ext2Filename}",
-                              "${base3Filename}",
-                              "${ext3Filename}",
                               "${workspaceDirectory}",
-                              "${workspaceFolder}",
-                              "${workspaceName}",
-                              "${name}"
+                              "${workspaceFolder}"
                             ]
                           },
                           {
@@ -209,6 +202,7 @@
                                 "${workspaceFolder}",
                                 "${workspaceName}",
                                 "${name}",
+                                "${description}",
                                 "${cwd}"
                               ]
                             },
@@ -218,6 +212,14 @@
                             }
                           ]
                         }
+                      },
+                      "dependsOn": {
+                        "type": "array",
+                        "description": "(Experimental) Array of _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ it will run the related executables.",
+                        "additionalItems": {
+                          "type": "string",
+                          "minLength": 1
+                        }
                       }
                     },
                     "additionalProperties": false,
@@ -226,7 +228,7 @@
                     ]
                   },
                   {
-                    "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
+                    "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
                     "type": "string",
                     "minLength": 1
                   }
@@ -237,7 +239,7 @@
               "type": "object",
               "properties": {
                 "pattern": {
-                  "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
+                  "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
                   "anyOf": [
                     {
                       "type": "string",
@@ -258,26 +260,29 @@
                     {
                       "type": "string",
                       "enum": [
-                        "${filename} (${relDirpath})",
-                        "${absPath}",
-                        "${relPath}",
-                        "${absDirpath}",
-                        "${relDirpath}",
                         "${filename}",
-                        "${baseFilename}",
-                        "${extFilename}",
-                        "${base2Filename}",
-                        "${ext2Filename}",
-                        "${base3Filename}",
-                        "${ext3Filename}",
-                        "${workspaceDirectory}",
-                        "${workspaceFolder}",
-                        "${workspaceName}"
+                        "${relPath}",
+                        "${absPath}"
                       ]
                     },
                     {
                       "type": "string",
                       "minLength": 1
+                    }
+                  ]
+                },
+                "description": {
+                  "description": "A less prominent text after the `name`. Can contains variables related to `pattern`.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "${relDirpath}/",
+                        "${absDirpath}/"
+                      ]
+                    },
+                    {
+                      "type": "string"
                     }
                   ]
                 },
@@ -287,21 +292,10 @@
                     {
                       "type": "string",
                       "enum": [
-                        "${absPath}",
-                        "${relPath}",
                         "${absDirpath}",
                         "${relDirpath}",
-                        "${filename}",
-                        "${baseFilename}",
-                        "${extFilename}",
-                        "${base2Filename}",
-                        "${ext2Filename}",
-                        "${base3Filename}",
-                        "${ext3Filename}",
                         "${workspaceDirectory}",
-                        "${workspaceFolder}",
-                        "${workspaceName}",
-                        "${name}"
+                        "${workspaceFolder}"
                       ]
                     },
                     {
@@ -333,6 +327,7 @@
                           "${workspaceFolder}",
                           "${workspaceName}",
                           "${name}",
+                          "${description}",
                           "${cwd}"
                         ]
                       },
@@ -342,6 +337,14 @@
                       }
                     ]
                   }
+                },
+                "dependsOn": {
+                  "type": "array",
+                  "description": "(Experimental) Array of _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ it will run the related executables.",
+                  "additionalItems": {
+                    "type": "string",
+                    "minLength": 1
+                  }
                 }
               },
               "additionalProperties": false,
@@ -350,7 +353,7 @@
               ]
             },
             {
-              "description": "A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
+              "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
               "type": "string",
               "minLength": 1
             }
@@ -365,21 +368,10 @@
             {
               "type": "string",
               "enum": [
-                "${absPath}",
-                "${relPath}",
                 "${absDirpath}",
                 "${relDirpath}",
-                "${filename}",
-                "${baseFilename}",
-                "${extFilename}",
-                "${base2Filename}",
-                "${ext2Filename}",
-                "${base3Filename}",
-                "${ext3Filename}",
                 "${workspaceDirectory}",
-                "${workspaceFolder}",
-                "${workspaceName}",
-                "${name}"
+                "${workspaceFolder}"
               ]
             },
             {
@@ -411,6 +403,7 @@
                   "${workspaceFolder}",
                   "${workspaceName}",
                   "${name}",
+                  "${description}",
                   "${cwd}"
                 ]
               },

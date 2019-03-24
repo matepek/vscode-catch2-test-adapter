@@ -39,8 +39,8 @@ export class Catch2TestInfo extends AbstractTestInfo {
   public constructor(
     shared: SharedVariables,
     id: string | undefined,
-    testNameFull: string,
-    description: string,
+    testNameAsId: string,
+    catch2Description: string,
     tags: string[],
     file: string,
     line: number,
@@ -49,14 +49,16 @@ export class Catch2TestInfo extends AbstractTestInfo {
     super(
       shared,
       id,
-      testNameFull,
-      testNameFull + (tags.length > 0 ? ' ' + tags.join('') : ''),
+      testNameAsId,
+      testNameAsId + (tags.length > 0 ? ' ' + tags.join('') : ''),
       tags.some((v: string) => {
         return v.startsWith('[.') || v == '[hide]';
-      }) || testNameFull.startsWith('./'),
+      }) || testNameAsId.startsWith('./'),
       file,
       line,
-      description ? 'Description: ' + description : '',
+      [tags.length > 0 ? 'Tags: ' + tags.join('') : '', catch2Description ? 'Description: ' + catch2Description : '']
+        .filter(v => v.length)
+        .join('\n'),
     );
     this._sections = sections;
   }
@@ -69,7 +71,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
   public getEscapedTestName(): string {
     /* ',' has special meaning */
-    let t = this.testNameFull;
+    let t = this.testNameAsId;
     t = t.replace(/,/g, '\\,');
     t = t.replace(/\[/g, '\\[');
     t = t.replace(/\*/g, '\\*');
@@ -89,7 +91,9 @@ export class Catch2TestInfo extends AbstractTestInfo {
     runInfo: RunningTestExecutableInfo,
   ): TestEvent {
     if (runInfo.timeout !== null) {
-      return this.getTimeoutEvent(runInfo.timeout);
+      const ev = this.getTimeoutEvent(runInfo.timeout);
+      this.lastRunState = ev.state;
+      return ev;
     }
 
     let res: XmlObject = {};
@@ -109,6 +113,8 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     this._processXmlTagTestCaseInner(res.TestCase, testEvent);
 
+    this.lastRunState = testEvent.state;
+
     return testEvent;
   }
 
@@ -117,6 +123,10 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
       testEvent.message += '⏱ Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
+      this._extendDescriptionAndTooltip(
+        testEvent,
+        Math.round(Number(testCase.OverallResult[0].$.durationInSeconds) * 1000),
+      );
     }
 
     this._processInfoWarningAndFailureTags(testCase, title, [], testEvent);
@@ -205,21 +215,26 @@ export class Catch2TestInfo extends AbstractTestInfo {
       for (let j = 0; j < xml.Expression.length; ++j) {
         const expr = xml.Expression[j];
         try {
+          const message =
+            '  Original:\n    ' +
+            expr.Original.map((x: string) => x.trim()).join('; ') +
+            '\n  Expanded:\n    ' +
+            expr.Expanded.map((x: string) => x.trim()).join('; ');
+
           testEvent.message +=
             this._getTitle(title, stack, {
               name: expr.$.type ? expr.$.type : '<unknown>',
               filename: expr.$.filename,
               line: expr.$.line,
             }) +
-            ':\n  Original:\n    ' +
-            expr.Original.map((x: string) => x.trim()).join('; ') +
-            '\n  Expanded:\n    ' +
-            expr.Expanded.map((x: string) => x.trim()).join('; ') +
+            ':\n' +
+            message +
             '\n' +
             '⬆️⬆️⬆️\n\n';
           testEvent.decorations!.push({
             line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
             message: '⬅️ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
+            hover: message,
           });
         } catch (error) {
           this._shared.log.error(error);

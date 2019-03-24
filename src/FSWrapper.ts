@@ -104,13 +104,16 @@ const nativeExacutableExtensionFilter = new Set([
   '.tar',
   '.txt',
 ]);
-
 export function isNativeExecutableAsync(filePath: string): Promise<void> {
   const ext = path.extname(filePath);
   if (process.platform === 'win32') {
     if (filePath.endsWith('.exe')) return accessAsync(filePath, ExecutableFlag);
     else return Promise.reject(new Error('Not a native executable extension on win32: ' + filePath));
   } else {
+    if (filePath.endsWith('/')) {
+      // noted that we got ".../CMakeFiles/" a lot. I assume the slash means directory.
+      return Promise.reject(new Error('It is a directory, not a native executable: ' + filePath));
+    }
     if (nativeExacutableExtensionFilter.has(ext)) {
       return Promise.reject(new Error('Not a native executable (filtered because of its extension): ' + filePath));
     } else {

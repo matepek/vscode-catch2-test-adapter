@@ -4,6 +4,12 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "createTmpWorkingFolder",
+      "type": "shell",
+      "command": "mkdir -p out/tmp/workspaceFolder",
+      "windows": { "command": "mkdir out\\tmp\\workspaceFolder" }
+    },
+    {
       "type": "npm",
       "script": "watch",
       "problemMatcher": "$tsc-watch",
@@ -17,7 +23,8 @@
       },
       "runOptions": {
         "runOn": "folderOpen"
-      }
+      },
+      "dependsOn": ["createTmpWorkingFolder"]
     }
   ]
 }

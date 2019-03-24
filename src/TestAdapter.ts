@@ -6,7 +6,6 @@ import { inspect } from 'util';
 import * as vscode from 'vscode';
 import {
   TestInfo,
-  TestSuiteInfo,
   TestEvent,
   TestLoadFinishedEvent,
   TestLoadStartedEvent,
@@ -44,6 +43,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _loadWithTaskEmitter = new vscode.EventEmitter<() => void | PromiseLike<void>>();
 
   private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
+
+  private readonly _sendAutorunEmitter = new vscode.EventEmitter<IterableIterator<AbstractTestSuiteInfo>>();
 
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
@@ -115,13 +116,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
               this._testStatesEmitter.fire({ type: 'started', tests: [id] });
 
               for (let j = 0; j < route.length - 1; ++j)
-                this._testStatesEmitter.fire({ type: 'suite', suite: route[j] as TestSuiteInfo, state: 'running' });
+                this._testStatesEmitter.fire((route[j] as AbstractTestSuiteInfo).getRunningEvent());
 
-              this._testStatesEmitter.fire({ type: 'test', test: testEvents[i].test, state: 'running' });
+              this._testStatesEmitter.fire((testEvents[i].test as AbstractTestInfo).getStartEvent());
               this._testStatesEmitter.fire(testEvents[i]);
 
               for (let j = route.length - 2; j >= 0; --j)
-                this._testStatesEmitter.fire({ type: 'suite', suite: route[j] as TestSuiteInfo, state: 'completed' });
+                this._testStatesEmitter.fire((route[j] as AbstractTestSuiteInfo).getCompletedEvent());
 
               this._testStatesEmitter.fire({ type: 'finished' });
             } else {
@@ -131,6 +132,48 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         });
       }),
     );
+
+    this._disposables.push(this._sendAutorunEmitter);
+    {
+      const retireDelayInSec = 2; // it should be a config
+
+      const data = new class {
+        public idBuffer: Set<string> = new Set();
+        public lastArrivedAt: number | undefined = undefined; // undefined means: not scheduled
+      }();
+
+      const s = (): void => {
+        if (data.lastArrivedAt === undefined) return; // shouldn't be here
+
+        if (Date.now() - data.lastArrivedAt >= retireDelayInSec * 1000) {
+          const ids = [...data.idBuffer.values()];
+
+          data.idBuffer = new Set();
+          data.lastArrivedAt = undefined;
+
+          if (ids.length > 0) this.run(ids);
+        } else {
+          setTimeout(s, retireDelayInSec * 1000 - (Date.now() - data.lastArrivedAt));
+        }
+      };
+
+      this._disposables.push(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        this._sendAutorunEmitter.event((tests: IterableIterator<AbstractTestSuiteInfo>) => {
+          if (data.idBuffer !== undefined) {
+            for (const test of tests) {
+              data.idBuffer.add(test.id);
+            }
+          }
+
+          if (data.lastArrivedAt === undefined) {
+            setTimeout(s, retireDelayInSec);
+          }
+
+          data.lastArrivedAt = Date.now();
+        }),
+      );
+    }
 
     const config = this._getConfiguration();
 
@@ -152,6 +195,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._testStatesEmitter,
       this._loadWithTaskEmitter,
       this._sendTestEventEmitter,
+      this._sendAutorunEmitter,
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),
@@ -556,25 +600,33 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const createFromObject = (obj: { [prop: string]: string }): TestExecutableInfo => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 
+      const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
+
       let pattern = '';
-      if (typeof obj.pattern == 'string') pattern = obj.pattern;
-      else if (typeof obj.path == 'string') pattern = obj.path;
-      else throw Error('Error: pattern property is required.');
+      {
+        if (typeof obj.pattern == 'string') pattern = obj.pattern;
+        else if (typeof obj.path == 'string') pattern = obj.path;
+        else throw Error('Error: pattern property is required.');
+      }
 
       const cwd: string | undefined = typeof obj.cwd === 'string' ? obj.cwd : undefined;
 
       const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
 
+      const dependsOn: string[] = Array.isArray(obj.dependsOn) ? obj.dependsOn.filter(v => typeof v === 'string') : [];
+
       return new TestExecutableInfo(
         this._shared,
         rootSuite,
         name,
+        description,
         pattern,
         defaultCwd,
         cwd,
         defaultEnv,
         env,
         this._variableToValue,
+        dependsOn,
       );
     };
 
@@ -585,12 +637,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           this._shared,
           rootSuite,
           undefined,
+          undefined,
           configExecs,
           defaultCwd,
           undefined,
           defaultEnv,
           undefined,
           this._variableToValue,
+          [],
         ),
       );
     } else if (Array.isArray(configExecs)) {
@@ -604,12 +658,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                 this._shared,
                 rootSuite,
                 undefined,
+                undefined,
                 configExecsName,
                 defaultCwd,
                 undefined,
                 defaultEnv,
                 undefined,
                 this._variableToValue,
+                [],
               ),
             );
           }

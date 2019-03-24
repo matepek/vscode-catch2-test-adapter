@@ -3,7 +3,7 @@ import { EOL } from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { TestInfo, TestSuiteInfo } from 'vscode-test-adapter-api';
-import { Imitation, settings, FileSystemWatcherStub, ChildProcessStub } from './TestCommon';
+import { Imitation, settings, FileSystemWatcherStub, ChildProcessStub } from './Common';
 
 ///
 

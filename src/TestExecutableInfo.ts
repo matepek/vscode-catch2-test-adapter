@@ -8,145 +8,89 @@ import * as vscode from 'vscode';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
-import * as c2fs from './FsWrapper';
+import * as c2fs from './FSWrapper';
 import { resolveVariables } from './Util';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { SharedVariables } from './SharedVariables';
+import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
 
 export class TestExecutableInfo implements vscode.Disposable {
   public constructor(
     private readonly _shared: SharedVariables,
     private readonly _rootSuite: RootTestSuiteInfo,
     private readonly _name: string | undefined,
+    private readonly _description: string | undefined,
     private readonly _pattern: string,
     private readonly _defaultCwd: string,
     private readonly _cwd: string | undefined,
     private readonly _defaultEnv: { [prop: string]: string },
     private readonly _env: { [prop: string]: string } | undefined,
     private readonly _variableToValue: [string, string][],
+    private readonly _dependsOn: string[],
   ) {}
 
   private _disposables: vscode.Disposable[] = [];
-
-  private _watcher: vscode.FileSystemWatcher | undefined = undefined;
-
-  private _absWatcher: any = undefined; // eslint-disable-line
-  private _absWatcherReady: Promise<void> = Promise.resolve();
 
   private readonly _executables: Map<string /*fsPath*/, AbstractTestSuiteInfo> = new Map();
 
   private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
   public dispose(): void {
-    // we only can close it after it is ready. (empiric)
-    this._absWatcherReady.then(() => {
-      this._absWatcher && this._absWatcher.close();
-    });
     this._disposables.forEach(d => d.dispose());
   }
 
   public async load(): Promise<void> {
-    const wsUri = this._shared.workspaceFolder.uri;
-    const isAbsolute = path.isAbsolute(this._pattern);
-    const absPattern = isAbsolute ? path.normalize(this._pattern) : path.join(wsUri.fsPath, this._pattern);
-    const absPatternAsUri = vscode.Uri.file(absPattern);
-    const relativeToWs = path.relative(wsUri.fsPath, absPatternAsUri.fsPath);
-    const isPartOfWs = !relativeToWs.startsWith('..');
-    const relativeToWsPosix = relativeToWs.split('\\').join('/');
+    const pattern = this._patternProcessor(this._pattern);
 
-    this._shared.log.info(
-      this._pattern,
-      wsUri.fsPath,
-      isAbsolute,
-      absPattern,
-      relativeToWs,
-      isPartOfWs,
-      relativeToWsPosix,
-    );
+    this._shared.log.info('pattern', pattern);
 
-    if (isAbsolute && isPartOfWs)
+    if (pattern.isAbsolute && pattern.isPartOfWs)
       this._shared.log.warn('Absolute path is used for workspace directory. This is unnecessary, but it should work.');
+
     if (this._pattern.indexOf('\\') != -1) this._shared.log.warn('Pattern contains backslash character.');
 
-    let fileUris: vscode.Uri[] = [];
+    let filePaths: string[] = [];
 
-    if (isPartOfWs) {
-      try {
-        const relativePattern = new vscode.RelativePattern(this._shared.workspaceFolder, relativeToWsPosix);
-        fileUris = await vscode.workspace.findFiles(relativePattern, null, 10000);
-
-        if (fileUris.length === 10000) {
-          this._shared.log.error(
-            "vscode.workspace.findFiles reached it's limit. Probablt pattern is not specific enough.",
-            fileUris.map(u => u.fsPath),
-          );
-        }
-
-        // abs path string or vscode.RelativePattern is required.
-        this._watcher = vscode.workspace.createFileSystemWatcher(relativePattern, false, false, false);
-        this._disposables.push(this._watcher);
-        this._disposables.push(this._watcher.onDidCreate(this._handleCreate, this));
-        this._disposables.push(this._watcher.onDidChange(this._handleChange, this));
-        this._disposables.push(this._watcher.onDidDelete(this._handleDelete, this));
-      } catch (e) {
-        this._shared.log.error(e, this);
+    let execWatcher: FSWatcher | undefined = undefined;
+    try {
+      if (pattern.isPartOfWs) {
+        execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.relativeToWsPosix);
+      } else {
+        execWatcher = new GazeWrapper([pattern.absPattern]);
       }
-    } else {
-      this._shared.log.info('absPath is used', absPatternAsUri.fsPath);
-      try {
-        this._absWatcherReady = new Promise(resolve => {
-          // eslint-disable-next-line
-          require('gaze')(absPatternAsUri.fsPath, (err: any, watcher: any) => {
-            resolve();
 
-            if (err) {
-              this._shared.log.error('coudnt init gaze:', err);
-              return;
-            }
+      filePaths = await execWatcher.watched();
 
-            this._absWatcher = watcher;
+      execWatcher.onError((err: Error) => this._shared.log.error('watcher error:', err));
 
-            watcher.on('error', (...args: any[]) => { // eslint-disable-line
-              this._shared.log.error('absWacher error:', args);
-            });
+      execWatcher.onAll(fsPath => {
+        this._shared.log.info('watcher event:', fsPath);
+        this._handleEverything(fsPath);
+      });
 
-            watcher.on('all', (event: string, filePath: string) => {
-              this._shared.log.info('absWacher all event:', event, filePath);
-              this._handleEverything(vscode.Uri.file(filePath));
-            });
-          });
-        });
+      this._disposables.push(execWatcher);
+    } catch (e) {
+      execWatcher && execWatcher.dispose();
+      filePaths.push(this._pattern);
 
-        await this._absWatcherReady;
-
-        const watched = this._absWatcher.watched();
-
-        for (const dir in watched) {
-          for (const file of watched[dir]) {
-            fileUris.push(vscode.Uri.file(file));
-          }
-        }
-      } catch (e) {
-        this._shared.log.error(e, this);
-        fileUris.push(absPatternAsUri);
-      }
+      this._shared.log.error("Coudn't watch pattern", e);
     }
 
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];
 
-    for (let i = 0; i < fileUris.length; i++) {
-      const file = fileUris[i];
-      this._shared.log.info('Checking file for tests:', file.fsPath);
+    for (let i = 0; i < filePaths.length; i++) {
+      const file = filePaths[i];
+      this._shared.log.info('Checking file for tests:', file);
 
       suiteCreationAndLoadingTasks.push(
-        c2fs.isNativeExecutableAsync(file.fsPath).then(
+        c2fs.isNativeExecutableAsync(file).then(
           () => {
             return this._createSuiteByUri(file).then(
               (suite: AbstractTestSuiteInfo) => {
                 return suite.reloadChildren().then(
                   () => {
                     if (this._rootSuite.insertChild(suite, false /* called later */)) {
-                      this._executables.set(file.fsPath, suite);
+                      this._executables.set(file, suite);
                     }
                   },
                   (reason: Error) => {
@@ -155,12 +99,12 @@ export class TestExecutableInfo implements vscode.Disposable {
                 );
               },
               (reason: Error) => {
-                this._shared.log.warn('Not a test executable:', file.fsPath, 'reason:', reason);
+                this._shared.log.warn('Not a test executable:', file, 'reason:', reason);
               },
             );
           },
           (reason: Error) => {
-            this._shared.log.info('Not an executable:', file.fsPath, reason);
+            this._shared.log.info('Not an executable:', file, reason);
           },
         ),
       );
@@ -169,14 +113,76 @@ export class TestExecutableInfo implements vscode.Disposable {
     await Promise.all(suiteCreationAndLoadingTasks);
 
     this._rootSuite.uniquifySuiteLabels();
+
+    if (this._dependsOn.length > 0) {
+      try {
+        // gaze can handle more patterns at once
+        const absPatterns: string[] = [];
+
+        for (const pattern of this._dependsOn) {
+          const p = this._patternProcessor(pattern);
+          if (p.isPartOfWs) {
+            const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.relativeToWsPosix);
+            this._disposables.push(w);
+
+            w.onError((e: Error) => this._shared.log.error('dependsOn watcher:', e, p));
+
+            w.onAll(fsPath => {
+              this._shared.log.info('dependsOn watcher event:', fsPath);
+              this._shared.autorunEmitter.fire(this._executables.values());
+            });
+          } else {
+            absPatterns.push(p.absPattern);
+          }
+        }
+
+        if (absPatterns.length > 0) {
+          const w = new GazeWrapper(absPatterns);
+          this._disposables.push(w);
+
+          w.onError((e: Error) => this._shared.log.error('dependsOn watcher:', e, absPatterns));
+
+          w.onAll(fsPath => {
+            this._shared.log.info('dependsOn watcher event:', fsPath);
+            this._shared.autorunEmitter.fire(this._executables.values());
+          });
+        }
+      } catch (e) {
+        this._shared.log.error('dependsOn error:', e);
+      }
+    }
   }
 
-  private _createSuiteByUri(file: vscode.Uri): Promise<AbstractTestSuiteInfo> {
-    const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, file.fsPath);
+  private _patternProcessor(
+    pattern: string,
+  ): {
+    isAbsolute: boolean;
+    absPattern: string;
+    relativeToWs: string;
+    isPartOfWs: boolean;
+    relativeToWsPosix: string;
+  } {
+    const isAbsolute = path.isAbsolute(pattern);
+    const absPattern = isAbsolute
+      ? vscode.Uri.file(path.normalize(pattern)).fsPath
+      : vscode.Uri.file(path.join(this._shared.workspaceFolder.uri.fsPath, pattern)).fsPath;
+    const relativeToWs = path.relative(this._shared.workspaceFolder.uri.fsPath, absPattern);
+
+    return {
+      isAbsolute,
+      absPattern,
+      relativeToWs,
+      isPartOfWs: !relativeToWs.startsWith('..'),
+      relativeToWsPosix: relativeToWs.split('\\').join('/'),
+    };
+  }
+
+  private _createSuiteByUri(filePath: string): Promise<AbstractTestSuiteInfo> {
+    const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
     let varToValue: [string, string][] = [];
     try {
-      const filename = path.basename(file.fsPath);
+      const filename = path.basename(filePath);
       const extFilename = path.extname(filename);
       const baseFilename = path.basename(filename, extFilename);
       const ext2Filename = path.extname(baseFilename);
@@ -186,12 +192,12 @@ export class TestExecutableInfo implements vscode.Disposable {
 
       varToValue = [
         ...this._variableToValue,
-        ['${absPath}', file.fsPath],
+        ['${absPath}', filePath],
         ['${relPath}', relPath],
-        ['${absDirpath}', path.dirname(file.fsPath)],
+        ['${absDirpath}', path.dirname(filePath)],
         ['${relDirpath}', path.dirname(relPath)],
         ['${filename}', filename],
-        ['${parentDirname}', path.basename(path.dirname(file.fsPath))],
+        ['${parentDirname}', path.basename(path.dirname(filePath))],
         ['${extFilename}', extFilename],
         ['${baseFilename}', baseFilename],
         ['${ext2Filename}', ext2Filename],
@@ -203,15 +209,35 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.error(e);
     }
 
-    let resolvedLabel = relPath;
+    let resolvedName = relPath;
     try {
-      if (this._name) resolvedLabel = resolveVariables(this._name, varToValue);
+      if (this._name) resolvedName = resolveVariables(this._name, varToValue);
+      else if (!this._description) resolvedName = resolveVariables('${filename}', varToValue);
 
-      if (resolvedLabel.match(/\$\{.*\}/)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedLabel);
+      if (resolvedName.match(/\$\{.*\}/)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedName);
 
-      varToValue.push(['${name}', resolvedLabel]);
+      varToValue.push(['${name}', resolvedName]);
     } catch (e) {
       this._shared.log.error('resolvedLabel', e);
+    }
+
+    let resolvedDescription: string | undefined = undefined;
+    try {
+      if (this._description) {
+        resolvedDescription = resolveVariables(this._description, varToValue);
+
+        if (resolvedDescription.match(/\$\{.*\}/))
+          this._shared.log.warn('Possibly unresolved variable: ' + resolvedDescription);
+
+        varToValue.push(['${description}', resolvedDescription]);
+      } else if (!this._name) {
+        resolvedDescription = resolveVariables('${relDirpath}/', varToValue);
+        varToValue.push(['${description}', resolvedDescription]);
+      } else {
+        varToValue.push(['${description}', '']);
+      }
+    } catch (e) {
+      this._shared.log.error('resolvedDescription', e);
     }
 
     let resolvedCwd = this._defaultCwd;
@@ -240,31 +266,31 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.error('resolvedEnv', e);
     }
 
-    return new TestSuiteInfoFactory(this._shared, resolvedLabel, file.fsPath, {
+    return new TestSuiteInfoFactory(this._shared, resolvedName, resolvedDescription, filePath, {
       cwd: resolvedCwd,
       env: resolvedEnv,
     }).create();
   }
 
-  private _handleEverything(uri: vscode.Uri): void {
-    const isRunning = this._lastEventArrivedAt.get(uri.fsPath) !== undefined;
+  private _handleEverything(filePath: string): void {
+    const isRunning = this._lastEventArrivedAt.get(filePath) !== undefined;
     if (isRunning) return;
 
-    this._lastEventArrivedAt.set(uri.fsPath, Date.now());
+    this._lastEventArrivedAt.set(filePath, Date.now());
 
     const x = (suite: AbstractTestSuiteInfo, exists: boolean, delay: number): Promise<void> => {
-      let lastEventArrivedAt = this._lastEventArrivedAt.get(uri.fsPath);
+      let lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
       if (lastEventArrivedAt === undefined) {
         this._shared.log.error('assert');
         debugger;
         return Promise.resolve();
       } else if (Date.now() - lastEventArrivedAt > this._shared.execWatchTimeout) {
-        this._shared.log.info('refresh timeout:', uri.fsPath);
-        this._lastEventArrivedAt.delete(uri.fsPath);
+        this._shared.log.info('refresh timeout:', filePath);
+        this._lastEventArrivedAt.delete(filePath);
         if (this._rootSuite.hasChild(suite)) {
           return new Promise<void>(resolve => {
             this._shared.loadWithTaskEmitter.fire(() => {
-              this._executables.delete(uri.fsPath);
+              this._executables.delete(filePath);
               this._rootSuite.removeChild(suite);
               resolve();
             });
@@ -279,55 +305,40 @@ export class TestExecutableInfo implements vscode.Disposable {
               .reloadChildren()
               .then(() => {
                 if (this._rootSuite.insertChild(suite, true)) {
-                  this._executables.set(uri.fsPath, suite);
+                  this._executables.set(filePath, suite);
                 }
-                this._lastEventArrivedAt.delete(uri.fsPath);
+                this._lastEventArrivedAt.delete(filePath);
               })
               .then(resolve, reject);
           });
         }).catch((reason: Error) => {
-          this._shared.log.warn('Problem under reloadChildren:', reason, uri.fsPath, suite);
+          this._shared.log.warn('Problem under reloadChildren:', reason, filePath, suite);
           return x(suite, false, Math.min(delay * 2, 2000));
         });
       } else {
         return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
           return c2fs
-            .isNativeExecutableAsync(uri.fsPath)
+            .isNativeExecutableAsync(filePath)
             .then(() => true, () => false)
             .then(isExec => x(suite, isExec, Math.min(delay * 2, 2000)));
         });
       }
     };
 
-    let suite = this._executables.get(uri.fsPath);
+    let suite = this._executables.get(filePath);
 
     if (suite == undefined) {
-      this._shared.log.info('new suite: ' + uri.fsPath);
-      this._createSuiteByUri(uri).then(
+      this._shared.log.info('new suite: ' + filePath);
+      this._createSuiteByUri(filePath).then(
         (s: AbstractTestSuiteInfo) => {
           x(s, false, 64);
         },
         (reason: Error) => {
-          this._shared.log.info("couldn't add: " + uri.fsPath, 'reson:', reason);
+          this._shared.log.info("couldn't add: " + filePath, 'reson:', reason);
         },
       );
     } else {
       x(suite!, false, 64);
     }
-  }
-
-  private _handleCreate(uri: vscode.Uri): void {
-    this._shared.log.info('create event: ' + uri.fsPath);
-    return this._handleEverything(uri);
-  }
-
-  private _handleChange(uri: vscode.Uri): void {
-    this._shared.log.info('change event: ' + uri.fsPath);
-    return this._handleEverything(uri);
-  }
-
-  private _handleDelete(uri: vscode.Uri): void {
-    this._shared.log.info('delete event: ' + uri.fsPath);
-    return this._handleEverything(uri);
   }
 }

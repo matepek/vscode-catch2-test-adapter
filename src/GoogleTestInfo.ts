@@ -12,7 +12,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
   public constructor(
     shared: SharedVariables,
     id: string | undefined,
-    testNameFull: string,
+    testNameAsId: string,
     label: string,
     valueParam: string | undefined,
     file: string | undefined,
@@ -21,23 +21,26 @@ export class GoogleTestInfo extends AbstractTestInfo {
     super(
       shared,
       id,
-      testNameFull,
+      testNameAsId,
       label + (valueParam ? ' # GetParam() = ' + valueParam : ''),
-      testNameFull.startsWith('DISABLED_') || testNameFull.indexOf('.DISABLED_') != -1,
+      testNameAsId.startsWith('DISABLED_') || testNameAsId.indexOf('.DISABLED_') != -1,
       file,
       line,
+      undefined,
     );
   }
 
   public getDebugParams(breakOnFailure: boolean): string[] {
-    const debugParams: string[] = ['--gtest_color=no', '--gtest_filter=' + this.testNameFull];
+    const debugParams: string[] = ['--gtest_color=no', '--gtest_filter=' + this.testNameAsId];
     if (breakOnFailure) debugParams.push('--gtest_break_on_failure');
     return debugParams;
   }
 
   public parseAndProcessTestCase(output: string, runInfo: RunningTestExecutableInfo): TestEvent {
     if (runInfo.timeout !== null) {
-      return this.getTimeoutEvent(runInfo.timeout);
+      const ev = this.getTimeoutEvent(runInfo.timeout);
+      this.lastRunState = ev.state;
+      return ev;
     }
 
     try {
@@ -57,6 +60,13 @@ export class GoogleTestInfo extends AbstractTestInfo {
         ev.state = 'errored';
       }
 
+      this.lastRunState = ev.state;
+
+      {
+        const m = lines[lines.length - 1].match(/\(([0-9]+) ms\)$/);
+        if (m) this._extendDescriptionAndTooltip(ev, Number(m[1]));
+      }
+
       const failure = /^(.+):([0-9]+): Failure$/;
 
       for (let i = 1; i < lines.length - 1; ++i) {
@@ -68,9 +78,13 @@ export class GoogleTestInfo extends AbstractTestInfo {
             lines[i + 1].startsWith('Expected: ') &&
             lines[i + 2].startsWith('  Actual: ')
           ) {
-            ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1] + ';  ' + lines[i + 2] });
+            ev.decorations!.push({
+              line: lineNumber,
+              message: '⬅️ ' + lines[i + 1] + ';  ' + lines[i + 2],
+              hover: [lines[i + 1], lines[i + 2]].join('\n'),
+            });
           } else if (i + 1 < lines.length - 1 && lines[i + 1].startsWith('Expected: ')) {
-            ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1] });
+            ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1], hover: lines[i + 1] });
           } else if (
             i + 3 < lines.length - 1 &&
             lines[i + 1].startsWith('Value of: ') &&
@@ -80,9 +94,10 @@ export class GoogleTestInfo extends AbstractTestInfo {
             ev.decorations!.push({
               line: lineNumber,
               message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';',
+              hover: [lines[i + 1], lines[i + 2], lines[i + 3]].join('\n'),
             });
           } else {
-            ev.decorations!.push({ line: lineNumber, message: '⬅️ failure' });
+            ev.decorations!.push({ line: lineNumber, message: '⬅️ failure', hover: '' });
           }
         }
       }

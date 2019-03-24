@@ -14,7 +14,7 @@
   "files.associations": {
     "catch.hpp.txt": "cpp"
   },
-  "editor.formatOnSaveTimeout": 3000,
+  "editor.formatOnSaveTimeout": 5000,
   "eslint.autoFixOnSave": true,
   "eslint.validate": [
     "javascript",
@@ -28,7 +28,7 @@
     "editor.formatOnSave": false
   },
   "[typescript]": {
-    "editor.formatOnSave": false
+    "editor.formatOnSave": true
   },
   "prettier.eslintIntegration": true
 }

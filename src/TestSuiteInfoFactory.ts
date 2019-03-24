@@ -2,7 +2,7 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import * as c2fs from './FsWrapper';
+import * as c2fs from './FSWrapper';
 import { Catch2TestSuiteInfo } from './Catch2TestSuiteInfo';
 import { GoogleTestSuiteInfo } from './GoogleTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
@@ -16,6 +16,7 @@ export class TestSuiteInfoFactory {
   public constructor(
     private readonly _shared: SharedVariables,
     private readonly _label: string,
+    private readonly _description: string | undefined,
     private readonly _execPath: string,
     private readonly _execOptions: c2fs.SpawnOptions,
   ) {}
@@ -23,13 +24,16 @@ export class TestSuiteInfoFactory {
   public create(): Promise<Catch2TestSuiteInfo | GoogleTestSuiteInfo> {
     return this._determineTestTypeOfExecutable().then((framework: TestFrameworkInfo) => {
       if (framework.type === 'google')
-        return new GoogleTestSuiteInfo(this._shared, this._label, this._execPath, this._execOptions);
+        return new GoogleTestSuiteInfo(this._shared, this._label, this._description, this._execPath, this._execOptions);
       else if (framework.type === 'catch2')
-        return new Catch2TestSuiteInfo(this._shared, this._label, this._execPath, this._execOptions, [
-          framework.version[0],
-          framework.version[1],
-          framework.version[2],
-        ]);
+        return new Catch2TestSuiteInfo(
+          this._shared,
+          this._label,
+          this._description,
+          this._execPath,
+          this._execOptions,
+          [framework.version[0], framework.version[1], framework.version[2]],
+        );
       else throw Error('Unknown error:' + framework.type);
     });
   }

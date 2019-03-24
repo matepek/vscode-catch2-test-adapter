@@ -48,12 +48,14 @@ This variable can be
 
 If it is an object it can contains the following properties:
 
-| Property  | Description                                                                                                                                                                                           |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`    | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                       |
-| `pattern` | A relative (to workspace directory) or an absolute path or [pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required) |
-| `cwd`     | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                               |
-| `env`     | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                       |
+| Property      | Description                                                                                                                                                                                                                       |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                   |
+| `pattern`     | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required)                      |
+| `description` | A less prominent text after the `name`. Can contains variables related to `pattern`.                                                                                                                                              |
+| `cwd`         | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                           |
+| `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                   |
+| `dependsOn`   | (Experimental) Array of _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ it will run the related executables. |
 
 The `pattern` (or the `executables` used as string or an array of strings)
 can contains [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
@@ -74,6 +76,10 @@ If the pattern is too general like `out/**/*test*`, it could cause unexpected ex
 which would not just increase the test-loading duration but also could have other unexpeced effects.
 I suggest to have a stricter file-name convention and a corresponding pattern like `out/**/*.test.*` or `out/**/Test.*`
 
+**Remark** that `dependsOn` is experimental and **only** works well with paths **inside** of the workspace directory.
+Also note that if it is set, it will run the related tests automatically.
+It accumulates events by waiting for 2 seconds after the last event.
+
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
 | Variable                | Description                                                                                                                                         |
@@ -93,6 +99,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 | `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                                                                                    |
 | `${workspaceName}`      | Workspace name can be custom in case of [`workspace file`](https://code.visualstudio.com/docs/editor/multi-root-workspaces#_workspace-file-schema). |
 | `${name}`               | The resolved `executables`'s name. Can be used only in `cwd` and `env`.                                                                             |
+| `${description}`        | The resolved `executables`'s description. Can be used only in `cwd` and `env`.                                                                      |
 | `${cwd}`                | The resolved `executables`'s cwd. Can be used only in `env`.                                                                                        |
 
 #### Examples:
@@ -107,7 +114,8 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 
 ```json
 "catch2TestExplorer.executables": {
-	"name": "${filename} (${relDirpath}/)",
+	"name": "${filename}",
+	"description": "${relDirpath}/",
 	"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
 	"cwd": "${absDirpath}",
 	"env": {
@@ -196,5 +204,6 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 ## TODOs
 
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip
+- gaze is not good enough: detects change and delete, but not creation
 
 ## [Contribution guideline here](CONTRIBUTING.md)

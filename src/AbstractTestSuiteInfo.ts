@@ -5,7 +5,7 @@
 import * as cp from 'child_process';
 import * as path from 'path';
 
-import * as c2fs from './FsWrapper';
+import * as c2fs from './FSWrapper';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { TaskPool } from './TaskPool';
@@ -18,11 +18,16 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   public constructor(
     shared: SharedVariables,
-    origLabel: string,
+    label: string,
+    desciption: string | undefined,
     public readonly execPath: string,
     public readonly execOptions: c2fs.SpawnOptions,
   ) {
-    super(shared, origLabel, undefined, execPath);
+    super(shared, label, desciption, undefined);
+  }
+
+  public get tooltip(): string {
+    return super.tooltip + '\n\nPath: ' + this.execPath + '\nCwd: ' + this.execOptions.cwd;
   }
 
   abstract reloadChildren(): Promise<void>;
@@ -87,7 +92,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     this._shared.log.info('proc starting: ', this.origLabel);
 
-    this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'running' });
+    this._shared.testStatesEmitter.fire(this.getRunningEvent());
 
     const execOptions = Object.assign({}, this.execOptions);
     execOptions.env = Object.assign({}, Object.assign(process.env, execOptions.env));
@@ -148,7 +153,8 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       })
       .then(() => {
         this._shared.log.info('proc finished:', this.execPath);
-        this._shared.testStatesEmitter.fire({ type: 'suite', suite: this, state: 'completed' });
+
+        this._shared.testStatesEmitter.fire(this.getCompletedEvent());
 
         if (this._runInfo !== runInfo) {
           this._shared.log.error("assertion: shouldn't be here", this._runInfo, runInfo);

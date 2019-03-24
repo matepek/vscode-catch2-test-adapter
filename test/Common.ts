@@ -216,7 +216,7 @@ export class TestAdapter extends my.TestAdapter {
   public readonly testLoadsEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
   private readonly testLoadsEventsConnection: vscode.Disposable;
 
-  public readonly testStatesEvents: (TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent)[] = [];
+  private readonly _testStatesEvents: (TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent)[] = [];
   private readonly testStatesEventsConnection: vscode.Disposable;
 
   public constructor() {
@@ -228,7 +228,7 @@ export class TestAdapter extends my.TestAdapter {
 
     this.testStatesEventsConnection = this.testStates(
       (e: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent) => {
-        this.testStatesEvents.push(e);
+        this._testStatesEvents.push(e);
       },
     );
   }
@@ -239,7 +239,7 @@ export class TestAdapter extends my.TestAdapter {
 
   public async waitAndDispose(context: Mocha.Context): Promise<void> {
     await waitFor(context, () => {
-      return (this as any /* eslint-disable-line */)._mainTaskQueue._count == 0;
+      return (this as any) /* eslint-disable-line */._mainTaskQueue._count == 0;
     });
 
     super.dispose();
@@ -261,7 +261,7 @@ export class TestAdapter extends my.TestAdapter {
   }
 
   public get root(): TestSuiteInfo {
-    return (this as any /* eslint-disable-line */)._rootSuite;
+    return (this as any) /* eslint-disable-line */._rootSuite;
   }
 
   public get(...index: number[]): TestSuiteInfo | TestInfo {
@@ -287,19 +287,21 @@ export class TestAdapter extends my.TestAdapter {
     return this.get(3) as TestSuiteInfo;
   }
 
+  public get testStatesEvents(): (TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent)[] {
+    // eslint-disable-next-line
+    return this._testStatesEvents.map((v: any) => {
+      if (v.tooltip) v.tooltip = (v.tooltip as string).replace(/(Path|Cwd): .*/g, '$1: <masked>');
+      return v;
+    });
+  }
+
   public getTestStatesEventIndex(
     searchFor: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent,
   ): number {
     const i = this.testStatesEvents.findIndex(
-      (v: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent) => {
-        return deepStrictEqual(searchFor, v);
-      },
+      (v: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent) => deepStrictEqual(searchFor, v),
     );
-    assert.notStrictEqual(
-      i,
-      -1,
-      'getTestStatesEventIndex failed to find: ' + inspect(searchFor) + '\n\nin\n\n' + inspect(this.testStatesEvents),
-    );
+    assert.ok(0 <= i, 'getTestStatesEventIndex failed to find: ' + inspect(this.testStatesEvents));
     return i;
   }
 

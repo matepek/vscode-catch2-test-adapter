@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0]
+
+### Added
+
+- `executables`'s `description` property for nicer labels
+- (experimental) `executables`'s `dependOn` (type: _string[]_) property.
+  Be careful with it. It eats [file descriptors](https://en.wikipedia.org/wiki/File_descriptor) and defecates test executions.
+
 ## [2.3.28] - 2019-03-20
 
 ### Changed

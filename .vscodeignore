@@ -5,7 +5,7 @@
 !node_modules
 
 # filter out's subdirs
-!out/*
+!out/src/**/*
 
 !package.json
 !resources/icon.png

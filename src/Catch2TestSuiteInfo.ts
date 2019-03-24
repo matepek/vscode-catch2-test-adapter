@@ -8,7 +8,7 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import { Catch2TestInfo } from './Catch2TestInfo';
-import * as c2fs from './FsWrapper';
+import * as c2fs from './FSWrapper';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
@@ -23,12 +23,13 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
   public constructor(
     shared: SharedVariables,
-    origLabel: string,
+    label: string,
+    desciption: string | undefined,
     execPath: string,
     execOptions: c2fs.SpawnOptions,
     private _catch2Version: [number, number, number] | undefined,
   ) {
-    super(shared, origLabel, execPath, execOptions);
+    super(shared, label, desciption, execPath, execOptions);
   }
 
   public reloadChildren(): Promise<void> {
@@ -75,7 +76,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         ]);
         return;
       }
-      const testNameFull = lines[i++].substr(2);
+      const testNameAsId = lines[i++].substr(2);
 
       let filePath = '';
       let line = 1;
@@ -101,13 +102,13 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         ++i;
       }
 
-      const index = oldChildren.findIndex(c => c.testNameFull == testNameFull);
+      const index = oldChildren.findIndex(c => c.testNameAsId == testNameAsId);
 
       this.addChild(
         new Catch2TestInfo(
           this._shared,
           index != -1 ? oldChildren[index].id : undefined,
-          testNameFull,
+          testNameAsId,
           description,
           tags,
           filePath,
@@ -253,11 +254,11 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
             data.beforeFirstTestCase = false;
             data.currentChild = this.children.find((v: Catch2TestInfo) => {
               // xml output trimmes the name of the test
-              return v.testNameFull.trim() == name;
+              return v.testNameAsId.trim() == name;
             });
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test', data.currentChild.testNameFull, 'has started.');
+              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
               this._shared.log.warn('TestCase not found in children: ' + name);
@@ -272,7 +273,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
             const testCaseXml = data.buffer.substring(0, b + endTestCase.length);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testNameFull, 'has finished.');
+              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
                 const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
                 data.processedTestCases.push(data.currentChild);
@@ -337,6 +338,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
               }
             }
 
+            data.currentChild.lastRunState = ev.state;
             this._shared.testStatesEmitter.fire(ev);
           } else {
             this._shared.log.warn('data.inTestCase: ', data);
@@ -344,9 +346,10 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         }
 
         const isTestRemoved =
-          (runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
-            this.children.filter(c => !c.skipped).length > data.processedTestCases.length) ||
-          (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0);
+          runInfo.timeout === null &&
+          ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
+            this.getTestInfoCount(false) > data.processedTestCases.length) ||
+            (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
 
         if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
           new Promise<void>((resolve, reject) => {
@@ -380,7 +383,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
                 const currentChild = this.children.find((v: Catch2TestInfo) => {
                   // xml output trimmes the name of the test
-                  return v.testNameFull.trim() == name;
+                  return v.testNameAsId.trim() == name;
                 });
                 if (currentChild === undefined) break;
 
