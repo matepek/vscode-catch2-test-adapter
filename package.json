@@ -95,7 +95,8 @@
           "scope": "resource",
           "default": [
             {
-              "name": "${filename} (${relDirpath})",
+              "name": "${filename}",
+              "description": "${relDirpath}/",
               "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
               "cwd": "${absDirpath}",
               "env": {
@@ -152,7 +153,7 @@
                             "type": "string",
                             "enum": [
                               "${relDirpath}/",
-                              "${absDirpath}"
+                              "${absDirpath}/"
                             ]
                           },
                           {
@@ -277,7 +278,7 @@
                       "type": "string",
                       "enum": [
                         "${relDirpath}/",
-                        "${absDirpath}"
+                        "${absDirpath}/"
                       ]
                     },
                     {

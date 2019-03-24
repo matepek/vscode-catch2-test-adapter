@@ -76,9 +76,9 @@ If the pattern is too general like `out/**/*test*`, it could cause unexpected ex
 which would not just increase the test-loading duration but also could have other unexpeced effects.
 I suggest to have a stricter file-name convention and a corresponding pattern like `out/**/*.test.*` or `out/**/Test.*`
 
-**Remark** that `dependsOn` is experimental and only works well with paths inside of the workspace directory.
-Also note that if it is set, it will run the related tests automatically. It accumulates events for 2 seconds and run the related tests.
-Stupid logic, will be improved in the future.
+**Remark** that `dependsOn` is experimental and **only** works well with paths **inside** of the workspace directory.
+Also note that if it is set, it will run the related tests automatically.
+It accumulates events by waiting for 2 seconds after the last event.
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
@@ -114,7 +114,8 @@ Stupid logic, will be improved in the future.
 
 ```json
 "catch2TestExplorer.executables": {
-	"name": "${filename} (${relDirpath}/)",
+	"name": "${filename}",
+	"description": "${relDirpath}/",
 	"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
 	"cwd": "${absDirpath}",
 	"env": {
@@ -203,6 +204,6 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 ## TODOs
 
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip
-- executable's dependsOn property
+- gaze is not good enough: detects change and delete, but not creation
 
 ## [Contribution guideline here](CONTRIBUTING.md)
