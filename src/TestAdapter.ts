@@ -6,7 +6,6 @@ import { inspect } from 'util';
 import * as vscode from 'vscode';
 import {
   TestInfo,
-  TestSuiteInfo,
   TestEvent,
   TestLoadFinishedEvent,
   TestLoadStartedEvent,
@@ -117,13 +116,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
               this._testStatesEmitter.fire({ type: 'started', tests: [id] });
 
               for (let j = 0; j < route.length - 1; ++j)
-                this._testStatesEmitter.fire({ type: 'suite', suite: route[j] as TestSuiteInfo, state: 'running' });
+                this._testStatesEmitter.fire((route[j] as AbstractTestSuiteInfo).getRunningEvent());
 
-              this._testStatesEmitter.fire({ type: 'test', test: testEvents[i].test, state: 'running' });
+              this._testStatesEmitter.fire((testEvents[i].test as AbstractTestInfo).getStartEvent());
               this._testStatesEmitter.fire(testEvents[i]);
 
               for (let j = route.length - 2; j >= 0; --j)
-                this._testStatesEmitter.fire({ type: 'suite', suite: route[j] as TestSuiteInfo, state: 'completed' });
+                this._testStatesEmitter.fire((route[j] as AbstractTestSuiteInfo).getCompletedEvent());
 
               this._testStatesEmitter.fire({ type: 'finished' });
             } else {

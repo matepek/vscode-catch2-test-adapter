@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import { inspect, promisify } from 'util';
-import { TestEvent, TestSuiteEvent } from 'vscode-test-adapter-api';
+import { TestEvent } from 'vscode-test-adapter-api';
 
 import { GoogleTestInfo } from './GoogleTestInfo';
 import * as c2fs from './FSWrapper';

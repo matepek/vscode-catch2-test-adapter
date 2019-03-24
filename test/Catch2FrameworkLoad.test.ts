@@ -132,9 +132,16 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(0ms)',
           message: '⏱ Duration: 0.000112 second(s).\n',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -157,7 +164,7 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(0ms)',
           message: '⏱ Duration: 0.000132 second(s).\n',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: s1t2 },
         {
@@ -168,11 +175,18 @@ describe(path.basename(__filename), function() {
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
           description: '(0ms)',
-          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -195,7 +209,7 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(0ms)',
           message: '⏱ Duration: 0.000132 second(s).\n',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: s1t2 },
         {
@@ -206,11 +220,18 @@ describe(path.basename(__filename), function() {
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
           description: '(0ms)',
-          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -241,9 +262,16 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(0ms)',
           message: '⏱ Duration: 0.000112 second(s).\n',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -273,9 +301,16 @@ describe(path.basename(__filename), function() {
             decorations: [],
             description: '(0ms)',
             message: '🔀 Randomness seeded to: 2.\n⏱ Duration: 0.000327 second(s).\n',
-            tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+            tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
           },
-          { type: 'suite', state: 'completed', suite: suite1 },
+          {
+            type: 'suite',
+            state: 'completed',
+            suite: suite1,
+            description: '(0ms) ./',
+            tooltip:
+              'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
+          },
           { type: 'finished' },
         ];
         assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -352,12 +387,26 @@ describe(path.basename(__filename), function() {
       const running: TestRunStartedEvent = { type: 'started', tests: [root.id] };
 
       const s1running: TestSuiteEvent = { type: 'suite', state: 'running', suite: suite1 };
-      const s1finished: TestSuiteEvent = { type: 'suite', state: 'completed', suite: suite1 };
+      const s1finished: TestSuiteEvent = {
+        type: 'suite',
+        state: 'completed',
+        suite: suite1,
+        description: '(0ms) ./',
+        tooltip:
+          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
+      };
       assert.ok(adapter.getTestStatesEventIndex(running) < adapter.getTestStatesEventIndex(s1running));
       assert.ok(adapter.getTestStatesEventIndex(s1running) < adapter.getTestStatesEventIndex(s1finished));
 
       const s2running: TestSuiteEvent = { type: 'suite', state: 'running', suite: suite2 };
-      const s2finished: TestSuiteEvent = { type: 'suite', state: 'completed', suite: suite2 };
+      const s2finished: TestSuiteEvent = {
+        type: 'suite',
+        state: 'completed',
+        suite: suite2,
+        description: '(0ms) ./',
+        tooltip:
+          'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
+      };
       assert.ok(adapter.getTestStatesEventIndex(running) < adapter.getTestStatesEventIndex(s1running));
       assert.ok(adapter.getTestStatesEventIndex(s2running) < adapter.getTestStatesEventIndex(s2finished));
 
@@ -371,7 +420,7 @@ describe(path.basename(__filename), function() {
         decorations: [],
         description: '(0ms)',
         message: '⏱ Duration: 0.000132 second(s).\n',
-        tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+        tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
       };
       assert.ok(adapter.getTestStatesEventIndex(s1t1running) < adapter.getTestStatesEventIndex(s1t1finished));
       assert.ok(adapter.getTestStatesEventIndex(s1t1finished) < adapter.getTestStatesEventIndex(s1finished));
@@ -387,7 +436,7 @@ describe(path.basename(__filename), function() {
           { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
         ],
         description: '(0ms)',
-        tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
+        tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
         message:
           '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
       };
@@ -404,7 +453,7 @@ describe(path.basename(__filename), function() {
         decorations: [],
         message: '⏱ Duration: 0.00037 second(s).\n',
         description: '(0ms)',
-        tooltip: 'Name: s2t1\nDescription: tag1\n⏱ 0ms',
+        tooltip: 'Name: s2t1\nDescription: tag1\n\n⏱ 0ms',
       };
       assert.ok(adapter.getTestStatesEventIndex(s2t1running) < adapter.getTestStatesEventIndex(s2t1finished));
       assert.ok(adapter.getTestStatesEventIndex(s2t1finished) < adapter.getTestStatesEventIndex(s2finished));
@@ -420,7 +469,7 @@ describe(path.basename(__filename), function() {
           { line: 20, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
         ],
         description: '(0ms)',
-        tooltip: 'Name: s2t3\nDescription: tag1\n⏱ 0ms',
+        tooltip: 'Name: s2t3\nDescription: tag1\n\n⏱ 0ms',
         message:
           '⏱ Duration: 0.000178 second(s).\n⬇️⬇️⬇️ "s2t3" at line 19 ➡️ "REQUIRE" at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
       };
@@ -458,9 +507,16 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(0ms)',
           message: '⏱ Duration: 0.000112 second(s).\n',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -483,9 +539,16 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(1ms)',
           message: '⏱ Duration: 0.001294 second(s).\n',
-          tooltip: 'Name: s2t2\nDescription: tag1\n⏱ 1ms',
+          tooltip: 'Name: s2t2\nDescription: tag1\n\n⏱ 1ms',
         },
-        { type: 'suite', state: 'completed', suite: suite2 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite2,
+          description: '(1ms) ./',
+          tooltip:
+            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n\n⏱ 1ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -511,9 +574,16 @@ describe(path.basename(__filename), function() {
           description: '(0ms)',
           message:
             '⏱ Duration: 0.000596 second(s).\n⬇️⬇️⬇️ "s2t3" at line 19 ➡️ "REQUIRE" at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
-          tooltip: 'Name: s2t3\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s2t3\nDescription: tag1\n\n⏱ 0ms',
         },
-        { type: 'suite', state: 'completed', suite: suite2 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite2,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -542,9 +612,16 @@ describe(path.basename(__filename), function() {
           description: '(0ms)',
           message:
             '⏱ Duration: 0.000596 second(s).\n⬇️⬇️⬇️ "s2t3" at line 19 ➡️ "REQUIRE" at line 21:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
-          tooltip: 'Name: s2t3\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s2t3\nDescription: tag1\n\n⏱ 0ms',
         },
-        { type: 'suite', state: 'completed', suite: suite2 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite2,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -567,7 +644,7 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(0ms)',
           message: '⏱ Duration: 0.000132 second(s).\n',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: s1t2 },
         {
@@ -578,11 +655,18 @@ describe(path.basename(__filename), function() {
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
           description: '(0ms)',
-          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -605,7 +689,7 @@ describe(path.basename(__filename), function() {
           test: s1t1,
           decorations: [],
           description: '(0ms)',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
           message: '⏱ Duration: 0.000132 second(s).\n',
         },
         { type: 'test', state: 'running', test: s1t2 },
@@ -617,11 +701,18 @@ describe(path.basename(__filename), function() {
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
           description: '(0ms)',
-          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
+        },
         { type: 'suite', state: 'running', suite: suite2 },
         { type: 'test', state: 'running', test: s2t2 },
         {
@@ -631,9 +722,16 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(1ms)',
           message: '⏱ Duration: 0.001294 second(s).\n',
-          tooltip: 'Name: s2t2\nDescription: tag1\n⏱ 1ms',
+          tooltip: 'Name: s2t2\nDescription: tag1\n\n⏱ 1ms',
         },
-        { type: 'suite', state: 'completed', suite: suite2 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite2,
+          description: '(1ms) ./',
+          tooltip:
+            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n\n⏱ 1ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -662,7 +760,13 @@ describe(path.basename(__filename), function() {
           decorations: [],
           message: '😱 Unexpected error !!\n',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: undefined,
+          tooltip: undefined,
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -684,9 +788,16 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(0ms)',
           message: '⏱ Duration: 0.000112 second(s).\n',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ]);
     });
@@ -714,7 +825,13 @@ describe(path.basename(__filename), function() {
           decorations: [],
           message: '😱 Unexpected error !!\n',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: undefined,
+          tooltip: undefined,
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -736,9 +853,16 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(0ms)',
           message: '⏱ Duration: 0.000112 second(s).\n',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ]);
     });
@@ -769,7 +893,13 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, [
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: undefined,
+          tooltip: undefined,
+        },
         { type: 'finished' },
       ]);
     });
@@ -810,12 +940,18 @@ describe(path.basename(__filename), function() {
         { type: 'test', state: 'running', test: s1t1 },
         {
           type: 'test',
-          state: 'failed',
+          state: 'errored',
           test: s1t1,
           decorations: [],
           message: '⌛️ Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": 3 second(s).\n',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: undefined,
+          tooltip: undefined,
+        },
         { type: 'finished' },
       ]);
     });
@@ -853,12 +989,26 @@ describe(path.basename(__filename), function() {
       const running: TestRunStartedEvent = { type: 'started', tests: [root.id] };
 
       const s1running: TestSuiteEvent = { type: 'suite', state: 'running', suite: suite1 };
-      const s1finished: TestSuiteEvent = { type: 'suite', state: 'completed', suite: suite1 };
+      const s1finished: TestSuiteEvent = {
+        type: 'suite',
+        state: 'completed',
+        suite: suite1,
+        description: '(0ms) ./',
+        tooltip:
+          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
+      };
       assert.ok(adapter.getTestStatesEventIndex(running) < adapter.getTestStatesEventIndex(s1running));
       assert.ok(adapter.getTestStatesEventIndex(s1running) < adapter.getTestStatesEventIndex(s1finished));
 
       const s2running: TestSuiteEvent = { type: 'suite', state: 'running', suite: suite2 };
-      const s2finished: TestSuiteEvent = { type: 'suite', state: 'completed', suite: suite2 };
+      const s2finished: TestSuiteEvent = {
+        type: 'suite',
+        state: 'completed',
+        suite: suite2,
+        description: '(0ms) ./',
+        tooltip:
+          'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
+      };
       assert.ok(adapter.getTestStatesEventIndex(running) < adapter.getTestStatesEventIndex(s1running));
       assert.ok(adapter.getTestStatesEventIndex(s2running) < adapter.getTestStatesEventIndex(s2finished));
 
@@ -1043,7 +1193,13 @@ describe(path.basename(__filename), function() {
       const expected = [
         { type: 'started', tests: [suite1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: undefined,
+          tooltip: undefined,
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -1071,9 +1227,16 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(0ms)',
           message: '⏱ Duration: 0.000132 second(s).\n',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
         { type: 'started', tests: [s1t2.id] },
         { type: 'suite', state: 'running', suite: suite1 },
@@ -1086,11 +1249,18 @@ describe(path.basename(__filename), function() {
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
           description: '(0ms)',
-          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ]);
     });
@@ -1128,11 +1298,18 @@ describe(path.basename(__filename), function() {
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
           description: '(0ms)',
-          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -1173,7 +1350,13 @@ describe(path.basename(__filename), function() {
       const expected = [
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: undefined,
+          tooltip: undefined,
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -1270,11 +1453,18 @@ describe(path.basename(__filename), function() {
             { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
           ],
           description: '(0ms)',
-          tooltip: 'Name: s1t2\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
             '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
@@ -1286,9 +1476,16 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(0ms)',
           message: '⏱ Duration: 0.000132 second(s).\n',
-          tooltip: 'Name: s1-t1\nDescription: tag1\n⏱ 0ms',
+          tooltip: 'Name: s1-t1\nDescription: tag1\n\n⏱ 0ms',
         },
-        { type: 'suite', state: 'completed', suite: suite1 },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: suite1,
+          description: '(0ms) ./',
+          tooltip:
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
+        },
         { type: 'finished' },
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
@@ -1433,37 +1630,53 @@ describe(path.basename(__filename), function() {
 
       imitation.spawnStub.withArgs(example1.suite3.execPath).throwsArg(1);
 
-      const runAndCheckEvents = async (test: TestInfo): Promise<void> => {
-        assert.equal(adapter.testStatesEvents.length, 0);
+      const runAndCheckEvents = async (test: TestInfo, i: number): Promise<void> => {
+        assert.equal(adapter.testStatesEvents.length, 6 * i);
 
         await adapter.run([test.id]);
 
-        assert.equal(adapter.testStatesEvents.length, 6, inspect(test));
+        assert.equal(adapter.testStatesEvents.length, 6 * (i + 1), inspect(test));
 
-        assert.deepStrictEqual({ type: 'started', tests: [test.id] }, adapter.testStatesEvents[0]);
-        assert.deepStrictEqual({ type: 'suite', state: 'running', suite: suite3 }, adapter.testStatesEvents[1]);
+        assert.deepStrictEqual({ type: 'started', tests: [test.id] }, adapter.testStatesEvents[6 * i + 0]);
+        assert.deepStrictEqual({ type: 'suite', state: 'running', suite: suite3 }, adapter.testStatesEvents[6 * i + 1]);
 
-        assert.equal(adapter.testStatesEvents[2].type, 'test');
-        assert.equal((adapter.testStatesEvents[2] as TestEvent).state, 'running');
-        assert.equal((adapter.testStatesEvents[2] as TestEvent).test, test);
+        assert.equal(adapter.testStatesEvents[6 * i + 2].type, 'test');
+        assert.equal((adapter.testStatesEvents[6 * i + 2] as TestEvent).state, 'running');
+        assert.equal((adapter.testStatesEvents[6 * i + 2] as TestEvent).test, test);
 
-        assert.equal(adapter.testStatesEvents[3].type, 'test');
+        assert.equal(adapter.testStatesEvents[6 * i + 3].type, 'test');
         assert.ok(
-          (adapter.testStatesEvents[3] as TestEvent).state == 'passed' ||
-            (adapter.testStatesEvents[3] as TestEvent).state == 'skipped' ||
-            (adapter.testStatesEvents[3] as TestEvent).state == 'failed',
+          (adapter.testStatesEvents[6 * i + 3] as TestEvent).state == 'passed' ||
+            (adapter.testStatesEvents[6 * i + 3] as TestEvent).state == 'skipped' ||
+            (adapter.testStatesEvents[6 * i + 3] as TestEvent).state == 'failed',
         );
-        assert.equal((adapter.testStatesEvents[3] as TestEvent).test, test);
+        assert.equal((adapter.testStatesEvents[6 * i + 3] as TestEvent).test, test);
 
-        assert.deepStrictEqual({ type: 'suite', state: 'completed', suite: suite3 }, adapter.testStatesEvents[4]);
-        assert.deepStrictEqual({ type: 'finished' }, adapter.testStatesEvents[5]);
+        const tooltips = [
+          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: 1\n\n⏱ 0ms',
+          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: 2\n\n⏱ 0ms',
+        ];
+        const tooltipTemplate =
+          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: ${num}\n  - failed: 1\n\n⏱ 1ms';
 
-        while (adapter.testStatesEvents.length) adapter.testStatesEvents.pop();
+        assert.deepStrictEqual(
+          adapter.testStatesEvents[6 * i + 4],
+          {
+            type: 'suite',
+            state: 'completed',
+            suite: suite3,
+            description: i < 2 ? '(0ms) ./' : '(1ms) ./',
+            tooltip: i < 2 ? tooltips[i] : tooltipTemplate.replace('${num}', i.toString()),
+          },
+          'index: ' + i,
+        );
+        assert.deepStrictEqual({ type: 'finished' }, adapter.testStatesEvents[6 * i + 5]);
       };
 
+      let i = 0;
       for (let test of suite3.children) {
         assert.equal(test.type, 'test');
-        await runAndCheckEvents(test as TestInfo);
+        await runAndCheckEvents(test as TestInfo, i++);
       }
     });
   });

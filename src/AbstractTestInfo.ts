@@ -29,7 +29,7 @@ export abstract class AbstractTestInfo implements TestInfo {
   ) {
     this.id = id ? id : generateUniqueId();
     this.origLabel = label;
-    this.tooltip = 'Name: ' + testNameAsId + (tooltip ? '\n\n' + tooltip : '');
+    this.tooltip = 'Name: ' + testNameAsId + (tooltip ? '\n' + tooltip : '');
     if (line && line < 0) throw Error('line smaller than zero');
   }
 
