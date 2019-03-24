@@ -539,7 +539,7 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(1ms)',
           message: '⏱ Duration: 0.001294 second(s).\n',
-          tooltip: 'Name: s2t2\nDescription: tag1\n\n⏱ 1ms',
+          tooltip: 'Name: s2t2\nTags: [.]\nDescription: tag1\n\n⏱ 1ms',
         },
         {
           type: 'suite',
@@ -722,7 +722,7 @@ describe(path.basename(__filename), function() {
           decorations: [],
           description: '(1ms)',
           message: '⏱ Duration: 0.001294 second(s).\n',
-          tooltip: 'Name: s2t2\nDescription: tag1\n\n⏱ 1ms',
+          tooltip: 'Name: s2t2\nTags: [.]\nDescription: tag1\n\n⏱ 1ms',
         },
         {
           type: 'suite',

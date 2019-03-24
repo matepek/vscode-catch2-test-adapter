@@ -56,7 +56,9 @@ export class Catch2TestInfo extends AbstractTestInfo {
       }) || testNameAsId.startsWith('./'),
       file,
       line,
-      catch2Description ? 'Description: ' + catch2Description : '',
+      [tags.length > 0 ? 'Tags: ' + tags.join('') : '', catch2Description ? 'Description: ' + catch2Description : '']
+        .filter(v => v.length)
+        .join('\n'),
     );
     this._sections = sections;
   }
