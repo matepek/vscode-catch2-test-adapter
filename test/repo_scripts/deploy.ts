@@ -56,8 +56,12 @@ async function updateChangelog(): Promise<Info | undefined> {
     // example:'## [0.1.0-beta] - 2018-04-12'
     const re = new RegExp(/## \[(([0-9]+)\.([0-9]+)\.([0-9]+)(?:|(?:-([^\]]+))))\](?: - (\S+))?/);
 
-    const match: RegExpMatchArray | null = changelog.match(re);
-    if (match === null) throw Error("Release error: Couldn't find version entry.");
+    const match = changelog.match(re);
+    if (match === null) {
+      console.log("CHANGELOG.md's first 350 character:");
+      console.log(changelog.substr(0, 350));
+      throw Error("Release error: Couldn't find version entry");
+    }
 
     assert.strictEqual(match.length, 7);
 
