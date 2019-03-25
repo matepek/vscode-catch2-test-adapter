@@ -50,7 +50,7 @@ async function updateChangelog(): Promise<Info | undefined> {
   try {
     console.log('Parsing CHANGELOG.md');
 
-    const changelogBuffer = promisify(fs.readFile)('CHANGELOG.md');
+    const changelogBuffer = await promisify(fs.readFile)('CHANGELOG.md');
 
     const changelog = changelogBuffer.toString();
     // example:'## [0.1.0-beta] - 2018-04-12'
@@ -58,8 +58,6 @@ async function updateChangelog(): Promise<Info | undefined> {
 
     const match = changelog.match(re);
     if (match === null) {
-      console.log("CHANGELOG.md's first 350 character:");
-      console.log(changelog.substr(0, 350));
       throw Error("Release error: Couldn't find version entry");
     }
 
@@ -251,7 +249,7 @@ async function createPackage(info: Info): Promise<string> {
   }
 }
 
-function publishPackage(info: Info, packagePath: string): Promise<void> {
+function publishPackage(packagePath: string): Promise<void> {
   console.log('Publishing vsce package');
   assert.ok(process.env['VSCE_PAT'] != undefined);
   assert.ok(packagePath);
@@ -344,7 +342,7 @@ async function main(argv: string[]): Promise<void> {
 
     await createGithubRelease(info, packagePath);
 
-    await publishPackage(info, packagePath);
+    await publishPackage(packagePath);
 
     console.log('Deployment has finished.');
   } else {
