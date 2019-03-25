@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { spawnAsync, SpawnOptions, SpawnReturns } from '../src/FSWrapper';
-import { ChildProcessStub, isWin } from './Common';
+import { ChildProcessFake, isWin } from './Common';
 
 ///
 
@@ -179,9 +179,9 @@ describe('vscode.Uri', function() {
   });
 });
 
-describe('ChildProcessStub', function() {
+describe('ChildProcessFake', function() {
   it('should works', async function() {
-    const cp = new ChildProcessStub('alma');
+    const cp = new ChildProcessFake('alma');
     let output = '';
     cp.stdout.on('data', (d: string) => {
       output += d;
@@ -194,9 +194,9 @@ describe('ChildProcessStub', function() {
   });
 
   it('should works2', async function() {
-    this.timeout(700);
+    this.timeout(800);
     this.slow(600);
-    const cp = new ChildProcessStub();
+    const cp = new ChildProcessFake();
     let output = '';
     cp.stdout.on('data', (d: string) => {
       output += d;

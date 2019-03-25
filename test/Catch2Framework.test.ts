@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import { inspect } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, waitFor, settings, isWin, ChildProcessStub, FileSystemWatcherStub } from './Common';
+import { TestAdapter, Imitation, waitFor, settings, isWin, ChildProcessFake, FileSystemWatcherStub } from './Common';
 
 ///
 
@@ -55,7 +55,7 @@ describe(path.basename(__filename), function() {
     spawnWithArgs.callsFake(function(p: string, args: string[], ops: { [prop: string]: string }) {
       try {
         assert.strictEqual(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'defaultCwdStr'));
-        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+        return new ChildProcessFake(example1.suite1.outputs[1][1]);
       } catch (e) {
         exception = e;
         throw e;
@@ -85,7 +85,7 @@ describe(path.basename(__filename), function() {
         cwd = ops.cwd;
         if (isWin) assert.strictEqual(ops.cwd, 'C:\\defaultCwdStr');
         else assert.strictEqual(ops.cwd, '/defaultCwdStr');
-        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+        return new ChildProcessFake(example1.suite1.outputs[1][1]);
       } catch (e) {
         exception = e;
         throw e;
@@ -111,7 +111,7 @@ describe(path.basename(__filename), function() {
       try {
         assert.ok(ops.env.hasOwnProperty('ENVTEST'));
         assert.equal(ops.env.ENVTEST, 'envtest');
-        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+        return new ChildProcessFake(example1.suite1.outputs[1][1]);
       } catch (e) {
         exception = e;
         throw e;
@@ -134,7 +134,7 @@ describe(path.basename(__filename), function() {
     assert.equal(testListOutput.length, 10);
     testListOutput.splice(1, 3);
     const withArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
-    withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
+    withArgs.onCall(withArgs.callCount).returns(new ChildProcessFake(testListOutput.join(EOL)));
 
     await adapter.load();
 
@@ -221,7 +221,7 @@ describe(path.basename(__filename), function() {
     const withArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
     withArgs
       .onCall(withArgs.callCount)
-      .returns(new ChildProcessStub('Matching test cases:' + EOL, undefined, testListErrOutput.join(EOL)));
+      .returns(new ChildProcessFake('Matching test cases:' + EOL, undefined, testListErrOutput.join(EOL)));
 
     await adapter.load();
 
@@ -275,7 +275,7 @@ describe(path.basename(__filename), function() {
 
     for (let scenario of example1.suite2.outputs) {
       imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0]).callsFake(function() {
-        return new ChildProcessStub(scenario[1]);
+        return new ChildProcessFake(scenario[1]);
       });
     }
 
@@ -330,7 +330,7 @@ describe(path.basename(__filename), function() {
 
     for (let scenario of example1.suite2.outputs) {
       imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0]).callsFake(function() {
-        return new ChildProcessStub(scenario[1]);
+        return new ChildProcessFake(scenario[1]);
       });
     }
 
@@ -420,7 +420,7 @@ describe(path.basename(__filename), function() {
 
     for (let scenario of example1.suite2.outputs) {
       imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0]).callsFake(function() {
-        return new ChildProcessStub(scenario[1]);
+        return new ChildProcessFake(scenario[1]);
       });
     }
     let exception: Error | undefined = undefined;
@@ -430,7 +430,7 @@ describe(path.basename(__filename), function() {
         assert.equal(ops.cwd, expectStr);
         assert.ok(ops.env.hasOwnProperty('C2TESTVARS'));
         assert.equal(ops.env.C2TESTVARS, expectStr);
-        return new ChildProcessStub(example1.suite2.t1.outputs[0][1]);
+        return new ChildProcessFake(example1.suite2.t1.outputs[0][1]);
       } catch (e) {
         exception = e;
         throw e;

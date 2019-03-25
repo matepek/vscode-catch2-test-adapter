@@ -74,7 +74,7 @@
     "request-promise": "4.2.2",
     "sinon": "^7.2.7",
     "typescript": "^3.3.3333",
-    "vsce": "^1.58.0",
+    "vsce": "^1.59.0",
     "vscode": "1.1.30",
     "vscode-test": "0.1.5"
   },
