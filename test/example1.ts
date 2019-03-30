@@ -3,7 +3,7 @@ import { EOL } from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { TestInfo, TestSuiteInfo } from 'vscode-test-adapter-api';
-import { Imitation, settings, FileSystemWatcherStub, ChildProcessFake } from './Common';
+import { Imitation, settings, FileSystemWatcherStub, ChildProcessStub } from './Common';
 
 ///
 
@@ -2281,7 +2281,7 @@ For more detailed usage please see the project docs
     for (let suite of this.outputs) {
       for (let scenario of suite[1]) {
         imitation.spawnStub.withArgs(suite[0], scenario[0]).callsFake(function() {
-          return new ChildProcessFake(scenario[1]);
+          return new ChildProcessStub(scenario[1]);
         });
       }
 

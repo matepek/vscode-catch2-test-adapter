@@ -12,9 +12,11 @@ import {
   TestRunFinishedEvent,
   TestRunStartedEvent,
   TestSuiteEvent,
+  RetireEvent,
 } from 'vscode-test-adapter-api';
 import * as api from 'vscode-test-adapter-api';
 import * as util from 'vscode-test-adapter-util';
+import debounce = require('debounce-collect');
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { resolveVariables, generateUniqueId } from './Util';
@@ -31,7 +33,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _testStatesEmitter = new vscode.EventEmitter<
     TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
   >();
-  private readonly _autorunEmitter = new vscode.EventEmitter<void>();
+  private readonly _retireEmitter = new vscode.EventEmitter<RetireEvent>();
 
   private readonly _variableToValue: [string, string][] = [
     ['${workspaceDirectory}', this.workspaceFolder.uri.fsPath],
@@ -44,7 +46,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
 
-  private readonly _sendAutorunEmitter = new vscode.EventEmitter<IterableIterator<AbstractTestSuiteInfo>>();
+  private readonly _sendRetireEmitter = new vscode.EventEmitter<AbstractTestSuiteInfo[]>();
 
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
@@ -71,7 +73,28 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(this._testsEmitter);
     this._disposables.push(this._testStatesEmitter);
-    this._disposables.push(this._autorunEmitter);
+
+    this._disposables.push(this._sendRetireEmitter);
+    {
+      const unique = new Set<AbstractTestSuiteInfo>();
+
+      const retire = (aggregatedArgs: [AbstractTestSuiteInfo[]][]): void => {
+        const isScheduled = unique.size > 0;
+        aggregatedArgs.forEach(args => args[0].forEach(test => unique.add(test)));
+
+        if (!isScheduled)
+          this._mainTaskQueue.then(() => {
+            if (unique.size > 0) {
+              this._retireEmitter.fire({ tests: [...unique].map(t => t.id) });
+              unique.clear();
+            }
+          });
+      };
+
+      const retireDelayInSec = 2; // could be a config
+
+      this._disposables.push(this._sendRetireEmitter.event(debounce(retire, retireDelayInSec * 1000)));
+    }
 
     this._disposables.push(this._loadWithTaskEmitter);
     this._disposables.push(
@@ -133,48 +156,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
-    this._disposables.push(this._sendAutorunEmitter);
-    {
-      const retireDelayInSec = 2; // it should be a config
-
-      const data = new class {
-        public idBuffer: Set<string> = new Set();
-        public lastArrivedAt: number | undefined = undefined; // undefined means: not scheduled
-      }();
-
-      const s = (): void => {
-        if (data.lastArrivedAt === undefined) return; // shouldn't be here
-
-        if (Date.now() - data.lastArrivedAt >= retireDelayInSec * 1000) {
-          const ids = [...data.idBuffer.values()];
-
-          data.idBuffer = new Set();
-          data.lastArrivedAt = undefined;
-
-          if (ids.length > 0) this.run(ids);
-        } else {
-          setTimeout(s, retireDelayInSec * 1000 - (Date.now() - data.lastArrivedAt));
-        }
-      };
-
-      this._disposables.push(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        this._sendAutorunEmitter.event((tests: IterableIterator<AbstractTestSuiteInfo>) => {
-          if (data.idBuffer !== undefined) {
-            for (const test of tests) {
-              data.idBuffer.add(test.id);
-            }
-          }
-
-          if (data.lastArrivedAt === undefined) {
-            setTimeout(s, retireDelayInSec);
-          }
-
-          data.lastArrivedAt = Date.now();
-        }),
-      );
-    }
-
     const config = this._getConfiguration();
 
     this._disposables.push(
@@ -195,7 +176,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._testStatesEmitter,
       this._loadWithTaskEmitter,
       this._sendTestEventEmitter,
-      this._sendAutorunEmitter,
+      this._sendRetireEmitter,
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),
@@ -207,7 +188,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       vscode.workspace.onDidChangeConfiguration(configChange => {
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultRngSeed', this.workspaceFolder.uri)) {
           this._shared.rngSeed = this._getDefaultRngSeed(this._getConfiguration());
-          this._autorunEmitter.fire();
+          this._retireEmitter.fire({});
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultWatchTimeoutSec', this.workspaceFolder.uri)) {
           this._shared.execWatchTimeout = this._getDefaultExecWatchTimeout(this._getConfiguration());
@@ -270,8 +251,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return this._testsEmitter.event;
   }
 
-  public get autorun(): vscode.Event<void> {
-    return this._autorunEmitter.event;
+  public get retire(): vscode.Event<RetireEvent> {
+    return this._retireEmitter.event;
   }
 
   public load(): Promise<void> {

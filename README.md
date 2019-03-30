@@ -48,14 +48,14 @@ This variable can be
 
 If it is an object it can contains the following properties:
 
-| Property      | Description                                                                                                                                                                                                                       |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`        | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                   |
-| `pattern`     | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required)                      |
-| `description` | A less prominent text after the `name`. Can contains variables related to `pattern`.                                                                                                                                              |
-| `cwd`         | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                           |
-| `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                   |
-| `dependsOn`   | (Experimental) Array of _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ it will run the related executables. |
+| Property      | Description                                                                                                                                                                                                                                                                   |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                                                               |
+| `pattern`     | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required)                                                                  |
+| `description` | A less prominent text after the `name`. Can contains variables related to `pattern`.                                                                                                                                                                                          |
+| `cwd`         | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                       |
+| `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                               |
+| `dependsOn`   | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. |
 
 The `pattern` (or the `executables` used as string or an array of strings)
 can contains [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
@@ -205,5 +205,6 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip
 - gaze is not good enough: detects change and delete, but not creation
+- `dependsOn` could contain variables
 
 ## [Contribution guideline here](CONTRIBUTING.md)

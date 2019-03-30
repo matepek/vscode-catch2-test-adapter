@@ -12,7 +12,8 @@
     "noImplicitThis": true,
     "noUnusedLocals": true,
     "removeComments": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "typeRoots": ["node_modules/@types", "src/@types"]
   },
   "include": ["src/main.ts", "test/**/*.ts"]
 }

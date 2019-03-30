@@ -8,7 +8,7 @@ import * as path from 'path';
 import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, settings, ChildProcessFake } from './Common';
+import { TestAdapter, Imitation, settings, ChildProcessStub } from './Common';
 
 ///
 
@@ -54,7 +54,7 @@ describe(path.basename(__filename), function() {
         }),
       )
       .callsFake(function() {
-        return new ChildProcessFake(example1.gtest1.gtest_list_tests_output);
+        return new ChildProcessStub(example1.gtest1.gtest_list_tests_output);
       });
 
     imitation.fsReadFileSyncStub.withArgs(sinon.match(/.*tmp_gtest_output_.+\.xml\.tmp/), 'utf8').returns('not an xml');
@@ -80,7 +80,7 @@ describe(path.basename(__filename), function() {
           }),
         )
         .callsFake(function() {
-          return new ChildProcessFake(example1.gtest1.gtest_list_tests_output);
+          return new ChildProcessStub(example1.gtest1.gtest_list_tests_output);
         });
 
       imitation.fsReadFileSyncStub

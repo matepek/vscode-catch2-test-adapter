@@ -142,7 +142,7 @@ describe(path.basename(__filename), function() {
       adapter = new TestAdapter();
 
       let autorunCounter = 0;
-      adapter.autorun(() => {
+      adapter.retire(() => {
         ++autorunCounter;
       });
 

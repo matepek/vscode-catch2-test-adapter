@@ -325,7 +325,7 @@ export class TestAdapter extends my.TestAdapter {
 
 ///
 
-export class ChildProcessFake extends EventEmitter {
+export class ChildProcessStub extends EventEmitter {
   public readonly stdout: Readable;
   private _stdoutChunks: (string | null)[] = [];
   private _canPushOut: boolean = false;
