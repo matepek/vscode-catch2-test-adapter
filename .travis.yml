@@ -30,6 +30,8 @@ install:
   - npm install
   - npm audit || npm audit
   - npm run compile
+  - npm run webpack
+  - ls -all dist
 
 script: 
   - npm test

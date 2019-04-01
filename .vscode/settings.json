@@ -3,6 +3,7 @@
     ".git": true,
     ".vscode-test": true,
     "node_modules": true,
+    "dist": true,
     "out": true
   },
   "editor.insertSpaces": true,

@@ -18,6 +18,7 @@ install:
   - npm install
   - npm audit
   - npm run compile
+  - npm run webpack
 
 build: off
 
