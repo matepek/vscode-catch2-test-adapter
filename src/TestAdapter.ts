@@ -210,7 +210,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
-    this._rootSuite = new RootTestSuiteInfo(this._shared, 1);
+    this._rootSuite = new RootTestSuiteInfo(undefined, this._shared, 1);
   }
 
   public dispose(): void {
@@ -263,7 +263,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._rootSuite.dispose();
 
-    this._rootSuite = new RootTestSuiteInfo(this._shared, this._getWorkerMaxNumber(config));
+    this._rootSuite = new RootTestSuiteInfo(this._rootSuite.id, this._shared, this._getWorkerMaxNumber(config));
 
     return this._mainTaskQueue.then(() => {
       this._log.info('load started');
