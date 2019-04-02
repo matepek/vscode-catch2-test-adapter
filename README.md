@@ -76,13 +76,17 @@ If the pattern is too general like `out/**/*test*`, it could cause unexpected ex
 which would not just increase the test-loading duration but also could have other unexpeced effects.
 I suggest to have a stricter file-name convention and a corresponding pattern like `out/**/*.test.*` or `out/**/Test.*`
 
-**Note** that `dependsOn` **only** works well with paths/patterns **inside** of the workspace directory.
-If "Enable autorun" is enabled in "**...**" menu (next to the play button), it will trigger the related tests.
-It accumulates events by waiting for 2 seconds after the last event.
+**Note** to `dependsOn`:
 
-**Also** `dependsOn` cannot contain variables like the others and outside of the workspace directory it works with only existing directory.
-So if one `dependsOn` a file which is deleted, the related tests will be triggered once, but re-reation won't trigger it agian.
-(It is harder to find a suitable fswatcher than I thought. Tried: chokidar, gaze)
+- If "Enable autorun" is enabled in "**...**" menu (next to the play button), it will trigger the related tests.
+- It accumulates events with the following strategy: waiting for 2 seconds after the last event.
+- Works flawlessly with paths/patterns **inside** the with workspace directory
+  (Usually there is no reason to keep your executables outside of the workspace. [See](https://github.com/matepek/vscode-catch2-test-adapter/issues/48).),
+- but have some issue/limitation with paths/patterns **outside** of the workspace directory.
+  - Theoretically is should support [glob patterns](https://github.com/matepek/vscode-catch2-test-adapter/issues/48),
+    but it seem there is an issue with _double star_ (`**`).
+  - Paths on different drive in the same `dependsOn` array maybe won't work.
+    (If you found another corner case, feel free to open an issue. It could be handy once in the future.)
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
@@ -202,7 +206,6 @@ Note that `name` and `request` are filled, if they are undefined, so it is not n
 - (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
 - (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures.
   Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
-- (2019-04-02) `dependsOn` limitation: See `dependsOn`.
 
 For solving issues use: `catch2TestExplorer.logpanel: true` and check the output window.
 

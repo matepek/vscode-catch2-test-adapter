@@ -4,7 +4,7 @@
 
 import * as path from 'path';
 import * as vscode from 'vscode';
-const {Gaze} = require('gaze'); // eslint-disable-line
+const { Gaze } = require('gaze'); // eslint-disable-line
 
 export interface FSWatcher extends vscode.Disposable {
   ready: () => Promise<void>;
@@ -13,9 +13,23 @@ export interface FSWatcher extends vscode.Disposable {
   onError: (handler: (err: Error) => void) => void;
 }
 
+function longestCommonPath(paths: string[]): [string, string[]] {
+  if (paths.length < 1) throw new Error('Need at least 1 path');
+
+  const x = paths.map(p => p.split(/(\/|\\)/));
+
+  let firstDiff = 0;
+
+  while (x.every(v => firstDiff < v.length && v[firstDiff].indexOf('*') === -1 && v[firstDiff] === x[0][firstDiff]))
+    firstDiff++;
+
+  return [path.join(...x[0].slice(0, firstDiff)), x.map(p => p.slice(firstDiff)).map(p => path.join(...p))];
+}
+
 export class GazeWrapper implements FSWatcher {
   public constructor(patterns: string[]) {
-    this._gaze = new Gaze(patterns);
+    const [cwd, children] = longestCommonPath(patterns);
+    this._gaze = new Gaze(children, { cwd, debounceDelay: 2000, interval: 2000 });
 
     this._watcherReady = new Promise((resolve, reject) => {
       this._gaze.on('error', (err: Error) => {
@@ -54,7 +68,9 @@ export class GazeWrapper implements FSWatcher {
   }
 
   public onAll(handler: (fsPath: string) => void): void {
-    this._gaze.on('all', (event: string, fsPath: string) => handler(fsPath));
+    this._gaze.on('all', (event: string, fsPath: string) => {
+      handler(fsPath);
+    });
   }
 
   public onError(handler: (err: Error) => void): void {
