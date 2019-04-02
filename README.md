@@ -76,9 +76,13 @@ If the pattern is too general like `out/**/*test*`, it could cause unexpected ex
 which would not just increase the test-loading duration but also could have other unexpeced effects.
 I suggest to have a stricter file-name convention and a corresponding pattern like `out/**/*.test.*` or `out/**/Test.*`
 
-**Remark** that `dependsOn` is experimental and **only** works well with paths **inside** of the workspace directory.
-Also note that if it is set, it will run the related tests automatically.
+**Note** that `dependsOn` **only** works well with paths/patterns **inside** of the workspace directory.
+If "Enable autorun" is enabled in "**...**" menu (next to the play button), it will trigger the related tests.
 It accumulates events by waiting for 2 seconds after the last event.
+
+**Also** `dependsOn` cannot contain variables like the others and outside of the workspace directory it works with only existing directory.
+So if one `dependsOn` a file which is deleted, the related tests will be triggered once, but re-reation won't trigger it agian.
+(It is harder to find a suitable fswatcher than I thought. Tried: chokidar, gaze)
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
@@ -198,6 +202,7 @@ Note that `name` and `request` are filled, if they are undefined, so it is not n
 - (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
 - (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures.
   Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
+- (2019-04-02) `dependsOn` limitation: See `dependsOn`.
 
 For solving issues use: `catch2TestExplorer.logpanel: true` and check the output window.
 
