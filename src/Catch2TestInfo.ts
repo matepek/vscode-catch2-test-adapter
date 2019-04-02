@@ -119,8 +119,6 @@ export class Catch2TestInfo extends AbstractTestInfo {
   }
 
   private _processXmlTagTestCaseInner(testCase: XmlObject, testEvent: TestEvent): void {
-    const title: Catch2Section = new Catch2Section(testCase.$.name, testCase.$.filename, testCase.$.line);
-
     if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
       testEvent.message += '⏱ Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
       this._extendDescriptionAndTooltip(
@@ -128,6 +126,8 @@ export class Catch2TestInfo extends AbstractTestInfo {
         Math.round(Number(testCase.OverallResult[0].$.durationInSeconds) * 1000),
       );
     }
+
+    const title: Catch2Section = new Catch2Section(testCase.$.name, testCase.$.filename, testCase.$.line);
 
     this._processInfoWarningAndFailureTags(testCase, title, [], testEvent);
 
@@ -159,6 +159,27 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     if (testCase.OverallResult[0].$.success === 'true') {
       testEvent.state = 'passed';
+    }
+
+    if (this._sections.length) {
+      let failedBranch = 0;
+      let succBranch = 0;
+
+      const traverse = (section: Catch2Section): void => {
+        if (section.children.length === 0) {
+          section.failed ? ++failedBranch : ++succBranch;
+        } else {
+          for (let i = 0; i < section.children.length; ++i) {
+            traverse(section.children[i]);
+          }
+        }
+      };
+
+      this._sections.forEach(section => traverse(section));
+
+      const branchMsg = failedBranch ? '✗ ' + failedBranch + ' /' : ' ' + '✓ ' + succBranch;
+      testEvent.description += ' [' + branchMsg + ']';
+      testEvent.tooltip += '\n🔀 ' + branchMsg + ' branches';
     }
   }
 

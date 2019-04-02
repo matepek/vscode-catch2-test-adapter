@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `executables`'s `dependOn` (type: _string[]_) property is no longer experimental.
   Be careful with it. It eats [file descriptors](https://en.wikipedia.org/wiki/File_descriptor) and defecates test executions.
+- section result stat to description and tooltip.
 
 ## [2.4.0] - 2019-03-25
 
