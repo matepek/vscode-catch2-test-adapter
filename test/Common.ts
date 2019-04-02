@@ -327,45 +327,54 @@ export class TestAdapter extends my.TestAdapter {
 
 export class ChildProcessStub extends EventEmitter {
   public readonly stdout: Readable;
+  private _stdoutChunks: (string | null)[] = [];
+  private _canPushOut: boolean = false;
+
   public readonly stderr: Readable;
+  private _stderrChunks: (string | null)[] = [];
+  private _canPushErr: boolean = false;
   public closed: boolean = false;
 
-  private _read(): void {
-    //this.stdout.push(null);
+  private _writeStdOut(): void {
+    while (this._stdoutChunks.length && this._canPushOut)
+      this._canPushOut = this.stdout.push(this._stdoutChunks.shift());
+  }
+
+  private _writeStdErr(): void {
+    while (this._stderrChunks.length && this._canPushErr)
+      this._canPushErr = this.stderr.push(this._stderrChunks.shift());
   }
 
   public constructor(stdout?: string | Iterable<string>, close?: number | string, stderr?: string) {
     super();
+
+    if (stdout === undefined) this._stdoutChunks = [];
+    else if (typeof stdout === 'string') this._stdoutChunks = [stdout, null];
+    else this._stdoutChunks = [...stdout, null];
+
+    if (stderr === undefined) this._stderrChunks = [null];
+    else if (typeof stderr === 'string') this._stderrChunks = [stderr, null];
+    else throw new Error('assert');
+
     this.stdout = new Readable({
       read: () => {
-        this._read();
+        this._canPushOut = true;
+        this._writeStdOut();
       },
     });
     this.stderr = new Readable({
       read: () => {
-        this._read();
+        this._canPushErr = true;
+        this._writeStdErr();
       },
     });
+
     this.stdout.on('end', () => {
       this.closed = true;
       if (close === undefined) this.emit('close', 1, null);
       else if (typeof close === 'string') this.emit('close', null, close);
       else this.emit('close', close, null);
     });
-    if (stderr !== undefined) {
-      this.stderr.push(stderr);
-      this.stderr.push(null);
-    }
-    if (stdout !== undefined) {
-      if (typeof stdout !== 'string') {
-        for (let line of stdout) {
-          this.write(line);
-        }
-        this.close();
-      } else {
-        this.writeAndClose(stdout);
-      }
-    }
   }
 
   public kill(signal?: string): void {
@@ -376,12 +385,15 @@ export class ChildProcessStub extends EventEmitter {
   }
 
   public write(data: string): void {
-    this.stdout.push(data);
+    this._stdoutChunks.push(data);
+    this._writeStdOut();
   }
 
   public close(): void {
-    this.stdout.push(null);
-    this.stderr.push(null);
+    this._stdoutChunks.push(null);
+    this._writeStdOut();
+    this._stderrChunks.push(null);
+    this._writeStdErr();
   }
 
   public writeAndClose(data: string): void {
@@ -392,7 +404,7 @@ export class ChildProcessStub extends EventEmitter {
   public writeLineByLineAndClose(data: string): void {
     const lines = data.split('\n');
     lines.forEach(l => {
-      this.write(l);
+      this.write(l + '\n');
     });
     this.close();
   }

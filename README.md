@@ -48,14 +48,14 @@ This variable can be
 
 If it is an object it can contains the following properties:
 
-| Property      | Description                                                                                                                                                                                                                       |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`        | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                   |
-| `pattern`     | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required)                      |
-| `description` | A less prominent text after the `name`. Can contains variables related to `pattern`.                                                                                                                                              |
-| `cwd`         | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                           |
-| `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                   |
-| `dependsOn`   | (Experimental) Array of _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ it will run the related executables. |
+| Property      | Description                                                                                                                                                                                                                                                                   |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                                                               |
+| `pattern`     | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required)                                                                  |
+| `description` | A less prominent text after the `name`. Can contains variables related to `pattern`.                                                                                                                                                                                          |
+| `cwd`         | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                       |
+| `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                               |
+| `dependsOn`   | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. |
 
 The `pattern` (or the `executables` used as string or an array of strings)
 can contains [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
@@ -76,9 +76,13 @@ If the pattern is too general like `out/**/*test*`, it could cause unexpected ex
 which would not just increase the test-loading duration but also could have other unexpeced effects.
 I suggest to have a stricter file-name convention and a corresponding pattern like `out/**/*.test.*` or `out/**/Test.*`
 
-**Remark** that `dependsOn` is experimental and **only** works well with paths **inside** of the workspace directory.
-Also note that if it is set, it will run the related tests automatically.
+**Note** that `dependsOn` **only** works well with paths/patterns **inside** of the workspace directory.
+If "Enable autorun" is enabled in "**...**" menu (next to the play button), it will trigger the related tests.
 It accumulates events by waiting for 2 seconds after the last event.
+
+**Also** `dependsOn` cannot contain variables like the others and outside of the workspace directory it works with only existing directory.
+So if one `dependsOn` a file which is deleted, the related tests will be triggered once, but re-reation won't trigger it agian.
+(It is harder to find a suitable fswatcher than I thought. Tried: chokidar, gaze)
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
@@ -198,6 +202,7 @@ Note that `name` and `request` are filled, if they are undefined, so it is not n
 - (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
 - (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures.
   Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
+- (2019-04-02) `dependsOn` limitation: See `dependsOn`.
 
 For solving issues use: `catch2TestExplorer.logpanel: true` and check the output window.
 
@@ -205,5 +210,6 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip
 - gaze is not good enough: detects change and delete, but not creation
+- `dependsOn` could contain variables
 
 ## [Contribution guideline here](CONTRIBUTING.md)

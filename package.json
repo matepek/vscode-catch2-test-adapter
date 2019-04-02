@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.4.0",
+  "version": "2.4.1-dev",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -45,10 +45,11 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
+    "debounce-collect": "^1.0.2",
     "entities": "^1.1.2",
     "gaze": "^1.1.3",
     "tslib": "^1.9.3",
-    "vscode-test-adapter-api": "^1.6.0",
+    "vscode-test-adapter-api": "^1.7.0",
     "vscode-test-adapter-util": "^0.6.4",
     "xml2js": "^0.4.19"
   },
@@ -58,23 +59,23 @@
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^5.0.5",
     "@types/mocha": "^5.2.6",
-    "@types/node": "^10.14.3",
+    "@types/node": "^10.14.4",
     "@types/request-promise": "4.1.42",
     "@types/sinon": "^5.0.7",
     "@types/xml2js": "^0.4.3",
     "@typescript-eslint/eslint-plugin": "^1.5.0",
     "@typescript-eslint/parser": "^1.5.0",
     "deep-equal": "^1.0.1",
-    "eslint": "^5.15.3",
+    "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.1.0",
     "eslint-plugin-prettier": "^3.0.1",
     "fs-extra": "^7.0.1",
     "mocha-eslint": "^5.0.0",
     "prettier": "^1.16.4",
     "request-promise": "4.2.2",
-    "sinon": "^7.2.7",
-    "typescript": "^3.3.3333",
-    "vsce": "^1.58.0",
+    "sinon": "^7.3.1",
+    "typescript": "^3.4.1",
+    "vsce": "^1.59.0",
     "vscode": "1.1.30",
     "vscode-test": "0.1.5"
   },
@@ -92,6 +93,7 @@
       "properties": {
         "catch2TestExplorer.executables": {
           "markdownDescription": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerexecutables)",
+          "description": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerexecutables)",
           "scope": "resource",
           "default": [
             {
@@ -215,7 +217,7 @@
                       },
                       "dependsOn": {
                         "type": "array",
-                        "description": "(Experimental) Array of _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ it will run the related executables.",
+                        "description": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables.",
                         "additionalItems": {
                           "type": "string",
                           "minLength": 1
@@ -340,7 +342,7 @@
                 },
                 "dependsOn": {
                   "type": "array",
-                  "description": "(Experimental) Array of _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ it will run the related executables.",
+                  "description": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables.",
                   "additionalItems": {
                     "type": "string",
                     "minLength": 1
@@ -361,6 +363,7 @@
         },
         "catch2TestExplorer.defaultCwd": {
           "markdownDescription": "The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in \"executables\". (It resolves variables.)",
+          "description": "The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in \"executables\". (It resolves variables.)",
           "scope": "resource",
           "type": "string",
           "default": "${absDirpath}",
@@ -382,6 +385,7 @@
         },
         "catch2TestExplorer.defaultEnv": {
           "markdownDescription": "Environment variables to be set when running the tests. (It resolves variables.)",
+          "description": "Environment variables to be set when running the tests. (It resolves variables.)",
           "type": "object",
           "additionalProperties": {
             "anyOf": [
@@ -418,6 +422,7 @@
         },
         "catch2TestExplorer.defaultRngSeed": {
           "markdownDescription": "Shuffles the tests with the given random. Catch2: [--rng-seed (<integer> or 'time')](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed); Google Test: [--gtest_random_seed=<integer>](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#shuffling-the-tests);",
+          "description": "Shuffles the tests with the given random. Catch2: [--rng-seed (<integer> or 'time')](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed); Google Test: [--gtest_random_seed=<integer>](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#shuffling-the-tests);",
           "scope": "resource",
           "default": null,
           "oneOf": [
@@ -438,6 +443,7 @@
         },
         "catch2TestExplorer.defaultWatchTimeoutSec": {
           "markdownDescription": "Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.",
+          "description": "Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.",
           "scope": "resource",
           "type": "integer",
           "default": 10,
@@ -445,6 +451,7 @@
         },
         "catch2TestExplorer.defaultRunningTimeoutSec": {
           "markdownDescription": "Test executable is running in a process. In case of an inifinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
+          "description": "Test executable is running in a process. In case of an inifinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
           "scope": "resource",
           "type": "integer",
           "default": 0,
@@ -452,6 +459,7 @@
         },
         "catch2TestExplorer.workerMaxNumber": {
           "markdownDescription": "The variable maximize the number of the parallel test execution. It applies instantly.",
+          "description": "The variable maximize the number of the parallel test execution. It applies instantly.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
@@ -459,6 +467,7 @@
         },
         "catch2TestExplorer.debugConfigTemplate": {
           "markdownDescription": "Set the necessary debug configuraitons and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",
+          "description": "Set the necessary debug configuraitons and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",
           "scope": "resource",
           "default": null,
           "oneOf": [
@@ -507,30 +516,35 @@
         },
         "catch2TestExplorer.debugBreakOnFailure": {
           "markdownDescription": "Debugger breaks on failure while debugging the test. Catch2: --break; Google Test: --gtest_break_on_failure;",
+          "description": "Debugger breaks on failure while debugging the test. Catch2: --break; Google Test: --gtest_break_on_failure;",
           "scope": "resource",
           "type": "boolean",
           "default": true
         },
         "catch2TestExplorer.defaultNoThrow": {
           "markdownDescription": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow",
+          "description": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow",
           "scope": "resource",
           "type": "boolean",
           "default": false
         },
         "catch2TestExplorer.logpanel": {
           "markdownDescription": "Creates a new output channel and write the log messages there. For debugging. Enabling it could slow down your vscode.",
+          "description": "Creates a new output channel and write the log messages there. For debugging. Enabling it could slow down your vscode.",
           "scope": "resource",
           "type": "boolean",
           "default": false
         },
         "catch2TestExplorer.logfile": {
           "markdownDescription": "Writes the log message into the given file. Empty means disabled.",
+          "description": "Writes the log message into the given file. Empty means disabled.",
           "scope": "resource",
           "type": "string",
           "default": ""
         },
         "catch2TestExplorer.enableTestListCaching": {
           "markdownDescription": "(Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.) (Click [here](http://bit.ly/2HFcAC6), if you think it is a useful feature!)",
+          "description": "(Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.) (Click [here](http://bit.ly/2HFcAC6), if you think it is a useful feature!)",
           "scope": "resource",
           "type": "boolean",
           "default": false

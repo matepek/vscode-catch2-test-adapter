@@ -141,35 +141,35 @@ describe(path.basename(__filename), function() {
 
       adapter = new TestAdapter();
 
-      let autorunCounter = 0;
-      adapter.autorun(() => {
-        ++autorunCounter;
+      let retireCounter = 0;
+      adapter.retire(() => {
+        ++retireCounter;
       });
 
       await adapter.load();
       assert.strictEqual(adapter.root.children.length, 0);
-      assert.strictEqual(autorunCounter, 0);
+      assert.strictEqual(retireCounter, 0);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
         return copy('../suite1.exe', 'out/suite1.exe');
       });
 
       assert.strictEqual(adapter.root.children.length, 1);
-      assert.strictEqual(autorunCounter, 0);
+      assert.strictEqual(retireCounter, 0);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
         return copy('../suite2.exe', 'out/sub/suite2X.exe');
       });
 
       assert.strictEqual(adapter.root.children.length, 2);
-      assert.strictEqual(autorunCounter, 0);
+      assert.strictEqual(retireCounter, 0);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
         return copy('../suite2.exe', 'out/sub/suite2.exe');
       });
 
       assert.strictEqual(adapter.root.children.length, 3);
-      assert.strictEqual(autorunCounter, 0);
+      assert.strictEqual(retireCounter, 0);
 
       await settings.updateConfig('defaultWatchTimeoutSec', 1);
 
@@ -178,12 +178,13 @@ describe(path.basename(__filename), function() {
       });
 
       assert.strictEqual(adapter.root.children.length, 2);
-      assert.strictEqual(autorunCounter, 0);
+      assert.strictEqual(retireCounter, 1);
 
       const eventCount = adapter.testStatesEvents.length;
       await adapter.run([adapter.root.id]);
+
       assert.strictEqual(adapter.testStatesEvents.length, eventCount + 14);
-      assert.strictEqual(autorunCounter, 0);
+      assert.strictEqual(retireCounter, 1);
     });
   });
 });

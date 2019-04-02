@@ -179,7 +179,7 @@ describe('vscode.Uri', function() {
   });
 });
 
-describe('ChildProcessStub', function() {
+describe('ChildProcessFake', function() {
   it('should works', async function() {
     const cp = new ChildProcessStub('alma');
     let output = '';
@@ -194,7 +194,7 @@ describe('ChildProcessStub', function() {
   });
 
   it('should works2', async function() {
-    this.timeout(700);
+    this.timeout(800);
     this.slow(600);
     const cp = new ChildProcessStub();
     let output = '';

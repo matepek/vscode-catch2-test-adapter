@@ -129,7 +129,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
             w.onAll(fsPath => {
               this._shared.log.info('dependsOn watcher event:', fsPath);
-              this._shared.autorunEmitter.fire(this._executables.values());
+              this._shared.retire.fire([...this._executables.values()]);
             });
           } else {
             absPatterns.push(p.absPattern);
@@ -144,7 +144,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
           w.onAll(fsPath => {
             this._shared.log.info('dependsOn watcher event:', fsPath);
-            this._shared.autorunEmitter.fire(this._executables.values());
+            this._shared.retire.fire([...this._executables.values()]);
           });
         }
       } catch (e) {
@@ -308,6 +308,7 @@ export class TestExecutableInfo implements vscode.Disposable {
                   this._executables.set(filePath, suite);
                 }
                 this._lastEventArrivedAt.delete(filePath);
+                this._shared.retire.fire([suite]);
               })
               .then(resolve, reject);
           });
