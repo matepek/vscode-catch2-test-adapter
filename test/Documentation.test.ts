@@ -50,7 +50,9 @@ describe(path.basename(__filename), function() {
         if (key === 'catch2TestExplorer.logfile') {
           // skip
         } else {
-          assert.strictEqual(findDescriptionInReadmeTable(key), properties[key]['markdownDescription'], key);
+          const descriptionInReadme = findDescriptionInReadmeTable(key);
+          assert.strictEqual(descriptionInReadme, properties[key]['markdownDescription'], key);
+          assert.strictEqual(descriptionInReadme, properties[key]['description'], key);
         }
       });
     }
