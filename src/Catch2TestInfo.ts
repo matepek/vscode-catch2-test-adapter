@@ -177,7 +177,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
       this._sections.forEach(section => traverse(section));
 
-      const branchMsg = failedBranch ? '✗ ' + failedBranch + ' /' : ' ' + '✓ ' + succBranch;
+      const branchMsg = (failedBranch ? '✘' + failedBranch + '|' : '') + '✔︎' + succBranch;
       testEvent.description += ' [' + branchMsg + ']';
       testEvent.tooltip += '\n🔀 ' + branchMsg + ' branches';
     }
