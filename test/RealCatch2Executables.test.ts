@@ -178,12 +178,12 @@ describe(path.basename(__filename), function() {
       });
 
       assert.strictEqual(adapter.root.children.length, 2);
-      assert.strictEqual(autorunCounter, 0);
+      assert.strictEqual(autorunCounter, 1);
 
       const eventCount = adapter.testStatesEvents.length;
       await adapter.run([adapter.root.id]);
       assert.strictEqual(adapter.testStatesEvents.length, eventCount + 14);
-      assert.strictEqual(autorunCounter, 0);
+      assert.strictEqual(autorunCounter, 1);
     });
   });
 });
