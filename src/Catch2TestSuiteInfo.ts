@@ -199,7 +199,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
   }
 
   protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
-    const data = new class {
+    const data = new (class {
       public buffer: string = '';
       public inTestCase: boolean = false;
       public currentChild: Catch2TestInfo | undefined = undefined;
@@ -207,7 +207,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       public rngSeed: number | undefined = undefined;
       public unprocessedXmlTestCases: string[] = [];
       public processedTestCases: Catch2TestInfo[] = [];
-    }();
+    })();
 
     const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
 

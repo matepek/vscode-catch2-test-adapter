@@ -125,12 +125,14 @@ export class TestExecutableInfo implements vscode.Disposable {
             const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.relativeToWsPosix);
             this._disposables.push(w);
 
-            w.onError((e: Error) => this._shared.log.error('dependsOn watcher:', e, p));
+            w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, p));
 
-            w.onAll(fsPath => {
-              this._shared.log.info('dependsOn watcher event:', fsPath);
-              this._shared.retire.fire([...this._executables.values()]);
-            });
+            w.onAll(
+              (fsPath: string): void => {
+                this._shared.log.info('dependsOn watcher event:', fsPath);
+                this._shared.retire.fire([...this._executables.values()]);
+              },
+            );
           } else {
             absPatterns.push(p.absPattern);
           }
@@ -140,12 +142,14 @@ export class TestExecutableInfo implements vscode.Disposable {
           const w = new GazeWrapper(absPatterns);
           this._disposables.push(w);
 
-          w.onError((e: Error) => this._shared.log.error('dependsOn watcher:', e, absPatterns));
+          w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, absPatterns));
 
-          w.onAll(fsPath => {
-            this._shared.log.info('dependsOn watcher event:', fsPath);
-            this._shared.retire.fire([...this._executables.values()]);
-          });
+          w.onAll(
+            (fsPath: string): void => {
+              this._shared.log.info('dependsOn watcher event:', fsPath);
+              this._shared.retire.fire([...this._executables.values()]);
+            },
+          );
         }
       } catch (e) {
         this._shared.log.error('dependsOn error:', e);

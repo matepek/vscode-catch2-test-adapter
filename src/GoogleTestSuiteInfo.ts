@@ -252,7 +252,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
   }
 
   protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
-    const data = new class {
+    const data = new (class {
       public buffer: string = '';
       public currentTestCaseNameFull: string | undefined = undefined;
       public currentChild: GoogleTestInfo | undefined = undefined;
@@ -260,7 +260,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
       public beforeFirstTestCase: boolean = true;
       public unprocessedTestCases: string[] = [];
       public processedTestCases: GoogleTestInfo[] = [];
-    }();
+    })();
 
     const testBeginRe = /^\[ RUN      \] ((.+)\.(.+))$/m;
 

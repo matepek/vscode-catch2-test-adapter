@@ -16,6 +16,7 @@
     "catch.hpp.txt": "cpp"
   },
   "editor.formatOnSaveTimeout": 5000,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "eslint.autoFixOnSave": true,
   "eslint.validate": [
     "javascript",
