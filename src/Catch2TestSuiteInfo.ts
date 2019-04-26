@@ -310,8 +310,8 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       });
 
       runInfo.process!.once('close', (code: number | null, signal: string | null) => {
-        if (code) resolve({ exitCode: code });
-        else if (signal) resolve({ signal: signal });
+        if (code !== null && code !== undefined) resolve({ exitCode: code });
+        else if (signal !== null && signal !== undefined) resolve({ signal: signal });
         else resolve({ error: new Error('unknown sfngvdlfkxdvgn') });
       });
     })
@@ -347,6 +347,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
         const isTestRemoved =
           runInfo.timeout === null &&
+          result.exitCode !== undefined &&
           ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
             this.getTestInfoCount(false) > data.processedTestCases.length) ||
             (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
