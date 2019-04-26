@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.5]
+
+### Fixed
+
+- a [bug](https://github.com/matepek/vscode-catch2-test-adapter/issues/88) which reloads the suite in case of the test crashes.
+
 ## [2.4.4] - 2019-04-16
 
 ### Fixed
