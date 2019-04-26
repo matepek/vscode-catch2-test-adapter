@@ -151,7 +151,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           this._reloadFromXml(xmlStr, oldChildren);
 
           if (!this._shared.enabledTestListCaching) {
-            fs.unlink(cacheFile, (err: Error) => err && this._shared.log.warn("Couldn't remove: " + cacheFile, err));
+            fs.unlink(cacheFile, (err: Error | null) => {
+              err && this._shared.log.warn("Couldn't remove: " + cacheFile, err);
+            });
           }
 
           return;

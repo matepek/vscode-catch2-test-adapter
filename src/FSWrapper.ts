@@ -76,7 +76,7 @@ const ExecutableFlag = fs.constants.X_OK;
 
 function accessAsync(filePath: string, flag: number): Promise<void> {
   return new Promise((resolve, reject) => {
-    fs.access(filePath, flag, (err: Error) => {
+    fs.access(filePath, flag, (err: Error | null) => {
       if (err) reject(err);
       else resolve();
     });
