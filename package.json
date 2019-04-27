@@ -99,11 +99,7 @@
             {
               "name": "${filename}",
               "description": "${relDirpath}/",
-              "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
-              "cwd": "${absDirpath}",
-              "env": {
-                "C2TESTEXECUTABLEPATH": "${absPath}"
-              }
+              "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*"
             }
           ],
           "oneOf": [
