@@ -335,6 +335,9 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
               if (result.error) {
                 ev.state = 'errored';
                 ev.message += 'Error: ' + inspect(result.error);
+              } else if (result.signal) {
+                ev.state = 'errored';
+                ev.message += 'Signal: ' + inspect(result.signal);
               }
             }
 

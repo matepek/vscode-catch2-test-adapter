@@ -820,10 +820,10 @@ describe(path.basename(__filename), function() {
         { type: 'test', state: 'running', test: s1t1 },
         {
           type: 'test',
-          state: 'failed',
+          state: 'errored',
           test: s1t1,
           decorations: [],
-          message: '😱 Unexpected error !!\n',
+          message: "😱 Unexpected error !!\nSignal: 'SIGTERM'",
         },
         {
           type: 'suite',
