@@ -12,7 +12,7 @@ import * as c2fs from './FSWrapper';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
-import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { RunningTestExecutableInfo, ProcessResult } from './RunningTestExecutableInfo';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -211,12 +211,6 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
     const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
 
-    interface ProcessResult {
-      exitCode?: number;
-      signal?: string;
-      error?: Error;
-    }
-
     return new Promise<ProcessResult>(resolve => {
       const processChunk = (chunk: string): void => {
         data.buffer = data.buffer + chunk;
@@ -310,16 +304,18 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       });
 
       runInfo.process!.once('close', (code: number | null, signal: string | null) => {
-        if (code !== null && code !== undefined) resolve({ exitCode: code });
-        else if (signal !== null && signal !== undefined) resolve({ signal: signal });
+        if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
+        else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
         else resolve({ error: new Error('unknown sfngvdlfkxdvgn') });
       });
     })
       .catch((reason: Error) => {
-        this._shared.log.error(runInfo, reason, this, data);
+        this._shared.log.error(reason);
         return { error: reason };
       })
       .then((result: ProcessResult) => {
+        result.error && this._shared.log.warn(result, runInfo, this, data);
+
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
             this._shared.log.warn('data.currentChild !== undefined: ', data);
@@ -334,10 +330,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
               if (result.error) {
                 ev.state = 'errored';
-                ev.message += 'Error: ' + inspect(result.error);
-              } else if (result.signal) {
-                ev.state = 'errored';
-                ev.message += 'Signal: ' + inspect(result.signal);
+                ev.message += result.error.message;
               }
             }
 
@@ -350,7 +343,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
         const isTestRemoved =
           runInfo.timeout === null &&
-          result.exitCode !== undefined &&
+          result.error === undefined &&
           ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
             this.getTestInfoCount(false) > data.processedTestCases.length) ||
             (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));

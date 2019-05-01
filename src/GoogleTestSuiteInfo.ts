@@ -14,7 +14,7 @@ import { Parser } from 'xml2js';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
-import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { RunningTestExecutableInfo, ProcessResult } from './RunningTestExecutableInfo';
 
 class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
   public children: GoogleTestInfo[] = [];
@@ -266,12 +266,6 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
     const testBeginRe = /^\[ RUN      \] ((.+)\.(.+))$/m;
 
-    interface ProcessResult {
-      exitCode?: number;
-      signal?: string;
-      error?: Error;
-    }
-
     return new Promise<ProcessResult>(resolve => {
       const processChunk = (chunk: string): void => {
         data.buffer = data.buffer + chunk;
@@ -360,16 +354,18 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
       });
 
       runInfo.process!.once('close', (code: number | null, signal: string | null) => {
-        if (code !== null && code !== undefined) resolve({ exitCode: code });
-        else if (signal != null && signal !== undefined) resolve({ signal: signal });
-        else resolve({ error: new Error('unknown sfngvdlfkgn') });
+        if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
+        else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
+        else resolve({ error: new Error('unknown sfngvdlfkxdvgn') });
       });
     })
       .catch((reason: Error) => {
-        this._shared.log.error(runInfo, reason, this, data);
+        this._shared.log.error(reason);
         return { error: reason };
       })
       .then((result: ProcessResult) => {
+        result.error && this._shared.log.warn(result, runInfo, this, data);
+
         if (data.currentTestCaseNameFull !== undefined) {
           if (data.currentChild !== undefined) {
             this._shared.log.warn('data.currentChild !== undefined: ', data);
@@ -385,10 +381,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
               if (result.error) {
                 ev.state = 'errored';
-                ev.message += 'Error: ' + inspect(result.error);
-              } else if (result.signal) {
-                ev.state = 'errored';
-                ev.message += 'Signal: ' + inspect(result.signal);
+                ev.message += result.error.message;
               }
             }
 
@@ -405,7 +398,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
         const isTestRemoved =
           runInfo.timeout === null &&
-          result.exitCode !== undefined &&
+          result.error === undefined &&
           ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
             this.getTestInfoCount(false) > data.processedTestCases.length) ||
             (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
