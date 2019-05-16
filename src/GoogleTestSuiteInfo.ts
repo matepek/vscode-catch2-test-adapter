@@ -367,7 +367,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         }
       };
 
-      runInfo.process!.stdout.on('data', (chunk: Uint8Array) => {
+      runInfo.process!.stdout!.on('data', (chunk: Uint8Array) => {
         processChunk(chunk.toLocaleString());
       });
 

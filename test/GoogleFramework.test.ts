@@ -316,7 +316,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 2',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/0\n\n⏱ 0ms',
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/0\n\n#️⃣GetParam() = 2\n\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 3, 1) },
         {
@@ -334,7 +334,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3 (0 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/1\n\n⏱ 0ms',
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/1\n\n#️⃣GetParam() = 3\n\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 3, 2) },
         {
@@ -352,7 +352,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 2',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2 (1 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails2/0\n\n⏱ 1ms',
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails2/0\n\n#️⃣GetParam() = 2\n\n⏱ 1ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 3, 3) },
         {
@@ -370,7 +370,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3 (0 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails2/1\n\n⏱ 0ms',
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails2/1\n\n#️⃣GetParam() = 3\n\n⏱ 0ms',
         },
         {
           type: 'suite',
@@ -396,7 +396,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3 (0 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams2/FailingParamTest.Fails1/0\n\n⏱ 0ms',
+          tooltip: 'Name: PrintingFailingParams2/FailingParamTest.Fails1/0\n\n#️⃣GetParam() = 3\n\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 4, 1) },
         {
@@ -414,7 +414,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3 (0 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams2/FailingParamTest.Fails2/0\n\n⏱ 0ms',
+          tooltip: 'Name: PrintingFailingParams2/FailingParamTest.Fails2/0\n\n#️⃣GetParam() = 3\n\n⏱ 0ms',
         },
         {
           type: 'suite',
@@ -493,7 +493,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 3, 0),
           decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
           description: '(0ms)',
-          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/0\n\n⏱ 0ms',
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/0\n\n#️⃣GetParam() = 2\n\n⏱ 0ms',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
             'gtest.cpp:41: Failure',
