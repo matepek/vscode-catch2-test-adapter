@@ -57,11 +57,11 @@
     "@types/chai": "^4.1.7",
     "@types/deep-equal": "^1.0.1",
     "@types/entities": "^1.1.1",
-    "@types/fs-extra": "^5.1.0",
+    "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.6",
-    "@types/node": "^10.14.6",
-    "@types/request-promise": "4.1.42",
-    "@types/sinon": "^5.0.7",
+    "@types/node": "^12.0.2",
+    "@types/request-promise": "4.1.43",
+    "@types/sinon": "^7.0.11",
     "@types/xml2js": "^0.4.4",
     "@typescript-eslint/eslint-plugin": "^1.9.0",
     "@typescript-eslint/parser": "^1.9.0",
@@ -72,12 +72,12 @@
     "fs-extra": "^7.0.1",
     "mocha-eslint": "^5.0.0",
     "prettier": "^1.17.1",
-    "request-promise": "4.2.2",
+    "request-promise": "4.2.4",
     "sinon": "^7.3.2",
     "typescript": "^3.4.5",
     "vsce": "^1.61.0",
     "vscode": "^1.1.34",
-    "vscode-test": "0.1.5"
+    "vscode-test": "0.4.1"
   },
   "engines": {
     "vscode": "^1.23.0"

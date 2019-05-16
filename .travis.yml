@@ -28,7 +28,7 @@ before_install:
 
 install:
   - npm install
-  - npm audit || npm audit
+  #- npm audit || npm audit temporarily disabled
   - npm run compile
 
 script: 
