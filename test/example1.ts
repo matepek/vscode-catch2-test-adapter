@@ -7,11 +7,11 @@ import { Imitation, settings, FileSystemWatcherStub, ChildProcessStub } from './
 
 ///
 
-export const example1 = new class {
-  public readonly suite1 = new class {
+export const example1 = new (class {
+  public readonly suite1 = new (class {
     public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath1.exe')).fsPath;
 
-    public readonly t1 = new class {
+    public readonly t1 = new (class {
       public readonly fullTestName = 's1t1';
       public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
@@ -54,9 +54,9 @@ export const example1 = new class {
             </Catch>`,
         ],
       ];
-    }();
+    })();
 
-    public readonly t2 = new class {
+    public readonly t2 = new (class {
       public readonly fullTestName = 's1t2';
       public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
@@ -115,7 +115,7 @@ export const example1 = new class {
             </Catch>`,
         ],
       ];
-    }();
+    })();
 
     public readonly outputs: [string[], string][] = [
       [['--help'], 'Catch v2.4.1'],
@@ -197,12 +197,12 @@ export const example1 = new class {
         uniqeIdContainer.add(suite.id);
       }
     }
-  }();
+  })();
 
-  public readonly suite2 = new class {
+  public readonly suite2 = new (class {
     public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath2.exe')).fsPath;
 
-    public readonly t1 = new class {
+    public readonly t1 = new (class {
       public readonly fullTestName = 's2t1';
       public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
@@ -245,9 +245,9 @@ export const example1 = new class {
           </Catch>`,
         ],
       ];
-    }();
+    })();
 
-    public readonly t2 = new class {
+    public readonly t2 = new (class {
       public readonly fullTestName = 's2t2';
       public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
@@ -290,9 +290,9 @@ export const example1 = new class {
             </Catch>`,
         ],
       ];
-    }();
+    })();
 
-    public readonly t3 = new class {
+    public readonly t3 = new (class {
       public readonly fullTestName = 's2t3';
       public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
@@ -351,7 +351,7 @@ export const example1 = new class {
             </Catch>`,
         ],
       ];
-    }();
+    })();
 
     public assert(label: string, childLabels: string[], suite: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
       assert.equal(suite.type, 'suite');
@@ -439,9 +439,9 @@ export const example1 = new class {
       ...this.t2.outputs,
       ...this.t3.outputs,
     ];
-  }();
+  })();
 
-  public readonly suite3 = new class {
+  public readonly suite3 = new (class {
     public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath3.exe')).fsPath;
 
     public readonly outputs: [string[], string][] = [
@@ -2010,7 +2010,7 @@ For more detailed usage please see the project docs
 `,
       ],
     ];
-  }();
+  })();
 
   public assertWithoutChildren(root: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
     assert.strictEqual(root.type, 'suite');
@@ -2023,7 +2023,7 @@ For more detailed usage please see the project docs
     }
   }
 
-  public readonly gtest1 = new class {
+  public readonly gtest1 = new (class {
     public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'gtest1.exe')).fsPath;
 
     public readonly gtest_list_tests_output = [
@@ -2048,31 +2048,33 @@ For more detailed usage please see the project docs
       '',
     ].join(EOL);
 
-    public readonly gtest_list_tests_output_xml = `<?xml version="1.0" encoding="UTF-8"?>
-    <testsuites tests="12" name="AllTests">
-      <testsuite name="TestCas1" tests="2">
-        <testcase name="test1" file="gtest.cpp" line="11" />
-        <testcase name="test2" file="gtest.cpp" line="16" />
-      </testsuite>
-      <testsuite name="TestCas2" tests="2">
-        <testcase name="test1" file="gtest.cpp" line="22" />
-        <testcase name="test2" file="gtest.cpp" line="34" />
-      </testsuite>
-      <testsuite name="MockTestCase" tests="2">
-        <testcase name="expect1" file="gtest.cpp" line="67" />
-        <testcase name="expect2" file="gtest.cpp" line="75" />
-      </testsuite>
-      <testsuite name="PrintingFailingParams1/FailingParamTest" tests="4">
-        <testcase name="Fails1/0" value_param="2" file="gtest.cpp" line="41" />
-        <testcase name="Fails1/1" value_param="3" file="gtest.cpp" line="41" />
-        <testcase name="Fails2/0" value_param="2" file="gtest.cpp" line="41" />
-        <testcase name="Fails2/1" value_param="3" file="gtest.cpp" line="41" />
-      </testsuite>
-      <testsuite name="PrintingFailingParams2/FailingParamTest" tests="2">
-        <testcase name="Fails1/0" value_param="3" file="gtest.cpp" line="41" />
-        <testcase name="Fails2/0" value_param="3" file="gtest.cpp" line="41" />
-      </testsuite>
-    </testsuites>`;
+    public readonly gtest_list_tests_output_xml = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<testsuites tests="12" name="AllTests">',
+      '  <testsuite name="TestCas1" tests="2">',
+      '    <testcase name="test1" file="gtest.cpp" line="11" />',
+      '    <testcase name="test2" file="gtest.cpp" line="16" />',
+      '  </testsuite>',
+      '  <testsuite name="TestCas2" tests="2">',
+      '    <testcase name="test1" file="gtest.cpp" line="22" />',
+      '    <testcase name="test2" file="gtest.cpp" line="34" />',
+      '  </testsuite>',
+      '  <testsuite name="MockTestCase" tests="2">',
+      '    <testcase name="expect1" file="gtest.cpp" line="67" />',
+      '    <testcase name="expect2" file="gtest.cpp" line="75" />',
+      '  </testsuite>',
+      '  <testsuite name="PrintingFailingParams1/FailingParamTest" tests="4">',
+      '    <testcase name="Fails1/0" value_param="2" file="gtest.cpp" line="41" />',
+      '    <testcase name="Fails1/1" value_param="3" file="gtest.cpp" line="41" />',
+      '    <testcase name="Fails2/0" value_param="2" file="gtest.cpp" line="41" />',
+      '    <testcase name="Fails2/1" value_param="3" file="gtest.cpp" line="41" />',
+      '  </testsuite>',
+      '  <testsuite name="PrintingFailingParams2/FailingParamTest" tests="2">',
+      '    <testcase name="Fails1/0" value_param="3" file="gtest.cpp" line="41" />',
+      '    <testcase name="Fails2/0" value_param="3" file="gtest.cpp" line="41" />',
+      '  </testsuite>',
+      '</testsuites>',
+    ].join(EOL);
 
     public readonly outputs: [string[], string][] = [
       [['--help'], 'This program contains tests written using Google Test. Yo'],
@@ -2266,7 +2268,7 @@ For more detailed usage please see the project docs
         ].join(EOL),
       ],
     ];
-  }();
+  })();
 
   public readonly outputs: [string, [string[], string][]][] = [
     [this.suite1.execPath, this.suite1.outputs],
@@ -2313,4 +2315,4 @@ For more detailed usage please see the project docs
 
     return watchers;
   }
-}();
+})();

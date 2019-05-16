@@ -80,13 +80,13 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 
 - If "Enable autorun" is enabled in "**...**" menu (next to the play button), it will trigger the related tests.
 - It accumulates events with the following strategy: waiting for 2 seconds after the last event.
-- Works flawlessly with paths/patterns **inside** the with workspace directory
+- Works flawlessly with paths/patterns **inside** of the workspace directory
   (Usually there is no reason to keep your executables outside of the workspace. [See](https://github.com/matepek/vscode-catch2-test-adapter/issues/48).),
-- but have some issue/limitation with paths/patterns **outside** of the workspace directory.
+- but have some issue/limitation with paths/patterns **outside** of the workspace directory:
   - Theoretically is should support [glob patterns](https://github.com/matepek/vscode-catch2-test-adapter/issues/48),
     but it seem there is an issue with _double star_ (`**`).
   - Paths on different drive in the same `dependsOn` array maybe won't work.
-    (If you found another corner case, feel free to open an issue. It could be handy once in the future.)
+    (If you find another corner case, feel free to open an issue. It could be handy once in the future.)
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
@@ -156,7 +156,7 @@ it will look after
 2. [`webfreak.debug`](https://github.com/WebFreak001/code-debug),
 3. [`ms-vscode.cpptools`](https://github.com/Microsoft/vscode-cpptools)
 
-extensions in order. If it founds one of it, it will use it automatically.
+extensions in order. If it finds one of it, it will use it automatically.
 For further details check [VSCode launch config](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations).
 
 **Remark**: This feature to work automatically (value: `null`) has a lot of requirements which are not listed here.

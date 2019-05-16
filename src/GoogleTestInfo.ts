@@ -14,19 +14,25 @@ export class GoogleTestInfo extends AbstractTestInfo {
     id: string | undefined,
     testNameAsId: string,
     label: string,
+    typeParam: string | undefined,
     valueParam: string | undefined,
     file: string | undefined,
     line: number | undefined,
   ) {
+    let tooltip = '';
+
+    if (typeParam) tooltip += '\n#️⃣TypeParam = ' + typeParam;
+    if (valueParam) tooltip += '\n#️⃣GetParam() = ' + valueParam;
+
     super(
       shared,
       id,
       testNameAsId,
-      label + (valueParam ? ' # GetParam() = ' + valueParam : ''),
+      label + (typeParam ? ' #️⃣Type: ' + typeParam : '') + (valueParam ? ' #️⃣Param: ' + valueParam : ''),
       testNameAsId.startsWith('DISABLED_') || testNameAsId.indexOf('.DISABLED_') != -1,
       file,
       line,
-      undefined,
+      tooltip ? tooltip : undefined,
     );
   }
 

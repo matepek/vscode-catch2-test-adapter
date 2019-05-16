@@ -81,7 +81,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         const test = xml.testsuites.testsuite[i].testcase[j];
         const testName = test.$.name.startsWith('DISABLED_') ? test.$.name.substr(9) : test.$.name;
         const testNameAsId = suiteName + '.' + test.$.name;
+        let typeParam: string | undefined = undefined;
         let valueParam: string | undefined = undefined;
+        if (test.$.hasOwnProperty('type_param')) typeParam = test.$.type_param;
         if (test.$.hasOwnProperty('value_param')) valueParam = test.$.value_param;
 
         const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
@@ -90,9 +92,86 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         const line = test.$.line ? test.$.line - 1 : undefined;
 
         group.addChild(
-          new GoogleTestInfo(this._shared, old ? old.id : undefined, testNameAsId, testName, valueParam, file, line),
+          new GoogleTestInfo(
+            this._shared,
+            old ? old.id : undefined,
+            testNameAsId,
+            testName,
+            typeParam,
+            valueParam,
+            file,
+            line,
+          ),
         );
       }
+    }
+  }
+
+  private _reloadFromStdOut(stdOutStr: string, oldChildren: GoogleTestGroupSuiteInfo[]): void {
+    this.children = [];
+
+    let lines = stdOutStr.split(/\r?\n/);
+
+    const testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.(?:\s+(# TypeParam = \s*(.+)))?$/;
+    const testRe = /^  ([A-z0-9][\/A-z0-9_\-]*)(?:\s+(# GetParam\(\) = \s*(.+)))?$/;
+
+    let lineCount = lines.length;
+
+    while (lineCount > 0 && lines[lineCount - 1].match(testRe) === null) lineCount--;
+
+    let lineNum = 0;
+
+    // gtest_main.cc
+    while (lineCount > lineNum && lines[lineNum].match(testGroupRe) === null) lineNum++;
+
+    if (lineCount - lineNum === 0) throw Error('Wrong test list.');
+
+    let testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
+
+    while (testGroupMatch) {
+      lineNum++;
+
+      const testGroupNameWithDot = testGroupMatch[0];
+      const suiteName = testGroupMatch[1];
+      const typeParam: string | undefined = testGroupMatch[3];
+
+      const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
+      const oldGroupId = oldGroup ? oldGroup.id : undefined;
+      const oldGroupChildren = oldGroup ? oldGroup.children : [];
+
+      const group = new GoogleTestGroupSuiteInfo(this._shared, suiteName, oldGroupId);
+
+      let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
+
+      while (testMatch) {
+        lineNum++;
+
+        const testName = testMatch[1].startsWith('DISABLED_') ? testMatch[1].substr(9) : testMatch[1];
+        const valueParam: string | undefined = testMatch[3];
+        const testNameAsId = testGroupNameWithDot + testMatch[1];
+
+        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
+
+        group.addChild(
+          new GoogleTestInfo(
+            this._shared,
+            old ? old.id : undefined,
+            testNameAsId,
+            testName,
+            typeParam,
+            valueParam,
+            undefined,
+            undefined,
+          ),
+        );
+
+        testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
+      }
+
+      if (group.children.length > 0) this.addChild(group);
+      else this._shared.log.error('group without test', this, group, lines);
+
+      testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
     }
   }
 
@@ -137,6 +216,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             '',
             undefined,
             undefined,
+            undefined,
           );
           super.addChild(test);
           this._shared.sendTestEventEmitter.fire([
@@ -165,69 +245,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             e,
           );
 
-          this.children = [];
-
-          let lines = googleTestListOutput.stdout.split(/\r?\n/);
-
-          const testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.$/;
-          const testRe = /^  ([A-z0-9][\/A-z0-9_\-]*)(?:\s+(# GetParam\(\) = \s*(.+)))?$/;
-
-          let lineCount = lines.length;
-
-          while (lineCount > 0 && lines[lineCount - 1].match(testRe) === null) lineCount--;
-
-          let lineNum = 0;
-
-          // gtest_main.cc
-          while (lineCount > lineNum && lines[lineNum].match(testGroupRe) === null) lineNum++;
-
-          if (lineCount - lineNum === 0) throw Error('Wrong test list.');
-
-          let testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
-
-          while (testGroupMatch) {
-            lineNum++;
-
-            const testGroupNameWithDot = testGroupMatch[0];
-            const suiteName = testGroupMatch[1];
-
-            const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
-            const oldGroupId = oldGroup ? oldGroup.id : undefined;
-            const oldGroupChildren = oldGroup ? oldGroup.children : [];
-
-            const group = new GoogleTestGroupSuiteInfo(this._shared, suiteName, oldGroupId);
-
-            let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
-
-            while (testMatch) {
-              lineNum++;
-
-              const testName = testMatch[1].startsWith('DISABLED_') ? testMatch[1].substr(9) : testMatch[1];
-              const valueParam: string | undefined = testMatch[3];
-              const testNameAsId = testGroupNameWithDot + testMatch[1];
-
-              const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
-
-              group.addChild(
-                new GoogleTestInfo(
-                  this._shared,
-                  old ? old.id : undefined,
-                  testNameAsId,
-                  testName,
-                  valueParam,
-                  undefined,
-                  undefined,
-                ),
-              );
-
-              testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
-            }
-
-            if (group.children.length > 0) this.addChild(group);
-            else this._shared.log.error('group without test', this, group, lines);
-
-            testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
-          }
+          this._reloadFromStdOut(googleTestListOutput.stdout, oldChildren);
         }
       });
   }
@@ -287,7 +305,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
                 this._shared.testStatesEmitter.fire(group.getRunningEvent());
               }
             } else {
-              this._shared.log.error('should have found group', this, groupName);
+              this._shared.log.error('should have found group', groupName, this);
             }
 
             data.beforeFirstTestCase = false;

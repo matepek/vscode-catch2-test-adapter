@@ -51,11 +51,11 @@ class FailingParamTest : public testing::TestWithParam<int> {};
 TEST_P(FailingParamTest, Fails1) { EXPECT_EQ(1, GetParam()); }
 TEST_P(FailingParamTest, Fails2) { EXPECT_EQ(1, GetParam()); }
 
-INSTANTIATE_TEST_CASE_P(PrintingFailingParams1, FailingParamTest,
-                        testing::Values(2, 3));
+INSTANTIATE_TEST_SUITE_P(PrintingFailingParams1, FailingParamTest,
+                         testing::Values(2, 3));
 
-INSTANTIATE_TEST_CASE_P(PrintingFailingParams2, FailingParamTest,
-                        testing::Range(3, 4));
+INSTANTIATE_TEST_SUITE_P(PrintingFailingParams2, FailingParamTest,
+                         testing::Range(3, 4));
 
 // Google Mock
 
@@ -90,6 +90,26 @@ GTEST_TEST(MockTestCase, expect2) {
   foo.Describe(3);
 
   ::testing::Mock::VerifyAndClearExpectations(&foo);
+}
+
+// https://stackoverflow.com/questions/29382157/how-to-test-c-template-class-with-multiple-template-parameters-using-gtest/29382470
+
+template <class T>
+class TestThreeParams : public testing::Test {};
+
+typedef ::testing::Types<std::tuple<float, double, int16_t>,
+                         std::tuple<int64_t, int8_t, float> >
+    Implementations;
+
+TYPED_TEST_CASE(TestThreeParams, Implementations);
+
+TYPED_TEST(TestThreeParams, MaximumTest) {
+  using A = typename std::tuple_element<0, decltype(TypeParam())>::type;
+  using B = typename std::tuple_element<1, decltype(TypeParam())>::type;
+  using C = typename std::tuple_element<2, decltype(TypeParam())>::type;
+
+  EXPECT_TRUE(std::max<A>(A(-5), B(2)) == 5);
+  EXPECT_TRUE(std::max<A>(A(-5), C(5)) == 5);
 }
 
 int main(int argc, char **argv) {
