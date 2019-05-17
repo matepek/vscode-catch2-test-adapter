@@ -298,7 +298,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         }
       };
 
-      runInfo.process!.stdout.on('data', (chunk: Uint8Array) => {
+      runInfo.process!.stdout!.on('data', (chunk: Uint8Array) => {
         const xml = chunk.toLocaleString();
         processChunk(xml);
       });

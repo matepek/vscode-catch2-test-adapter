@@ -11,7 +11,7 @@ export abstract class AbstractTestInfo implements TestInfo {
   public readonly type: 'test' = 'test';
   public readonly id: string;
   public readonly origLabel: string;
-  public readonly description: string = '';
+  public readonly description: string;
   public readonly tooltip: string;
 
   public lastRunState: string | undefined = undefined;
@@ -25,10 +25,12 @@ export abstract class AbstractTestInfo implements TestInfo {
     public readonly skipped: boolean,
     public readonly file: string | undefined,
     public readonly line: number | undefined,
+    description: string | undefined,
     tooltip: string | undefined,
   ) {
     this.id = id ? id : generateUniqueId();
     this.origLabel = label;
+    this.description = description ? description : '';
     this.tooltip = 'Name: ' + testNameAsId + (tooltip ? '\n' + tooltip : '');
     if (line && line < 0) throw Error('line smaller than zero');
   }

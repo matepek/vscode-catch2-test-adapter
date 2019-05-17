@@ -138,7 +138,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
         },
@@ -183,7 +183,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
         },
@@ -228,7 +228,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
         },
@@ -268,7 +268,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
         },
@@ -307,7 +307,7 @@ describe(path.basename(__filename), function() {
             type: 'suite',
             state: 'completed',
             suite: suite1,
-            description: '(0ms) ./',
+            description: './ (0ms)',
             tooltip:
               'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
           },
@@ -359,7 +359,7 @@ describe(path.basename(__filename), function() {
 
       example1.suite1.assert('execPath1.exe', ['s1t1', 's1t2'], suite1, uniqueIdC);
 
-      example1.suite2.assert('execPath2.exe', ['s2t1', 's2t2 [.]', 's2t3'], suite2, uniqueIdC);
+      example1.suite2.assert('execPath2.exe', ['s2t1', 's2t2', 's2t3'], ['', '[.]', ''], suite2, uniqueIdC);
     }
 
     beforeEach(function() {
@@ -391,7 +391,7 @@ describe(path.basename(__filename), function() {
         type: 'suite',
         state: 'completed',
         suite: suite1,
-        description: '(0ms) ./',
+        description: './ (0ms)',
         tooltip:
           'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
       };
@@ -403,7 +403,7 @@ describe(path.basename(__filename), function() {
         type: 'suite',
         state: 'completed',
         suite: suite2,
-        description: '(0ms) ./',
+        description: './ (0ms)',
         tooltip:
           'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
       };
@@ -513,7 +513,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
         },
@@ -537,7 +537,7 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s2t2,
           decorations: [],
-          description: '(1ms)',
+          description: '[.] (1ms)',
           message: '⏱ Duration: 0.001294 second(s).\n',
           tooltip: 'Name: s2t2\nTags: [.]\nDescription: tag1\n\n⏱ 1ms',
         },
@@ -545,7 +545,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: '(1ms) ./',
+          description: './ (1ms)',
           tooltip:
             'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n\n⏱ 1ms',
         },
@@ -580,7 +580,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: '(1ms) ./',
+          description: './ (1ms)',
           tooltip:
             'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n\n⏱ 1ms',
         },
@@ -618,7 +618,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: '(1ms) ./',
+          description: './ (1ms)',
           tooltip:
             'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n\n⏱ 1ms',
         },
@@ -663,7 +663,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
         },
@@ -709,7 +709,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
         },
@@ -720,7 +720,7 @@ describe(path.basename(__filename), function() {
           state: 'passed',
           test: s2t2,
           decorations: [],
-          description: '(1ms)',
+          description: '[.] (1ms)',
           message: '⏱ Duration: 0.001294 second(s).\n',
           tooltip: 'Name: s2t2\nTags: [.]\nDescription: tag1\n\n⏱ 1ms',
         },
@@ -728,7 +728,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: '(1ms) ./',
+          description: './ (1ms)',
           tooltip:
             'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n\n⏱ 1ms',
         },
@@ -794,7 +794,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
         },
@@ -859,7 +859,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
         },
@@ -911,7 +911,7 @@ describe(path.basename(__filename), function() {
       await loadAdapterAndAssert();
       const withArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.t1.outputs[0][0]);
       const cp = new ChildProcessStub();
-      const spyKill = sinon.spy(cp, 'kill') as sinon.SinonSpy<never, void>;
+      const spyKill = sinon.spy(cp, 'kill');
       cp.write(
         [
           '<?xml version="1.0" encoding="UTF-8"?>',
@@ -965,17 +965,17 @@ describe(path.basename(__filename), function() {
       // since taskQueue/allTasks has benn added it works differently, so it
       // wont test anything really, but i dont want to delete it either
       await loadAdapterAndAssert();
-      let spyKill1: sinon.SinonSpy<never, void>;
-      let spyKill2: sinon.SinonSpy<never, void>;
+      let spyKill1: sinon.SinonSpy<[(string | undefined)?], void>;
+      let spyKill2: sinon.SinonSpy<[(string | undefined)?], void>;
       {
         const spawnEvent = new ChildProcessStub(example1.suite1.outputs[2][1]);
-        spyKill1 = sinon.spy(spawnEvent, 'kill') as sinon.SinonSpy<never, void>;
+        spyKill1 = sinon.spy(spawnEvent, 'kill');
         const withArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[2][0]);
         withArgs.onCall(withArgs.callCount).returns(spawnEvent);
       }
       {
         const spawnEvent = new ChildProcessStub(example1.suite2.outputs[2][1]);
-        spyKill2 = sinon.spy(spawnEvent, 'kill') as sinon.SinonSpy<never, void>;
+        spyKill2 = sinon.spy(spawnEvent, 'kill');
         const withArgs = imitation.spawnStub.withArgs(example1.suite2.execPath, example1.suite2.outputs[2][0]);
         withArgs.onCall(withArgs.callCount).returns(spawnEvent);
       }
@@ -993,7 +993,7 @@ describe(path.basename(__filename), function() {
         type: 'suite',
         state: 'completed',
         suite: suite1,
-        description: '(0ms) ./',
+        description: './ (0ms)',
         tooltip:
           'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
       };
@@ -1005,7 +1005,7 @@ describe(path.basename(__filename), function() {
         type: 'suite',
         state: 'completed',
         suite: suite2,
-        description: '(0ms) ./',
+        description: './ (0ms)',
         tooltip:
           'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
       };
@@ -1021,17 +1021,17 @@ describe(path.basename(__filename), function() {
 
     it('cancels after run finished', async function() {
       await loadAdapterAndAssert();
-      let spyKill1: sinon.SinonSpy<never, void>;
-      let spyKill2: sinon.SinonSpy<never, void>;
+      let spyKill1: sinon.SinonSpy<[(string | undefined)?], void>;
+      let spyKill2: sinon.SinonSpy<[(string | undefined)?], void>;
       {
         const spawnEvent = new ChildProcessStub(example1.suite1.outputs[2][1]);
-        spyKill1 = sinon.spy(spawnEvent, 'kill') as sinon.SinonSpy<never, void>;
+        spyKill1 = sinon.spy(spawnEvent, 'kill');
         const withArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[2][0]);
         withArgs.onCall(withArgs.callCount).returns(spawnEvent);
       }
       {
         const spawnEvent = new ChildProcessStub(example1.suite2.outputs[2][1]);
-        spyKill2 = sinon.spy(spawnEvent, 'kill') as sinon.SinonSpy<never, void>;
+        spyKill2 = sinon.spy(spawnEvent, 'kill');
         const withArgs = imitation.spawnStub.withArgs(example1.suite2.execPath, example1.suite2.outputs[2][0]);
         withArgs.onCall(withArgs.callCount).returns(spawnEvent);
       }
@@ -1233,7 +1233,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
         },
@@ -1257,7 +1257,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
         },
@@ -1306,7 +1306,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n\n⏱ 0ms',
         },
@@ -1461,7 +1461,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n\n⏱ 0ms',
         },
@@ -1482,7 +1482,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
         },
@@ -1665,7 +1665,7 @@ describe(path.basename(__filename), function() {
             type: 'suite',
             state: 'completed',
             suite: suite3,
-            description: i < 2 ? '(0ms) ./' : '(1ms) ./',
+            description: i < 2 ? './ (0ms)' : './ (1ms)',
             tooltip: i < 2 ? tooltips[i] : tooltipTemplate.replace('${num}', i.toString()),
           },
           'index: ' + i,

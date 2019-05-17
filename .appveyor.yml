@@ -16,7 +16,7 @@ install:
   - node --version
   - npm --version
   - npm install
-  - npm audit
+  #- npm audit temporarily disabled
   - npm run compile
 
 build: off

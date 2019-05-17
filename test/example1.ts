@@ -7,11 +7,11 @@ import { Imitation, settings, FileSystemWatcherStub, ChildProcessStub } from './
 
 ///
 
-export const example1 = new class {
-  public readonly suite1 = new class {
+export const example1 = new (class {
+  public readonly suite1 = new (class {
     public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath1.exe')).fsPath;
 
-    public readonly t1 = new class {
+    public readonly t1 = new (class {
       public readonly fullTestName = 's1t1';
       public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
@@ -54,9 +54,9 @@ export const example1 = new class {
             </Catch>`,
         ],
       ];
-    }();
+    })();
 
-    public readonly t2 = new class {
+    public readonly t2 = new (class {
       public readonly fullTestName = 's1t2';
       public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
@@ -115,7 +115,7 @@ export const example1 = new class {
             </Catch>`,
         ],
       ];
-    }();
+    })();
 
     public readonly outputs: [string[], string][] = [
       [['--help'], 'Catch v2.4.1'],
@@ -197,16 +197,17 @@ export const example1 = new class {
         uniqeIdContainer.add(suite.id);
       }
     }
-  }();
+  })();
 
-  public readonly suite2 = new class {
+  public readonly suite2 = new (class {
     public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath2.exe')).fsPath;
 
-    public readonly t1 = new class {
+    public readonly t1 = new (class {
       public readonly fullTestName = 's2t1';
-      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
+      public assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
+        assert.equal(test.description, description);
         assert.equal(test.file, 'suite2.cpp');
         assert.equal(test.line, 7 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
@@ -245,13 +246,14 @@ export const example1 = new class {
           </Catch>`,
         ],
       ];
-    }();
+    })();
 
-    public readonly t2 = new class {
+    public readonly t2 = new (class {
       public readonly fullTestName = 's2t2';
-      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
+      public assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
+        assert.equal(test.description, description);
         assert.equal(test.file, 'suite2.cpp');
         assert.equal(test.line, 13 - 1);
         assert.ok(test.skipped === true);
@@ -290,13 +292,14 @@ export const example1 = new class {
             </Catch>`,
         ],
       ];
-    }();
+    })();
 
-    public readonly t3 = new class {
+    public readonly t3 = new (class {
       public readonly fullTestName = 's2t3';
-      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
+      public assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
+        assert.equal(test.description, description);
         assert.equal(test.file, 'suite2.cpp');
         assert.equal(test.line, 19 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
@@ -351,18 +354,24 @@ export const example1 = new class {
             </Catch>`,
         ],
       ];
-    }();
+    })();
 
-    public assert(label: string, childLabels: string[], suite: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
+    public assert(
+      label: string,
+      childLabels: string[],
+      childDescs: string[],
+      suite: TestSuiteInfo,
+      uniqeIdContainer?: Set<string>,
+    ): void {
       assert.equal(suite.type, 'suite');
       assert.equal(suite.label, label);
       assert.equal(suite.file, 'suite2.cpp');
       assert.equal(suite.line, 0);
       assert.equal(suite.children.length, 3);
       assert.equal(childLabels.length, suite.children.length);
-      this.t1.assert(childLabels[0], suite.children[0] as TestInfo, uniqeIdContainer);
-      this.t2.assert(childLabels[1], suite.children[1] as TestInfo, uniqeIdContainer);
-      this.t3.assert(childLabels[2], suite.children[2] as TestInfo, uniqeIdContainer);
+      this.t1.assert(childLabels[0], childDescs[0], suite.children[0] as TestInfo, uniqeIdContainer);
+      this.t2.assert(childLabels[1], childDescs[1], suite.children[1] as TestInfo, uniqeIdContainer);
+      this.t3.assert(childLabels[2], childDescs[2], suite.children[2] as TestInfo, uniqeIdContainer);
       if (uniqeIdContainer != undefined) {
         assert.ok(!uniqeIdContainer.has(suite.id));
         uniqeIdContainer.add(suite.id);
@@ -439,9 +448,9 @@ export const example1 = new class {
       ...this.t2.outputs,
       ...this.t3.outputs,
     ];
-  }();
+  })();
 
-  public readonly suite3 = new class {
+  public readonly suite3 = new (class {
     public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath3.exe')).fsPath;
 
     public readonly outputs: [string[], string][] = [
@@ -2010,7 +2019,7 @@ For more detailed usage please see the project docs
 `,
       ],
     ];
-  }();
+  })();
 
   public assertWithoutChildren(root: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
     assert.strictEqual(root.type, 'suite');
@@ -2023,7 +2032,7 @@ For more detailed usage please see the project docs
     }
   }
 
-  public readonly gtest1 = new class {
+  public readonly gtest1 = new (class {
     public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'gtest1.exe')).fsPath;
 
     public readonly gtest_list_tests_output = [
@@ -2045,34 +2054,46 @@ For more detailed usage please see the project docs
       'PrintingFailingParams2/FailingParamTest.',
       '  Fails1/0  # GetParam() = 3',
       '  Fails2/0  # GetParam() = 3',
+      'TestThreeParams/0.  # TypeParam = std::tuple<float, double, short>',
+      '  MaximumTest',
+      'TestThreeParams/1.  # TypeParam = std::tuple<long long, signed char, float>',
+      '  MaximumTest',
       '',
     ].join(EOL);
 
-    public readonly gtest_list_tests_output_xml = `<?xml version="1.0" encoding="UTF-8"?>
-    <testsuites tests="12" name="AllTests">
-      <testsuite name="TestCas1" tests="2">
-        <testcase name="test1" file="gtest.cpp" line="11" />
-        <testcase name="test2" file="gtest.cpp" line="16" />
-      </testsuite>
-      <testsuite name="TestCas2" tests="2">
-        <testcase name="test1" file="gtest.cpp" line="22" />
-        <testcase name="test2" file="gtest.cpp" line="34" />
-      </testsuite>
-      <testsuite name="MockTestCase" tests="2">
-        <testcase name="expect1" file="gtest.cpp" line="67" />
-        <testcase name="expect2" file="gtest.cpp" line="75" />
-      </testsuite>
-      <testsuite name="PrintingFailingParams1/FailingParamTest" tests="4">
-        <testcase name="Fails1/0" value_param="2" file="gtest.cpp" line="41" />
-        <testcase name="Fails1/1" value_param="3" file="gtest.cpp" line="41" />
-        <testcase name="Fails2/0" value_param="2" file="gtest.cpp" line="41" />
-        <testcase name="Fails2/1" value_param="3" file="gtest.cpp" line="41" />
-      </testsuite>
-      <testsuite name="PrintingFailingParams2/FailingParamTest" tests="2">
-        <testcase name="Fails1/0" value_param="3" file="gtest.cpp" line="41" />
-        <testcase name="Fails2/0" value_param="3" file="gtest.cpp" line="41" />
-      </testsuite>
-    </testsuites>`;
+    public readonly gtest_list_tests_output_xml = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<testsuites tests="12" name="AllTests">',
+      '  <testsuite name="TestCas1" tests="2">',
+      '    <testcase name="test1" file="gtest.cpp" line="11" />',
+      '    <testcase name="test2" file="gtest.cpp" line="16" />',
+      '  </testsuite>',
+      '  <testsuite name="TestCas2" tests="2">',
+      '    <testcase name="test1" file="gtest.cpp" line="22" />',
+      '    <testcase name="test2" file="gtest.cpp" line="34" />',
+      '  </testsuite>',
+      '  <testsuite name="MockTestCase" tests="2">',
+      '    <testcase name="expect1" file="gtest.cpp" line="67" />',
+      '    <testcase name="expect2" file="gtest.cpp" line="75" />',
+      '  </testsuite>',
+      '  <testsuite name="PrintingFailingParams1/FailingParamTest" tests="4">',
+      '    <testcase name="Fails1/0" value_param="2" file="gtest.cpp" line="41" />',
+      '    <testcase name="Fails1/1" value_param="3" file="gtest.cpp" line="41" />',
+      '    <testcase name="Fails2/0" value_param="2" file="gtest.cpp" line="41" />',
+      '    <testcase name="Fails2/1" value_param="3" file="gtest.cpp" line="41" />',
+      '  </testsuite>',
+      '  <testsuite name="PrintingFailingParams2/FailingParamTest" tests="2">',
+      '    <testcase name="Fails1/0" value_param="3" file="gtest.cpp" line="41" />',
+      '    <testcase name="Fails2/0" value_param="3" file="gtest.cpp" line="41" />',
+      '  </testsuite>',
+      '  <testsuite name="TestThreeParams/0" tests="1">',
+      '    <testcase name="MaximumTest" type_param="std::tuple&lt;float, double, short&gt;" file="gtest.cpp" line="106" />',
+      '  </testsuite>',
+      '  <testsuite name="TestThreeParams/1" tests="1">',
+      '    <testcase name="MaximumTest" type_param="std::tuple&lt;long long, signed char, float&gt;" file="gtest.cpp" line="106" />',
+      '  </testsuite>',
+      '</testsuites>',
+    ].join(EOL);
 
     public readonly outputs: [string[], string][] = [
       [['--help'], 'This program contains tests written using Google Test. Yo'],
@@ -2198,6 +2219,24 @@ For more detailed usage please see the project docs
           '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3 (0 ms)',
           '[----------] 2 tests from PrintingFailingParams2/FailingParamTest (0 ms total)',
           '',
+          '[----------] 1 test from TestThreeParams/0, where TypeParam = std::tuple<float, double, short>',
+          '[ RUN      ] TestThreeParams/0.MaximumTest',
+          'gtest.cpp:111: Failure',
+          'Value of: std::max<A>(A(-5), B(2)) == 5',
+          '  Actual: false',
+          'Expected: true',
+          '[  FAILED  ] TestThreeParams/0.MaximumTest, where TypeParam = std::tuple<float, double, short> (1 ms)',
+          '[----------] 1 test from TestThreeParams/0 (1 ms total)',
+          '',
+          '[----------] 1 test from TestThreeParams/1, where TypeParam = std::tuple<long long, signed char, float>',
+          '[ RUN      ] TestThreeParams/1.MaximumTest',
+          'gtest.cpp:111: Failure',
+          'Value of: std::max<A>(A(-5), B(2)) == 5',
+          '  Actual: false',
+          'Expected: true',
+          '[  FAILED  ] TestThreeParams/1.MaximumTest, where TypeParam = std::tuple<long long, signed char, float> (0 ms)',
+          '[----------] 1 test from TestThreeParams/1 (0 ms total)',
+          '',
           '[----------] Global test environment tear-down',
           '[==========] 12 tests from 5 test cases ran. (2 ms total)',
           '[  PASSED  ] 1 test.',
@@ -2213,8 +2252,11 @@ For more detailed usage please see the project docs
           '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3',
           '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3',
           '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3',
+          '[  FAILED  ] TestThreeParams/0.MaximumTest, where TypeParam = std::tuple<float, double, short>',
+          '[  FAILED  ] TestThreeParams/1.MaximumTest, where TypeParam = std::tuple<long long, signed char, float>',
           '',
-          '11 FAILED TESTS',
+          '13 FAILED TESTS',
+          '  YOU HAVE 1 DISABLED TEST',
           '',
         ].join(EOL),
       ],
@@ -2266,7 +2308,7 @@ For more detailed usage please see the project docs
         ].join(EOL),
       ],
     ];
-  }();
+  })();
 
   public readonly outputs: [string, [string[], string][]][] = [
     [this.suite1.execPath, this.suite1.outputs],
@@ -2313,4 +2355,4 @@ For more detailed usage please see the project docs
 
     return watchers;
   }
-}();
+})();

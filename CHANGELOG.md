@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.8]
+
+### Fixed
+
+- a [bug](https://github.com/matepek/vscode-catch2-test-adapter/issues/92) related to parsing a Google Test with 'TypeParam'
+
 ## [2.4.7] - 2019-05-01
 
 ### Fixed

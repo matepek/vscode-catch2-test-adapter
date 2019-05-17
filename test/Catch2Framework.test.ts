@@ -177,7 +177,7 @@ describe(path.basename(__filename), function() {
         type: 'suite',
         state: 'completed',
         suite: adapter.suite1,
-        description: '(0ms) ./',
+        description: './ (0ms)',
         tooltip:
           'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 1\n  - failed: 1\n\n⏱ 0ms',
       },
@@ -198,7 +198,7 @@ describe(path.basename(__filename), function() {
         type: 'suite',
         state: 'completed',
         suite: adapter.suite1,
-        description: '(0ms) ./',
+        description: './ (0ms)',
         tooltip:
           'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
       },

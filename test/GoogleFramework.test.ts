@@ -63,7 +63,7 @@ describe(path.basename(__filename), function() {
 
     assert.equal(adapter.testLoadsEvents.length, 2);
     assert.equal(adapter.root.children.length, 1);
-    assert.equal(adapter.suite1.children.length, 5);
+    assert.equal(adapter.suite1.children.length, 7);
   });
 
   describe('load gtest1', function() {
@@ -93,7 +93,7 @@ describe(path.basename(__filename), function() {
 
       assert.equal(adapter.testLoadsEvents.length, 2);
       assert.equal(adapter.root.children.length, 1);
-      assert.equal(adapter.suite1.children.length, 5);
+      assert.equal(adapter.suite1.children.length, 7);
     });
 
     afterEach(function() {
@@ -144,7 +144,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0, 0),
-          description: '(0ms) ',
+          description: '(0ms)',
           tooltip: 'Name: TestCas1\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱ 0ms',
         },
         { type: 'suite', state: 'running', suite: adapter.get(0, 1) },
@@ -243,7 +243,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0, 1),
-          description: '(1ms) ',
+          description: '(1ms)',
           tooltip: 'Name: TestCas2\n\nTests: 2\n  - failed: 2\n\n⏱ 1ms',
         },
         { type: 'suite', state: 'running', suite: adapter.get(0, 2) },
@@ -296,7 +296,7 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0, 2),
-          description: '(0ms) ',
+          description: '(0ms)',
           tooltip: 'Name: MockTestCase\n\nTests: 2\n  - failed: 2\n\n⏱ 0ms',
         },
         { type: 'suite', state: 'running', suite: adapter.get(0, 3) },
@@ -306,7 +306,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 3, 0),
           decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
-          description: '(0ms)',
+          description: '#️⃣Value: 2 (0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
             'gtest.cpp:41: Failure',
@@ -316,7 +316,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 2',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/0, where GetParam() = 2 (0 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/0\n\n⏱ 0ms',
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/0\n\n#️⃣GetParam() = 2\n\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 3, 1) },
         {
@@ -324,7 +324,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 3, 1),
           decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
-          description: '(0ms)',
+          description: '#️⃣Value: 3 (0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/1',
             'gtest.cpp:41: Failure',
@@ -334,7 +334,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails1/1, where GetParam() = 3 (0 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/1\n\n⏱ 0ms',
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/1\n\n#️⃣GetParam() = 3\n\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 3, 2) },
         {
@@ -342,7 +342,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 3, 2),
           decorations: [{ line: 41, message: '⬅️ failure', hover: '' }],
-          description: '(1ms)',
+          description: '#️⃣Value: 2 (1ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/0',
             'gtest.cpp:42: Failure',
@@ -352,7 +352,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 2',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/0, where GetParam() = 2 (1 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails2/0\n\n⏱ 1ms',
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails2/0\n\n#️⃣GetParam() = 2\n\n⏱ 1ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 3, 3) },
         {
@@ -360,7 +360,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 3, 3),
           decorations: [{ line: 41, message: '⬅️ failure', hover: '' }],
-          description: '(0ms)',
+          description: '#️⃣Value: 3 (0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/1',
             'gtest.cpp:42: Failure',
@@ -370,13 +370,13 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3 (0 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails2/1\n\n⏱ 0ms',
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails2/1\n\n#️⃣GetParam() = 3\n\n⏱ 0ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0, 3),
-          description: '(1ms) ',
+          description: '(1ms)',
           tooltip: 'Name: PrintingFailingParams1/FailingParamTest\n\nTests: 4\n  - failed: 4\n\n⏱ 1ms',
         },
         { type: 'suite', state: 'running', suite: adapter.get(0, 4) },
@@ -386,7 +386,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 4, 0),
           decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
-          description: '(0ms)',
+          description: '#️⃣Value: 3 (0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails1/0',
             'gtest.cpp:41: Failure',
@@ -396,7 +396,7 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3 (0 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams2/FailingParamTest.Fails1/0\n\n⏱ 0ms',
+          tooltip: 'Name: PrintingFailingParams2/FailingParamTest.Fails1/0\n\n#️⃣GetParam() = 3\n\n⏱ 0ms',
         },
         { type: 'test', state: 'running', test: adapter.get(0, 4, 1) },
         {
@@ -404,7 +404,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 4, 1),
           decorations: [{ line: 41, message: '⬅️ failure', hover: '' }],
-          description: '(0ms)',
+          description: '#️⃣Value: 3 (0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails2/0',
             'gtest.cpp:42: Failure',
@@ -414,22 +414,85 @@ describe(path.basename(__filename), function() {
             '    Which is: 3',
             '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3 (0 ms)',
           ].join(EOL),
-          tooltip: 'Name: PrintingFailingParams2/FailingParamTest.Fails2/0\n\n⏱ 0ms',
+          tooltip: 'Name: PrintingFailingParams2/FailingParamTest.Fails2/0\n\n#️⃣GetParam() = 3\n\n⏱ 0ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0, 4),
-          description: '(0ms) ',
+          description: '#️⃣Value: 3 (0ms)',
           tooltip: 'Name: PrintingFailingParams2/FailingParamTest\n\nTests: 2\n  - failed: 2\n\n⏱ 0ms',
+        },
+        { type: 'suite', state: 'running', suite: adapter.get(0, 5) },
+        { type: 'test', state: 'running', test: adapter.get(0, 5, 0) },
+        {
+          type: 'test',
+          state: 'failed',
+          test: adapter.get(0, 5, 0),
+          decorations: [
+            {
+              line: 110,
+              message: '⬅️ Actual: false;  Expected: true;',
+              hover: 'Value of: std::max<A>(A(-5), B(2)) == 5\n  Actual: false\nExpected: true',
+            },
+          ],
+          description: '#️⃣Type: std::tuple<float, double, short> (1ms)',
+          message: [
+            '[ RUN      ] TestThreeParams/0.MaximumTest',
+            'gtest.cpp:111: Failure',
+            'Value of: std::max<A>(A(-5), B(2)) == 5',
+            '  Actual: false',
+            'Expected: true',
+            '[  FAILED  ] TestThreeParams/0.MaximumTest, where TypeParam = std::tuple<float, double, short> (1 ms)',
+          ].join(EOL),
+          tooltip: 'Name: TestThreeParams/0.MaximumTest\n\n#️⃣TypeParam() = std::tuple<float, double, short>\n\n⏱ 1ms',
+        },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: adapter.get(0, 5),
+          description: '#️⃣Type: std::tuple<float, double, short> (1ms)',
+          tooltip: 'Name: TestThreeParams/0\n\nTests: 1\n  - failed: 1\n\n⏱ 1ms',
+        },
+        { type: 'suite', state: 'running', suite: adapter.get(0, 6) },
+        { type: 'test', state: 'running', test: adapter.get(0, 6, 0) },
+        {
+          type: 'test',
+          state: 'failed',
+          test: adapter.get(0, 6, 0),
+          decorations: [
+            {
+              line: 110,
+              message: '⬅️ Actual: false;  Expected: true;',
+              hover: 'Value of: std::max<A>(A(-5), B(2)) == 5\n  Actual: false\nExpected: true',
+            },
+          ],
+          description: '#️⃣Type: std::tuple<long long, signed char, float> (0ms)',
+          message: [
+            '[ RUN      ] TestThreeParams/1.MaximumTest',
+            'gtest.cpp:111: Failure',
+            'Value of: std::max<A>(A(-5), B(2)) == 5',
+            '  Actual: false',
+            'Expected: true',
+            '[  FAILED  ] TestThreeParams/1.MaximumTest, where TypeParam = std::tuple<long long, signed char, float> (0 ms)',
+          ].join(EOL),
+          tooltip:
+            'Name: TestThreeParams/1.MaximumTest\n\n#️⃣TypeParam() = std::tuple<long long, signed char, float>\n\n⏱ 0ms',
+        },
+        {
+          type: 'suite',
+          state: 'completed',
+          suite: adapter.get(0, 6),
+          description: '#️⃣Type: std::tuple<long long, signed char, float> (0ms)',
+          tooltip: 'Name: TestThreeParams/1\n\nTests: 1\n  - failed: 1\n\n⏱ 0ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0),
-          description: '(2ms) ./',
+          description: './ (3ms)',
           tooltip:
-            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 12\n  - passed: 1\n  - failed: 11\n\n⏱ 2ms',
+            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - passed: 1\n  - failed: 13\n\n⏱ 3ms',
         },
         { type: 'finished' },
       ];
@@ -460,16 +523,16 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0, 0),
-          description: '(0ms) ',
+          description: '(0ms)',
           tooltip: 'Name: TestCas1\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0),
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
-            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 12\n  - passed: 1\n\n⏱ 0ms',
+            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - passed: 1\n\n⏱ 0ms',
         },
         { type: 'finished' },
       ];
@@ -492,8 +555,8 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: adapter.get(0, 3, 0),
           decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
-          description: '(0ms)',
-          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/0\n\n⏱ 0ms',
+          description: '#️⃣Value: 2 (0ms)',
+          tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/0\n\n#️⃣GetParam() = 2\n\n⏱ 0ms',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
             'gtest.cpp:41: Failure',
@@ -508,16 +571,16 @@ describe(path.basename(__filename), function() {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0, 3),
-          description: '(0ms) ',
+          description: '(0ms)',
           tooltip: 'Name: PrintingFailingParams1/FailingParamTest\n\nTests: 4\n  - failed: 1\n\n⏱ 0ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0),
-          description: '(0ms) ./',
+          description: './ (0ms)',
           tooltip:
-            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 12\n  - failed: 1\n\n⏱ 0ms',
+            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - failed: 1\n\n⏱ 0ms',
         },
         { type: 'finished' },
       ];
