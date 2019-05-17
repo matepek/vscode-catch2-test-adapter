@@ -50,12 +50,13 @@ export class Catch2TestInfo extends AbstractTestInfo {
       shared,
       id,
       testNameAsId,
-      testNameAsId + (tags.length > 0 ? ' ' + tags.join('') : ''),
+      testNameAsId,
       tags.some((v: string) => {
         return v.startsWith('[.') || v == '[hide]';
       }) || testNameAsId.startsWith('./'),
       file,
       line,
+      tags.join(''),
       [tags.length > 0 ? 'Tags: ' + tags.join('') : '', catch2Description ? 'Description: ' + catch2Description : '']
         .filter(v => v.length)
         .join('\n'),

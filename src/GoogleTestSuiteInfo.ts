@@ -81,10 +81,8 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         const test = xml.testsuites.testsuite[i].testcase[j];
         const testName = test.$.name.startsWith('DISABLED_') ? test.$.name.substr(9) : test.$.name;
         const testNameAsId = suiteName + '.' + test.$.name;
-        let typeParam: string | undefined = undefined;
-        let valueParam: string | undefined = undefined;
-        if (test.$.hasOwnProperty('type_param')) typeParam = test.$.type_param;
-        if (test.$.hasOwnProperty('value_param')) valueParam = test.$.value_param;
+        const typeParam: string | undefined = test.$.type_param;
+        const valueParam: string | undefined = test.$.value_param;
 
         const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
 
@@ -104,6 +102,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           ),
         );
       }
+
+      if (group.children.length && group.children.every(c => c.description === group.children[0].description))
+        group.description = group.children[0].description;
     }
   }
 
@@ -112,8 +113,8 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
     let lines = stdOutStr.split(/\r?\n/);
 
-    const testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.(?:\s+(# TypeParam = \s*(.+)))?$/;
-    const testRe = /^  ([A-z0-9][\/A-z0-9_\-]*)(?:\s+(# GetParam\(\) = \s*(.+)))?$/;
+    const testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.(?:\s+(#\s+TypeParam(?:\(\))?\s+=\s*(.+)))?$/;
+    const testRe = /^\s+([A-z0-9][\/A-z0-9_\-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
 
     let lineCount = lines.length;
 
@@ -131,7 +132,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     while (testGroupMatch) {
       lineNum++;
 
-      const testGroupNameWithDot = testGroupMatch[0];
+      const testGroupName = testGroupMatch[1];
       const suiteName = testGroupMatch[1];
       const typeParam: string | undefined = testGroupMatch[3];
 
@@ -148,7 +149,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
         const testName = testMatch[1].startsWith('DISABLED_') ? testMatch[1].substr(9) : testMatch[1];
         const valueParam: string | undefined = testMatch[3];
-        const testNameAsId = testGroupNameWithDot + testMatch[1];
+        const testNameAsId = testGroupName + '.' + testMatch[1];
 
         const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
 
@@ -167,6 +168,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
         testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
       }
+
+      if (group.children.length && group.children.every(c => c.description === group.children[0].description))
+        group.description = group.children[0].description;
 
       if (group.children.length > 0) this.addChild(group);
       else this._shared.log.error('group without test', this, group, lines);

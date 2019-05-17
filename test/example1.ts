@@ -204,9 +204,10 @@ export const example1 = new (class {
 
     public readonly t1 = new (class {
       public readonly fullTestName = 's2t1';
-      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
+      public assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
+        assert.equal(test.description, description);
         assert.equal(test.file, 'suite2.cpp');
         assert.equal(test.line, 7 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
@@ -249,9 +250,10 @@ export const example1 = new (class {
 
     public readonly t2 = new (class {
       public readonly fullTestName = 's2t2';
-      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
+      public assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
+        assert.equal(test.description, description);
         assert.equal(test.file, 'suite2.cpp');
         assert.equal(test.line, 13 - 1);
         assert.ok(test.skipped === true);
@@ -294,9 +296,10 @@ export const example1 = new (class {
 
     public readonly t3 = new (class {
       public readonly fullTestName = 's2t3';
-      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
+      public assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
+        assert.equal(test.description, description);
         assert.equal(test.file, 'suite2.cpp');
         assert.equal(test.line, 19 - 1);
         assert.ok(test.skipped == undefined || test.skipped === false);
@@ -353,16 +356,22 @@ export const example1 = new (class {
       ];
     })();
 
-    public assert(label: string, childLabels: string[], suite: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
+    public assert(
+      label: string,
+      childLabels: string[],
+      childDescs: string[],
+      suite: TestSuiteInfo,
+      uniqeIdContainer?: Set<string>,
+    ): void {
       assert.equal(suite.type, 'suite');
       assert.equal(suite.label, label);
       assert.equal(suite.file, 'suite2.cpp');
       assert.equal(suite.line, 0);
       assert.equal(suite.children.length, 3);
       assert.equal(childLabels.length, suite.children.length);
-      this.t1.assert(childLabels[0], suite.children[0] as TestInfo, uniqeIdContainer);
-      this.t2.assert(childLabels[1], suite.children[1] as TestInfo, uniqeIdContainer);
-      this.t3.assert(childLabels[2], suite.children[2] as TestInfo, uniqeIdContainer);
+      this.t1.assert(childLabels[0], childDescs[0], suite.children[0] as TestInfo, uniqeIdContainer);
+      this.t2.assert(childLabels[1], childDescs[1], suite.children[1] as TestInfo, uniqeIdContainer);
+      this.t3.assert(childLabels[2], childDescs[2], suite.children[2] as TestInfo, uniqeIdContainer);
       if (uniqeIdContainer != undefined) {
         assert.ok(!uniqeIdContainer.has(suite.id));
         uniqeIdContainer.add(suite.id);
@@ -2045,6 +2054,10 @@ For more detailed usage please see the project docs
       'PrintingFailingParams2/FailingParamTest.',
       '  Fails1/0  # GetParam() = 3',
       '  Fails2/0  # GetParam() = 3',
+      'TestThreeParams/0.  # TypeParam = std::tuple<float, double, short>',
+      '  MaximumTest',
+      'TestThreeParams/1.  # TypeParam = std::tuple<long long, signed char, float>',
+      '  MaximumTest',
       '',
     ].join(EOL);
 
@@ -2072,6 +2085,12 @@ For more detailed usage please see the project docs
       '  <testsuite name="PrintingFailingParams2/FailingParamTest" tests="2">',
       '    <testcase name="Fails1/0" value_param="3" file="gtest.cpp" line="41" />',
       '    <testcase name="Fails2/0" value_param="3" file="gtest.cpp" line="41" />',
+      '  </testsuite>',
+      '  <testsuite name="TestThreeParams/0" tests="1">',
+      '    <testcase name="MaximumTest" type_param="std::tuple&lt;float, double, short&gt;" file="gtest.cpp" line="106" />',
+      '  </testsuite>',
+      '  <testsuite name="TestThreeParams/1" tests="1">',
+      '    <testcase name="MaximumTest" type_param="std::tuple&lt;long long, signed char, float&gt;" file="gtest.cpp" line="106" />',
       '  </testsuite>',
       '</testsuites>',
     ].join(EOL);
@@ -2200,6 +2219,24 @@ For more detailed usage please see the project docs
           '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3 (0 ms)',
           '[----------] 2 tests from PrintingFailingParams2/FailingParamTest (0 ms total)',
           '',
+          '[----------] 1 test from TestThreeParams/0, where TypeParam = std::tuple<float, double, short>',
+          '[ RUN      ] TestThreeParams/0.MaximumTest',
+          'gtest.cpp:111: Failure',
+          'Value of: std::max<A>(A(-5), B(2)) == 5',
+          '  Actual: false',
+          'Expected: true',
+          '[  FAILED  ] TestThreeParams/0.MaximumTest, where TypeParam = std::tuple<float, double, short> (1 ms)',
+          '[----------] 1 test from TestThreeParams/0 (1 ms total)',
+          '',
+          '[----------] 1 test from TestThreeParams/1, where TypeParam = std::tuple<long long, signed char, float>',
+          '[ RUN      ] TestThreeParams/1.MaximumTest',
+          'gtest.cpp:111: Failure',
+          'Value of: std::max<A>(A(-5), B(2)) == 5',
+          '  Actual: false',
+          'Expected: true',
+          '[  FAILED  ] TestThreeParams/1.MaximumTest, where TypeParam = std::tuple<long long, signed char, float> (0 ms)',
+          '[----------] 1 test from TestThreeParams/1 (0 ms total)',
+          '',
           '[----------] Global test environment tear-down',
           '[==========] 12 tests from 5 test cases ran. (2 ms total)',
           '[  PASSED  ] 1 test.',
@@ -2215,8 +2252,11 @@ For more detailed usage please see the project docs
           '[  FAILED  ] PrintingFailingParams1/FailingParamTest.Fails2/1, where GetParam() = 3',
           '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails1/0, where GetParam() = 3',
           '[  FAILED  ] PrintingFailingParams2/FailingParamTest.Fails2/0, where GetParam() = 3',
+          '[  FAILED  ] TestThreeParams/0.MaximumTest, where TypeParam = std::tuple<float, double, short>',
+          '[  FAILED  ] TestThreeParams/1.MaximumTest, where TypeParam = std::tuple<long long, signed char, float>',
           '',
-          '11 FAILED TESTS',
+          '13 FAILED TESTS',
+          '  YOU HAVE 1 DISABLED TEST',
           '',
         ].join(EOL),
       ],

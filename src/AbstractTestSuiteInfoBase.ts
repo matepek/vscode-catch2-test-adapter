@@ -58,7 +58,7 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     if (durationSum !== undefined) {
       const durationStr = AbstractTestInfo.milisecToStr(durationSum);
 
-      description = '(' + durationStr + ') ' + (this.description ? this.description : '');
+      description = (this.description ? this.description + ' ' : '') + '(' + durationStr + ')';
 
       tooltip =
         this.tooltip +
