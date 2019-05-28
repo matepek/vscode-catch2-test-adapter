@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# copy this file to ./.git/hooks directory
+
+echo "pre-push hook:"
+
+set -e -x
+
+npm audit
+npm rum compile
+npx mocha ./out/test/Documentation.test.js ./out/test/ESLint.test.js
