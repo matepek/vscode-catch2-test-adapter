@@ -12,7 +12,17 @@ This extension allows you to run your [Catch2](https://github.com/catchorg/Catch
 and [Google Test](https://github.com/google/googletest) tests using the
 [Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
 
+## Screenshots
+
+![Screenshot1](resources/Screenshot_2019-05-28.png)
+
 ## Configuration
+
+The extension is pre-configured and should find executables inside the `out` and `build` directory.
+
+Not good enough for you?! : Edit your `.vscode/settings.json` file according to the [examples](#Examples)!
+
+(See VSCode settings.json [documentation](https://code.visualstudio.com/docs/getstarted/settings) for further details.)
 
 | Property                                      | Description                                                                                                                                                                                                                                                                                                              |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
