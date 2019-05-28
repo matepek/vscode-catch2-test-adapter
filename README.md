@@ -18,11 +18,11 @@ and [Google Test](https://github.com/google/googletest) tests using the
 
 ## Configuration
 
-The extension is pre-configured and should find executables inside the `out` or `build` directory.
+The extension is pre-configured and should find executables inside the `out` and `build` directory.
 
 Not good enough for you?! : Edit your `.vscode/settings.json` file according to the [examples](#Examples)!
 
-(See VSCode settings.json [documantation](https://code.visualstudio.com/docs/getstarted/settings) for further details.)
+(See VSCode settings.json [documentation](https://code.visualstudio.com/docs/getstarted/settings) for further details.)
 
 | Property                                      | Description                                                                                                                                                                                                                                                                                                              |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
