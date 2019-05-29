@@ -12,17 +12,27 @@ This extension allows you to run your [Catch2](https://github.com/catchorg/Catch
 and [Google Test](https://github.com/google/googletest) tests using the
 [Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
 
-## Screenshots
+## Features and Screenshots
+
+- Finds and recognises the exectuables by a given glob-pattern (`catch2TestExplorer.executables`).
+- Automatically runs executables if it is modified ("_..._" -> "_Enable autorun_") or if a dependency is modified (`dependsOn`)
+- Reloads test list of an executable if it is recompiled.
+- Supports popular debuggers such as `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools`.
+- Runs executables parallel (`catch2TestExplorer.workerMaxNumber`).
+- Sorts tests and suites (`testExplorer.sort`).
 
 ![Screenshot1](resources/Screenshot_2019-05-28.png)
+![Screenshot2](resources/Screenshot_2019-05-29.png)
 
 ## Configuration
 
-The extension is pre-configured and should find executables inside the `out` and `build` directory.
+The extension is pre-configured and should find executables inside the working directory which are match the folowing pattern:
 
-Not good enough for you?! : Edit your `.vscode/settings.json` file according to the [examples](#Examples)!
+> `{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*`.
 
-(See VSCode settings.json [documentation](https://code.visualstudio.com/docs/getstarted/settings) for further details.)
+This basically means executables inside the `build` and `out` directories (recursive) which are contain the `test` word in their name (including extensions).
+
+Not good enough for you?!: Edit your `.vscode/settings.json` [file](https://code.visualstudio.com/docs/getstarted/settings) according to the [examples](#Examples) bellow!
 
 | Property                                      | Description                                                                                                                                                                                                                                                                                                              |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
