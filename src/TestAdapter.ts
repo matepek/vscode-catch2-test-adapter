@@ -458,7 +458,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   private _getDebugConfigurationTemplate(config: vscode.WorkspaceConfiguration): vscode.DebugConfiguration {
-    const templateFromConfig = config.get<object | null | 'extension'>('debugConfigTemplate', null);
+    const templateFromConfig = config.get<object | null | 'extensionOnly'>('debugConfigTemplate', null);
 
     if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
       this._log.info('using user defined debug config');

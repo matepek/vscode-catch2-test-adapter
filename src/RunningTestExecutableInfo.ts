@@ -69,6 +69,8 @@ export class RunningTestExecutableInfo {
     process.once('close', () => {
       this._closed = true;
     });
+
+    process.stderr && process.stderr.on('data', (chunk: Uint8Array) => (this._stderr += chunk.toString()));
   }
 
   public killProcess(timeout: number | null = null): void {
@@ -96,7 +98,12 @@ export class RunningTestExecutableInfo {
     return this._timeout;
   }
 
+  public get stderr(): string {
+    return this._stderr;
+  }
+
   private _timeout: number | null = null;
   private _closed: boolean = false;
   private _killed: boolean = false;
+  private _stderr: string = '';
 }

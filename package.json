@@ -507,6 +507,12 @@
             },
             {
               "type": "null"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "extensionOnly"
+              ]
             }
           ]
         },

@@ -331,7 +331,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
                 ev.message += result.error.message + '\n';
               }
 
-              ev.message += '\n' + data.buffer;
+              ev.message += runInfo.stderr ? '\n' + runInfo.stderr : '';
             }
 
             data.currentChild.lastRunState = ev.state;

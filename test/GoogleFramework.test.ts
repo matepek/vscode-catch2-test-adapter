@@ -164,7 +164,7 @@ describe(path.basename(__filename), function() {
               message: '⬅️ Actual: true;  Expected: false;',
               hover: 'Value of: 1 == 1\n  Actual: true\nExpected: false',
             },
-            { line: 25, message: '⬅️ failure', hover: '' },
+            { line: 25, message: '⬅️ Expected equality', hover: 'Expected equality of these values:\n  1\n  2' },
             {
               line: 26,
               message: '⬅️ Expected: (1) != (1), actual: 1 vs 1',
@@ -252,7 +252,14 @@ describe(path.basename(__filename), function() {
           type: 'test',
           state: 'failed',
           test: adapter.get(0, 2, 0),
-          decorations: [{ line: 69, message: '⬅️ failure', hover: '' }],
+          decorations: [
+            {
+              line: 69,
+              message: '⬅️ Expected: to be called once;  Actual: never called - unsatisfied and active;',
+              hover:
+                "Actual function call count doesn't match EXPECT_CALL(foo, GetSize())...\n         Expected: to be called once\n           Actual: never called - unsatisfied and active",
+            },
+          ],
           description: '(0ms)',
           tooltip: 'Name: MockTestCase.expect1\n\n⏱ 0ms',
           message: [
@@ -269,7 +276,14 @@ describe(path.basename(__filename), function() {
           type: 'test',
           state: 'failed',
           test: adapter.get(0, 2, 1),
-          decorations: [{ line: 77, message: '⬅️ failure', hover: '' }],
+          decorations: [
+            {
+              line: 77,
+              message: '⬅️ Expected: to be called once;  Actual: never called - unsatisfied and active;',
+              hover:
+                "Actual function call count doesn't match EXPECT_CALL(foo, Describe(4))...\n         Expected: to be called once\n           Actual: never called - unsatisfied and active",
+            },
+          ],
           description: '(0ms)',
           tooltip: 'Name: MockTestCase.expect2\n\n⏱ 0ms',
           message: [
@@ -305,7 +319,13 @@ describe(path.basename(__filename), function() {
           type: 'test',
           state: 'failed',
           test: adapter.get(0, 3, 0),
-          decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
+          decorations: [
+            {
+              line: 40,
+              message: '⬅️ Expected equality',
+              hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 2',
+            },
+          ],
           description: '#️⃣Value: 2 (0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/0',
@@ -323,7 +343,13 @@ describe(path.basename(__filename), function() {
           type: 'test',
           state: 'failed',
           test: adapter.get(0, 3, 1),
-          decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
+          decorations: [
+            {
+              line: 40,
+              message: '⬅️ Expected equality',
+              hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
+            },
+          ],
           description: '#️⃣Value: 3 (0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails1/1',
@@ -341,7 +367,13 @@ describe(path.basename(__filename), function() {
           type: 'test',
           state: 'failed',
           test: adapter.get(0, 3, 2),
-          decorations: [{ line: 41, message: '⬅️ failure', hover: '' }],
+          decorations: [
+            {
+              line: 41,
+              message: '⬅️ Expected equality',
+              hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 2',
+            },
+          ],
           description: '#️⃣Value: 2 (1ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/0',
@@ -359,7 +391,13 @@ describe(path.basename(__filename), function() {
           type: 'test',
           state: 'failed',
           test: adapter.get(0, 3, 3),
-          decorations: [{ line: 41, message: '⬅️ failure', hover: '' }],
+          decorations: [
+            {
+              line: 41,
+              message: '⬅️ Expected equality',
+              hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
+            },
+          ],
           description: '#️⃣Value: 3 (0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams1/FailingParamTest.Fails2/1',
@@ -385,7 +423,13 @@ describe(path.basename(__filename), function() {
           type: 'test',
           state: 'failed',
           test: adapter.get(0, 4, 0),
-          decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
+          decorations: [
+            {
+              line: 40,
+              message: '⬅️ Expected equality',
+              hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
+            },
+          ],
           description: '#️⃣Value: 3 (0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails1/0',
@@ -403,7 +447,13 @@ describe(path.basename(__filename), function() {
           type: 'test',
           state: 'failed',
           test: adapter.get(0, 4, 1),
-          decorations: [{ line: 41, message: '⬅️ failure', hover: '' }],
+          decorations: [
+            {
+              line: 41,
+              message: '⬅️ Expected equality',
+              hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
+            },
+          ],
           description: '#️⃣Value: 3 (0ms)',
           message: [
             '[ RUN      ] PrintingFailingParams2/FailingParamTest.Fails2/0',
@@ -554,7 +604,13 @@ describe(path.basename(__filename), function() {
           type: 'test',
           state: 'failed',
           test: adapter.get(0, 3, 0),
-          decorations: [{ line: 40, message: '⬅️ failure', hover: '' }],
+          decorations: [
+            {
+              line: 40,
+              message: '⬅️ Expected equality',
+              hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 2',
+            },
+          ],
           description: '#️⃣Value: 2 (0ms)',
           tooltip: 'Name: PrintingFailingParams1/FailingParamTest.Fails1/0\n\n#️⃣GetParam() = 2\n\n⏱ 0ms',
           message: [

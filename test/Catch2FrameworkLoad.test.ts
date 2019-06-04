@@ -823,7 +823,7 @@ describe(path.basename(__filename), function() {
           state: 'errored',
           test: s1t1,
           decorations: [],
-          message: '😱 Unexpected error !!\nSignal received: SIGTERM',
+          message: '😱 Unexpected error !!\nSignal received: SIGTERM\n',
         },
         {
           type: 'suite',
