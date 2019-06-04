@@ -418,7 +418,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const magicValue = generateUniqueId();
     debugConfig[magicValueKey] = magicValue;
 
-    this._log.info('Debug: resolved catch2TestExplorer.debugConfigTemplate:', debugConfig);
+    this._log.info('Debug: resolved debugConfig:', debugConfig);
 
     return this._mainTaskQueue
       .then(async () => {
@@ -458,67 +458,100 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   private _getDebugConfigurationTemplate(config: vscode.WorkspaceConfiguration): vscode.DebugConfiguration {
-    const templateFromConfig = config.get<object | null>('debugConfigTemplate', null);
+    const templateFromConfig = config.get<object | null | 'extension'>('debugConfigTemplate', null);
 
-    const template: vscode.DebugConfiguration = Object.assign(
-      {
-        name: '${label} (${suiteLabel})',
-        request: 'launch',
-        type: 'cppdbg',
-      },
-      templateFromConfig ? templateFromConfig : {},
-    );
+    if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
+      this._log.info('using user defined debug config');
+      return Object.assign(
+        {
+          name: '${label} (${suiteLabel})',
+          request: 'launch',
+          type: 'cppdbg',
+        },
+        templateFromConfig,
+      );
+    }
 
     if (templateFromConfig === null) {
-      if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
-        Object.assign(template, {
-          type: 'cppdbg',
-          MIMode: 'lldb',
-          program: '${exec}',
-          args: '${args}',
-          cwd: '${cwd}',
-          env: '${envObj}',
-        });
-      } else if (vscode.extensions.getExtension('webfreak.debug')) {
-        Object.assign(template, {
-          type: 'gdb',
-          target: '${exec}',
-          arguments: '${argsStr}',
-          cwd: '${cwd}',
-          env: '${envObj}',
-          valuesFormatting: 'prettyPrinters',
-        });
+      const wpLaunchConfigs = vscode.workspace
+        .getConfiguration('launch', this.workspaceFolder.uri)
+        .get('configurations');
 
-        if (process.platform === 'darwin') {
-          template.type = 'lldb-mi';
-          // Note: for LLDB you need to have lldb-mi in your PATH
-          // If you are on OS X you can add lldb-mi to your path using ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi /usr/local/bin/lldb-mi if you have Xcode.
-          template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
+      if (wpLaunchConfigs && Array.isArray(wpLaunchConfigs) && wpLaunchConfigs.length > 0) {
+        for (let i = 0; i < wpLaunchConfigs.length; ++i) {
+          if (wpLaunchConfigs[i].request == 'launch' && wpLaunchConfigs[i].type) {
+            this._log.info('using debug config from launch.json');
+            // putting as much known properties as much we can and hoping for the best 🤞
+            return Object.assign({}, wpLaunchConfigs[i], {
+              name: '${label} (${suiteLabel})',
+              program: '${exec}',
+              target: '${exec}',
+              arguments: '${argsStr}',
+              args: '${args}',
+              cwd: '${cwd}',
+              env: '${envObj}',
+            });
+          }
         }
-      } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
-        // documentation says debug"environment" = [{...}] but that doesn't work
-        Object.assign(template, {
-          type: 'cppvsdbg',
-          linux: { type: 'cppdbg', MIMode: 'gdb' },
-          osx: { type: 'cppdbg', MIMode: 'lldb' },
-          windows: { type: 'cppvsdbg' },
-          program: '${exec}',
-          args: '${args}',
-          cwd: '${cwd}',
-          env: '${envObj}',
-        });
-      } else {
-        throw Error(
-          "For debugging 'catch2TestExplorer.debugConfigTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
-        );
       }
     }
 
+    const template: vscode.DebugConfiguration = {
+      name: '${label} (${suiteLabel})',
+      request: 'launch',
+      type: 'cppdbg',
+    };
+
+    if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
+      this._log.info('using debug extension: vadimcn.vscode-lldb');
+      Object.assign(template, {
+        type: 'cppdbg',
+        MIMode: 'lldb',
+        program: '${exec}',
+        args: '${args}',
+        cwd: '${cwd}',
+        env: '${envObj}',
+      });
+    } else if (vscode.extensions.getExtension('webfreak.debug')) {
+      this._log.info('using debug extension: webfreak.debug');
+      Object.assign(template, {
+        type: 'gdb',
+        target: '${exec}',
+        arguments: '${argsStr}',
+        cwd: '${cwd}',
+        env: '${envObj}',
+        valuesFormatting: 'prettyPrinters',
+      });
+
+      if (process.platform === 'darwin') {
+        template.type = 'lldb-mi';
+        // Note: for LLDB you need to have lldb-mi in your PATH
+        // If you are on OS X you can add lldb-mi to your path using ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi /usr/local/bin/lldb-mi if you have Xcode.
+        template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
+      }
+    } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
+      this._log.info('using debug extension: ms-vscode.cpptools');
+      // documentation says debug"environment" = [{...}] but that doesn't work
+      Object.assign(template, {
+        type: 'cppvsdbg',
+        linux: { type: 'cppdbg', MIMode: 'gdb' },
+        osx: { type: 'cppdbg', MIMode: 'lldb' },
+        windows: { type: 'cppvsdbg' },
+        program: '${exec}',
+        args: '${args}',
+        cwd: '${cwd}',
+        env: '${envObj}',
+      });
+    } else {
+      throw Error(
+        "For debugging 'catch2TestExplorer.debugConfigTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+      );
+    }
     return template;
   }
 
   private _getConfiguration(): vscode.WorkspaceConfiguration {
-    return vscode.workspace.getConfiguration('catch2TestExplorer', this.workspaceFolder.uri);
+    return vscode.workspace.getConfiguration('catch2TestExplorer', null);
   }
 
   private _getDebugBreakOnFailure(config: vscode.WorkspaceConfiguration): boolean {
