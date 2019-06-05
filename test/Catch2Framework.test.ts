@@ -7,9 +7,12 @@ import * as fse from 'fs-extra';
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { inspect } from 'util';
+import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
 import { TestAdapter, Imitation, waitFor, settings, isWin, ChildProcessStub, FileSystemWatcherStub } from './Common';
+import { SpawnOptions } from '../src/FSWrapper';
+import { ChildProcess } from 'child_process';
 
 ///
 
@@ -51,11 +54,15 @@ describe(path.basename(__filename), function() {
     adapter = new TestAdapter();
 
     let exception: Error | undefined = undefined;
-    const spawnWithArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
-    spawnWithArgs.callsFake(function(p: string, args: string[], ops: { [prop: string]: string }) {
+    const spawnWithArgs = imitation.spawnStub.withArgs(
+      example1.suite1.execPath,
+      example1.suite1.outputs[1][0],
+      sinon.match.any,
+    );
+    spawnWithArgs.callsFake(function(p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
       try {
         assert.strictEqual(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'defaultCwdStr'));
-        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+        return (new ChildProcessStub(example1.suite1.outputs[1][1]) as unknown) as ChildProcess;
       } catch (e) {
         exception = e;
         throw e;
@@ -79,13 +86,17 @@ describe(path.basename(__filename), function() {
 
     let exception: Error | undefined = undefined;
     let cwd = '';
-    const spawnWithArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
-    spawnWithArgs.callsFake(function(p: string, args: string[], ops: { [prop: string]: string }) {
+    const spawnWithArgs = imitation.spawnStub.withArgs(
+      example1.suite1.execPath,
+      example1.suite1.outputs[1][0],
+      sinon.match.any,
+    );
+    spawnWithArgs.callsFake(function(p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
       try {
-        cwd = ops.cwd;
+        cwd = ops.cwd!;
         if (isWin) assert.strictEqual(ops.cwd, 'C:\\defaultCwdStr');
         else assert.strictEqual(ops.cwd, '/defaultCwdStr');
-        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+        return (new ChildProcessStub(example1.suite1.outputs[1][1]) as unknown) as ChildProcess;
       } catch (e) {
         exception = e;
         throw e;
@@ -106,12 +117,16 @@ describe(path.basename(__filename), function() {
     adapter = new TestAdapter();
 
     let exception: Error | undefined = undefined;
-    const spawnWithArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
-    spawnWithArgs.callsFake(function(p: string, args: string[], ops: { [prop: string]: { [prop: string]: string } }) {
+    const spawnWithArgs = imitation.spawnStub.withArgs(
+      example1.suite1.execPath,
+      example1.suite1.outputs[1][0],
+      sinon.match.any,
+    );
+    spawnWithArgs.callsFake(function(p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
       try {
-        assert.ok(ops.env.hasOwnProperty('ENVTEST'));
-        assert.equal(ops.env.ENVTEST, 'envtest');
-        return new ChildProcessStub(example1.suite1.outputs[1][1]);
+        assert.ok(ops.env!.hasOwnProperty('ENVTEST'));
+        assert.equal(ops.env!.ENVTEST, 'envtest');
+        return (new ChildProcessStub(example1.suite1.outputs[1][1]) as unknown) as ChildProcess;
       } catch (e) {
         exception = e;
         throw e;
@@ -133,8 +148,14 @@ describe(path.basename(__filename), function() {
     const testListOutput = example1.suite1.outputs[1][1].split('\n');
     assert.equal(testListOutput.length, 10);
     testListOutput.splice(1, 3);
-    const withArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
-    withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
+    const withArgs = imitation.spawnStub.withArgs(
+      example1.suite1.execPath,
+      example1.suite1.outputs[1][0],
+      sinon.match.any,
+    );
+    withArgs
+      .onCall(withArgs.callCount)
+      .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
 
     await adapter.load();
 
@@ -218,10 +239,18 @@ describe(path.basename(__filename), function() {
       '  Redefined at ../Task/biggest_rectangle.cpp:102',
       '',
     ];
-    const withArgs = imitation.spawnStub.withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0]);
+    const withArgs = imitation.spawnStub.withArgs(
+      example1.suite1.execPath,
+      example1.suite1.outputs[1][0],
+      sinon.match.any,
+    );
     withArgs
       .onCall(withArgs.callCount)
-      .returns(new ChildProcessStub('Matching test cases:' + EOL, undefined, testListErrOutput.join(EOL)));
+      .returns((new ChildProcessStub(
+        'Matching test cases:' + EOL,
+        undefined,
+        testListErrOutput.join(EOL),
+      ) as unknown) as ChildProcess);
 
     await adapter.load();
 
@@ -259,7 +288,11 @@ describe(path.basename(__filename), function() {
     await settings.updateConfig('executables', ['execPath1.exe', './execPath2.exe']);
     adapter = new TestAdapter();
 
-    const withArgs = imitation.spawnStub.withArgs(example1.suite2.execPath, example1.suite2.outputs[1][0]);
+    const withArgs = imitation.spawnStub.withArgs(
+      example1.suite2.execPath,
+      example1.suite2.outputs[1][0],
+      sinon.match.any,
+    );
     withArgs.onCall(withArgs.callCount).throws('dummy error for testing (should be handled)');
 
     await adapter.load();
@@ -274,12 +307,14 @@ describe(path.basename(__filename), function() {
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
     for (let scenario of example1.suite2.outputs) {
-      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0]).callsFake(function() {
-        return new ChildProcessStub(scenario[1]);
+      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function() {
+        return (new ChildProcessStub(scenario[1]) as unknown) as ChildProcess;
       });
     }
 
-    imitation.fsAccessStub.withArgs(execPath2CopyPath).callsFake(imitation.handleAccessFileExists);
+    imitation.fsAccessStub
+      .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
+      .callsFake(imitation.handleAccessFileExists);
 
     imitation.vsfsWatchStub
       .withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
@@ -301,14 +336,18 @@ describe(path.basename(__filename), function() {
 
     let start = 0;
     await adapter.doAndWaitForReloadEvent(this, () => {
-      imitation.fsAccessStub.withArgs(execPath2CopyPath).callsFake(imitation.handleAccessFileNotExists);
+      imitation.fsAccessStub
+        .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
+        .callsFake(imitation.handleAccessFileNotExists);
       start = Date.now();
       watcher.sendDelete();
       setTimeout(() => {
         assert.equal(adapter!.testLoadsEvents.length, 2);
       }, 1500);
       setTimeout(() => {
-        imitation.fsAccessStub.withArgs(execPath2CopyPath).callsFake(imitation.handleAccessFileExists);
+        imitation.fsAccessStub
+          .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
+          .callsFake(imitation.handleAccessFileExists);
         watcher.sendCreate();
       }, 3000);
     });
@@ -329,12 +368,14 @@ describe(path.basename(__filename), function() {
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
     for (let scenario of example1.suite2.outputs) {
-      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0]).callsFake(function() {
-        return new ChildProcessStub(scenario[1]);
+      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function() {
+        return (new ChildProcessStub(scenario[1]) as unknown) as ChildProcess;
       });
     }
 
-    imitation.fsAccessStub.withArgs(execPath2CopyPath).callsFake(imitation.handleAccessFileExists);
+    imitation.fsAccessStub
+      .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
+      .callsFake(imitation.handleAccessFileExists);
 
     imitation.vsfsWatchStub
       .withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
@@ -356,7 +397,9 @@ describe(path.basename(__filename), function() {
 
     let start = 0;
     await adapter.doAndWaitForReloadEvent(this, async () => {
-      imitation.fsAccessStub.withArgs(execPath2CopyPath).callsFake(imitation.handleAccessFileNotExists);
+      imitation.fsAccessStub
+        .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
+        .callsFake(imitation.handleAccessFileNotExists);
       start = Date.now();
       watcher.sendDelete();
     });
@@ -419,25 +462,31 @@ describe(path.basename(__filename), function() {
     });
 
     for (let scenario of example1.suite2.outputs) {
-      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0]).callsFake(function() {
-        return new ChildProcessStub(scenario[1]);
+      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function() {
+        return (new ChildProcessStub(scenario[1]) as unknown) as ChildProcess;
       });
     }
     let exception: Error | undefined = undefined;
-    const spawnWithArgs = imitation.spawnStub.withArgs(execPath2CopyPath, example1.suite2.t1.outputs[0][0]);
-    spawnWithArgs.callsFake(function(p: string, args: string[], ops: { [prop: string]: { [prop: string]: string } }) {
+    const spawnWithArgs = imitation.spawnStub.withArgs(
+      execPath2CopyPath,
+      example1.suite2.t1.outputs[0][0],
+      sinon.match.any,
+    );
+    spawnWithArgs.callsFake(function(p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
       try {
         assert.equal(ops.cwd, expectStr);
-        assert.ok(ops.env.hasOwnProperty('C2TESTVARS'));
-        assert.equal(ops.env.C2TESTVARS, expectStr);
-        return new ChildProcessStub(example1.suite2.t1.outputs[0][1]);
+        assert.ok(ops.env!.hasOwnProperty('C2TESTVARS'));
+        assert.equal(ops.env!.C2TESTVARS, expectStr);
+        return (new ChildProcessStub(example1.suite2.t1.outputs[0][1]) as unknown) as ChildProcess;
       } catch (e) {
         exception = e;
         throw e;
       }
     });
 
-    imitation.fsAccessStub.withArgs(execPath2CopyPath).callsFake(imitation.handleAccessFileExists);
+    imitation.fsAccessStub
+      .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
+      .callsFake(imitation.handleAccessFileExists);
 
     imitation.vsfsWatchStub
       .withArgs(imitation.createVscodeRelativePatternMatcher(execPath2CopyRelPath))

@@ -9,6 +9,7 @@ import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
 import { TestAdapter, Imitation, settings, ChildProcessStub } from './Common';
+import { ChildProcess } from 'child_process';
 
 ///
 
@@ -52,9 +53,10 @@ describe(path.basename(__filename), function() {
         sinon.match((args: string[]) => {
           return args[0] === '--gtest_list_tests';
         }),
+        sinon.match.any,
       )
       .callsFake(function() {
-        return new ChildProcessStub(example1.gtest1.gtest_list_tests_output);
+        return (new ChildProcessStub(example1.gtest1.gtest_list_tests_output) as unknown) as ChildProcess;
       });
 
     imitation.fsReadFileSyncStub.withArgs(sinon.match(/.*tmp_gtest_output_.+\.xml\.tmp/), 'utf8').returns('not an xml');
@@ -78,9 +80,10 @@ describe(path.basename(__filename), function() {
           sinon.match((args: string[]) => {
             return args[0] === '--gtest_list_tests';
           }),
+          sinon.match.any,
         )
         .callsFake(function() {
-          return new ChildProcessStub(example1.gtest1.gtest_list_tests_output);
+          return (new ChildProcessStub(example1.gtest1.gtest_list_tests_output) as unknown) as ChildProcess;
         });
 
       imitation.fsReadFileSyncStub

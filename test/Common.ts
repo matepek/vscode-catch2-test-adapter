@@ -35,7 +35,7 @@ export const isWin = process.platform === 'win32';
 assert.notStrictEqual(vscode.workspace.workspaceFolders, undefined);
 assert.equal(vscode.workspace.workspaceFolders!.length, 1);
 
-export const settings = new class {
+export const settings = new (class {
   public constructor() {}
 
   public readonly workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
@@ -70,7 +70,7 @@ export const settings = new class {
     });
     return new Promise(r => t.then(r));
   }
-}();
+})();
 
 export async function waitFor(context: Mocha.Context, condition: Function, timeout?: number): Promise<void> {
   if (timeout === undefined) timeout = context.timeout();
@@ -127,19 +127,20 @@ export class FileSystemWatcherStub implements vscode.FileSystemWatcher {
 export class Imitation {
   public readonly sinonSandbox = sinon.createSandbox();
 
-  public readonly spawnStub = this.sinonSandbox.stub(cp, 'spawn').named('spawnStub') as sinon.SinonStub<any[], any>; // eslint-disable-line
+  public readonly spawnStub = this.sinonSandbox.stub(cp, 'spawn').named('spawnStub'); // eslint-disable-line
 
   public readonly vsfsWatchStub = this.sinonSandbox
     .stub(vscode.workspace, 'createFileSystemWatcher')
-    .named('vscode.createFileSystemWatcher') as sinon.SinonStub<any[], any>; // eslint-disable-line
+    .named('vscode.createFileSystemWatcher'); // eslint-disable-line
 
-  public readonly fsAccessStub = this.sinonSandbox.stub(fs, 'access').named('access') as sinon.SinonStub<any[], any>; // eslint-disable-line
+  public readonly fsAccessStub = (this.sinonSandbox.stub(fs, 'access').named('access') as unknown) as sinon.SinonStub<
+    [fs.PathLike, string, (err: NodeJS.ErrnoException | null) => void],
+    void
+  >; // eslint-disable-line
 
   public readonly fsReadFileSyncStub = this.sinonSandbox.stub(fs, 'readFileSync').named('fsReadFileSync') as any; // eslint-disable-line
 
-  public readonly vsFindFilesStub = this.sinonSandbox
-    .stub(vscode.workspace, 'findFiles')
-    .named('vsFindFilesStub') as sinon.SinonStub<[vscode.GlobPattern | sinon.SinonMatcher], Thenable<vscode.Uri[]>>;
+  public readonly vsFindFilesStub = this.sinonSandbox.stub(vscode.workspace, 'findFiles').named('vsFindFilesStub');
 
   public constructor() {
     this.resetToCallThrough();
@@ -169,16 +170,25 @@ export class Imitation {
     return this.createVscodeRelativePatternMatcher(path.relative(settings.workspaceFolderUri.fsPath, p));
   }
 
-  public handleAccessFileExists(path: string, flag: number, cb: (err: NodeJS.ErrnoException | null) => void): void {
+  public handleAccessFileExists(
+    path: fse.PathLike,
+    flag: string,
+    cb: (err: NodeJS.ErrnoException | null) => void,
+  ): void {
     cb(null);
   }
 
-  public handleAccessFileNotExists(path: string, cb: (err: NodeJS.ErrnoException | null | {}) => void): void {
+  public handleAccessFileNotExists(
+    path: fse.PathLike,
+    flag: string,
+    cb: (err: NodeJS.ErrnoException | null) => void,
+  ): void {
     cb({
+      name: 'errname',
       code: 'ENOENT',
       errno: -2,
       message: 'ENOENT',
-      path: path,
+      path: path.toString(),
       syscall: 'stat',
     });
   }
@@ -186,18 +196,18 @@ export class Imitation {
   public createCreateFSWatcherHandler(
     watchers: Map<string, FileSystemWatcherStub>,
   ): (
-    p: vscode.RelativePattern,
-    ignoreCreateEvents: boolean,
-    ignoreChangeEvents: boolean,
-    ignoreDeleteEvents: boolean,
+    p: vscode.GlobPattern,
+    ignoreCreateEvents?: boolean | undefined,
+    ignoreChangeEvents?: boolean | undefined,
+    ignoreDeleteEvents?: boolean | undefined,
   ) => FileSystemWatcherStub {
     return (
-      p: vscode.RelativePattern,
-      ignoreCreateEvents: boolean,
-      ignoreChangeEvents: boolean,
-      ignoreDeleteEvents: boolean,
+      p: vscode.GlobPattern,
+      ignoreCreateEvents?: boolean | undefined,
+      ignoreChangeEvents?: boolean | undefined,
+      ignoreDeleteEvents?: boolean | undefined,
     ) => {
-      const pp = path.join(p.base, p.pattern);
+      const pp = typeof p === 'string' ? p : path.join(p.base, p.pattern);
       const e = new FileSystemWatcherStub(
         vscode.Uri.file(pp),
         ignoreCreateEvents,
