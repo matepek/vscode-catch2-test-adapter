@@ -84,7 +84,7 @@ function accessAsync(filePath: string, flag: number): Promise<void> {
 }
 
 // https://askubuntu.com/questions/156392/what-is-the-equivalent-of-an-exe-file
-const nativeExacutableExtensionFilter = new Set([
+const nativeExecutableExtensionFilter = new Set([
   '.c',
   '.cmake',
   '.cpp',
@@ -104,17 +104,20 @@ const nativeExacutableExtensionFilter = new Set([
   '.tar',
   '.txt',
 ]);
+
+const win32NativeExecutableExtensionFilter = new Set(['.exe', '.cmd', '.bat']);
+
 export function isNativeExecutableAsync(filePath: string): Promise<void> {
   const ext = path.extname(filePath);
   if (process.platform === 'win32') {
-    if (filePath.endsWith('.exe')) return accessAsync(filePath, ExecutableFlag);
+    if (win32NativeExecutableExtensionFilter.has(ext)) return accessAsync(filePath, ExecutableFlag);
     else return Promise.reject(new Error('Not a native executable extension on win32: ' + filePath));
   } else {
     if (filePath.endsWith('/')) {
       // noted that we got ".../CMakeFiles/" a lot. I assume the slash means directory.
       return Promise.reject(new Error('It is a directory, not a native executable: ' + filePath));
     }
-    if (nativeExacutableExtensionFilter.has(ext)) {
+    if (nativeExecutableExtensionFilter.has(ext)) {
       return Promise.reject(new Error('Not a native executable (filtered because of its extension): ' + filePath));
     } else {
       return accessAsync(filePath, ExecutableFlag);

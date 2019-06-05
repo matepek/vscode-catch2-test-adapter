@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.11]
+
+### Addedd
+
+- additional file extensions recognized as valid executable: `.cmd` and `.bat` ([PR](https://github.com/matepek/vscode-catch2-test-adapter/pull/96))
+
 ## [2.4.10] - 2019-06-05
 
 Google Test impovements. Now I use my product, so I've found a lot a of small issues. :)
