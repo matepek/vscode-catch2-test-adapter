@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.10]
+
+Google Test impovements. Now I use my product, so I've found a lot a of small issues. :)
+
+### Fixed
+
+- Google Test was losing it's state when the exec was touched.
+- a bug which ignored the user and global config values.
+
+### Added
+
+- a logic which tries to create a debug template on the fly.
+  It searches for configurations in the workspacefolder's `.vscode/launch.json`.
+  It will choose the first one which's `"request"` property is `"launch"` and has `type` property.
+
 ## [2.4.9] - 2019-05-28
 
 Just updated the README.md and updated the packages.
@@ -15,7 +30,7 @@ Just updated the README.md and updated the packages.
 
 ### Fixed
 
-- a [bug](https://github.com/matepek/vscode-catch2-test-adapter/issues/92) related to parsing a Google Test with 'TypeParam'
+- a [bug](https://github.com/matepek/vscode-catch2-test-adapter/issues/92) related to parsing a Google Test with 'TypeParam'.
 
 ## [2.4.7] - 2019-05-01
 

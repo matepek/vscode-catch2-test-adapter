@@ -206,7 +206,6 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     return c2fs
       .spawnAsync(this.execPath, ['--gtest_list_tests', '--gtest_output=xml:' + cacheFile], this.execOptions, 30000)
       .then(async googleTestListOutput => {
-        const oldChildren = this.children;
         this.children = [];
         this.label = this.origLabel;
 
@@ -371,9 +370,8 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         }
       };
 
-      runInfo.process!.stdout!.on('data', (chunk: Uint8Array) => {
-        processChunk(chunk.toLocaleString());
-      });
+      runInfo.process!.stdout!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
+      runInfo.process!.stderr!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
 
       runInfo.process!.once('close', (code: number | null, signal: string | null) => {
         if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
@@ -399,12 +397,14 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             } else {
               ev = data.currentChild.getFailedEventBase();
 
-              ev.message = '😱 Unexpected error !!\n';
+              ev.message = '😱 Unexpected error !!';
 
               if (result.error) {
                 ev.state = 'errored';
-                ev.message += result.error.message;
+                ev.message += '\n' + result.error.message;
               }
+
+              ev.message += data.buffer ? '\n' + data.buffer : '';
             }
 
             data.currentChild.lastRunState = ev.state;

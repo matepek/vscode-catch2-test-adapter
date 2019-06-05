@@ -298,10 +298,8 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         }
       };
 
-      runInfo.process!.stdout!.on('data', (chunk: Uint8Array) => {
-        const xml = chunk.toLocaleString();
-        processChunk(xml);
-      });
+      runInfo.process!.stdout!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
+      runInfo.process!.stderr!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
 
       runInfo.process!.once('close', (code: number | null, signal: string | null) => {
         if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
@@ -326,12 +324,14 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
             } else {
               ev = data.currentChild.getFailedEventBase();
 
-              ev.message = '😱 Unexpected error !!\n';
+              ev.message = '😱 Unexpected error !!';
 
               if (result.error) {
                 ev.state = 'errored';
-                ev.message += result.error.message;
+                ev.message += '\n' + result.error.message;
               }
+
+              ev.message += runInfo.stderr ? '\n' + runInfo.stderr : '';
             }
 
             data.currentChild.lastRunState = ev.state;
