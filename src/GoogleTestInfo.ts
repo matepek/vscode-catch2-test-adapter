@@ -61,8 +61,6 @@ export class GoogleTestInfo extends AbstractTestInfo {
     try {
       const ev = this.getFailedEventBase();
 
-      ev.message += output;
-
       const lines = output.split(/\r?\n/);
 
       if (lines.length < 2) throw new Error('unexpected');
@@ -77,63 +75,77 @@ export class GoogleTestInfo extends AbstractTestInfo {
 
       this.lastRunState = ev.state;
 
+      ev.message += output;
+
+      if (ev.state === 'skipped') {
+        // asserts or anything what is hapepend until here is not relevant anymore
+        // we will fill the output window, because it is maybe interesting, but wont decoreate the code
+        return ev;
+      }
+
       {
         const m = lines[lines.length - 1].match(/\(([0-9]+) ms\)$/);
         if (m) this._extendDescriptionAndTooltip(ev, Number(m[1]));
       }
 
+      lines.shift();
       lines.pop();
-
       const failure = /^(.+):([0-9]+): Failure$/;
 
-      for (let i = 1; i < lines.length; ++i) {
+      for (let i = 0; i < lines.length; ) {
         const m = lines[i].match(failure);
         if (m !== null) {
+          i += 1;
           const lineNumber = Number(m[2]) - 1 /*It looks vscode works like this.*/;
-          if (i + 2 < lines.length && lines[i + 1].startsWith('Expected: ') && lines[i + 2].startsWith('  Actual: ')) {
+
+          if (i + 1 < lines.length && lines[i + 0].startsWith('Expected: ') && lines[i + 1].startsWith('  Actual: ')) {
             ev.decorations!.push({
               line: lineNumber,
-              message: '⬅️ ' + lines[i + 1] + ';  ' + lines[i + 2],
-              hover: [lines[i + 1], lines[i + 2]].join('\n'),
+              message: '⬅️ ' + lines[i] + ';  ' + lines[i + 1],
+              hover: [lines[i], lines[i + 1]].join('\n'),
             });
             i += 2;
-          } else if (i + 1 < lines.length && lines[i + 1].startsWith('Expected: ')) {
-            ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i + 1], hover: lines[i + 1] });
+          } else if (i < lines.length && lines[i].startsWith('Expected: ')) {
+            ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i], hover: lines[i] });
+            i += 1;
           } else if (
-            i + 3 < lines.length &&
-            lines[i + 1].startsWith('Value of: ') &&
-            lines[i + 2].startsWith('  Actual: ') &&
-            lines[i + 3].startsWith('Expected: ')
+            i + 2 < lines.length &&
+            lines[i + 0].startsWith('Value of: ') &&
+            lines[i + 1].startsWith('  Actual: ') &&
+            lines[i + 2].startsWith('Expected: ')
           ) {
             ev.decorations!.push({
               line: lineNumber,
-              message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';',
-              hover: [lines[i + 1], lines[i + 2], lines[i + 3]].join('\n'),
+              message: '⬅️ ' + lines[i + 1].trim() + ';  ' + lines[i + 2].trim() + ';',
+              hover: [lines[i], lines[i + 1], lines[i + 2]].join('\n'),
             });
             i += 3;
           } else if (
-            i + 3 < lines.length &&
-            lines[i + 1].startsWith('Actual function call') &&
-            lines[i + 2].startsWith('         Expected:') &&
-            lines[i + 3].startsWith('           Actual:')
+            i + 2 < lines.length &&
+            lines[i + 0].startsWith('Actual function call') &&
+            lines[i + 1].startsWith('         Expected:') &&
+            lines[i + 2].startsWith('           Actual:')
           ) {
             ev.decorations!.push({
               line: lineNumber,
-              message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';',
-              hover: [lines[i + 1], lines[i + 2], lines[i + 3]].join('\n'),
+              message: '⬅️ ' + lines[i + 1].trim() + ';  ' + lines[i + 2].trim() + ';',
+              hover: [lines[i], lines[i + 1], lines[i + 2]].join('\n'),
             });
             i += 3;
-          } else if (i + 1 < lines.length && lines[i + 1].startsWith('Expected equality of these values:')) {
+          } else if (i < lines.length && lines[i].startsWith('Expected equality of these values:')) {
             let j = i + 1;
-            while (j + 1 < lines.length && lines[j + 1].startsWith('  ')) j++;
+            while (j < lines.length && lines[j].startsWith('  ')) j++;
             ev.decorations!.push({
               line: lineNumber,
               message: '⬅️ Expected equality',
-              hover: lines.slice(i + 1, j + 1).join('\n'),
+              hover: lines.slice(i, j).join('\n'),
             });
+            i = j;
           } else {
             ev.decorations!.push({ line: lineNumber, message: '⬅️ failure', hover: '' });
           }
+        } else {
+          i += 1;
         }
       }
 

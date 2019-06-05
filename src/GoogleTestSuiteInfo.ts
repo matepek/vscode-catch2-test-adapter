@@ -397,14 +397,14 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             } else {
               ev = data.currentChild.getFailedEventBase();
 
-              ev.message = '😱 Unexpected error !!\n';
+              ev.message = '😱 Unexpected error !!';
 
               if (result.error) {
                 ev.state = 'errored';
-                ev.message += result.error.message + '\n';
+                ev.message += '\n' + result.error.message;
               }
 
-              ev.message += '\n' + data.buffer;
+              ev.message += data.buffer ? '\n' + data.buffer : '';
             }
 
             data.currentChild.lastRunState = ev.state;

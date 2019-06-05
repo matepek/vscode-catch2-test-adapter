@@ -758,7 +758,7 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: s1t1,
           decorations: [],
-          message: '😱 Unexpected error !!\n',
+          message: '😱 Unexpected error !!',
         },
         {
           type: 'suite',

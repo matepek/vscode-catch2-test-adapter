@@ -324,11 +324,11 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
             } else {
               ev = data.currentChild.getFailedEventBase();
 
-              ev.message = '😱 Unexpected error !!\n';
+              ev.message = '😱 Unexpected error !!';
 
               if (result.error) {
                 ev.state = 'errored';
-                ev.message += result.error.message + '\n';
+                ev.message += '\n' + result.error.message;
               }
 
               ev.message += runInfo.stderr ? '\n' + runInfo.stderr : '';
