@@ -282,9 +282,18 @@ describe(path.basename(__filename), function() {
           decorations: [
             {
               line: 77,
-              message: '⬅️ Expected: to be called once;  Actual: never called - unsatisfied and active;',
-              hover:
-                "Actual function call count doesn't match EXPECT_CALL(foo, Describe(4))...\n         Expected: to be called once\n           Actual: never called - unsatisfied and active",
+              message: '⬅️ Expected arg #0: is equal to 4;  Actual: 3;',
+              hover: [
+                'EXPECT_CALL(foo, Describe(4))...',
+                '  Expected arg #0: is equal to 4',
+                '           Actual: 3',
+                '         Expected: to be called once',
+                '           Actual: never called - unsatisfied and active',
+                '⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯',
+                "Actual function call count doesn't match EXPECT_CALL(foo, Describe(4))...",
+                '         Expected: to be called once',
+                '           Actual: never called - unsatisfied and active',
+              ].join('\n'),
             },
           ],
           description: '(0ms)',

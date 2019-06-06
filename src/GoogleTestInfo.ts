@@ -2,7 +2,7 @@
 // vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
 // public domain. The author hereby disclaims copyright to this source code.
 
-import { TestEvent } from 'vscode-test-adapter-api';
+import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
 
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { SharedVariables } from './SharedVariables';
@@ -90,23 +90,36 @@ export class GoogleTestInfo extends AbstractTestInfo {
 
       lines.shift();
       lines.pop();
-      const failure = /^(.+):([0-9]+): Failure$/;
+
+      const failureRe = /^((.+):([0-9]+):) Failure$/;
+      const expectRe = /^((.+):([0-9]+):) (EXPECT_CALL\(.+)$/;
+
+      const addDecoration = (d: TestDecoration): void => {
+        const found = ev.decorations!.find(v => v.line === d.line);
+        if (found && d.hover) {
+          if (!found.hover) found.hover = '';
+          else found.hover += '\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n';
+          found.hover += d.hover;
+        } else {
+          ev.decorations!.push(d);
+        }
+      };
 
       for (let i = 0; i < lines.length; ) {
-        const m = lines[i].match(failure);
+        const m = lines[i].match(failureRe);
         if (m !== null) {
           i += 1;
-          const lineNumber = Number(m[2]) - 1 /*It looks vscode works like this.*/;
+          const lineNumber = Number(m[3]) - 1 /*It looks vscode works like this.*/;
 
           if (i + 1 < lines.length && lines[i + 0].startsWith('Expected: ') && lines[i + 1].startsWith('  Actual: ')) {
-            ev.decorations!.push({
+            addDecoration({
               line: lineNumber,
               message: '⬅️ ' + lines[i] + ';  ' + lines[i + 1],
               hover: [lines[i], lines[i + 1]].join('\n'),
             });
             i += 2;
           } else if (i < lines.length && lines[i].startsWith('Expected: ')) {
-            ev.decorations!.push({ line: lineNumber, message: '⬅️ ' + lines[i], hover: lines[i] });
+            addDecoration({ line: lineNumber, message: '⬅️ ' + lines[i], hover: lines[i] });
             i += 1;
           } else if (
             i + 2 < lines.length &&
@@ -114,7 +127,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
             lines[i + 1].startsWith('  Actual: ') &&
             lines[i + 2].startsWith('Expected: ')
           ) {
-            ev.decorations!.push({
+            addDecoration({
               line: lineNumber,
               message: '⬅️ ' + lines[i + 1].trim() + ';  ' + lines[i + 2].trim() + ';',
               hover: [lines[i], lines[i + 1], lines[i + 2]].join('\n'),
@@ -126,7 +139,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
             lines[i + 1].startsWith('         Expected:') &&
             lines[i + 2].startsWith('           Actual:')
           ) {
-            ev.decorations!.push({
+            addDecoration({
               line: lineNumber,
               message: '⬅️ ' + lines[i + 1].trim() + ';  ' + lines[i + 2].trim() + ';',
               hover: [lines[i], lines[i + 1], lines[i + 2]].join('\n'),
@@ -135,17 +148,39 @@ export class GoogleTestInfo extends AbstractTestInfo {
           } else if (i < lines.length && lines[i].startsWith('Expected equality of these values:')) {
             let j = i + 1;
             while (j < lines.length && lines[j].startsWith('  ')) j++;
-            ev.decorations!.push({
+            addDecoration({
               line: lineNumber,
               message: '⬅️ Expected equality',
               hover: lines.slice(i, j).join('\n'),
             });
             i = j;
           } else {
-            ev.decorations!.push({ line: lineNumber, message: '⬅️ failure', hover: '' });
+            addDecoration({ line: lineNumber, message: '⬅️ failure', hover: '' });
           }
         } else {
-          i += 1;
+          const m = lines[i].match(expectRe);
+          if (m) {
+            i += 1;
+            const lineNumber = Number(m[3]) - 1 /*It looks vscode works like this.*/;
+            if (
+              i + 1 < lines.length &&
+              lines[i].startsWith('  Expected') &&
+              lines[i + 1].trim().startsWith('Actual:')
+            ) {
+              let j = i + 1;
+              while (j < lines.length && lines[j].startsWith('  ')) j++;
+              addDecoration({
+                line: lineNumber,
+                message: '⬅️ ' + lines[i].trim() + ';  ' + lines[i + 1].trim() + ';',
+                hover: [m[4], ...lines.slice(i, j)].join('\n'),
+              });
+              i = j;
+            } else {
+              addDecoration({ line: lineNumber, message: '⬅️ ' + m[4] });
+            }
+          } else {
+            i += 1;
+          }
         }
       }
 
