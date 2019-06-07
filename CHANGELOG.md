@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Google Mock output parsing enhancements.
 
+### Fixed
+
+- a [bug](https://github.com/matepek/vscode-catch2-test-adapter/issues/97) related to config retrieval.
+
 ## [2.4.11] - 2019-06-06
 
 ### Addedd
