@@ -302,9 +302,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
 
     return this._mainTaskQueue.then(() => {
-      return this._rootSuite.run(tests).catch((reason: Error) => {
-        this._log.error(reason);
-      });
+      return this._rootSuite.run(tests).catch((reason: Error) => this._log.error(reason));
     });
   }
 
@@ -551,7 +549,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   private _getConfiguration(): vscode.WorkspaceConfiguration {
-    return vscode.workspace.getConfiguration('catch2TestExplorer', null);
+    return vscode.workspace.getConfiguration('catch2TestExplorer', this.workspaceFolder.uri);
   }
 
   private _getDebugBreakOnFailure(config: vscode.WorkspaceConfiguration): boolean {
