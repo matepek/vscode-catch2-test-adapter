@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.13]
+
+npm update: security alert fix.
+
 ## [2.4.12] - 2019-06-07
 
 "Google Test impovements. Now I use my product, so I've found a lot a of small issues." Vol. 2.

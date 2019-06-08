@@ -127,12 +127,10 @@ export class TestExecutableInfo implements vscode.Disposable {
 
             w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, p));
 
-            w.onAll(
-              (fsPath: string): void => {
-                this._shared.log.info('dependsOn watcher event:', fsPath);
-                this._shared.retire.fire([...this._executables.values()]);
-              },
-            );
+            w.onAll((fsPath: string): void => {
+              this._shared.log.info('dependsOn watcher event:', fsPath);
+              this._shared.retire.fire([...this._executables.values()]);
+            });
           } else {
             absPatterns.push(p.absPattern);
           }
@@ -144,12 +142,10 @@ export class TestExecutableInfo implements vscode.Disposable {
 
           w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, absPatterns));
 
-          w.onAll(
-            (fsPath: string): void => {
-              this._shared.log.info('dependsOn watcher event:', fsPath);
-              this._shared.retire.fire([...this._executables.values()]);
-            },
-          );
+          w.onAll((fsPath: string): void => {
+            this._shared.log.info('dependsOn watcher event:', fsPath);
+            this._shared.retire.fire([...this._executables.values()]);
+          });
         }
       } catch (e) {
         this._shared.log.error('dependsOn error:', e);
