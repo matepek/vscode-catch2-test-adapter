@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.4.13]
+## [2.4.13] - 2019-06-08
 
 npm update: security alert fix.
 
