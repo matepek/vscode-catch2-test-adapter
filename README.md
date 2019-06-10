@@ -86,7 +86,7 @@ If compilation reaches timeout it will drop the suite (`catch2TestExplorer.defau
 
 **Note** that there is a mechanism which will filter out every possible executable which:
 
-- on windows: NOT ends with `.exe`.
+- on windows: NOT ends with `.exe`, `.cmd` or `.bat`.
 - on other platforms: ends with one of the following:
   `'.c', '.cmake', '.cpp', '.cxx', '.deb', '.dir', '.gz', '.h', '.hpp', '.hxx', '.ko', '.log', '.o', '.php', '.rpm', '.so', '.tar', '.txt'`.
 

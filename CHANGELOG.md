@@ -25,7 +25,7 @@ npm update: security alert fix.
 
 ## [2.4.11] - 2019-06-06
 
-### Addedd
+### Added
 
 - additional file extensions recognized as valid executable: `.cmd` and `.bat` ([PR](https://github.com/matepek/vscode-catch2-test-adapter/pull/96))
 
