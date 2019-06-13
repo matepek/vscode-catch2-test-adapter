@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.4.13",
+  "version": "2.4.14",
   "license": "Unlicense",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -48,7 +48,7 @@
     "debounce-collect": "^1.0.2",
     "entities": "^1.1.2",
     "gaze": "^1.1.3",
-    "tslib": "^1.9.3",
+    "tslib": "^1.10.0",
     "vscode-test-adapter-api": "^1.7.0",
     "vscode-test-adapter-util": "^0.6.4",
     "xml2js": "^0.4.19"
@@ -59,12 +59,12 @@
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.0.7",
+    "@types/node": "^12.0.8",
     "@types/request-promise": "4.1.43",
-    "@types/sinon": "^7.0.12",
+    "@types/sinon": "^7.0.13",
     "@types/xml2js": "^0.4.4",
-    "@typescript-eslint/eslint-plugin": "^1.9.0",
-    "@typescript-eslint/parser": "^1.9.0",
+    "@typescript-eslint/eslint-plugin": "^1.10.2",
+    "@typescript-eslint/parser": "^1.10.2",
     "deep-equal": "^1.0.1",
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.3.0",
@@ -75,7 +75,7 @@
     "request-promise": "4.2.4",
     "sinon": "^7.3.2",
     "typescript": "^3.5.1",
-    "vsce": "^1.62.0",
+    "vsce": "^1.63.0",
     "vscode": "^1.1.34",
     "vscode-test": "0.4.1"
   },
@@ -179,7 +179,7 @@
                       },
                       "env": {
                         "type": "object",
-                        "description": "Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.",
+                        "description": "Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`).",
                         "additionalProperties": {
                           "anyOf": [
                             {
@@ -303,7 +303,7 @@
                   ]
                 },
                 "env": {
-                  "description": "Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.",
+                  "description": "Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`).",
                   "type": "object",
                   "additionalProperties": {
                     "anyOf": [

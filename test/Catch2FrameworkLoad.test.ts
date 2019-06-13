@@ -18,7 +18,7 @@ import {
 import { inspect, promisify } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, waitFor, settings, ChildProcessStub, FileSystemWatcherStub } from './Common';
+import { TestAdapter, Imitation, waitFor, settings, ChildProcessStub, FileSystemWatcherStub, isWin } from './Common';
 import { ChildProcess } from 'child_process';
 import { SpawnOptions } from '../src/FSWrapper';
 
@@ -1585,6 +1585,8 @@ describe(path.basename(__filename), function() {
             C2LOCALTESTENV: 'c2localtestenv',
             C2OVERRIDETESTENV: 'c2overridetestenv-l',
             C2LOCALCWDANDNAME: '${cwd}-${name}',
+            C2ENVVARS1: 'X${os_env:PATH}X',
+            C2ENVVARS2: 'X${os_env:pAtH}X',
           },
         },
       ]);
@@ -1630,6 +1632,9 @@ describe(path.basename(__filename), function() {
             assert.equal(ops.env!.C2CWDANDNAME, ops.cwd + '-' + 'execPath1');
             assert.equal(ops.env!.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath1');
             assert.equal(ops.env!.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
+            assert.equal(ops.env!.C2ENVVARS1, 'X' + process.env['PATH'] + 'X');
+            if (isWin) assert.equal(ops.env!.C2ENVVARS2, 'X' + process.env['PATH'] + 'X');
+            else assert.equal(ops.env!.C2ENVVARS2, 'X${os_env:pAtH}X');
 
             return (new ChildProcessStub(example1.suite1.outputs[2][1]) as unknown) as ChildProcess;
           } catch (e) {

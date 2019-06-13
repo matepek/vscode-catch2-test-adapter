@@ -262,6 +262,29 @@ export class TestExecutableInfo implements vscode.Disposable {
       if (this._env) Object.assign(resolvedEnv, this._env);
 
       resolvedEnv = resolveVariables(resolvedEnv, varToValue);
+
+      const getValueOfEnv = (prop: string): string | undefined => {
+        const normalize = (s: string): string => (process.platform === 'win32' ? s.toLowerCase() : s);
+        const normProp = normalize(prop);
+        for (const prop in process.env) {
+          if (normalize(prop) == normProp) {
+            return process.env[prop];
+          }
+        }
+        return undefined;
+      };
+
+      for (const prop in resolvedEnv) {
+        const m = resolvedEnv[prop].match(/\$\{os_env:([A-z_][A-z0-9_]*)\}/gm);
+        if (m) {
+          for (const envExpr of m) {
+            const envName = envExpr.substring('${os_env:'.length, envExpr.length - 1);
+            const value = getValueOfEnv(envName);
+            if (value) resolvedEnv[prop] = resolvedEnv[prop].replace(envExpr, value);
+            else this._shared.log.warn("couldn't resolve env variable: No env in process.env:", envExpr);
+          }
+        }
+      }
     } catch (e) {
       this._shared.log.error('resolvedEnv', e);
     }

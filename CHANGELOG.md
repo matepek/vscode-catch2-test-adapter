@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.14]
+
+## Added
+
+- `executables`' `env` variable can contains variables related to environment variables (ex.: `${os_env:PATH};/mypath`).
+
 ## [2.4.13] - 2019-06-08
 
 npm update: security alert fix.

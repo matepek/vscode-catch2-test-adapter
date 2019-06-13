@@ -74,7 +74,7 @@ If it is an object it can contains the following properties:
 | `pattern`     | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required)                                                                  |
 | `description` | A less prominent text after the `name`. Can contains variables related to `pattern`.                                                                                                                                                                                          |
 | `cwd`         | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                       |
-| `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                               |
+| `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`).                          |
 | `dependsOn`   | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. |
 
 The `pattern` (or the `executables` used as string or an array of strings)
@@ -107,6 +107,10 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
     but it seem there is an issue with _double star_ (`**`).
   - Paths on different drive in the same `dependsOn` array maybe won't work.
     (If you find another corner case, feel free to open an issue. It could be handy once in the future.)
+
+**Note** to `env`:
+
+`${os_env:<some os environment variable name>}` is case insensitive on Windows, so `${os_env:pAtH}` will give the same result as `${os_env:PATH}`.
 
 #### Variables which can be used in `name`, `cwd` and `env` of `executables`:
 
