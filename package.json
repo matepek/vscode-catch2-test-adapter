@@ -6,7 +6,7 @@
   "author": "Mate Pek",
   "publisher": "matepek",
   "version": "2.4.14",
-  "license": "Unlicense",
+  "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
     "type": "git",
