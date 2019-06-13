@@ -885,7 +885,7 @@ describe(path.basename(__filename), function() {
 
     it('should timeout not inside a test case', async function() {
       this.timeout(8000);
-      this.slow(4000);
+      this.slow(7000);
       await settings.updateConfig('defaultRunningTimeoutSec', 3);
       await loadAdapterAndAssert();
       const withArgs = imitation.spawnStub.withArgs(
@@ -926,7 +926,7 @@ describe(path.basename(__filename), function() {
 
     it('should timeout inside a test case', async function() {
       this.timeout(8000);
-      this.slow(4000);
+      this.slow(7000);
       await settings.updateConfig('defaultRunningTimeoutSec', 3);
       await loadAdapterAndAssert();
       const withArgs = imitation.spawnStub.withArgs(

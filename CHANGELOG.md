@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Added
 
-- `executables`' `env` variable can contains variables related to environment variables (ex.: `${os_env:PATH};/mypath`).
+- `executables`'s properties can contains variables related to environment variables (ex.: `${os_env:PATH};/mypath`).
 
 ## [2.4.13] - 2019-06-08
 

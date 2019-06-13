@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import * as c2fs from './FSWrapper';
-import { resolveVariables } from './Util';
+import { resolveVariables, resolveOSEnvironmentVariables } from './Util';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
@@ -209,12 +209,15 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.error(e);
     }
 
+    const variableRe = /\$\{[^ ]*\}/;
+
     let resolvedName = relPath;
     try {
       if (this._name) resolvedName = resolveVariables(this._name, varToValue);
       else if (!this._description) resolvedName = resolveVariables('${filename}', varToValue);
+      resolvedName = resolveOSEnvironmentVariables(resolvedName);
 
-      if (resolvedName.match(/\$\{.*\}/)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedName);
+      if (resolvedName.match(variableRe)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedName);
 
       varToValue.push(['${name}', resolvedName]);
     } catch (e) {
@@ -225,8 +228,9 @@ export class TestExecutableInfo implements vscode.Disposable {
     try {
       if (this._description) {
         resolvedDescription = resolveVariables(this._description, varToValue);
+        resolvedDescription = resolveOSEnvironmentVariables(resolvedDescription);
 
-        if (resolvedDescription.match(/\$\{.*\}/))
+        if (resolvedDescription.match(variableRe))
           this._shared.log.warn('Possibly unresolved variable: ' + resolvedDescription);
 
         varToValue.push(['${description}', resolvedDescription]);
@@ -245,8 +249,9 @@ export class TestExecutableInfo implements vscode.Disposable {
       if (this._cwd) resolvedCwd = this._cwd;
 
       resolvedCwd = resolveVariables(resolvedCwd, varToValue);
+      resolvedCwd = resolveOSEnvironmentVariables(resolvedCwd);
 
-      if (resolvedCwd.match(/\$\{.*\}/)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedCwd);
+      if (resolvedCwd.match(variableRe)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedCwd);
 
       resolvedCwd = path.resolve(this._shared.workspaceFolder.uri.fsPath, resolvedCwd);
 
@@ -262,29 +267,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       if (this._env) Object.assign(resolvedEnv, this._env);
 
       resolvedEnv = resolveVariables(resolvedEnv, varToValue);
-
-      const getValueOfEnv = (prop: string): string | undefined => {
-        const normalize = (s: string): string => (process.platform === 'win32' ? s.toLowerCase() : s);
-        const normProp = normalize(prop);
-        for (const prop in process.env) {
-          if (normalize(prop) == normProp) {
-            return process.env[prop];
-          }
-        }
-        return undefined;
-      };
-
-      for (const prop in resolvedEnv) {
-        const m = resolvedEnv[prop].match(/\$\{os_env:([A-z_][A-z0-9_]*)\}/gm);
-        if (m) {
-          for (const envExpr of m) {
-            const envName = envExpr.substring('${os_env:'.length, envExpr.length - 1);
-            const value = getValueOfEnv(envName);
-            if (value) resolvedEnv[prop] = resolvedEnv[prop].replace(envExpr, value);
-            else this._shared.log.warn("couldn't resolve env variable: No env in process.env:", envExpr);
-          }
-        }
-      }
+      resolvedEnv = resolveOSEnvironmentVariables(resolvedEnv);
     } catch (e) {
       this._shared.log.error('resolvedEnv', e);
     }

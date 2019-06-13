@@ -363,8 +363,8 @@ describe(path.basename(__filename), function() {
   specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete second', async function() {
     const watchTimeout = 5;
     await settings.updateConfig('defaultWatchTimeoutSec', watchTimeout);
-    this.timeout(watchTimeout * 1000 + 6500 /* because of 'delay' */);
-    this.slow(watchTimeout * 1000 + 3500 /* because of 'delay' */);
+    this.timeout(watchTimeout * 1000 + 7500 /* because of 'delay' */);
+    this.slow(watchTimeout * 1000 + 5500 /* because of 'delay' */);
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
     for (let scenario of example1.suite2.outputs) {

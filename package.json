@@ -201,7 +201,8 @@
                                 "${workspaceName}",
                                 "${name}",
                                 "${description}",
-                                "${cwd}"
+                                "${cwd}",
+                                "${os_env:PATH}"
                               ]
                             },
                             {
@@ -326,7 +327,8 @@
                           "${workspaceName}",
                           "${name}",
                           "${description}",
-                          "${cwd}"
+                          "${cwd}",
+                          "${os_env:PATH}"
                         ]
                       },
                       {
