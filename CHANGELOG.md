@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.14]
+
+## Added
+
+- `executables`'s properties can contains variables related to environment variables (ex.: `${os_env:PATH};/mypath`).
+
 ## [2.4.13] - 2019-06-08
 
 npm update: security alert fix.
@@ -25,7 +31,7 @@ npm update: security alert fix.
 
 ## [2.4.11] - 2019-06-06
 
-### Addedd
+### Added
 
 - additional file extensions recognized as valid executable: `.cmd` and `.bat` ([PR](https://github.com/matepek/vscode-catch2-test-adapter/pull/96))
 

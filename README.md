@@ -74,7 +74,7 @@ If it is an object it can contains the following properties:
 | `pattern`     | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required)                                                                  |
 | `description` | A less prominent text after the `name`. Can contains variables related to `pattern`.                                                                                                                                                                                          |
 | `cwd`         | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                       |
-| `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern`.                                                                                                               |
+| `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`).                          |
 | `dependsOn`   | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. |
 
 The `pattern` (or the `executables` used as string or an array of strings)
@@ -86,7 +86,7 @@ If compilation reaches timeout it will drop the suite (`catch2TestExplorer.defau
 
 **Note** that there is a mechanism which will filter out every possible executable which:
 
-- on windows: NOT ends with `.exe`.
+- on windows: NOT ends with `.exe`, `.cmd` or `.bat`.
 - on other platforms: ends with one of the following:
   `'.c', '.cmake', '.cpp', '.cxx', '.deb', '.dir', '.gz', '.h', '.hpp', '.hxx', '.ko', '.log', '.o', '.php', '.rpm', '.so', '.tar', '.txt'`.
 
@@ -108,27 +108,28 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
   - Paths on different drive in the same `dependsOn` array maybe won't work.
     (If you find another corner case, feel free to open an issue. It could be handy once in the future.)
 
-#### Variables which can be used in `name`, `cwd` and `env` of `executables`:
+#### Variables which can be used in `name`, `description`, `cwd` and `env` of `executables`:
 
-| Variable                | Description                                                                                                                                         |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `${absPath}`            | Absolute path of the test executable                                                                                                                |
-| `${relPath}`            | Relative path of the test executable to the workspace folder                                                                                        |
-| `${absDirpath}`         | Absolute path of the test executable's parent directory                                                                                             |
-| `${relDirpath}`         | Relative path of the test executable's parent directory to the workspace folder                                                                     |
-| `${filename}`           | Filename (Path withouth directories; "`d/a.b.c`" => "`a.b.c`")                                                                                      |
-| `${baseFilename}`       | Filename without extension ("`d/a.b.c`" => "`a.b`")                                                                                                 |
-| `${extFilename}`        | Filename extension. ("`d/a.b.c`" => "`.c`")                                                                                                         |
-| `${base2Filename}`      | Filename without second extension ("`d/a.b.c`" => "`a`")                                                                                            |
-| `${ext2Filename}`       | Filename's second level extension. ("`d/a.b.c`" => "`.b`")                                                                                          |
-| `${base3Filename}`      | Filename without third extension ("`d/a.b.c`" => "`a`")                                                                                             |
-| `${ext3Filename}`       | Filename's third level extension. ("`d/a.b.c`" => "")                                                                                               |
-| `${workspaceDirectory}` | (You can only guess once.)                                                                                                                          |
-| `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                                                                                    |
-| `${workspaceName}`      | Workspace name can be custom in case of [`workspace file`](https://code.visualstudio.com/docs/editor/multi-root-workspaces#_workspace-file-schema). |
-| `${name}`               | The resolved `executables`'s name. Can be used only in `cwd` and `env`.                                                                             |
-| `${description}`        | The resolved `executables`'s description. Can be used only in `cwd` and `env`.                                                                      |
-| `${cwd}`                | The resolved `executables`'s cwd. Can be used only in `env`.                                                                                        |
+| Variable                | Description                                                                                                                                                 |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `${absPath}`            | Absolute path of the test executable                                                                                                                        |
+| `${relPath}`            | Relative path of the test executable to the workspace folder                                                                                                |
+| `${absDirpath}`         | Absolute path of the test executable's parent directory                                                                                                     |
+| `${relDirpath}`         | Relative path of the test executable's parent directory to the workspace folder                                                                             |
+| `${filename}`           | Filename (Path withouth directories; "`d/a.b.c`" => "`a.b.c`")                                                                                              |
+| `${baseFilename}`       | Filename without extension ("`d/a.b.c`" => "`a.b`")                                                                                                         |
+| `${extFilename}`        | Filename extension. ("`d/a.b.c`" => "`.c`")                                                                                                                 |
+| `${base2Filename}`      | Filename without second extension ("`d/a.b.c`" => "`a`")                                                                                                    |
+| `${ext2Filename}`       | Filename's second level extension. ("`d/a.b.c`" => "`.b`")                                                                                                  |
+| `${base3Filename}`      | Filename without third extension ("`d/a.b.c`" => "`a`")                                                                                                     |
+| `${ext3Filename}`       | Filename's third level extension. ("`d/a.b.c`" => "")                                                                                                       |
+| `${workspaceDirectory}` | (You can only guess once.)                                                                                                                                  |
+| `${workspaceFolder}`    | Alias of `${workspaceDirectory}`                                                                                                                            |
+| `${workspaceName}`      | Workspace name can be custom in case of [`workspace file`](https://code.visualstudio.com/docs/editor/multi-root-workspaces#_workspace-file-schema).         |
+| `${name}`               | The resolved `executables`'s name. Can be used only in `cwd` and `env`.                                                                                     |
+| `${description}`        | The resolved `executables`'s description. Can be used only in `cwd` and `env`.                                                                              |
+| `${cwd}`                | The resolved `executables`'s cwd. Can be used only in `env`.                                                                                                |
+| `${os_env:<varname>}`   | Resolves it to the given(`<varname>`) environment variable. Can be used everywhere. On Windows it is case insensitive: `${os_env:pAtH}` == `${os_env:PATH}` |
 
 #### Examples:
 

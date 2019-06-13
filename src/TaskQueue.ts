@@ -1,7 +1,3 @@
-//-----------------------------------------------------------------------------
-// vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
-// public domain. The author hereby disclaims copyright to this source code.
-
 export class TaskQueue {
   public constructor(depends: Iterable<TaskQueue> = [], public readonly name?: string) {
     for (const dep of depends) {

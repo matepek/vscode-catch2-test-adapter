@@ -1,7 +1,3 @@
-//-----------------------------------------------------------------------------
-// vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
-// public domain. The author hereby disclaims copyright to this source code.
-
 // https://stackoverflow.com/questions/51925941/travis-ci-how-to-push-to-master-branch
 // https://stackoverflow.com/questions/23277391/how-to-publish-to-github-pages-from-travis-ci
 

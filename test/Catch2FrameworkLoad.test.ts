@@ -1,7 +1,3 @@
-//-----------------------------------------------------------------------------
-// vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
-// public domain. The author hereby disclaims copyright to this source code.
-
 import * as path from 'path';
 import * as fse from 'fs-extra';
 import * as assert from 'assert';
@@ -18,7 +14,7 @@ import {
 import { inspect, promisify } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, waitFor, settings, ChildProcessStub, FileSystemWatcherStub } from './Common';
+import { TestAdapter, Imitation, waitFor, settings, ChildProcessStub, FileSystemWatcherStub, isWin } from './Common';
 import { ChildProcess } from 'child_process';
 import { SpawnOptions } from '../src/FSWrapper';
 
@@ -885,7 +881,7 @@ describe(path.basename(__filename), function() {
 
     it('should timeout not inside a test case', async function() {
       this.timeout(8000);
-      this.slow(4000);
+      this.slow(7000);
       await settings.updateConfig('defaultRunningTimeoutSec', 3);
       await loadAdapterAndAssert();
       const withArgs = imitation.spawnStub.withArgs(
@@ -926,7 +922,7 @@ describe(path.basename(__filename), function() {
 
     it('should timeout inside a test case', async function() {
       this.timeout(8000);
-      this.slow(4000);
+      this.slow(7000);
       await settings.updateConfig('defaultRunningTimeoutSec', 3);
       await loadAdapterAndAssert();
       const withArgs = imitation.spawnStub.withArgs(
@@ -1585,6 +1581,8 @@ describe(path.basename(__filename), function() {
             C2LOCALTESTENV: 'c2localtestenv',
             C2OVERRIDETESTENV: 'c2overridetestenv-l',
             C2LOCALCWDANDNAME: '${cwd}-${name}',
+            C2ENVVARS1: 'X${os_env:PATH}X',
+            C2ENVVARS2: 'X${os_env:pAtH}X',
           },
         },
       ]);
@@ -1630,6 +1628,9 @@ describe(path.basename(__filename), function() {
             assert.equal(ops.env!.C2CWDANDNAME, ops.cwd + '-' + 'execPath1');
             assert.equal(ops.env!.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath1');
             assert.equal(ops.env!.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
+            assert.equal(ops.env!.C2ENVVARS1, 'X' + process.env['PATH'] + 'X');
+            if (isWin) assert.equal(ops.env!.C2ENVVARS2, 'X' + process.env['PATH'] + 'X');
+            else assert.equal(ops.env!.C2ENVVARS2, 'X${os_env:pAtH}X');
 
             return (new ChildProcessStub(example1.suite1.outputs[2][1]) as unknown) as ChildProcess;
           } catch (e) {

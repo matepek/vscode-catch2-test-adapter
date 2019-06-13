@@ -1,7 +1,3 @@
-//-----------------------------------------------------------------------------
-// vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
-// public domain. The author hereby disclaims copyright to this source code.
-
 import * as path from 'path';
 import { promisify } from 'util';
 import * as vscode from 'vscode';
@@ -9,7 +5,7 @@ import * as vscode from 'vscode';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import * as c2fs from './FSWrapper';
-import { resolveVariables } from './Util';
+import { resolveVariables, resolveOSEnvironmentVariables } from './Util';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
@@ -209,12 +205,15 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.error(e);
     }
 
+    const variableRe = /\$\{[^ ]*\}/;
+
     let resolvedName = relPath;
     try {
       if (this._name) resolvedName = resolveVariables(this._name, varToValue);
       else if (!this._description) resolvedName = resolveVariables('${filename}', varToValue);
+      resolvedName = resolveOSEnvironmentVariables(resolvedName);
 
-      if (resolvedName.match(/\$\{.*\}/)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedName);
+      if (resolvedName.match(variableRe)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedName);
 
       varToValue.push(['${name}', resolvedName]);
     } catch (e) {
@@ -225,8 +224,9 @@ export class TestExecutableInfo implements vscode.Disposable {
     try {
       if (this._description) {
         resolvedDescription = resolveVariables(this._description, varToValue);
+        resolvedDescription = resolveOSEnvironmentVariables(resolvedDescription);
 
-        if (resolvedDescription.match(/\$\{.*\}/))
+        if (resolvedDescription.match(variableRe))
           this._shared.log.warn('Possibly unresolved variable: ' + resolvedDescription);
 
         varToValue.push(['${description}', resolvedDescription]);
@@ -245,8 +245,9 @@ export class TestExecutableInfo implements vscode.Disposable {
       if (this._cwd) resolvedCwd = this._cwd;
 
       resolvedCwd = resolveVariables(resolvedCwd, varToValue);
+      resolvedCwd = resolveOSEnvironmentVariables(resolvedCwd);
 
-      if (resolvedCwd.match(/\$\{.*\}/)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedCwd);
+      if (resolvedCwd.match(variableRe)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedCwd);
 
       resolvedCwd = path.resolve(this._shared.workspaceFolder.uri.fsPath, resolvedCwd);
 
@@ -262,6 +263,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       if (this._env) Object.assign(resolvedEnv, this._env);
 
       resolvedEnv = resolveVariables(resolvedEnv, varToValue);
+      resolvedEnv = resolveOSEnvironmentVariables(resolvedEnv);
     } catch (e) {
       this._shared.log.error('resolvedEnv', e);
     }

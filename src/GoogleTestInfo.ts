@@ -1,7 +1,3 @@
-//-----------------------------------------------------------------------------
-// vscode-catch2-test-adapter was written by Mate Pek, and is placed in the
-// public domain. The author hereby disclaims copyright to this source code.
-
 import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
 
 import { AbstractTestInfo } from './AbstractTestInfo';
@@ -143,6 +139,19 @@ export class GoogleTestInfo extends AbstractTestInfo {
               line: lineNumber,
               message: '⬅️ ' + lines[i + 1].trim() + ';  ' + lines[i + 2].trim() + ';',
               hover: [lines[i], lines[i + 1], lines[i + 2]].join('\n'),
+            });
+            i += 3;
+          } else if (
+            i + 3 < lines.length &&
+            lines[i + 0].startsWith('Mock function call') &&
+            lines[i + 1].startsWith('    Function call:') &&
+            lines[i + 2].startsWith('         Expected:') &&
+            lines[i + 3].startsWith('           Actual:')
+          ) {
+            addDecoration({
+              line: lineNumber,
+              message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';',
+              hover: lines.slice(i, i + 4).join('\n'),
             });
             i += 3;
           } else if (i < lines.length && lines[i].startsWith('Expected equality of these values:')) {
