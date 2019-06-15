@@ -554,8 +554,8 @@
           "default": false
         },
         "catch2TestExplorer.googletest.treatGmockWarningAs": {
-          "markdownDescription": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using `testing::StrictMock<T>`)",
-          "description": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using `testing::StrictMock<T>`)",
+          "markdownDescription": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
+          "description": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
           "scope": "resource",
           "type": "string",
           "default": "nothing",
@@ -566,6 +566,25 @@
           "enumDescriptions": [
             "",
             "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`."
+          ]
+        },
+        "catch2TestExplorer.googletest.gmockVerbose": {
+          "markdownDescription": "Sets `--gmock_verbose=...`. (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
+          "description": "Sets `--gmock_verbose=...`. (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
+          "scope": "resource",
+          "type": "string",
+          "default": "default",
+          "enum": [
+            "default",
+            "info",
+            "warning",
+            "error"
+          ],
+          "enumDescriptions": [
+            "--gmock_verbose=... parameter won't be added",
+            "Google Mock will print all informational messages, warnings, and errors (most verbose). At this setting, Google Mock will also log any calls to the ON_CALL/EXPECT_CALL macros.",
+            "Google Mock will print both warnings and errors (less verbose). This is the default.",
+            "Google Mock will print errors only (least verbose)."
           ]
         }
       }

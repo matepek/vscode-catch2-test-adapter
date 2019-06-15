@@ -192,7 +192,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
           } else {
             if (lines[i].startsWith('GMOCK WARNING:')) {
               gMockWarningCount += 1;
-              if (ev.state === 'passed' && this._shared.googleTestTreatGmockWarningAs === 'failure')
+              if (ev.state === 'passed' && this._shared.googleTestTreatGMockWarningAs === 'failure')
                 ev.state = 'failed';
             }
             i += 1;

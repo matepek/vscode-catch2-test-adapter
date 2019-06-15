@@ -178,7 +178,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._getDefaultExecRunningTimeout(config),
       this._getDefaultNoThrow(config),
       this._getEnableTestListCaching(config),
-      this._getGoogleTestTreatGmockWarningAs(config),
+      this._getGoogleTestTreatGMockWarningAs(config),
+      this._getGoogleTestGMockVerbose(config),
     );
 
     this._disposables.push(
@@ -210,7 +211,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             this.workspaceFolder.uri,
           )
         ) {
-          this._shared.googleTestTreatGmockWarningAs = this._getGoogleTestTreatGmockWarningAs(this._getConfiguration());
+          this._shared.googleTestTreatGMockWarningAs = this._getGoogleTestTreatGMockWarningAs(this._getConfiguration());
+        }
+        if (configChange.affectsConfiguration('catch2TestExplorer.googletest.gmockVerbose', this.workspaceFolder.uri)) {
+          this._shared.googleTestGMockVerbose = this._getGoogleTestGMockVerbose(this._getConfiguration());
         }
       }),
     );
@@ -599,8 +603,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return config.get<boolean>('enableTestListCaching', false);
   }
 
-  private _getGoogleTestTreatGmockWarningAs(config: vscode.WorkspaceConfiguration): 'nothing' | 'failure' {
+  private _getGoogleTestTreatGMockWarningAs(config: vscode.WorkspaceConfiguration): 'nothing' | 'failure' {
     return config.get<'nothing' | 'failure'>('googletest.treatGmockWarningAs', 'nothing');
+  }
+
+  private _getGoogleTestGMockVerbose(config: vscode.WorkspaceConfiguration): 'default' | 'info' | 'warning' | 'error' {
+    return config.get<'default' | 'info' | 'warning' | 'error'>(
+      'catch2TestExplorer.googletest.gmockVerbose',
+      'default',
+    );
   }
 
   private _getExecutables(config: vscode.WorkspaceConfiguration, rootSuite: RootTestSuiteInfo): TestExecutableInfo[] {
