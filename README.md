@@ -236,6 +236,10 @@ Note that `name` and `request` are filled, if they are undefined, so it is not n
 
 For solving issues use: `catch2TestExplorer.logpanel: true` and check the output window.
 
+## Useful / Related
+
+- [Test Explorer Status Bar](https://marketplace.visualstudio.com/items?itemName=connorshea.vscode-test-explorer-status-bar)
+
 ## TODOs
 
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip, gmock_verbose
