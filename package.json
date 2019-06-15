@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.4.14",
+  "version": "2.5.0",
   "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -552,6 +552,21 @@
           "scope": "resource",
           "type": "boolean",
           "default": false
+        },
+        "catch2TestExplorer.googletest.treatGmockWarningAs": {
+          "markdownDescription": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using `testing::StrictMock<T>`)",
+          "description": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using `testing::StrictMock<T>`)",
+          "scope": "resource",
+          "type": "string",
+          "default": "nothing",
+          "enum": [
+            "nothing",
+            "failure"
+          ],
+          "enumDescriptions": [
+            "",
+            "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`."
+          ]
         }
       }
     }
