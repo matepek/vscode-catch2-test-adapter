@@ -74,7 +74,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
       ev.message += output;
 
       if (ev.state === 'skipped') {
-        // asserts or anything what is hapepend until here is not relevant anymore
+        // asserts or anything what is happened until here is not relevant anymore
         // we will fill the output window, because it is maybe interesting, but wont decoreate the code
         return ev;
       }
@@ -100,6 +100,8 @@ export class GoogleTestInfo extends AbstractTestInfo {
           ev.decorations!.push(d);
         }
       };
+
+      let gMockWarningCount = 0;
 
       for (let i = 0; i < lines.length; ) {
         const m = lines[i].match(failureRe);
@@ -188,9 +190,18 @@ export class GoogleTestInfo extends AbstractTestInfo {
               addDecoration({ line: lineNumber, message: '⬅️ ' + m[4] });
             }
           } else {
+            if (lines[i].startsWith('GMOCK WARNING:')) {
+              gMockWarningCount += 1;
+              if (ev.state === 'passed' && this._shared.googleTestTreatGMockWarningAs === 'failure')
+                ev.state = 'failed';
+            }
             i += 1;
           }
         }
+      }
+
+      if (gMockWarningCount) {
+        ev.tooltip += '\n\n⚠️' + gMockWarningCount + ' GMock warning(s) in the output!';
       }
 
       return ev;

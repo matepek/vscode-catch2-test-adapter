@@ -267,6 +267,10 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
       );
     }
 
+    if (this._shared.googleTestGMockVerbose !== 'default') {
+      execParams.push('--gmock_verbose=' + this._shared.googleTestGMockVerbose);
+    }
+
     return execParams;
   }
 

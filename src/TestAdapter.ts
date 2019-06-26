@@ -178,6 +178,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._getDefaultExecRunningTimeout(config),
       this._getDefaultNoThrow(config),
       this._getEnableTestListCaching(config),
+      this._getGoogleTestTreatGMockWarningAs(config),
+      this._getGoogleTestGMockVerbose(config),
     );
 
     this._disposables.push(
@@ -202,6 +204,17 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.enableTestListCaching', this.workspaceFolder.uri)) {
           this._shared.enabledTestListCaching = this._getEnableTestListCaching(this._getConfiguration());
+        }
+        if (
+          configChange.affectsConfiguration(
+            'catch2TestExplorer.googletest.treatGmockWarningAs',
+            this.workspaceFolder.uri,
+          )
+        ) {
+          this._shared.googleTestTreatGMockWarningAs = this._getGoogleTestTreatGMockWarningAs(this._getConfiguration());
+        }
+        if (configChange.affectsConfiguration('catch2TestExplorer.googletest.gmockVerbose', this.workspaceFolder.uri)) {
+          this._shared.googleTestGMockVerbose = this._getGoogleTestGMockVerbose(this._getConfiguration());
         }
       }),
     );
@@ -588,6 +601,17 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private _getEnableTestListCaching(config: vscode.WorkspaceConfiguration): boolean {
     return config.get<boolean>('enableTestListCaching', false);
+  }
+
+  private _getGoogleTestTreatGMockWarningAs(config: vscode.WorkspaceConfiguration): 'nothing' | 'failure' {
+    return config.get<'nothing' | 'failure'>('googletest.treatGmockWarningAs', 'nothing');
+  }
+
+  private _getGoogleTestGMockVerbose(config: vscode.WorkspaceConfiguration): 'default' | 'info' | 'warning' | 'error' {
+    return config.get<'default' | 'info' | 'warning' | 'error'>(
+      'catch2TestExplorer.googletest.gmockVerbose',
+      'default',
+    );
   }
 
   private _getExecutables(config: vscode.WorkspaceConfiguration, rootSuite: RootTestSuiteInfo): TestExecutableInfo[] {
