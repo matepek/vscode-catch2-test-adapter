@@ -26,7 +26,7 @@ npm update: security alert fix.
 
 ## [2.4.12] - 2019-06-07
 
-"Google Test impovements. Now I use my product, so I've found a lot a of small issues." Vol. 2.
+"Google Test improvements. Now I use my product, so I've found a lot a of small issues." Vol. 2.
 
 ### Changed
 
@@ -44,7 +44,7 @@ npm update: security alert fix.
 
 ## [2.4.10] - 2019-06-05
 
-Google Test impovements. Now I use my product, so I've found a lot a of small issues. :)
+Google Test improvements. Now I use my product, so I've found a lot a of small issues. :)
 
 ### Fixed
 
@@ -89,7 +89,7 @@ Just updated the README.md and updated the packages.
 
 ### Fixed
 
-- some vulnerabilites in packages (npm audit fix)
+- some vulnerabilities in packages (npm audit fix)
 
 ## [2.4.3] - 2019-04-03
 
@@ -226,7 +226,7 @@ Stability improvements.
 
 ## [2.3.16] - 2019-01-31
 
-This version probalby contains stability imporvements ✌️, but in case it doesn't work on all platforms as I expect,
+This version probably contains stability improvements ✌️, but in case it doesn't work on all platforms as I expect,
 you can downgrade it in the vscode's extension manager and please file an issue about the bug. 🙏
 
 **REMARK**: A list of non-executable extensions are hard-coded: `['py', 'sh', 'cmake', 'deb', 'o', 'so', 'rpm', 'tar', 'gz', 'php', 'ko']`.
@@ -234,7 +234,7 @@ And on Windows everything is filtered what is not ends with `.exe`;
 
 ### Added
 
-- sending `SIGKILL` in case of second cancel. (Clicking onto the cancel button after the first cancel wasn's succesful.)
+- sending `SIGKILL` in case of second cancel. (Clicking onto the cancel button after the first cancel wasn't successful.)
 
 ## [2.3.15] - 2019-01-20
 
@@ -263,11 +263,11 @@ Google Test tests are grouped.
 
 ## [2.3.11] - 2019-01-11
 
-Performance and stability impovements.
+Performance and stability improvements.
 
 ## [2.3.10] - 2019-01-05
 
-Performance and stability impovements.
+Performance and stability improvements.
 
 ## [2.3.9] - 2019-01-03
 
@@ -446,7 +446,7 @@ Lot of things new under the hood, but lets talk about the 'API' change.
 
 - Renamed `defaultExecWatchTimeout` --> `defaultWatchTimeoutSec`.
 
-  - Also the unit has changed from milisecond to **second**.
+  - Also the unit has changed from millisecond to **second**.
 
 - Renamed `debugConfigurationTemplate` --> `debugConfigTemplate`.
 - Renamed `path` property of `executables` --> `pattern`. (Technically `path` still can be used as an alias.)
@@ -463,7 +463,7 @@ Lot of things new under the hood, but lets talk about the 'API' change.
   - `[]` to declare a range of characters to match (e.g., `example.[0-9]` to match on example.0, example.1, …)
 
 - File system is watched through the previously mentioned pattern (only inside the _workspace directory_), and
-  newly created executables will be added automtically, deleted ones will be removed and changed ones will be refresed.
+  newly created executables will be added automatically, deleted ones will be removed and changed ones will be refreshed.
 
 - Variable substitution has been changed. (See [README](README.md) for details.)
 
@@ -517,7 +517,7 @@ Bugfix release
 
 - Skipped tests are recognised.
 - `catch2TestExplorer.workerMaxNumber`, see Changed section.
-- Tricky test names (with spaces in it) are handeld.
+- Tricky test names (with spaces in it) are handled.
 
 ### Changed
 
@@ -526,7 +526,7 @@ Bugfix release
 ### Removed
 
 - `catch2TestExplorer.defaultGroupFileLevelRun` was removed. Now just group file level run exists.
-- Thats why `catch2TestExplorer.defaultWorkerMaxNumberPerFile` was unnecesary too, removed.
+- Thats why `catch2TestExplorer.defaultWorkerMaxNumberPerFile` was unnecessary too, removed.
 - And also `catch2TestExplorer.executables`'s `workerMaxNumber` was removed.
 - `catch2TestExplorer.globalWorkerMaxNumber`, see Changed section.
 

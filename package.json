@@ -360,8 +360,8 @@
           ]
         },
         "catch2TestExplorer.defaultCwd": {
-          "markdownDescription": "The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in \"executables\". (It resolves variables.)",
-          "description": "The working directory where the test is run (relative to the workspace folder or absolue path), if it isn't provided in \"executables\". (It resolves variables.)",
+          "markdownDescription": "The working directory where the test is run (relative to the workspace folder or absolute path), if it isn't provided in \"executables\". (It resolves variables.)",
+          "description": "The working directory where the test is run (relative to the workspace folder or absolute path), if it isn't provided in \"executables\". (It resolves variables.)",
           "scope": "resource",
           "type": "string",
           "default": "${absDirpath}",
@@ -448,8 +448,8 @@
           "minimum": 1
         },
         "catch2TestExplorer.defaultRunningTimeoutSec": {
-          "markdownDescription": "Test executable is running in a process. In case of an inifinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
-          "description": "Test executable is running in a process. In case of an inifinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
+          "markdownDescription": "Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
+          "description": "Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
           "scope": "resource",
           "type": "integer",
           "default": 0,
@@ -464,8 +464,8 @@
           "minimum": 1
         },
         "catch2TestExplorer.debugConfigTemplate": {
-          "markdownDescription": "Set the necessary debug configuraitons and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",
-          "description": "Set the necessary debug configuraitons and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",
+          "markdownDescription": "Set the necessary debug configurations and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",
+          "description": "Set the necessary debug configurations and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",
           "scope": "resource",
           "default": null,
           "oneOf": [
@@ -519,15 +519,15 @@
           ]
         },
         "catch2TestExplorer.debugBreakOnFailure": {
-          "markdownDescription": "Debugger breaks on failure while debugging the test. Catch2: --break; Google Test: --gtest_break_on_failure;",
-          "description": "Debugger breaks on failure while debugging the test. Catch2: --break; Google Test: --gtest_break_on_failure;",
+          "markdownDescription": "Debugger breaks on failure while debugging the test. Catch2: [--break](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#breaking-into-the-debugger); Google Test: [--gtest_break_on_failure](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#turning-assertion-failures-into-break-points);",
+          "description": "Debugger breaks on failure while debugging the test. Catch2: [--break](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#breaking-into-the-debugger); Google Test: [--gtest_break_on_failure](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#turning-assertion-failures-into-break-points);",
           "scope": "resource",
           "type": "boolean",
           "default": true
         },
         "catch2TestExplorer.defaultNoThrow": {
-          "markdownDescription": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow",
-          "description": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: --nothrow",
+          "markdownDescription": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: [--nothrow](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#eliding-assertions-expected-to-throw);",
+          "description": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: [--nothrow](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#eliding-assertions-expected-to-throw);",
           "scope": "resource",
           "type": "boolean",
           "default": false
