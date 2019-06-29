@@ -554,8 +554,8 @@
           "default": false
         },
         "catch2TestExplorer.googletest.treatGmockWarningAs": {
-          "markdownDescription": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
-          "description": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
+          "markdownDescription": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googlemock/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
+          "description": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googlemock/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
           "scope": "resource",
           "type": "string",
           "default": "nothing",
@@ -569,8 +569,8 @@
           ]
         },
         "catch2TestExplorer.googletest.gmockVerbose": {
-          "markdownDescription": "Sets `--gmock_verbose=...`. (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
-          "description": "Sets `--gmock_verbose=...`. (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
+          "markdownDescription": "Sets [--gmock_verbose=...](https://github.com/google/googlemock/blob/master/googlemock/docs/v1_6/CheatSheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
+          "description": "Sets [--gmock_verbose=...](https://github.com/google/googlemock/blob/master/googlemock/docs/v1_6/CheatSheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
           "scope": "resource",
           "type": "string",
           "default": "default",

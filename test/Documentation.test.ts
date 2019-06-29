@@ -28,7 +28,7 @@ describe(path.basename(__filename), function() {
       if (match) {
         return match[1].trim();
       }
-      throw new Error('couldnt find: ' + name);
+      throw new Error("couldn't find: " + name);
     };
     {
       const executableSchemaProp = properties['catch2TestExplorer.executables']['oneOf'][0]['items']['oneOf'][0][
@@ -46,7 +46,9 @@ describe(path.basename(__filename), function() {
         if (key === 'catch2TestExplorer.logfile') {
           // skip
         } else {
-          const descriptionInReadme = findDescriptionInReadmeTable(key);
+          assert.ok(key.startsWith('catch2TestExplorer.'));
+          const trimmedKey = key.substring('catch2TestExplorer.'.length);
+          const descriptionInReadme = findDescriptionInReadmeTable(trimmedKey);
           assert.strictEqual(descriptionInReadme, properties[key]['markdownDescription'], key);
           assert.strictEqual(descriptionInReadme, properties[key]['description'], key);
         }
