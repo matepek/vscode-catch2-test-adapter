@@ -59,7 +59,7 @@
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.0.10",
+    "@types/node": "^12.0.12",
     "@types/request-promise": "4.1.43",
     "@types/sinon": "^7.0.13",
     "@types/xml2js": "^0.4.4",
