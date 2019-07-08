@@ -176,6 +176,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
       this._getDefaultExecRunningTimeout(config),
+      this._getDefaultExecParsingTimeout(config),
       this._getDefaultNoThrow(config),
       this._getEnableTestListCaching(config),
       this._getGoogleTestTreatGMockWarningAs(config),
@@ -195,6 +196,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           configChange.affectsConfiguration('catch2TestExplorer.defaultRunningTimeoutSec', this.workspaceFolder.uri)
         ) {
           this._shared.setExecRunningTimeout(this._getDefaultExecRunningTimeout(this._getConfiguration()));
+        }
+        if (
+          configChange.affectsConfiguration('catch2TestExplorer.defaultExecParsingTimeoutSec', this.workspaceFolder.uri)
+        ) {
+          this._shared.setExecRunningTimeout(this._getDefaultExecParsingTimeout(this._getConfiguration()));
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultNoThrow', this.workspaceFolder.uri)) {
           this._shared.isNoThrow = this._getDefaultNoThrow(this._getConfiguration());
@@ -597,6 +603,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private _getDefaultExecRunningTimeout(config: vscode.WorkspaceConfiguration): null | number {
     const r = config.get<null | number>('defaultRunningTimeoutSec', null);
     return r !== null && r > 0 ? r * 1000 : null;
+  }
+
+  private _getDefaultExecParsingTimeout(config: vscode.WorkspaceConfiguration): number {
+    const r = config.get<number>('defaultExecParsingTimeoutSec', 5);
+    return r * 1000;
   }
 
   private _getEnableTestListCaching(config: vscode.WorkspaceConfiguration): boolean {

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0]
+
+### Added
+
+- `catch2TestExplorer.defaultExecParsingTimeoutSec` to the configs.
+
 ## [2.5.0] - 2019-06-26
 
 ### Added

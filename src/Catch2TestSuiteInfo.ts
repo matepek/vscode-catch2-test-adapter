@@ -30,7 +30,11 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
   public reloadChildren(): Promise<void> {
     this._shared.log.info('reloadChildren', this.label);
-    return TestSuiteInfoFactory.determineTestTypeOfExecutable(this.execPath, this.execOptions).then(testInfo => {
+    return TestSuiteInfoFactory.determineTestTypeOfExecutable(
+      this._shared.execParsingTimeout,
+      this.execPath,
+      this.execOptions,
+    ).then(testInfo => {
       if (testInfo.type === 'catch2') {
         this._catch2Version = testInfo.version;
         if (this._catch2Version[0] > 2 || this._catch2Version[0] < 2)

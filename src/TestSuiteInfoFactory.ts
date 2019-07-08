@@ -18,7 +18,7 @@ export class TestSuiteInfoFactory {
   ) {}
 
   public create(): Promise<Catch2TestSuiteInfo | GoogleTestSuiteInfo> {
-    return this._determineTestTypeOfExecutable().then((framework: TestFrameworkInfo) => {
+    return this._determineTestTypeOfExecutable(this._shared.execParsingTimeout).then((framework: TestFrameworkInfo) => {
       if (framework.type === 'google')
         return new GoogleTestSuiteInfo(this._shared, this._label, this._description, this._execPath, this._execOptions);
       else if (framework.type === 'catch2')
@@ -34,16 +34,17 @@ export class TestSuiteInfoFactory {
     });
   }
 
-  private _determineTestTypeOfExecutable(): Promise<TestFrameworkInfo> {
-    return TestSuiteInfoFactory.determineTestTypeOfExecutable(this._execPath, this._execOptions);
+  private _determineTestTypeOfExecutable(execParsingTimeout: number): Promise<TestFrameworkInfo> {
+    return TestSuiteInfoFactory.determineTestTypeOfExecutable(execParsingTimeout, this._execPath, this._execOptions);
   }
 
   public static determineTestTypeOfExecutable(
+    execParsingTimeout: number,
     execPath: string,
     execOptions: c2fs.SpawnOptions,
   ): Promise<TestFrameworkInfo> {
     return c2fs.isNativeExecutableAsync(execPath).then(() => {
-      return c2fs.spawnAsync(execPath, ['--help'], execOptions, 5000).then(
+      return c2fs.spawnAsync(execPath, ['--help'], execOptions, execParsingTimeout).then(
         (res): TestFrameworkInfo => {
           const catch2 = res.stdout.match(/Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/);
           if (catch2 && catch2.length == 4) {

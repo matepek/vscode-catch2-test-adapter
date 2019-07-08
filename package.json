@@ -455,6 +455,15 @@
           "default": 0,
           "minimum": -1
         },
+        "catch2TestExplorer.defaultExecParsingTimeoutSec": {
+          "markdownDescription": "The timeout duration (in seconds) of the test-executable identifier (Calls the exec with `--help`).",
+          "description": "The timeout duration (in seconds) of the test-executable identifier (Calls the exec with `--help`).",
+          "scope": "resource",
+          "type": "integer",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 900
+        },
         "catch2TestExplorer.workerMaxNumber": {
           "markdownDescription": "The variable maximize the number of the parallel test execution. It applies instantly.",
           "description": "The variable maximize the number of the parallel test execution. It applies instantly.",
