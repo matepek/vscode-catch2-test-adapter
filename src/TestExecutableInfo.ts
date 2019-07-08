@@ -158,6 +158,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     isPartOfWs: boolean;
     relativeToWsPosix: string;
   } {
+    pattern = resolveOSEnvironmentVariables(pattern);
     const isAbsolute = path.isAbsolute(pattern);
     const absPattern = isAbsolute
       ? vscode.Uri.file(path.normalize(pattern)).fsPath

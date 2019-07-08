@@ -563,8 +563,8 @@
           "default": false
         },
         "catch2TestExplorer.googletest.treatGmockWarningAs": {
-          "markdownDescription": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googlemock/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
-          "description": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googlemock/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
+          "markdownDescription": "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googlemock/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
+          "description": "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googlemock/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
           "scope": "resource",
           "type": "string",
           "default": "nothing",
@@ -574,7 +574,7 @@
           ],
           "enumDescriptions": [
             "",
-            "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`."
+            "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`."
           ]
         },
         "catch2TestExplorer.googletest.gmockVerbose": {
