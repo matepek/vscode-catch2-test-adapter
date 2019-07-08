@@ -50,7 +50,7 @@ export function resolveOSEnvironmentVariables<T>(value: T): T {
       for (const envExpr of m) {
         const envName = envExpr.substring('${os_env:'.length, envExpr.length - 1);
         const val = getValueOfEnv(envName);
-        if (val) s = s.replace(envExpr, val);
+        if (val !== undefined) s = s.replace(envExpr, val);
       }
     }
     return s;
