@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.1]
+
+### Added
+
+- `catch2TestExplorer.executables`'s `pattern` resolves variables related to the process's environment variables (Ex.: `${os_env:PATH}`).
+
 ## [2.6.0] - 2019-07-08
 
 ### Added

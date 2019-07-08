@@ -51,7 +51,7 @@ Not good enough for you?!: Edit your `.vscode/settings.json` [file](https://code
 | `enableTestListCaching`          | (Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.) (Click [here](http://bit.ly/2HFcAC6), if you think it is a useful feature!)                    |
 | `logpanel`                       | Creates a new output channel and write the log messages there. For debugging. Enabling it could slow down your vscode.                                                                                                                                                                                                                      |
 | `googletest.gmockVerbose`        | Sets [--gmock_verbose=...](https://github.com/google/googlemock/blob/master/googlemock/docs/v1_6/CheatSheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)                                                                                                                                           |
-| `googletest.treatGmockWarningAs` | Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googlemock/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))                                                                            |
+| `googletest.treatGmockWarningAs` | Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googlemock/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))                                                                         |
 
 | `testExplorer.___` | [Description](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                                    |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -85,7 +85,8 @@ If it is an object it can contains the following properties:
 | `dependsOn`   | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. |
 
 The `pattern` (or the `executables` used as string or an array of strings)
-can contains [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
+can contain [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
+Also it can contain variables related to the process's environment variables (Ex.: `${os_env:PATH}`).
 
 Test executables and `pattern`s are being watched.
 In case of one recompiles it will try to preserve the test states.
