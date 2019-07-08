@@ -59,12 +59,12 @@
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.0.8",
+    "@types/node": "^12.0.10",
     "@types/request-promise": "4.1.43",
     "@types/sinon": "^7.0.13",
     "@types/xml2js": "^0.4.4",
-    "@typescript-eslint/eslint-plugin": "^1.10.2",
-    "@typescript-eslint/parser": "^1.10.2",
+    "@typescript-eslint/eslint-plugin": "^1.11.0",
+    "@typescript-eslint/parser": "^1.11.0",
     "deep-equal": "^1.0.1",
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.3.0",
@@ -74,9 +74,9 @@
     "prettier": "^1.18.2",
     "request-promise": "4.2.4",
     "sinon": "^7.3.2",
-    "typescript": "^3.5.1",
-    "vsce": "^1.63.0",
-    "vscode": "^1.1.34",
+    "typescript": "^3.5.2",
+    "vsce": "^1.64.0",
+    "vscode": "^1.1.35",
     "vscode-test": "0.4.1"
   },
   "engines": {
@@ -455,6 +455,15 @@
           "default": 0,
           "minimum": -1
         },
+        "catch2TestExplorer.defaultExecParsingTimeoutSec": {
+          "markdownDescription": "The timeout duration (in seconds) of the test-executable identifier (Calls the exec with `--help`).",
+          "description": "The timeout duration (in seconds) of the test-executable identifier (Calls the exec with `--help`).",
+          "scope": "resource",
+          "type": "integer",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 900
+        },
         "catch2TestExplorer.workerMaxNumber": {
           "markdownDescription": "The variable maximize the number of the parallel test execution. It applies instantly.",
           "description": "The variable maximize the number of the parallel test execution. It applies instantly.",
@@ -554,8 +563,8 @@
           "default": false
         },
         "catch2TestExplorer.googletest.treatGmockWarningAs": {
-          "markdownDescription": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
-          "description": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
+          "markdownDescription": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googlemock/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
+          "description": "Forces the test to be failed even it is passed if contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googlemock/blob/master/googlemock/docs/CookBook.md#the-nice-the-strict-and-the-naggy))",
           "scope": "resource",
           "type": "string",
           "default": "nothing",
@@ -569,8 +578,8 @@
           ]
         },
         "catch2TestExplorer.googletest.gmockVerbose": {
-          "markdownDescription": "Sets `--gmock_verbose=...`. (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
-          "description": "Sets `--gmock_verbose=...`. (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
+          "markdownDescription": "Sets [--gmock_verbose=...](https://github.com/google/googlemock/blob/master/googlemock/docs/v1_6/CheatSheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
+          "description": "Sets [--gmock_verbose=...](https://github.com/google/googlemock/blob/master/googlemock/docs/v1_6/CheatSheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
           "scope": "resource",
           "type": "string",
           "default": "default",

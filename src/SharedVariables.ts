@@ -18,6 +18,7 @@ export class SharedVariables implements vscode.Disposable {
     public rngSeed: string | number | null,
     public execWatchTimeout: number,
     private _execRunningTimeout: null | number,
+    public execParsingTimeout: number,
     public isNoThrow: boolean,
     public enabledTestListCaching: boolean,
     public googleTestTreatGMockWarningAs: 'nothing' | 'failure',

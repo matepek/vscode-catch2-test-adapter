@@ -39,7 +39,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
   public reloadChildren(): Promise<void> {
     this._shared.log.info('reloadChildren', this.label);
-    return TestSuiteInfoFactory.determineTestTypeOfExecutable(this.execPath, this.execOptions).then(testInfo => {
+    return TestSuiteInfoFactory.determineTestTypeOfExecutable(
+      this._shared.execParsingTimeout,
+      this.execPath,
+      this.execOptions,
+    ).then(testInfo => {
       if (testInfo.type === 'google') {
         return this._reloadGoogleTests();
       }
