@@ -59,7 +59,17 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       true,
     );
 
-    this._log.info('info:', this.workspaceFolder, process.platform, process.version, process.versions, vscode.version);
+    const config = this._getConfiguration();
+
+    this._log.info(
+      'info:',
+      this.workspaceFolder,
+      process.platform,
+      process.version,
+      process.versions,
+      vscode.version,
+      config,
+    );
 
     this._disposables.push(
       vscode.workspace.onDidChangeWorkspaceFolders(() => {
@@ -87,9 +97,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           });
       };
 
-      const retireDelayInSec = 2; // could be a config
-
-      this._disposables.push(this._sendRetireEmitter.event(debounce(retire, retireDelayInSec * 1000)));
+      this._disposables.push(this._sendRetireEmitter.event(debounce(retire, this._getRetireDebounceTime(config))));
     }
 
     this._disposables.push(this._loadWithTaskEmitter);
@@ -152,8 +160,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
-    const config = this._getConfiguration();
-
     this._disposables.push(
       vscode.workspace.onDidChangeConfiguration(configChange => {
         if (
@@ -175,6 +181,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._sendRetireEmitter,
       this._getDefaultRngSeed(config),
       this._getDefaultExecWatchTimeout(config),
+      this._getRetireDebounceTime(config),
       this._getDefaultExecRunningTimeout(config),
       this._getDefaultExecParsingTimeout(config),
       this._getDefaultNoThrow(config),
@@ -191,6 +198,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultWatchTimeoutSec', this.workspaceFolder.uri)) {
           this._shared.execWatchTimeout = this._getDefaultExecWatchTimeout(this._getConfiguration());
+        }
+        if (
+          configChange.affectsConfiguration('catch2TestExplorer.retireDebounceTimeMilisec', this.workspaceFolder.uri)
+        ) {
+          this._shared.retireDebounceTime = this._getRetireDebounceTime(this._getConfiguration());
         }
         if (
           configChange.affectsConfiguration('catch2TestExplorer.defaultRunningTimeoutSec', this.workspaceFolder.uri)
@@ -600,8 +612,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return res;
   }
 
+  private _getRetireDebounceTime(config: vscode.WorkspaceConfiguration): number {
+    const res = config.get<number>('retireDebounceTimeMilisec', 1000);
+    this._log.info('retireDebounceTimeMilisec:', res);
+    return res;
+  }
+
   private _getDefaultExecRunningTimeout(config: vscode.WorkspaceConfiguration): null | number {
     const r = config.get<null | number>('defaultRunningTimeoutSec', null);
+    this._log.info('defaultRunningTimeoutSec:', r);
     return r !== null && r > 0 ? r * 1000 : null;
   }
 
