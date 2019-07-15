@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.6.2",
+  "version": "2.6.3-devel",
   "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -59,7 +59,7 @@
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.6.2",
+    "@types/node": "^12.6.3",
     "@types/request-promise": "4.1.43",
     "@types/sinon": "^7.0.13",
     "@types/xml2js": "^0.4.4",
@@ -446,6 +446,14 @@
           "type": "integer",
           "default": 10,
           "minimum": 1
+        },
+        "catch2TestExplorer.retireDebounceTimeMilisec": {
+          "markdownDescription": "Retire events will be held back for the given duration. (Reload is required)",
+          "description": "Retire events will be held back for the given duration. (Reload is required)",
+          "scope": "resource",
+          "type": "integer",
+          "default": 1000,
+          "minimum": 200
         },
         "catch2TestExplorer.defaultRunningTimeoutSec": {
           "markdownDescription": "Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
