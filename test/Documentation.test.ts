@@ -44,7 +44,7 @@ describe(path.basename(__filename), function() {
 
       keys.forEach(key => {
         if (key === 'catch2TestExplorer.logfile') {
-          // skip
+          // skip: not documented
         } else {
           assert.ok(key.startsWith('catch2TestExplorer.'));
           const trimmedKey = key.substring('catch2TestExplorer.'.length);
