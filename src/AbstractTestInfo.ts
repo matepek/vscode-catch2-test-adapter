@@ -1,5 +1,5 @@
+import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
-
 import { generateUniqueId } from './Util';
 import { SharedVariables } from './SharedVariables';
 
@@ -9,6 +9,7 @@ export abstract class AbstractTestInfo implements TestInfo {
   public readonly origLabel: string;
   public readonly description: string;
   public readonly tooltip: string;
+  public readonly file: string | undefined;
 
   public lastRunState: string | undefined = undefined;
   public lastRunMilisec: number | undefined = undefined;
@@ -19,7 +20,7 @@ export abstract class AbstractTestInfo implements TestInfo {
     public readonly testNameAsId: string,
     public readonly label: string,
     public readonly skipped: boolean,
-    public readonly file: string | undefined,
+    file: string | undefined,
     public readonly line: number | undefined,
     description: string | undefined,
     tooltip: string | undefined,
@@ -27,6 +28,7 @@ export abstract class AbstractTestInfo implements TestInfo {
     this.id = id ? id : generateUniqueId();
     this.origLabel = label;
     this.description = description ? description : '';
+    this.file = file ? path.normalize(file) : undefined;
     this.tooltip = 'Name: ' + testNameAsId + (tooltip ? '\n' + tooltip : '');
     if (line && line < 0) throw Error('line smaller than zero');
   }
