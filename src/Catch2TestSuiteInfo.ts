@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
-import * as path from 'path';
 import * as xml2js from 'xml2js';
 
 import { Catch2TestInfo } from './Catch2TestInfo';
@@ -112,7 +111,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
           testNameAsId,
           description,
           tags,
-          path.normalize(filePath),
+          filePath,
           line - 1,
           index != -1 ? oldChildren[index].sections : undefined,
         ),

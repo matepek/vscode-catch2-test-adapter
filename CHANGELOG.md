@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.4]
+
+### Fixed
+
+- The path is relative to the test file. If the source file is already open vscode would open it another time using the unnormalized file path.
+
 ### Changed
 
 - Updated googletest links.
