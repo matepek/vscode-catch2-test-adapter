@@ -75,7 +75,7 @@
     "request-promise": "4.2.4",
     "sinon": "^7.3.2",
     "typescript": "^3.5.3",
-    "vsce": "^1.65.0",
+    "vsce": "^1.66.0",
     "vscode": "^1.1.35",
     "vscode-test": "0.4.1"
   },
@@ -460,7 +460,7 @@
           "description": "Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
           "scope": "resource",
           "type": "integer",
-          "default": 0,
+          "default": 600,
           "minimum": -1
         },
         "catch2TestExplorer.defaultExecParsingTimeoutSec": {

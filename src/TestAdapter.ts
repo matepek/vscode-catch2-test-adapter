@@ -325,7 +325,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   public run(tests: string[]): Promise<void> {
     if (this._mainTaskQueue.size > 0) {
-      this._log.info('Run is busy');
+      this._log.info(
+        "Run is busy. Your test maybe in an infinite loop: Try to limit the test's timeout with: defaultRunningTimeoutSec config option!",
+      );
     }
 
     return this._mainTaskQueue.then(() => {

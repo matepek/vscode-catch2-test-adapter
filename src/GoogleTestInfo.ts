@@ -87,7 +87,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
       lines.shift();
       lines.pop();
 
-      const failureRe = /^((.+):([0-9]+):) Failure$/;
+      const failureRe = /^((.+):([0-9]+):) (Failure.*)$/;
       const expectRe = /^((.+):([0-9]+):) (EXPECT_CALL\(.+)$/;
 
       const addDecoration = (d: TestDecoration): void => {
@@ -104,7 +104,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
       let gMockWarningCount = 0;
 
       for (let i = 0; i < lines.length; ) {
-        const m = lines[i].match(failureRe);
+        let m = lines[i].match(failureRe);
         if (m !== null) {
           i += 1;
           const lineNumber = Number(m[3]) - 1 /*It looks vscode works like this.*/;
@@ -155,7 +155,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
               message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';',
               hover: lines.slice(i, i + 4).join('\n'),
             });
-            i += 3;
+            i += 4;
           } else if (i < lines.length && lines[i].startsWith('Expected equality of these values:')) {
             let j = i + 1;
             while (j < lines.length && lines[j].startsWith('  ')) j++;
@@ -166,37 +166,29 @@ export class GoogleTestInfo extends AbstractTestInfo {
             });
             i = j;
           } else {
-            addDecoration({ line: lineNumber, message: '⬅️ failure', hover: '' });
+            addDecoration({ line: lineNumber, message: '⬅️ ' + m[4], hover: '' });
+          }
+        } else if ((m = lines[i].match(expectRe))) {
+          i += 1;
+          const lineNumber = Number(m[3]) - 1 /*It looks vscode works like this.*/;
+          if (i + 1 < lines.length && lines[i].startsWith('  Expected') && lines[i + 1].trim().startsWith('Actual:')) {
+            let j = i + 1;
+            while (j < lines.length && lines[j].startsWith('  ')) j++;
+            addDecoration({
+              line: lineNumber,
+              message: '⬅️ ' + lines[i].trim() + ';  ' + lines[i + 1].trim() + ';',
+              hover: [m[4], ...lines.slice(i, j)].join('\n'),
+            });
+            i = j;
+          } else {
+            addDecoration({ line: lineNumber, message: '⬅️ ' + m[4] });
           }
         } else {
-          const m = lines[i].match(expectRe);
-          if (m) {
-            i += 1;
-            const lineNumber = Number(m[3]) - 1 /*It looks vscode works like this.*/;
-            if (
-              i + 1 < lines.length &&
-              lines[i].startsWith('  Expected') &&
-              lines[i + 1].trim().startsWith('Actual:')
-            ) {
-              let j = i + 1;
-              while (j < lines.length && lines[j].startsWith('  ')) j++;
-              addDecoration({
-                line: lineNumber,
-                message: '⬅️ ' + lines[i].trim() + ';  ' + lines[i + 1].trim() + ';',
-                hover: [m[4], ...lines.slice(i, j)].join('\n'),
-              });
-              i = j;
-            } else {
-              addDecoration({ line: lineNumber, message: '⬅️ ' + m[4] });
-            }
-          } else {
-            if (lines[i].startsWith('GMOCK WARNING:')) {
-              gMockWarningCount += 1;
-              if (ev.state === 'passed' && this._shared.googleTestTreatGMockWarningAs === 'failure')
-                ev.state = 'failed';
-            }
-            i += 1;
+          if (lines[i].startsWith('GMOCK WARNING:')) {
+            gMockWarningCount += 1;
+            if (ev.state === 'passed' && this._shared.googleTestTreatGMockWarningAs === 'failure') ev.state = 'failed';
           }
+          i += 1;
         }
       }
 
