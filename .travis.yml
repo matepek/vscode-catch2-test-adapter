@@ -10,7 +10,12 @@ env:
   matrix:
     - VSCODE_VERSION: "latest"
     - VSCODE_VERSION: "1.31.0"
-    
+    - VSCODE_VERSION: "insiders"
+
+matrix:
+  allow_failures:
+    - env: VSCODE_VERSION="insiders"
+
 language: node_js
 
 node_js: "10"
