@@ -18,20 +18,30 @@ export class TestSuiteInfoFactory {
   ) {}
 
   public create(): Promise<Catch2TestSuiteInfo | GoogleTestSuiteInfo> {
-    return this._determineTestTypeOfExecutable(this._shared.execParsingTimeout).then((framework: TestFrameworkInfo) => {
-      if (framework.type === 'google')
-        return new GoogleTestSuiteInfo(this._shared, this._label, this._description, this._execPath, this._execOptions);
-      else if (framework.type === 'catch2')
-        return new Catch2TestSuiteInfo(
-          this._shared,
-          this._label,
-          this._description,
-          this._execPath,
-          this._execOptions,
-          [framework.version[0], framework.version[1], framework.version[2]],
-        );
-      else throw Error('Unknown error:' + framework.type);
-    });
+    return this._shared.taskPool
+      .scheduleTask(() => {
+        return this._determineTestTypeOfExecutable(this._shared.execParsingTimeout);
+      })
+      .then((framework: TestFrameworkInfo) => {
+        if (framework.type === 'google')
+          return new GoogleTestSuiteInfo(
+            this._shared,
+            this._label,
+            this._description,
+            this._execPath,
+            this._execOptions,
+          );
+        else if (framework.type === 'catch2')
+          return new Catch2TestSuiteInfo(
+            this._shared,
+            this._label,
+            this._description,
+            this._execPath,
+            this._execOptions,
+            [framework.version[0], framework.version[1], framework.version[2]],
+          );
+        else throw Error('Unknown error:' + framework.type);
+      });
   }
 
   private _determineTestTypeOfExecutable(execParsingTimeout: number): Promise<TestFrameworkInfo> {
