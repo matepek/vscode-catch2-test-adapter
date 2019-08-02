@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.5]
+
+### Changed
+
+- `catch2TestExplorer.workerMaxNumber` now applies for the test exploration phase too
+
 ## [2.6.4] - 2019-07-19
 
 ### Fixed

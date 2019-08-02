@@ -26,11 +26,17 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     return super.tooltip + '\n\nPath: ' + this.execPath + '\nCwd: ' + this.execOptions.cwd;
   }
 
-  abstract reloadChildren(): Promise<void>;
+  protected abstract _reloadChildren(): Promise<void>;
 
   protected abstract _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): string[];
 
   protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
+
+  public reloadTests(taskPool: TaskPool): Promise<void> {
+    return taskPool.scheduleTask(() => {
+      return this._reloadChildren();
+    });
+  }
 
   public cancel(): void {
     this._shared.log.info('canceled:', this.id, this.label, this._runInfo);
