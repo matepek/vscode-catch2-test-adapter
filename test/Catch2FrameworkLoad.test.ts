@@ -1742,7 +1742,7 @@ describe(path.basename(__filename), function() {
 
   context('vscode.debug', function() {
     let startDebuggingStub: sinon.SinonStub<
-      [vscode.WorkspaceFolder | undefined, string | vscode.DebugConfiguration],
+      [vscode.WorkspaceFolder | undefined, string | vscode.DebugConfiguration, (vscode.DebugSession | undefined)?],
       Thenable<boolean>
     >;
 
