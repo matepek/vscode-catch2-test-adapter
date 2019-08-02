@@ -185,6 +185,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._getDefaultExecRunningTimeout(config),
       this._getDefaultExecParsingTimeout(config),
       this._getDefaultNoThrow(config),
+      this._getWorkerMaxNumber(config),
       this._getEnableTestListCaching(config),
       this._getGoogleTestTreatGMockWarningAs(config),
       this._getGoogleTestGMockVerbose(config),
@@ -218,7 +219,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           this._shared.isNoThrow = this._getDefaultNoThrow(this._getConfiguration());
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.workerMaxNumber', this.workspaceFolder.uri)) {
-          this._rootSuite.workerMaxNumber = this._getWorkerMaxNumber(this._getConfiguration());
+          this._shared.taskPool.maxTaskCount = this._getWorkerMaxNumber(this._getConfiguration());
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.enableTestListCaching', this.workspaceFolder.uri)) {
           this._shared.enabledTestListCaching = this._getEnableTestListCaching(this._getConfiguration());
@@ -237,7 +238,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
-    this._rootSuite = new RootTestSuiteInfo(undefined, this._shared, 1);
+    this._rootSuite = new RootTestSuiteInfo(undefined, this._shared);
   }
 
   public dispose(): void {
@@ -290,7 +291,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._rootSuite.dispose();
 
-    this._rootSuite = new RootTestSuiteInfo(this._rootSuite.id, this._shared, this._getWorkerMaxNumber(config));
+    this._rootSuite = new RootTestSuiteInfo(this._rootSuite.id, this._shared);
 
     return this._mainTaskQueue.then(() => {
       this._log.info('load started');
@@ -325,7 +326,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   public run(tests: string[]): Promise<void> {
     if (this._mainTaskQueue.size > 0) {
-      this._log.info('Run is busy');
+      this._log.info(
+        "Run is busy. Your test maybe in an infinite loop: Try to limit the test's timeout with: defaultRunningTimeoutSec config option!",
+      );
     }
 
     return this._mainTaskQueue.then(() => {
@@ -603,7 +606,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private _getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
     const res = Math.max(1, config.get<number>('workerMaxNumber', 1));
     this._log.info('workerMaxNumber:', res);
-    return res;
+    if (typeof res != 'number') return 1;
+    else return res;
   }
 
   private _getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration): number {

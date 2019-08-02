@@ -28,7 +28,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     super(shared, label, desciption, execPath, execOptions);
   }
 
-  public reloadChildren(): Promise<void> {
+  protected _reloadChildren(): Promise<void> {
     this._shared.log.info('reloadChildren', this.label);
     return TestSuiteInfoFactory.determineTestTypeOfExecutable(
       this._shared.execParsingTimeout,
@@ -351,7 +351,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
           new Promise<void>((resolve, reject) => {
             this._shared.loadWithTaskEmitter.fire(() => {
-              return this.reloadChildren().then(resolve, reject);
+              return this.reloadTests(this._shared.taskPool).then(resolve, reject);
             });
           }).then(
             () => {

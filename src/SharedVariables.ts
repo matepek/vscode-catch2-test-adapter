@@ -2,9 +2,11 @@ import { Log } from 'vscode-test-adapter-util';
 import * as vscode from 'vscode';
 import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { TaskPool } from './TaskPool';
 
 export class SharedVariables implements vscode.Disposable {
   private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
+  public readonly taskPool: TaskPool;
 
   public constructor(
     public readonly log: Log,
@@ -21,10 +23,13 @@ export class SharedVariables implements vscode.Disposable {
     private _execRunningTimeout: null | number,
     public execParsingTimeout: number,
     public isNoThrow: boolean,
+    workerMaxNumber: number,
     public enabledTestListCaching: boolean,
     public googleTestTreatGMockWarningAs: 'nothing' | 'failure',
     public googleTestGMockVerbose: 'default' | 'info' | 'warning' | 'error',
-  ) {}
+  ) {
+    this.taskPool = new TaskPool(workerMaxNumber);
+  }
 
   public dispose(): void {
     this._execRunningTimeoutChangeEmitter.dispose();

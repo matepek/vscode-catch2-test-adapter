@@ -83,7 +83,7 @@ export class TestExecutableInfo implements vscode.Disposable {
           () => {
             return this._createSuiteByUri(file).then(
               (suite: AbstractTestSuiteInfo) => {
-                return suite.reloadChildren().then(
+                return suite.reloadTests(this._shared.taskPool).then(
                   () => {
                     if (this._rootSuite.insertChild(suite, false /* called later */)) {
                       this._executables.set(file, suite);
@@ -305,7 +305,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         return new Promise<void>((resolve, reject) => {
           this._shared.loadWithTaskEmitter.fire(() => {
             return suite
-              .reloadChildren()
+              .reloadTests(this._shared.taskPool)
               .then(() => {
                 if (this._rootSuite.insertChild(suite, true)) {
                   this._executables.set(filePath, suite);

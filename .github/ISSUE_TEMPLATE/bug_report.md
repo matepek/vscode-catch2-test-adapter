@@ -3,28 +3,28 @@ name: Bug report
 about: Create a report to help us improve
 ---
 
-**Before you file an issue, please check the [README.md](https://github.com/matepek/vscode-catch2-test-adapter#known-issues)'s known issues section.**
+**Checklist** (You can delete this section, don't have to be the part of your issue.)
+
+- [ ] The issue is about this extension and NOT about a fork.
+- [ ] Check the [known issues](https://github.com/matepek/vscode-catch2-test-adapter#known-issues) list.
+- [ ] The latest version of the extension was used.
 
 **Describe the bug** (A clear and concise description of what the bug is.)
 
-**To Reproduce** (Steps to reproduce the behavior:)
+**To Reproduce** (Steps to reproduce the behavior.)
 
 1. Go to '...'
 2. Click on '....'
 3. Scroll down to '....'
 4. See error
 
-**Expected behavior** (A clear and concise description of what you expected to happen.)
-
 **Screenshots** (If applicable, add screenshots to help explain your problem.)
 
-**Desktop (please complete the following information):**
+**Desktop**
 
 - Extension Version [e.g. 22]
 - VS Code Version [e.g. 22]
-- Catch2/Google Test Version
+- Catch2/Google Test Version [e.g. 2.3.4]
 - OS Type and Version
 
 **Log** (Attach log. (optional, Set: `catch2TestExplorer.logfile` and reproduce the bug.) _Warning_: Log probably contains file and test names too.)
-
-**Additional context** Add any other context about the problem here.
