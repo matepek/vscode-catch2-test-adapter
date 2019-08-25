@@ -33,7 +33,7 @@ export function resolveVariables<T>(value: T, varValue: [string, any][]): T {
 }
 
 // eslint-disable-next-line
-export function resolveOSEnvironmentVariables<T>(value: T): T {
+export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolean): T {
   const getValueOfEnv = (prop: string): string | undefined => {
     const normalize = (s: string): string => (process.platform === 'win32' ? s.toLowerCase() : s);
     const normProp = normalize(prop);
@@ -60,7 +60,8 @@ export function resolveOSEnvironmentVariables<T>(value: T): T {
         replacedS += val;
       } else {
         if (match[1] === 'os_env_strict') {
-          return undefined;
+          if (strictAllowed) return undefined;
+          else replacedS += '<missing env>';
         } else {
           // skip: replaces to empty string
         }

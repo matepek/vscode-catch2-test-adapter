@@ -158,7 +158,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     isPartOfWs: boolean;
     relativeToWsPosix: string;
   } {
-    pattern = resolveOSEnvironmentVariables(pattern);
+    pattern = resolveOSEnvironmentVariables(pattern, false);
     const isAbsolute = path.isAbsolute(pattern);
     const absPattern = isAbsolute
       ? vscode.Uri.file(path.normalize(pattern)).fsPath
@@ -212,7 +212,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     try {
       if (this._name) resolvedName = resolveVariables(this._name, varToValue);
       else if (!this._description) resolvedName = resolveVariables('${filename}', varToValue);
-      resolvedName = resolveOSEnvironmentVariables(resolvedName);
+      resolvedName = resolveOSEnvironmentVariables(resolvedName, false);
 
       if (resolvedName.match(variableRe)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedName);
 
@@ -225,7 +225,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     try {
       if (this._description) {
         resolvedDescription = resolveVariables(this._description, varToValue);
-        resolvedDescription = resolveOSEnvironmentVariables(resolvedDescription);
+        resolvedDescription = resolveOSEnvironmentVariables(resolvedDescription, false);
 
         if (resolvedDescription.match(variableRe))
           this._shared.log.warn('Possibly unresolved variable: ' + resolvedDescription);
@@ -246,7 +246,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       if (this._cwd) resolvedCwd = this._cwd;
 
       resolvedCwd = resolveVariables(resolvedCwd, varToValue);
-      resolvedCwd = resolveOSEnvironmentVariables(resolvedCwd);
+      resolvedCwd = resolveOSEnvironmentVariables(resolvedCwd, false);
 
       if (resolvedCwd.match(variableRe)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedCwd);
 
@@ -264,7 +264,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       if (this._env) Object.assign(resolvedEnv, this._env);
 
       resolvedEnv = resolveVariables(resolvedEnv, varToValue);
-      resolvedEnv = resolveOSEnvironmentVariables(resolvedEnv);
+      resolvedEnv = resolveOSEnvironmentVariables(resolvedEnv, true);
     } catch (e) {
       this._shared.log.error('resolvedEnv', e);
     }
