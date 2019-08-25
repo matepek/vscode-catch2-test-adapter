@@ -1583,6 +1583,7 @@ describe(path.basename(__filename), function() {
             C2LOCALCWDANDNAME: '${cwd}-${name}',
             C2ENVVARS1: 'X${os_env:PATH}X',
             C2ENVVARS2: 'X${os_env:pAtH}X',
+            C2ENVVARS3: 'X${os_env_strict:NOT_EXISTING}X',
           },
         },
       ]);
@@ -1629,8 +1630,11 @@ describe(path.basename(__filename), function() {
             assert.equal(ops.env!.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath1');
             assert.equal(ops.env!.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
             assert.equal(ops.env!.C2ENVVARS1, 'X' + process.env['PATH'] + 'X');
+
             if (isWin) assert.equal(ops.env!.C2ENVVARS2, 'X' + process.env['PATH'] + 'X');
-            else assert.equal(ops.env!.C2ENVVARS2, 'X${os_env:pAtH}X');
+            else assert.equal(ops.env!.C2ENVVARS2, 'XX');
+
+            assert.strictEqual(ops.env!.C2ENVVARS3, undefined);
 
             return (new ChildProcessStub(example1.suite1.outputs[2][1]) as unknown) as ChildProcess;
           } catch (e) {
