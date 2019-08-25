@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.6.7]
+## [2.7.0]
 
 Fixing vulnerabilites in packages.
+
+### Changed
+
+- Resolving `${os_env:<varname>}` will result in empty string if if `<varname>` is not set.
+  Use `${os_env_strict:<varname>}` which will not set the target variable if there is no `<varname>` environment variable.
 
 ## [2.6.6] - 2019-08-02
 

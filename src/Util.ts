@@ -9,7 +9,8 @@ function _mapAllStrings<T>(value: T, mapperFunc: (s: string) => any): T {
     // eslint-disable-next-line
     const newValue: any = {};
     for (const prop in value) {
-      newValue[prop] = _mapAllStrings(value[prop], mapperFunc);
+      const val = _mapAllStrings(value[prop], mapperFunc);
+      if (val !== undefined) newValue[prop] = val;
     }
     return newValue;
   } else {
@@ -45,15 +46,28 @@ export function resolveOSEnvironmentVariables<T>(value: T): T {
   };
   // eslint-disable-next-line
   return _mapAllStrings(value, (s: string): any => {
-    const m = s.match(/\$\{os_env:([A-z_][A-z0-9_]*)\}/gm);
-    if (m) {
-      for (const envExpr of m) {
-        const envName = envExpr.substring('${os_env:'.length, envExpr.length - 1);
-        const val = getValueOfEnv(envName);
-        if (val !== undefined) s = s.replace(envExpr, val);
+    let replacedS = '';
+    while (true) {
+      const match = s.match(/\$\{(os_env|os_env_strict):([A-z_][A-z0-9_]*)\}/);
+
+      if (!match) return replacedS + s;
+
+      const val = getValueOfEnv(match[2]);
+
+      replacedS += s.substring(0, match.index!);
+
+      if (val !== undefined) {
+        replacedS += val;
+      } else {
+        if (match[1] === 'os_env_strict') {
+          return undefined;
+        } else {
+          // skip: replaces to empty string
+        }
       }
+
+      s = s.substring(match.index! + match[0].length);
     }
-    return s;
   });
 }
 
