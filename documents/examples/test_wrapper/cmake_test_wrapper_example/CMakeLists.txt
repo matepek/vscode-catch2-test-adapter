@@ -26,7 +26,7 @@ target_compile_features(Test1 PRIVATE cxx_noexcept)
 
 
 # Examples:
-#   Remark: I haven't tested on windows.
+#   (Remark: I haven't tested on windows.)
 
 
 # 2) Assuming nothing special is required, the easiest way is 'file'. something like this:
@@ -101,3 +101,6 @@ endfunction()
 add_test_wrapper(Test1)
 
 # and add_test_wrapper(Test2), add_test_wrapper(Test3), etc...
+
+# ALSO, dont forget to replace `catch2TestExplorer.executables` pattern to a stricter one like "{build,Build,BUILD,out,Out,OUT}/**/*.test-wrapper*"
+#  because we don't want to match on the executable just the wrapper.

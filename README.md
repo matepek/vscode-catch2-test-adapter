@@ -244,9 +244,19 @@ Note that `name` and `request` are filled, if they are undefined, so it is not n
 
 For solving issues use: `catch2TestExplorer.logpanel: true` and check the output window.
 
-## Useful / Related
+## F.A.Q
 
-- [Test Explorer Status Bar](https://marketplace.visualstudio.com/items?itemName=connorshea.vscode-test-explorer-status-bar)
+> Wanna see the test run results in the status bar too.
+>
+> > Check this extension: [Test Explorer Status Bar](https://marketplace.visualstudio.com/items?itemName=connorshea.vscode-test-explorer-status-bar)
+
+> I want to run some **custom script** before the tests (for example to set some environment variables and do some init), how should I do that?
+>
+> > Create command line wrapper (.sh/.bat) or a python script wrapper. The most convenient way is to generate one.
+>
+> Would you show me an example?
+>
+> > Sure! For example in case of CMake: [check this](documents/examples/test_wrapper/cmake_test_wrapper_example/CMakeLists.txt).
 
 ## TODOs
 
