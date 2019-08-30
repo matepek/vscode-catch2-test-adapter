@@ -17,3 +17,11 @@ target_include_directories(ThirdParty.Catch2
     INTERFACE "${catch2test_SOURCE_DIR}/single_include")
 
 target_compile_features(ThirdParty.Catch2 INTERFACE cxx_std_11)
+
+#
+
+function(add_catch2test_with_main target cpp_file)
+  add_executable(${target} "${cpp_file}")
+  target_link_libraries(${target} PUBLIC ThirdParty.Catch2)
+  target_compile_definitions(${target} PUBLIC "CATCH_CONFIG_MAIN")
+endfunction()

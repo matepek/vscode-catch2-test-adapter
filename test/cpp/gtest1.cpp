@@ -6,7 +6,7 @@
 
 // Google Test
 
-#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 GTEST_TEST(TestCas1, test1) {
   //
@@ -25,7 +25,7 @@ GTEST_TEST(TestCas1, DISABLED_test3) {
 }
 
 GTEST_TEST(TestCas1, test4) {
-  GTEST_SKIP();
+  // GMOKC_SKIP();
   ASSERT_TRUE(1 == 1);
 }
 
@@ -51,11 +51,11 @@ class FailingParamTest : public testing::TestWithParam<int> {};
 TEST_P(FailingParamTest, Fails1) { EXPECT_EQ(1, GetParam()); }
 TEST_P(FailingParamTest, Fails2) { EXPECT_EQ(1, GetParam()); }
 
-INSTANTIATE_TEST_SUITE_P(PrintingFailingParams1, FailingParamTest,
-                         testing::Values(2, 3));
+INSTANTIATE_TEST_CASE_P(PrintingFailingParams1, FailingParamTest,
+                        testing::Values(2, 3));
 
-INSTANTIATE_TEST_SUITE_P(PrintingFailingParams2, FailingParamTest,
-                         testing::Range(3, 4));
+INSTANTIATE_TEST_CASE_P(PrintingFailingParams2, FailingParamTest,
+                        testing::Range(3, 4));
 
 // Google Mock
 

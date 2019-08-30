@@ -1,5 +1,4 @@
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp.txt"
+#include "catch2/catch.hpp"
 
 // c++ -x c++ -std=c++17 -I ../Catch2/single_include -O0 -g -o suite2
 // ../vscode-catch2-test-adapter/src/test/suite2.cpp

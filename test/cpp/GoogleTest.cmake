@@ -48,3 +48,11 @@ add_library(ThirdParty.GoogleMockWithMain INTERFACE)
 
 target_link_libraries(ThirdParty.GoogleMockWithMain
                       INTERFACE ThirdParty.GoogleMock gmock_main)
+
+#
+
+function(add_gtest_with_main target cpp_file)
+  add_executable(${target} "${cpp_file}")
+  target_link_libraries(${target} PUBLIC ThirdParty.GoogleMockWithMain)
+endfunction()
+
