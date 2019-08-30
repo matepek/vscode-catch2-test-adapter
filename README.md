@@ -256,7 +256,13 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 >
 > Would you show me an example?
 >
-> > Sure! For example in case of CMake: [check this](documents/examples/test_wrapper/cmake_test_wrapper_example/CMakeLists.txt).
+> > Sure! For example in case of CMake: [check this](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/examples/test_wrapper/cmake_test_wrapper_example/CMakeLists.txt).
+> > Note: However this is the easiest, not the best solution.
+> > There is a drawback: Debugging button won't work, since the debuger will attach to the script not to the exec the script calls.
+>
+> Is there a solution for that?
+>
+> > Yes. One can enhance their test executable from c++. The example is [here](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/examples/test_wrapper/cppmain_test_wrapper_example/env_setter.hpp)
 
 ## TODOs
 
