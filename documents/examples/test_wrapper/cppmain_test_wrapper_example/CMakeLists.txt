@@ -1,5 +1,5 @@
-# This file is not part of the example
-# This is for to test the example.
+# NOTE: This file is not part of the example.
+# This is just for to test the example.
 
 cmake_minimum_required(VERSION 3.15)
 

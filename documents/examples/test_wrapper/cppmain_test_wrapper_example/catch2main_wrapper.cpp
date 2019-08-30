@@ -1,5 +1,5 @@
 /**
- * Check wrapper.cpp for details
+ * Check env_setter.hpp for details
  *
  * https://github.com/catchorg/Catch2/blob/master/docs/own-main.md
  */
