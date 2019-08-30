@@ -96,10 +96,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     this._shared.testStatesEmitter.fire(this.getRunningEvent());
 
-    const execOptions = Object.assign({}, this.execOptions);
-    execOptions.env = Object.assign({}, Object.assign(process.env, execOptions.env));
-
-    const runInfo = new RunningTestExecutableInfo(cp.spawn(this.execPath, execParams, execOptions), childrenToRun);
+    const runInfo = new RunningTestExecutableInfo(cp.spawn(this.execPath, execParams, this.execOptions), childrenToRun);
 
     this._runInfo = runInfo;
 

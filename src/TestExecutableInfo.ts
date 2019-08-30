@@ -271,7 +271,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     return new TestSuiteInfoFactory(this._shared, resolvedName, resolvedDescription, filePath, {
       cwd: resolvedCwd,
-      env: resolvedEnv,
+      env: Object.assign({}, process.env, resolvedEnv),
     }).create();
   }
 

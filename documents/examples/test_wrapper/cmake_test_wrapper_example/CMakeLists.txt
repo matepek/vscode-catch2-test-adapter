@@ -25,6 +25,11 @@ target_compile_features(Test1 PRIVATE cxx_noexcept)
 #  3) https://cmake.org/cmake/help/latest/command/add_custom_command.html
 
 
+# IMPORTANT: The output shoud not be modified because the extension will process it:
+# - first with `--help` to determine the type:(Catch2 GTest)
+# - then with framework specific parametrs to list the tests and run them.
+
+
 # Examples:
 #   (Remark: I haven't tested on windows.)
 
@@ -32,9 +37,9 @@ target_compile_features(Test1 PRIVATE cxx_noexcept)
 # 2) Assuming nothing special is required, the easiest way is 'file'. something like this:
 
 if(WIN32)
-  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Test1.wrapper1.bat" "echo this is my script\ncall \"${CMAKE_CURRENT_BINARY_DIR}\\Test1${CMAKE_EXECUTABLE_SUFFIX_CXX}\" %*\n")
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Test1.wrapper1.bat" ">put your command here<\ncall \"${CMAKE_CURRENT_BINARY_DIR}\\Test1${CMAKE_EXECUTABLE_SUFFIX_CXX}\" %*\n")
 else()
-  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Test1.wrapper1.sh" "echo this is my script\n\"${CMAKE_CURRENT_BINARY_DIR}/Test1${CMAKE_EXECUTABLE_SUFFIX_CXX}\" \"$@\"\n")
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Test1.wrapper1.sh" ">put your command here<\n\"${CMAKE_CURRENT_BINARY_DIR}/Test1${CMAKE_EXECUTABLE_SUFFIX_CXX}\" \"$@\"\n")
   execute_process(COMMAND "chmod" "+x" "${CMAKE_CURRENT_BINARY_DIR}/Test1.wrapper1.sh")
 endif()
 
@@ -45,14 +50,14 @@ endif()
 
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
   add_custom_command(TARGET Test1 POST_BUILD
-    COMMAND "echo" "echo this is my script" ">" "Test1.wrapper2.sh"
+    COMMAND "echo" ">put your command here<" ">" "Test1.wrapper2.sh"
     COMMAND "echo" "call \"${CMAKE_CURRENT_BINARY_DIR}\\Test1${CMAKE_EXECUTABLE_SUFFIX_CXX}\" %*" ">>" "Test1.wrapper2.sh"
     MAIN_DEPENDENCY Test1
     VERBATIM
     )
 else()
   add_custom_command(TARGET Test1 POST_BUILD
-    COMMAND "echo" "echo this is my script" ">" "Test1.wrapper2.sh"
+    COMMAND "echo" ">put your command here<" ">" "Test1.wrapper2.sh"
     COMMAND "echo" "echo put your command here" ">>" "Test1.wrapper2.sh"
     COMMAND "echo" "\"${CMAKE_CURRENT_BINARY_DIR}/Test1${CMAKE_EXECUTABLE_SUFFIX_CXX}\" \"$@\"" ">>" "Test1.wrapper2.sh"
     COMMAND "chmod" "+x" "Test1.wrapper2.sh"
@@ -73,9 +78,8 @@ function(add_test_wrapper target)
     set(WRAPPER_OUTPUT_NAME "${WRAPPER_OUTPUT_NAME_BASE}.bat")
 
     add_custom_command(TARGET ${target} POST_BUILD
-      COMMAND "echo" "echo this is my script" ">" "${WRAPPER_OUTPUT_NAME}"
-      COMMAND "echo" "echo put your command here" ">>" "${WRAPPER_OUTPUT_NAME}"
-      COMMAND "echo" "echo and here too" ">>" "${WRAPPER_OUTPUT_NAME}"
+      COMMAND "echo" ">echo put your command here<" ">>" "${WRAPPER_OUTPUT_NAME}"
+      COMMAND "echo" ">echo and here too<" ">>" "${WRAPPER_OUTPUT_NAME}"
       COMMAND "echo" "call \"${CMAKE_CURRENT_BINARY_DIR}\\${target}${CMAKE_EXECUTABLE_SUFFIX_CXX}\" %*" ">>" "${WRAPPER_OUTPUT_NAME}"
       MAIN_DEPENDENCY ${target}
       VERBATIM
@@ -85,9 +89,8 @@ function(add_test_wrapper target)
     set(WRAPPER_OUTPUT_NAME "${WRAPPER_OUTPUT_NAME_BASE}.sh")
 
     add_custom_command(TARGET ${target} POST_BUILD
-      COMMAND "echo" "echo this is my script" ">" "${WRAPPER_OUTPUT_NAME}"
-      COMMAND "echo" "echo put your command here" ">>" "${WRAPPER_OUTPUT_NAME}"
-      COMMAND "echo" "echo and here too" ">>" "${WRAPPER_OUTPUT_NAME}"
+      COMMAND "echo" "echo >put your command here<" ">>" "${WRAPPER_OUTPUT_NAME}"
+      COMMAND "echo" ">echo and here too<" ">>" "${WRAPPER_OUTPUT_NAME}"
       COMMAND "echo" "\"${CMAKE_CURRENT_BINARY_DIR}/${target}${CMAKE_EXECUTABLE_SUFFIX_CXX}\" \"$@\"" ">>" "${WRAPPER_OUTPUT_NAME}"
       COMMAND "chmod" "+x" "${WRAPPER_OUTPUT_NAME}"
       MAIN_DEPENDENCY ${target}
@@ -103,4 +106,4 @@ add_test_wrapper(Test1)
 # and add_test_wrapper(Test2), add_test_wrapper(Test3), etc...
 
 # ALSO, dont forget to replace `catch2TestExplorer.executables` pattern to a stricter one like "{build,Build,BUILD,out,Out,OUT}/**/*.test-wrapper*"
-#  because we don't want to match on the executable just the wrapper.
+#  because we don't want to match the executables just the wrappers.

@@ -7,7 +7,6 @@ import { Catch2TestInfo } from './Catch2TestInfo';
 import * as c2fs from './FSWrapper';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
-import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { RunningTestExecutableInfo, ProcessResult } from './RunningTestExecutableInfo';
 
 interface XmlObject {
@@ -29,20 +28,8 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
   }
 
   protected _reloadChildren(): Promise<void> {
-    this._shared.log.info('reloadChildren', this.label);
-    return TestSuiteInfoFactory.determineTestTypeOfExecutable(
-      this._shared.execParsingTimeout,
-      this.execPath,
-      this.execOptions,
-    ).then(testInfo => {
-      if (testInfo.type === 'catch2') {
-        this._catch2Version = testInfo.version;
-        if (this._catch2Version[0] > 2 || this._catch2Version[0] < 2)
-          this._shared.log.warn('Unsupported Cathc2 version: ', this._catch2Version);
-        return this._reloadCatch2Tests();
-      }
-      throw Error('Not a catch2 test executable: ' + this.execPath);
-    });
+    this._shared.log.info('reloadChildren', this.label, this._catch2Version);
+    return this._reloadCatch2Tests();
   }
 
   private _reloadFromString(testListOutput: string, oldChildren: Catch2TestInfo[]): void {

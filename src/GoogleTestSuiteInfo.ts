@@ -9,7 +9,6 @@ import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { Parser } from 'xml2js';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
-import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { RunningTestExecutableInfo, ProcessResult } from './RunningTestExecutableInfo';
 
 class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
@@ -39,16 +38,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
   protected _reloadChildren(): Promise<void> {
     this._shared.log.info('reloadChildren', this.label);
-    return TestSuiteInfoFactory.determineTestTypeOfExecutable(
-      this._shared.execParsingTimeout,
-      this.execPath,
-      this.execOptions,
-    ).then(testInfo => {
-      if (testInfo.type === 'google') {
-        return this._reloadGoogleTests();
-      }
-      throw Error('Not a google test executable: ' + this.execPath);
-    });
+    return this._reloadGoogleTests();
   }
 
   private _reloadFromXml(xmlStr: string, oldChildren: GoogleTestGroupSuiteInfo[]): void {
