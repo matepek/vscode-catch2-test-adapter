@@ -148,7 +148,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     return this._handleProcess(runInfo)
       .catch((reason: Error) => {
-        this._shared.log.error(reason);
+        this._shared.log.exception(reason);
       })
       .then(() => {
         this._shared.log.info('proc finished:', this.execPath);

@@ -11,9 +11,10 @@ import {
   RetireEvent,
 } from 'vscode-test-adapter-api';
 import * as api from 'vscode-test-adapter-api';
-import * as util from 'vscode-test-adapter-util';
 import debounce = require('debounce-collect');
+import * as Sentry from '@sentry/node';
 
+import { LogWrapper } from './LogWrapper';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { resolveVariables, generateUniqueId } from './Util';
 import { TaskQueue } from './TaskQueue';
@@ -24,7 +25,7 @@ import { Catch2Section, Catch2TestInfo } from './Catch2TestInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
-  private readonly _log: util.Log;
+  private readonly _log: LogWrapper;
   private readonly _testsEmitter = new vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>();
   private readonly _testStatesEmitter = new vscode.EventEmitter<
     TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
@@ -51,7 +52,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private _rootSuite: RootTestSuiteInfo;
 
   public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
-    this._log = new util.Log(
+    this._log = new LogWrapper(
       'catch2TestExplorer',
       this.workspaceFolder,
       'Test Explorer: ' + this.workspaceFolder.name,
@@ -60,6 +61,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     );
 
     const config = this._getConfiguration();
+
+    Sentry.init({
+      dsn: 'https://0cfbeca1e97e4478a5d7e9c77925d92f@sentry.io/1554599',
+      //debug: /--debug|--inspect/.test(process.execArgv.join(' ')),
+      //defaultIntegrations: false,
+      enabled: this._getLogSentry(config) !== 'disable',
+    });
+
+    Sentry.setContext('config', config);
 
     this._log.info(
       'info:',
@@ -70,6 +80,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       vscode.version,
       config,
     );
+
+    Sentry.setTags({
+      workspaceFolder: this.workspaceFolder.uri.fsPath,
+      platform: process.platform,
+      vscodeVersion: vscode.version,
+    });
 
     this._disposables.push(
       vscode.workspace.onDidChangeWorkspaceFolders(() => {
@@ -115,7 +131,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                 });
               },
               (reason: Error) => {
-                this._log.error(reason);
+                this._log.exception(reason);
                 debugger;
                 this._testsEmitter.fire({
                   type: 'finished',
@@ -193,36 +209,38 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(
       vscode.workspace.onDidChangeConfiguration(configChange => {
+        const config = this._getConfiguration();
+
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultRngSeed', this.workspaceFolder.uri)) {
-          this._shared.rngSeed = this._getDefaultRngSeed(this._getConfiguration());
+          this._shared.rngSeed = this._getDefaultRngSeed(config);
           this._retireEmitter.fire({});
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultWatchTimeoutSec', this.workspaceFolder.uri)) {
-          this._shared.execWatchTimeout = this._getDefaultExecWatchTimeout(this._getConfiguration());
+          this._shared.execWatchTimeout = this._getDefaultExecWatchTimeout(config);
         }
         if (
           configChange.affectsConfiguration('catch2TestExplorer.retireDebounceTimeMilisec', this.workspaceFolder.uri)
         ) {
-          this._shared.retireDebounceTime = this._getRetireDebounceTime(this._getConfiguration());
+          this._shared.retireDebounceTime = this._getRetireDebounceTime(config);
         }
         if (
           configChange.affectsConfiguration('catch2TestExplorer.defaultRunningTimeoutSec', this.workspaceFolder.uri)
         ) {
-          this._shared.setExecRunningTimeout(this._getDefaultExecRunningTimeout(this._getConfiguration()));
+          this._shared.setExecRunningTimeout(this._getDefaultExecRunningTimeout(config));
         }
         if (
           configChange.affectsConfiguration('catch2TestExplorer.defaultExecParsingTimeoutSec', this.workspaceFolder.uri)
         ) {
-          this._shared.setExecRunningTimeout(this._getDefaultExecParsingTimeout(this._getConfiguration()));
+          this._shared.setExecRunningTimeout(this._getDefaultExecParsingTimeout(config));
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultNoThrow', this.workspaceFolder.uri)) {
-          this._shared.isNoThrow = this._getDefaultNoThrow(this._getConfiguration());
+          this._shared.isNoThrow = this._getDefaultNoThrow(config);
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.workerMaxNumber', this.workspaceFolder.uri)) {
-          this._shared.taskPool.maxTaskCount = this._getWorkerMaxNumber(this._getConfiguration());
+          this._shared.taskPool.maxTaskCount = this._getWorkerMaxNumber(config);
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.enableTestListCaching', this.workspaceFolder.uri)) {
-          this._shared.enabledTestListCaching = this._getEnableTestListCaching(this._getConfiguration());
+          this._shared.enabledTestListCaching = this._getEnableTestListCaching(config);
         }
         if (
           configChange.affectsConfiguration(
@@ -230,11 +248,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             this.workspaceFolder.uri,
           )
         ) {
-          this._shared.googleTestTreatGMockWarningAs = this._getGoogleTestTreatGMockWarningAs(this._getConfiguration());
+          this._shared.googleTestTreatGMockWarningAs = this._getGoogleTestTreatGMockWarningAs(config);
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.googletest.gmockVerbose', this.workspaceFolder.uri)) {
-          this._shared.googleTestGMockVerbose = this._getGoogleTestGMockVerbose(this._getConfiguration());
+          this._shared.googleTestGMockVerbose = this._getGoogleTestGMockVerbose(config);
         }
+
+        Sentry.setContext('config', config);
       }),
     );
 
@@ -308,7 +328,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           });
         },
         (e: Error) => {
-          this._log.info('load finished with error:', e);
+          this._log.exception(e);
 
           this._testsEmitter.fire({
             type: 'finished',
@@ -332,7 +352,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
 
     return this._mainTaskQueue.then(() => {
-      return this._rootSuite.run(tests).catch((reason: Error) => this._log.error(reason));
+      return this._rootSuite.run(tests).catch((reason: Error) => this._log.exception(reason));
     });
   }
 
@@ -580,6 +600,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private _getConfiguration(): vscode.WorkspaceConfiguration {
     return vscode.workspace.getConfiguration('catch2TestExplorer', this.workspaceFolder.uri);
+  }
+
+  private _getLogSentry(config: vscode.WorkspaceConfiguration): 'disable' | 'error' {
+    return config.get<'disable' | 'error'>('logSentry', 'error');
   }
 
   private _getDebugBreakOnFailure(config: vscode.WorkspaceConfiguration): boolean {

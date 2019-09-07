@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.2]
+
+⚠️ Sentry.io integration: From this build errors and exceptions can be reported automatically.
+Please be understandable and allow it with setting `catch2TestExplorer.logSentry: 'error'`.
+
 ## [2.7.1] - 2019-08-30
 
 Nothing really changed (just slightly), but documentation was updated.
