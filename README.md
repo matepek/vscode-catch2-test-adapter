@@ -6,7 +6,7 @@
 [![GitHub license](https://img.shields.io/github/license/matepek/vscode-catch2-test-adapter.svg)](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/LICENSE)
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/d/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
-[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+[![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 
 This extension allows you to run your [Catch2](https://github.com/catchorg/Catch2)
 and [Google Test](https://github.com/google/googletest) tests using the
@@ -27,11 +27,13 @@ and [Google Test](https://github.com/google/googletest) tests using the
 
 ## Configuration
 
-The extension is pre-configured and should find executables inside the working directory which match the following pattern:
+The extension is pre-configured (`catch2TestExplorer.executables`) and should find executables inside the working directory which match the following pattern:
 
 > `{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*`.
 
-This basically means executables inside the `build` and `out` directories (recursive) which contain the `test` word in their name (including extensions).
+This basically means executables inside the `build` and `out` directories (recursive `/**/`) which contain the `test` word in their name (including extensions).
+
+See vscode's [documentation](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) for syntax.
 
 Not good enough for you?!: Edit your `.vscode/settings.json` [file](https://code.visualstudio.com/docs/getstarted/settings) according to the [examples](#Examples) bellow!
 

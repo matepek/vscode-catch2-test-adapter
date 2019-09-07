@@ -73,7 +73,7 @@ Fixed security vulnerability.
 
 ## [2.4.14] - 2019-06-13
 
-## Added
+### Added
 
 - `executables`'s properties can contains variables related to environment variables (ex.: `${os_env:PATH};/mypath`).
 
