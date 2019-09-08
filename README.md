@@ -241,6 +241,13 @@ These variables will be substituted when a DebugConfiguration is created.
 Note that `name` and `request` are filled, if they are undefined, so it is not necessary to set them.
 `type` is necessary.
 
+#### About [Sentry.io]() integration
+
+As a developer, you may know how valuable can be if you have some information.
+The feature is disabled by default, the user is promted to enable it.
+It can be enabled globally and disabled for the workspace or the other way around.
+With enabling you support my work. 🙏
+
 ## License
 
 [The Unlicense](https://choosealicense.com/licenses/unlicense/)
@@ -279,4 +286,8 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 - gaze is not good enough: detects change and delete, but not creation
 - `dependsOn` could contain variables
 
-## [Contribution guideline here](CONTRIBUTING.md)
+## Contribution
+
+[The guideline is here.](CONTRIBUTING.md)
+
+[![Buy Me A Coffee](https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png)](https://www.buymeacoffee.com/rtdmjYspB)

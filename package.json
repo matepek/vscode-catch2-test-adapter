@@ -569,17 +569,19 @@
           "description": "Errors/Exceptions will be logged and sent automatically for further analysis.",
           "scope": "resource",
           "type": "string",
-          "default": "disable",
+          "default": "question",
           "enum": [
-            "error",
-            "disable"
-          ],
-          "enumDescriptions": [
-            "--gmock_verbose=... parameter won't be added",
-            "Google Mock will print all informational messages, warnings, and errors (most verbose). At this setting, Google Mock will also log any calls to the ON_CALL/EXPECT_CALL macros.",
-            "Google Mock will print both warnings and errors (less verbose). This is the default.",
-            "Google Mock will print errors only (least verbose)."
+            "question",
+            "enable",
+            "disable",
+            "disable_1"
           ]
+        },
+        "catch2TestExplorer.userId": {
+          "description": "A locally generated identifier which is used to group the errors/events.",
+          "scope": "resource",
+          "type": "string",
+          "default": ""
         },
         "catch2TestExplorer.enableTestListCaching": {
           "markdownDescription": "(Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.) (Click [here](http://bit.ly/2HFcAC6), if you think it is a useful feature!)",

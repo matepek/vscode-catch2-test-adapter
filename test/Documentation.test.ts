@@ -43,7 +43,7 @@ describe(path.basename(__filename), function() {
       const keys = Object.keys(properties);
 
       keys.forEach(key => {
-        if (key === 'catch2TestExplorer.logfile') {
+        if (key === 'catch2TestExplorer.logfile' || key === 'catch2TestExplorer.userId') {
           // skip: not documented
         } else {
           assert.ok(key.startsWith('catch2TestExplorer.'));

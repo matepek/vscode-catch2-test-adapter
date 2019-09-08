@@ -77,3 +77,11 @@ let uidCounter = 0;
 export function generateUniqueId(): string {
   return (++uidCounter).toString();
 }
+
+import * as crypto from 'crypto';
+
+export function hashString<T>(str: string, algorithm: string = 'sha1'): string {
+  const hash = crypto.createHash(algorithm);
+  hash.update(str);
+  return hash.digest('hex');
+}

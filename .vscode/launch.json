@@ -17,7 +17,8 @@
       ],
       "preLaunchTask": "npm: watch",
       "env": {
-        "C2AVCVA": "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat"
+        "C2AVCVA": "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat",
+        "C2_SENTRY_DISABLE": "true"
       }
     },
     {
@@ -29,6 +30,9 @@
         "${workspaceFolder}/../catch2test",
         "--extensionDevelopmentPath=${workspaceFolder}"
       ],
+      "env": {
+        "C2_SENTRY_DISABLE": "true"
+      },
       "outFiles": [
         "${workspaceFolder}/out/**/*.js"
       ],

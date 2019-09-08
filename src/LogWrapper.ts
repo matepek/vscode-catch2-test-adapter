@@ -6,34 +6,58 @@ import * as Sentry from '@sentry/node';
 export class LogWrapper extends util.Log {
   //eslint-disable-next-line
   public debug(...msg: any[]): void {
-    Sentry.addBreadcrumb({ data: msg, level: Sentry.Severity.Debug });
-    return super.debug(msg);
+    try {
+      Sentry.addBreadcrumb({ message: JSON.stringify(msg), data: msg, level: Sentry.Severity.Debug });
+    } catch (e) {
+      super.error(e);
+    }
+    return super.debug(...msg);
   }
 
   //eslint-disable-next-line
   public info(...msg: any[]): void {
-    Sentry.addBreadcrumb({ data: msg, level: Sentry.Severity.Info });
-    return super.info(msg);
+    try {
+      Sentry.addBreadcrumb({ message: JSON.stringify(msg), data: msg, level: Sentry.Severity.Info });
+    } catch (e) {
+      super.error(e);
+    }
+    return super.info(...msg);
   }
 
   //eslint-disable-next-line
   public warn(m: string, ...msg: any[]): void {
-    Sentry.addBreadcrumb({ message: m, data: msg, level: Sentry.Severity.Warning });
-    Sentry.captureMessage(m, Sentry.Severity.Error);
-    return super.warn(m, msg);
+    try {
+      Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), data: msg, level: Sentry.Severity.Warning });
+      Sentry.captureMessage(m, Sentry.Severity.Error);
+    } catch (e) {
+      super.error(e);
+    }
+    return super.warn(m, ...msg);
   }
 
   //eslint-disable-next-line
   public error(m: string, ...msg: any[]): void {
-    Sentry.addBreadcrumb({ message: m, data: msg, level: Sentry.Severity.Error });
-    Sentry.captureMessage(m, Sentry.Severity.Error);
-    return super.error(m, msg);
+    try {
+      Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), level: Sentry.Severity.Error });
+      Sentry.captureMessage(m, Sentry.Severity.Error);
+    } catch (e) {
+      super.error(e);
+    }
+    return super.error(m, ...msg);
   }
 
   //eslint-disable-next-line
   public exception(e: Error, ...msg: any[]): void {
-    Sentry.addBreadcrumb({ data: msg, level: Sentry.Severity.Error });
-    Sentry.captureException(e);
-    return super.error(e, msg);
+    try {
+      Sentry.addBreadcrumb({
+        message: e.message + ': ' + JSON.stringify(msg),
+        data: msg,
+        level: Sentry.Severity.Error,
+      });
+      Sentry.captureException(e);
+    } catch (e) {
+      super.error(e);
+    }
+    return super.error(e, ...msg);
   }
 }

@@ -10,7 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.7.2]
 
 ⚠️ Sentry.io integration: From this build errors and exceptions can be reported automatically.
-Please be understandable and allow it with setting `catch2TestExplorer.logSentry: 'error'`.
+Please allow it by setting `catch2TestExplorer.logSentry: "enable"`.
+
+### Changed
+
+- `debugConfigTemplate` now filters `launch.json` a bit more precisely
 
 ## [2.7.1] - 2019-08-30
 

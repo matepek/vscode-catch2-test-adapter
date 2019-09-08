@@ -16,13 +16,14 @@ import * as Sentry from '@sentry/node';
 
 import { LogWrapper } from './LogWrapper';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { resolveVariables, generateUniqueId } from './Util';
+import { resolveVariables, generateUniqueId, hashString } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { Catch2Section, Catch2TestInfo } from './Catch2TestInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { performance } from 'perf_hooks';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: LogWrapper;
@@ -62,15 +63,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const config = this._getConfiguration();
 
-    Sentry.init({
-      dsn: 'https://0cfbeca1e97e4478a5d7e9c77925d92f@sentry.io/1554599',
-      //debug: /--debug|--inspect/.test(process.execArgv.join(' ')),
-      //defaultIntegrations: false,
-      enabled: this._getLogSentry(config) !== 'disable',
-    });
-
-    Sentry.setContext('config', config);
-
     this._log.info(
       'info:',
       this.workspaceFolder,
@@ -81,11 +73,89 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       config,
     );
 
-    Sentry.setTags({
-      workspaceFolder: this.workspaceFolder.uri.fsPath,
-      platform: process.platform,
-      vscodeVersion: vscode.version,
-    });
+    if (this._getLogSentry(config) === 'question') {
+      const options = [
+        'Sure! I love this extension and happy to help.',
+        'Yes, but exclude the current workspace.',
+        'Over my dead body',
+      ];
+      vscode.window
+        .showInformationMessage(
+          'Hey there! The extension now has [sentry.io](https://sentry.io/welcome) integration to ' +
+            'improve the stability and the development. 🤩 For this, I want to log and send errors ' +
+            'to [sentry.io](https://sentry.io/welcome), but I would NEVER do it without your consent. ' +
+            'Please be understandable and allow it. 🙏' +
+            ' (`catch2TestExplorer.logSentry: "enable"/"disable"`)',
+          ...options,
+        )
+        .then((value: string | undefined) => {
+          this._log.info('Sentry consent: ' + value);
+
+          if (value === options[0]) {
+            config.update('logSentry', 'enable', true);
+          } else if (value === options[1]) {
+            config.update('logSentry', 'enable', true);
+            config.update('logSentry', 'disable_1', false);
+          } else if (value === options[2]) {
+            config.update('logSentry', 'disable_1', true);
+          }
+        });
+    }
+
+    try {
+      const enabled = this._getLogSentry(config) === 'enable' && process.env['C2_SENTRY_DISABLE'] === undefined;
+
+      this._log.info('sentry.io is: ', enabled);
+
+      Sentry.init({
+        dsn: 'https://0cfbeca1e97e4478a5d7e9c77925d92f@sentry.io/1554599',
+        enabled,
+      });
+
+      Sentry.setTags({
+        platform: process.platform,
+        vscodeVersion: vscode.version,
+      });
+
+      try {
+        const opt = Intl.DateTimeFormat().resolvedOptions();
+        Sentry.setTags({ timeZone: opt.timeZone, locale: opt.locale });
+      } catch (e) {
+        this._log.exception(e);
+      }
+
+      try {
+        var pjson = require('../../package.json'); // eslint-disable-line
+        Sentry.setTag('version', pjson.version);
+      } catch (e) {
+        this._log.exception(e);
+      }
+
+      {
+        let userId = config.get<string>('userId');
+        if (!userId) {
+          userId = (process.env['USER'] || process.env['USERNAME'] || 'user') + process.env['USERDOMAIN'];
+          userId += performance.now().toString();
+          userId += process.pid.toString();
+          userId += Date.now().toString();
+
+          userId = hashString(userId);
+
+          config.update('userId', userId, true);
+        }
+
+        this._log.info('userId', userId);
+
+        Sentry.setUser({ id: userId });
+        Sentry.setTag('workspaceFolder', hashString(this.workspaceFolder.uri.fsPath));
+      }
+
+      Sentry.setContext('config', config);
+
+      Sentry.captureMessage('Extension was activated', Sentry.Severity.Log);
+    } catch (e) {
+      this._log.exception(e);
+    }
 
     this._disposables.push(
       vscode.workspace.onDidChangeWorkspaceFolders(() => {
@@ -610,8 +680,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return vscode.workspace.getConfiguration('catch2TestExplorer', this.workspaceFolder.uri);
   }
 
-  private _getLogSentry(config: vscode.WorkspaceConfiguration): 'disable' | 'error' {
-    return config.get<'disable' | 'error'>('logSentry', 'error');
+  private _getLogSentry(config: vscode.WorkspaceConfiguration): 'enable' | 'disable' | 'question' {
+    return config.get<'enable' | 'disable' | 'question'>('logSentry', 'disable');
   }
 
   private _getDebugBreakOnFailure(config: vscode.WorkspaceConfiguration): boolean {
@@ -637,26 +707,22 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private _getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
     const res = Math.max(1, config.get<number>('workerMaxNumber', 1));
-    this._log.info('workerMaxNumber:', res);
     if (typeof res != 'number') return 1;
     else return res;
   }
 
   private _getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration): number {
     const res = config.get<number>('defaultWatchTimeoutSec', 10) * 1000;
-    this._log.info('defaultWatchTimeoutSec:', res);
     return res;
   }
 
   private _getRetireDebounceTime(config: vscode.WorkspaceConfiguration): number {
     const res = config.get<number>('retireDebounceTimeMilisec', 1000);
-    this._log.info('retireDebounceTimeMilisec:', res);
     return res;
   }
 
   private _getDefaultExecRunningTimeout(config: vscode.WorkspaceConfiguration): null | number {
     const r = config.get<null | number>('defaultRunningTimeoutSec', null);
-    this._log.info('defaultRunningTimeoutSec:', r);
     return r !== null && r > 0 ? r * 1000 : null;
   }
 
@@ -692,8 +758,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       | string[]
       | { [prop: string]: string }
       | ({ [prop: string]: string } | string)[] = config.get('executables');
-
-    this._log.info('executables:', configExecs);
 
     const createFromObject = (obj: { [prop: string]: string }): TestExecutableInfo => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
