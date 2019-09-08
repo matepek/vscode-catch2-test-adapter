@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.2]
+
+⚠️ Sentry.io integration: From this build errors and exceptions can be reported automatically.
+Please allow it by setting `catch2TestExplorer.logSentry: "enable"`.
+
+### Changed
+
+- `debugConfigTemplate` now filters `launch.json` a bit more precisely
+
 ## [2.7.1] - 2019-08-30
 
 Nothing really changed (just slightly), but documentation was updated.
@@ -73,7 +82,7 @@ Fixed security vulnerability.
 
 ## [2.4.14] - 2019-06-13
 
-## Added
+### Added
 
 - `executables`'s properties can contains variables related to environment variables (ex.: `${os_env:PATH};/mypath`).
 

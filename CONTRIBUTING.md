@@ -5,6 +5,7 @@ Any contribution is welcome.
 - Create a pull request.
 - Report a bug.
 - Tell me about your desired features.
+- [![Buy Me A Coffee](https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png)](https://www.buymeacoffee.com/rtdmjYspB)
 
 ## Install
 

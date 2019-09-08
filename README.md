@@ -6,7 +6,7 @@
 [![GitHub license](https://img.shields.io/github/license/matepek/vscode-catch2-test-adapter.svg)](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/LICENSE)
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/d/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
-[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+[![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 
 This extension allows you to run your [Catch2](https://github.com/catchorg/Catch2)
 and [Google Test](https://github.com/google/googletest) tests using the
@@ -27,11 +27,13 @@ and [Google Test](https://github.com/google/googletest) tests using the
 
 ## Configuration
 
-The extension is pre-configured and should find executables inside the working directory which match the following pattern:
+The extension is pre-configured (`catch2TestExplorer.executables`) and should find executables inside the working directory which match the following pattern:
 
 > `{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*`.
 
-This basically means executables inside the `build` and `out` directories (recursive) which contain the `test` word in their name (including extensions).
+This basically means executables inside the `build` and `out` directories (recursive `/**/`) which contain the `test` word in their name (including extensions).
+
+See vscode's [documentation](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) for syntax.
 
 Not good enough for you?!: Edit your `.vscode/settings.json` [file](https://code.visualstudio.com/docs/getstarted/settings) according to the [examples](#Examples) bellow!
 
@@ -51,6 +53,7 @@ Not good enough for you?!: Edit your `.vscode/settings.json` [file](https://code
 | `workerMaxNumber`                | The variable maximize the number of the parallel test execution. It applies instantly.                                                                                                                                                                                                                                                      |
 | `enableTestListCaching`          | (Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.) (Click [here](http://bit.ly/2HFcAC6), if you think it is a useful feature!)                    |
 | `logpanel`                       | Creates a new output channel and write the log messages there. For debugging. Enabling it could slow down your vscode.                                                                                                                                                                                                                      |
+| `logSentry`                      | Errors/Exceptions will be logged and sent automatically for further analysis.                                                                                                                                                                                                                                                               |
 | `googletest.gmockVerbose`        | Sets [--gmock_verbose=...](https://github.com/google/googletest/blob/master/googlemock/docs/cheat_sheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)                                                                                                                                               |
 | `googletest.treatGmockWarningAs` | Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/cook_book.md#the-nice-the-strict-and-the-naggy-nicestrictnaggy))                                                        |
 
@@ -107,6 +110,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 
 **Note** to `dependsOn`:
 
+- ℹ️Executables found by pattern are automatically watched, don't need to add them to `dependsOn`.
 - If "Enable autorun" is enabled in "**...**" menu (next to the play button), it will trigger the related tests.
 - It accumulates events with the following strategy: waiting for 2 seconds after the last event.
 - Works flawlessly with paths/patterns **inside** of the workspace directory
@@ -158,7 +162,8 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 	"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
 	"cwd": "${absDirpath}",
 	"env": {
-		"ExampleENV1": "You can use variables here too, like ${absPath}"
+		"ExampleENV1": "You can use variables here too, like ${absPath}",
+		"PATH": "${os_env:PATH}:/adding/new/item/to/PATH/env"
 	}
 }
 ```
@@ -171,7 +176,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 	},
 	"singleTest.exe",
 	{
-		"pattern": "dir2/{t,T}est",
+		"pattern": "${os_env:HOME}/dir2/{t,T}est",
 		"cwd": "out/tmp",
 		"env": {}
 	}
@@ -181,17 +186,21 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 ### catch2TestExplorer.debugConfigTemplate
 
 If `catch2TestExplorer.debugConfigTemplate` value is `null` (default),
-it searches for configurations in the workspacefolder's `.vscode/launch.json`.
-It will choose the first one which's `"request"` property is `"launch"` and has `type` property.
+
+> it searches for configurations in the workspacefolder's `.vscode/launch.json`.
+> It will choose the first one which's `"request"` property is `"launch"`
+> and has `type` property with string value starting with `cpp`, `lldb` or `gdb`.
+> (If you don't want this but also don't want to specify you own debugConfigTemplate
+> use `"extensionOnly"` as value.)
 
 In case it hasn't found one it will look after:
 
-1. [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start),
-2. [`webfreak.debug`](https://github.com/WebFreak001/code-debug),
-3. [`ms-vscode.cpptools`](https://github.com/Microsoft/vscode-cpptools)
-
-extensions in order. If it finds one of it, it will use it automatically.
-For further details check [VSCode launch config](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations).
+> 1. [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start),
+> 2. [`webfreak.debug`](https://github.com/WebFreak001/code-debug),
+> 3. [`ms-vscode.cpptools`](https://github.com/Microsoft/vscode-cpptools)
+>
+> extensions in order. If it finds one of it, it will use it automatically.
+> For further details check [VSCode launch config](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations).
 
 **Remark**: This feature to work automatically (value: `null`) has a lot of requirements which are not listed here.
 If it works it is good for you.
@@ -232,6 +241,13 @@ These variables will be substituted when a DebugConfiguration is created.
 Note that `name` and `request` are filled, if they are undefined, so it is not necessary to set them.
 `type` is necessary.
 
+#### About [Sentry.io]() integration
+
+As a developer, you may know how valuable can be if you have some information.
+The feature is disabled by default, the user is promted to enable it.
+It can be enabled globally and disabled for the workspace or the other way around.
+With enabling you support my work. 🙏
+
 ## License
 
 [The Unlicense](https://choosealicense.com/licenses/unlicense/)
@@ -270,4 +286,8 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 - gaze is not good enough: detects change and delete, but not creation
 - `dependsOn` could contain variables
 
-## [Contribution guideline here](CONTRIBUTING.md)
+## Contribution
+
+[The guideline is here.](CONTRIBUTING.md)
+
+[![Buy Me A Coffee](https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png)](https://www.buymeacoffee.com/rtdmjYspB)

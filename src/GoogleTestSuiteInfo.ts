@@ -374,11 +374,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
       });
     })
       .catch((reason: Error) => {
-        this._shared.log.error(reason);
+        this._shared.log.exception(reason);
         return { error: reason };
       })
       .then((result: ProcessResult) => {
-        result.error && this._shared.log.warn(result, runInfo, this, data);
+        result.error && this._shared.log.warn(result.error.toString(), result, runInfo, this, data);
 
         if (data.currentTestCaseNameFull !== undefined) {
           if (data.currentChild !== undefined) {

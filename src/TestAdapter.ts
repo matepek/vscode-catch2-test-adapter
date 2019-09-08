@@ -11,20 +11,22 @@ import {
   RetireEvent,
 } from 'vscode-test-adapter-api';
 import * as api from 'vscode-test-adapter-api';
-import * as util from 'vscode-test-adapter-util';
 import debounce = require('debounce-collect');
+import * as Sentry from '@sentry/node';
 
+import { LogWrapper } from './LogWrapper';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { resolveVariables, generateUniqueId } from './Util';
+import { resolveVariables, generateUniqueId, hashString } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { Catch2Section, Catch2TestInfo } from './Catch2TestInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { performance } from 'perf_hooks';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
-  private readonly _log: util.Log;
+  private readonly _log: LogWrapper;
   private readonly _testsEmitter = new vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>();
   private readonly _testStatesEmitter = new vscode.EventEmitter<
     TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
@@ -51,7 +53,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private _rootSuite: RootTestSuiteInfo;
 
   public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
-    this._log = new util.Log(
+    this._log = new LogWrapper(
       'catch2TestExplorer',
       this.workspaceFolder,
       'Test Explorer: ' + this.workspaceFolder.name,
@@ -70,6 +72,90 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       vscode.version,
       config,
     );
+
+    if (this._getLogSentry(config) === 'question') {
+      const options = [
+        'Sure! I love this extension and happy to help.',
+        'Yes, but exclude the current workspace.',
+        'Over my dead body',
+      ];
+      vscode.window
+        .showInformationMessage(
+          'Hey there! The extension now has [sentry.io](https://sentry.io/welcome) integration to ' +
+            'improve the stability and the development. 🤩 For this, I want to log and send errors ' +
+            'to [sentry.io](https://sentry.io/welcome), but I would NEVER do it without your consent. ' +
+            'Please be understandable and allow it. 🙏' +
+            ' (`catch2TestExplorer.logSentry: "enable"/"disable"`)',
+          ...options,
+        )
+        .then((value: string | undefined) => {
+          this._log.info('Sentry consent: ' + value);
+
+          if (value === options[0]) {
+            config.update('logSentry', 'enable', true);
+          } else if (value === options[1]) {
+            config.update('logSentry', 'enable', true);
+            config.update('logSentry', 'disable_1', false);
+          } else if (value === options[2]) {
+            config.update('logSentry', 'disable_1', true);
+          }
+        });
+    }
+
+    try {
+      const enabled = this._getLogSentry(config) === 'enable' && process.env['C2_SENTRY_DISABLE'] === undefined;
+
+      this._log.info('sentry.io is: ', enabled);
+
+      Sentry.init({
+        dsn: 'https://0cfbeca1e97e4478a5d7e9c77925d92f@sentry.io/1554599',
+        enabled,
+      });
+
+      Sentry.setTags({
+        platform: process.platform,
+        vscodeVersion: vscode.version,
+      });
+
+      try {
+        const opt = Intl.DateTimeFormat().resolvedOptions();
+        Sentry.setTags({ timeZone: opt.timeZone, locale: opt.locale });
+      } catch (e) {
+        this._log.exception(e);
+      }
+
+      try {
+        var pjson = require('../../package.json'); // eslint-disable-line
+        Sentry.setTag('version', pjson.version);
+      } catch (e) {
+        this._log.exception(e);
+      }
+
+      {
+        let userId = config.get<string>('userId');
+        if (!userId) {
+          userId = (process.env['USER'] || process.env['USERNAME'] || 'user') + process.env['USERDOMAIN'];
+          userId += performance.now().toString();
+          userId += process.pid.toString();
+          userId += Date.now().toString();
+
+          userId = hashString(userId);
+
+          config.update('userId', userId, true);
+        }
+
+        this._log.info('userId', userId);
+
+        Sentry.setUser({ id: userId });
+        Sentry.setTag('workspaceFolder', hashString(this.workspaceFolder.uri.fsPath));
+      }
+
+      Sentry.setContext('config', config);
+
+      Sentry.captureMessage('Extension was activated', Sentry.Severity.Log);
+    } catch (e) {
+      this._log.exception(e);
+    }
 
     this._disposables.push(
       vscode.workspace.onDidChangeWorkspaceFolders(() => {
@@ -115,7 +201,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                 });
               },
               (reason: Error) => {
-                this._log.error(reason);
+                this._log.exception(reason);
                 debugger;
                 this._testsEmitter.fire({
                   type: 'finished',
@@ -193,36 +279,38 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(
       vscode.workspace.onDidChangeConfiguration(configChange => {
+        const config = this._getConfiguration();
+
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultRngSeed', this.workspaceFolder.uri)) {
-          this._shared.rngSeed = this._getDefaultRngSeed(this._getConfiguration());
+          this._shared.rngSeed = this._getDefaultRngSeed(config);
           this._retireEmitter.fire({});
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultWatchTimeoutSec', this.workspaceFolder.uri)) {
-          this._shared.execWatchTimeout = this._getDefaultExecWatchTimeout(this._getConfiguration());
+          this._shared.execWatchTimeout = this._getDefaultExecWatchTimeout(config);
         }
         if (
           configChange.affectsConfiguration('catch2TestExplorer.retireDebounceTimeMilisec', this.workspaceFolder.uri)
         ) {
-          this._shared.retireDebounceTime = this._getRetireDebounceTime(this._getConfiguration());
+          this._shared.retireDebounceTime = this._getRetireDebounceTime(config);
         }
         if (
           configChange.affectsConfiguration('catch2TestExplorer.defaultRunningTimeoutSec', this.workspaceFolder.uri)
         ) {
-          this._shared.setExecRunningTimeout(this._getDefaultExecRunningTimeout(this._getConfiguration()));
+          this._shared.setExecRunningTimeout(this._getDefaultExecRunningTimeout(config));
         }
         if (
           configChange.affectsConfiguration('catch2TestExplorer.defaultExecParsingTimeoutSec', this.workspaceFolder.uri)
         ) {
-          this._shared.setExecRunningTimeout(this._getDefaultExecParsingTimeout(this._getConfiguration()));
+          this._shared.setExecRunningTimeout(this._getDefaultExecParsingTimeout(config));
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultNoThrow', this.workspaceFolder.uri)) {
-          this._shared.isNoThrow = this._getDefaultNoThrow(this._getConfiguration());
+          this._shared.isNoThrow = this._getDefaultNoThrow(config);
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.workerMaxNumber', this.workspaceFolder.uri)) {
-          this._shared.taskPool.maxTaskCount = this._getWorkerMaxNumber(this._getConfiguration());
+          this._shared.taskPool.maxTaskCount = this._getWorkerMaxNumber(config);
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.enableTestListCaching', this.workspaceFolder.uri)) {
-          this._shared.enabledTestListCaching = this._getEnableTestListCaching(this._getConfiguration());
+          this._shared.enabledTestListCaching = this._getEnableTestListCaching(config);
         }
         if (
           configChange.affectsConfiguration(
@@ -230,11 +318,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             this.workspaceFolder.uri,
           )
         ) {
-          this._shared.googleTestTreatGMockWarningAs = this._getGoogleTestTreatGMockWarningAs(this._getConfiguration());
+          this._shared.googleTestTreatGMockWarningAs = this._getGoogleTestTreatGMockWarningAs(config);
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.googletest.gmockVerbose', this.workspaceFolder.uri)) {
-          this._shared.googleTestGMockVerbose = this._getGoogleTestGMockVerbose(this._getConfiguration());
+          this._shared.googleTestGMockVerbose = this._getGoogleTestGMockVerbose(config);
         }
+
+        Sentry.setContext('config', config);
       }),
     );
 
@@ -308,7 +398,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           });
         },
         (e: Error) => {
-          this._log.info('load finished with error:', e);
+          this._log.exception(e);
 
           this._testsEmitter.fire({
             type: 'finished',
@@ -332,7 +422,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
 
     return this._mainTaskQueue.then(() => {
-      return this._rootSuite.run(tests).catch((reason: Error) => this._log.error(reason));
+      return this._rootSuite.run(tests).catch((reason: Error) => this._log.exception(reason));
     });
   }
 
@@ -507,8 +597,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       if (wpLaunchConfigs && Array.isArray(wpLaunchConfigs) && wpLaunchConfigs.length > 0) {
         for (let i = 0; i < wpLaunchConfigs.length; ++i) {
-          if (wpLaunchConfigs[i].request == 'launch' && wpLaunchConfigs[i].type) {
-            this._log.info('using debug config from launch.json');
+          if (
+            wpLaunchConfigs[i].request == 'launch' &&
+            typeof wpLaunchConfigs[i].type == 'string' &&
+            (wpLaunchConfigs[i].type.startsWith('cpp') ||
+              wpLaunchConfigs[i].type.startsWith('lldb') ||
+              wpLaunchConfigs[i].type.startsWith('gdb'))
+          ) {
+            this._log.info(
+              "using debug config from launch.json. If it doesn't wokr for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+            );
             // putting as much known properties as much we can and hoping for the best 🤞
             return Object.assign({}, wpLaunchConfigs[i], {
               name: '${label} (${suiteLabel})',
@@ -582,6 +680,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return vscode.workspace.getConfiguration('catch2TestExplorer', this.workspaceFolder.uri);
   }
 
+  private _getLogSentry(config: vscode.WorkspaceConfiguration): 'enable' | 'disable' | 'question' {
+    return config.get<'enable' | 'disable' | 'question'>('logSentry', 'disable');
+  }
+
   private _getDebugBreakOnFailure(config: vscode.WorkspaceConfiguration): boolean {
     return config.get<boolean>('debugBreakOnFailure', true);
   }
@@ -605,26 +707,22 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private _getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
     const res = Math.max(1, config.get<number>('workerMaxNumber', 1));
-    this._log.info('workerMaxNumber:', res);
     if (typeof res != 'number') return 1;
     else return res;
   }
 
   private _getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration): number {
     const res = config.get<number>('defaultWatchTimeoutSec', 10) * 1000;
-    this._log.info('defaultWatchTimeoutSec:', res);
     return res;
   }
 
   private _getRetireDebounceTime(config: vscode.WorkspaceConfiguration): number {
     const res = config.get<number>('retireDebounceTimeMilisec', 1000);
-    this._log.info('retireDebounceTimeMilisec:', res);
     return res;
   }
 
   private _getDefaultExecRunningTimeout(config: vscode.WorkspaceConfiguration): null | number {
     const r = config.get<null | number>('defaultRunningTimeoutSec', null);
-    this._log.info('defaultRunningTimeoutSec:', r);
     return r !== null && r > 0 ? r * 1000 : null;
   }
 
@@ -660,8 +758,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       | string[]
       | { [prop: string]: string }
       | ({ [prop: string]: string } | string)[] = config.get('executables');
-
-    this._log.info('executables:', configExecs);
 
     const createFromObject = (obj: { [prop: string]: string }): TestExecutableInfo => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
