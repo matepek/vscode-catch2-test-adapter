@@ -527,8 +527,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       if (wpLaunchConfigs && Array.isArray(wpLaunchConfigs) && wpLaunchConfigs.length > 0) {
         for (let i = 0; i < wpLaunchConfigs.length; ++i) {
-          if (wpLaunchConfigs[i].request == 'launch' && wpLaunchConfigs[i].type) {
-            this._log.info('using debug config from launch.json');
+          if (
+            wpLaunchConfigs[i].request == 'launch' &&
+            typeof wpLaunchConfigs[i].type == 'string' &&
+            (wpLaunchConfigs[i].type.startsWith('cpp') ||
+              wpLaunchConfigs[i].type.startsWith('lldb') ||
+              wpLaunchConfigs[i].type.startsWith('gdb'))
+          ) {
+            this._log.info(
+              "using debug config from launch.json. If it doesn't wokr for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+            );
             // putting as much known properties as much we can and hoping for the best 🤞
             return Object.assign({}, wpLaunchConfigs[i], {
               name: '${label} (${suiteLabel})',

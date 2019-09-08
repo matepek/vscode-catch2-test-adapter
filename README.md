@@ -110,6 +110,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 
 **Note** to `dependsOn`:
 
+- ℹ️Executables found by pattern are automatically watched, don't need to add them to `dependsOn`.
 - If "Enable autorun" is enabled in "**...**" menu (next to the play button), it will trigger the related tests.
 - It accumulates events with the following strategy: waiting for 2 seconds after the last event.
 - Works flawlessly with paths/patterns **inside** of the workspace directory
@@ -161,7 +162,8 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 	"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
 	"cwd": "${absDirpath}",
 	"env": {
-		"ExampleENV1": "You can use variables here too, like ${absPath}"
+		"ExampleENV1": "You can use variables here too, like ${absPath}",
+		"PATH": "${os_env:PATH}:/adding/new/item/to/PATH/env"
 	}
 }
 ```
@@ -174,7 +176,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 	},
 	"singleTest.exe",
 	{
-		"pattern": "dir2/{t,T}est",
+		"pattern": "${os_env:HOME}/dir2/{t,T}est",
 		"cwd": "out/tmp",
 		"env": {}
 	}
@@ -184,17 +186,21 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 ### catch2TestExplorer.debugConfigTemplate
 
 If `catch2TestExplorer.debugConfigTemplate` value is `null` (default),
-it searches for configurations in the workspacefolder's `.vscode/launch.json`.
-It will choose the first one which's `"request"` property is `"launch"` and has `type` property.
+
+> it searches for configurations in the workspacefolder's `.vscode/launch.json`.
+> It will choose the first one which's `"request"` property is `"launch"`
+> and has `type` property with string value starting with `cpp`, `lldb` or `gdb`.
+> (If you don't want this but also don't want to specify you own debugConfigTemplate
+> use `"extensionOnly"` as value.)
 
 In case it hasn't found one it will look after:
 
-1. [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start),
-2. [`webfreak.debug`](https://github.com/WebFreak001/code-debug),
-3. [`ms-vscode.cpptools`](https://github.com/Microsoft/vscode-cpptools)
-
-extensions in order. If it finds one of it, it will use it automatically.
-For further details check [VSCode launch config](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations).
+> 1. [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start),
+> 2. [`webfreak.debug`](https://github.com/WebFreak001/code-debug),
+> 3. [`ms-vscode.cpptools`](https://github.com/Microsoft/vscode-cpptools)
+>
+> extensions in order. If it finds one of it, it will use it automatically.
+> For further details check [VSCode launch config](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations).
 
 **Remark**: This feature to work automatically (value: `null`) has a lot of requirements which are not listed here.
 If it works it is good for you.
