@@ -41,9 +41,9 @@ export class TestExecutableInfo implements vscode.Disposable {
     this._shared.log.info('pattern', pattern);
 
     if (pattern.isAbsolute && pattern.isPartOfWs)
-      this._shared.log.warn('Absolute path is used for workspace directory. This is unnecessary, but it should work.');
+      this._shared.log.info('Absolute path is used for workspace directory. This is unnecessary, but it should work.');
 
-    if (this._pattern.indexOf('\\') != -1) this._shared.log.warn('Pattern contains backslash character.');
+    if (this._pattern.indexOf('\\') != -1) this._shared.log.info('Pattern contains backslash character.');
 
     let filePaths: string[] = [];
 
@@ -95,7 +95,7 @@ export class TestExecutableInfo implements vscode.Disposable {
                 );
               },
               (reason: Error) => {
-                this._shared.log.warn('Not a test executable:', file, 'reason:', reason);
+                this._shared.log.warn('Not a test executable', file, 'reason', reason);
               },
             );
           },
@@ -214,7 +214,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       else if (!this._description) resolvedName = resolveVariables('${filename}', varToValue);
       resolvedName = resolveOSEnvironmentVariables(resolvedName, false);
 
-      if (resolvedName.match(variableRe)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedName);
+      if (resolvedName.match(variableRe)) this._shared.log.warn('Possibly unresolved variable', resolvedName);
 
       varToValue.push(['${name}', resolvedName]);
     } catch (e) {
@@ -228,7 +228,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         resolvedDescription = resolveOSEnvironmentVariables(resolvedDescription, false);
 
         if (resolvedDescription.match(variableRe))
-          this._shared.log.warn('Possibly unresolved variable: ' + resolvedDescription);
+          this._shared.log.warn('Possibly unresolved variable', resolvedDescription);
 
         varToValue.push(['${description}', resolvedDescription]);
       } else if (!this._name) {
@@ -248,7 +248,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       resolvedCwd = resolveVariables(resolvedCwd, varToValue);
       resolvedCwd = resolveOSEnvironmentVariables(resolvedCwd, false);
 
-      if (resolvedCwd.match(variableRe)) this._shared.log.warn('Possibly unresolved variable: ' + resolvedCwd);
+      if (resolvedCwd.match(variableRe)) this._shared.log.warn('Possibly unresolved variable', resolvedCwd);
 
       resolvedCwd = path.resolve(this._shared.workspaceFolder.uri.fsPath, resolvedCwd);
 
@@ -316,7 +316,7 @@ export class TestExecutableInfo implements vscode.Disposable {
               .then(resolve, reject);
           });
         }).catch((reason: Error) => {
-          this._shared.log.warn('Problem under reloadChildren:', reason, filePath, suite);
+          this._shared.log.info('Problem under reloadChildren:', reason, filePath, suite);
           return x(suite, false, Math.min(delay * 2, 2000));
         });
       } else {

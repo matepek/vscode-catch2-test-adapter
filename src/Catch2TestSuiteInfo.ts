@@ -242,7 +242,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
-              this._shared.log.warn('TestCase not found in children: ' + name);
+              this._shared.log.info('TestCase not found in children', name);
             }
 
             data.buffer = data.buffer.substr(b);
@@ -303,7 +303,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
-            this._shared.log.warn('data.currentChild !== undefined: ', data);
+            this._shared.log.info('data.currentChild !== undefined: ', data);
             let ev: TestEvent;
 
             if (runInfo.timeout !== null) {

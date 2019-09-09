@@ -225,7 +225,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
           if (!this._shared.enabledTestListCaching) {
             fs.unlink(cacheFile, (err: Error | null) => {
-              err && this._shared.log.warn("Couldn't remove: " + cacheFile, err);
+              err && this._shared.log.warn("Couldn't remove: ", cacheFile, err);
             });
           }
 
@@ -312,7 +312,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
-              this._shared.log.warn('TestCase not found in children:', data.currentTestCaseNameFull);
+              this._shared.log.info('TestCase not found in children', data.currentTestCaseNameFull);
             }
 
             data.buffer = data.buffer.substr(m.index!);
@@ -382,7 +382,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
         if (data.currentTestCaseNameFull !== undefined) {
           if (data.currentChild !== undefined) {
-            this._shared.log.warn('data.currentChild !== undefined: ', data);
+            this._shared.log.info('data.currentChild !== undefined: ', data);
 
             let ev: TestEvent;
 
