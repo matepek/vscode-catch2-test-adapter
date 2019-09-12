@@ -114,7 +114,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       });
 
       runInfo.process.once('close', (...args) => {
-        this._shared.log.info('proc close:', this.origLabel, args);
+        this._shared.log.debug('proc close:', this.origLabel, args);
         trigger('closed');
       });
 

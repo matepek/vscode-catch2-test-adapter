@@ -55,12 +55,12 @@
     "xml2js": "^0.4.22"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.1",
+    "@types/chai": "^4.2.2",
     "@types/deep-equal": "^1.0.1",
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.7.4",
+    "@types/node": "^12.7.5",
     "@types/request-promise": "4.1.43",
     "@types/sinon": "^7.0.13",
     "@types/xml2js": "^0.4.5",
@@ -75,7 +75,7 @@
     "prettier": "^1.18.2",
     "request-promise": "4.2.4",
     "sinon": "^7.4.2",
-    "typescript": "^3.6.2",
+    "typescript": "^3.6.3",
     "vsce": "^1.66.0",
     "vscode": "^1.1.36",
     "vscode-test": "^1.2.0"

@@ -28,7 +28,7 @@ export class LogWrapper extends util.Log {
   public warn(m: string, ...msg: any[]): void {
     try {
       Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), data: msg, level: Sentry.Severity.Warning });
-      Sentry.captureMessage(m, Sentry.Severity.Error);
+      Sentry.captureMessage(m, Sentry.Severity.Warning);
     } catch (e) {
       super.error(e);
     }

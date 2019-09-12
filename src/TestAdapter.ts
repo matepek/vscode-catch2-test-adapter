@@ -103,32 +103,39 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
 
     try {
+      const extensionInfo = (() => {
+        try {
+          var pjson = require('../../package.json'); // eslint-disable-line
+          return { version: pjson.version, publisher: pjson.publisher, name: pjson.name };
+        } catch (e) {
+          this._log.exception(e);
+          return { version: '<unknown version>', publisher: '<unknown publisher>', name: '<unknown name>' };
+        }
+      })();
+
       const enabled = this._getLogSentry(config) === 'enable' && process.env['C2_SENTRY_DISABLE'] === undefined;
 
       this._log.info('sentry.io is: ', enabled);
 
+      const release = extensionInfo.publisher + '/' + extensionInfo.name + '@' + extensionInfo.version;
+
       Sentry.init({
         dsn: 'https://0cfbeca1e97e4478a5d7e9c77925d92f@sentry.io/1554599',
         enabled,
-        release: 'vscode-catch2-test-adapter@' + extensionVersion,
+        release,
         defaultIntegrations: false,
       });
 
       Sentry.setTags({
         platform: process.platform,
         vscodeVersion: vscode.version,
+        version: extensionInfo.version,
+        publisher: extensionInfo.publisher,
       });
 
       try {
         const opt = Intl.DateTimeFormat().resolvedOptions();
         Sentry.setTags({ timeZone: opt.timeZone, locale: opt.locale });
-      } catch (e) {
-        this._log.exception(e);
-      }
-
-      try {
-        var pjson = require('../../package.json'); // eslint-disable-line
-        Sentry.setTag('version', pjson.version);
       } catch (e) {
         this._log.exception(e);
       }
@@ -572,7 +579,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         return terminated;
       })
       .catch(err => {
-        this._log.error(err);
+        this._log.exception(err);
         throw err;
       });
   }
