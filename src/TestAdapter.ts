@@ -110,6 +110,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       Sentry.init({
         dsn: 'https://0cfbeca1e97e4478a5d7e9c77925d92f@sentry.io/1554599',
         enabled,
+        release: 'vscode-catch2-test-adapter@' + extensionVersion,
+        defaultIntegrations: false,
       });
 
       Sentry.setTags({

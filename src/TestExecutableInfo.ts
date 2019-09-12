@@ -95,7 +95,7 @@ export class TestExecutableInfo implements vscode.Disposable {
                 );
               },
               (reason: Error) => {
-                this._shared.log.warn('Not a test executable', file, 'reason', reason);
+                this._shared.log.info('Not a test executable:', file, 'reason:', reason);
               },
             );
           },
