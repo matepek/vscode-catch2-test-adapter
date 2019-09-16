@@ -57,7 +57,11 @@ export class TestExecutableInfo implements vscode.Disposable {
 
       filePaths = await execWatcher.watched();
 
-      execWatcher.onError((err: Error) => this._shared.log.error('watcher error:', err));
+      execWatcher.onError((err: Error) => {
+        // eslint-disable-next-line
+        if ((err as any).code == 'ENOENT') this._shared.log.info('watcher error', err);
+        else this._shared.log.error('watcher error', err);
+      });
 
       execWatcher.onAll(fsPath => {
         this._shared.log.info('watcher event:', fsPath);
@@ -69,7 +73,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       execWatcher && execWatcher.dispose();
       filePaths.push(this._pattern);
 
-      this._shared.log.error("Coudn't watch pattern", e);
+      this._shared.log.exception(e, "Coudn't watch pattern");
     }
 
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];
@@ -95,12 +99,12 @@ export class TestExecutableInfo implements vscode.Disposable {
                 );
               },
               (reason: Error) => {
-                this._shared.log.warn('Not a test executable', file, 'reason', reason);
+                this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
               },
             );
           },
           (reason: Error) => {
-            this._shared.log.info('Not an executable:', file, reason);
+            this._shared.log.debug('Not an executable:', file, reason);
           },
         ),
       );
@@ -203,7 +207,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         ['${base3Filename}', base3Filename],
       ];
     } catch (e) {
-      this._shared.log.error(e);
+      this._shared.log.exception(e);
     }
 
     const variableRe = /\$\{[^ ]*\}/;
@@ -316,7 +320,9 @@ export class TestExecutableInfo implements vscode.Disposable {
               .then(resolve, reject);
           });
         }).catch((reason: Error) => {
-          this._shared.log.info('Problem under reloadChildren:', reason, filePath, suite);
+          this._shared.log.debug(reason, filePath, suite);
+          // eslint-disable-next-line
+          if ((reason as any).code === undefined) this._shared.log.exception(Error('problem under reloading'), reason);
           return x(suite, false, Math.min(delay * 2, 2000));
         });
       } else {

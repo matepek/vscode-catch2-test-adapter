@@ -44,7 +44,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format: ' + lines.toString());
 
       if (lines[i].startsWith('    ')) {
-        this._shared.log.warn('Probably too long test name: ' + lines);
+        this._shared.log.warn('Probably too long test name', lines);
         this.children = [];
         const test = this.addChild(
           new Catch2TestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
@@ -139,7 +139,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       )
       .then(catch2TestListOutput => {
         if (catch2TestListOutput.stderr) {
-          this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr: ', catch2TestListOutput);
+          this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
           const test = this.addChild(
             new Catch2TestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
           );
@@ -217,7 +217,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
               m[0] + '</TestCase>',
               (err: Error, result: XmlObject) => {
                 if (err) {
-                  this._shared.log.error(err.toString());
+                  this._shared.log.exception(err);
                   throw err;
                 } else {
                   name = result.TestCase.$.name;
@@ -295,11 +295,13 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       });
     })
       .catch((reason: Error) => {
-        this._shared.log.exception(reason);
+        // eslint-disable-next-line
+        if ((reason as any).code === undefined) this._shared.log.exception(reason);
+
         return { error: reason };
       })
       .then((result: ProcessResult) => {
-        result.error && this._shared.log.warn(result.error.toString(), result, runInfo, this, data);
+        result.error && this._shared.log.info(result.error.toString(), result, runInfo, this, data);
 
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
@@ -357,7 +359,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
                   m[0] + '</TestCase>',
                   (err: Error, result: XmlObject) => {
                     if (err) {
-                      this._shared.log.error(err.toString());
+                      this._shared.log.exception(err);
                     } else {
                       name = result.TestCase.$.name;
                     }

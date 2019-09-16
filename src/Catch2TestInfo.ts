@@ -255,7 +255,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
             hover: message,
           });
         } catch (error) {
-          this._shared.log.error(error);
+          this._shared.log.exception(error);
         }
         this._processXmlTagFatalErrorConditions(expr, title, stack, testEvent);
       }
@@ -298,7 +298,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
           this._processXmlTagSections(section, title, currStack, testEvent, currSection);
         } catch (error) {
-          this._shared.log.error(error);
+          this._shared.log.exception(error);
         }
       }
     }
@@ -325,7 +325,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
           testEvent.message += '⬆️⬆️⬆️\n\n';
         }
       } catch (error) {
-        this._shared.log.error(error);
+        this._shared.log.exception(error);
         testEvent.message += 'Unknown fatal error: ' + inspect(error);
       }
     }
