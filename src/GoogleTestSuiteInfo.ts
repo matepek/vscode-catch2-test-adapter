@@ -215,30 +215,26 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           this._shared.sendTestEventEmitter.fire([
             { type: 'test', test: test, state: 'errored', message: googleTestListOutput.stderr },
           ]);
-          return;
-        }
+        } else {
+          const hasXmlFile = await promisify(fs.exists)(cacheFile);
 
-        try {
-          const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
+          if (hasXmlFile) {
+            const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          this._reloadFromXml(xmlStr, oldChildren);
+            this._reloadFromXml(xmlStr, oldChildren);
 
-          if (!this._shared.enabledTestListCaching) {
-            fs.unlink(cacheFile, (err: Error | null) => {
-              err && this._shared.log.warn("Couldn't remove: ", cacheFile, err);
-            });
+            if (!this._shared.enabledTestListCaching) {
+              fs.unlink(cacheFile, (err: Error | null) => {
+                err && this._shared.log.warn("Couldn't remove: ", cacheFile, err);
+              });
+            }
+          } else {
+            this._shared.log.info(
+              "Couldn't parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output",
+            );
+
+            this._reloadFromStdOut(googleTestListOutput.stdout, oldChildren);
           }
-
-          return;
-        } catch (e) {
-          this._shared.log.warn(
-            "Couldn't parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output:",
-            googleTestListOutput,
-            'Catched:',
-            e,
-          );
-
-          this._reloadFromStdOut(googleTestListOutput.stdout, oldChildren);
         }
       });
   }
