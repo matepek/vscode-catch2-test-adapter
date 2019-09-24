@@ -811,6 +811,8 @@ describe(path.basename(__filename), function() {
     });
 
     it('should run with wrong xml with signal', async function() {
+      this.timeout(5000);
+
       await loadAdapterAndAssert();
       const m = example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');
       assert.notStrictEqual(m, undefined);
@@ -1206,6 +1208,8 @@ describe(path.basename(__filename), function() {
     });
 
     it('reloads because new tests found under run', async function() {
+      this.timeout(5000);
+
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
       assert.equal(testListOutput.length, 10);
@@ -1461,6 +1465,8 @@ describe(path.basename(__filename), function() {
     });
 
     it('reloads because test was renamed', async function() {
+      this.timeout(5000);
+
       await loadAdapterAndAssert();
       assert.ok(example1.suite1.outputs[1][1].indexOf('s1t1') != -1);
       const testListOutput = example1.suite1.outputs[1][1].replace('s1t1', 's1-t1');
