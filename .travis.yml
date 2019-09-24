@@ -9,12 +9,9 @@ env:
     # APPVEYOR_TOKEN
     - secure: "WG8FVhmErK4sbqYMQLMoKvI4Q+/Huq2TA96YjQOjmSoqZ6JbmVAGcQZKoHYgDpuquFPETzwZdTy1ffRUrfDflQ+u8HaFuJh78a9lJVh5jW8cQx/n6m+UpY6SW+EN3Z/8TtT5dYY14g/R1AntAGjhM6E6mtABVDS0wwuW0JahIGCB4QK7YgtGg8ulWZlgXCo5MF4WXQWalVMMnEYbAuGLleXjjRxnXP4I70Sg1oFOH4zDtUpBuS5ihdpuWed8BrQtlP7fz1DSo71BEfbxUN1wlKvm2sMEa/FRjGbeAiWs6WqmZdrXGFpJPL10Ss6BtDKxTcbOfn27IynkI/Dyw6v5Q8HIzLcWnIysJrsCHlMqoSI4X6Ooj+l0FWeCndZX5uq2iQS7v4n+cbn94fTgD69bsKLHWORnrmuK2CDpCGtdnFqAe2KX7EaUyJCq0l7SPZA698Xf0JiG+vdXCoVL4/wWPlv1/pE1HXb9HB3JpjpLshg1ENVWq/ksZ6Hi3rFLNlvXkxy/36cGjlDBx7CIlpCeVjhqi4+G3JgJvhQ/kaimglMkA33Yo8bxQoVo8nQKEJ79KPKLvATVHkmVRXBAvIFQ6AqLhYHFlTZF1/XQ7SblE0PCyLNs6s8yq25lOns6EfEhGl6wLyNBLXT33CAY/6eJRlsuHVfKT0yBAYhhQ0dltMM="
   matrix:
-    include:
-      - VSCODE_VERSION: "latest"
-      - VSCODE_VERSION: "1.31.0"
-      - VSCODE_VERSION: "insiders"
-    allow_failures:
-      - env: VSCODE_VERSION="insiders"
+    - VSCODE_VERSION: "latest"
+    - VSCODE_VERSION: "1.31.0"
+    - VSCODE_VERSION: "insiders"
 
 language: node_js
 
