@@ -24,7 +24,7 @@ Content of **.git/hooks/pre-push** file:
 #!/bin/sh
 echo "pre-push hook:"
 set -e -x
-npm audit
+npm audit --production
 npm rum compile
 npx mocha ./out/test/TestDocumentation.test.js ./out/test/TestESLint.test.js
 ```
