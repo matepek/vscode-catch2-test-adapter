@@ -56,7 +56,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
             state: 'errored',
             message: [
               '⚠️ Probably too long test name or the test name starts with space characters!',
-              '🛠 - Try to define: #define CATCH_CONFIG_CONSOLE_WIDTH 300)',
+              '🛠 - Try to define `CATCH_CONFIG_CONSOLE_WIDTH 300` before `catch2.hpp` is included.',
               '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
             ].join('\n'),
           },
