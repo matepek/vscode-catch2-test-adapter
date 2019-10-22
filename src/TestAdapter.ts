@@ -450,13 +450,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const route = this._rootSuite.findRouteToTestById(tests[0]);
     if (route === undefined) {
-      this._log.warn('route === undefined');
+      this._log.warn('route === undefined', tests);
       throw Error('Not existing test id.');
     } else if (route.length == 0) {
-      this._log.error('route.length == 0');
+      this._log.error('route.length == 0', tests);
       throw Error('Unexpected error.');
     } else if (route[route.length - 1].type !== 'test') {
-      this._log.error("route[route.length-1].type !== 'test'");
+      this._log.error("route[route.length-1].type !== 'test'", tests);
       throw Error('Unexpected error.');
     }
 

@@ -137,21 +137,21 @@ export class Catch2TestInfo extends AbstractTestInfo {
     this._processXmlTagFatalErrorConditions(testCase, title, [], testEvent);
 
     if (testCase.OverallResult[0].hasOwnProperty('StdOut')) {
-      testEvent.message += '⬇️⬇️⬇️ std::cout:';
+      testEvent.message += '⬇ std::cout:';
       for (let i = 0; i < testCase.OverallResult[0].StdOut.length; i++) {
         const element = testCase.OverallResult[0].StdOut[i];
         testEvent.message += element.trimRight();
       }
-      testEvent.message += '\n⬆️⬆️⬆️ std::cout\n';
+      testEvent.message += '\n⬆ std::cout\n';
     }
 
     if (testCase.OverallResult[0].hasOwnProperty('StdErr')) {
-      testEvent.message += '⬇️⬇️⬇️ std::err:';
+      testEvent.message += '⬇ std::err:';
       for (let i = 0; i < testCase.OverallResult[0].StdErr.length; i++) {
         const element = testCase.OverallResult[0].StdErr[i];
         testEvent.message += element.trimRight();
       }
-      testEvent.message += '\n⬆️⬆️⬆️ std::err\n';
+      testEvent.message += '\n⬆ std::err\n';
     }
 
     if (testCase.OverallResult[0].$.success === 'true') {
@@ -189,17 +189,17 @@ export class Catch2TestInfo extends AbstractTestInfo {
     if (xml.hasOwnProperty('Info')) {
       for (let j = 0; j < xml.Info.length; ++j) {
         const info = xml.Info[j];
-        testEvent.message += '⬇️⬇️⬇️ Info: ' + info.trim() + ' ⬆️⬆️⬆️\n';
+        testEvent.message += '⬇ Info: ' + info.trim() + ' ⬆\n';
       }
     }
     if (xml.hasOwnProperty('Warning')) {
       for (let j = 0; j < xml.Warning.length; ++j) {
         const warning = xml.Warning[j];
-        testEvent.message += '⬇️⬇️⬇️ Warning: ' + warning.trim() + ' ⬆️⬆️⬆️\n';
+        testEvent.message += '⬇ Warning: ' + warning.trim() + ' ⬆\n';
         testEvent.decorations!.push({
           line: Number(warning.$.line) - 1 /*It looks vscode works like this.*/,
           message:
-            '⬅️ ' +
+            '⬅ ' +
             warning._.split(EOL)
               .map((l: string) => l.trim())
               .filter((l: string) => l.length > 0)
@@ -212,11 +212,11 @@ export class Catch2TestInfo extends AbstractTestInfo {
     if (xml.hasOwnProperty('Failure')) {
       for (let j = 0; j < xml.Failure.length; ++j) {
         const failure = xml.Failure[j];
-        testEvent.message += '⬇️⬇️⬇️ Failure: ' + failure._.trim() + ' ⬆️⬆️⬆️\n';
+        testEvent.message += '⬇ Failure: ' + failure._.trim() + ' ⬆\n';
         testEvent.decorations!.push({
           line: Number(failure.$.line) - 1 /*It looks vscode works like this.*/,
           message:
-            '⬅️ ' +
+            '⬅ ' +
             failure._.split(EOL)
               .map((l: string) => l.trim())
               .filter((l: string) => l.length > 0)
@@ -248,10 +248,10 @@ export class Catch2TestInfo extends AbstractTestInfo {
             ':\n' +
             message +
             '\n' +
-            '⬆️⬆️⬆️\n\n';
+            '⬆\n\n';
           testEvent.decorations!.push({
             line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
-            message: '⬅️ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
+            message: '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
             hover: message,
           });
         } catch (error) {
@@ -322,7 +322,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
           } else {
             testEvent.message += '  Error: unknown: ' + inspect(fatal) + '\n';
           }
-          testEvent.message += '⬆️⬆️⬆️\n\n';
+          testEvent.message += '⬆\n\n';
         }
       } catch (error) {
         this._shared.log.exception(error);
@@ -332,6 +332,25 @@ export class Catch2TestInfo extends AbstractTestInfo {
   }
 
   private _getTitle(title: Frame, stack: Frame[], suffix: Frame): string {
-    return '⬇️⬇️⬇️ ' + [title, ...stack, suffix].map((f: Frame) => '"' + f.name + '" at line ' + f.line).join(' ➡️ ');
+    const format = (f: Frame) => f.name + ' (at ' + f.line + ')';
+
+    let s = '⬇ ' + format(title);
+
+    if (title.name.startsWith('Scenario:')) {
+      const semicolonPos = s.indexOf(':') - 1;
+
+      stack.forEach(f => {
+        s += '\n⬇';
+        let sc = f.name.indexOf(':');
+        if (sc == -1) {
+          sc = 0;
+        }
+        s += ' '.repeat(semicolonPos - sc) + format(f);
+      });
+    } else {
+      s += [...stack].map(format).map(x => '\n⬇   ' + x);
+    }
+
+    return s + '\n' + format(suffix);
   }
 }

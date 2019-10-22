@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.6]
+
+### Changed
+
+- Catch2 output information format has been changed. (Hopefully a bit more readable.)
+
 ## [2.7.5] - 2019-09-17
 
 Logging improvements.

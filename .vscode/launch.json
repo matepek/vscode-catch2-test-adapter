@@ -28,6 +28,7 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "${workspaceFolder}/../catch2test",
+        "${workspaceFolder}/out/tmp",
         "--extensionDevelopmentPath=${workspaceFolder}"
       ],
       "env": {

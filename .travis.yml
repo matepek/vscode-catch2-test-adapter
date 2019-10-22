@@ -32,7 +32,7 @@ before_install:
 
 install:
   - npm install
-  - npm audit || npm audit
+  - npm audit --production
   - npm run compile
 
 script: 
