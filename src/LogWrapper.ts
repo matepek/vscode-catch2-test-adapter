@@ -1,5 +1,6 @@
 import * as util from 'vscode-test-adapter-util';
 import * as Sentry from '@sentry/node';
+import { inspect } from 'util';
 
 ///
 
@@ -17,7 +18,7 @@ export class LogWrapper extends util.Log {
   //eslint-disable-next-line
   public info(...msg: any[]): void {
     try {
-      Sentry.addBreadcrumb({ message: JSON.stringify(msg), data: msg, level: Sentry.Severity.Info });
+      Sentry.addBreadcrumb({ message: inspect(msg), data: msg, level: Sentry.Severity.Info });
     } catch (e) {
       super.error(e);
     }
