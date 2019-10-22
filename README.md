@@ -18,9 +18,12 @@ and [Google Test](https://github.com/google/googletest) tests using the
 - Finds and recognises the executables by a given glob-pattern (`catch2TestExplorer.executables`).
 - Automatically runs executables if it is modified ("_..._" -> "_Enable autorun_") or if a dependency is modified (`dependsOn`)
 - Reloads test list of an executable if it is recompiled.
-- Supports popular debuggers such as `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools`.
+- Supports popular **debuggers** such as `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools` out of the box.
 - Runs executables parallel (`catch2TestExplorer.workerMaxNumber`).
 - Sorts tests and suites (`testExplorer.sort`).
+- Cooperates with other extensions like:
+  - [Test Explorer Status Bar](https://marketplace.visualstudio.com/items?itemName=connorshea.vscode-test-explorer-status-bar)
+  - [Test Explorer Live Share](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer-liveshare)
 
 ![Screenshot1](resources/Screenshot_2019-05-28.png)
 ![Screenshot2](resources/Screenshot_2019-05-29.png)
@@ -111,7 +114,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 **Note** to `dependsOn`:
 
 - ℹ️Executables found by pattern are automatically watched, don't need to add them to `dependsOn`.
-- If "Enable autorun" is enabled in "**...**" menu (next to the play button), it will trigger the related tests.
+- If "Enable autorun" is enabled in "**...**" menu (next to the play button), it will trigger the related test suites by detecting the recompilation of the executable.
 - It accumulates events with the following strategy: waiting for 2 seconds after the last event.
 - Works flawlessly with paths/patterns **inside** of the workspace directory
   (Usually there is no reason to keep your executables outside of the workspace. [See](https://github.com/matepek/vscode-catch2-test-adapter/issues/48).),
@@ -119,7 +122,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
   - Theoretically is should support [glob patterns](https://github.com/matepek/vscode-catch2-test-adapter/issues/48),
     but it seem there is an issue with _double star_ (`**`).
   - Paths on different drive in the same `dependsOn` array maybe won't work.
-    (If you find another corner case, feel free to open an issue. It could be handy once in the future.)
+  - (If you find another corner case, feel free to open an issue. It could be handy once in the future.)
 
 #### Variables which can be used in `name`, `description`, `cwd` and `env` of `executables`:
 
@@ -256,7 +259,7 @@ With enabling you support my work. 🙏
 
 - (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
 - (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures.
-  Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300`
+  Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300` and it has to be defined before every `#include "catch.hpp"` lines.
 
 For solving issues use: `catch2TestExplorer.logpanel: true` and check the output window.
 
@@ -274,11 +277,11 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 >
 > > Sure! For example in case of CMake: [check this](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/examples/test_wrapper/cmake_test_wrapper_example/CMakeLists.txt).
 > > Note: However this is the easiest, not the best solution.
-> > There is a drawback: Debugging button won't work, since the debuger will attach to the script not to the exec the script calls.
+> > There is a drawback: Debugging button won't work, since the debuger will attach to the script not to the executable started by the script.
 >
 > Is there a solution for that?
 >
-> > Yes. One can enhance their test executable from c++. The example is [here](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/examples/test_wrapper/cppmain_test_wrapper_example/env_setter.hpp)
+> > Yes. One can enhance their test executable from c++. The example is [here](https://github.com/matepek/vscode-catch2-test-adapter/tree/master/documents/examples/test_wrapper/cppmain_test_wrapper_example)
 
 ## TODOs
 
