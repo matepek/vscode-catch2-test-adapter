@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as cp from 'child_process';
 import * as fse from 'fs-extra';
 import * as path from 'path';
-import { inspect, promisify } from 'util';
+import { inspect } from 'util';
 import * as vscode from 'vscode';
 
 import { TestAdapter, settings, isWin, waitFor } from './Common';
@@ -10,79 +10,87 @@ import * as c2fs from '../src/FSWrapper';
 
 ///
 
-const cppUri = vscode.Uri.file(path.join(settings.workspaceFolderUri.fsPath, 'cpp'));
+const outPath = path.dirname(path.dirname(__filename));
+
+assert(outPath.endsWith('out'));
+
+const cppUri = vscode.Uri.file(path.join(outPath, 'cpp'));
 
 function inCpp(relPath: string): string {
   return vscode.Uri.file(path.join(cppUri.fsPath, relPath)).fsPath;
 }
 
+function inWS(relPath: string): string {
+  return vscode.Uri.file(path.join(settings.workspaceFolderUri.fsPath, relPath)).fsPath;
+}
+
+function inWSTmp(relPath: string): string {
+  return inWS(path.join('tmp', relPath));
+}
+
+async function spawn(command: string, cwd: string, ...args: string[]): Promise<void> {
+  console.log('$ ' + [command, ...args.map(x => '"' + x + '"')].join(' '));
+  return new Promise((resolve, reject) => {
+    const c = cp.spawn(command, args, { cwd, stdio: 'pipe' });
+    c.on('exit', (code: number) => {
+      code == 0 ? resolve() : reject(new Error('Process exited with: ' + code));
+    });
+  });
+}
+
 ///
 
 describe(path.basename(__filename), function() {
-  async function compile(source: string, output: string): Promise<void> {
-    if (isWin) {
-      let vcvarsall: vscode.Uri | undefined;
-      if (process.env['C2AVCVA']) {
-        // local testing
-        vcvarsall = vscode.Uri.file(process.env['C2AVCVA']!);
-      } else if (process.env['APPVEYOR_BUILD_WORKER_IMAGE'] == 'Visual Studio 2017')
-        vcvarsall = vscode.Uri.file(
-          'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat',
-        );
+  async function compile(): Promise<void> {
+    await fse.mkdirp(cppUri.fsPath);
 
-      assert.notStrictEqual(vcvarsall, undefined, inspect(process.env));
-      const command =
-        '"' +
-        vcvarsall!.fsPath +
-        '" x86 && ' +
-        ['cl.exe', '/EHsc', '/I"' + path.dirname(source) + '"', '/Fe"' + output + '"', '"' + source + '"'].join(' ');
-      await promisify(cp.exec)(command);
+    await spawn('cmake', cppUri.fsPath, '../../test/cpp');
+
+    if (isWin) {
+      await spawn('msbuild.exe', cppUri.fsPath, 'ALL_BUILD.vcxproj');
     } else {
-      await promisify(cp.exec)('"' + ['c++', '-x', 'c++', '-std=c++11', '-o', output, source].join('" "') + '"');
-      await promisify(cp.exec)('"' + ['chmod', '+x', output].join('" "') + '"');
+      await spawn('make', cppUri.fsPath);
     }
-    await promisify(setTimeout)(500);
-    await c2fs.isNativeExecutableAsync(output).catch(() => {
-      assert.fail();
-    });
   }
 
   before(async function() {
-    this.timeout(82000);
+    this.timeout(152000);
 
-    await c2fs
-      .isNativeExecutableAsync(inCpp('../suite1.exe'))
-      .catch(() => compile(path.join(__dirname, '../../test/cpp/suite1.cpp'), inCpp('../suite1.exe')));
+    const exec = ['suite1.exe', 'suite2.exe', 'suite3.exe', 'gtest1.exe'];
 
-    await c2fs
-      .isNativeExecutableAsync(inCpp('../suite2.exe'))
-      .catch(() => compile(path.join(__dirname, '../../test/cpp/suite2.cpp'), inCpp('../suite2.exe')));
+    for (const e of exec) {
+      if (!c2fs.existsSync(inCpp(e))) {
+        await compile();
+        break;
+      }
+    }
 
-    await c2fs
-      .isNativeExecutableAsync(inCpp('../suite3.exe'))
-      .catch(() => compile(path.join(__dirname, '../../test/cpp/suite3.cpp'), inCpp('../suite3.exe')));
+    for (const e of exec) {
+      await c2fs.isNativeExecutableAsync(inCpp(e));
+    }
   });
 
   beforeEach(async function() {
-    await fse.remove(cppUri.fsPath);
-    await fse.mkdirp(cppUri.fsPath);
     await settings.resetConfig();
+    await fse.remove(inWSTmp('.'));
+    await fse.mkdirp(inWSTmp('.'));
   });
 
   let adapter: TestAdapter;
 
   afterEach(async function() {
     this.timeout(8000);
-    await adapter.waitAndDispose(this);
+
+    if (adapter !== undefined) await adapter.waitAndDispose(this);
   });
 
   after(async function() {
-    await fse.remove(cppUri.fsPath);
+    await fse.remove(inWSTmp('.'));
     await settings.resetConfig();
   });
 
   function copy(from: string, to: string): Promise<void> {
-    return fse.copy(inCpp(from), inCpp(to));
+    return fse.copy(from, to);
   }
 
   context('example1', function() {
@@ -94,23 +102,23 @@ describe(path.basename(__filename), function() {
       await settings.updateConfig('executables', [
         {
           name: '${baseFilename}',
-          pattern: 'cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*',
-          cwd: '${workspaceFolder}/cpp',
+          pattern: 'tmp/*suite[0-9].exe',
+          cwd: '${workspaceFolder}',
         },
       ]);
 
-      await copy('../suite1.exe', 'out/suite1.exe');
-      await copy('../suite2.exe', 'out/suite2.exe');
-      await copy('../suite3.exe', 'out/suite3.exe');
+      await copy(inCpp('suite1.exe'), inWSTmp('suite1.exe'));
+      await copy(inCpp('suite2.exe'), inWSTmp('suite2.exe'));
+      await copy(inCpp('suite3.exe'), inWSTmp('suite3.exe'));
 
       await waitFor(this, () => {
-        return fse.existsSync(inCpp('out/suite1.exe'));
+        return fse.existsSync(inWSTmp('suite1.exe'));
       });
       await waitFor(this, () => {
-        return fse.existsSync(inCpp('out/suite2.exe'));
+        return fse.existsSync(inWSTmp('suite2.exe'));
       });
       await waitFor(this, () => {
-        return fse.existsSync(inCpp('out/suite3.exe'));
+        return fse.existsSync(inWSTmp('suite3.exe'));
       });
 
       adapter = new TestAdapter();
@@ -127,11 +135,12 @@ describe(path.basename(__filename), function() {
 
       this.timeout(8000);
       this.slow(4000);
+
       await settings.updateConfig('executables', [
         {
           name: '${baseFilename}',
-          pattern: 'cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*',
-          cwd: '${workspaceFolder}/cpp',
+          pattern: 'tmp/**/suite[0-9].exe',
+          cwd: '${workspaceFolder}',
         },
       ]);
 
@@ -147,21 +156,23 @@ describe(path.basename(__filename), function() {
       assert.strictEqual(retireCounter, 0);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
-        return copy('../suite1.exe', 'out/suite1.exe');
+        return copy(inCpp('suite1.exe'), inWSTmp('suite1.exe'));
       });
 
       assert.strictEqual(adapter.root.children.length, 1);
       assert.strictEqual(retireCounter, 0);
 
+      await fse.mkdirp(inWSTmp('sub'));
+
       await adapter.doAndWaitForReloadEvent(this, () => {
-        return copy('../suite2.exe', 'out/sub/suite2X.exe');
+        return copy(inCpp('suite2.exe'), inWSTmp('sub/suite2X.exe'));
       });
 
       assert.strictEqual(adapter.root.children.length, 2);
       assert.strictEqual(retireCounter, 0);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
-        return copy('../suite2.exe', 'out/sub/suite2.exe');
+        return copy(inCpp('suite2.exe'), inWSTmp('sub/suite2.exe'));
       });
 
       assert.strictEqual(adapter.root.children.length, 3);
@@ -170,7 +181,7 @@ describe(path.basename(__filename), function() {
       await settings.updateConfig('defaultWatchTimeoutSec', 1);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
-        return fse.unlink(inCpp('out/sub/suite2X.exe'));
+        return fse.unlink(inWSTmp('sub/suite2X.exe'));
       });
 
       assert.strictEqual(adapter.root.children.length, 2);
