@@ -44,6 +44,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
   public getDebugParams(breakOnFailure: boolean): string[] {
     const debugParams: string[] = ['--gtest_color=no', '--gtest_filter=' + this.testNameAsId];
     if (breakOnFailure) debugParams.push('--gtest_break_on_failure');
+    debugParams.push('--gtest_also_run_disabled_tests');
     return debugParams;
   }
 
