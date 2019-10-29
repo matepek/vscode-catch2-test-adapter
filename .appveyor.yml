@@ -25,5 +25,5 @@ build: off
 test_script:
   - npm test
 
-on_failure:
-  - type .\out\tmp\workspaceFolder\FailedTestLogs\log_*.txt
+#on_failure:
+#  - type .\out\tmp\workspaceFolder\FailedTestLogs\log_*.txt

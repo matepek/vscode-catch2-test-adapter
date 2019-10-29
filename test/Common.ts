@@ -69,12 +69,12 @@ export const settings = new (class {
 })();
 
 export async function waitFor(context: Mocha.Context, condition: Function, timeout?: number): Promise<void> {
-  if (timeout === undefined) timeout = context.timeout();
+  if (timeout === undefined) timeout = context.timeout() - 1000 /*need some time for error handling*/;
   const start = Date.now();
   let c = await condition();
   while (!(c = await condition()) && (Date.now() - start < timeout || !context.enableTimeouts()))
     await promisify(setTimeout)(32);
-  assert.ok(c, 'title: ' + (context.test ? context.test.title : '?') + '\ncondition: ' + condition.toString());
+  if (!c) throw Error('in test: ' + (context.test ? context.test.title : '?') + '. Condition: ' + condition.toString());
 }
 
 ///
@@ -313,10 +313,18 @@ export class TestAdapter extends my.TestAdapter {
 
   public async doAndWaitForReloadEvent(context: Mocha.Context, action: Function): Promise<TestSuiteInfo | undefined> {
     const origCount = this.testLoadsEvents.length;
-    await action();
-    await waitFor(context, () => {
-      return this.testLoadsEvents.length >= origCount + 2;
-    });
+    try {
+      await action();
+    } catch (e) {
+      throw Error('action: "' + action.toString() + '" errored: ' + e.toString());
+    }
+    try {
+      await waitFor(context, () => {
+        return this.testLoadsEvents.length >= origCount + 2;
+      });
+    } catch (e) {
+      throw Error('waiting after action: "' + action.toString() + '" errored: ' + e.toString());
+    }
     assert.equal(this.testLoadsEvents.length, origCount + 2, action.toString());
     assert.equal(this.testLoadsEvents[this.testLoadsEvents.length - 1].type, 'finished');
     const e = this.testLoadsEvents[this.testLoadsEvents.length - 1] as TestLoadFinishedEvent;

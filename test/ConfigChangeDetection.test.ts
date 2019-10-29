@@ -26,7 +26,7 @@ describe(path.basename(__filename), function() {
   });
 
   it('defaultEnv', function() {
-    this.slow(1000);
+    this.slow(1500);
     return adapter.doAndWaitForReloadEvent(this, () => {
       return settings.updateConfig('defaultEnv', { APPLE: 'apple' });
     });

@@ -6,6 +6,15 @@ project(Tests)
 
 #
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w")
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")  
+  set(CMAKE_EXECUTABLE_SUFFIX ".exe")
+endif()
+
+#
+
 include("GoogleTest.cmake")
 add_gtest_with_main(gtest1 "gtest1.cpp")
 

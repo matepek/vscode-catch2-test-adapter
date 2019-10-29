@@ -183,12 +183,12 @@ describe(path.basename(__filename), function() {
         state: 'failed',
         test: s1t2,
         decorations: [
-          { line: 14, message: '⬅️ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
+          { line: 14, message: '⬅ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
         ],
         description: '(0ms)',
         tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
         message:
-          '⏱ Duration: 0.000204 second(s).\n⬇️⬇️⬇️ "s1t2" at line 13 ➡️ "REQUIRE" at line 15:\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆️⬆️⬆️\n\n',
+          '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
       },
       {
         type: 'suite',
