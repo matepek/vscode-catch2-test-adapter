@@ -95,7 +95,7 @@ describe(path.basename(__filename), function() {
 
   context('example1', function() {
     it('should be found and run withouth error', async function() {
-      if (!isWin) this.skip();
+      if (process.env['TRAVIS'] == 'true') this.skip();
 
       this.timeout(8000);
       this.slow(2000);
@@ -131,7 +131,7 @@ describe(path.basename(__filename), function() {
     });
 
     it('should be notified by watcher', async function() {
-      if (!isWin) this.skip();
+      if (!isWin) this.skip(); // ?
 
       this.timeout(8000);
       this.slow(4000);
