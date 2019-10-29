@@ -13,10 +13,6 @@ compiler: clang
 
 node_js: '10'
 
-os:
-  - linux
-  - osx
-
 before_install:
   - |
     if [ $TRAVIS_OS_NAME == "linux" ]; then
@@ -39,12 +35,25 @@ after_failure:
 
 jobs:
   include:
-    - env: VSCODE_VERSION=latest
-    - env: VSCODE_VERSION=1.31.0
-    - env: VSCODE_VERSION=insiders
-    - stage: deploy
+    - os: linux
+      env: VSCODE_VERSION=latest
+    - os: linux
+      env: VSCODE_VERSION=1.31.0
+    - os: linux
+      env: VSCODE_VERSION=insiders
+    - os: osx
+      env: VSCODE_VERSION=latest
+    - os: osx
+      env: VSCODE_VERSION=1.31.0
+    - os: osx
+      env: VSCODE_VERSION=insiders
+    - os: linux
+      stage: deploy
       script: npm run deploy
       # https://docs.travis-ci.com/user/conditions-v1
       if: branch = master && type = push && tag IS blank && repo = matepek/vscode-catch2-test-adapter
   allow_failures:
-    - env: VSCODE_VERSION=insiders
+    - os: linux
+      env: VSCODE_VERSION=insiders
+    - os: osx
+      env: VSCODE_VERSION=insiders
