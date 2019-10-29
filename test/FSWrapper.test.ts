@@ -190,8 +190,8 @@ describe('ChildProcessFake', function() {
   });
 
   it('should works2', async function() {
-    this.timeout(800);
-    this.slow(600);
+    this.timeout(2000);
+    this.slow(1500);
     const cp = new ChildProcessStub();
     let output = '';
     cp.stdout.on('data', (d: string) => {

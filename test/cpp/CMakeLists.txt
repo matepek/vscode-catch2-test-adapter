@@ -8,7 +8,7 @@ project(Tests)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w")
-elseif (CMAKE_CXX_COMPILER_ID IN_LIST "AppleClang;GNU")
+else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")  
   set(CMAKE_EXECUTABLE_SUFFIX ".exe")
 endif()

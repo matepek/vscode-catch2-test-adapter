@@ -25,12 +25,12 @@
       "autoFix": true
     }
   ],
-  "editor.formatOnSave": true,
   "[javascript]": {
     "editor.formatOnSave": false
   },
   "[typescript]": {
     "editor.formatOnSave": true
   },
-  "prettier.eslintIntegration": true
+  "prettier.eslintIntegration": true,
+  "editor.formatOnSave": true
 }
