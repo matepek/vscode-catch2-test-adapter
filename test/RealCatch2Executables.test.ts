@@ -40,7 +40,7 @@ async function spawn(command: string, cwd: string, ...args: string[]): Promise<v
 
 ///
 
-describe(path.basename(__filename), function() {
+describe.only(path.basename(__filename), function() {
   async function compile(): Promise<void> {
     await fse.mkdirp(cppUri.fsPath);
 

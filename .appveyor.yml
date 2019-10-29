@@ -23,7 +23,12 @@ install:
 build: off
 
 test_script:
-  - npm test
+  - npm test || cd .
+  - dir out
+  - dir out\\cpp
+  - dir out\\cpp\\Debug
+  - dir out\\cpp\\Debug\x64
+
 
 #on_failure:
 #  - type .\out\tmp\workspaceFolder\FailedTestLogs\log_*.txt
