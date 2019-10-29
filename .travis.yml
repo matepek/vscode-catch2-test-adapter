@@ -1,5 +1,3 @@
-sudo: false
-
 env:
   global:
     - C2_SENTRY_DISABLE=true
@@ -8,10 +6,6 @@ env:
     - secure: 'euDckCIzfWbvdH8YoSm9OMOt7bnEmeWqV9YApz/quRpqe+6RIvKYnFqhC0IpzJaS734sDroJA/ouDITExY8+uEDMg4mnHGHVVfYZSgVjo6tOcVHfWtE2OBLIJ//8DMs1092Q4HAKsKb0iJYDS3Wvk3noaaPHG/sM+Cdo4dsc1ITLcwsLdayrzoO0Mh0AVd1OcVWI8pigm8+io5nPuczje9YrsHVCwYx78jomdWQ8YjMYD+dPsv1qWz3hEpcqXkw3f++nPsNmO6N3dCsaL3zacAFv8BlXVJ/uDmDINlTghJpU4LVt8p21oSi6L9Hcg2SP8SJWuQYy/yiQy6or8dW6I7+B48S0ZxP0CkZ+oFJpkKKKYRixJNFVW4yonK8WW5MNC5hDZx6mCHdWMchYVOcqwk1Q2ga7S8eSdsuAsT2m0VmBSoNpNICcFPmt4dII3ykYTaVR9HWCkcLyTuMnRH8v5IfTRQIxoKS+WuaezmJHkwOj9KIy/uG0ED21nzQ4NL0rx/1VpJPOmRFmcCJPvb1PdS+z2VPWiaSAqFLPzRshOzFSV9OfqyXxT0fowcDxqu5iR9cfXvujMWnmvUjA/7Cil9k157/fwiE2kUXDSXarzFU2jNG0IeHpEd3GpcII3mD3i5BVKAD7qUoxFaIzq+S4R4JEZMUFpsDv65O+BO9drlI='
     # APPVEYOR_TOKEN
     - secure: 'WG8FVhmErK4sbqYMQLMoKvI4Q+/Huq2TA96YjQOjmSoqZ6JbmVAGcQZKoHYgDpuquFPETzwZdTy1ffRUrfDflQ+u8HaFuJh78a9lJVh5jW8cQx/n6m+UpY6SW+EN3Z/8TtT5dYY14g/R1AntAGjhM6E6mtABVDS0wwuW0JahIGCB4QK7YgtGg8ulWZlgXCo5MF4WXQWalVMMnEYbAuGLleXjjRxnXP4I70Sg1oFOH4zDtUpBuS5ihdpuWed8BrQtlP7fz1DSo71BEfbxUN1wlKvm2sMEa/FRjGbeAiWs6WqmZdrXGFpJPL10Ss6BtDKxTcbOfn27IynkI/Dyw6v5Q8HIzLcWnIysJrsCHlMqoSI4X6Ooj+l0FWeCndZX5uq2iQS7v4n+cbn94fTgD69bsKLHWORnrmuK2CDpCGtdnFqAe2KX7EaUyJCq0l7SPZA698Xf0JiG+vdXCoVL4/wWPlv1/pE1HXb9HB3JpjpLshg1ENVWq/ksZ6Hi3rFLNlvXkxy/36cGjlDBx7CIlpCeVjhqi4+G3JgJvhQ/kaimglMkA33Yo8bxQoVo8nQKEJ79KPKLvATVHkmVRXBAvIFQ6AqLhYHFlTZF1/XQ7SblE0PCyLNs6s8yq25lOns6EfEhGl6wLyNBLXT33CAY/6eJRlsuHVfKT0yBAYhhQ0dltMM='
-  matrix:
-    - VSCODE_VERSION: 'latest'
-    - VSCODE_VERSION: '1.31.0'
-    - VSCODE_VERSION: 'insiders'
 
 language: node_js
 
@@ -45,7 +39,12 @@ after_failure:
 
 jobs:
   include:
+    - env: VSCODE_VERSION=latest
+    - env: VSCODE_VERSION=1.31.0
+    - env: VSCODE_VERSION=insiders
     - stage: deploy
       script: npm run deploy
       # https://docs.travis-ci.com/user/conditions-v1
       if: branch = master && type = push && tag IS blank && repo = matepek/vscode-catch2-test-adapter
+  allow_failures:
+    - env: VSCODE_VERSION=insiders
