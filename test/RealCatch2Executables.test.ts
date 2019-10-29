@@ -54,7 +54,7 @@ describe(path.basename(__filename), function() {
   }
 
   before(async function() {
-    this.timeout(152000);
+    this.timeout(352000);
 
     const exec = ['suite1.exe', 'suite2.exe', 'suite3.exe', 'gtest1.exe'];
 
