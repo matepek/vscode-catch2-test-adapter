@@ -17,7 +17,8 @@ assert(outPath.endsWith('out'));
 const cppUri = vscode.Uri.file(path.join(outPath, 'cpp'));
 
 function inCpp(relPath: string): string {
-  return vscode.Uri.file(path.join(cppUri.fsPath, relPath)).fsPath;
+  const p = isWin ? path.join(cppUri.fsPath, 'Debug', relPath) : path.join(cppUri.fsPath, relPath);
+  return vscode.Uri.file(p).fsPath;
 }
 
 function inWS(relPath: string): string {
@@ -130,9 +131,7 @@ describe(path.basename(__filename), function() {
       assert.strictEqual(adapter.testStatesEvents.length, eventCount + 84, inspect(adapter.testStatesEvents));
     });
 
-    it('should be notified by watcher', async function() {
-      if (!isWin) this.skip(); // ?
-
+    it.skip('should be notified by watcher', async function() {
       this.timeout(8000);
       this.slow(4000);
 
