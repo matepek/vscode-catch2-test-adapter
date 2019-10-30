@@ -60,7 +60,7 @@
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.11.2",
+    "@types/node": "^12.12.0",
     "@types/request-promise": "4.1.43",
     "@types/sinon": "^7.5.0",
     "@types/xml2js": "^0.4.5",
@@ -76,7 +76,7 @@
     "request-promise": "4.2.4",
     "sinon": "^7.5.0",
     "typescript": "^3.6.4",
-    "vsce": "^1.68.0",
+    "vsce": "^1.69.0",
     "vscode": "^1.1.36",
     "vscode-test": "^1.2.0"
   },
