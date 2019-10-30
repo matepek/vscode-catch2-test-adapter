@@ -48,6 +48,7 @@ jobs:
     - os: osx
       env: VSCODE_VERSION=insiders
     - os: linux
+      env: VSCODE_VERSION=latest
       stage: deploy
       script: npm run deploy
       # https://docs.travis-ci.com/user/conditions-v1
