@@ -145,6 +145,20 @@ export class GoogleTestInfo extends AbstractTestInfo {
             });
             i += 3;
           } else if (
+            i + 4 < lines.length &&
+            lines[i + 0].startsWith('Mock function call') &&
+            lines[i + 1].startsWith('    Function call:') &&
+            lines[i + 2].startsWith('          Returns:') &&
+            lines[i + 3].startsWith('         Expected:') &&
+            lines[i + 4].startsWith('           Actual:')
+          ) {
+            addDecoration({
+              line: lineNumber,
+              message: '⬅️ ' + lines[i + 3].trim() + ';  ' + lines[i + 4].trim() + ';',
+              hover: lines.slice(i, i + 5).join('\n'),
+            });
+            i += 5;
+          } else if (
             i + 3 < lines.length &&
             lines[i + 0].startsWith('Mock function call') &&
             lines[i + 1].startsWith('    Function call:') &&
