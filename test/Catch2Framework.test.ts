@@ -136,7 +136,7 @@ describe(path.basename(__filename), function() {
   });
 
   specify('arriving <TestCase> for missing TestInfo', async function() {
-    this.slow(500);
+    this.timeout(5000);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
     adapter = new TestAdapter();
@@ -242,11 +242,13 @@ describe(path.basename(__filename), function() {
     );
     withArgs
       .onCall(withArgs.callCount)
-      .returns((new ChildProcessStub(
-        'Matching test cases:' + EOL,
-        undefined,
-        testListErrOutput.join(EOL),
-      ) as unknown) as ChildProcess);
+      .returns(
+        (new ChildProcessStub(
+          'Matching test cases:' + EOL,
+          undefined,
+          testListErrOutput.join(EOL),
+        ) as unknown) as ChildProcess,
+      );
 
     await adapter.load();
 
