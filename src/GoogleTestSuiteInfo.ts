@@ -314,7 +314,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             data.buffer = data.buffer.substr(m.index!);
           } else {
             const testEndRe = new RegExp(
-              '^(?!\\[ RUN      \\])\\[..........\\] ' + data.currentTestCaseNameFull.replace('.', '\\.') + '.*$',
+              '(?!\\[ RUN      \\])\\[..........\\] ' + data.currentTestCaseNameFull.replace('.', '\\.') + '.*$',
               'm',
             );
 

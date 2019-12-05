@@ -1214,7 +1214,7 @@ describe(path.basename(__filename), function() {
     });
 
     it('reloads because new tests found under run', async function() {
-      this.timeout(5000);
+      this.timeout(10000);
 
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
