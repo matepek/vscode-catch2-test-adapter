@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Google Test parsing improvements
 
+### Fixed
+
+- a bug related to bactick in SECTION name
+
 ## [2.7.6] - 2019-10-30
 
 ### Changed

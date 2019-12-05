@@ -1398,7 +1398,7 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['spec ` char', '--reporter', 'xml', '--durations', 'yes'],
+        ['spec \\` char', '--reporter', 'xml', '--durations', 'yes'],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Group name="suite3">

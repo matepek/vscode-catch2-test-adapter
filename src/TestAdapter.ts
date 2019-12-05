@@ -550,6 +550,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return this._mainTaskQueue
       .then(async () => {
         let terminateConn: vscode.Disposable | undefined;
+
         const terminated = new Promise<void>(resolve => {
           terminateConn = vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
             const session2 = (session as unknown) as { configuration: { [prop: string]: string } };
@@ -562,9 +563,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           this._log.info('debugSessionTerminated');
         });
 
+        this._log.info('startDebugging');
+
         const debugSessionStarted = await vscode.debug.startDebugging(this.workspaceFolder, debugConfig);
 
-        if (!debugSessionStarted) {
+        if (debugSessionStarted) {
+          this._log.info('debugSessionStarted');
+          return terminated;
+        } else {
           terminateConn && terminateConn.dispose();
           return Promise.reject(
             new Error(
@@ -573,10 +579,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             ),
           );
         }
-
-        this._log.info('debugSessionStarted');
-
-        return terminated;
       })
       .catch(err => {
         this._log.exception(err);

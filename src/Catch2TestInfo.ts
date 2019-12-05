@@ -20,6 +20,10 @@ interface Frame {
 export class Catch2Section implements Frame {
   public constructor(name: string, filename: string, line: number) {
     this.name = name;
+    // some debug adapter on ubuntu starts debug session in shell,
+    // this prevents the SECTION("`pwd`") to be executed
+    this.name = this.name.replace(/`/g, '\\`');
+
     this.filename = filename;
     this.line = line;
   }
@@ -72,6 +76,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     t = t.replace(/,/g, '\\,');
     t = t.replace(/\[/g, '\\[');
     t = t.replace(/\*/g, '\\*');
+    t = t.replace(/`/g, '\\`');
     if (t.startsWith(' ')) t = '*' + t.trimLeft();
     return t;
   }

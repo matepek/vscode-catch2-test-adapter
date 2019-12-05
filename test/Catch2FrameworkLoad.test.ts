@@ -900,7 +900,10 @@ describe(path.basename(__filename), function() {
       await adapter.run([s1t1.id]);
       const elapsed = Date.now() - start;
       assert.ok(3000 <= elapsed && elapsed <= 5000, elapsed.toString());
-      assert.deepStrictEqual(spyKill.getCalls().map(c => c.args), [[]]);
+      assert.deepStrictEqual(
+        spyKill.getCalls().map(c => c.args),
+        [[]],
+      );
 
       cp.close();
 
@@ -948,7 +951,10 @@ describe(path.basename(__filename), function() {
       await adapter.run([s1t1.id]);
       const elapsed = Date.now() - start;
       assert.ok(3000 <= elapsed && elapsed <= 5000, elapsed.toString());
-      assert.deepStrictEqual(spyKill.getCalls().map(c => c.args), [[]]);
+      assert.deepStrictEqual(
+        spyKill.getCalls().map(c => c.args),
+        [[]],
+      );
 
       cp.close();
 

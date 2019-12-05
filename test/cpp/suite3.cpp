@@ -62,3 +62,10 @@ TEST_CASE("spec § char") {}
 TEST_CASE("spec ± char") {}
 TEST_CASE("spec \" char") {}
 TEST_CASE("spec | char") {}
+
+TEST_CASE("spec char in section name") {
+  SECTION("`Config`s can be serialized") {
+    //
+    REQUIRE(true == false);
+  }
+}
