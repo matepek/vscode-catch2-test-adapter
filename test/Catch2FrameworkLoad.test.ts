@@ -950,7 +950,7 @@ describe(path.basename(__filename), function() {
       const start = Date.now();
       await adapter.run([s1t1.id]);
       const elapsed = Date.now() - start;
-      assert.ok(3000 <= elapsed && elapsed <= 5000, elapsed.toString());
+      assert.ok(3000 <= elapsed && elapsed <= 7000, elapsed.toString());
       assert.deepStrictEqual(
         spyKill.getCalls().map(c => c.args),
         [[]],
@@ -1471,7 +1471,7 @@ describe(path.basename(__filename), function() {
     });
 
     it('reloads because test was renamed', async function() {
-      this.timeout(5000);
+      this.timeout(8000);
 
       await loadAdapterAndAssert();
       assert.ok(example1.suite1.outputs[1][1].indexOf('s1t1') != -1);
