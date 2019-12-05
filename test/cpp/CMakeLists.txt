@@ -6,6 +6,10 @@ project(Tests)
 
 #
 
+file(WRITE "${PROJECT_BINARY_DIR}/.vscode/settings.jsonX" "{\n  \"catch2TestExplorer.executables\": [ \"*.exe\" ],\n  \"catch2TestExplorer.logpanel\": true\n}\n")
+
+#
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w")
 else()

@@ -811,7 +811,7 @@ describe(path.basename(__filename), function() {
     });
 
     it('should run with wrong xml with signal', async function() {
-      this.timeout(10000);
+      this.timeout(20000);
 
       await loadAdapterAndAssert();
       const m = example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');
@@ -1214,7 +1214,7 @@ describe(path.basename(__filename), function() {
     });
 
     it('reloads because new tests found under run', async function() {
-      this.timeout(10000);
+      this.timeout(20000);
 
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
