@@ -94,7 +94,7 @@ describe(path.basename(__filename), function() {
     return fse.copy(from, to);
   }
 
-  context('example1', function() {
+  context('Catch2 tests', function() {
     it('should be found and run withouth error', async function() {
       if (process.env['TRAVIS'] == 'true') this.skip();
 
@@ -128,7 +128,7 @@ describe(path.basename(__filename), function() {
 
       const eventCount = adapter.testStatesEvents.length;
       await adapter.run([adapter.root.id]);
-      assert.strictEqual(adapter.testStatesEvents.length, eventCount + 84, inspect(adapter.testStatesEvents));
+      assert.strictEqual(adapter.testStatesEvents.length - eventCount, 86, inspect(adapter.testStatesEvents));
     });
 
     it.skip('should be notified by watcher', async function() {
@@ -191,6 +191,36 @@ describe(path.basename(__filename), function() {
 
       assert.strictEqual(adapter.testStatesEvents.length, eventCount + 14);
       assert.strictEqual(retireCounter, 1);
+    });
+  });
+
+  context('Google tests', function() {
+    it('should be found and run withouth error', async function() {
+      if (process.env['TRAVIS'] == 'true') this.skip();
+
+      this.timeout(8000);
+      this.slow(2000);
+      await settings.updateConfig('executables', [
+        {
+          name: '${baseFilename}',
+          pattern: 'tmp/*gtest[0-9].exe',
+          cwd: '${workspaceFolder}',
+        },
+      ]);
+
+      await copy(inCpp('gtest1.exe'), inWSTmp('gtest1.exe'));
+
+      await waitFor(this, () => {
+        return fse.existsSync(inWSTmp('gtest1.exe'));
+      });
+
+      adapter = new TestAdapter();
+      await adapter.load();
+      assert.strictEqual(adapter.root.children.length, 1);
+
+      const eventCount = adapter.testStatesEvents.length;
+      await adapter.run([adapter.root.id]);
+      assert.strictEqual(adapter.testStatesEvents.length - eventCount, 50, inspect(adapter.testStatesEvents));
     });
   });
 });
