@@ -1,8 +1,8 @@
 import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
 
-import { AbstractTestInfo } from './AbstractTestInfo';
-import { SharedVariables } from './SharedVariables';
-import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { AbstractTestInfo } from '../AbstractTestInfo';
+import { SharedVariables } from '../SharedVariables';
+import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 
 export class GoogleTestInfo extends AbstractTestInfo {
   public constructor(

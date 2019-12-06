@@ -21,7 +21,7 @@ import { TaskQueue } from './TaskQueue';
 import { TestExecutableInfo } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
-import { Catch2Section, Catch2TestInfo } from './Catch2TestInfo';
+import { Catch2Section, Catch2TestInfo } from './framework/Catch2TestInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { performance } from 'perf_hooks';
 

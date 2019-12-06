@@ -2,10 +2,10 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { EOL } from 'os';
 
-import { AbstractTestInfo } from './AbstractTestInfo';
+import { AbstractTestInfo } from '../AbstractTestInfo';
 import { inspect } from 'util';
-import { SharedVariables } from './SharedVariables';
-import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { SharedVariables } from '../SharedVariables';
+import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
