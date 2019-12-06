@@ -29,6 +29,11 @@ GTEST_TEST(TestCas1, test4) {
   ASSERT_TRUE(1 == 1);
 }
 
+GTEST_TEST(TestCas1, test5) {
+  // GMOKC_SKIP();
+  printf("Is True");
+}
+
 GTEST_TEST(TestCas2, test1) {
   //
   EXPECT_TRUE(1 != 1);

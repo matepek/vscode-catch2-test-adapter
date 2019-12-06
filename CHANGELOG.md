@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.7]
+
+### Changed
+
+- Google Test parsing improvements
+
+### Fixed
+
+- a bug related to bactick in SECTION name
+
 ## [2.7.6] - 2019-10-30
 
 ### Changed

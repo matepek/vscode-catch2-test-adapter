@@ -3,13 +3,13 @@ import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
 import { GoogleTestInfo } from './GoogleTestInfo';
-import * as c2fs from './FSWrapper';
-import { AbstractTestInfo } from './AbstractTestInfo';
-import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import * as c2fs from '../FSWrapper';
+import { AbstractTestInfo } from '../AbstractTestInfo';
+import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
 import { Parser } from 'xml2js';
-import { SharedVariables } from './SharedVariables';
-import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
-import { RunningTestExecutableInfo, ProcessResult } from './RunningTestExecutableInfo';
+import { SharedVariables } from '../SharedVariables';
+import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
+import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 
 class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
   public children: GoogleTestInfo[] = [];
@@ -314,7 +314,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             data.buffer = data.buffer.substr(m.index!);
           } else {
             const testEndRe = new RegExp(
-              '^(?!\\[ RUN      \\])\\[..........\\] ' + data.currentTestCaseNameFull.replace('.', '\\.') + '.*$',
+              '(?!\\[ RUN      \\])\\[..........\\] ' + data.currentTestCaseNameFull.replace('.', '\\.') + '.*$',
               'm',
             );
 

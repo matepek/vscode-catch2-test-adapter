@@ -1,8 +1,8 @@
 import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
 
-import { AbstractTestInfo } from './AbstractTestInfo';
-import { SharedVariables } from './SharedVariables';
-import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { AbstractTestInfo } from '../AbstractTestInfo';
+import { SharedVariables } from '../SharedVariables';
+import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 
 export class GoogleTestInfo extends AbstractTestInfo {
   public constructor(
@@ -62,9 +62,9 @@ export class GoogleTestInfo extends AbstractTestInfo {
 
       if (lines.length < 2) throw new Error('unexpected');
 
-      if (lines[lines.length - 1].startsWith('[       OK ]')) ev.state = 'passed';
-      else if (lines[lines.length - 1].startsWith('[  FAILED  ]')) ev.state = 'failed';
-      else if (lines[lines.length - 1].startsWith('[  SKIPPED ]')) ev.state = 'skipped';
+      if (lines[lines.length - 1].indexOf('[       OK ]') != -1) ev.state = 'passed';
+      else if (lines[lines.length - 1].indexOf('[  FAILED  ]') != -1) ev.state = 'failed';
+      else if (lines[lines.length - 1].indexOf('[  SKIPPED ]') != -1) ev.state = 'skipped';
       else {
         this._shared.log.error('unexpected token:', lines[lines.length - 1]);
         ev.state = 'errored';
@@ -144,6 +144,20 @@ export class GoogleTestInfo extends AbstractTestInfo {
               hover: [lines[i], lines[i + 1], lines[i + 2]].join('\n'),
             });
             i += 3;
+          } else if (
+            i + 4 < lines.length &&
+            lines[i + 0].startsWith('Mock function call') &&
+            lines[i + 1].startsWith('    Function call:') &&
+            lines[i + 2].startsWith('          Returns:') &&
+            lines[i + 3].startsWith('         Expected:') &&
+            lines[i + 4].startsWith('           Actual:')
+          ) {
+            addDecoration({
+              line: lineNumber,
+              message: '⬅️ ' + lines[i + 3].trim() + ';  ' + lines[i + 4].trim() + ';',
+              hover: lines.slice(i, i + 5).join('\n'),
+            });
+            i += 5;
           } else if (
             i + 3 < lines.length &&
             lines[i + 0].startsWith('Mock function call') &&

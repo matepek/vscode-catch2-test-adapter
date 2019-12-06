@@ -1,6 +1,6 @@
 import * as c2fs from './FSWrapper';
-import { Catch2TestSuiteInfo } from './Catch2TestSuiteInfo';
-import { GoogleTestSuiteInfo } from './GoogleTestSuiteInfo';
+import { Catch2TestSuiteInfo } from './framework/Catch2TestSuiteInfo';
+import { GoogleTestSuiteInfo } from './framework/GoogleTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
 
 interface TestFrameworkInfo {

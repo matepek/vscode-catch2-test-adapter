@@ -65,7 +65,11 @@ export abstract class AbstractTestInfo implements TestInfo {
     const sec = Math.floor((durationInMilisec - minute * 60000) / 1000);
     const miliSec = durationInMilisec - minute * 60000 - sec * 1000;
 
-    let durationArr = [[minute, 'm'], [sec, 's'], [miliSec, 'ms']].filter(v => v[0]);
+    let durationArr = [
+      [minute, 'm'],
+      [sec, 's'],
+      [miliSec, 'ms'],
+    ].filter(v => v[0]);
 
     if (durationArr.length === 0) durationArr.push([0, 'ms']);
 

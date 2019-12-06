@@ -2,10 +2,10 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { EOL } from 'os';
 
-import { AbstractTestInfo } from './AbstractTestInfo';
+import { AbstractTestInfo } from '../AbstractTestInfo';
 import { inspect } from 'util';
-import { SharedVariables } from './SharedVariables';
-import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { SharedVariables } from '../SharedVariables';
+import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -20,6 +20,10 @@ interface Frame {
 export class Catch2Section implements Frame {
   public constructor(name: string, filename: string, line: number) {
     this.name = name;
+    // some debug adapter on ubuntu starts debug session in shell,
+    // this prevents the SECTION("`pwd`") to be executed
+    this.name = this.name.replace(/`/g, '\\`');
+
     this.filename = filename;
     this.line = line;
   }
@@ -72,6 +76,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     t = t.replace(/,/g, '\\,');
     t = t.replace(/\[/g, '\\[');
     t = t.replace(/\*/g, '\\*');
+    t = t.replace(/`/g, '\\`');
     if (t.startsWith(' ')) t = '*' + t.trimLeft();
     return t;
   }

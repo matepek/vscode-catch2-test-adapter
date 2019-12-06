@@ -329,7 +329,10 @@ export class TestExecutableInfo implements vscode.Disposable {
         return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
           return c2fs
             .isNativeExecutableAsync(filePath)
-            .then(() => true, () => false)
+            .then(
+              () => true,
+              () => false,
+            )
             .then(isExec => x(suite, isExec, Math.min(delay * 2, 2000)));
         });
       }

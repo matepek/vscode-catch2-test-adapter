@@ -811,7 +811,7 @@ describe(path.basename(__filename), function() {
     });
 
     it('should run with wrong xml with signal', async function() {
-      this.timeout(10000);
+      this.timeout(20000);
 
       await loadAdapterAndAssert();
       const m = example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');
@@ -900,7 +900,10 @@ describe(path.basename(__filename), function() {
       await adapter.run([s1t1.id]);
       const elapsed = Date.now() - start;
       assert.ok(3000 <= elapsed && elapsed <= 5000, elapsed.toString());
-      assert.deepStrictEqual(spyKill.getCalls().map(c => c.args), [[]]);
+      assert.deepStrictEqual(
+        spyKill.getCalls().map(c => c.args),
+        [[]],
+      );
 
       cp.close();
 
@@ -947,8 +950,11 @@ describe(path.basename(__filename), function() {
       const start = Date.now();
       await adapter.run([s1t1.id]);
       const elapsed = Date.now() - start;
-      assert.ok(3000 <= elapsed && elapsed <= 5000, elapsed.toString());
-      assert.deepStrictEqual(spyKill.getCalls().map(c => c.args), [[]]);
+      assert.ok(3000 <= elapsed && elapsed <= 7000, elapsed.toString());
+      assert.deepStrictEqual(
+        spyKill.getCalls().map(c => c.args),
+        [[]],
+      );
 
       cp.close();
 
@@ -1208,7 +1214,7 @@ describe(path.basename(__filename), function() {
     });
 
     it('reloads because new tests found under run', async function() {
-      this.timeout(5000);
+      this.timeout(20000);
 
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
@@ -1465,7 +1471,7 @@ describe(path.basename(__filename), function() {
     });
 
     it('reloads because test was renamed', async function() {
-      this.timeout(5000);
+      this.timeout(8000);
 
       await loadAdapterAndAssert();
       assert.ok(example1.suite1.outputs[1][1].indexOf('s1t1') != -1);
@@ -1752,7 +1758,7 @@ describe(path.basename(__filename), function() {
 
   context('vscode.debug', function() {
     let startDebuggingStub: sinon.SinonStub<
-      [vscode.WorkspaceFolder | undefined, string | vscode.DebugConfiguration, (vscode.DebugSession | undefined)?],
+      [vscode.WorkspaceFolder | undefined, string | vscode.DebugConfiguration],
       Thenable<boolean>
     >;
 

@@ -21,7 +21,7 @@ export function spawnAsync(
       stdout: '',
       stderr: '',
       status: 0,
-      signal: (null as unknown) as string,
+      signal: null,
       error: (undefined as unknown) as Error,
       closed: false,
     };
@@ -47,7 +47,7 @@ export function spawnAsync(
       reject(err);
     });
 
-    command.on('close', function(code: number, signal: string) {
+    command.on('close', function(code: number, signal: NodeJS.Signals) {
       ret.closed = true;
 
       if (signal !== null) {
