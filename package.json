@@ -28,18 +28,20 @@
     "unit test",
     "c++"
   ],
-  "main": "out/src/main.js",
+  "main": "dist/main.bundle.js",
   "scripts": {
     "postinstall": "node ./node_modules/vscode/bin/install",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
     "clean": "rimraf out node_modules vscode-catch2-test-adapter-*.vsix",
-    "compile": "tsc -p ./tsconfig.json",
     "watch": "tsc -watch -p ./tsconfig.json",
-    "rebuild": "npm run clean && npm run build",
+    "compile": "tsc -p ./tsconfig.json",
+    "vscode:prepublish": "npm run webpack",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTests.js",
+    "prewebpack": "npm run compile",
+    "webpack": "webpack --config webpack.config.js",
     "package": "vsce package",
-    "vscode:prepublish": "tsc -p ./tsconfig.json",
-    "deploy": "node ./out/test/repo_scripts/deploy.js",
-    "test": "node ./out/test/runTests.js"
+    "deploy": "node ./out/test/repo_scripts/deploy.js"
   },
   "extensionDependencies": [
     "hbenl.vscode-test-explorer"
@@ -73,12 +75,16 @@
     "fs-extra": "^7.0.1",
     "mocha-eslint": "^5.0.0",
     "prettier": "^1.19.1",
+    "raw-loader": "^2.0.0",
     "request-promise": "4.2.4",
     "sinon": "^7.5.0",
     "typescript": "^3.7.3",
     "vsce": "^1.70.0",
     "vscode": "^1.1.36",
     "vscode-test": "^1.2.3"
+    "webpack": "^4.29.6",
+    "webpack-bundle-analyzer": "^3.1.0",
+    "webpack-cli": "^3.3.0"
   },
   "engines": {
     "vscode": "^1.23.0"

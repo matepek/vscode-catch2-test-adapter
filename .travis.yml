@@ -29,6 +29,8 @@ install:
   - npm install
   - npm audit --production
   - npm run compile
+  - npm run webpack
+  - ls -all dist
 
 script:
   - npm test

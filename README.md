@@ -288,6 +288,7 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip, gmock_verbose
 - gaze is not good enough: detects change and delete, but not creation
 - `dependsOn` could contain variables
+- https://github.com/nodejs/node-gyp
 
 ## Contribution
 

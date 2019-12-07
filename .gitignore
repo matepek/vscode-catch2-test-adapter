@@ -1,6 +1,13 @@
 .DS_Store
+
 node_modules
+
 out
+
 *.vsix
 .vscode-test
+
 .vscode/ipch
+
+coverage
+dist
