@@ -299,17 +299,6 @@ export class Catch2TestInfo extends AbstractTestInfo {
         const section = xml.Section[j];
 
         try {
-          if (testEvent.message) testEvent.message = testEvent.message.trimRight();
-          testEvent.message +=
-            '\n' + '⏩ '.repeat(stack.length + 1) + `${section.$.name} (${section.$.filename}:${section.$.line})\n`;
-
-          if (typeof section._ === 'string')
-            testEvent.message +=
-              section._.split(EOL)
-                .map((x: string) => x.trim())
-                .filter((l: string) => l.length > 0)
-                .join('\n') + '\n';
-
           let currSection = parentSection.children.find(
             v => v.name === section.$.name && v.filename === section.$.filename && v.line === section.$.line,
           );
@@ -319,13 +308,31 @@ export class Catch2TestInfo extends AbstractTestInfo {
             parentSection.children.push(currSection);
           }
 
+          const isLeaf = section.Section === undefined || section.Section.length === 0;
+
           if (
+            isLeaf &&
             section.OverallResults &&
             section.OverallResults.length > 0 &&
             section.OverallResults[0].$.failures !== '0'
           ) {
             currSection.failed = true;
           }
+
+          if (testEvent.message) testEvent.message = testEvent.message.trimRight() + '\n';
+
+          testEvent.message += '⏩ '.repeat(stack.length + 1);
+
+          if (isLeaf) testEvent.message += currSection.failed ? '❌ ' : '✅ ';
+
+          testEvent.message += `${section.$.name} (${section.$.filename}:${section.$.line})`;
+
+          if (typeof section._ === 'string')
+            testEvent.message +=
+              section._.split(EOL)
+                .map((x: string) => x.trim())
+                .filter((l: string) => l.length > 0)
+                .join('\n') + '\n';
 
           const currStack = stack.concat(currSection);
 
