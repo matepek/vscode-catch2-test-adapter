@@ -35,13 +35,12 @@
     "clean": "rimraf out node_modules vscode-catch2-test-adapter-*.vsix",
     "watch": "tsc -watch -p ./tsconfig.json",
     "compile": "tsc -p ./tsconfig.json",
-    "pretest": "npm run compile",
     "test": "node ./out/test/runTests.js",
-    "prewebpack": "npm run compile",
-    "webpack": "webpack --config webpack.config.js",
+    "pretest": "npm run compile",
     "package": "vsce package",
     "deploy": "node ./out/test/repo_scripts/deploy.js",
-    "vscode:prepublish": "npm run webpack"
+    "vscode:prepublish": "webpack --config webpack.config.js --mode production",
+    "webpack": "webpack --config webpack.config.js --mode development"
   },
   "extensionDependencies": [
     "hbenl.vscode-test-explorer"
@@ -80,6 +79,7 @@
     "raw-loader": "^2.0.0",
     "request-promise": "4.2.4",
     "sinon": "^7.5.0",
+    "ts-loader": "^6.2.1",
     "typescript": "^3.7.3",
     "vsce": "^1.70.0",
     "vscode": "^1.1.36",
