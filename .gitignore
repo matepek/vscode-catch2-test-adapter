@@ -8,6 +8,3 @@ out
 .vscode-test
 
 .vscode/ipch
-
-coverage
-dist

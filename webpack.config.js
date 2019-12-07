@@ -1,12 +1,12 @@
 const path = require('path'); // eslint-disable-line
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-const webpack = require('webpack');
+const webpack = require('webpack'); // eslint-disable-line
+//const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = {
   mode: 'production',
   entry: './out/src/main.js',
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'out', 'dist'),
     filename: 'main.bundle.js',
     devtoolModuleFilenameTemplate: '../[resource-path]',
     libraryTarget: 'commonjs2',
@@ -32,7 +32,7 @@ module.exports = {
   plugins: [
     // new BundleAnalyzerPlugin(),
     new webpack.DefinePlugin({
-    'process.env.NODE_ENV': '"production"'
-    })
-  ]
+      'process.env.NODE_ENV': '"production"',
+    }),
+  ],
 };

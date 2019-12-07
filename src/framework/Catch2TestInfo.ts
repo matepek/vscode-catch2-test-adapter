@@ -129,11 +129,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
       );
     }
 
-    testEvent.message +=
-      testCase._.split(EOL)
-        .map((x: string) => x.trim())
-        .filter((l: string) => l.length > 0)
-        .join('\n') + '\n';
+    if (typeof testCase._ === 'string')
+      testEvent.message +=
+        testCase._.split(EOL)
+          .map((x: string) => x.trim())
+          .filter((l: string) => l.length > 0)
+          .join('\n') + '\n';
 
     const title: Catch2Section = new Catch2Section(testCase.$.name, testCase.$.filename, testCase.$.line);
 
@@ -285,13 +286,15 @@ export class Catch2TestInfo extends AbstractTestInfo {
         const section = xml.Section[j];
 
         try {
-          testEvent.message += `\n#️⃣ ${section.$.name} (${section.$.filename}:${section.$.line})\n`;
+          if (testEvent.message && !testEvent.message.endsWith(EOL)) testEvent.message += '\n';
+          testEvent.message += `#️⃣ ${section.$.name} (${section.$.filename}:${section.$.line})\n`;
 
-          testEvent.message +=
-            section._.split(EOL)
-              .map((x: string) => x.trim())
-              .filter((l: string) => l.length > 0)
-              .join('\n') + '\n';
+          if (typeof section._ === 'string')
+            testEvent.message +=
+              section._.split(EOL)
+                .map((x: string) => x.trim())
+                .filter((l: string) => l.length > 0)
+                .join('\n') + '\n';
 
           let currSection = parentSection.children.find(
             v => v.name === section.$.name && v.filename === section.$.filename && v.line === section.$.line,

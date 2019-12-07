@@ -5,7 +5,7 @@
 node_modules
 
 # filter out's subdirs
-!dist/main.bundle.js
+!out/dist/main.bundle.js
 
 !package.json
 !resources/icon.png

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.7.8]
 
+Finally I decided to use webpack. Faster load are expcted.
+
+### Fixed
+
+- Catch2 parsing errors.
+
 ## [2.7.7] - 2019-12-06
 
 ### Changed

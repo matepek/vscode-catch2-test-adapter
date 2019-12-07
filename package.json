@@ -28,20 +28,20 @@
     "unit test",
     "c++"
   ],
-  "main": "dist/main.bundle.js",
+  "main": "out/dist/main.bundle.js",
   "scripts": {
     "postinstall": "node ./node_modules/vscode/bin/install",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
     "clean": "rimraf out node_modules vscode-catch2-test-adapter-*.vsix",
     "watch": "tsc -watch -p ./tsconfig.json",
     "compile": "tsc -p ./tsconfig.json",
-    "vscode:prepublish": "npm run webpack",
     "pretest": "npm run compile",
     "test": "node ./out/test/runTests.js",
     "prewebpack": "npm run compile",
     "webpack": "webpack --config webpack.config.js",
     "package": "vsce package",
-    "deploy": "node ./out/test/repo_scripts/deploy.js"
+    "deploy": "node ./out/test/repo_scripts/deploy.js",
+    "vscode:prepublish": "npm run webpack"
   },
   "extensionDependencies": [
     "hbenl.vscode-test-explorer"
