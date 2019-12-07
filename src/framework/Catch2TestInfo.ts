@@ -194,13 +194,13 @@ export class Catch2TestInfo extends AbstractTestInfo {
     if (xml.hasOwnProperty('Info')) {
       for (let j = 0; j < xml.Info.length; ++j) {
         const info = xml.Info[j];
-        testEvent.message += '⬇ Info: ' + info.trim() + ' ⬆\n';
+        testEvent.message += '⬇ Info: ' + info.trim() + '\n⬆\n';
       }
     }
     if (xml.hasOwnProperty('Warning')) {
       for (let j = 0; j < xml.Warning.length; ++j) {
         const warning = xml.Warning[j];
-        testEvent.message += '⬇ Warning: ' + warning.trim() + ' ⬆\n';
+        testEvent.message += '⬇ Warning: ' + warning.trim() + '\n⬆\n';
         testEvent.decorations!.push({
           line: Number(warning.$.line) - 1 /*It looks vscode works like this.*/,
           message:
@@ -217,7 +217,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     if (xml.hasOwnProperty('Failure')) {
       for (let j = 0; j < xml.Failure.length; ++j) {
         const failure = xml.Failure[j];
-        testEvent.message += '⬇ Failure: ' + failure._.trim() + ' ⬆\n';
+        testEvent.message += '⬇ Failure: ' + failure._.trim() + '\n⬆\n';
         testEvent.decorations!.push({
           line: Number(failure.$.line) - 1 /*It looks vscode works like this.*/,
           message:
