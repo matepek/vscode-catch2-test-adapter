@@ -139,7 +139,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     this._processInfoWarningAndFailureTags(testCase, title, [], testEvent);
 
-    this._processXmlTagExpressions(testCase, title, [], testEvent);
+    this._processXmlTagExpressionsAndExceptions(testCase, title, [], testEvent);
 
     this._processXmlTagSections(testCase, title, [], testEvent, title);
 
@@ -251,7 +251,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
-  private _processXmlTagExpressions(xml: XmlObject, title: Frame, stack: Catch2Section[], testEvent: TestEvent): void {
+  private _processXmlTagExpressionsAndExceptions(
+    xml: XmlObject,
+    title: Frame,
+    stack: Catch2Section[],
+    testEvent: TestEvent,
+  ): void {
     if (xml.hasOwnProperty('Expression')) {
       for (let j = 0; j < xml.Expression.length; ++j) {
         const expr = xml.Expression[j];
@@ -283,6 +288,32 @@ export class Catch2TestInfo extends AbstractTestInfo {
           this._shared.log.exception(error);
         }
         this._processXmlTagFatalErrorConditions(expr, title, stack, testEvent);
+      }
+    }
+    if (xml.hasOwnProperty('Exception')) {
+      for (let j = 0; j < xml.Exception.length; ++j) {
+        const exception = xml.Exception[j];
+        try {
+          const message = 'Exception were thrown: ' + exception._.trim();
+
+          if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+          testEvent.message += '\n  ' + message;
+
+          testEvent.decorations!.push({
+            line: Number(exception.$.line) - 1 /*It looks vscode works like this.*/,
+            message:
+              '⬅ ' +
+              message
+                .split(EOL)
+                .map((x: string) => x.trim())
+                .filter((l: string) => l.length > 0)
+                .join('')
+                .substr(0, 200),
+            hover: message,
+          });
+        } catch (error) {
+          this._shared.log.exception(error);
+        }
       }
     }
   }
@@ -338,7 +369,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
           this._processInfoWarningAndFailureTags(section, title, currStack, testEvent);
 
-          this._processXmlTagExpressions(section, title, currStack, testEvent);
+          this._processXmlTagExpressionsAndExceptions(section, title, currStack, testEvent);
 
           this._processXmlTagSections(section, title, currStack, testEvent, currSection);
         } catch (error) {
