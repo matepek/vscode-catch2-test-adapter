@@ -175,7 +175,7 @@ describe(path.basename(__filename), function() {
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
-            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
         },
         {
           type: 'suite',
@@ -220,7 +220,7 @@ describe(path.basename(__filename), function() {
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
-            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
         },
         {
           type: 'suite',
@@ -436,7 +436,7 @@ describe(path.basename(__filename), function() {
         description: '(0ms)',
         tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
         message:
-          '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+          '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
       };
       assert.ok(adapter.getTestStatesEventIndex(s1t2running) < adapter.getTestStatesEventIndex(s1t2finished));
       assert.ok(adapter.getTestStatesEventIndex(s1t2finished) < adapter.getTestStatesEventIndex(s1finished));
@@ -469,7 +469,7 @@ describe(path.basename(__filename), function() {
         description: '(0ms)',
         tooltip: 'Name: s2t3\nDescription: tag1\n\n⏱ 0ms',
         message:
-          '⏱ Duration: 0.000178 second(s).\n⬇ s2t3 (at 19)\nREQUIRE (at 21):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+          '⏱ Duration: 0.000178 second(s).\n⬇ s2t3 (at 19)\nREQUIRE (at 21):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
       };
       assert.ok(adapter.getTestStatesEventIndex(s2t3running) < adapter.getTestStatesEventIndex(s2t3finished));
       assert.ok(adapter.getTestStatesEventIndex(s2t3finished) < adapter.getTestStatesEventIndex(s2finished));
@@ -571,7 +571,7 @@ describe(path.basename(__filename), function() {
           ],
           description: '(1ms)',
           message:
-            '⏱ Duration: 0.000596 second(s).\n⬇ s2t3 (at 19)\nREQUIRE (at 21):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+            '⏱ Duration: 0.000596 second(s).\n⬇ s2t3 (at 19)\nREQUIRE (at 21):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
           tooltip: 'Name: s2t3\nDescription: tag1\n\n⏱ 1ms',
         },
         {
@@ -615,7 +615,7 @@ describe(path.basename(__filename), function() {
           ],
           description: '(1ms)',
           message:
-            '⏱ Duration: 0.000596 second(s).\n⬇ s2t3 (at 19)\nREQUIRE (at 21):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+            '⏱ Duration: 0.000596 second(s).\n⬇ s2t3 (at 19)\nREQUIRE (at 21):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
           tooltip: 'Name: s2t3\nDescription: tag1\n\n⏱ 1ms',
         },
         {
@@ -661,7 +661,7 @@ describe(path.basename(__filename), function() {
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
-            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
         },
         {
           type: 'suite',
@@ -707,7 +707,7 @@ describe(path.basename(__filename), function() {
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
-            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
         },
         {
           type: 'suite',
@@ -1303,7 +1303,7 @@ describe(path.basename(__filename), function() {
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
-            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
         },
         {
           type: 'suite',
@@ -1352,7 +1352,7 @@ describe(path.basename(__filename), function() {
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
-            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
         },
         {
           type: 'suite',
@@ -1515,7 +1515,7 @@ describe(path.basename(__filename), function() {
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
           message:
-            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+            '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
         },
         {
           type: 'suite',

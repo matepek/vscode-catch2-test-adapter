@@ -130,11 +130,10 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
 
     if (typeof testCase._ === 'string')
-      testEvent.message +=
-        testCase._.split(EOL)
-          .map((x: string) => x.trim())
-          .filter((l: string) => l.length > 0)
-          .join('\n') + '\n';
+      testEvent.message += testCase._.split(EOL)
+        .map((x: string) => x.trim())
+        .filter((l: string) => l.length > 0)
+        .join('\n');
 
     const title: Catch2Section = new Catch2Section(testCase.$.name, testCase.$.filename, testCase.$.line);
 
@@ -149,21 +148,25 @@ export class Catch2TestInfo extends AbstractTestInfo {
     this._processXmlTagFatalErrorConditions(testCase, title, [], testEvent);
 
     if (testCase.OverallResult[0].hasOwnProperty('StdOut')) {
-      testEvent.message += '⬇ std::cout:';
+      if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+
+      testEvent.message += '\n⬇ std::cout:\n';
       for (let i = 0; i < testCase.OverallResult[0].StdOut.length; i++) {
         const element = testCase.OverallResult[0].StdOut[i];
         testEvent.message += element.trimRight();
       }
-      testEvent.message += '\n⬆ std::cout\n';
+      testEvent.message += '\n⬆ std::cout';
     }
 
     if (testCase.OverallResult[0].hasOwnProperty('StdErr')) {
-      testEvent.message += '⬇ std::err:';
+      if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+
+      testEvent.message += '\n⬇ std::err:\n';
       for (let i = 0; i < testCase.OverallResult[0].StdErr.length; i++) {
         const element = testCase.OverallResult[0].StdErr[i];
         testEvent.message += element.trimRight();
       }
-      testEvent.message += '\n⬆ std::err\n';
+      testEvent.message += '\n⬆ std::err';
     }
 
     if (testCase.OverallResult[0].$.success === 'true') {
@@ -199,15 +202,20 @@ export class Catch2TestInfo extends AbstractTestInfo {
     testEvent: TestEvent,
   ): void {
     if (xml.hasOwnProperty('Info')) {
+      if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+
       for (let j = 0; j < xml.Info.length; ++j) {
         const info = xml.Info[j];
-        testEvent.message += '⬇ Info: ' + info.trim() + '\n⬆\n';
+        testEvent.message += '\n⬇ Info: ' + info.trim() + '\n⬆';
       }
     }
     if (xml.hasOwnProperty('Warning')) {
       for (let j = 0; j < xml.Warning.length; ++j) {
         const warning = xml.Warning[j];
-        testEvent.message += '⬇ Warning: ' + warning.trim() + '\n⬆\n';
+
+        if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+        testEvent.message += '\n⬇ Warning: ' + warning.trim() + '\n⬆';
+
         testEvent.decorations!.push({
           line: Number(warning.$.line) - 1 /*It looks vscode works like this.*/,
           message:
@@ -224,7 +232,10 @@ export class Catch2TestInfo extends AbstractTestInfo {
     if (xml.hasOwnProperty('Failure')) {
       for (let j = 0; j < xml.Failure.length; ++j) {
         const failure = xml.Failure[j];
-        testEvent.message += '⬇ Failure: ' + failure._.trim() + '\n⬆\n';
+
+        if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+        testEvent.message += '\n⬇ Failure: ' + failure._.trim() + '\n⬆';
+
         testEvent.decorations!.push({
           line: Number(failure.$.line) - 1 /*It looks vscode works like this.*/,
           message:
@@ -251,7 +262,9 @@ export class Catch2TestInfo extends AbstractTestInfo {
             '\n  Expanded:\n    ' +
             expr.Expanded.map((x: string) => x.trim()).join('; ');
 
+          if (testEvent.message) testEvent.message = testEvent.message.trimRight();
           testEvent.message +=
+            '\n' +
             this._getTitle(title, stack, {
               name: expr.$.type ? expr.$.type : '<unknown>',
               filename: expr.$.filename,
@@ -260,7 +273,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
             ':\n' +
             message +
             '\n' +
-            '⬆\n\n';
+            '⬆';
           testEvent.decorations!.push({
             line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
             message: '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
@@ -286,8 +299,9 @@ export class Catch2TestInfo extends AbstractTestInfo {
         const section = xml.Section[j];
 
         try {
-          if (testEvent.message && !testEvent.message.endsWith(EOL)) testEvent.message += '\n';
-          testEvent.message += `#️⃣ ${section.$.name} (${section.$.filename}:${section.$.line})\n`;
+          if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+          testEvent.message +=
+            '\n' + '⏩ '.repeat(stack.length + 1) + `${section.$.name} (${section.$.filename}:${section.$.line})\n`;
 
           if (typeof section._ === 'string')
             testEvent.message +=
@@ -338,14 +352,18 @@ export class Catch2TestInfo extends AbstractTestInfo {
         for (let j = 0; j < expr.FatalErrorCondition.length; ++j) {
           const fatal = expr.FatalErrorCondition[j];
 
+          if (testEvent.message) testEvent.message = testEvent.message.trimRight();
           testEvent.message +=
-            this._getTitle(title, stack, { name: 'Fatal Error', filename: expr.$.filename, line: expr.$.line }) + ':\n';
+            '\n' +
+            this._getTitle(title, stack, { name: 'Fatal Error', filename: expr.$.filename, line: expr.$.line }) +
+            ':\n';
+
           if (fatal.hasOwnProperty('_')) {
             testEvent.message += '  Error: ' + fatal._.trim() + '\n';
           } else {
             testEvent.message += '  Error: unknown: ' + inspect(fatal) + '\n';
           }
-          testEvent.message += '⬆\n\n';
+          testEvent.message += '⬆';
         }
       } catch (error) {
         this._shared.log.exception(error);
