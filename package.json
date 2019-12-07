@@ -45,7 +45,7 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
-    "@sentry/node": "^5.10.0",
+    "@sentry/node": "^5.10.1",
     "debounce-collect": "^1.0.2",
     "entities": "^1.1.2",
     "gaze": "^1.1.3",
