@@ -14,3 +14,19 @@ TEST_CASE("s1t2", "tag1") {
   REQUIRE(std::false_type::value);
   //
 }
+
+TEST_CASE("cout test") {
+  //
+  std::cout << "cout msg" << std::endl;
+
+  REQUIRE(true);
+  //
+}
+
+TEST_CASE("cerr test") {
+  //
+  std::cerr << "cerr msg" << std::endl;
+
+  REQUIRE(true);
+  //
+}
