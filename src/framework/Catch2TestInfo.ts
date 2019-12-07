@@ -209,7 +209,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
               .map((l: string) => l.trim())
               .filter((l: string) => l.length > 0)
               .join('; ')
-              .substr(0, 20),
+              .substr(0, 200),
           hover: warning._,
         });
       }
@@ -226,7 +226,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
               .map((l: string) => l.trim())
               .filter((l: string) => l.length > 0)
               .join('; ')
-              .substr(0, 20),
+              .substr(0, 200),
           hover: failure._,
         });
       }

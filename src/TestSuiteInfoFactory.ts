@@ -2,7 +2,7 @@ import * as c2fs from './FSWrapper';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { Catch2TestSuiteInfo } from './framework/Catch2TestSuiteInfo';
 import { GoogleTestSuiteInfo } from './framework/GoogleTestSuiteInfo';
-import { DOCTestSuiteInfo } from './framework/DOCTestSuiteInfo';
+//import { DOCTestSuiteInfo } from './framework/DOCTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
 
 interface TestFrameworkInfo {
@@ -43,15 +43,15 @@ export class TestSuiteInfoFactory {
               this._execOptions,
               [framework.version[0], framework.version[1], framework.version[2]],
             );
-          case 'doc':
-            return new DOCTestSuiteInfo(
-              this._shared,
-              this._label,
-              this._description,
-              this._execPath,
-              this._execOptions,
-              [framework.version[0], framework.version[1], framework.version[2]],
-            );
+          // case 'doc':
+          //   return new DOCTestSuiteInfo(
+          //     this._shared,
+          //     this._label,
+          //     this._description,
+          //     this._execPath,
+          //     this._execOptions,
+          //     [framework.version[0], framework.version[1], framework.version[2]],
+          //   );
         }
         throw Error('Unknown error:' + framework.type);
       });

@@ -6,6 +6,7 @@ import * as xml2js from 'xml2js';
 import { DOCTestInfo } from './DOCTestInfo';
 import * as c2fs from '../FSWrapper';
 import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
+import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 
@@ -13,20 +14,20 @@ interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-// class DOCTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
-//   public children: DOCTestInfo[] = [];
+class DOCTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
+  public children: DOCTestInfo[] = [];
 
-//   public constructor(shared: SharedVariables, label: string, id?: string) {
-//     super(shared, label, undefined, id);
-//   }
+  public constructor(shared: SharedVariables, label: string, id?: string) {
+    super(shared, label, undefined, id);
+  }
 
-//   public addChild(test: DOCTestInfo): void {
-//     super.addChild(test);
-//   }
-// }
+  public addChild(test: DOCTestInfo): void {
+    super.addChild(test);
+  }
+}
 
 export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
-  public children: DOCTestInfo[] = [];
+  public children: (DOCTestGroupSuiteInfo | DOCTestInfo)[] = [];
 
   public constructor(
     shared: SharedVariables,
@@ -44,7 +45,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     return this._reloadDOCTests();
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: DOCTestInfo[]): void {
+  private _reloadFromString(testListOutput: string, oldChildren: (DOCTestGroupSuiteInfo | DOCTestInfo)[]): void {
     let lines = testListOutput.split(/\r?\n/);
 
     while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
@@ -123,53 +124,71 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     this.children = [];
     this.label = this.origLabel;
 
-    const cacheFile = this.execPath + '.cache.txt';
+    try {
+      // if we wanna group the suites we need more steps TODO
 
-    if (this._shared.enabledTestListCaching) {
-      try {
-        const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.execPath);
+      const cases = await c2fs
+        .spawnAsync(this.execPath, ['--list-test-cases', '--no-colors=true'], this.execOptions, 30000)
+        .then(output => {
+          if (output.stderr) throw Error(output.stderr);
 
-        if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
-          this._shared.log.info('loading from cache: ', cacheFile);
-          const content = await promisify(fs.readFile)(cacheFile, 'utf8');
+          if (output.stdout.length < 3) throw Error('Output error:' + output.stdout);
+          if (!output.stdout[0].startsWith('[doctest] listing all test case names')) throw Error('TODO');
+          const delimiter = '=================================';
+          if (!output.stdout[1].startsWith(delimiter)) throw Error('TODO');
 
-          this._reloadFromString(content, oldChildren);
-          return Promise.resolve();
-        }
-      } catch (e) {
-        this._shared.log.warn('coudnt use cache', e);
-      }
+          const cases: string[] = [];
+
+          {
+            let i = 2;
+            while (output.stdout.length < i && !output.stdout[i].startsWith(delimiter)) {
+              ++i;
+            }
+
+            if (output.stdout.length >= i) throw Error('Output error:' + output.stdout);
+            if (!output.stdout[i].startsWith(delimiter)) throw Error('TODO');
+          }
+
+          cases.forEach(x => {
+            //this.addChild(new DOCTestInfo());
+          });
+        });
+    } catch (e) {
+      this._shared.log.warn('reloadChildren -> docTestListOutput.stderr', e);
+      const test = this.addChild(
+        new DOCTestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
+      );
+      this._shared.sendTestEventEmitter.fire([{ type: 'test', test: test, state: 'errored', message: e.toString() }]);
     }
 
-    return c2fs
-      .spawnAsync(
-        this.execPath,
-        ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
-        this.execOptions,
-        30000,
-      )
-      .then(docTestListOutput => {
-        if (docTestListOutput.stderr) {
-          this._shared.log.warn('reloadChildren -> docTestListOutput.stderr', docTestListOutput);
-          const test = this.addChild(
-            new DOCTestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
-          );
-          this._shared.sendTestEventEmitter.fire([
-            { type: 'test', test: test, state: 'errored', message: docTestListOutput.stderr },
-          ]);
-          return Promise.resolve();
-        }
+    // return c2fs
+    //   .spawnAsync(
+    //     this.execPath,
+    //     ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
+    //     this.execOptions,
+    //     30000,
+    //   )
+    //   .then(docTestListOutput => {
+    //     if (docTestListOutput.stderr) {
+    //       this._shared.log.warn('reloadChildren -> docTestListOutput.stderr', docTestListOutput);
+    //       const test = this.addChild(
+    //         new DOCTestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
+    //       );
+    //       this._shared.sendTestEventEmitter.fire([
+    //         { type: 'test', test: test, state: 'errored', message: docTestListOutput.stderr },
+    //       ]);
+    //       return Promise.resolve();
+    //     }
 
-        this._reloadFromString(docTestListOutput.stdout, oldChildren);
+    //     this._reloadFromString(docTestListOutput.stdout, oldChildren);
 
-        if (this._shared.enabledTestListCaching) {
-          return promisify(fs.writeFile)(cacheFile, docTestListOutput.stdout).catch(err =>
-            this._shared.log.warn('couldnt write cache file:', err),
-          );
-        }
-        return Promise.resolve();
-      });
+    //     if (this._shared.enabledTestListCaching) {
+    //       return promisify(fs.writeFile)(cacheFile, docTestListOutput.stdout).catch(err =>
+    //         this._shared.log.warn('couldnt write cache file:', err),
+    //       );
+    //     }
+    //     return Promise.resolve();
+    //   });
   }
 
   protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<DOCTestInfo>): string[] {

@@ -140,3 +140,12 @@ TEST_CASE("with desc" * doctest::description("shouldn't take more than 500ms") *
 TEST_CASE("skipped" * doctest::skip(true)) {
   // skipped
 }
+
+TEST_CASE(
+    "really long test name really long test name really long test name really "
+    "long test name really long test name really long test name really long "
+    "test name really long test name really long test name really long test "
+    "name really long test name really long test name really long test name ") {
+}
+
+TEST_CASE("  starts with double space and ends with 2 more ") {}
