@@ -33,15 +33,19 @@ async function spawn(command: string, cwd: string, ...args: string[]): Promise<v
   console.log('$ ' + [command, ...args.map(x => '"' + x + '"')].join(' '));
   return new Promise((resolve, reject) => {
     const c = cp.spawn(command, args, { cwd, stdio: 'pipe' });
+    const proc = { output: '' };
     c.on('exit', (code: number) => {
+      if (code !== 0) console.log(proc.output);
       code == 0 ? resolve() : reject(new Error('Process exited with: ' + code));
     });
+    c.stdout.on('data', x => (proc.output += x.toString()));
+    c.stderr.on('data', x => (proc.output += x.toString()));
   });
 }
 
 ///
 
-describe(path.basename(__filename), function() {
+describe.only(path.basename(__filename), function() {
   async function compile(): Promise<void> {
     await fse.mkdirp(cppUri.fsPath);
 
