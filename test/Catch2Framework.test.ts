@@ -188,7 +188,7 @@ describe(path.basename(__filename), function() {
         description: '(0ms)',
         tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
         message:
-          '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆\n\n',
+          '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
       },
       {
         type: 'suite',

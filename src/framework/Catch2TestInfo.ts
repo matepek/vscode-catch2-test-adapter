@@ -129,11 +129,17 @@ export class Catch2TestInfo extends AbstractTestInfo {
       );
     }
 
+    if (typeof testCase._ === 'string')
+      testEvent.message += testCase._.split(EOL)
+        .map((x: string) => x.trim())
+        .filter((l: string) => l.length > 0)
+        .join('\n');
+
     const title: Catch2Section = new Catch2Section(testCase.$.name, testCase.$.filename, testCase.$.line);
 
     this._processInfoWarningAndFailureTags(testCase, title, [], testEvent);
 
-    this._processXmlTagExpressions(testCase, title, [], testEvent);
+    this._processXmlTagExpressionsAndExceptions(testCase, title, [], testEvent);
 
     this._processXmlTagSections(testCase, title, [], testEvent, title);
 
@@ -142,21 +148,25 @@ export class Catch2TestInfo extends AbstractTestInfo {
     this._processXmlTagFatalErrorConditions(testCase, title, [], testEvent);
 
     if (testCase.OverallResult[0].hasOwnProperty('StdOut')) {
-      testEvent.message += '⬇ std::cout:';
+      if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+
+      testEvent.message += '\n⬇ std::cout:\n';
       for (let i = 0; i < testCase.OverallResult[0].StdOut.length; i++) {
         const element = testCase.OverallResult[0].StdOut[i];
         testEvent.message += element.trimRight();
       }
-      testEvent.message += '\n⬆ std::cout\n';
+      testEvent.message += '\n⬆ std::cout';
     }
 
     if (testCase.OverallResult[0].hasOwnProperty('StdErr')) {
-      testEvent.message += '⬇ std::err:';
+      if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+
+      testEvent.message += '\n⬇ std::err:\n';
       for (let i = 0; i < testCase.OverallResult[0].StdErr.length; i++) {
         const element = testCase.OverallResult[0].StdErr[i];
         testEvent.message += element.trimRight();
       }
-      testEvent.message += '\n⬆ std::err\n';
+      testEvent.message += '\n⬆ std::err';
     }
 
     if (testCase.OverallResult[0].$.success === 'true') {
@@ -192,15 +202,20 @@ export class Catch2TestInfo extends AbstractTestInfo {
     testEvent: TestEvent,
   ): void {
     if (xml.hasOwnProperty('Info')) {
+      if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+
       for (let j = 0; j < xml.Info.length; ++j) {
         const info = xml.Info[j];
-        testEvent.message += '⬇ Info: ' + info.trim() + ' ⬆\n';
+        testEvent.message += '\n⬇ Info: ' + info.trim() + '\n⬆';
       }
     }
     if (xml.hasOwnProperty('Warning')) {
       for (let j = 0; j < xml.Warning.length; ++j) {
         const warning = xml.Warning[j];
-        testEvent.message += '⬇ Warning: ' + warning.trim() + ' ⬆\n';
+
+        if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+        testEvent.message += '\n⬇ Warning: ' + warning.trim() + '\n⬆';
+
         testEvent.decorations!.push({
           line: Number(warning.$.line) - 1 /*It looks vscode works like this.*/,
           message:
@@ -209,7 +224,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
               .map((l: string) => l.trim())
               .filter((l: string) => l.length > 0)
               .join('; ')
-              .substr(0, 20),
+              .substr(0, 200),
           hover: warning._,
         });
       }
@@ -217,7 +232,10 @@ export class Catch2TestInfo extends AbstractTestInfo {
     if (xml.hasOwnProperty('Failure')) {
       for (let j = 0; j < xml.Failure.length; ++j) {
         const failure = xml.Failure[j];
-        testEvent.message += '⬇ Failure: ' + failure._.trim() + ' ⬆\n';
+
+        if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+        testEvent.message += '\n⬇ Failure: ' + failure._.trim() + '\n⬆';
+
         testEvent.decorations!.push({
           line: Number(failure.$.line) - 1 /*It looks vscode works like this.*/,
           message:
@@ -226,14 +244,19 @@ export class Catch2TestInfo extends AbstractTestInfo {
               .map((l: string) => l.trim())
               .filter((l: string) => l.length > 0)
               .join('; ')
-              .substr(0, 20),
+              .substr(0, 200),
           hover: failure._,
         });
       }
     }
   }
 
-  private _processXmlTagExpressions(xml: XmlObject, title: Frame, stack: Catch2Section[], testEvent: TestEvent): void {
+  private _processXmlTagExpressionsAndExceptions(
+    xml: XmlObject,
+    title: Frame,
+    stack: Catch2Section[],
+    testEvent: TestEvent,
+  ): void {
     if (xml.hasOwnProperty('Expression')) {
       for (let j = 0; j < xml.Expression.length; ++j) {
         const expr = xml.Expression[j];
@@ -244,7 +267,9 @@ export class Catch2TestInfo extends AbstractTestInfo {
             '\n  Expanded:\n    ' +
             expr.Expanded.map((x: string) => x.trim()).join('; ');
 
+          if (testEvent.message) testEvent.message = testEvent.message.trimRight();
           testEvent.message +=
+            '\n' +
             this._getTitle(title, stack, {
               name: expr.$.type ? expr.$.type : '<unknown>',
               filename: expr.$.filename,
@@ -253,7 +278,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
             ':\n' +
             message +
             '\n' +
-            '⬆\n\n';
+            '⬆';
           testEvent.decorations!.push({
             line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
             message: '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
@@ -263,6 +288,32 @@ export class Catch2TestInfo extends AbstractTestInfo {
           this._shared.log.exception(error);
         }
         this._processXmlTagFatalErrorConditions(expr, title, stack, testEvent);
+      }
+    }
+    if (xml.hasOwnProperty('Exception')) {
+      for (let j = 0; j < xml.Exception.length; ++j) {
+        const exception = xml.Exception[j];
+        try {
+          const message = 'Exception were thrown: ' + exception._.trim();
+
+          if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+          testEvent.message += '\n  ' + message;
+
+          testEvent.decorations!.push({
+            line: Number(exception.$.line) - 1 /*It looks vscode works like this.*/,
+            message:
+              '⬅ ' +
+              message
+                .split(EOL)
+                .map((x: string) => x.trim())
+                .filter((l: string) => l.length > 0)
+                .join('')
+                .substr(0, 200),
+            hover: message,
+          });
+        } catch (error) {
+          this._shared.log.exception(error);
+        }
       }
     }
   }
@@ -277,6 +328,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     if (xml.hasOwnProperty('Section')) {
       for (let j = 0; j < xml.Section.length; ++j) {
         const section = xml.Section[j];
+
         try {
           let currSection = parentSection.children.find(
             v => v.name === section.$.name && v.filename === section.$.filename && v.line === section.$.line,
@@ -287,7 +339,10 @@ export class Catch2TestInfo extends AbstractTestInfo {
             parentSection.children.push(currSection);
           }
 
+          const isLeaf = section.Section === undefined || section.Section.length === 0;
+
           if (
+            isLeaf &&
             section.OverallResults &&
             section.OverallResults.length > 0 &&
             section.OverallResults[0].$.failures !== '0'
@@ -295,11 +350,26 @@ export class Catch2TestInfo extends AbstractTestInfo {
             currSection.failed = true;
           }
 
+          if (testEvent.message) testEvent.message = testEvent.message.trimRight() + '\n';
+
+          testEvent.message += '⏩ '.repeat(stack.length + 1);
+
+          if (isLeaf) testEvent.message += currSection.failed ? '❌ ' : '✅ ';
+
+          testEvent.message += `${section.$.name} (${section.$.filename}:${section.$.line})`;
+
+          if (typeof section._ === 'string')
+            testEvent.message +=
+              section._.split(EOL)
+                .map((x: string) => x.trim())
+                .filter((l: string) => l.length > 0)
+                .join('\n') + '\n';
+
           const currStack = stack.concat(currSection);
 
-          this._processInfoWarningAndFailureTags(xml, title, currStack, testEvent);
+          this._processInfoWarningAndFailureTags(section, title, currStack, testEvent);
 
-          this._processXmlTagExpressions(section, title, currStack, testEvent);
+          this._processXmlTagExpressionsAndExceptions(section, title, currStack, testEvent);
 
           this._processXmlTagSections(section, title, currStack, testEvent, currSection);
         } catch (error) {
@@ -320,14 +390,18 @@ export class Catch2TestInfo extends AbstractTestInfo {
         for (let j = 0; j < expr.FatalErrorCondition.length; ++j) {
           const fatal = expr.FatalErrorCondition[j];
 
+          if (testEvent.message) testEvent.message = testEvent.message.trimRight();
           testEvent.message +=
-            this._getTitle(title, stack, { name: 'Fatal Error', filename: expr.$.filename, line: expr.$.line }) + ':\n';
+            '\n' +
+            this._getTitle(title, stack, { name: 'Fatal Error', filename: expr.$.filename, line: expr.$.line }) +
+            ':\n';
+
           if (fatal.hasOwnProperty('_')) {
             testEvent.message += '  Error: ' + fatal._.trim() + '\n';
           } else {
             testEvent.message += '  Error: unknown: ' + inspect(fatal) + '\n';
           }
-          testEvent.message += '⬆\n\n';
+          testEvent.message += '⬆';
         }
       } catch (error) {
         this._shared.log.exception(error);

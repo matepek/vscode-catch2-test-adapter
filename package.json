@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.7.7",
+  "version": "2.7.8",
   "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -28,30 +28,33 @@
     "unit test",
     "c++"
   ],
-  "main": "out/src/main.js",
+  "main": "out/dist/main.bundle.js",
   "scripts": {
     "postinstall": "node ./node_modules/vscode/bin/install",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
     "clean": "rimraf out node_modules vscode-catch2-test-adapter-*.vsix",
-    "compile": "tsc -p ./tsconfig.json",
     "watch": "tsc -watch -p ./tsconfig.json",
-    "rebuild": "npm run clean && npm run build",
+    "compile": "tsc -p ./tsconfig.json",
+    "test": "node ./out/test/runTests.js",
+    "pretest": "npm run compile",
     "package": "vsce package",
-    "vscode:prepublish": "tsc -p ./tsconfig.json",
     "deploy": "node ./out/test/repo_scripts/deploy.js",
-    "test": "node ./out/test/runTests.js"
+    "vscode:prepublish": "webpack --config webpack.config.js --mode production",
+    "webpack": "webpack --config webpack.config.js --mode development"
   },
   "extensionDependencies": [
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
-    "@sentry/node": "^5.10.0",
+    "@sentry/node": "^5.10.1",
     "debounce-collect": "^1.0.2",
     "entities": "^1.1.2",
     "gaze": "^1.1.3",
     "tslib": "^1.10.0",
     "vscode-test-adapter-api": "^1.7.0",
     "vscode-test-adapter-util": "^0.7.0",
+    "webpack-bundle-analyzer": "^3.6.0",
+    "webpack-cli": "^3.3.10",
     "xml2js": "^0.4.22"
   },
   "devDependencies": {
@@ -73,12 +76,15 @@
     "fs-extra": "^7.0.1",
     "mocha-eslint": "^5.0.0",
     "prettier": "^1.19.1",
+    "raw-loader": "^2.0.0",
     "request-promise": "4.2.4",
     "sinon": "^7.5.0",
+    "ts-loader": "^6.2.1",
     "typescript": "^3.7.3",
     "vsce": "^1.70.0",
     "vscode": "^1.1.36",
-    "vscode-test": "^1.2.3"
+    "vscode-test": "^1.2.3",
+    "webpack": "^4.35.2"
   },
   "engines": {
     "vscode": "^1.23.0"

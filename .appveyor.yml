@@ -19,6 +19,7 @@ install:
   - npm install
   - npm audit --production
   - npm run compile
+  - npm run webpack
 
 build: off
 

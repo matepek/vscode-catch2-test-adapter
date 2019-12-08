@@ -2,10 +2,10 @@
 */**
 
 # https://code.visualstudio.com/docs/extensions/publish-extension#_advanced-usage : Development dependencies listed in devDependencies will be automatically ignored, you don't need to add them to the .vscodeignore file.
-!node_modules
+node_modules
 
 # filter out's subdirs
-!out/src/**/*
+!out/dist/main.bundle.js
 
 !package.json
 !resources/icon.png

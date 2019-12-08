@@ -6,7 +6,7 @@ project(Tests)
 
 #
 
-file(WRITE "${PROJECT_BINARY_DIR}/.vscode/settings.jsonX" "{\n  \"catch2TestExplorer.executables\": [ \"*.exe\" ],\n  \"catch2TestExplorer.logpanel\": true\n}\n")
+file(WRITE "${PROJECT_BINARY_DIR}/.vscode/settings.json" "{\n  \"catch2TestExplorer.executables\": [ \"*.exe\" ],\n  \"catch2TestExplorer.logpanel\": true\n}\n")
 
 #
 
@@ -20,6 +20,7 @@ endif()
 #
 
 include("GoogleTest.cmake")
+
 add_gtest_with_main(gtest1 "gtest1.cpp")
 
 #
@@ -30,3 +31,9 @@ add_catch2test_with_main(suite1 "suite1.cpp")
 add_catch2test_with_main(suite2 "suite2.cpp")
 add_catch2test_with_main(suite3 "suite3.cpp")
 add_catch2test_with_main(suite4 "suite4.cpp")
+
+#
+
+#include("DOCTest.cmake")
+
+#add_doctest_with_main(doctest1 "doctest1.cpp")
