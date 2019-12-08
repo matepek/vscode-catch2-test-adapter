@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.7.8]
+## [2.7.8] - 2019-12-08
 
 Finally I decided to use webpack. Faster load are expcted.
 
