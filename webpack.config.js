@@ -12,7 +12,6 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'out', 'dist'),
     filename: 'main.bundle.js',
-    devtoolModuleFilenameTemplate: '../../[resource-path]',
     libraryTarget: 'commonjs2',
   },
 

@@ -3,6 +3,12 @@ import * as path from 'path';
 import * as fse from 'fs-extra';
 
 describe(path.basename(__filename), function() {
+  it('package.json: main should be "out/dist/main.bundle.js"', function() {
+    // this check is necessary because for development sometimes I change it.
+    const packageJson = fse.readJSONSync(path.join(__dirname, '../..', 'package.json'));
+    assert.strictEqual(packageJson['main'], 'out/dist/main.bundle.js');
+  });
+
   it('package.json: executables should be consistent', function() {
     // definitions/$ref combo doesn't work in case of vscode :(
     const packageJson = fse.readJSONSync(path.join(__dirname, '../..', 'package.json'));

@@ -29,7 +29,7 @@ install:
   - npm install
   - npm audit --production
   - npm run compile
-  - npm run webpack
+  - npm run webpack # test dos not use it, but we are testing the webpack creation
   - ls -all out/dist
 
 script:
