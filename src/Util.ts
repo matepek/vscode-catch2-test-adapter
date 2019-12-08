@@ -85,3 +85,33 @@ export function hashString<T>(str: string, algorithm: string = 'sha1'): string {
   hash.update(str);
   return hash.digest('hex');
 }
+
+export function reindentArr(indentLevel: number, str: string | undefined, indentWidth: number = 2): string[] {
+  if (str === undefined) return [];
+
+  const lines = str.split(/\r?\n/);
+  let indent = 9999;
+  lines.forEach(l => {
+    let spaces = 0;
+    while (l.length < spaces && l[spaces] === ' ') ++spaces;
+    indent = Math.min(indent, spaces);
+  });
+  const reindented = lines.map(l => ' '.repeat(indentWidth).repeat(indentLevel) + l.substr(indent).trimRight());
+  return reindented;
+}
+
+export function milisecToStr(durationInMilisec: number): string {
+  const minute = Math.floor(durationInMilisec / 60000);
+  const sec = Math.floor((durationInMilisec - minute * 60000) / 1000);
+  const miliSec = Math.floor(durationInMilisec - minute * 60000 - sec * 1000);
+
+  let durationArr = [
+    [minute, 'm'],
+    [sec, 's'],
+    [miliSec, 'ms'],
+  ].filter(v => v[0]);
+
+  if (durationArr.length === 0) durationArr.push([0, 'ms']);
+
+  return durationArr.map(v => v[0].toString() + v[1]).join(' ');
+}

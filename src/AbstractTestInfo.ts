@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
-import { generateUniqueId } from './Util';
+import { generateUniqueId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 
 export abstract class AbstractTestInfo implements TestInfo {
@@ -60,26 +60,10 @@ export abstract class AbstractTestInfo implements TestInfo {
     };
   }
 
-  public static milisecToStr(durationInMilisec: number): string {
-    const minute = Math.floor(durationInMilisec / 60000);
-    const sec = Math.floor((durationInMilisec - minute * 60000) / 1000);
-    const miliSec = durationInMilisec - minute * 60000 - sec * 1000;
-
-    let durationArr = [
-      [minute, 'm'],
-      [sec, 's'],
-      [miliSec, 'ms'],
-    ].filter(v => v[0]);
-
-    if (durationArr.length === 0) durationArr.push([0, 'ms']);
-
-    return durationArr.map(v => v[0].toString() + v[1]).join(' ');
-  }
-
   protected _extendDescriptionAndTooltip(ev: TestEvent, durationInMilisec: number): void {
     this.lastRunMilisec = durationInMilisec;
 
-    const durationStr = AbstractTestInfo.milisecToStr(durationInMilisec);
+    const durationStr = milisecToStr(durationInMilisec);
 
     ev.description = this.description + (this.description ? ' ' : '') + '(' + durationStr + ')';
     ev.tooltip = this.tooltip + (this.tooltip ? '\n\n' : '') + '⏱ ' + durationStr;

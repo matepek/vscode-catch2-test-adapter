@@ -1,6 +1,6 @@
 import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
 
-import { generateUniqueId } from './Util';
+import { generateUniqueId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
 
@@ -52,7 +52,7 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     let tooltip: string | undefined = undefined;
 
     if (durationSum !== undefined) {
-      const durationStr = AbstractTestInfo.milisecToStr(durationSum);
+      const durationStr = milisecToStr(durationSum);
 
       description = (this.description ? this.description + ' ' : '') + '(' + durationStr + ')';
 
