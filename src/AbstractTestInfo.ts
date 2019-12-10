@@ -45,7 +45,7 @@ export abstract class AbstractTestInfo implements TestInfo {
 
   public getTimeoutEvent(milisec: number): TestEvent {
     const ev = this.getFailedEventBase();
-    ev.message += '⌛️ Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": ' + milisec / 1000 + ' second(s).\n';
+    ev.message += '⌛️ Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": ' + milisec / 1000 + ' second(s).';
     ev.state = 'errored';
     return ev;
   }
@@ -66,7 +66,7 @@ export abstract class AbstractTestInfo implements TestInfo {
     const durationStr = milisecToStr(durationInMilisec);
 
     ev.description = this.description + (this.description ? ' ' : '') + '(' + durationStr + ')';
-    ev.tooltip = this.tooltip + (this.tooltip ? '\n\n' : '') + '⏱ ' + durationStr;
+    ev.tooltip = this.tooltip + (this.tooltip ? '\n\n' : '') + '⏱Duration: ' + durationStr;
   }
 
   public findRouteToTestById(id: string): AbstractTestInfo[] | undefined {

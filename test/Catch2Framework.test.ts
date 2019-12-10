@@ -135,7 +135,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(exception, undefined);
   });
 
-  specify('arriving <TestCase> for missing TestInfo', async function() {
+  specify.only('arriving <TestCase> for missing TestInfo', async function() {
     this.timeout(5000);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
@@ -183,12 +183,11 @@ describe(path.basename(__filename), function() {
         state: 'failed',
         test: s1t2,
         decorations: [
-          { line: 14, message: '⬅ false', hover: '  Original:\n    std::false_type::value\n  Expanded:\n    false' },
+          { line: 14, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
         ],
         description: '(0ms)',
-        tooltip: 'Name: s1t2\nDescription: tag1\n\n⏱ 0ms',
-        message:
-          '⏱ Duration: 0.000204 second(s).\n⬇ s1t2 (at 13)\nREQUIRE (at 15):\n  Original:\n    std::false_type::value\n  Expanded:\n    false\n⬆',
+        tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
+        message: '⏱Duration: 0.000204 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
       },
       {
         type: 'suite',
@@ -196,7 +195,7 @@ describe(path.basename(__filename), function() {
         suite: adapter.suite1,
         description: './ (0ms)',
         tooltip:
-          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 1\n  - failed: 1\n\n⏱ 0ms',
+          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 1\n  - failed: 1\n\n⏱Duration: 0ms',
       },
       { type: 'finished' },
       { type: 'started', tests: [s1t1.id] },
@@ -208,8 +207,8 @@ describe(path.basename(__filename), function() {
         test: s1t1,
         decorations: [],
         description: '(0ms)',
-        tooltip: 'Name: s1t1\nDescription: tag1\n\n⏱ 0ms',
-        message: '⏱ Duration: 0.000132 second(s).\n',
+        tooltip: 'Name: s1t1\nDescription: tag1\n⏱Duration: 0ms',
+        message: '⏱Duration: 0.000132 second(s).',
       },
       {
         type: 'suite',
@@ -217,7 +216,7 @@ describe(path.basename(__filename), function() {
         suite: adapter.suite1,
         description: './ (0ms)',
         tooltip:
-          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱ 0ms',
+          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱Duration: 0ms',
       },
       { type: 'finished' },
     ]);

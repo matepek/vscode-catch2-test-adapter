@@ -108,7 +108,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     const testEventBuilder = new TestEventBuilder(this);
 
-    if (rngSeed) testEventBuilder.appendTooltip(`🔀 Randomness seeded to: ${rngSeed.toString()}`);
+    if (rngSeed) testEventBuilder.appendMessage(`🔀 Randomness seeded to: ${rngSeed.toString()}`);
 
     this._processXmlTagTestCaseInner(res.TestCase, testEventBuilder);
 
@@ -249,6 +249,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
           testEventBuilder.appendDecorator(
             Number(expr.$.line) - 1,
             '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join(' | '),
+            message,
           );
         }
       }

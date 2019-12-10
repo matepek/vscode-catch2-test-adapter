@@ -1,5 +1,5 @@
 import { TestEvent, TestInfo, TestDecoration } from 'vscode-test-adapter-api';
-import { reindentArr, milisecToStr } from './Util';
+import { reindentStr, reindentLines, milisecToStr } from './Util';
 
 export type TestEventState = 'running' | 'passed' | 'failed' | 'skipped' | 'errored';
 
@@ -30,16 +30,17 @@ export class TestEventBuilder {
   }
 
   public appendMessage(str: string | undefined): void {
-    this._message.push(...reindentArr(0, str));
+    this._message.push(...reindentStr(0, str));
   }
 
-  public appendDecorator(line: number, str: string | undefined): void {
-    const reindented = reindentArr(0, str);
+  public appendDecorator(line: number, msg: string | string[] | undefined, hover?: string): void {
+    const reindented =
+      typeof msg === 'string' ? [reindentStr(0, msg)] : Array.isArray(msg) ? reindentLines(0, msg) : [];
 
     this._decorations.push({
       line,
       message: '⬅ ' + reindented.length ? reindented.join('; ').substr(0, 200) : 'failed',
-      hover: reindented.length ? reindented.join('\n') : undefined,
+      hover: hover ? reindentStr(0, hover).join('\n') : reindented.length ? reindented.join('\n') : undefined,
     });
   }
 
@@ -49,27 +50,37 @@ export class TestEventBuilder {
   }
 
   public build(): TestEvent {
-    const duration = this._durationMilisec ? milisecToStr(this._durationMilisec) : '';
+    const duration = this._durationMilisec ? milisecToStr(this._durationMilisec) : undefined;
 
-    const description =
-      (this.test.description ? this.test.description + ' ' : '') +
-      duration +
-      (this._description ? this._description : '');
+    const description: string[] = [];
+    const message: string[] = [];
+    const tooltip: string[] = [];
 
-    const message =
-      (duration ? `⏱ Duration: ${duration}.\n` : '') + (this._message.length ? this._message.join('\n') : '');
+    if (this.test.description) description.push(this.test.description);
 
-    const tooltip =
-      (this.test.tooltip ? this.test.tooltip + '\n' : '') + (this._tooltip.length ? this._tooltip.join('\n') : '');
+    if (duration && this._durationMilisec) {
+      message.push(`⏱Duration: ${Math.round(this._durationMilisec * 1000) / 1000000} second(s).`);
+      description.push(`(${duration})`);
+    }
+
+    message.push(...this._message);
+
+    if (this._description) description.push(this._description);
+
+    if (this.test.tooltip) tooltip.push(this.test.tooltip);
+
+    tooltip.push(...this._tooltip);
+
+    if (duration) tooltip.push(`⏱Duration: ${duration}`);
 
     return {
       type: 'test',
       test: this.test,
       state: this._state,
-      message: message ? message : undefined,
-      decorations: this._decorations.length ? this._decorations : undefined,
-      description: description ? description : undefined,
-      tooltip: tooltip ? tooltip : undefined,
+      message: message.length ? message.join('\n') : undefined,
+      decorations: this._decorations.length ? this._decorations : [],
+      description: description.length ? description.join(' ') : undefined,
+      tooltip: tooltip.length ? tooltip.join('\n') : undefined,
     };
   }
 }

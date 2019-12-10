@@ -86,24 +86,28 @@ export function hashString<T>(str: string, algorithm: string = 'sha1'): string {
   return hash.digest('hex');
 }
 
-export function reindentArr(indentLevel: number, str: string | undefined, indentWidth: number = 2): string[] {
-  if (str === undefined) return [];
-
-  const lines = str.split(/\r?\n/);
+export function reindentLines(indentLevel: number, lines: string[], indentWidth: number = 2): string[] {
   let indent = 9999;
   lines.forEach(l => {
     let spaces = 0;
-    while (l.length < spaces && l[spaces] === ' ') ++spaces;
+    while (spaces < l.length && l[spaces] === ' ') ++spaces;
     indent = Math.min(indent, spaces);
   });
-  const reindented = lines.map(l => ' '.repeat(indentWidth).repeat(indentLevel) + l.substr(indent).trimRight());
+  const reindented = lines.map(l => ' '.repeat(indentWidth * indentLevel) + l.substr(indent).trimRight());
   return reindented;
+}
+
+export function reindentStr(indentLevel: number, str: string | undefined, indentWidth: number = 2): string[] {
+  if (str === undefined) return [];
+
+  const lines = str.split(/\r?\n/);
+  return reindentLines(indentLevel, lines, indentWidth);
 }
 
 export function milisecToStr(durationInMilisec: number): string {
   const minute = Math.floor(durationInMilisec / 60000);
   const sec = Math.floor((durationInMilisec - minute * 60000) / 1000);
-  const miliSec = Math.floor(durationInMilisec - minute * 60000 - sec * 1000);
+  const miliSec = Math.round(durationInMilisec - minute * 60000 - sec * 1000);
 
   let durationArr = [
     [minute, 'm'],

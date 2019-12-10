@@ -65,7 +65,7 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
         Object.keys(stateStat)
           .map(state => '  - ' + state + ': ' + stateStat[state])
           .join('\n') +
-        '\n\n⏱ ' +
+        '\n\n⏱Duration: ' +
         durationStr;
     }
 

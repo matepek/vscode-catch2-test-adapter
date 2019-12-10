@@ -77,6 +77,7 @@ export class DOCTestInfo extends AbstractTestInfo {
     return t;
   }
 
+  // eslint-disable-next-line
   public getDebugParams(breakOnFailure: boolean): string[] {
     const debugParams: string[] = ['--test-case=' + this.getEscapedTestName()];
     return debugParams;

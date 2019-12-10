@@ -307,8 +307,23 @@ export class TestAdapter extends my.TestAdapter {
     const i = this.testStatesEvents.findIndex(
       (v: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent) => deepStrictEqual(searchFor, v),
     );
-    assert.ok(0 <= i, 'getTestStatesEventIndex failed to find: ' + inspect(this.testStatesEvents));
+    assert.ok(
+      0 <= i,
+      'getTestStatesEventIndex failed to find: ' +
+        inspect(searchFor, false, 1) +
+        '\nin:\n' +
+        inspect(this.testStatesEvents, false, 2),
+    );
     return i;
+  }
+
+  public testStateEventIndexLess(
+    less: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent,
+    thanThis: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent,
+  ): void {
+    const l = this.getTestStatesEventIndex(less);
+    const r = this.getTestStatesEventIndex(thanThis);
+    assert.ok(l < r, 'testStateEventIndexLess: ' + inspect({ less: [l, less], thanThis: [r, thanThis] }));
   }
 
   public async doAndWaitForReloadEvent(context: Mocha.Context, action: Function): Promise<TestSuiteInfo | undefined> {
