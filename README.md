@@ -10,9 +10,10 @@
 [![GitHub license](https://img.shields.io/github/license/matepek/vscode-catch2-test-adapter.svg?style=for-the-badge)](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/LICENSE)
 [![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=for-the-badge)](https://github.com/prettier/prettier)
 
-This extension allows you to run your [Catch2](https://github.com/catchorg/Catch2)
-and [Google Test](https://github.com/google/googletest) tests using the
-[Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
+This extension allows you to run your [Catch2](https://github.com/catchorg/Catch2),
+[Google Test](https://github.com/google/googletest)
+and [doctest](https://github.com/onqtam/doctest) (experimental)
+tests using the [Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
 
 ## Features and Screenshots
 

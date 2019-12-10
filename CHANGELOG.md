@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.7.9]
 
+### Added
+
+- experimental support for [doctest](https://github.com/onqtam/doctest)
+
 ## [2.7.8] - 2019-12-08
 
 Finally I decided to use webpack. Package is the fraction of the previous version and loading time is faster.
