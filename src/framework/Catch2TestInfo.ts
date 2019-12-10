@@ -176,7 +176,30 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
   }
 
+  private static readonly _expectedPropertyNames = new Set([
+    '_',
+    '$',
+    'Section',
+    'Info',
+    'Warning',
+    'Failure',
+    'Expression',
+    'OverallResult',
+    'OverallResults',
+    'FatalErrorCondition',
+  ]);
+
   private _processTags(xml: XmlObject, title: Frame, stack: Catch2Section[], testEventBuilder: TestEventBuilder): void {
+    {
+      Object.getOwnPropertyNames(xml).forEach(n => {
+        if (!Catch2TestInfo._expectedPropertyNames.has(n)) {
+          this._shared.log.error('undexpected Catch2 tag', n);
+          testEventBuilder.appendMessage('unexpected Catch2 tag:' + n);
+          testEventBuilder.setState('errored');
+        }
+      });
+    }
+
     testEventBuilder.appendMessage(xml._);
 
     try {

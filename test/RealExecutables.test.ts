@@ -45,7 +45,7 @@ async function spawn(command: string, cwd: string, ...args: string[]): Promise<v
 
 ///
 
-describe.only(path.basename(__filename), function() {
+describe(path.basename(__filename), function() {
   async function compile(): Promise<void> {
     await fse.mkdirp(cppUri.fsPath);
 
@@ -142,7 +142,7 @@ describe.only(path.basename(__filename), function() {
       await settings.updateConfig('executables', [
         {
           name: '${baseFilename}',
-          pattern: 'tmp/**/suite[0-9].exe',
+          pattern: 'tmp/suite[0-9].exe',
           cwd: '${workspaceFolder}',
         },
       ]);
@@ -207,7 +207,7 @@ describe.only(path.basename(__filename), function() {
       await settings.updateConfig('executables', [
         {
           name: '${baseFilename}',
-          pattern: 'tmp/*gtest[0-9].exe',
+          pattern: 'tmp/gtest[0-9].exe',
           cwd: '${workspaceFolder}',
         },
       ]);
@@ -225,6 +225,36 @@ describe.only(path.basename(__filename), function() {
       const eventCount = adapter.testStatesEvents.length;
       await adapter.run([adapter.root.id]);
       assert.strictEqual(adapter.testStatesEvents.length - eventCount, 50, inspect(adapter.testStatesEvents));
+    });
+  });
+
+  context('doctest tests', function() {
+    it('should be found and run withouth error', async function() {
+      if (process.env['TRAVIS'] == 'true') this.skip();
+
+      this.timeout(8000);
+      this.slow(2000);
+      await settings.updateConfig('executables', [
+        {
+          name: '${baseFilename}',
+          pattern: 'tmp/doctest[0-9].exe',
+          cwd: '${workspaceFolder}',
+        },
+      ]);
+
+      await copy(inCpp('doctest1.exe'), inWSTmp('doctest1.exe'));
+
+      await waitFor(this, () => {
+        return fse.existsSync(inWSTmp('doctest1.exe'));
+      });
+
+      adapter = new TestAdapter();
+      await adapter.load();
+      assert.strictEqual(adapter.root.children.length, 1);
+
+      const eventCount = adapter.testStatesEvents.length;
+      await adapter.run([adapter.root.id]);
+      assert.strictEqual(adapter.testStatesEvents.length - eventCount, 26, inspect(adapter.testStatesEvents));
     });
   });
 });

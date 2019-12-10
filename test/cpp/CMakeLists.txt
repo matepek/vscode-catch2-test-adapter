@@ -34,6 +34,6 @@ add_catch2test_with_main(suite4 "suite4.cpp")
 
 #
 
-#include("DOCTest.cmake")
+include("DOCTest.cmake")
 
-#add_doctest_with_main(doctest1 "doctest1.cpp")
+add_doctest_with_main(doctest1 "doctest1.cpp")

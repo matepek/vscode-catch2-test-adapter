@@ -122,13 +122,10 @@ TEST_CASE("Nested - related to https://github.com/onqtam/doctest/issues/282") {
 TEST_SUITE_BEGIN("suite1");
 
 TEST_CASE("suite1t1") {}
-TEST_CASE("suite1t1") {}
 
 TEST_SUITE_BEGIN("suite11");  // double nesting doesnt count
 
-TEST_CASE("suite1t1") {}
-
-TEST_SUITE_END();
+TEST_CASE("suite11t1") {}
 
 TEST_SUITE_END();
 

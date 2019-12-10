@@ -1,361 +1,320 @@
-// import { TestEvent } from 'vscode-test-adapter-api';
-// import * as xml2js from 'xml2js';
-// import { EOL } from 'os';
+import { TestEvent } from 'vscode-test-adapter-api';
+import * as xml2js from 'xml2js';
+import { AbstractTestInfo } from '../AbstractTestInfo';
+import { SharedVariables } from '../SharedVariables';
+import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
+import { TestEventBuilder } from '../TestEventBuilder';
 
-// import { AbstractTestInfo } from '../AbstractTestInfo';
-// import { inspect } from 'util';
-// import { SharedVariables } from '../SharedVariables';
-// import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
+interface XmlObject {
+  [prop: string]: any; //eslint-disable-line
+}
 
-// interface XmlObject {
-//   [prop: string]: any; //eslint-disable-line
-// }
+interface Frame {
+  name: string;
+  filename: string;
+  line: number;
+}
 
-// interface Frame {
-//   name: string;
-//   filename: string;
-//   line: number;
-// }
+export class DOCSection implements Frame {
+  public constructor(name: string, filename: string, line: number) {
+    this.name = name;
+    // some debug adapter on ubuntu starts debug session in shell,
+    // this prevents the SECTION("`pwd`") to be executed
+    this.name = this.name.replace(/`/g, '\\`');
 
-// export class DOCSection implements Frame {
-//   public constructor(name: string, filename: string, line: number) {
-//     this.name = name;
-//     // some debug adapter on ubuntu starts debug session in shell,
-//     // this prevents the SECTION("`pwd`") to be executed
-//     this.name = this.name.replace(/`/g, '\\`');
+    this.filename = filename;
+    this.line = line;
+  }
 
-//     this.filename = filename;
-//     this.line = line;
-//   }
+  public readonly name: string;
+  public readonly filename: string;
+  public readonly line: number;
+  public readonly children: DOCSection[] = [];
+  public failed: boolean = false;
+}
 
-//   public readonly name: string;
-//   public readonly filename: string;
-//   public readonly line: number;
-//   public readonly children: DOCSection[] = [];
-//   public failed: boolean = false;
-// }
+export class DOCTestInfo extends AbstractTestInfo {
+  public constructor(
+    shared: SharedVariables,
+    id: string | undefined,
+    testNameAsId: string,
+    skipped: boolean,
+    file: string | undefined,
+    line: number | undefined,
+    old?: DOCTestInfo,
+  ) {
+    super(
+      shared,
+      id,
+      testNameAsId,
+      testNameAsId.startsWith('  Scenario:') ? '⒮' + testNameAsId.substr(11) : testNameAsId,
+      skipped,
+      file ? file : old ? old.capturedFilename : undefined,
+      line ? line : old ? old.capturedLine : undefined,
+      undefined,
+      undefined,
+    );
+    this._sections = old ? old.sections : undefined;
+  }
 
-// export class DOCTestInfo extends AbstractTestInfo {
-//   public constructor(
-//     shared: SharedVariables,
-//     id: string | undefined,
-//     testNameAsId: string,
-//     docDescription: string,
-//     tags: string[],
-//     file: string,
-//     line: number,
-//     sections?: DOCSection[],
-//   ) {
-//     super(
-//       shared,
-//       id,
-//       testNameAsId,
-//       testNameAsId,
-//       tags.some((v: string) => {
-//         return v.startsWith('[.') || v == '[hide]';
-//       }) || testNameAsId.startsWith('./'),
-//       file,
-//       line,
-//       tags.join(''),
-//       [tags.length > 0 ? 'Tags: ' + tags.join('') : '', docDescription ? 'Description: ' + docDescription : '']
-//         .filter(v => v.length)
-//         .join('\n'),
-//     );
-//     this._sections = sections;
-//   }
+  public capturedFilename: string | undefined = undefined;
+  public capturedLine: number | undefined = undefined;
 
-//   private _sections: undefined | DOCSection[];
+  private _sections: undefined | DOCSection[];
 
-//   public get sections(): undefined | DOCSection[] {
-//     return this._sections;
-//   }
+  public get sections(): undefined | DOCSection[] {
+    return this._sections;
+  }
 
-//   public getEscapedTestName(): string {
-//     /* ',' has special meaning */
-//     let t = this.testNameAsId;
-//     t = t.replace(/,/g, '\\,');
-//     t = t.replace(/\[/g, '\\[');
-//     t = t.replace(/\*/g, '\\*');
-//     t = t.replace(/`/g, '\\`');
-//     if (t.startsWith(' ')) t = '*' + t.trimLeft();
-//     return t;
-//   }
+  public getEscapedTestName(): string {
+    /* ',' has special meaning */
+    let t = this.testNameAsId;
+    t = t.replace(/,/g, '\\,');
+    t = t.replace(/\[/g, '\\[');
+    t = t.replace(/\*/g, '\\*');
+    t = t.replace(/`/g, '\\`');
+    if (t.startsWith(' ')) t = '*' + t.trimLeft();
+    return t;
+  }
 
-//   public getDebugParams(breakOnFailure: boolean): string[] {
-//     const debugParams: string[] = [this.getEscapedTestName(), '--reporter', 'console'];
-//     if (breakOnFailure) debugParams.push('--break');
-//     return debugParams;
-//   }
+  public getDebugParams(breakOnFailure: boolean): string[] {
+    const debugParams: string[] = ['--test-case=' + this.getEscapedTestName()];
+    return debugParams;
+  }
 
-//   public parseAndProcessTestCase(
-//     xmlStr: string,
-//     rngSeed: number | undefined,
-//     runInfo: RunningTestExecutableInfo,
-//   ): TestEvent {
-//     if (runInfo.timeout !== null) {
-//       const ev = this.getTimeoutEvent(runInfo.timeout);
-//       this.lastRunState = ev.state;
-//       return ev;
-//     }
+  public parseAndProcessTestCase(
+    xmlStr: string,
+    rngSeed: number | undefined,
+    runInfo: RunningTestExecutableInfo,
+  ): TestEvent {
+    if (runInfo.timeout !== null) {
+      const ev = this.getTimeoutEvent(runInfo.timeout);
+      this.lastRunState = ev.state;
+      return ev;
+    }
 
-//     let res: XmlObject = {};
-//     new xml2js.Parser({ explicitArray: true }).parseString(xmlStr, (err: Error, result: XmlObject) => {
-//       if (err) {
-//         throw err;
-//       } else {
-//         res = result;
-//       }
-//     });
+    let res: XmlObject = {};
+    new xml2js.Parser({ explicitArray: true }).parseString(xmlStr, (err: Error, result: XmlObject) => {
+      if (err) {
+        throw err;
+      } else {
+        res = result;
+      }
+    });
 
-//     const testEvent = this.getFailedEventBase();
+    this.capturedFilename = res.TestCase.$.filename;
+    this.capturedLine = Number(res.TestCase.$.line) - 1;
 
-//     if (rngSeed) {
-//       testEvent.message += '🔀 Randomness seeded to: ' + rngSeed.toString() + '.\n';
-//     }
+    const testEventBuilder = new TestEventBuilder(this);
 
-//     this._processXmlTagTestCaseInner(res.TestCase, testEvent);
+    if (rngSeed) testEventBuilder.appendTooltip(`🔀 Randomness seeded to: ${rngSeed.toString()}`);
 
-//     this.lastRunState = testEvent.state;
+    this._processXmlTagTestCaseInner(res.TestCase, testEventBuilder);
 
-//     return testEvent;
-//   }
+    const testEvent = testEventBuilder.build();
 
-//   private _processXmlTagTestCaseInner(testCase: XmlObject, testEvent: TestEvent): void {
-//     if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
-//       testEvent.message += '⏱ Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
-//       this._extendDescriptionAndTooltip(
-//         testEvent,
-//         Math.round(Number(testCase.OverallResult[0].$.durationInSeconds) * 1000),
-//       );
-//     }
+    this.lastRunState = testEvent.state;
 
-//     const title: DOCSection = new DOCSection(testCase.$.name, testCase.$.filename, testCase.$.line);
+    return testEvent;
+  }
 
-//     this._processInfoWarningAndFailureTags(testCase, title, [], testEvent);
+  private _processXmlTagTestCaseInner(testCase: XmlObject, testEventBuilder: TestEventBuilder): void {
+    if (testCase.OverallResultsAsserts[0].$.duration) {
+      this.lastRunMilisec = Number(testCase.OverallResultsAsserts[0].$.duration) * 1000;
+      testEventBuilder.setDurationMilisec(this.lastRunMilisec);
+    }
 
-//     this._processXmlTagExpressions(testCase, title, [], testEvent);
+    testEventBuilder.appendMessage(testCase._);
 
-//     this._processXmlTagSections(testCase, title, [], testEvent, title);
+    const title: DOCSection = new DOCSection(testCase.$.name, testCase.$.filename, testCase.$.line);
 
-//     this._sections = title.children;
+    this._processTags(testCase, title, [], testEventBuilder);
 
-//     this._processXmlTagFatalErrorConditions(testCase, title, [], testEvent);
+    this._processXmlTagSubcase(testCase, title, [], testEventBuilder, title);
 
-//     if (testCase.OverallResult[0].hasOwnProperty('StdOut')) {
-//       testEvent.message += '⬇ std::cout:';
-//       for (let i = 0; i < testCase.OverallResult[0].StdOut.length; i++) {
-//         const element = testCase.OverallResult[0].StdOut[i];
-//         testEvent.message += element.trimRight();
-//       }
-//       testEvent.message += '\n⬆ std::cout\n';
-//     }
+    this._sections = title.children;
 
-//     if (testCase.OverallResult[0].hasOwnProperty('StdErr')) {
-//       testEvent.message += '⬇ std::err:';
-//       for (let i = 0; i < testCase.OverallResult[0].StdErr.length; i++) {
-//         const element = testCase.OverallResult[0].StdErr[i];
-//         testEvent.message += element.trimRight();
-//       }
-//       testEvent.message += '\n⬆ std::err\n';
-//     }
+    if (testCase.OverallResultsAsserts[0].$.failures === '0') {
+      testEventBuilder.setState('passed');
+    }
 
-//     if (testCase.OverallResult[0].$.success === 'true') {
-//       testEvent.state = 'passed';
-//     }
+    if (this._sections.length) {
+      let failedBranch = 0;
+      let succBranch = 0;
 
-//     if (this._sections.length) {
-//       let failedBranch = 0;
-//       let succBranch = 0;
+      const traverse = (section: DOCSection): void => {
+        if (section.children.length === 0) {
+          section.failed ? ++failedBranch : ++succBranch;
+        } else {
+          for (let i = 0; i < section.children.length; ++i) {
+            traverse(section.children[i]);
+          }
+        }
+      };
 
-//       const traverse = (section: DOCSection): void => {
-//         if (section.children.length === 0) {
-//           section.failed ? ++failedBranch : ++succBranch;
-//         } else {
-//           for (let i = 0; i < section.children.length; ++i) {
-//             traverse(section.children[i]);
-//           }
-//         }
-//       };
+      this._sections.forEach(section => traverse(section));
 
-//       this._sections.forEach(section => traverse(section));
+      const branchMsg = (failedBranch ? '✘' + failedBranch + '|' : '') + '✔︎' + succBranch;
 
-//       const branchMsg = (failedBranch ? '✘' + failedBranch + '|' : '') + '✔︎' + succBranch;
-//       testEvent.description += ' [' + branchMsg + ']';
-//       testEvent.tooltip += '\n🔀 ' + branchMsg + ' branches';
-//     }
-//   }
+      testEventBuilder.appendDescription(` [${branchMsg}]`);
+      testEventBuilder.appendTooltip(`ᛦ ${branchMsg} branches`);
+    }
+  }
 
-//   private _processInfoWarningAndFailureTags(
-//     xml: XmlObject,
-//     title: Frame,
-//     stack: DOCSection[],
-//     testEvent: TestEvent,
-//   ): void {
-//     if (xml.hasOwnProperty('Info')) {
-//       for (let j = 0; j < xml.Info.length; ++j) {
-//         const info = xml.Info[j];
-//         testEvent.message += '⬇ Info: ' + info.trim() + ' ⬆\n';
-//       }
-//     }
-//     if (xml.hasOwnProperty('Warning')) {
-//       for (let j = 0; j < xml.Warning.length; ++j) {
-//         const warning = xml.Warning[j];
-//         testEvent.message += '⬇ Warning: ' + warning.trim() + ' ⬆\n';
-//         testEvent.decorations!.push({
-//           line: Number(warning.$.line) - 1 /*It looks vscode works like this.*/,
-//           message:
-//             '⬅ ' +
-//             warning._.split(EOL)
-//               .map((l: string) => l.trim())
-//               .filter((l: string) => l.length > 0)
-//               .join('; ')
-//               .substr(0, 20),
-//           hover: warning._,
-//         });
-//       }
-//     }
-//     if (xml.hasOwnProperty('Failure')) {
-//       for (let j = 0; j < xml.Failure.length; ++j) {
-//         const failure = xml.Failure[j];
-//         testEvent.message += '⬇ Failure: ' + failure._.trim() + ' ⬆\n';
-//         testEvent.decorations!.push({
-//           line: Number(failure.$.line) - 1 /*It looks vscode works like this.*/,
-//           message:
-//             '⬅ ' +
-//             failure._.split(EOL)
-//               .map((l: string) => l.trim())
-//               .filter((l: string) => l.length > 0)
-//               .join('; ')
-//               .substr(0, 20),
-//           hover: failure._,
-//         });
-//       }
-//     }
-//   }
+  private static readonly _expectedPropertyNames = new Set([
+    '_',
+    '$',
+    'SubCase',
+    'OverallResultsAsserts',
+    'Message',
+    'Expression',
+  ]);
 
-//   private _processXmlTagExpressions(xml: XmlObject, title: Frame, stack: DOCSection[], testEvent: TestEvent): void {
-//     if (xml.hasOwnProperty('Expression')) {
-//       for (let j = 0; j < xml.Expression.length; ++j) {
-//         const expr = xml.Expression[j];
-//         try {
-//           const message =
-//             '  Original:\n    ' +
-//             expr.Original.map((x: string) => x.trim()).join('; ') +
-//             '\n  Expanded:\n    ' +
-//             expr.Expanded.map((x: string) => x.trim()).join('; ');
+  private _processTags(xml: XmlObject, title: Frame, stack: DOCSection[], testEventBuilder: TestEventBuilder): void {
+    {
+      Object.getOwnPropertyNames(xml).forEach(n => {
+        if (!DOCTestInfo._expectedPropertyNames.has(n)) {
+          this._shared.log.error('undexpected doctest tag', n);
+          testEventBuilder.appendMessage('unexpected doctest tag:' + n);
+          testEventBuilder.setState('errored');
+        }
+      });
+    }
 
-//           testEvent.message +=
-//             this._getTitle(title, stack, {
-//               name: expr.$.type ? expr.$.type : '<unknown>',
-//               filename: expr.$.filename,
-//               line: expr.$.line,
-//             }) +
-//             ':\n' +
-//             message +
-//             '\n' +
-//             '⬆\n\n';
-//           testEvent.decorations!.push({
-//             line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
-//             message: '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
-//             hover: message,
-//           });
-//         } catch (error) {
-//           this._shared.log.exception(error);
-//         }
-//         this._processXmlTagFatalErrorConditions(expr, title, stack, testEvent);
-//       }
-//     }
-//   }
+    testEventBuilder.appendMessage(xml._);
 
-//   private _processXmlTagSections(
-//     xml: XmlObject,
-//     title: Frame,
-//     stack: DOCSection[],
-//     testEvent: TestEvent,
-//     parentSection: DOCSection,
-//   ): void {
-//     if (xml.hasOwnProperty('Section')) {
-//       for (let j = 0; j < xml.Section.length; ++j) {
-//         const section = xml.Section[j];
-//         try {
-//           let currSection = parentSection.children.find(
-//             v => v.name === section.$.name && v.filename === section.$.filename && v.line === section.$.line,
-//           );
+    try {
+      if (xml.Message) {
+        for (let j = 0; j < xml.Message.length; ++j) {
+          const msg = xml.Message[j];
 
-//           if (currSection === undefined) {
-//             currSection = new DOCSection(section.$.name, section.$.filename, section.$.line);
-//             parentSection.children.push(currSection);
-//           }
+          testEventBuilder.appendMessage(msg.$.type);
 
-//           if (
-//             section.OverallResults &&
-//             section.OverallResults.length > 0 &&
-//             section.OverallResults[0].$.failures !== '0'
-//           ) {
-//             currSection.failed = true;
-//           }
+          msg.Text.forEach((m: string) => testEventBuilder.appendMessage(m));
 
-//           const currStack = stack.concat(currSection);
+          testEventBuilder.appendDecorator(
+            Number(msg.$.line) - 1,
+            '⬅ ' + msg.Text.map((x: string) => x.trim()).join(' | '),
+          );
+        }
+      }
+    } catch (e) {
+      this._shared.log.exception(e);
+    }
 
-//           this._processInfoWarningAndFailureTags(xml, title, currStack, testEvent);
+    try {
+      if (xml.Expression) {
+        for (let j = 0; j < xml.Expression.length; ++j) {
+          const expr = xml.Expression[j];
 
-//           this._processXmlTagExpressions(section, title, currStack, testEvent);
+          testEventBuilder.appendMessage('  ❕Original:  ' + expr.Original.map((x: string) => x.trim()).join('\n'));
 
-//           this._processXmlTagSections(section, title, currStack, testEvent, currSection);
-//         } catch (error) {
-//           this._shared.log.exception(error);
-//         }
-//       }
-//     }
-//   }
+          const line = Number(expr.$.line) - 1;
 
-//   private _processXmlTagFatalErrorConditions(
-//     expr: XmlObject,
-//     title: Frame,
-//     stack: DOCSection[],
-//     testEvent: TestEvent,
-//   ): void {
-//     if (expr.hasOwnProperty('FatalErrorCondition')) {
-//       try {
-//         for (let j = 0; j < expr.FatalErrorCondition.length; ++j) {
-//           const fatal = expr.FatalErrorCondition[j];
+          try {
+            for (let j = 0; expr.Expanded && j < expr.Expanded.length; ++j) {
+              testEventBuilder.appendMessage(
+                '  ❗️Expanded:  ' + expr.Expanded.map((x: string) => x.trim()).join('\n'),
+              );
+              testEventBuilder.appendDecorator(line, '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join(' | '));
+            }
+          } catch (e) {
+            this._shared.log.exception(e);
+          }
 
-//           testEvent.message +=
-//             this._getTitle(title, stack, { name: 'Fatal Error', filename: expr.$.filename, line: expr.$.line }) + ':\n';
-//           if (fatal.hasOwnProperty('_')) {
-//             testEvent.message += '  Error: ' + fatal._.trim() + '\n';
-//           } else {
-//             testEvent.message += '  Error: unknown: ' + inspect(fatal) + '\n';
-//           }
-//           testEvent.message += '⬆\n\n';
-//         }
-//       } catch (error) {
-//         this._shared.log.exception(error);
-//         testEvent.message += 'Unknown fatal error: ' + inspect(error);
-//       }
-//     }
-//   }
+          try {
+            for (let j = 0; expr.Exception && j < expr.Exception.length; ++j) {
+              testEventBuilder.appendMessage(
+                '  ❗️Exception:  ' + expr.Exception.map((x: string) => x.trim()).join('\n'),
+              );
+              testEventBuilder.appendDecorator(line, '⬅ ' + expr.Exception.map((x: string) => x.trim()).join(' | '));
+            }
+          } catch (e) {
+            this._shared.log.exception(e);
+          }
 
-//   private _getTitle(title: Frame, stack: Frame[], suffix: Frame): string {
-//     const format = (f: Frame) => f.name + ' (at ' + f.line + ')';
+          try {
+            for (let j = 0; expr.ExpectedException && j < expr.ExpectedException.length; ++j) {
+              testEventBuilder.appendMessage(
+                '  ❗️ExpectedException:  ' + expr.ExpectedException.map((x: string) => x.trim()).join('\n'),
+              );
+              testEventBuilder.appendDecorator(
+                line,
+                '⬅ ' + expr.ExpectedException.map((x: string) => x.trim()).join(' | '),
+              );
+            }
+          } catch (e) {
+            this._shared.log.exception(e);
+          }
 
-//     let s = '⬇ ' + format(title);
+          try {
+            for (let j = 0; expr.ExpectedExceptionString && j < expr.ExpectedExceptionString.length; ++j) {
+              testEventBuilder.appendMessage(
+                '  ❗️ExpectedExceptionString  ' + expr.ExpectedExceptionString[j]._.trim(),
+              );
+              testEventBuilder.appendDecorator(
+                line,
+                '⬅ ' + expr.ExpectedExceptionString.map((x: string) => x.trim()).join(' | '),
+              );
+            }
+          } catch (e) {
+            this._shared.log.exception(e);
+          }
+        }
+      }
+    } catch (e) {
+      this._shared.log.exception(e);
+    }
+  }
 
-//     if (title.name.startsWith('Scenario:')) {
-//       const semicolonPos = s.indexOf(':') - 1;
+  private _processXmlTagSubcase(
+    xml: XmlObject,
+    title: Frame,
+    stack: DOCSection[],
+    testEventBuilder: TestEventBuilder,
+    parentSection: DOCSection,
+  ): void {
+    for (let j = 0; xml.SubCase && j < xml.SubCase.length; ++j) {
+      const subcase = xml.SubCase[j];
 
-//       stack.forEach(f => {
-//         s += '\n⬇';
-//         let sc = f.name.indexOf(':');
-//         if (sc == -1) {
-//           sc = 0;
-//         }
-//         s += ' '.repeat(semicolonPos - sc) + format(f);
-//       });
-//     } else {
-//       s += [...stack].map(format).map(x => '\n⬇   ' + x);
-//     }
+      try {
+        let currSection = parentSection.children.find(
+          v => v.name === subcase.$.name && v.filename === subcase.$.filename && v.line === subcase.$.line,
+        );
 
-//     return s + '\n' + format(suffix);
-//   }
-// }
+        if (currSection === undefined) {
+          currSection = new DOCSection(subcase.$.name || '', subcase.$.filename, subcase.$.line);
+          parentSection.children.push(currSection);
+        }
+
+        const isLeaf = subcase.Section === undefined || subcase.Section.length === 0;
+
+        if (
+          isLeaf &&
+          subcase.OverallResults &&
+          subcase.OverallResults.length > 0 &&
+          subcase.OverallResults[0].$.failures !== '0'
+        ) {
+          currSection.failed = true;
+        }
+
+        const msg =
+          '   '.repeat(stack.length) +
+          '⮑ ' +
+          (isLeaf ? (currSection.failed ? ' ❌ ' : ' ✅ ') : '') +
+          `${subcase.$.name}`;
+
+        testEventBuilder.appendMessage(msg + ` (line:${subcase.$.line})`);
+
+        const currStack = stack.concat(currSection);
+
+        this._processTags(subcase, title, currStack, testEventBuilder);
+
+        this._processXmlTagSubcase(subcase, title, currStack, testEventBuilder, currSection);
+      } catch (error) {
+        testEventBuilder.appendMessage('Fatal error processing subcase');
+        this._shared.log.exception(error);
+      }
+    }
+  }
+}

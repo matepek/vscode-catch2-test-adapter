@@ -28,7 +28,7 @@
     "unit test",
     "c++"
   ],
-  "main": "out/dist/main.bundle.js",
+  "main": "out/src/main.js",
   "scripts": {
     "postinstall": "node ./node_modules/vscode/bin/install",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
