@@ -135,7 +135,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(exception, undefined);
   });
 
-  specify.only('arriving <TestCase> for missing TestInfo', async function() {
+  specify('arriving <TestCase> for missing TestInfo', async function() {
     this.timeout(5000);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
