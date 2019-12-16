@@ -1699,7 +1699,7 @@ describe(path.basename(__filename), function() {
 
         await adapter.run([test.id]);
 
-        assert.equal(adapter.testStatesEvents.length, 6 * (i + 1), inspect(test));
+        assert.equal(adapter.testStatesEvents.length, 6 * (i + 1));
 
         assert.deepStrictEqual({ type: 'started', tests: [test.id] }, adapter.testStatesEvents[6 * i + 0]);
         assert.deepStrictEqual({ type: 'suite', state: 'running', suite: suite3 }, adapter.testStatesEvents[6 * i + 1]);
