@@ -1,11 +1,10 @@
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
-import { EOL } from 'os';
-
 import { AbstractTestInfo } from '../AbstractTestInfo';
 import { inspect } from 'util';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
+import { TestEventBuilder } from '../TestEventBuilder';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -94,83 +93,64 @@ export class Catch2TestInfo extends AbstractTestInfo {
   ): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);
-      this.lastRunState = ev.state;
+      this.lastRunEvent = ev;
       return ev;
     }
 
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(xmlStr, (err: Error, result: XmlObject) => {
       if (err) {
-        throw err;
+        throw Error(inspect(err));
       } else {
         res = result;
       }
     });
 
-    const testEvent = this.getFailedEventBase();
+    const testEventBuilder = new TestEventBuilder(this);
 
-    if (rngSeed) {
-      testEvent.message += '🔀 Randomness seeded to: ' + rngSeed.toString() + '.\n';
-    }
+    if (rngSeed) testEventBuilder.appendMessage(`🔀 Randomness seeded to: ${rngSeed.toString()}`, 0);
 
-    this._processXmlTagTestCaseInner(res.TestCase, testEvent);
+    this._processXmlTagTestCaseInner(res.TestCase, testEventBuilder);
 
-    this.lastRunState = testEvent.state;
+    const testEvent = testEventBuilder.build();
+
+    this.lastRunEvent = testEvent;
 
     return testEvent;
   }
 
-  private _processXmlTagTestCaseInner(testCase: XmlObject, testEvent: TestEvent): void {
+  private _processXmlTagTestCaseInner(testCase: XmlObject, testEventBuilder: TestEventBuilder): void {
     if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
-      testEvent.message += '⏱ Duration: ' + testCase.OverallResult[0].$.durationInSeconds + ' second(s).\n';
-      this._extendDescriptionAndTooltip(
-        testEvent,
-        Math.round(Number(testCase.OverallResult[0].$.durationInSeconds) * 1000),
-      );
+      this.lastRunMilisec = Number(testCase.OverallResult[0].$.durationInSeconds) * 1000;
+      testEventBuilder.setDurationMilisec(this.lastRunMilisec);
     }
 
-    if (typeof testCase._ === 'string')
-      testEvent.message += testCase._.split(EOL)
-        .map((x: string) => x.trim())
-        .filter((l: string) => l.length > 0)
-        .join('\n');
+    testEventBuilder.appendMessage(testCase._, 0);
 
     const title: Catch2Section = new Catch2Section(testCase.$.name, testCase.$.filename, testCase.$.line);
 
-    this._processInfoWarningAndFailureTags(testCase, title, [], testEvent);
+    this._processTags(testCase, title, [], testEventBuilder);
 
-    this._processXmlTagExpressionsAndExceptions(testCase, title, [], testEvent);
-
-    this._processXmlTagSections(testCase, title, [], testEvent, title);
+    this._processXmlTagSections(testCase, title, [], testEventBuilder, title);
 
     this._sections = title.children;
 
-    this._processXmlTagFatalErrorConditions(testCase, title, [], testEvent);
-
-    if (testCase.OverallResult[0].hasOwnProperty('StdOut')) {
-      if (testEvent.message) testEvent.message = testEvent.message.trimRight();
-
-      testEvent.message += '\n⬇ std::cout:\n';
-      for (let i = 0; i < testCase.OverallResult[0].StdOut.length; i++) {
-        const element = testCase.OverallResult[0].StdOut[i];
-        testEvent.message += element.trimRight();
-      }
-      testEvent.message += '\n⬆ std::cout';
+    if (testCase.OverallResult[0].StdOut) {
+      testEventBuilder.appendMessage('⬇ std::cout:', 0);
+      for (let i = 0; i < testCase.OverallResult[0].StdOut.length; i++)
+        testEventBuilder.appendMessage(testCase.OverallResult[0].StdOut[i], 1);
+      testEventBuilder.appendMessage('⬆ std::cout', 0);
     }
 
-    if (testCase.OverallResult[0].hasOwnProperty('StdErr')) {
-      if (testEvent.message) testEvent.message = testEvent.message.trimRight();
-
-      testEvent.message += '\n⬇ std::err:\n';
-      for (let i = 0; i < testCase.OverallResult[0].StdErr.length; i++) {
-        const element = testCase.OverallResult[0].StdErr[i];
-        testEvent.message += element.trimRight();
-      }
-      testEvent.message += '\n⬆ std::err';
+    if (testCase.OverallResult[0].StdErr) {
+      testEventBuilder.appendMessage('⬇ std::err:', 0);
+      for (let i = 0; i < testCase.OverallResult[0].StdErr.length; i++)
+        testEventBuilder.appendMessage(testCase.OverallResult[0].StdErr[i], 1);
+      testEventBuilder.appendMessage('⬆ std::err', 0);
     }
 
     if (testCase.OverallResult[0].$.success === 'true') {
-      testEvent.state = 'passed';
+      testEventBuilder.setState('passed');
     }
 
     if (this._sections.length) {
@@ -190,131 +170,120 @@ export class Catch2TestInfo extends AbstractTestInfo {
       this._sections.forEach(section => traverse(section));
 
       const branchMsg = (failedBranch ? '✘' + failedBranch + '|' : '') + '✔︎' + succBranch;
-      testEvent.description += ' [' + branchMsg + ']';
-      testEvent.tooltip += '\n🔀 ' + branchMsg + ' branches';
+
+      testEventBuilder.appendDescription(` [${branchMsg}]`);
+      testEventBuilder.appendTooltip(`ᛦ ${branchMsg} branches`);
     }
   }
 
-  private _processInfoWarningAndFailureTags(
-    xml: XmlObject,
-    title: Frame,
-    stack: Catch2Section[],
-    testEvent: TestEvent,
-  ): void {
-    if (xml.hasOwnProperty('Info')) {
-      if (testEvent.message) testEvent.message = testEvent.message.trimRight();
+  private static readonly _expectedPropertyNames = new Set([
+    '_',
+    '$',
+    'Section',
+    'Info',
+    'Warning',
+    'Failure',
+    'Expression',
+    'OverallResult',
+    'OverallResults',
+    'FatalErrorCondition',
+  ]);
 
-      for (let j = 0; j < xml.Info.length; ++j) {
-        const info = xml.Info[j];
-        testEvent.message += '\n⬇ Info: ' + info.trim() + '\n⬆';
-      }
+  private _processTags(xml: XmlObject, title: Frame, stack: Catch2Section[], testEventBuilder: TestEventBuilder): void {
+    {
+      Object.getOwnPropertyNames(xml).forEach(n => {
+        if (!Catch2TestInfo._expectedPropertyNames.has(n)) {
+          this._shared.log.error('undexpected Catch2 tag', n);
+          testEventBuilder.appendMessage('unexpected Catch2 tag:' + n, 0);
+          testEventBuilder.setState('errored');
+        }
+      });
     }
-    if (xml.hasOwnProperty('Warning')) {
-      for (let j = 0; j < xml.Warning.length; ++j) {
-        const warning = xml.Warning[j];
 
-        if (testEvent.message) testEvent.message = testEvent.message.trimRight();
-        testEvent.message += '\n⬇ Warning: ' + warning.trim() + '\n⬆';
+    testEventBuilder.appendMessage(xml._, 0);
 
-        testEvent.decorations!.push({
-          line: Number(warning.$.line) - 1 /*It looks vscode works like this.*/,
-          message:
-            '⬅ ' +
-            warning._.split(EOL)
-              .map((l: string) => l.trim())
-              .filter((l: string) => l.length > 0)
-              .join('; ')
-              .substr(0, 200),
-          hover: warning._,
-        });
+    try {
+      if (xml.Info) {
+        testEventBuilder.appendMessage('⬇ Info:', 0);
+        for (let i = 0; i < xml.Info.length; i++) testEventBuilder.appendMessage(xml.Info[i], 1);
+        testEventBuilder.appendMessage('⬆ Info', 0);
       }
+    } catch (e) {
+      this._shared.log.exception(e);
     }
-    if (xml.hasOwnProperty('Failure')) {
-      for (let j = 0; j < xml.Failure.length; ++j) {
-        const failure = xml.Failure[j];
 
-        if (testEvent.message) testEvent.message = testEvent.message.trimRight();
-        testEvent.message += '\n⬇ Failure: ' + failure._.trim() + '\n⬆';
-
-        testEvent.decorations!.push({
-          line: Number(failure.$.line) - 1 /*It looks vscode works like this.*/,
-          message:
-            '⬅ ' +
-            failure._.split(EOL)
-              .map((l: string) => l.trim())
-              .filter((l: string) => l.length > 0)
-              .join('; ')
-              .substr(0, 200),
-          hover: failure._,
-        });
+    try {
+      if (xml.Warning) {
+        testEventBuilder.appendMessage('⬇ Warning:', 0);
+        for (let i = 0; i < xml.Warning.length; i++)
+          testEventBuilder.appendMessageWithDecorator(Number(xml.Warning[i].$.line) - 1, xml.Warning[i], 1);
+        testEventBuilder.appendMessage('⬆ Warning', 0);
       }
+    } catch (e) {
+      this._shared.log.exception(e);
     }
-  }
 
-  private _processXmlTagExpressionsAndExceptions(
-    xml: XmlObject,
-    title: Frame,
-    stack: Catch2Section[],
-    testEvent: TestEvent,
-  ): void {
-    if (xml.hasOwnProperty('Expression')) {
-      for (let j = 0; j < xml.Expression.length; ++j) {
-        const expr = xml.Expression[j];
-        try {
+    try {
+      if (xml.Failure) {
+        testEventBuilder.appendMessage('⬇ Failure:', 0);
+        for (let i = 0; i < xml.Failure.length; i++)
+          testEventBuilder.appendMessageWithDecorator(Number(xml.Failure[i].$.line) - 1, xml.Failure[i], 1);
+        testEventBuilder.appendMessage('⬆ Failure', 0);
+      }
+    } catch (e) {
+      this._shared.log.exception(e);
+    }
+
+    try {
+      if (xml.Expression) {
+        for (let j = 0; j < xml.Expression.length; ++j) {
+          const expr = xml.Expression[j];
           const message =
-            '  Original:\n    ' +
+            '❕Original:  ' +
             expr.Original.map((x: string) => x.trim()).join('; ') +
-            '\n  Expanded:\n    ' +
+            '\n' +
+            '❗️Expanded:  ' +
             expr.Expanded.map((x: string) => x.trim()).join('; ');
 
-          if (testEvent.message) testEvent.message = testEvent.message.trimRight();
-          testEvent.message +=
-            '\n' +
-            this._getTitle(title, stack, {
-              name: expr.$.type ? expr.$.type : '<unknown>',
-              filename: expr.$.filename,
-              line: expr.$.line,
-            }) +
-            ':\n' +
-            message +
-            '\n' +
-            '⬆';
-          testEvent.decorations!.push({
-            line: Number(expr.$.line) - 1 /*It looks vscode works like this.*/,
-            message: '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join('; '),
-            hover: message,
-          });
-        } catch (error) {
-          this._shared.log.exception(error);
+          testEventBuilder.appendMessage(message, 1);
+          testEventBuilder.appendDecorator(
+            Number(expr.$.line) - 1,
+            '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join(' | '),
+            message,
+          );
         }
-        this._processXmlTagFatalErrorConditions(expr, title, stack, testEvent);
       }
+    } catch (e) {
+      this._shared.log.exception(e);
     }
-    if (xml.hasOwnProperty('Exception')) {
-      for (let j = 0; j < xml.Exception.length; ++j) {
-        const exception = xml.Exception[j];
-        try {
-          const message = 'Exception were thrown: ' + exception._.trim();
 
-          if (testEvent.message) testEvent.message = testEvent.message.trimRight();
-          testEvent.message += '\n  ' + message;
-
-          testEvent.decorations!.push({
-            line: Number(exception.$.line) - 1 /*It looks vscode works like this.*/,
-            message:
-              '⬅ ' +
-              message
-                .split(EOL)
-                .map((x: string) => x.trim())
-                .filter((l: string) => l.length > 0)
-                .join('')
-                .substr(0, 200),
-            hover: message,
-          });
-        } catch (error) {
-          this._shared.log.exception(error);
-        }
+    try {
+      for (let j = 0; xml.Exception && j < xml.Exception.length; ++j) {
+        testEventBuilder.appendMessageWithDecorator(
+          Number(xml.Exception[j].$.line) - 1,
+          'Exception were thrown: ' + xml.Exception[j]._.trim(),
+          0,
+        );
       }
+    } catch (e) {
+      this._shared.log.exception(e);
+    }
+
+    try {
+      if (xml.FatalErrorCondition) {
+        testEventBuilder.appendMessage('⬇ FatalErrorCondition:', 0);
+        for (let j = 0; j < xml.FatalErrorCondition.length; ++j) {
+          testEventBuilder.appendMessageWithDecorator(
+            Number(xml.FatalErrorCondition[j].$.line) - 1,
+            xml.FatalErrorCondition[j]._,
+            0,
+          );
+        }
+        testEventBuilder.appendMessage('⬆ FatalErrorCondition', 0);
+      }
+    } catch (error) {
+      this._shared.log.exception(error);
+      testEventBuilder.appendMessage('Unknown fatal error: ' + inspect(error), 0);
     }
   }
 
@@ -322,114 +291,50 @@ export class Catch2TestInfo extends AbstractTestInfo {
     xml: XmlObject,
     title: Frame,
     stack: Catch2Section[],
-    testEvent: TestEvent,
+    testEventBuilder: TestEventBuilder,
     parentSection: Catch2Section,
   ): void {
-    if (xml.hasOwnProperty('Section')) {
-      for (let j = 0; j < xml.Section.length; ++j) {
-        const section = xml.Section[j];
+    for (let j = 0; xml.Section && j < xml.Section.length; ++j) {
+      const section = xml.Section[j];
 
-        try {
-          let currSection = parentSection.children.find(
-            v => v.name === section.$.name && v.filename === section.$.filename && v.line === section.$.line,
-          );
-
-          if (currSection === undefined) {
-            currSection = new Catch2Section(section.$.name, section.$.filename, section.$.line);
-            parentSection.children.push(currSection);
-          }
-
-          const isLeaf = section.Section === undefined || section.Section.length === 0;
-
-          if (
-            isLeaf &&
-            section.OverallResults &&
-            section.OverallResults.length > 0 &&
-            section.OverallResults[0].$.failures !== '0'
-          ) {
-            currSection.failed = true;
-          }
-
-          if (testEvent.message) testEvent.message = testEvent.message.trimRight() + '\n';
-
-          testEvent.message += '⏩ '.repeat(stack.length + 1);
-
-          if (isLeaf) testEvent.message += currSection.failed ? '❌ ' : '✅ ';
-
-          testEvent.message += `${section.$.name} (${section.$.filename}:${section.$.line})`;
-
-          if (typeof section._ === 'string')
-            testEvent.message +=
-              section._.split(EOL)
-                .map((x: string) => x.trim())
-                .filter((l: string) => l.length > 0)
-                .join('\n') + '\n';
-
-          const currStack = stack.concat(currSection);
-
-          this._processInfoWarningAndFailureTags(section, title, currStack, testEvent);
-
-          this._processXmlTagExpressionsAndExceptions(section, title, currStack, testEvent);
-
-          this._processXmlTagSections(section, title, currStack, testEvent, currSection);
-        } catch (error) {
-          this._shared.log.exception(error);
-        }
-      }
-    }
-  }
-
-  private _processXmlTagFatalErrorConditions(
-    expr: XmlObject,
-    title: Frame,
-    stack: Catch2Section[],
-    testEvent: TestEvent,
-  ): void {
-    if (expr.hasOwnProperty('FatalErrorCondition')) {
       try {
-        for (let j = 0; j < expr.FatalErrorCondition.length; ++j) {
-          const fatal = expr.FatalErrorCondition[j];
+        let currSection = parentSection.children.find(
+          v => v.name === section.$.name && v.filename === section.$.filename && v.line === section.$.line,
+        );
 
-          if (testEvent.message) testEvent.message = testEvent.message.trimRight();
-          testEvent.message +=
-            '\n' +
-            this._getTitle(title, stack, { name: 'Fatal Error', filename: expr.$.filename, line: expr.$.line }) +
-            ':\n';
-
-          if (fatal.hasOwnProperty('_')) {
-            testEvent.message += '  Error: ' + fatal._.trim() + '\n';
-          } else {
-            testEvent.message += '  Error: unknown: ' + inspect(fatal) + '\n';
-          }
-          testEvent.message += '⬆';
+        if (currSection === undefined) {
+          currSection = new Catch2Section(section.$.name, section.$.filename, section.$.line);
+          parentSection.children.push(currSection);
         }
+
+        const isLeaf = section.Section === undefined || section.Section.length === 0;
+
+        if (
+          isLeaf &&
+          section.OverallResults &&
+          section.OverallResults.length > 0 &&
+          section.OverallResults[0].$.failures !== '0'
+        ) {
+          currSection.failed = true;
+        }
+
+        const msg =
+          '   '.repeat(stack.length) +
+          '⮑ ' +
+          (isLeaf ? (currSection.failed ? ' ❌ ' : ' ✅ ') : '') +
+          `${section.$.name}`;
+
+        testEventBuilder.appendMessage(msg + ` (line:${section.$.line})`, null);
+
+        const currStack = stack.concat(currSection);
+
+        this._processTags(section, title, currStack, testEventBuilder);
+
+        this._processXmlTagSections(section, title, currStack, testEventBuilder, currSection);
       } catch (error) {
+        testEventBuilder.appendMessage('Fatal error processing section', 0);
         this._shared.log.exception(error);
-        testEvent.message += 'Unknown fatal error: ' + inspect(error);
       }
     }
-  }
-
-  private _getTitle(title: Frame, stack: Frame[], suffix: Frame): string {
-    const format = (f: Frame) => f.name + ' (at ' + f.line + ')';
-
-    let s = '⬇ ' + format(title);
-
-    if (title.name.startsWith('Scenario:')) {
-      const semicolonPos = s.indexOf(':') - 1;
-
-      stack.forEach(f => {
-        s += '\n⬇';
-        let sc = f.name.indexOf(':');
-        if (sc == -1) {
-          sc = 0;
-        }
-        s += ' '.repeat(semicolonPos - sc) + format(f);
-      });
-    } else {
-      s += [...stack].map(format).map(x => '\n⬇   ' + x);
-    }
-
-    return s + '\n' + format(suffix);
   }
 }

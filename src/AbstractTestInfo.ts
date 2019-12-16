@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
-import { generateUniqueId } from './Util';
+import { generateUniqueId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 
 export abstract class AbstractTestInfo implements TestInfo {
@@ -11,7 +11,7 @@ export abstract class AbstractTestInfo implements TestInfo {
   public readonly tooltip: string;
   public readonly file: string | undefined;
 
-  public lastRunState: string | undefined = undefined;
+  public lastRunEvent: TestEvent | undefined = undefined;
   public lastRunMilisec: number | undefined = undefined;
 
   protected constructor(
@@ -45,7 +45,7 @@ export abstract class AbstractTestInfo implements TestInfo {
 
   public getTimeoutEvent(milisec: number): TestEvent {
     const ev = this.getFailedEventBase();
-    ev.message += '⌛️ Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": ' + milisec / 1000 + ' second(s).\n';
+    ev.message += '⌛️ Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": ' + milisec / 1000 + ' second(s).';
     ev.state = 'errored';
     return ev;
   }
@@ -60,29 +60,13 @@ export abstract class AbstractTestInfo implements TestInfo {
     };
   }
 
-  public static milisecToStr(durationInMilisec: number): string {
-    const minute = Math.floor(durationInMilisec / 60000);
-    const sec = Math.floor((durationInMilisec - minute * 60000) / 1000);
-    const miliSec = durationInMilisec - minute * 60000 - sec * 1000;
-
-    let durationArr = [
-      [minute, 'm'],
-      [sec, 's'],
-      [miliSec, 'ms'],
-    ].filter(v => v[0]);
-
-    if (durationArr.length === 0) durationArr.push([0, 'ms']);
-
-    return durationArr.map(v => v[0].toString() + v[1]).join(' ');
-  }
-
   protected _extendDescriptionAndTooltip(ev: TestEvent, durationInMilisec: number): void {
     this.lastRunMilisec = durationInMilisec;
 
-    const durationStr = AbstractTestInfo.milisecToStr(durationInMilisec);
+    const durationStr = milisecToStr(durationInMilisec);
 
     ev.description = this.description + (this.description ? ' ' : '') + '(' + durationStr + ')';
-    ev.tooltip = this.tooltip + (this.tooltip ? '\n\n' : '') + '⏱ ' + durationStr;
+    ev.tooltip = this.tooltip + (this.tooltip ? '\n\n' : '') + '⏱Duration: ' + durationStr;
   }
 
   public findRouteToTestById(id: string): AbstractTestInfo[] | undefined {

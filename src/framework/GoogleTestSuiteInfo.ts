@@ -189,7 +189,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           return Promise.resolve();
         }
       } catch (e) {
-        this._shared.log.warn('coudnt use cache', e);
+        this._shared.log.info('coudnt use cache', e);
       }
     }
 
@@ -334,14 +334,14 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               } catch (e) {
                 this._shared.log.error('parsing and processing test', e, data);
 
-                data.currentChild.lastRunState = 'errored';
-
-                this._shared.testStatesEmitter.fire({
+                data.currentChild.lastRunEvent = {
                   type: 'test',
                   test: data.currentChild,
                   state: 'errored',
                   message: '😱 Unexpected error under parsing output !! Error: ' + inspect(e) + '\n',
-                });
+                };
+
+                this._shared.testStatesEmitter.fire(data.currentChild.lastRunEvent);
               }
             } else {
               this._shared.log.info('Test case found without TestInfo: ', this, '; ' + testCase);
@@ -399,7 +399,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               ev.message += data.buffer ? '\n' + data.buffer : '';
             }
 
-            data.currentChild.lastRunState = ev.state;
+            data.currentChild.lastRunEvent = ev;
             this._shared.testStatesEmitter.fire(ev);
           } else {
             this._shared.log.warn('data.inTestCase: ', data);
@@ -442,7 +442,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
                   const ev = currentChild.parseAndProcessTestCase(testCase, runInfo);
                   events.push(ev);
                 } catch (e) {
-                  this._shared.log.error('parsing and processing test: ' + testCase);
+                  this._shared.log.error('parsing and processing test', e, testCase);
                 }
               }
               events.length && this._shared.sendTestEventEmitter.fire(events);

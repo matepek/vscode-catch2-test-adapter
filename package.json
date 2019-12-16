@@ -1,11 +1,11 @@
 {
   "name": "vscode-catch2-test-adapter",
-  "displayName": "Catch2 and Google Test Explorer",
-  "description": "Run your Catch2 and Google Test tests in the Sidebar of Visual Studio Code",
+  "displayName": "Catch2, Google Test and doctest Explorer",
+  "description": "Run your Catch2, Google Test and doctest tests in the Sidebar of Visual Studio Code",
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.7.8",
+  "version": "2.7.9",
   "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -19,14 +19,18 @@
     "Other"
   ],
   "keywords": [
-    "catch2",
-    "googletest",
-    "google test",
-    "gtest",
+    "c++",
     "test",
     "testing",
     "unit test",
-    "c++"
+    "catch2",
+    "catchorg",
+    "google",
+    "googletest",
+    "google test",
+    "gtest",
+    "doctest",
+    "onqtam"
   ],
   "main": "out/dist/main.bundle.js",
   "scripts": {
@@ -46,7 +50,7 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
-    "@sentry/node": "^5.10.1",
+    "@sentry/node": "^5.10.2",
     "debounce-collect": "^1.0.2",
     "entities": "^1.1.2",
     "gaze": "^1.1.3",
@@ -58,12 +62,12 @@
     "xml2js": "^0.4.22"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.6",
+    "@types/chai": "^4.2.7",
     "@types/deep-equal": "^1.0.1",
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.12.14",
+    "@types/node": "^12.12.18",
     "@types/request-promise": "4.1.43",
     "@types/sinon": "^7.5.1",
     "@types/xml2js": "^0.4.5",
@@ -72,7 +76,7 @@
     "deep-equal": "^1.1.1",
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.3.0",
-    "eslint-plugin-prettier": "^3.1.1",
+    "eslint-plugin-prettier": "^3.1.2",
     "fs-extra": "^7.0.1",
     "mocha-eslint": "^5.0.0",
     "prettier": "^1.19.1",
@@ -81,10 +85,10 @@
     "sinon": "^7.5.0",
     "ts-loader": "^6.2.1",
     "typescript": "^3.7.3",
-    "vsce": "^1.70.0",
+    "vsce": "^1.71.0",
     "vscode": "^1.1.36",
     "vscode-test": "^1.2.3",
-    "webpack": "^4.35.2"
+    "webpack": "^4.41.3"
   },
   "engines": {
     "vscode": "^1.23.0"

@@ -41,7 +41,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     lines.pop(); // last line: '[0-9]+ matching test cases'
 
     for (let i = 0; i < lines.length; ) {
-      if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format: ' + lines.toString());
+      if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format', lines);
 
       if (lines[i].startsWith('    ')) {
         this._shared.log.warn('Probably too long test name', lines);
@@ -323,7 +323,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
               ev.message += runInfo.stderr ? '\n' + runInfo.stderr : '';
             }
 
-            data.currentChild.lastRunState = ev.state;
+            data.currentChild.lastRunEvent = ev;
             this._shared.testStatesEmitter.fire(ev);
           } else {
             this._shared.log.warn('data.inTestCase: ', data);
@@ -377,7 +377,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
                   const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
                   events.push(ev);
                 } catch (e) {
-                  this._shared.log.error('parsing and processing test: ' + testCaseXml);
+                  this._shared.log.error('parsing and processing test', e, testCaseXml);
                 }
               }
               events.length && this._shared.sendTestEventEmitter.fire(events);
