@@ -108,7 +108,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     const testEventBuilder = new TestEventBuilder(this);
 
-    if (rngSeed) testEventBuilder.appendMessage(`🔀 Randomness seeded to: ${rngSeed.toString()}`);
+    if (rngSeed) testEventBuilder.appendMessage(`🔀 Randomness seeded to: ${rngSeed.toString()}`, 0);
 
     this._processXmlTagTestCaseInner(res.TestCase, testEventBuilder);
 
@@ -125,7 +125,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
       testEventBuilder.setDurationMilisec(this.lastRunMilisec);
     }
 
-    testEventBuilder.appendMessage(testCase._);
+    testEventBuilder.appendMessage(testCase._, 0);
 
     const title: Catch2Section = new Catch2Section(testCase.$.name, testCase.$.filename, testCase.$.line);
 
@@ -136,17 +136,17 @@ export class Catch2TestInfo extends AbstractTestInfo {
     this._sections = title.children;
 
     if (testCase.OverallResult[0].StdOut) {
-      testEventBuilder.appendMessage('⬇ std::cout:');
+      testEventBuilder.appendMessage('⬇ std::cout:', 0);
       for (let i = 0; i < testCase.OverallResult[0].StdOut.length; i++)
-        testEventBuilder.appendMessage(testCase.OverallResult[0].StdOut[i]);
-      testEventBuilder.appendMessage('⬆ std::cout');
+        testEventBuilder.appendMessage(testCase.OverallResult[0].StdOut[i], 1);
+      testEventBuilder.appendMessage('⬆ std::cout', 0);
     }
 
     if (testCase.OverallResult[0].StdErr) {
-      testEventBuilder.appendMessage('⬇ std::err:');
+      testEventBuilder.appendMessage('⬇ std::err:', 0);
       for (let i = 0; i < testCase.OverallResult[0].StdErr.length; i++)
-        testEventBuilder.appendMessage(testCase.OverallResult[0].StdErr[i]);
-      testEventBuilder.appendMessage('⬆ std::err');
+        testEventBuilder.appendMessage(testCase.OverallResult[0].StdErr[i], 1);
+      testEventBuilder.appendMessage('⬆ std::err', 0);
     }
 
     if (testCase.OverallResult[0].$.success === 'true') {
@@ -194,19 +194,19 @@ export class Catch2TestInfo extends AbstractTestInfo {
       Object.getOwnPropertyNames(xml).forEach(n => {
         if (!Catch2TestInfo._expectedPropertyNames.has(n)) {
           this._shared.log.error('undexpected Catch2 tag', n);
-          testEventBuilder.appendMessage('unexpected Catch2 tag:' + n);
+          testEventBuilder.appendMessage('unexpected Catch2 tag:' + n, 0);
           testEventBuilder.setState('errored');
         }
       });
     }
 
-    testEventBuilder.appendMessage(xml._);
+    testEventBuilder.appendMessage(xml._, 0);
 
     try {
       if (xml.Info) {
-        testEventBuilder.appendMessage('⬇ Info:');
-        for (let i = 0; i < xml.Info.length; i++) testEventBuilder.appendMessage(xml.Info[i]);
-        testEventBuilder.appendMessage('⬆ Info');
+        testEventBuilder.appendMessage('⬇ Info:', 0);
+        for (let i = 0; i < xml.Info.length; i++) testEventBuilder.appendMessage(xml.Info[i], 1);
+        testEventBuilder.appendMessage('⬆ Info', 0);
       }
     } catch (e) {
       this._shared.log.exception(e);
@@ -214,10 +214,10 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     try {
       if (xml.Warning) {
-        testEventBuilder.appendMessage('⬇ Warning:');
+        testEventBuilder.appendMessage('⬇ Warning:', 0);
         for (let i = 0; i < xml.Warning.length; i++)
-          testEventBuilder.appendMessageWithDecorator(Number(xml.Warning[i].$.line) - 1, xml.Warning[i]);
-        testEventBuilder.appendMessage('⬆ Warning');
+          testEventBuilder.appendMessageWithDecorator(Number(xml.Warning[i].$.line) - 1, xml.Warning[i], 1);
+        testEventBuilder.appendMessage('⬆ Warning', 0);
       }
     } catch (e) {
       this._shared.log.exception(e);
@@ -225,10 +225,10 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     try {
       if (xml.Failure) {
-        testEventBuilder.appendMessage('⬇ Failure:');
+        testEventBuilder.appendMessage('⬇ Failure:', 0);
         for (let i = 0; i < xml.Failure.length; i++)
-          testEventBuilder.appendMessageWithDecorator(Number(xml.Failure[i].$.line) - 1, xml.Failure[i]);
-        testEventBuilder.appendMessage('⬆ Failure');
+          testEventBuilder.appendMessageWithDecorator(Number(xml.Failure[i].$.line) - 1, xml.Failure[i], 1);
+        testEventBuilder.appendMessage('⬆ Failure', 0);
       }
     } catch (e) {
       this._shared.log.exception(e);
@@ -239,13 +239,13 @@ export class Catch2TestInfo extends AbstractTestInfo {
         for (let j = 0; j < xml.Expression.length; ++j) {
           const expr = xml.Expression[j];
           const message =
-            '  ❕Original:  ' +
+            '❕Original:  ' +
             expr.Original.map((x: string) => x.trim()).join('; ') +
             '\n' +
-            '  ❗️Expanded:  ' +
+            '❗️Expanded:  ' +
             expr.Expanded.map((x: string) => x.trim()).join('; ');
 
-          testEventBuilder.appendMessage(message);
+          testEventBuilder.appendMessage(message, 1);
           testEventBuilder.appendDecorator(
             Number(expr.$.line) - 1,
             '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join(' | '),
@@ -262,6 +262,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
         testEventBuilder.appendMessageWithDecorator(
           Number(xml.Exception[j].$.line) - 1,
           'Exception were thrown: ' + xml.Exception[j]._.trim(),
+          0,
         );
       }
     } catch (e) {
@@ -270,18 +271,19 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     try {
       if (xml.FatalErrorCondition) {
-        testEventBuilder.appendMessage('⬇ FatalErrorCondition:');
+        testEventBuilder.appendMessage('⬇ FatalErrorCondition:', 0);
         for (let j = 0; j < xml.FatalErrorCondition.length; ++j) {
           testEventBuilder.appendMessageWithDecorator(
             Number(xml.FatalErrorCondition[j].$.line) - 1,
             xml.FatalErrorCondition[j]._,
+            0,
           );
         }
-        testEventBuilder.appendMessage('⬆ FatalErrorCondition');
+        testEventBuilder.appendMessage('⬆ FatalErrorCondition', 0);
       }
     } catch (error) {
       this._shared.log.exception(error);
-      testEventBuilder.appendMessage('Unknown fatal error: ' + inspect(error));
+      testEventBuilder.appendMessage('Unknown fatal error: ' + inspect(error), 0);
     }
   }
 
@@ -322,7 +324,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
           (isLeaf ? (currSection.failed ? ' ❌ ' : ' ✅ ') : '') +
           `${section.$.name}`;
 
-        testEventBuilder.appendMessage(msg + ` (line:${section.$.line})`);
+        testEventBuilder.appendMessage(msg + ` (line:${section.$.line})`, null);
 
         const currStack = stack.concat(currSection);
 
@@ -330,7 +332,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
         this._processXmlTagSections(section, title, currStack, testEventBuilder, currSection);
       } catch (error) {
-        testEventBuilder.appendMessage('Fatal error processing section');
+        testEventBuilder.appendMessage('Fatal error processing section', 0);
         this._shared.log.exception(error);
       }
     }

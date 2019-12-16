@@ -91,7 +91,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     return c2fs
       .spawnAsync(
         this.execPath,
-        ['--list-test-cases', '--reporters=xml', /*'--no-skip=true',*/ '--no-color=true'],
+        ['--list-test-cases', '--reporters=xml', '--no-skip=true', '--no-color=true'],
         this.execOptions,
         30000,
       )
@@ -131,6 +131,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     if (childrenToRun !== 'runAllTestsExceptSkipped') {
       const testNames = [...childrenToRun].map(c => c.getEscapedTestName());
       execParams.push('--test-case=' + testNames.join(','));
+      execParams.push('--no-skip=true');
     }
 
     execParams.push('--case-sensitive=true');
@@ -158,7 +159,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
       public processedTestCases: DOCTestInfo[] = [];
     })();
 
-    const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
+    const testCaseTagRe = /<TestCase(\s+[^\n\r]+)[^\/](\/)?>/;
 
     return new Promise<ProcessResult>(resolve => {
       const processChunk = (chunk: string): void => {
@@ -173,33 +174,35 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
               }
             }
 
-            const b = data.buffer.indexOf('<TestCase');
-            if (b == -1) return;
-
-            const skippedTest = data.buffer.match(/<TestCase[^\n]*\/>/);
-
-            if (skippedTest && skippedTest.index === b) {
-              data.buffer = data.buffer.substr(b + skippedTest[0].length);
-              continue;
-            }
-
             const m = data.buffer.match(testCaseTagRe);
-            if (m == null || m.length != 1) return;
+            if (m == null) return;
 
+            const skipped = m[2] === '/';
             data.inTestCase = true;
-
             let name = '';
-            new xml2js.Parser({ explicitArray: true }).parseString(
-              m[0] + '</TestCase>',
-              (err: Error, result: XmlObject) => {
+
+            if (skipped) {
+              new xml2js.Parser({ explicitArray: true }).parseString(m[0], (err: Error, result: XmlObject) => {
                 if (err) {
                   this._shared.log.exception(err);
                   throw err;
                 } else {
                   name = result.TestCase.$.name;
                 }
-              },
-            );
+              });
+            } else {
+              new xml2js.Parser({ explicitArray: true }).parseString(
+                m[0] + '</TestCase>',
+                (err: Error, result: XmlObject) => {
+                  if (err) {
+                    this._shared.log.exception(err);
+                    throw err;
+                  } else {
+                    name = result.TestCase.$.name;
+                  }
+                },
+              );
+            }
 
             data.beforeFirstTestCase = false;
             data.currentChild = this.children.find((v: DOCTestInfo) => {
@@ -208,15 +211,41 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
 
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
-              this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
+
+              if (!skipped) {
+                this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
+                data.buffer = data.buffer.substr(m.index!);
+              } else {
+                this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has skipped.');
+
+                // this always comes so we skip it
+                //const testCaseXml = m[0];
+                //this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
+                // try {
+                //   const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
+                //   data.processedTestCases.push(data.currentChild);
+                //   this._shared.testStatesEmitter.fire(ev);
+                // } catch (e) {
+                //   this._shared.log.error('parsing and processing test', e, data, testCaseXml);
+                //   this._shared.testStatesEmitter.fire({
+                //     type: 'test',
+                //     test: data.currentChild,
+                //     state: 'errored',
+                //     message: '😱 Unexpected error under parsing output !! Error: ' + inspect(e) + '\n',
+                //   });
+                // }
+
+                data.inTestCase = false;
+                data.currentChild = undefined;
+                data.buffer = data.buffer.substr(m.index! + m[0].length);
+              }
             } else {
               this._shared.log.info('TestCase not found in children', name);
             }
-
-            data.buffer = data.buffer.substr(b);
           } else {
             const endTestCase = '</TestCase>';
             const b = data.buffer.indexOf(endTestCase);
+
             if (b == -1) return;
 
             const testCaseXml = data.buffer.substring(0, b + endTestCase.length);

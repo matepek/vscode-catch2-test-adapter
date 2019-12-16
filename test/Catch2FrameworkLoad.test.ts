@@ -174,7 +174,7 @@ describe(path.basename(__filename), function() {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
+          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -218,7 +218,7 @@ describe(path.basename(__filename), function() {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
+          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -433,7 +433,7 @@ describe(path.basename(__filename), function() {
         ],
         description: '(0ms)',
         tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-        message: '⏱Duration: 0.000204 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
+        message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
       };
       adapter.testStateEventIndexLess(s1t2running, s1t2finished);
       adapter.testStateEventIndexLess(s1t2finished, s1finished);
@@ -465,7 +465,7 @@ describe(path.basename(__filename), function() {
         ],
         description: '(0ms)',
         tooltip: 'Name: s2t3\nDescription: tag1\n⏱Duration: 0ms',
-        message: '⏱Duration: 0.000178 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
+        message: '⏱Duration: 0.000178 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
       };
       adapter.testStateEventIndexLess(s2t3running, s2t3finished);
       adapter.testStateEventIndexLess(s2t3finished, s2finished);
@@ -566,7 +566,7 @@ describe(path.basename(__filename), function() {
             { line: 20, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
           ],
           description: '(1ms)',
-          message: '⏱Duration: 0.000596 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
+          message: '⏱Duration: 0.000596 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
           tooltip: 'Name: s2t3\nDescription: tag1\n⏱Duration: 1ms',
         },
         {
@@ -609,7 +609,7 @@ describe(path.basename(__filename), function() {
             { line: 20, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
           ],
           description: '(1ms)',
-          message: '⏱Duration: 0.000596 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
+          message: '⏱Duration: 0.000596 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
           tooltip: 'Name: s2t3\nDescription: tag1\n⏱Duration: 1ms',
         },
         {
@@ -654,7 +654,7 @@ describe(path.basename(__filename), function() {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
+          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -699,7 +699,7 @@ describe(path.basename(__filename), function() {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
+          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -1294,7 +1294,7 @@ describe(path.basename(__filename), function() {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
+          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -1342,7 +1342,7 @@ describe(path.basename(__filename), function() {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
+          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -1504,7 +1504,7 @@ describe(path.basename(__filename), function() {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n❕Original:  std::false_type::value\n❗️Expanded:  false',
+          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
         },
         {
           type: 'suite',

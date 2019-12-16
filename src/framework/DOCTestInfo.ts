@@ -55,6 +55,11 @@ export class DOCTestInfo extends AbstractTestInfo {
       undefined,
     );
     this._sections = old ? old.sections : undefined;
+    this._isSecnario = testNameAsId.startsWith('  Scenario:');
+    if (old) {
+      this.lastRunEvent = old.lastRunEvent;
+      this.lastRunMilisec = old.lastRunMilisec;
+    }
   }
 
   public capturedFilename: string | undefined = undefined;
@@ -62,6 +67,7 @@ export class DOCTestInfo extends AbstractTestInfo {
   public capturedSkipped: string | undefined = undefined;
 
   private _sections: undefined | DOCSection[];
+  private _isSecnario: boolean;
 
   public get sections(): undefined | DOCSection[] {
     return this._sections;
@@ -127,7 +133,7 @@ export class DOCTestInfo extends AbstractTestInfo {
       testEventBuilder.setDurationMilisec(this.lastRunMilisec);
     }
 
-    testEventBuilder.appendMessage(testCase._);
+    testEventBuilder.appendMessage(testCase._, 0);
 
     const title: DOCSection = new DOCSection(testCase.$.name, testCase.$.filename, testCase.$.line);
 
@@ -178,22 +184,22 @@ export class DOCTestInfo extends AbstractTestInfo {
       Object.getOwnPropertyNames(xml).forEach(n => {
         if (!DOCTestInfo._expectedPropertyNames.has(n)) {
           this._shared.log.error('undexpected doctest tag', n);
-          testEventBuilder.appendMessage('unexpected doctest tag:' + n);
+          testEventBuilder.appendMessage('unexpected doctest tag:' + n, 0);
           testEventBuilder.setState('errored');
         }
       });
     }
 
-    testEventBuilder.appendMessage(xml._);
+    testEventBuilder.appendMessage(xml._, 0);
 
     try {
       if (xml.Message) {
         for (let j = 0; j < xml.Message.length; ++j) {
           const msg = xml.Message[j];
 
-          testEventBuilder.appendMessage(msg.$.type);
+          testEventBuilder.appendMessage(msg.$.type, 0);
 
-          msg.Text.forEach((m: string) => testEventBuilder.appendMessage(m));
+          msg.Text.forEach((m: string) => testEventBuilder.appendMessage(m, 1));
 
           testEventBuilder.appendDecorator(
             Number(msg.$.line) - 1,
@@ -210,14 +216,15 @@ export class DOCTestInfo extends AbstractTestInfo {
         for (let j = 0; j < xml.Expression.length; ++j) {
           const expr = xml.Expression[j];
 
-          testEventBuilder.appendMessage('  ❕Original:  ' + expr.Original.map((x: string) => x.trim()).join('\n'));
+          testEventBuilder.appendMessage('❕Original:  ' + expr.Original.map((x: string) => x.trim()).join('\n'), 1);
 
           const line = Number(expr.$.line) - 1;
 
           try {
             for (let j = 0; expr.Expanded && j < expr.Expanded.length; ++j) {
               testEventBuilder.appendMessage(
-                '  ❗️Expanded:  ' + expr.Expanded.map((x: string) => x.trim()).join('\n'),
+                '❗️Expanded:  ' + expr.Expanded.map((x: string) => x.trim()).join('\n'),
+                1,
               );
               testEventBuilder.appendDecorator(line, '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join(' | '));
             }
@@ -229,6 +236,7 @@ export class DOCTestInfo extends AbstractTestInfo {
             for (let j = 0; expr.Exception && j < expr.Exception.length; ++j) {
               testEventBuilder.appendMessage(
                 '  ❗️Exception:  ' + expr.Exception.map((x: string) => x.trim()).join('\n'),
+                1,
               );
               testEventBuilder.appendDecorator(line, '⬅ ' + expr.Exception.map((x: string) => x.trim()).join(' | '));
             }
@@ -239,7 +247,8 @@ export class DOCTestInfo extends AbstractTestInfo {
           try {
             for (let j = 0; expr.ExpectedException && j < expr.ExpectedException.length; ++j) {
               testEventBuilder.appendMessage(
-                '  ❗️ExpectedException:  ' + expr.ExpectedException.map((x: string) => x.trim()).join('\n'),
+                '❗️ExpectedException:  ' + expr.ExpectedException.map((x: string) => x.trim()).join('\n'),
+                1,
               );
               testEventBuilder.appendDecorator(
                 line,
@@ -253,7 +262,8 @@ export class DOCTestInfo extends AbstractTestInfo {
           try {
             for (let j = 0; expr.ExpectedExceptionString && j < expr.ExpectedExceptionString.length; ++j) {
               testEventBuilder.appendMessage(
-                '  ❗️ExpectedExceptionString  ' + expr.ExpectedExceptionString[j]._.trim(),
+                '❗️ExpectedExceptionString  ' + expr.ExpectedExceptionString[j]._.trim(),
+                1,
               );
               testEventBuilder.appendDecorator(
                 line,
@@ -290,24 +300,24 @@ export class DOCTestInfo extends AbstractTestInfo {
           parentSection.children.push(currSection);
         }
 
-        const isLeaf = subcase.Section === undefined || subcase.Section.length === 0;
+        const isLeaf = subcase.SubCase === undefined || subcase.SubCase.length === 0;
 
         if (
           isLeaf &&
-          subcase.OverallResults &&
-          subcase.OverallResults.length > 0 &&
-          subcase.OverallResults[0].$.failures !== '0'
+          subcase.Expression &&
+          subcase.Expression.length > 0 &&
+          // eslint-disable-next-line
+          subcase.Expression.some((x: any) => x.$ && x.$.success && x.$.success == 'false')
         ) {
           currSection.failed = true;
         }
 
-        const msg =
-          '   '.repeat(stack.length) +
-          '⮑ ' +
-          (isLeaf ? (currSection.failed ? ' ❌ ' : ' ✅ ') : '') +
-          `${subcase.$.name}`;
+        const name = this._isSecnario ? subcase.$.name.trimLeft() : subcase.$.name;
 
-        testEventBuilder.appendMessage(msg + ` (line:${subcase.$.line})`);
+        const msg =
+          '   '.repeat(stack.length) + '⮑ ' + (isLeaf ? (currSection.failed ? ' ❌ ' : ' ✅ ') : '') + `${name}`;
+
+        testEventBuilder.appendMessage(msg + ` (line:${subcase.$.line})`, null);
 
         const currStack = stack.concat(currSection);
 
@@ -315,7 +325,7 @@ export class DOCTestInfo extends AbstractTestInfo {
 
         this._processXmlTagSubcase(subcase, title, currStack, testEventBuilder, currSection);
       } catch (error) {
-        testEventBuilder.appendMessage('Fatal error processing subcase');
+        testEventBuilder.appendMessage('Fatal error processing subcase', 1);
         this._shared.log.exception(error);
       }
     }

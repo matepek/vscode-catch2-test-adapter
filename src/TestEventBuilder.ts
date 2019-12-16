@@ -29,8 +29,12 @@ export class TestEventBuilder {
     this._tooltip.push(str);
   }
 
-  public appendMessage(str: string | undefined): void {
-    this._message.push(...reindentStr(0, str));
+  public appendMessage(str: string | undefined, reindent: number | null): void {
+    if (reindent !== null) {
+      this._message.push(...reindentStr(reindent, str));
+    } else if (str) {
+      this._message.push(str);
+    }
   }
 
   public appendDecorator(line: number, msg: string | string[] | undefined, hover?: string): void {
@@ -44,8 +48,8 @@ export class TestEventBuilder {
     });
   }
 
-  public appendMessageWithDecorator(line: number, str: string | undefined): void {
-    this.appendMessage(str);
+  public appendMessageWithDecorator(line: number, str: string | undefined, reindent: number | null): void {
+    this.appendMessage(str, reindent);
     this.appendDecorator(line, str);
   }
 
