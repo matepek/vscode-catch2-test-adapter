@@ -847,6 +847,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             executables.push(createFromObject(configExec));
           } catch (e) {
             this._log.warn(e, configExec);
+            throw e;
           }
         } else {
           this._log.error('_getExecutables', configExec, i);
@@ -857,6 +858,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         executables.push(createFromObject(configExecs));
       } catch (e) {
         this._log.warn(e, configExecs);
+        throw e;
       }
     } else {
       this._log.error("executables couldn't be recognised:", executables);

@@ -189,7 +189,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           return Promise.resolve();
         }
       } catch (e) {
-        this._shared.log.warn('coudnt use cache', e);
+        this._shared.log.info('coudnt use cache', e);
       }
     }
 
@@ -442,7 +442,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
                   const ev = currentChild.parseAndProcessTestCase(testCase, runInfo);
                   events.push(ev);
                 } catch (e) {
-                  this._shared.log.error('parsing and processing test: ' + testCase);
+                  this._shared.log.error('parsing and processing test', e, testCase);
                 }
               }
               events.length && this._shared.sendTestEventEmitter.fire(events);

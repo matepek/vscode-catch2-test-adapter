@@ -359,7 +359,7 @@ describe(path.basename(__filename), function() {
     }
 
     beforeEach(function() {
-      this.timeout(10000);
+      this.timeout(20000);
       return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe']);
     });
 
@@ -1686,7 +1686,7 @@ describe(path.basename(__filename), function() {
       return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);
     });
 
-    it('run suite3 one-by-one', async function() {
+    it.skip('run suite3 one-by-one', async function() {
       this.timeout(5000);
       await loadAdapter();
       assert.equal(root.children.length, 3);

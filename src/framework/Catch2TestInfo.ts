@@ -100,7 +100,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(xmlStr, (err: Error, result: XmlObject) => {
       if (err) {
-        throw err;
+        throw Error(inspect(err));
       } else {
         res = result;
       }

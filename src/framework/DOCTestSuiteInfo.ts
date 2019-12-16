@@ -355,7 +355,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
                   const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
                   events.push(ev);
                 } catch (e) {
-                  this._shared.log.error('parsing and processing test: ' + testCaseXml);
+                  this._shared.log.error('parsing and processing test', e, testCaseXml);
                 }
               }
               events.length && this._shared.sendTestEventEmitter.fire(events);
