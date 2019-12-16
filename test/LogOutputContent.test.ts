@@ -27,6 +27,10 @@ const expectedErrorLines = new Map<string /* test */, Set<string>>([
       '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
     ]),
   ],
+  [
+    'Catch2Framework.test.js -> wrong executables format',
+    new Set(['[ERROR] Error: Error: pattern property is required.']),
+  ],
 ]);
 
 ///

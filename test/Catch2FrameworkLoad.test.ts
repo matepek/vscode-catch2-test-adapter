@@ -1686,6 +1686,7 @@ describe(path.basename(__filename), function() {
       return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);
     });
 
+    // TODO: not so bad test bud need time to calibrate
     it.skip('run suite3 one-by-one', async function() {
       this.timeout(5000);
       await loadAdapter();
@@ -1720,8 +1721,10 @@ describe(path.basename(__filename), function() {
           'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: 1\n\n⏱Duration: 0ms',
           'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: 2\n\n⏱Duration: 0ms',
         ];
-        const tooltipTemplate =
-          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: ${num}\n  - failed: 1\n\n⏱Duration: 1ms';
+        const tooltipTemplate = [
+          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: ${num}\n  - failed: 1\n\n⏱Duration: 1ms',
+          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: ${num}\n  - failed: 1\n\n⏱Duration: 2ms',
+        ];
 
         assert.deepStrictEqual(
           adapter.testStatesEvents[6 * i + 4],
@@ -1729,12 +1732,13 @@ describe(path.basename(__filename), function() {
             type: 'suite',
             state: 'completed',
             suite: suite3,
-            description: i < 2 ? './ (0ms)' : './ (1ms)',
-            tooltip: i < 2 ? tooltips[i] : tooltipTemplate.replace('${num}', i.toString()),
+            description: i >= 5 ? './ (2ms)' : i > 1 ? './ (1ms)' : './ (0ms)',
+            tooltip:
+              i < 2 ? tooltips[i] : (i >= 5 ? tooltipTemplate[1] : tooltipTemplate[0]).replace('${num}', i.toString()),
           },
           'index: ' + i,
         );
-        assert.deepStrictEqual({ type: 'finished' }, adapter.testStatesEvents[6 * i + 5]);
+        assert.deepStrictEqual({ type: 'finished' }, adapter.testStatesEvents[6 * i + 5], 'index: ' + i);
       };
 
       let i = 0;

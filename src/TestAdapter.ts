@@ -397,25 +397,32 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       this._testsEmitter.fire({ type: 'started' });
 
-      return this._rootSuite.load(this._getExecutables(config, this._rootSuite)).then(
-        () => {
-          this._log.info('load finished', this._rootSuite.children.length);
+      return Promise.resolve()
+        .then(() => {
+          return this._getExecutables(config, this._rootSuite);
+        })
+        .then(exec => {
+          return this._rootSuite.load(exec);
+        })
+        .then(
+          () => {
+            this._log.info('load finished', this._rootSuite.children.length);
 
-          this._testsEmitter.fire({
-            type: 'finished',
-            suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
-          });
-        },
-        (e: Error) => {
-          this._log.exception(e);
+            this._testsEmitter.fire({
+              type: 'finished',
+              suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
+            });
+          },
+          (e: Error) => {
+            this._log.exception(e);
 
-          this._testsEmitter.fire({
-            type: 'finished',
-            suite: undefined,
-            errorMessage: inspect(e),
-          });
-        },
-      );
+            this._testsEmitter.fire({
+              type: 'finished',
+              suite: undefined,
+              errorMessage: inspect(e),
+            });
+          },
+        );
     });
   }
 
