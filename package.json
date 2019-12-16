@@ -67,7 +67,7 @@
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.12.17",
+    "@types/node": "^12.12.18",
     "@types/request-promise": "4.1.43",
     "@types/sinon": "^7.5.1",
     "@types/xml2js": "^0.4.5",
@@ -76,7 +76,7 @@
     "deep-equal": "^1.1.1",
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.3.0",
-    "eslint-plugin-prettier": "^3.1.1",
+    "eslint-plugin-prettier": "^3.1.2",
     "fs-extra": "^7.0.1",
     "mocha-eslint": "^5.0.0",
     "prettier": "^1.19.1",
@@ -88,7 +88,7 @@
     "vsce": "^1.71.0",
     "vscode": "^1.1.36",
     "vscode-test": "^1.2.3",
-    "webpack": "^4.35.2"
+    "webpack": "^4.41.3"
   },
   "engines": {
     "vscode": "^1.23.0"
