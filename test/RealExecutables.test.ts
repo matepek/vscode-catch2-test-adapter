@@ -76,6 +76,7 @@ describe(path.basename(__filename), function() {
   });
 
   beforeEach(async function() {
+    this.timeout(5000);
     await settings.resetConfig();
     await fse.remove(inWSTmp('.'));
     await fse.mkdirp(inWSTmp('.'));

@@ -11,7 +11,7 @@ describe(path.basename(__filename), function() {
   let adapter: TestAdapter;
 
   before(async function() {
-    this.timeout(4000);
+    this.timeout(5000);
 
     imitation = new Imitation();
     await settings.resetConfig();
@@ -27,6 +27,7 @@ describe(path.basename(__filename), function() {
   });
 
   after(function() {
+    this.timeout(5000);
     imitation.restore();
     return settings.resetConfig();
   });

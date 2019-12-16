@@ -1680,14 +1680,14 @@ describe(path.basename(__filename), function() {
     });
   });
 
-  context('executables=["execPath1.exe", "execPath2.exe", "execPath3.exe"]', async function() {
+  // TODO: not so bad test bud need time to calibrate
+  context.skip('executables=["execPath1.exe", "execPath2.exe", "execPath3.exe"]', async function() {
     beforeEach(function() {
       this.timeout(8000);
       return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);
     });
 
-    // TODO: not so bad test bud need time to calibrate
-    it.skip('run suite3 one-by-one', async function() {
+    it('run suite3 one-by-one', async function() {
       this.timeout(5000);
       await loadAdapter();
       assert.equal(root.children.length, 3);
