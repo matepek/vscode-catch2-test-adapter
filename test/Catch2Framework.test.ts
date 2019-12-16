@@ -413,9 +413,7 @@ describe(path.basename(__filename), function() {
 
     adapter = new TestAdapter();
 
-    assert.throws(() => {
-      adapter!.load();
-    });
+    adapter.load();
 
     assert.strictEqual(adapter.root.children.length, 0);
   });

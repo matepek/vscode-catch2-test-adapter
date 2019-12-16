@@ -51,7 +51,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
   public parseAndProcessTestCase(output: string, runInfo: RunningTestExecutableInfo): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);
-      this.lastRunState = ev.state;
+      this.lastRunEvent = ev;
       return ev;
     }
 
@@ -70,7 +70,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
         ev.state = 'errored';
       }
 
-      this.lastRunState = ev.state;
+      this.lastRunEvent = ev;
 
       ev.message += output;
 

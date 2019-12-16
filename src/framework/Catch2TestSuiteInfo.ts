@@ -323,7 +323,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
               ev.message += runInfo.stderr ? '\n' + runInfo.stderr : '';
             }
 
-            data.currentChild.lastRunState = ev.state;
+            data.currentChild.lastRunEvent = ev;
             this._shared.testStatesEmitter.fire(ev);
           } else {
             this._shared.log.warn('data.inTestCase: ', data);

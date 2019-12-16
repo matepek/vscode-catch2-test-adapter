@@ -93,7 +93,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
   ): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);
-      this.lastRunState = ev.state;
+      this.lastRunEvent = ev;
       return ev;
     }
 
@@ -114,7 +114,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     const testEvent = testEventBuilder.build();
 
-    this.lastRunState = testEvent.state;
+    this.lastRunEvent = testEvent;
 
     return testEvent;
   }

@@ -38,17 +38,17 @@ export class DOCTestInfo extends AbstractTestInfo {
     shared: SharedVariables,
     id: string | undefined,
     testNameAsId: string,
-    skipped: boolean,
+    skipped: boolean | undefined,
     file: string | undefined,
     line: number | undefined,
     old?: DOCTestInfo,
   ) {
     super(
       shared,
-      id,
+      id != undefined ? id : old ? old.id : undefined,
       testNameAsId,
       testNameAsId.startsWith('  Scenario:') ? '⒮' + testNameAsId.substr(11) : testNameAsId,
-      skipped,
+      skipped != undefined ? skipped : !!old && !!old.capturedSkipped && old.capturedSkipped === 'true',
       file ? file : old ? old.capturedFilename : undefined,
       line ? line : old ? old.capturedLine : undefined,
       undefined,
@@ -59,6 +59,7 @@ export class DOCTestInfo extends AbstractTestInfo {
 
   public capturedFilename: string | undefined = undefined;
   public capturedLine: number | undefined = undefined;
+  public capturedSkipped: string | undefined = undefined;
 
   private _sections: undefined | DOCSection[];
 
@@ -90,7 +91,7 @@ export class DOCTestInfo extends AbstractTestInfo {
   ): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);
-      this.lastRunState = ev.state;
+      this.lastRunEvent = ev;
       return ev;
     }
 
@@ -105,6 +106,7 @@ export class DOCTestInfo extends AbstractTestInfo {
 
     this.capturedFilename = res.TestCase.$.filename;
     this.capturedLine = Number(res.TestCase.$.line) - 1;
+    this.capturedSkipped = res.TestCase.$.skipped;
 
     const testEventBuilder = new TestEventBuilder(this);
 
@@ -114,7 +116,7 @@ export class DOCTestInfo extends AbstractTestInfo {
 
     const testEvent = testEventBuilder.build();
 
-    this.lastRunState = testEvent.state;
+    this.lastRunEvent = testEvent;
 
     return testEvent;
   }

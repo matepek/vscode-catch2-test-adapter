@@ -42,9 +42,9 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     this.enumerateTestInfos((test: AbstractTestInfo) => {
       testCount++;
       if (test.lastRunMilisec !== undefined) durationSum = (durationSum ? durationSum : 0) + test.lastRunMilisec;
-      if (test.lastRunState) {
-        if (test.lastRunState in stateStat) stateStat[test.lastRunState]++;
-        else stateStat[test.lastRunState] = 1;
+      if (test.lastRunEvent) {
+        if (test.lastRunEvent.state in stateStat) stateStat[test.lastRunEvent.state]++;
+        else stateStat[test.lastRunEvent.state] = 1;
       }
     });
 

@@ -11,7 +11,7 @@ export abstract class AbstractTestInfo implements TestInfo {
   public readonly tooltip: string;
   public readonly file: string | undefined;
 
-  public lastRunState: string | undefined = undefined;
+  public lastRunEvent: TestEvent | undefined = undefined;
   public lastRunMilisec: number | undefined = undefined;
 
   protected constructor(

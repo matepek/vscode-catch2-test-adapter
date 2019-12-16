@@ -53,7 +53,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
       this.addChild(
         new DOCTestInfo(
           this._shared,
-          index != -1 ? oldChildren[index].id : undefined,
+          undefined,
           testNameAsId,
           false,
           filePath,
@@ -291,7 +291,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
               ev.message += runInfo.stderr ? '\n' + runInfo.stderr : '';
             }
 
-            data.currentChild.lastRunState = ev.state;
+            data.currentChild.lastRunEvent = ev;
             this._shared.testStatesEmitter.fire(ev);
           } else {
             this._shared.log.warn('data.inTestCase: ', data);
@@ -358,6 +358,12 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
                   this._shared.log.error('parsing and processing test', e, testCaseXml);
                 }
               }
+
+              // it was reloaded because we have new file information
+              if (fileOrLineChanged) {
+                this.children.forEach(testInfo => testInfo.lastRunEvent && events.push(testInfo.lastRunEvent));
+              }
+
               events.length && this._shared.sendTestEventEmitter.fire(events);
             },
             (reason: Error) => {
