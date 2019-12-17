@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- experimental support for [doctest](https://github.com/onqtam/doctest)
+- experimental support for [doctest](https://github.com/onqtam/doctest) version >= 2.3.6
 
 ## [2.7.8] - 2019-12-08
 

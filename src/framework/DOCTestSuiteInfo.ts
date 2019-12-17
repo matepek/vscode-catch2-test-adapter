@@ -43,10 +43,13 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     });
 
     for (let i = 0; i < res.doctest.TestCase.length; ++i) {
-      const testNameAsId = res.doctest.TestCase[i].$.name;
+      const testCase = res.doctest.TestCase[i].$;
 
-      let filePath: string | undefined = undefined;
-      let line: number | undefined = undefined;
+      const testNameAsId = testCase.name;
+      const filePath: string | undefined = testCase.filename;
+      const line: number | undefined = testCase.line !== undefined ? Number(testCase.line) - 1 : undefined;
+      const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
+      const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
       const index = oldChildren.findIndex(c => c.testNameAsId == testNameAsId);
 
@@ -55,7 +58,8 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
           this._shared,
           undefined,
           testNameAsId,
-          false,
+          suite !== undefined ? `[${suite}]` : undefined,
+          skipped,
           filePath,
           line,
           index != -1 ? oldChildren[index] : undefined,
@@ -103,6 +107,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
               this._shared,
               undefined,
               'Check the test output message for details ⚠️',
+              undefined,
               false,
               undefined,
               undefined,
@@ -327,24 +332,15 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
           }
         }
 
-        const isTestRemoved =
-          runInfo.timeout === null &&
-          result.error === undefined &&
-          ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
-            this.getTestInfoCount(false) > data.processedTestCases.length) ||
-            (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
+        // skipped test handling is wrong. I just disable this feature
+        // const isTestRemoved =
+        //   runInfo.timeout === null &&
+        //   result.error === undefined &&
+        //   ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
+        //     this.getTestInfoCount(false) > data.processedTestCases.length) ||
+        //     (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
 
-        const fileOrLineChanged = (() => {
-          for (let i = 0; i < this.children.length; ++i)
-            if (
-              this.children[i].file !== this.children[i].capturedFilename ||
-              this.children[i].line !== this.children[i].capturedLine
-            )
-              return true;
-          return false;
-        })();
-
-        if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved || fileOrLineChanged) {
+        if (data.unprocessedXmlTestCases.length > 0 /*|| isTestRemoved*/) {
           new Promise<void>((resolve, reject) => {
             this._shared.loadWithTaskEmitter.fire(() => {
               return this.reloadTests(this._shared.taskPool).then(resolve, reject);
@@ -386,11 +382,6 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCaseXml);
                 }
-              }
-
-              // it was reloaded because we have new file information
-              if (fileOrLineChanged) {
-                this.children.forEach(testInfo => testInfo.lastRunEvent && events.push(testInfo.lastRunEvent));
               }
 
               events.length && this._shared.sendTestEventEmitter.fire(events);

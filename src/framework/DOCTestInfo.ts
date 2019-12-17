@@ -38,6 +38,7 @@ export class DOCTestInfo extends AbstractTestInfo {
     shared: SharedVariables,
     id: string | undefined,
     testNameAsId: string,
+    description: string | undefined,
     skipped: boolean | undefined,
     file: string | undefined,
     line: number | undefined,
@@ -48,10 +49,10 @@ export class DOCTestInfo extends AbstractTestInfo {
       id != undefined ? id : old ? old.id : undefined,
       testNameAsId,
       testNameAsId.startsWith('  Scenario:') ? '⒮' + testNameAsId.substr(11) : testNameAsId,
-      skipped != undefined ? skipped : !!old && !!old.capturedSkipped && old.capturedSkipped === 'true',
-      file ? file : old ? old.capturedFilename : undefined,
-      line ? line : old ? old.capturedLine : undefined,
-      undefined,
+      skipped !== undefined ? skipped : false,
+      file,
+      line,
+      description,
       undefined,
     );
     this._sections = old ? old.sections : undefined;
@@ -61,10 +62,6 @@ export class DOCTestInfo extends AbstractTestInfo {
       this.lastRunMilisec = old.lastRunMilisec;
     }
   }
-
-  public capturedFilename: string | undefined = undefined;
-  public capturedLine: number | undefined = undefined;
-  public capturedSkipped: string | undefined = undefined;
 
   private _sections: undefined | DOCSection[];
   private _isSecnario: boolean;
@@ -109,10 +106,6 @@ export class DOCTestInfo extends AbstractTestInfo {
         res = result;
       }
     });
-
-    this.capturedFilename = res.TestCase.$.filename;
-    this.capturedLine = Number(res.TestCase.$.line) - 1;
-    this.capturedSkipped = res.TestCase.$.skipped;
 
     const testEventBuilder = new TestEventBuilder(this);
 

@@ -1,4 +1,4 @@
-# Catch2 and Google Test Explorer for Visual Studio Code
+# **Catch2**, **Google Test** and **doctest** Explorer for VSCode
 
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 [![GitHub issues](https://img.shields.io/github/issues/matepek/vscode-catch2-test-adapter?color=green&style=for-the-badge)](https://github.com/matepek/vscode-catch2-test-adapter/issues)
@@ -13,7 +13,7 @@
 This extension allows you to run your [Catch2](https://github.com/catchorg/Catch2),
 [Google Test](https://github.com/google/googletest)
 and [doctest](https://github.com/onqtam/doctest) (experimental)
-tests using the [Test Explorer for VS Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
+tests using the [Test Explorer for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
 
 ## Features and Screenshots
 
@@ -263,6 +263,7 @@ With enabling you support my work. 🙏
 - (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
 - (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures.
   Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300` and it has to be defined before every `#include "catch.hpp"` lines.
+- (2019-12-27) doctest 2.3.6 is support file and line informations. Previous version will recognise the tests but navigation will be disabled.
 
 For solving issues use: `catch2TestExplorer.logpanel: true` and check the output window.
 
@@ -288,6 +289,7 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 
 ## TODOs
 
+- doctest: supporting test suites
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip, gmock_verbose
 - gaze is not good enough: detects change and delete, but not creation
 - `dependsOn` could contain variables
