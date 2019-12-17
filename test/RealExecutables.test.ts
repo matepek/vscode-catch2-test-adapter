@@ -91,6 +91,7 @@ describe(path.basename(__filename), function() {
   });
 
   after(async function() {
+    this.timeout(5000);
     await fse.remove(inWSTmp('.'));
     await settings.resetConfig();
   });

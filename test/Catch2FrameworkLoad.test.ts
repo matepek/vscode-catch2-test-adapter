@@ -34,6 +34,7 @@ describe(path.basename(__filename), function() {
   });
 
   after(function() {
+    this.timeout(5000);
     imitation.restore();
     return settings.resetConfig();
   });
