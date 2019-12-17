@@ -24,6 +24,7 @@ import { AbstractTestInfo } from './AbstractTestInfo';
 import { Catch2Section, Catch2TestInfo } from './framework/Catch2TestInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { performance } from 'perf_hooks';
+import { readJSONSync } from 'fs-extra';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: LogWrapper;
@@ -105,7 +106,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     try {
       const extensionInfo = (() => {
         try {
-          var pjson = require('../../package.json'); // eslint-disable-line
+          var pjson = readJSONSync('../../package.json');
           return { version: pjson.version, publisher: pjson.publisher, name: pjson.name };
         } catch (e) {
           this._log.exception(e);
