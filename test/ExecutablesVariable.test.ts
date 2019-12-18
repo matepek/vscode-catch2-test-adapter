@@ -5,14 +5,13 @@ import { TestAdapter, Imitation, settings } from './Common';
 ///
 
 describe(path.basename(__filename), function() {
-  this.slow(500);
+  this.timeout(5000);
+  this.slow(1000);
 
   let imitation: Imitation;
   let adapter: TestAdapter;
 
   before(async function() {
-    this.timeout(5000);
-
     imitation = new Imitation();
     await settings.resetConfig();
   });
@@ -27,7 +26,6 @@ describe(path.basename(__filename), function() {
   });
 
   after(function() {
-    this.timeout(5000);
     imitation.restore();
     return settings.resetConfig();
   });

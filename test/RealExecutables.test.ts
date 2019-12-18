@@ -58,9 +58,9 @@ describe(path.basename(__filename), function() {
     }
   }
 
-  before(async function() {
-    this.timeout(352000);
+  this.timeout(352000);
 
+  before(async function() {
     const exec = ['suite1.exe', 'suite2.exe', 'suite3.exe', 'gtest1.exe'];
 
     for (const e of exec) {
@@ -76,7 +76,6 @@ describe(path.basename(__filename), function() {
   });
 
   beforeEach(async function() {
-    this.timeout(5000);
     await settings.resetConfig();
     await fse.remove(inWSTmp('.'));
     await fse.mkdirp(inWSTmp('.'));
@@ -85,13 +84,10 @@ describe(path.basename(__filename), function() {
   let adapter: TestAdapter;
 
   afterEach(async function() {
-    this.timeout(8000);
-
     if (adapter !== undefined) await adapter.waitAndDispose(this);
   });
 
   after(async function() {
-    this.timeout(5000);
     await fse.remove(inWSTmp('.'));
     await settings.resetConfig();
   });

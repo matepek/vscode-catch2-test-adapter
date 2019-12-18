@@ -10,6 +10,8 @@ import { ChildProcess } from 'child_process';
 ///
 
 describe(path.basename(__filename), function() {
+  this.timeout(10000);
+
   let imitation: Imitation;
   let adapter: TestAdapter | undefined = undefined;
 
@@ -23,7 +25,6 @@ describe(path.basename(__filename), function() {
   });
 
   beforeEach(function() {
-    this.timeout(8000);
     adapter = undefined;
 
     imitation.resetToCallThrough();
@@ -33,7 +34,6 @@ describe(path.basename(__filename), function() {
   });
 
   afterEach(async function() {
-    this.timeout(8000);
     if (adapter) await adapter.waitAndDispose(this);
   });
 

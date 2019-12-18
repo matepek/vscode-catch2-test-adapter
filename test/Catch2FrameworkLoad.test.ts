@@ -21,7 +21,8 @@ import { SpawnOptions } from '../src/FSWrapper';
 ///
 
 describe(path.basename(__filename), function() {
-  this.slow(1000);
+  this.timeout(20000);
+  this.slow(3000);
 
   let imitation: Imitation;
   let adapter: TestAdapter;
@@ -34,14 +35,11 @@ describe(path.basename(__filename), function() {
   });
 
   after(function() {
-    this.timeout(5000);
     imitation.restore();
     return settings.resetConfig();
   });
 
   beforeEach(async function() {
-    this.timeout(8000);
-
     imitation.resetToCallThrough();
     watchers = example1.initImitation(imitation);
 
@@ -50,8 +48,6 @@ describe(path.basename(__filename), function() {
   });
 
   afterEach(async function() {
-    this.timeout(8000);
-
     await adapter.waitAndDispose(this);
     uniqueIdC.clear();
   });
@@ -87,7 +83,6 @@ describe(path.basename(__filename), function() {
 
   context('executables="execPath1.exe"', function() {
     beforeEach(function() {
-      this.timeout(8000);
       return settings.updateConfig('executables', 'execPath1.exe');
     });
 
@@ -280,7 +275,6 @@ describe(path.basename(__filename), function() {
 
     context('with config: defaultRngSeed=2', function() {
       beforeEach(function() {
-        this.timeout(8000);
         return settings.updateConfig('defaultRngSeed', 2);
       });
 
@@ -360,7 +354,6 @@ describe(path.basename(__filename), function() {
     }
 
     beforeEach(function() {
-      this.timeout(20000);
       return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe']);
     });
 
@@ -804,8 +797,6 @@ describe(path.basename(__filename), function() {
     });
 
     it('should run with wrong xml with signal', async function() {
-      this.timeout(20000);
-
       await loadAdapterAndAssert();
       const m = example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');
       assert.notStrictEqual(m, undefined);
@@ -875,7 +866,6 @@ describe(path.basename(__filename), function() {
     });
 
     it('should timeout not inside a test case', async function() {
-      this.timeout(8000);
       this.slow(7000);
       await settings.updateConfig('defaultRunningTimeoutSec', 3);
       await loadAdapterAndAssert();
@@ -919,7 +909,6 @@ describe(path.basename(__filename), function() {
     });
 
     it('should timeout inside a test case', async function() {
-      this.timeout(8000);
       this.slow(7000);
       await settings.updateConfig('defaultRunningTimeoutSec', 3);
       await loadAdapterAndAssert();
@@ -1207,8 +1196,6 @@ describe(path.basename(__filename), function() {
     });
 
     it('reloads because new tests found under run', async function() {
-      this.timeout(20000);
-
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
       assert.equal(testListOutput.length, 10);
@@ -1462,8 +1449,6 @@ describe(path.basename(__filename), function() {
     });
 
     it('reloads because test was renamed', async function() {
-      this.timeout(8000);
-
       await loadAdapterAndAssert();
       assert.ok(example1.suite1.outputs[1][1].indexOf('s1t1') != -1);
       const testListOutput = example1.suite1.outputs[1][1].replace('s1t1', 's1-t1');
@@ -1573,7 +1558,6 @@ describe(path.basename(__filename), function() {
 
   context('executables=[{<regex>}] and env={...}', function() {
     beforeEach(async function() {
-      this.timeout(8000);
       await settings.updateConfig('executables', [
         {
           name: '${baseFilename}',
@@ -1684,12 +1668,10 @@ describe(path.basename(__filename), function() {
   // TODO: not so bad test bud need time to calibrate
   context.skip('executables=["execPath1.exe", "execPath2.exe", "execPath3.exe"]', async function() {
     beforeEach(function() {
-      this.timeout(8000);
       return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);
     });
 
     it('run suite3 one-by-one', async function() {
-      this.timeout(5000);
       await loadAdapter();
       assert.equal(root.children.length, 3);
       assert.equal(root.children[0].type, 'suite');

@@ -17,6 +17,8 @@ describe(path.basename(__filename), function() {
   let adapter: TestAdapter | undefined = undefined;
   let watchers: Map<string, FileSystemWatcherStub>;
 
+  this.timeout(8000);
+
   before(function() {
     imitation = new Imitation();
     fse.removeSync(settings.dotVscodePath);
@@ -28,7 +30,6 @@ describe(path.basename(__filename), function() {
   });
 
   beforeEach(async function() {
-    this.timeout(8000);
     adapter = undefined;
 
     imitation.resetToCallThrough();
@@ -39,7 +40,6 @@ describe(path.basename(__filename), function() {
   });
 
   afterEach(async function() {
-    this.timeout(8000);
     if (adapter) await adapter.waitAndDispose(this);
   });
 
@@ -136,7 +136,7 @@ describe(path.basename(__filename), function() {
   });
 
   specify('arriving <TestCase> for missing TestInfo', async function() {
-    this.timeout(5000);
+    this.timeout(15000);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
     adapter = new TestAdapter();
@@ -419,7 +419,6 @@ describe(path.basename(__filename), function() {
   });
 
   specify('variable substitution with executables={...}', async function() {
-    this.timeout(8000);
     this.slow(500);
     const wsPath = settings.workspaceFolderUri.fsPath;
     const execPath2CopyRelPath = 'foo/bar/base.second.exe';
