@@ -110,7 +110,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           const pjson = readJSONSync(join(__dirname, '../../package.json'));
           return { version: pjson.version, publisher: pjson.publisher, name: pjson.name };
         } catch (e) {
-          this._log.exception(e);
+          this._log.exception(e, __dirname);
           return { version: '<unknown version>', publisher: '<unknown publisher>', name: '<unknown name>' };
         }
       })();

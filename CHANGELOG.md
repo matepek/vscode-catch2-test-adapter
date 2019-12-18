@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.11]
+
 ## [2.7.10] - 2019-12-18
 
 Sentry fix: webpack caused it.

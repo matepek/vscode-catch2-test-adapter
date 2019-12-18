@@ -16,6 +16,11 @@ module.exports = {
   },
 
   target: 'node',
+
+  node: {
+    __dirname: false,
+  },
+
   devtool: 'source-map',
 
   externals: {
