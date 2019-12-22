@@ -16,6 +16,18 @@ export class LogWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
+  public infoAndSend(m: string, ...msg: any[]): void {
+    try {
+      if (msg.length > 0)
+        Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), data: msg, level: Sentry.Severity.Log });
+      Sentry.captureMessage(m, Sentry.Severity.Log);
+    } catch (e) {
+      super.error(e);
+    }
+    return super.info(m, ...msg);
+  }
+
+  //eslint-disable-next-line
   public info(...msg: any[]): void {
     try {
       Sentry.addBreadcrumb({ message: inspect(msg), data: msg, level: Sentry.Severity.Info });
@@ -28,7 +40,8 @@ export class LogWrapper extends util.Log {
   //eslint-disable-next-line
   public warn(m: string, ...msg: any[]): void {
     try {
-      Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), data: msg, level: Sentry.Severity.Warning });
+      if (msg.length > 0)
+        Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), data: msg, level: Sentry.Severity.Warning });
       Sentry.captureMessage(m, Sentry.Severity.Warning);
     } catch (e) {
       super.error(e);
@@ -39,7 +52,8 @@ export class LogWrapper extends util.Log {
   //eslint-disable-next-line
   public error(m: string, ...msg: any[]): void {
     try {
-      Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), level: Sentry.Severity.Error });
+      if (msg.length > 0)
+        Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), level: Sentry.Severity.Error });
       Sentry.captureMessage(m, Sentry.Severity.Error);
     } catch (e) {
       super.error(e);
@@ -50,11 +64,12 @@ export class LogWrapper extends util.Log {
   //eslint-disable-next-line
   public exception(e: Error, ...msg: any[]): void {
     try {
-      Sentry.addBreadcrumb({
-        message: e.message + ': ' + JSON.stringify(msg),
-        data: msg,
-        level: Sentry.Severity.Error,
-      });
+      if (msg.length > 0)
+        Sentry.addBreadcrumb({
+          message: e.message + ': ' + JSON.stringify(msg),
+          data: msg,
+          level: Sentry.Severity.Error,
+        });
       Sentry.captureException(e);
     } catch (e) {
       super.error(e);

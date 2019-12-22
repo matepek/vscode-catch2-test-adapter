@@ -25,6 +25,7 @@ class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
 
 export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
   public children: GoogleTestGroupSuiteInfo[] = [];
+  private static _reportedFramework: boolean = false;
 
   public constructor(
     shared: SharedVariables,
@@ -34,6 +35,13 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     execOptions: c2fs.SpawnOptions,
   ) {
     super(shared, label, desciption, execPath, execOptions);
+
+    if (!GoogleTestSuiteInfo._reportedFramework) {
+      try {
+        shared.log.infoAndSend(`Framework: ${this.constructor.name}`); // no version info
+        GoogleTestSuiteInfo._reportedFramework = true;
+      } catch (e) {}
+    }
   }
 
   protected _reloadChildren(): Promise<void> {

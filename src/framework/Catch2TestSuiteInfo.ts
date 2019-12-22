@@ -15,6 +15,7 @@ interface XmlObject {
 
 export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
   public children: Catch2TestInfo[] = [];
+  private static _reportedFramework: boolean = false;
 
   public constructor(
     shared: SharedVariables,
@@ -25,6 +26,14 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     private _catch2Version: [number, number, number] | undefined,
   ) {
     super(shared, label, desciption, execPath, execOptions);
+
+    if (!Catch2TestSuiteInfo._reportedFramework) {
+      try {
+        const versionStr = this._catch2Version ? this._catch2Version.join('.') : 'unknown';
+        shared.log.infoAndSend(`Framework: ${this.constructor.name} - ${versionStr}`);
+        Catch2TestSuiteInfo._reportedFramework = true;
+      } catch (e) {}
+    }
   }
 
   protected _reloadChildren(): Promise<void> {

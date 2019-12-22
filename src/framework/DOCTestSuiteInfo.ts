@@ -15,6 +15,7 @@ interface XmlObject {
 
 export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
   public children: DOCTestInfo[] = [];
+  private static _reportedFramework: boolean = false;
 
   public constructor(
     shared: SharedVariables,
@@ -25,6 +26,14 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     private _docVersion: [number, number, number] | undefined,
   ) {
     super(shared, label, desciption, execPath, execOptions);
+
+    if (!DOCTestSuiteInfo._reportedFramework) {
+      try {
+        const versionStr = this._docVersion ? this._docVersion.join('.') : 'unknown';
+        shared.log.infoAndSend(`Framework: ${this.constructor.name} - ${versionStr}`);
+        DOCTestSuiteInfo._reportedFramework = true;
+      } catch (e) {}
+    }
   }
 
   protected _reloadChildren(): Promise<void> {
