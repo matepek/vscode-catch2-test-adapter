@@ -44,12 +44,25 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
   private _reloadFromString(testListOutput: string, oldChildren: Catch2TestInfo[]): void {
     let lines = testListOutput.split(/\r?\n/);
 
-    while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
+    const startRe = /Matching test cases:/;
+    const endRe = /[0-9]+ matching test cases/;
 
-    lines.shift(); // first line: 'Matching test cases:'
-    lines.pop(); // last line: '[0-9]+ matching test cases'
+    let i = 0;
 
-    for (let i = 0; i < lines.length; ) {
+    while (i < lines.length) {
+      const m = lines[i++].match(startRe);
+      if (m !== null) break;
+    }
+
+    if (i >= lines.length) {
+      this._shared.log.error('Wrong test list output format #1', lines);
+      throw Error('Wrong test list output format');
+    }
+
+    while (i < lines.length) {
+      const m = lines[i].match(endRe);
+      if (m !== null) break;
+
       if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format', lines);
 
       if (lines[i].startsWith('    ')) {
@@ -113,6 +126,8 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         ),
       );
     }
+
+    if (i >= lines.length) this._shared.log.error('Wrong test list output format #2', lines);
   }
 
   private async _reloadCatch2Tests(): Promise<void> {

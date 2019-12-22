@@ -271,6 +271,46 @@ describe(path.basename(__filename), function() {
     });
   });
 
+  specify('custom1 test case list', async function() {
+    this.slow(500);
+    await settings.updateConfig('executables', example1.suite1.execPath);
+
+    adapter = new TestAdapter();
+
+    const testListErrOutput = [
+      'Matching test cases:',
+      '  first',
+      '    /mnt/c/Users/a.cpp:12',
+      '    (NO DESCRIPTION)',
+      '      [a]',
+      '  second',
+      '    /mnt/c/Users/b.cpp:42',
+      '    (NO DESCRIPTION)',
+      '      [b]',
+      '2 matching test cases',
+    ];
+
+    const withArgs = imitation.spawnStub.withArgs(
+      example1.suite1.execPath,
+      example1.suite1.outputs[1][0],
+      sinon.match.any,
+    );
+    withArgs
+      .onCall(withArgs.callCount)
+      .returns((new ChildProcessStub(testListErrOutput.join(EOL)) as unknown) as ChildProcess);
+
+    await adapter.load();
+
+    assert.equal(adapter.root.children.length, 1);
+
+    const suite1 = adapter.suite1;
+    assert.equal(suite1.children.length, 2, inspect([testListErrOutput, adapter.testLoadsEvents]));
+
+    assert.strictEqual(suite1.label, 'execPath1.exe');
+    assert.strictEqual(suite1.children[0].label, 'first');
+    assert.strictEqual(suite1.children[1].label, 'second');
+  });
+
   specify('load executables=<full path of execPath1>', async function() {
     this.slow(500);
     await settings.updateConfig('executables', example1.suite1.execPath);
