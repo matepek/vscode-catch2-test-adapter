@@ -8,7 +8,9 @@ const path = require('path'); // eslint-disable-line
 
 module.exports = {
   mode: 'production',
+
   entry: './src/main.ts',
+
   output: {
     path: path.resolve(__dirname, 'out', 'dist'),
     filename: 'main.bundle.js',
@@ -29,13 +31,13 @@ module.exports = {
   },
 
   resolve: {
-    extensions: ['.ts', '.js'],
+    extensions: [ '.tsx', '.ts', '.js' ],
   },
 
   module: {
     rules: [
       {
-        test: /\.ts$/,
+        test: /\.tsx?$/,
         exclude: /node_modules/,
         use: [
           {
