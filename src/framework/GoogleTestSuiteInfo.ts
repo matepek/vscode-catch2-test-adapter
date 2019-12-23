@@ -38,7 +38,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
     if (!GoogleTestSuiteInfo._reportedFramework) {
       try {
-        shared.log.infoAndSend(`Framework: ${this.constructor.name}`); // no version info
+        shared.log.infoAndSend(`Framework: GoogleTest`); // no version info
         GoogleTestSuiteInfo._reportedFramework = true;
       } catch (e) {}
     }

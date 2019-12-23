@@ -30,7 +30,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     if (!DOCTestSuiteInfo._reportedFramework) {
       try {
         const versionStr = this._docVersion ? this._docVersion.join('.') : 'unknown';
-        shared.log.infoAndSend(`Framework: ${this.constructor.name} - ${versionStr}`);
+        shared.log.infoAndSend(`Framework: doctest - ${versionStr}`);
         DOCTestSuiteInfo._reportedFramework = true;
       } catch (e) {}
     }
