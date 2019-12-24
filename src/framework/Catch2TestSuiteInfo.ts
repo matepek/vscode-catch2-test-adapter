@@ -30,7 +30,9 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     if (!Catch2TestSuiteInfo._reportedFramework) {
       try {
         const versionStr = this._catch2Version ? this._catch2Version.join('.') : 'unknown';
-        shared.log.infoAndSend(`Framework: Catch2 - ${versionStr}`);
+
+        shared.log.infoWithTags('Framework', { framework: 'Catch2', frameworkVersion: `Catch2@${versionStr}` });
+
         Catch2TestSuiteInfo._reportedFramework = true;
       } catch (e) {}
     }

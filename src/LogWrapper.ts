@@ -16,15 +16,16 @@ export class LogWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public infoAndSend(m: string, ...msg: any[]): void {
+  public infoWithTags(m: string, tags: { [key: string]: string }): void {
     try {
-      if (msg.length > 0)
-        Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), data: msg, level: Sentry.Severity.Log });
-      Sentry.captureMessage(m, Sentry.Severity.Log);
+      Sentry.withScope(function(scope) {
+        scope.setTags(tags);
+        Sentry.captureMessage(m, Sentry.Severity.Log);
+      });
     } catch (e) {
       super.error(e);
     }
-    return super.info(m, ...msg);
+    return super.info(m, tags);
   }
 
   //eslint-disable-next-line
