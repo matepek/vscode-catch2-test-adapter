@@ -45,7 +45,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     let lines = testListOutput.split(/\r?\n/);
 
     const startRe = /Matching test cases:/;
-    const endRe = /[0-9]+ matching test cases/;
+    const endRe = /[0-9]+ matching test cases?/;
 
     let i = 0;
 

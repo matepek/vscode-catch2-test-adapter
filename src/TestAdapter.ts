@@ -590,7 +590,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         }
       })
       .catch(err => {
-        this._log.exception(err);
+        this._log.info(err);
         throw err;
       });
   }
