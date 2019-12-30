@@ -13,7 +13,7 @@ module.exports = {
 
   output: {
     path: path.resolve(__dirname, 'out', 'dist'),
-    filename: 'main.bundle.js',
+    filename: 'main.js',
     libraryTarget: 'commonjs2',
   },
 
@@ -31,7 +31,7 @@ module.exports = {
   },
 
   resolve: {
-    extensions: [ '.tsx', '.ts', '.js' ],
+    extensions: ['.tsx', '.ts', '.js'],
   },
 
   module: {

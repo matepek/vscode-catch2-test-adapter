@@ -184,6 +184,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     'Warning',
     'Failure',
     'Expression',
+    'Exception',
     'OverallResult',
     'OverallResults',
     'FatalErrorCondition',
@@ -261,7 +262,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
       for (let j = 0; xml.Exception && j < xml.Exception.length; ++j) {
         testEventBuilder.appendMessageWithDecorator(
           Number(xml.Exception[j].$.line) - 1,
-          'Exception were thrown: ' + xml.Exception[j]._.trim(),
+          'Exception were thrown: "' + xml.Exception[j]._.trim() + '"',
           0,
         );
       }

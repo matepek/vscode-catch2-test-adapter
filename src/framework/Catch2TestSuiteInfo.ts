@@ -132,8 +132,12 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
           this._shared.log.info('loading from cache: ', cacheFile);
           const content = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          this._reloadFromString(content, oldChildren);
-          return Promise.resolve();
+          if (content === '') {
+            this._shared.log.debug('loading from cache failed because file is empty');
+          } else {
+            this._reloadFromString(content, oldChildren);
+            return Promise.resolve();
+          }
         }
       } catch (e) {
         this._shared.log.warn('coudnt use cache', e);

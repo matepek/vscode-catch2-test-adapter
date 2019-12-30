@@ -12,9 +12,7 @@
         "--extensionTestsPath=${workspaceFolder}/out/test",
         "${workspaceFolder}/out/tmp/workspaceFolder"
       ],
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "npm: watch",
       "env": {
         "C2AVCVA": "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat",
@@ -24,36 +22,13 @@
     {
       "type": "extensionHost",
       "request": "launch",
-      "name": "Manual test",
-      "runtimeExecutable": "${execPath}",
-      "args": [
-        "${workspaceFolder}/../catch2test",
-        "${workspaceFolder}/out/tmp",
-        "--extensionDevelopmentPath=${workspaceFolder}"
-      ],
-      "env": {
-        "C2_SENTRY_DISABLE": "true"
-      },
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js"
-      ],
-      "preLaunchTask": "npm: watch"
-    },
-    {
-      "type": "extensionHost",
-      "request": "launch",
       "name": "Manual cpp",
       "runtimeExecutable": "${execPath}",
-      "args": [
-        "${workspaceFolder}/out/cpp",
-        "--extensionDevelopmentPath=${workspaceFolder}"
-      ],
+      "args": ["${workspaceFolder}/out/cpp", "--extensionDevelopmentPath=${workspaceFolder}"],
       "env": {
         "C2_SENTRY_DISABLE": "true"
       },
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "npm: watch"
     },
     {
@@ -61,16 +36,11 @@
       "request": "launch",
       "name": "Manual chorus",
       "runtimeExecutable": "${execPath}",
-      "args": [
-        "/Users/matepek/repo/ac-chorus-addon/nbschorusconnect",
-        "--extensionDevelopmentPath=${workspaceFolder}"
-      ],
+      "args": ["/Users/matepek/repo/ac-chorus-addon/nbschorusconnect", "--extensionDevelopmentPath=${workspaceFolder}"],
       "env": {
         "C2_SENTRY_DISABLE": "true"
       },
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "npm: watch"
     }
   ]

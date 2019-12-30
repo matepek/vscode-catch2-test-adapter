@@ -30,3 +30,11 @@ TEST_CASE("cerr test") {
   REQUIRE(true);
   //
 }
+
+TEST_CASE("throws an unexpected exception") {
+  //
+  throw std::runtime_error("this is unexpected");
+
+  REQUIRE(true);
+  //
+}
