@@ -9,6 +9,8 @@ import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 
 export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
+  private static _reportedFrameworks: string[] = [];
+
   private _canceled: boolean = false;
   private _runInfo: RunningTestExecutableInfo | undefined = undefined;
 
@@ -18,8 +20,23 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     desciption: string | undefined,
     public readonly execPath: string,
     public readonly execOptions: c2fs.SpawnOptions,
+    public readonly frameworkName: string,
+    public readonly frameworkVersion: [number, number, number] | undefined,
   ) {
     super(shared, label, desciption, undefined);
+
+    if (AbstractTestSuiteInfo._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
+      try {
+        const versionStr = this.frameworkVersion ? this.frameworkVersion.join('.') : 'unknown';
+
+        shared.log.infoWithTags('Framework', {
+          framework: this.frameworkName,
+          frameworkVersion: `${this.frameworkName}@${versionStr}`,
+        });
+
+        AbstractTestSuiteInfo._reportedFrameworks.push(frameworkName);
+      } catch (e) {}
+    }
   }
 
   public get tooltip(): string {
@@ -34,6 +51,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   public reloadTests(taskPool: TaskPool): Promise<void> {
     return taskPool.scheduleTask(() => {
+      this._shared.log.info('reloadChildren', this.label, this.frameworkName, this.frameworkVersion, this.execPath);
       return this._reloadChildren();
     });
   }

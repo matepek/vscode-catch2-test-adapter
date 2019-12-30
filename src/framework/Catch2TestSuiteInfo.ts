@@ -15,7 +15,6 @@ interface XmlObject {
 
 export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
   public children: Catch2TestInfo[] = [];
-  private static _reportedFramework: boolean = false;
 
   public constructor(
     shared: SharedVariables,
@@ -23,24 +22,9 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     desciption: string | undefined,
     execPath: string,
     execOptions: c2fs.SpawnOptions,
-    private _catch2Version: [number, number, number] | undefined,
+    catch2Version: [number, number, number] | undefined,
   ) {
-    super(shared, label, desciption, execPath, execOptions);
-
-    if (!Catch2TestSuiteInfo._reportedFramework) {
-      try {
-        const versionStr = this._catch2Version ? this._catch2Version.join('.') : 'unknown';
-
-        shared.log.infoWithTags('Framework', { framework: 'Catch2', frameworkVersion: `Catch2@${versionStr}` });
-
-        Catch2TestSuiteInfo._reportedFramework = true;
-      } catch (e) {}
-    }
-  }
-
-  protected _reloadChildren(): Promise<void> {
-    this._shared.log.info('reloadChildren', this.label, this._catch2Version);
-    return this._reloadCatch2Tests();
+    super(shared, label, desciption, execPath, execOptions, 'Catch2', catch2Version);
   }
 
   private _reloadFromString(testListOutput: string, oldChildren: Catch2TestInfo[]): void {
@@ -132,7 +116,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     if (i >= lines.length) this._shared.log.error('Wrong test list output format #2', lines);
   }
 
-  private async _reloadCatch2Tests(): Promise<void> {
+  protected async _reloadChildren(): Promise<void> {
     const oldChildren = this.children;
     this.children = [];
     this.label = this.origLabel;

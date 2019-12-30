@@ -655,4 +655,32 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
     });
   });
+
+  specify.skip('custom1 test case list', async function() {
+    this.slow(500);
+    await settings.updateConfig('executables', example1.gtest1.execPath);
+
+    adapter = new TestAdapter();
+
+    const testListOutput = ['NOTHING TO TEST now, thi is just a template'];
+
+    const withArgs = imitation.spawnStub.withArgs(
+      example1.suite1.execPath,
+      example1.suite1.outputs[1][0],
+      sinon.match.any,
+    );
+    withArgs
+      .onCall(withArgs.callCount)
+      .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+
+    await adapter.load();
+
+    assert.equal(adapter.root.children.length, 1);
+
+    const suite1 = adapter.suite1;
+    assert.equal(suite1.children.length, 1);
+
+    assert.strictEqual(suite1.label, 'execPath1.exe');
+    assert.strictEqual(suite1.children[0].label, 'first');
+  });
 });

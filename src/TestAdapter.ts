@@ -454,7 +454,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     if (tests.length !== 1) {
       this._log.error('unsupported test count: ', tests);
-      throw Error('Unsupported input. Contact');
+      throw Error(
+        'Unsupported input. It seems you would like to debug more test cases at once. This is not supported currently.',
+      );
     }
 
     const route = this._rootSuite.findRouteToTestById(tests[0]);

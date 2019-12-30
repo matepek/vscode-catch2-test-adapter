@@ -25,7 +25,6 @@ class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
 
 export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
   public children: GoogleTestGroupSuiteInfo[] = [];
-  private static _reportedFramework: boolean = false;
 
   public constructor(
     shared: SharedVariables,
@@ -34,19 +33,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     execPath: string,
     execOptions: c2fs.SpawnOptions,
   ) {
-    super(shared, label, desciption, execPath, execOptions);
-
-    if (!GoogleTestSuiteInfo._reportedFramework) {
-      try {
-        shared.log.infoWithTags('Framework', { framework: 'GoogleTest', frameworkVersion: `GoogleTest@noinfo` }); // no version info
-        GoogleTestSuiteInfo._reportedFramework = true;
-      } catch (e) {}
-    }
-  }
-
-  protected _reloadChildren(): Promise<void> {
-    this._shared.log.info('reloadChildren', this.label);
-    return this._reloadGoogleTests();
+    super(shared, label, desciption, execPath, execOptions, 'GoogleTest', undefined);
   }
 
   private _reloadFromXml(xmlStr: string, oldChildren: GoogleTestGroupSuiteInfo[]): void {
@@ -177,7 +164,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     }
   }
 
-  private async _reloadGoogleTests(): Promise<void> {
+  protected async _reloadChildren(): Promise<void> {
     const oldChildren = this.children;
     this.children = [];
     this.label = this.origLabel;

@@ -15,7 +15,6 @@ interface XmlObject {
 
 export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
   public children: DOCTestInfo[] = [];
-  private static _reportedFramework: boolean = false;
 
   public constructor(
     shared: SharedVariables,
@@ -23,22 +22,9 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     desciption: string | undefined,
     execPath: string,
     execOptions: c2fs.SpawnOptions,
-    private _docVersion: [number, number, number] | undefined,
+    docVersion: [number, number, number] | undefined,
   ) {
-    super(shared, label, desciption, execPath, execOptions);
-
-    if (!DOCTestSuiteInfo._reportedFramework) {
-      try {
-        const versionStr = this._docVersion ? this._docVersion.join('.') : 'unknown';
-        shared.log.infoWithTags('Framework', { framework: 'doctest', frameworkVersion: `doctest@${versionStr}` });
-        DOCTestSuiteInfo._reportedFramework = true;
-      } catch (e) {}
-    }
-  }
-
-  protected _reloadChildren(): Promise<void> {
-    this._shared.log.info('reloadChildren', this.label, this._docVersion);
-    return this._reloadDOCTests();
+    super(shared, label, desciption, execPath, execOptions, 'doctest', docVersion);
   }
 
   private _reloadFromString(testListOutput: string, oldChildren: DOCTestInfo[]): void {
@@ -77,7 +63,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     }
   }
 
-  private async _reloadDOCTests(): Promise<void> {
+  protected async _reloadChildren(): Promise<void> {
     const oldChildren = this.children;
     this.children = [];
     this.label = this.origLabel;
