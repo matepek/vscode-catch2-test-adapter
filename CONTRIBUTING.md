@@ -26,7 +26,7 @@ echo "pre-push hook:"
 set -e -x
 npm audit --production
 npm rum compile
-npx mocha ./out/test/TestDocumentation.test.js ./out/test/TestESLint.test.js
+npx mocha ./out/test/Documentation.test.js ./out/test/ESLint.test.js
 ```
 
 ## Publishing to market
