@@ -322,7 +322,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         }).catch((reason: Error) => {
           this._shared.log.debug(reason, filePath, suite);
           // eslint-disable-next-line
-          if ((reason as any).code === undefined) this._shared.log.exception(Error('problem under reloading'), reason);
+          if ((reason as any).code === undefined) this._shared.log.warn('problem under reloading', reason);
           return x(suite, false, Math.min(delay * 2, 2000));
         });
       } else {
@@ -338,20 +338,16 @@ export class TestExecutableInfo implements vscode.Disposable {
       }
     };
 
-    let suite = this._executables.get(filePath);
+    const suite = this._executables.get(filePath);
 
-    if (suite == undefined) {
-      this._shared.log.info('new suite: ' + filePath);
+    if (suite === undefined) {
+      this._shared.log.info('possibly new suite: ' + filePath);
       this._createSuiteByUri(filePath).then(
-        (s: AbstractTestSuiteInfo) => {
-          x(s, false, 64);
-        },
-        (reason: Error) => {
-          this._shared.log.info("couldn't add: " + filePath, 'reson:', reason);
-        },
+        (s: AbstractTestSuiteInfo) => x(s, false, 64),
+        (reason: Error) => this._shared.log.info("couldn't add: " + filePath, 'reson:', reason),
       );
     } else {
-      x(suite!, false, 64);
+      x(suite, false, 64);
     }
   }
 }

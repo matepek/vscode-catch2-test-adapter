@@ -283,7 +283,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
                 });
               }
             } else {
-              this._shared.log.info('<TestCase> found without TestInfo: ', this, '; ', testCaseXml);
+              this._shared.log.info('<TestCase> found without TestInfo', this, testCaseXml);
               data.unprocessedXmlTestCases.push(testCaseXml);
             }
 
@@ -299,10 +299,10 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         }
       };
 
-      runInfo.process!.stdout!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
-      runInfo.process!.stderr!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
+      runInfo.process.stdout!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
+      runInfo.process.stderr!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
 
-      runInfo.process!.once('close', (code: number | null, signal: string | null) => {
+      runInfo.process.once('close', (code: number | null, signal: string | null) => {
         if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
         else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
         else resolve({ error: new Error('unknown sfngvdlfkxdvgn') });
@@ -319,7 +319,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
-            this._shared.log.info('data.currentChild !== undefined: ', data);
+            this._shared.log.info('data.currentChild !== undefined', data);
             let ev: TestEvent;
 
             if (runInfo.timeout !== null) {

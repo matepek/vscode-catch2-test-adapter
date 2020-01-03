@@ -355,10 +355,10 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         }
       };
 
-      runInfo.process!.stdout!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
-      runInfo.process!.stderr!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
+      runInfo.process.stdout!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
+      runInfo.process.stderr!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
 
-      runInfo.process!.once('close', (code: number | null, signal: string | null) => {
+      runInfo.process.once('close', (code: number | null, signal: string | null) => {
         if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
         else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
         else resolve({ error: new Error('unknown sfngvdlfkxdvgn') });
