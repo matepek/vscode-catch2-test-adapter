@@ -776,6 +776,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const configExecs:
       | undefined
+      | null
       | string
       | string[]
       | { [prop: string]: string }
@@ -864,6 +865,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           this._log.error('_getExecutables', configExec, i);
         }
       }
+    } else if (configExecs === null || configExecs === undefined) {
+      return [];
     } else if (typeof configExecs === 'object') {
       try {
         executables.push(createFromObject(configExecs));

@@ -7,6 +7,7 @@ import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { promisify } from 'util';
 
 export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   private static _reportedFrameworks: string[] = [];
@@ -98,12 +99,25 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       if (childrenToRun.size == 0) return Promise.resolve();
     }
 
-    return taskPool.scheduleTask(() => {
+    const runIfNotCancelled = () => {
       if (this._canceled) {
         this._shared.log.info('test was canceled:', this);
         return Promise.resolve();
       }
       return this._runInner(childrenToRun);
+    };
+
+    return taskPool.scheduleTask(runIfNotCancelled).catch((err: Error) => {
+      // eslint-disable-next-line
+      if ((err as any).code === 'EBUSY') {
+        this._shared.log.info('executable is busy, rescheduled: 2sec', err);
+
+        return promisify(setTimeout)(2000).then(() => {
+          taskPool.scheduleTask(runIfNotCancelled);
+        });
+      } else {
+        throw err;
+      }
     });
   }
 

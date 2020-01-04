@@ -203,10 +203,6 @@
                                 "${filename}",
                                 "${baseFilename}",
                                 "${extFilename}",
-                                "${base2Filename}",
-                                "${ext2Filename}",
-                                "${base3Filename}",
-                                "${ext3Filename}",
                                 "${workspaceDirectory}",
                                 "${workspaceFolder}",
                                 "${workspaceName}",
@@ -329,10 +325,6 @@
                           "${filename}",
                           "${baseFilename}",
                           "${extFilename}",
-                          "${base2Filename}",
-                          "${ext2Filename}",
-                          "${base3Filename}",
-                          "${ext3Filename}",
                           "${workspaceDirectory}",
                           "${workspaceFolder}",
                           "${workspaceName}",
@@ -367,6 +359,10 @@
               "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
               "type": "string",
               "minLength": 1
+            },
+            {
+              "type": "null",
+              "description": "null means it is disabled"
             }
           ]
         },
@@ -408,10 +404,6 @@
                   "${filename}",
                   "${baseFilename}",
                   "${extFilename}",
-                  "${base2Filename}",
-                  "${ext2Filename}",
-                  "${base3Filename}",
-                  "${ext3Filename}",
                   "${workspaceDirectory}",
                   "${workspaceFolder}",
                   "${workspaceName}",

@@ -136,7 +136,7 @@ export function reindentLines(indentLevel: number, lines: string[], indentWidth:
 }
 
 export function reindentStr(indentLevel: number, str: string | undefined, indentWidth: number = 2): string[] {
-  if (str === undefined) return [];
+  if (typeof str !== 'string') return [];
 
   const lines = str.split(/\r?\n/);
   return reindentLines(indentLevel, lines, indentWidth);

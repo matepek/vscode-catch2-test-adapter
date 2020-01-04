@@ -48,7 +48,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
       const child = this.children[i];
       ps.push(
         child.run(testSet, this._shared.taskPool).catch(err => {
-          this._shared.log.error('RootTestSuite.run.for.child', child.label, err);
+          this._shared.log.error('RootTestSuite.run.for.child', child.label, child.execPath, err);
         }),
       );
     }
