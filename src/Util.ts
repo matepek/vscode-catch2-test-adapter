@@ -1,6 +1,8 @@
 // eslint-disable-next-line
 function _mapAllStrings<T>(value: T, mapperFunc: (s: string) => any): T {
-  if (typeof value === 'string') {
+  if (value === null || value === undefined || typeof value === 'function') {
+    return value;
+  } else if (typeof value === 'string') {
     return (mapperFunc(value) as unknown) as T;
   } else if (Array.isArray(value)) {
     // eslint-disable-next-line
@@ -23,10 +25,15 @@ export function resolveVariables<T>(value: T, varValue: [string, any][]): T {
   // eslint-disable-next-line
   return _mapAllStrings(value, (s: string): any => {
     for (let i = 0; i < varValue.length; ++i) {
-      if (s === varValue[i][0] && typeof varValue[i][1] !== 'string') {
-        return varValue[i][1];
+      if (typeof varValue[i][1] === 'string') {
+        s = s.replace(varValue[i][0], varValue[i][1]);
+      } else if (s === varValue[i][0]) {
+        if (typeof varValue[i][1] === 'function') {
+          return varValue[i][1]();
+        } else {
+          return varValue[i][1];
+        }
       }
-      s = s.replace(varValue[i][0], varValue[i][1]);
     }
     return s;
   });
