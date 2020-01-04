@@ -21,7 +21,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     private readonly _cwd: string | undefined,
     private readonly _defaultEnv: { [prop: string]: string },
     private readonly _env: { [prop: string]: string } | undefined,
-    private readonly _variableToValue: [string, string][],
+    private readonly _variableToValue: ResolveRulePair[],
     private readonly _dependsOn: string[],
   ) {}
 
@@ -183,39 +183,39 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     let varToValue: ResolveRulePair[] = [];
     try {
+      const subPath = (pathStr: string) => {
+        const pathArray = pathStr.split(/\/|\\/);
+        return (m: RegExpMatchArray) => {
+          const idx1 = m[1] === undefined ? undefined : Number(m[1]);
+          const idx2 = m[2] === undefined ? undefined : Number(m[2]);
+
+          return path.normalize(pathArray.slice(idx1, idx2).join(path.sep));
+        };
+      };
+
+      const subFilename = (filename: string) => {
+        const filenameArray = filename.split('.');
+        return (m: RegExpMatchArray) => {
+          const idx1 = m[1] === undefined ? undefined : Number(m[1]);
+          const idx2 = m[2] === undefined ? undefined : Number(m[2]);
+
+          return filenameArray.slice(idx1, idx2).join('.');
+        };
+      };
+
       const filename = path.basename(filePath);
       const extFilename = path.extname(filename);
       const baseFilename = path.basename(filename, extFilename);
-      const ext2Filename = path.extname(baseFilename);
-      const base2Filename = path.basename(baseFilename, ext2Filename);
-      const ext3Filename = path.extname(base2Filename);
-      const base3Filename = path.basename(base2Filename, ext3Filename);
 
       varToValue = [
         ...this._variableToValue,
-        ['${absPath}', filePath],
-        ['${relPath}', relPath],
-        ['${absDirpath}', path.dirname(filePath)],
-        ['${relDirpath}', path.dirname(relPath)],
-        ['${filename}', filename],
-        ['${parentDirname}', path.basename(path.dirname(filePath))],
+        [/\${absPath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(filePath)],
+        [/\${relPath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(relPath)],
+        [/\${absDirpath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(path.dirname(filePath))],
+        [/\${relDirpath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(path.dirname(relPath))],
+        [/\${filename(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subFilename(filename)],
         ['${extFilename}', extFilename],
         ['${baseFilename}', baseFilename],
-        ['${ext2Filename}', ext2Filename],
-        ['${base2Filename}', base2Filename],
-        ['${ext3Filename}', ext3Filename],
-        ['${base3Filename}', base3Filename],
-        [
-          /\${relSubDirpath:([0-9]+)?(?::([0-9]+))?}/,
-          (m: RegExpMatchArray) => {
-            const relPathArr = path.dirname(relPath).split(/\/|\\/);
-            // TOdO better interface
-            const start = Math.max(0, m[1] ? Number(m[1]) : 0);
-            const end = Math.min(relPathArr.length, m[2] ? Number(m[2]) : relPathArr.length);
-
-            return path.join(...relPathArr.slice(start, end));
-          },
-        ],
       ];
     } catch (e) {
       this._shared.log.exception(e);

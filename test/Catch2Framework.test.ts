@@ -585,33 +585,35 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(adapter.root.children.length, 0);
   });
 
-  specify.only('variable substitution with executables={...}', async function() {
+  specify('variable substitution with executables={...}', async function() {
     this.slow(500);
     const wsPath = settings.workspaceFolderUri.fsPath;
-    const execPath2CopyRelPath = 'foo/bar/base.second.exe';
+    const execPath2CopyRelPath = 'a/b/c/d/1.2.3';
     const execPath2CopyPath = path.join(wsPath, execPath2CopyRelPath);
 
     const envArray: [string, string][] = [
       ['${absPath}', execPath2CopyPath],
       ['${relPath}', path.normalize(execPath2CopyRelPath)],
-      ['${absDirpath}', path.join(wsPath, 'foo/bar')],
-      ['${relDirpath}', path.normalize('foo/bar')],
-      ['${filename}', 'base.second.exe'],
-      ['${baseFilename}', 'base.second'],
-      ['${extFilename}', '.exe'],
-      ['${base2Filename}', 'base'],
-      ['${ext2Filename}', '.second'],
-      ['${base3Filename}', 'base'],
-      ['${ext3Filename}', ''],
+      ['${absDirpath}', path.join(wsPath, 'a/b/c/d')],
+      ['${relDirpath}', path.normalize('a/b/c/d')],
+      ['${relDirpath[0:0]}', path.normalize('.')],
+      ['${relDirpath[9:9]}', path.normalize('.')],
+      ['${relDirpath[:]}', path.normalize('a/b/c/d')],
+      ['${relDirpath[0:9]}', path.normalize('a/b/c/d')],
+      ['${relDirpath[0:1]}', path.normalize('a')],
+      ['${relDirpath[1:2]}', path.normalize('b')],
+      ['${relDirpath[:1]}', path.normalize('a')],
+      ['${relDirpath[1:]}', path.normalize('b/c/d')],
+      ['${relDirpath[2:]}', path.normalize('c/d')],
+      ['${filename}', '1.2.3'],
+      ['${baseFilename}', '1.2'],
+      ['${extFilename}', '.3'],
+      ['${filename[:-2]}', '1'],
+      ['${filename[-2:-1]}', '2'],
+      ['${filename[:-3]}', ''],
+      ['${filename[-3:-2]}', '1'],
       ['${workspaceDirectory}', wsPath],
       ['${workspaceFolder}', wsPath],
-      ['${relSubDirpath:0:0}', path.normalize('.')],
-      ['${relSubDirpath:9:9}', path.normalize('.')],
-      ['${relSubDirpath:0:9}', path.normalize('foo/bar')],
-      ['${relSubDirpath:0:1}', path.normalize('foo')],
-      ['${relSubDirpath:1:2}', path.normalize('bar')],
-      ['${relSubDirpath:1:9}', path.normalize('bar')],
-      ['${relSubDirpath:1:1}', path.normalize('.')],
     ];
     const envsStr = envArray
       .map(v => {

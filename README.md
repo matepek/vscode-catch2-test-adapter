@@ -129,19 +129,17 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 
 #### Variables which can be used in `name`, `description`, `cwd` and `env` of `executables`:
 
+[array index]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
+
 | Variable                     | Description                                                                                                                                                                                  |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `${absPath}`                 | Absolute path of the test executable                                                                                                                                                         |
-| `${relPath}`                 | Relative path of the test executable to the workspace folder                                                                                                                                 |
-| `${absDirpath}`              | Absolute path of the test executable's parent directory                                                                                                                                      |
-| `${relDirpath}`              | Relative path of the test executable's parent directory to the workspace folder                                                                                                              |
+| `${absPath}`                 | Absolute path of the test executable. Supports [array index]ing.                                                                                                                             |
+| `${relPath}`                 | Relative path of the test executable to the workspace folder. Supports [array index]ing.                                                                                                     |
+| `${absDirpath}`              | Absolute path of the test executable's parent directory. Supports [array index]ing.                                                                                                          |
+| `${relDirpath}`              | Relative path of the test executable's parent directory to the workspace folder. Supports [array index]ing.                                                                                  |
 | `${filename}`                | Filename (Path without directories; "`d/a.b.c`" => "`a.b.c`")                                                                                                                                |
 | `${baseFilename}`            | Filename without extension ("`d/a.b.c`" => "`a.b`")                                                                                                                                          |
 | `${extFilename}`             | Filename extension. ("`d/a.b.c`" => "`.c`")                                                                                                                                                  |
-| `${base2Filename}`           | Filename without second extension ("`d/a.b.c`" => "`a`")                                                                                                                                     |
-| `${ext2Filename}`            | Filename's second level extension. ("`d/a.b.c`" => "`.b`")                                                                                                                                   |
-| `${base3Filename}`           | Filename without third extension ("`d/a.b.c`" => "`a`")                                                                                                                                      |
-| `${ext3Filename}`            | Filename's third level extension. ("`d/a.b.c`" => "")                                                                                                                                        |
 | `${workspaceDirectory}`      | (You can only guess once.)                                                                                                                                                                   |
 | `${workspaceFolder}`         | Alias of `${workspaceDirectory}`                                                                                                                                                             |
 | `${workspaceName}`           | Workspace name can be custom in case of [`workspace file`](https://code.visualstudio.com/docs/editor/multi-root-workspaces#_workspace-file-schema).                                          |
@@ -150,6 +148,9 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 | `${cwd}`                     | The resolved `executables`'s cwd. Can be used only in `env`.                                                                                                                                 |
 | `${os_env:<varname>}`        | Resolves it to the given(`<varname>`) environment variable if exists empty string otherwise. Can be used everywhere. On Windows it is case insensitive: `${os_env:pAtH}` == `${os_env:PATH}` |
 | `${os_env_strict:<varname>}` | Resolves it to the given(`<varname>`) environment variable if exists won't set the variable othewise. Can be used ONLY in `env`.                                                             |
+
+[Array index]ing: `(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?`.
+Exmaple: `${relPath[:-2]}`
 
 #### Examples:
 

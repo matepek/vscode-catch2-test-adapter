@@ -228,7 +228,12 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               "Couldn't parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output",
             );
 
-            this._reloadFromStdOut(googleTestListOutput.stdout, oldChildren);
+            try {
+              this._reloadFromStdOut(googleTestListOutput.stdout, oldChildren);
+            } catch (e) {
+              this._shared.log.info('GoogleTest._reloadFromStdOut error', e, googleTestListOutput);
+              throw e;
+            }
           }
         }
       });
