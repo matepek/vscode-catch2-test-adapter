@@ -1665,7 +1665,7 @@ describe(path.basename(__filename), function() {
     });
   });
 
-  // TODO: not so bad test bud need time to calibrate
+  // TODO: not so bad test but need time to calibrate
   context.skip('executables=["execPath1.exe", "execPath2.exe", "execPath3.exe"]', async function() {
     beforeEach(function() {
       return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);

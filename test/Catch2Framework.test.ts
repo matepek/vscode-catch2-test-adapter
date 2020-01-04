@@ -384,7 +384,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(suite1.children[0].label, 'first');
   });
 
-  specify.only('custom4 test', async function() {
+  specify.skip('custom4 test', async function() {
     this.slow(500);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
@@ -585,7 +585,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(adapter.root.children.length, 0);
   });
 
-  specify('variable substitution with executables={...}', async function() {
+  specify.only('variable substitution with executables={...}', async function() {
     this.slow(500);
     const wsPath = settings.workspaceFolderUri.fsPath;
     const execPath2CopyRelPath = 'foo/bar/base.second.exe';
@@ -605,6 +605,13 @@ describe(path.basename(__filename), function() {
       ['${ext3Filename}', ''],
       ['${workspaceDirectory}', wsPath],
       ['${workspaceFolder}', wsPath],
+      ['${relSubDirpath:0:0}', path.normalize('.')],
+      ['${relSubDirpath:9:9}', path.normalize('.')],
+      ['${relSubDirpath:0:9}', path.normalize('foo/bar')],
+      ['${relSubDirpath:0:1}', path.normalize('foo')],
+      ['${relSubDirpath:1:2}', path.normalize('bar')],
+      ['${relSubDirpath:1:9}', path.normalize('bar')],
+      ['${relSubDirpath:1:1}', path.normalize('.')],
     ];
     const envsStr = envArray
       .map(v => {

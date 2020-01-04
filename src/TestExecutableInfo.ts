@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import * as c2fs from './FSWrapper';
-import { resolveVariables, resolveOSEnvironmentVariables } from './Util';
+import { resolveVariables, resolveOSEnvironmentVariables, ResolveRulePair } from './Util';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
@@ -181,7 +181,7 @@ export class TestExecutableInfo implements vscode.Disposable {
   private _createSuiteByUri(filePath: string): Promise<AbstractTestSuiteInfo> {
     const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
-    let varToValue: [string, string][] = [];
+    let varToValue: ResolveRulePair[] = [];
     try {
       const filename = path.basename(filePath);
       const extFilename = path.extname(filename);
@@ -205,6 +205,17 @@ export class TestExecutableInfo implements vscode.Disposable {
         ['${base2Filename}', base2Filename],
         ['${ext3Filename}', ext3Filename],
         ['${base3Filename}', base3Filename],
+        [
+          /\${relSubDirpath:([0-9]+)?(?::([0-9]+))?}/,
+          (m: RegExpMatchArray) => {
+            const relPathArr = path.dirname(relPath).split(/\/|\\/);
+            // TOdO better interface
+            const start = Math.max(0, m[1] ? Number(m[1]) : 0);
+            const end = Math.min(relPathArr.length, m[2] ? Number(m[2]) : relPathArr.length);
+
+            return path.join(...relPathArr.slice(start, end));
+          },
+        ],
       ];
     } catch (e) {
       this._shared.log.exception(e);
