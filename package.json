@@ -67,7 +67,7 @@
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.12.22",
+    "@types/node": "^12.12.24",
     "@types/request-promise": "4.1.43",
     "@types/sinon": "^7.5.1",
     "@types/xml2js": "^0.4.5",
