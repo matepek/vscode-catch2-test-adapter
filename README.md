@@ -155,7 +155,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 | `${relPath}`                 | Relative path of the test executable to the workspace folder. Supports [array index]ing.                                                                                                     |
 | `${absDirpath}`              | Absolute path of the test executable's parent directory. Supports [array index]ing.                                                                                                          |
 | `${relDirpath}`              | Relative path of the test executable's parent directory to the workspace folder. Supports [array index]ing.                                                                                  |
-| `${filename}`                | Filename (Path without directories; "`d/a.b.c`" => "`a.b.c`")                                                                                                                                |
+| `${filename}`                | Filename (Path without directories; "`d/a.b.c`" => "`a.b.c`") Supports [array index]ing.                                                                                                     |
 | `${baseFilename}`            | Filename without extension ("`d/a.b.c`" => "`a.b`")                                                                                                                                          |
 | `${extFilename}`             | Filename extension. ("`d/a.b.c`" => "`.c`")                                                                                                                                                  |
 | `${workspaceDirectory}`      | (You can only guess once.)                                                                                                                                                                   |
@@ -163,7 +163,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 | `${workspaceName}`           | Workspace name can be custom in case of [`workspace file`](https://code.visualstudio.com/docs/editor/multi-root-workspaces#_workspace-file-schema).                                          |
 | `${name}`                    | The resolved `executables`'s name. Can be used only in `cwd` and `env`.                                                                                                                      |
 | `${description}`             | The resolved `executables`'s description. Can be used only in `cwd` and `env`.                                                                                                               |
-| `${cwd}`                     | The resolved `executables`'s cwd. Can be used only in `env`.                                                                                                                                 |
+| `${cwd}`                     | The resolved `executables`'s cwd. Can be used only in `env`. Supports [array index]ing.                                                                                                      |
 | `${os_env:<varname>}`        | Resolves it to the given(`<varname>`) environment variable if exists empty string otherwise. Can be used everywhere. On Windows it is case insensitive: `${os_env:pAtH}` == `${os_env:PATH}` |
 | `${os_env_strict:<varname>}` | Resolves it to the given(`<varname>`) environment variable if exists won't set the variable othewise. Can be used ONLY in `env`.                                                             |
 

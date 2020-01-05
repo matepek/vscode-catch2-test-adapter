@@ -188,27 +188,28 @@ export class TestExecutableInfo implements vscode.Disposable {
     const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
     let varToValue: ResolveRulePair[] = [];
+
+    const subPath = (pathStr: string) => {
+      const pathArray = pathStr.split(/\/|\\/);
+      return (m: RegExpMatchArray) => {
+        const idx1 = m[1] === undefined ? undefined : Number(m[1]);
+        const idx2 = m[2] === undefined ? undefined : Number(m[2]);
+
+        return path.normalize(pathArray.slice(idx1, idx2).join(path.sep));
+      };
+    };
+
+    const subFilename = (filename: string) => {
+      const filenameArray = filename.split('.');
+      return (m: RegExpMatchArray) => {
+        const idx1 = m[1] === undefined ? undefined : Number(m[1]);
+        const idx2 = m[2] === undefined ? undefined : Number(m[2]);
+
+        return filenameArray.slice(idx1, idx2).join('.');
+      };
+    };
+
     try {
-      const subPath = (pathStr: string) => {
-        const pathArray = pathStr.split(/\/|\\/);
-        return (m: RegExpMatchArray) => {
-          const idx1 = m[1] === undefined ? undefined : Number(m[1]);
-          const idx2 = m[2] === undefined ? undefined : Number(m[2]);
-
-          return path.normalize(pathArray.slice(idx1, idx2).join(path.sep));
-        };
-      };
-
-      const subFilename = (filename: string) => {
-        const filenameArray = filename.split('.');
-        return (m: RegExpMatchArray) => {
-          const idx1 = m[1] === undefined ? undefined : Number(m[1]);
-          const idx2 = m[2] === undefined ? undefined : Number(m[2]);
-
-          return filenameArray.slice(idx1, idx2).join('.');
-        };
-      };
-
       const filename = path.basename(filePath);
       const extFilename = path.extname(filename);
       const baseFilename = path.basename(filename, extFilename);
@@ -265,7 +266,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
       resolvedCwd = path.resolve(this._shared.workspaceFolder.uri.fsPath, resolvedCwd);
 
-      varToValue.push(['${cwd}', resolvedCwd]);
+      varToValue.push([/\${cwd(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(resolvedCwd)]);
     } catch (e) {
       this._shared.log.error('resolvedCwd', e);
     }

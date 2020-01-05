@@ -130,10 +130,22 @@ describe(path.basename(__filename), function() {
 
       const eventCount = adapter.testStatesEvents.length;
       await adapter.run([adapter.root.id]);
+
+      const labels: string[] = [];
+      adapter.testStatesEvents.forEach(x => {
+        if (x.type == 'test' && x.state == 'running' && typeof x.test != 'string') labels.push(x.test.label);
+      });
+
       assert.strictEqual(
         adapter.testStatesEvents.length - eventCount,
-        2 + 2 + 5 * 2 + 2 + 2 * 2 + 2 + 35 * 2,
-        inspect(adapter.testStatesEvents),
+        2 + // start,fin
+        2 + //suite1 start,fin
+        5 * 2 + // suite1 tests
+        2 + //suite2 start,fin
+        2 * 2 + // suite2 tests
+        2 + //suite3 start,fin
+          35 * 2, // suite3 tests
+        inspect(labels),
       );
     });
 
