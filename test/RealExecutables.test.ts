@@ -130,7 +130,11 @@ describe(path.basename(__filename), function() {
 
       const eventCount = adapter.testStatesEvents.length;
       await adapter.run([adapter.root.id]);
-      assert.strictEqual(adapter.testStatesEvents.length - eventCount, 92, inspect(adapter.testStatesEvents));
+      assert.strictEqual(
+        adapter.testStatesEvents.length - eventCount,
+        2 + 2 + 5 * 2 + 2 + 2 * 2 + 2 + 35 * 2,
+        inspect(adapter.testStatesEvents),
+      );
     });
 
     it.skip('should be notified by watcher', async function() {

@@ -17,8 +17,7 @@ tests using the [Test Explorer for Visual Studio Code](https://marketplace.visua
 
 ## Features and Screenshots
 
-- Are you new to VSCode? [Check this!](https://code.visualstudio.com/docs/getstarted/settings)
-- Finds and recognises the executables by a given glob-pattern (`catch2TestExplorer.executables`).
+- Finds and recognises the executables by a given [glob pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ([More](#catch2TestExplorer_executables))
 - Automatically runs executables if it is modified ("_..._" -> "_Enable autorun_") or if a dependency is modified (`dependsOn`)
 - Reloads test list of an executable if it is recompiled.
 - Supports popular **debuggers** such as `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools` out of the box.
@@ -33,11 +32,13 @@ tests using the [Test Explorer for Visual Studio Code](https://marketplace.visua
 
 ## Configuration
 
-The extension is pre-configured (`catch2TestExplorer.executables`) and should find executables inside the working directory which match the following pattern:
+The extension is \*_pre-configured_ and should find executables inside the working directory which match the following [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options):
 
 > `{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*`.
 
 This basically means executables inside the `build` and `out` directories (recursive `/**/`) which contain the `test` word in their name (including extensions).
+
+See [examples here](#Examples) for more.
 
 See vscode's [documentation](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) for syntax.
 
@@ -77,6 +78,23 @@ Not good enough for you?!: Edit your `.vscode/settings.json` [file](https://code
 can be used.
 
 ### catch2TestExplorer.executables
+
+The first example (`.vscode/settings.json` or hit _Ctr/Cmd + ,_):
+
+```json
+"catch2TestExplorer.executables": [
+	{
+		"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+		"cwd": "${absDirpath}",
+		"env": {
+			"ExampleENV1": "You can use variables here too, like ${relPath}",
+			"PATH": "${os_env:PATH}:/adding/new/item/to/PATH/env"
+		}
+	}
+]
+```
+
+[More examples.](#Examples)
 
 This variable can be
 
@@ -181,7 +199,7 @@ Exmaple: `${relPath[:-2]}`
 		"name": "Test1 suite",
 		"pattern": "dir/test.exe"
 	},
-	"singleTest.exe",
+	"canBeMixed.exe",
 	{
 		"pattern": "${os_env:HOME}/dir2/{t,T}est",
 		"cwd": "out/tmp",

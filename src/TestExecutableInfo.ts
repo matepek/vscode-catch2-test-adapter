@@ -14,16 +14,22 @@ export class TestExecutableInfo implements vscode.Disposable {
   public constructor(
     private readonly _shared: SharedVariables,
     private readonly _rootSuite: RootTestSuiteInfo,
-    private readonly _name: string | undefined,
-    private readonly _description: string | undefined,
     private readonly _pattern: string,
-    private readonly _defaultCwd: string,
+    name: string | undefined,
+    description: string | undefined,
     private readonly _cwd: string | undefined,
-    private readonly _defaultEnv: { [prop: string]: string },
     private readonly _env: { [prop: string]: string } | undefined,
-    private readonly _variableToValue: ResolveRulePair[],
     private readonly _dependsOn: string[],
-  ) {}
+    private readonly _defaultCwd: string,
+    private readonly _defaultEnv: { [prop: string]: string },
+    private readonly _variableToValue: ResolveRulePair[],
+  ) {
+    this._name = name !== undefined ? name : '${filename}';
+    this._description = description !== undefined ? description : '${relDirpath}/';
+  }
+
+  private readonly _name: string;
+  private readonly _description: string;
 
   private _disposables: vscode.Disposable[] = [];
 
@@ -225,8 +231,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     let resolvedName = relPath;
     try {
-      if (this._name) resolvedName = resolveVariables(this._name, varToValue);
-      else if (!this._description) resolvedName = resolveVariables('${filename}', varToValue);
+      resolvedName = resolveVariables(this._name, varToValue);
       resolvedName = resolveOSEnvironmentVariables(resolvedName, false);
 
       if (resolvedName.match(variableRe)) this._shared.log.warn('Possibly unresolved variable', resolvedName);
@@ -236,31 +241,24 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.error('resolvedLabel', e);
     }
 
-    let resolvedDescription: string | undefined = undefined;
+    let resolvedDescription = '';
     try {
-      if (this._description) {
-        resolvedDescription = resolveVariables(this._description, varToValue);
-        resolvedDescription = resolveOSEnvironmentVariables(resolvedDescription, false);
+      resolvedDescription = resolveVariables(this._description, varToValue);
+      resolvedDescription = resolveOSEnvironmentVariables(resolvedDescription, false);
 
-        if (resolvedDescription.match(variableRe))
-          this._shared.log.warn('Possibly unresolved variable', resolvedDescription);
+      if (resolvedDescription.match(variableRe))
+        this._shared.log.warn('Possibly unresolved variable', resolvedDescription);
 
-        varToValue.push(['${description}', resolvedDescription]);
-      } else if (!this._name) {
-        resolvedDescription = resolveVariables('${relDirpath}/', varToValue);
-        varToValue.push(['${description}', resolvedDescription]);
-      } else {
-        varToValue.push(['${description}', '']);
-      }
+      varToValue.push(['${description}', resolvedDescription]);
     } catch (e) {
       this._shared.log.error('resolvedDescription', e);
     }
 
-    let resolvedCwd = this._defaultCwd;
+    let resolvedCwd = '.';
     try {
-      if (this._cwd) resolvedCwd = this._cwd;
+      if (this._cwd) resolvedCwd = resolveVariables(this._cwd, varToValue);
+      else resolvedCwd = resolveVariables(this._defaultCwd, varToValue);
 
-      resolvedCwd = resolveVariables(resolvedCwd, varToValue);
       resolvedCwd = resolveOSEnvironmentVariables(resolvedCwd, false);
 
       if (resolvedCwd.match(variableRe)) this._shared.log.warn('Possibly unresolved variable', resolvedCwd);
