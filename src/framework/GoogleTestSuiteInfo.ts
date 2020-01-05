@@ -32,8 +32,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     desciption: string | undefined,
     execPath: string,
     execOptions: c2fs.SpawnOptions,
+    version: [number, number, number] | undefined,
   ) {
-    super(shared, label, desciption, execPath, execOptions, 'GoogleTest', undefined);
+    super(shared, label, desciption, execPath, execOptions, 'GoogleTest', version);
   }
 
   private _reloadFromXml(xmlStr: string, oldChildren: GoogleTestGroupSuiteInfo[]): void {
