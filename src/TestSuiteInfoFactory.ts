@@ -12,7 +12,7 @@ import { promisify } from 'util';
 class GoogleTestVersion {
   private constructor(public readonly version: [number, number, number] | undefined) {}
 
-  private static readonly _gtesthVersion: [number, [number, number, number]][] = [
+  private static readonly _versions: [number, [number, number, number]][] = [
     [48592, [1, 0, 0]],
     [47254, [1, 0, 1]],
     [48150, [1, 1, 0]],
@@ -28,23 +28,47 @@ class GoogleTestVersion {
     [93924, [1, 10, 0]],
   ];
 
-  public static async Create(shared: SharedVariables): Promise<GoogleTestVersion> {
-    try {
-      const gtests = await vscode.workspace.findFiles('**/include/gtest/gtest.h', '**/node_modules/**', 2);
+  private static _version: Promise<GoogleTestVersion> | undefined = undefined;
+  private static _finished: boolean = false;
 
-      if (gtests.length !== 1) {
+  public static Get(shared: SharedVariables): Promise<GoogleTestVersion> {
+    if (this._version === undefined) {
+      this._version = new Promise<vscode.Uri[]>(resolve =>
+        vscode.workspace.findFiles('**/include/gtest/gtest.h', '**/node_modules/**', 2).then(resolve),
+      )
+        .then(async gtests => {
+          this._finished = true;
+
+          if (gtests.length === 1) {
+            const stats = await promisify(fs.stat)(gtests[0].fsPath);
+            const fileSizeInBytes = stats['size'];
+            const found = GoogleTestVersion._versions.find(x => x[0] === fileSizeInBytes);
+
+            if (found) return new GoogleTestVersion(found[1]);
+          }
+
+          throw Error('Google Test version not found');
+        })
+        .catch(e => {
+          shared.log.exception(e);
+          return new GoogleTestVersion(undefined);
+        });
+
+      return Promise.race([
+        this._version,
+        promisify(setTimeout)(2000).then(() => {
+          throw Error('GoogleTestVersion timeout');
+        }),
+      ]).catch(e => {
+        shared.log.exception(e);
         return new GoogleTestVersion(undefined);
-      } else {
-        const stats = await promisify(fs.stat)(gtests[0].fsPath);
-        const fileSizeInBytes = stats['size'];
-        const found = GoogleTestVersion._gtesthVersion.find(x => x[0] === fileSizeInBytes);
+      });
+    }
 
-        if (found) return new GoogleTestVersion(found[1]);
-        else return new GoogleTestVersion(undefined);
-      }
-    } catch (e) {
-      shared.log.exception(e);
-      return new GoogleTestVersion(undefined);
+    if (this._finished) {
+      return this._version;
+    } else {
+      return Promise.race([this._version, Promise.resolve(new GoogleTestVersion(undefined))]);
     }
   }
 }
@@ -63,8 +87,6 @@ export class TestSuiteInfoFactory {
     private readonly _execOptions: c2fs.SpawnOptions,
   ) {}
 
-  private _googleTestVersion: GoogleTestVersion | undefined = undefined;
-
   public create(): Promise<AbstractTestSuiteInfo> {
     return this._shared.taskPool
       .scheduleTask(() => {
@@ -73,21 +95,16 @@ export class TestSuiteInfoFactory {
       .then((framework: TestFrameworkInfo) => {
         switch (framework.type) {
           case 'google':
-            Promise.resolve()
-              .then(() => {
-                if (this._googleTestVersion) return this._googleTestVersion;
-                else return GoogleTestVersion.Create(this._shared);
-              })
-              .then(gtestVersion => {
-                return new GoogleTestSuiteInfo(
-                  this._shared,
-                  this._label,
-                  this._description,
-                  this._execPath,
-                  this._execOptions,
-                  gtestVersion.version,
-                );
-              });
+            return GoogleTestVersion.Get(this._shared).then(g => {
+              return new GoogleTestSuiteInfo(
+                this._shared,
+                this._label,
+                this._description,
+                this._execPath,
+                this._execOptions,
+                g.version,
+              );
+            });
           case 'catch2':
             return new Catch2TestSuiteInfo(
               this._shared,

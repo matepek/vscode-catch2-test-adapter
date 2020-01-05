@@ -14,7 +14,7 @@ import {
 import { inspect, promisify } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, waitFor, settings, ChildProcessStub, FileSystemWatcherStub, isWin } from './Common';
+import { TestAdapter, Imitation, waitFor, settings, ChildProcessStub, FileSystemWatcherStub, isWin, expectedLoggedErrorLine } from './Common';
 import { SpawnOptions } from '../src/FSWrapper';
 
 ///
@@ -101,6 +101,8 @@ describe(path.basename(__filename), function() {
     }
 
     it('should run with not existing test id', async function() {
+      expectedLoggedErrorLine("[ERROR] Some tests have remained:  Set { 'not existing id' }");
+
       await loadAdapterAndAssert();
       await adapter.run(['not existing id']);
 
@@ -471,6 +473,8 @@ describe(path.basename(__filename), function() {
     });
 
     it('should run with not existing test id', async function() {
+      expectedLoggedErrorLine("[ERROR] Some tests have remained:  Set { 'not existing id' }");
+
       await loadAdapterAndAssert();
       await adapter.run(['not existing id']);
 
@@ -1741,6 +1745,8 @@ describe(path.basename(__filename), function() {
     });
 
     it('should be debugged', async function() {
+      expectedLoggedErrorLine('[ERROR] Error: Failed starting the debug session. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".');
+      
       await settings.updateConfig('executables', [
         {
           name: 'X${baseFilename}',

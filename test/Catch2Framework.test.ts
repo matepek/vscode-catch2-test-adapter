@@ -6,7 +6,7 @@ import { inspect } from 'util';
 import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, waitFor, settings, isWin, ChildProcessStub, FileSystemWatcherStub } from './Common';
+import { TestAdapter, Imitation, waitFor, settings, isWin, ChildProcessStub, FileSystemWatcherStub, expectedLoggedErrorLine } from './Common';
 import { SpawnOptions } from '../src/FSWrapper';
 import { ChildProcess } from 'child_process';
 
@@ -18,6 +18,7 @@ describe(path.basename(__filename), function() {
   let watchers: Map<string, FileSystemWatcherStub>;
 
   this.timeout(8000);
+  this.slow(1000);
 
   before(function() {
     imitation = new Imitation();
@@ -44,7 +45,7 @@ describe(path.basename(__filename), function() {
   });
 
   specify('resolving relative defaultCwd', async function() {
-    this.slow(500);
+    this.slow(1000);
     await settings.updateConfig('executables', example1.suite1.execPath);
     await settings.updateConfig('defaultCwd', 'defaultCwdStr');
     adapter = new TestAdapter();
@@ -136,6 +137,7 @@ describe(path.basename(__filename), function() {
   });
 
   specify('arriving <TestCase> for missing TestInfo', async function() {
+    this.slow(4000);
     this.timeout(15000);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
@@ -559,6 +561,8 @@ describe(path.basename(__filename), function() {
   });
 
   specify('wrong executables format', async function() {
+    expectedLoggedErrorLine('[ERROR] Error: Error: pattern property is required.');
+
     this.slow(5000);
     await settings.updateConfig('executables', { name: '' });
 

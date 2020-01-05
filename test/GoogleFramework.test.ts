@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, settings, ChildProcessStub } from './Common';
+import { TestAdapter, Imitation, settings, ChildProcessStub, expectedLoggedErrorLine } from './Common';
 
 ///
 
@@ -37,6 +37,8 @@ describe(path.basename(__filename), function() {
   });
 
   it('loads gtest1 from output because there is xml parsing error', async function() {
+    expectedLoggedErrorLine('[ERROR] Error: Google Test version not found');
+
     this.slow(500);
     await settings.updateConfig('executables', example1.gtest1.execPath);
 
@@ -162,7 +164,7 @@ describe(path.basename(__filename), function() {
               message: '⬅️ Actual: true;  Expected: false;',
               hover: 'Value of: 1 == 1\n  Actual: true\nExpected: false',
             },
-            { line: 25, message: '⬅️ Expected equality', hover: 'Expected equality of these values:\n  1\n  2' },
+            { line: 25, message: '⬅️ Expected: equality', hover: 'Expected equality of these values:\n  1\n  2' },
             {
               line: 26,
               message: '⬅️ Expected: (1) != (1), actual: 1 vs 1',
@@ -329,7 +331,7 @@ describe(path.basename(__filename), function() {
           decorations: [
             {
               line: 40,
-              message: '⬅️ Expected equality',
+              message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 2',
             },
           ],
@@ -353,7 +355,7 @@ describe(path.basename(__filename), function() {
           decorations: [
             {
               line: 40,
-              message: '⬅️ Expected equality',
+              message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
             },
           ],
@@ -377,7 +379,7 @@ describe(path.basename(__filename), function() {
           decorations: [
             {
               line: 41,
-              message: '⬅️ Expected equality',
+              message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 2',
             },
           ],
@@ -401,7 +403,7 @@ describe(path.basename(__filename), function() {
           decorations: [
             {
               line: 41,
-              message: '⬅️ Expected equality',
+              message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
             },
           ],
@@ -433,7 +435,7 @@ describe(path.basename(__filename), function() {
           decorations: [
             {
               line: 40,
-              message: '⬅️ Expected equality',
+              message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
             },
           ],
@@ -457,7 +459,7 @@ describe(path.basename(__filename), function() {
           decorations: [
             {
               line: 41,
-              message: '⬅️ Expected equality',
+              message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
             },
           ],
@@ -615,7 +617,7 @@ describe(path.basename(__filename), function() {
           decorations: [
             {
               line: 40,
-              message: '⬅️ Expected equality',
+              message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 2',
             },
           ],

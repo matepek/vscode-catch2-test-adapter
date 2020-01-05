@@ -42,6 +42,24 @@ GTEST_TEST(TestCas2, test1) {
   EXPECT_NE(1, 1);
   EXPECT_LT(1, 1);
   EXPECT_GT(1, 1);
+  EXPECT_NEAR(1.0f, 1.5f, 0.25f);
+}
+
+GTEST_TEST(TestCas2, test11) {
+  //
+  int one = 1;
+  int two = 2;
+  EXPECT_TRUE(one != one);
+  EXPECT_FALSE(one == one);
+  EXPECT_EQ(one, two);
+  EXPECT_NE(one, one);
+  EXPECT_LT(one, one);
+  EXPECT_GT(one, one);
+
+  double a = 1.0;
+  double b = 1.5;
+  double c = 0.25;
+  EXPECT_NEAR(a, b, c);
 }
 
 void magic_func() { ASSERT_TRUE(false); }

@@ -176,7 +176,16 @@ export class GoogleTestInfo extends AbstractTestInfo {
             while (j < lines.length && lines[j].startsWith('  ')) j++;
             addDecoration({
               line: lineNumber,
-              message: '⬅️ Expected equality',
+              message: '⬅️ Expected: equality',
+              hover: lines.slice(i, j).join('\n'),
+            });
+            i = j;
+          } else if (i < lines.length && lines[i].startsWith('The difference between')) {
+            let j = i + 1;
+            while (j < lines.length && lines[j].indexOf(' evaluates to ') != -1) j++;
+            addDecoration({
+              line: lineNumber,
+              message: '⬅️ ' + lines[i].trim(),
               hover: lines.slice(i, j).join('\n'),
             });
             i = j;

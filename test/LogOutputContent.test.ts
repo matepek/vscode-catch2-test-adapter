@@ -11,27 +11,12 @@ const failedTestLogDir = path.join(settings.workspaceFolderUri.fsPath, 'FailedTe
 
 let counter = 1;
 let currentLogfilePath: string;
+const currentExpectedLoggedErrors = new Set<string>();
 
-const expectedErrorLines = new Map<string /* test */, Set<string>>([
-  [
-    'Catch2FrameworkLoad.test.js -> executables="execPath1.exe" -> should run with not existing test id',
-    new Set(["[ERROR] Some tests have remained:  Set { 'not existing id' }"]),
-  ],
-  [
-    'Catch2FrameworkLoad.test.js -> executables=["execPath1.exe", "execPath2.exe"] -> should run with not existing test id',
-    new Set(["[ERROR] Some tests have remained:  Set { 'not existing id' }"]),
-  ],
-  [
-    'Catch2FrameworkLoad.test.js -> vscode.debug -> should be debugged',
-    new Set([
-      '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
-    ]),
-  ],
-  [
-    'Catch2Framework.test.js -> wrong executables format',
-    new Set(['[ERROR] Error: Error: pattern property is required.']),
-  ],
-]);
+// eslint-disable-next-line
+(globalThis as any).expectedLoggedErrorLine = (errorLine: string) => {
+  currentExpectedLoggedErrors.add(errorLine);
+};
 
 ///
 
@@ -43,6 +28,7 @@ before(function() {
 });
 
 beforeEach(function() {
+  currentExpectedLoggedErrors.clear();
   currentLogfilePath = path.join(failedTestLogDir, 'log_' + counter++ + '.txt');
 
   const w = fse.createWriteStream(currentLogfilePath, { flags: 'w' });
@@ -67,7 +53,7 @@ afterEach(async function() {
   const currentTest = this.currentTest!;
   const title = currentTest.titlePath().join(' -> ');
 
-  {
+  if (currentTest.state === 'passed') {
     const inputLineStream = readline.createInterface(fse.createReadStream(currentLogfilePath));
 
     const exceptions: Error[] = [];
@@ -81,9 +67,8 @@ afterEach(async function() {
             .split(']')
             .filter((v, i) => i !== 1)
             .join(']');
-          const expectedErrorsInTest = expectedErrorLines.get(title);
-          assert.notStrictEqual(expectedErrorsInTest, undefined, title + ': ' + error);
-          assert.ok(expectedErrorsInTest!.has(error), title + ': ' + error);
+          assert.notStrictEqual(currentExpectedLoggedErrors, undefined, title + ': ' + error);
+          assert.ok(currentExpectedLoggedErrors.has(error), title + ': ' + error);
         } else if (line.substr(26, 6) === '[WARN]') {
           // we could test this once
         }
