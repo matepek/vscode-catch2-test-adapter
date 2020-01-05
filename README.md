@@ -38,7 +38,7 @@ The extension is \*_pre-configured_ and should find executables inside the worki
 
 This basically means executables inside the `build` and `out` directories (recursive `/**/`) which contain the `test` word in their name (including extensions).
 
-See [examples here](#Examples) for more.
+(Examples [here](#Examples))
 
 See vscode's [documentation](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) for syntax.
 
@@ -306,6 +306,27 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 >
 > > Yes. One can enhance their test executable from c++. The example is [here](https://github.com/matepek/vscode-catch2-test-adapter/tree/master/documents/examples/test_wrapper/cppmain_test_wrapper_example)
 
+> Wanna set `cwd` to the _source file_'s dir to use the resources next to it and my structure looks like (because I use cmake):
+>
+> ```
+> <workspaceFolder>/src/a/resources/
+> <workspaceFolder>/src/a/test1.cpp
+> <workspaceFolder>/build/a/test1.exe
+> ```
+>
+> > You can try this:
+> >
+> > ```
+> > "catch2TestExplorer.executables": [
+> >   {
+> >     "pattern": "build/**/test*.exe",
+> >     "cwd": "${relDirpath[1:]}/resources"
+> >   }
+> > ]
+> > ```
+> >
+> > This will remove the `build/` from the beggining of the relative path of the executable.
+
 ## TODOs
 
 - doctest: supporting test suites
@@ -319,3 +340,7 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 [The guideline is here.](CONTRIBUTING.md)
 
 [![Buy Me A Coffee](https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png)](https://www.buymeacoffee.com/rtdmjYspB)
+
+```
+
+```
