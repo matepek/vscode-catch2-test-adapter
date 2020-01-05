@@ -5,7 +5,6 @@ import * as vscode from 'vscode';
 import { TestInfo, TestSuiteInfo } from 'vscode-test-adapter-api';
 import { Imitation, settings, FileSystemWatcherStub, ChildProcessStub } from './Common';
 import * as sinon from 'sinon';
-import { ChildProcess } from 'child_process';
 
 ///
 
@@ -2325,7 +2324,7 @@ For more detailed usage please see the project docs
     for (let suite of this.outputs) {
       for (let scenario of suite[1]) {
         imitation.spawnStub.withArgs(suite[0], scenario[0], sinon.match.any).callsFake(function() {
-          return (new ChildProcessStub(scenario[1]) as unknown) as ChildProcess;
+          return new ChildProcessStub(scenario[1]);
         });
       }
 

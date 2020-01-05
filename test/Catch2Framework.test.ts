@@ -58,7 +58,7 @@ describe(path.basename(__filename), function() {
     spawnWithArgs.callsFake(function(p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
       try {
         assert.strictEqual(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'defaultCwdStr'));
-        return (new ChildProcessStub(example1.suite1.outputs[1][1]) as unknown) as ChildProcess;
+        return new ChildProcessStub(example1.suite1.outputs[1][1]);
       } catch (e) {
         exception = e;
         throw e;
@@ -92,7 +92,7 @@ describe(path.basename(__filename), function() {
         cwd = ops.cwd!;
         if (isWin) assert.strictEqual(ops.cwd, 'C:\\defaultCwdStr');
         else assert.strictEqual(ops.cwd, '/defaultCwdStr');
-        return (new ChildProcessStub(example1.suite1.outputs[1][1]) as unknown) as ChildProcess;
+        return new ChildProcessStub(example1.suite1.outputs[1][1]);
       } catch (e) {
         exception = e;
         throw e;
@@ -122,7 +122,7 @@ describe(path.basename(__filename), function() {
       try {
         assert.ok(ops.env!.hasOwnProperty('ENVTEST'));
         assert.equal(ops.env!.ENVTEST, 'envtest');
-        return (new ChildProcessStub(example1.suite1.outputs[1][1]) as unknown) as ChildProcess;
+        return new ChildProcessStub(example1.suite1.outputs[1][1]);
       } catch (e) {
         exception = e;
         throw e;
@@ -149,9 +149,7 @@ describe(path.basename(__filename), function() {
       example1.suite1.outputs[1][0],
       sinon.match.any,
     );
-    withArgs
-      .onCall(withArgs.callCount)
-      .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+    withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
 
     await adapter.load();
 
@@ -241,13 +239,7 @@ describe(path.basename(__filename), function() {
     );
     withArgs
       .onCall(withArgs.callCount)
-      .returns(
-        (new ChildProcessStub(
-          'Matching test cases:' + EOL,
-          undefined,
-          testListErrOutput.join(EOL),
-        ) as unknown) as ChildProcess,
-      );
+      .returns(new ChildProcessStub('Matching test cases:' + EOL, undefined, testListErrOutput.join(EOL)));
 
     await adapter.load();
 
@@ -295,9 +287,7 @@ describe(path.basename(__filename), function() {
       example1.suite1.outputs[1][0],
       sinon.match.any,
     );
-    withArgs
-      .onCall(withArgs.callCount)
-      .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+    withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
 
     await adapter.load();
 
@@ -331,9 +321,7 @@ describe(path.basename(__filename), function() {
       example1.suite1.outputs[1][0],
       sinon.match.any,
     );
-    withArgs
-      .onCall(withArgs.callCount)
-      .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+    withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
 
     await adapter.load();
 
@@ -369,9 +357,7 @@ describe(path.basename(__filename), function() {
       example1.suite1.outputs[1][0],
       sinon.match.any,
     );
-    withArgs
-      .onCall(withArgs.callCount)
-      .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+    withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
 
     await adapter.load();
 
@@ -405,9 +391,7 @@ describe(path.basename(__filename), function() {
       example1.suite1.outputs[1][0],
       sinon.match.any,
     );
-    withArgs
-      .onCall(withArgs.callCount)
-      .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+    withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
 
     await adapter.load();
 
@@ -420,7 +404,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(suite1.children[0].label, 'first');
 
     imitation.spawnStub.withArgs(sinon.match.any, sinon.match.any, sinon.match.any).callsFake(function() {
-      return (new ChildProcessStub([
+      return new ChildProcessStub([
         `<TestCase name="${suite1.children[0].label}" tags="[tag1]" filename="/home/master-kenobi/test.cpp" line="4">`,
         '      <OverallResult success="true" durationInSeconds="0.724167">',
         '        <StdOut>',
@@ -430,7 +414,7 @@ describe(path.basename(__filename), function() {
         '        </StdOut>',
         '      </OverallResult>',
         '    </TestCase>',
-      ]) as unknown) as ChildProcess;
+      ]);
     });
 
     await adapter.run([suite1.id]);
@@ -472,7 +456,7 @@ describe(path.basename(__filename), function() {
 
     for (let scenario of example1.suite2.outputs) {
       imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function() {
-        return (new ChildProcessStub(scenario[1]) as unknown) as ChildProcess;
+        return new ChildProcessStub(scenario[1]);
       });
     }
 
@@ -533,7 +517,7 @@ describe(path.basename(__filename), function() {
 
     for (let scenario of example1.suite2.outputs) {
       imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function() {
-        return (new ChildProcessStub(scenario[1]) as unknown) as ChildProcess;
+        return new ChildProcessStub(scenario[1]);
       });
     }
 
@@ -631,7 +615,7 @@ describe(path.basename(__filename), function() {
 
     for (let scenario of example1.suite2.outputs) {
       imitation.spawnStub.withArgs(execAbsPath, scenario[0], sinon.match.any).callsFake(function() {
-        return (new ChildProcessStub(scenario[1]) as unknown) as ChildProcess;
+        return new ChildProcessStub(scenario[1]);
       });
     }
 
@@ -644,7 +628,7 @@ describe(path.basename(__filename), function() {
         assert.equal(ops.cwd, expectStr);
         assert.ok(ops.env && ops.env.C2TESTVARS);
         assert.equal(ops.env!.C2TESTVARS!, expectStr);
-        return (new ChildProcessStub(example1.suite2.t1.outputs[0][1]) as unknown) as ChildProcess;
+        return new ChildProcessStub(example1.suite2.t1.outputs[0][1]);
       } catch (e) {
         exception = e;
         throw e;

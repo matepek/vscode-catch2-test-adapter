@@ -8,7 +8,8 @@ import * as path from 'path';
 import * as fse from 'fs-extra';
 import { inspect, promisify } from 'util';
 import { EventEmitter } from 'events';
-import { Readable } from 'stream';
+import { Readable, Writable } from 'stream';
+import { ChildProcess } from 'child_process';
 
 import {
   TestEvent,
@@ -354,7 +355,32 @@ export class TestAdapter extends my.TestAdapter {
 
 ///
 
-export class ChildProcessStub extends EventEmitter {
+export class ChildProcessStub extends EventEmitter implements ChildProcess {
+  public readonly stdin: Writable | null = undefined as any; // eslint-disable-line
+  public readonly stdio: [
+    Writable | null, // stdin
+    Readable | null, // stdout
+    Readable | null, // stderr
+    Readable | Writable | null | undefined, // extra
+    Readable | Writable | null | undefined, // extra
+  ] = undefined as any; // eslint-disable-line
+  public readonly pid: number = undefined as any; // eslint-disable-line
+  public readonly connected: boolean = undefined as any; // eslint-disable-line
+
+  // eslint-disable-next-line
+  public send(...args: any[]): boolean {
+    throw Error('methond not implemented');
+  }
+  public disconnect(): void {
+    throw Error('methond not implemented');
+  }
+  public unref(): void {
+    throw Error('methond not implemented');
+  }
+  public ref(): void {
+    throw Error('methond not implemented');
+  }
+
   public readonly stdout: Readable;
   private _stdoutChunks: (string | null)[] = [];
   private _canPushOut: boolean = false;
@@ -363,6 +389,7 @@ export class ChildProcessStub extends EventEmitter {
   private _stderrChunks: (string | null)[] = [];
   private _canPushErr: boolean = false;
   public closed: boolean = false;
+  public killed: boolean = false;
 
   private _writeStdOut(): void {
     while (this._stdoutChunks.length && this._canPushOut)
@@ -406,8 +433,9 @@ export class ChildProcessStub extends EventEmitter {
     });
   }
 
-  public kill(signal?: string): void {
+  public kill(signal?: NodeJS.Signals | number): void {
     if (signal === undefined) signal = 'SIGTERM';
+    this.killed = true;
     this.emit('close', null, signal);
     this.stdout.push(null);
     this.stderr.push(null);

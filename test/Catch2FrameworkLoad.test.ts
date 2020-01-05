@@ -15,7 +15,6 @@ import { inspect, promisify } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
 import { TestAdapter, Imitation, waitFor, settings, ChildProcessStub, FileSystemWatcherStub, isWin } from './Common';
-import { ChildProcess } from 'child_process';
 import { SpawnOptions } from '../src/FSWrapper';
 
 ///
@@ -586,9 +585,7 @@ describe(path.basename(__filename), function() {
         example1.suite2.t3.outputs[0][0],
         sinon.match.any,
       );
-      withArgs
-        .onCall(withArgs.callCount)
-        .returns((new ChildProcessStub(example1.suite2.t3.outputs[0][1]) as unknown) as ChildProcess);
+      withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(example1.suite2.t3.outputs[0][1]));
 
       await adapter.run([s2t3.id]);
       const expected = [
@@ -739,7 +736,7 @@ describe(path.basename(__filename), function() {
         example1.suite1.t1.outputs[0][0],
         sinon.match.any,
       );
-      withArgs.onCall(withArgs.callCount).returns((new ChildProcessStub(part) as unknown) as ChildProcess);
+      withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(part));
 
       await adapter.run([s1t1.id]);
 
@@ -808,7 +805,7 @@ describe(path.basename(__filename), function() {
         example1.suite1.t1.outputs[0][0],
         sinon.match.any,
       );
-      withArgs.onCall(withArgs.callCount).returns((new ChildProcessStub(part, 'SIGTERM') as unknown) as ChildProcess);
+      withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(part, 'SIGTERM'));
 
       await adapter.run([s1t1.id]);
 
@@ -877,7 +874,7 @@ describe(path.basename(__filename), function() {
       const cp = new ChildProcessStub();
       const spyKill = sinon.spy(cp, 'kill') as sinon.SinonSpy<[string?], void>;
       cp.write('<?xml version="1.0" encoding="UTF-8"?><Catch name="suite1">'); // no close
-      withArgs.onCall(withArgs.callCount).returns((cp as unknown) as ChildProcess);
+      withArgs.onCall(withArgs.callCount).returns(cp);
 
       const start = Date.now();
       await adapter.run([s1t1.id]);
@@ -927,7 +924,7 @@ describe(path.basename(__filename), function() {
           '    <TestCase name="s1t1" description="tag1" filename="suite1.cpp" line="7">',
         ].join(EOL),
       ); // no close
-      withArgs.onCall(withArgs.callCount).returns((cp as unknown) as ChildProcess);
+      withArgs.onCall(withArgs.callCount).returns(cp);
 
       const start = Date.now();
       await adapter.run([s1t1.id]);
@@ -975,8 +972,8 @@ describe(path.basename(__filename), function() {
       // since taskQueue/allTasks has benn added it works differently, so it
       // wont test anything really, but i dont want to delete it either
       await loadAdapterAndAssert();
-      let spyKill1: sinon.SinonSpy<[(string | undefined)?], void>;
-      let spyKill2: sinon.SinonSpy<[(string | undefined)?], void>;
+      let spyKill1: sinon.SinonSpy<[(NodeJS.Signals | number)?], void>;
+      let spyKill2: sinon.SinonSpy<[(NodeJS.Signals | number)?], void>;
       {
         const spawnEvent = new ChildProcessStub(example1.suite1.outputs[2][1]);
         spyKill1 = sinon.spy(spawnEvent, 'kill');
@@ -985,7 +982,7 @@ describe(path.basename(__filename), function() {
           example1.suite1.outputs[2][0],
           sinon.match.any,
         );
-        withArgs.onCall(withArgs.callCount).returns((spawnEvent as unknown) as ChildProcess);
+        withArgs.onCall(withArgs.callCount).returns(spawnEvent);
       }
       {
         const spawnEvent = new ChildProcessStub(example1.suite2.outputs[2][1]);
@@ -995,7 +992,7 @@ describe(path.basename(__filename), function() {
           example1.suite2.outputs[2][0],
           sinon.match.any,
         );
-        withArgs.onCall(withArgs.callCount).returns((spawnEvent as unknown) as ChildProcess);
+        withArgs.onCall(withArgs.callCount).returns(spawnEvent);
       }
       const run = adapter.run([root.id]);
       adapter.cancel();
@@ -1039,8 +1036,8 @@ describe(path.basename(__filename), function() {
 
     it('cancels after run finished', async function() {
       await loadAdapterAndAssert();
-      let spyKill1: sinon.SinonSpy<[(string | undefined)?], void>;
-      let spyKill2: sinon.SinonSpy<[(string | undefined)?], void>;
+      let spyKill1: sinon.SinonSpy<[(NodeJS.Signals | number)?], void>;
+      let spyKill2: sinon.SinonSpy<[(NodeJS.Signals | number)?], void>;
       {
         const spawnEvent = new ChildProcessStub(example1.suite1.outputs[2][1]);
         spyKill1 = sinon.spy(spawnEvent, 'kill');
@@ -1049,7 +1046,7 @@ describe(path.basename(__filename), function() {
           example1.suite1.outputs[2][0],
           sinon.match.any,
         );
-        withArgs.onCall(withArgs.callCount).returns((spawnEvent as unknown) as ChildProcess);
+        withArgs.onCall(withArgs.callCount).returns(spawnEvent);
       }
       {
         const spawnEvent = new ChildProcessStub(example1.suite2.outputs[2][1]);
@@ -1059,7 +1056,7 @@ describe(path.basename(__filename), function() {
           example1.suite2.outputs[2][0],
           sinon.match.any,
         );
-        withArgs.onCall(withArgs.callCount).returns((spawnEvent as unknown) as ChildProcess);
+        withArgs.onCall(withArgs.callCount).returns(spawnEvent);
       }
       await adapter.run([root.id]);
       adapter.cancel();
@@ -1156,9 +1153,7 @@ describe(path.basename(__filename), function() {
         example1.suite1.outputs[1][0],
         sinon.match.any,
       );
-      withArgs
-        .onCall(withArgs.callCount)
-        .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+      withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
 
       const oldRootChildren = [...root.children];
       const oldSuite1Children = [...suite1.children];
@@ -1202,7 +1197,7 @@ describe(path.basename(__filename), function() {
       testListOutput.splice(1, 6);
       imitation.spawnStub
         .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0], sinon.match.any)
-        .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+        .returns(new ChildProcessStub(testListOutput.join(EOL)));
 
       assert.strictEqual(suite1.children.length, 2);
 
@@ -1217,7 +1212,7 @@ describe(path.basename(__filename), function() {
 
       imitation.spawnStub
         .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0], sinon.match.any)
-        .returns((new ChildProcessStub(example1.suite1.outputs[1][1]) as unknown) as ChildProcess);
+        .returns(new ChildProcessStub(example1.suite1.outputs[1][1]));
 
       const testLoadEventCount = adapter.testLoadsEvents.length;
       await adapter.run([suite1.id]);
@@ -1303,13 +1298,13 @@ describe(path.basename(__filename), function() {
       testListOutput.splice(1, 3);
       imitation.spawnStub
         .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0], sinon.match.any)
-        .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+        .returns(new ChildProcessStub(testListOutput.join(EOL)));
       const testOutput = example1.suite1.outputs[2][1].split('\n');
       assert.equal(testOutput.length, 21);
       testOutput.splice(3, 3);
       imitation.spawnStub
         .withArgs(example1.suite1.execPath, example1.suite1.outputs[2][0], sinon.match.any)
-        .returns((new ChildProcessStub(testOutput.join(EOL)) as unknown) as ChildProcess);
+        .returns(new ChildProcessStub(testOutput.join(EOL)));
 
       assert.strictEqual(suite1.children.length, 2);
 
@@ -1363,13 +1358,13 @@ describe(path.basename(__filename), function() {
       testListOutput.splice(1, 3);
       imitation.spawnStub
         .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0], sinon.match.any)
-        .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+        .returns(new ChildProcessStub(testListOutput.join(EOL)));
       const testOutput = example1.suite1.t1.outputs[0][1].split('\n');
       assert.equal(testOutput.length, 10);
       testOutput.splice(3, 3);
       imitation.spawnStub
         .withArgs(example1.suite1.execPath, example1.suite1.t1.outputs[0][0], sinon.match.any)
-        .returns((new ChildProcessStub(testOutput.join(EOL)) as unknown) as ChildProcess);
+        .returns(new ChildProcessStub(testOutput.join(EOL)));
 
       assert.strictEqual(suite1.children.length, 2);
 
@@ -1413,9 +1408,7 @@ describe(path.basename(__filename), function() {
         example1.suite1.outputs[1][0],
         sinon.match.any,
       );
-      withArgs
-        .onCall(withArgs.callCount)
-        .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+      withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
 
       const oldRootChildren = [...root.children];
       const oldSuite1Children = [...suite1.children];
@@ -1454,12 +1447,12 @@ describe(path.basename(__filename), function() {
       const testListOutput = example1.suite1.outputs[1][1].replace('s1t1', 's1-t1');
       imitation.spawnStub
         .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0], sinon.match.any)
-        .returns((new ChildProcessStub(testListOutput) as unknown) as ChildProcess);
+        .returns(new ChildProcessStub(testListOutput));
       assert.ok(example1.suite1.outputs[2][1].indexOf('s1t1') != -1);
       const testOutput = example1.suite1.outputs[2][1].replace('s1t1', 's1-t1');
       imitation.spawnStub
         .withArgs(example1.suite1.execPath, example1.suite1.outputs[2][0], sinon.match.any)
-        .returns((new ChildProcessStub(testOutput) as unknown) as ChildProcess);
+        .returns(new ChildProcessStub(testOutput));
 
       assert.strictEqual(suite1.children.length, 2);
 
@@ -1550,7 +1543,7 @@ describe(path.basename(__filename), function() {
         example1.suite1.outputs[2][0],
         sinon.match.any,
       );
-      withArgs.onCall(withArgs.callCount).returns((new ChildProcessStub(newOutput) as unknown) as ChildProcess);
+      withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(newOutput));
 
       await adapter.run([suite1.id]);
     });
@@ -1622,7 +1615,7 @@ describe(path.basename(__filename), function() {
 
             assert.strictEqual(ops.env!.C2ENVVARS3, undefined);
 
-            return (new ChildProcessStub(example1.suite1.outputs[2][1]) as unknown) as ChildProcess;
+            return new ChildProcessStub(example1.suite1.outputs[2][1]);
           } catch (e) {
             exception = e;
             throw e;
@@ -1651,7 +1644,7 @@ describe(path.basename(__filename), function() {
             assert.equal(ops.env!.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath2');
             assert.equal(ops.env!.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
 
-            return (new ChildProcessStub(example1.suite2.outputs[2][1]) as unknown) as ChildProcess;
+            return new ChildProcessStub(example1.suite2.outputs[2][1]);
           } catch (e) {
             exception = e;
             throw e;
