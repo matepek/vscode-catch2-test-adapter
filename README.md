@@ -17,8 +17,7 @@ tests using the [Test Explorer for Visual Studio Code](https://marketplace.visua
 
 ## Features and Screenshots
 
-- Are you new to VSCode? [Check this!](https://code.visualstudio.com/docs/getstarted/settings)
-- Finds and recognises the executables by a given glob-pattern (`catch2TestExplorer.executables`).
+- Finds and recognises the executables by a given [glob pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ([More](#catch2TestExplorer_executables))
 - Automatically runs executables if it is modified ("_..._" -> "_Enable autorun_") or if a dependency is modified (`dependsOn`)
 - Reloads test list of an executable if it is recompiled.
 - Supports popular **debuggers** such as `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools` out of the box.
@@ -33,11 +32,13 @@ tests using the [Test Explorer for Visual Studio Code](https://marketplace.visua
 
 ## Configuration
 
-The extension is pre-configured (`catch2TestExplorer.executables`) and should find executables inside the working directory which match the following pattern:
+The extension is \*_pre-configured_ and should find executables inside the working directory which match the following [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options):
 
 > `{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*`.
 
 This basically means executables inside the `build` and `out` directories (recursive `/**/`) which contain the `test` word in their name (including extensions).
+
+(Examples [here](#Examples))
 
 See vscode's [documentation](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) for syntax.
 
@@ -77,6 +78,23 @@ Not good enough for you?!: Edit your `.vscode/settings.json` [file](https://code
 can be used.
 
 ### catch2TestExplorer.executables
+
+The first example (`.vscode/settings.json` or hit _Ctr/Cmd + ,_):
+
+```json
+"catch2TestExplorer.executables": [
+	{
+		"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+		"cwd": "${absDirpath}",
+		"env": {
+			"ExampleENV1": "You can use variables here too, like ${relPath}",
+			"PATH": "${os_env:PATH}:/adding/new/item/to/PATH/env"
+		}
+	}
+]
+```
+
+[More examples.](#Examples)
 
 This variable can be
 
@@ -129,27 +147,28 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 
 #### Variables which can be used in `name`, `description`, `cwd` and `env` of `executables`:
 
+[array index]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
+
 | Variable                     | Description                                                                                                                                                                                  |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `${absPath}`                 | Absolute path of the test executable                                                                                                                                                         |
-| `${relPath}`                 | Relative path of the test executable to the workspace folder                                                                                                                                 |
-| `${absDirpath}`              | Absolute path of the test executable's parent directory                                                                                                                                      |
-| `${relDirpath}`              | Relative path of the test executable's parent directory to the workspace folder                                                                                                              |
-| `${filename}`                | Filename (Path without directories; "`d/a.b.c`" => "`a.b.c`")                                                                                                                                |
+| `${absPath}`                 | Absolute path of the test executable. Supports [array index]ing.                                                                                                                             |
+| `${relPath}`                 | Relative path of the test executable to the workspace folder. Supports [array index]ing.                                                                                                     |
+| `${absDirpath}`              | Absolute path of the test executable's parent directory. Supports [array index]ing.                                                                                                          |
+| `${relDirpath}`              | Relative path of the test executable's parent directory to the workspace folder. Supports [array index]ing.                                                                                  |
+| `${filename}`                | Filename (Path without directories; "`d/a.b.c`" => "`a.b.c`") Supports [array index]ing.                                                                                                     |
 | `${baseFilename}`            | Filename without extension ("`d/a.b.c`" => "`a.b`")                                                                                                                                          |
 | `${extFilename}`             | Filename extension. ("`d/a.b.c`" => "`.c`")                                                                                                                                                  |
-| `${base2Filename}`           | Filename without second extension ("`d/a.b.c`" => "`a`")                                                                                                                                     |
-| `${ext2Filename}`            | Filename's second level extension. ("`d/a.b.c`" => "`.b`")                                                                                                                                   |
-| `${base3Filename}`           | Filename without third extension ("`d/a.b.c`" => "`a`")                                                                                                                                      |
-| `${ext3Filename}`            | Filename's third level extension. ("`d/a.b.c`" => "")                                                                                                                                        |
 | `${workspaceDirectory}`      | (You can only guess once.)                                                                                                                                                                   |
 | `${workspaceFolder}`         | Alias of `${workspaceDirectory}`                                                                                                                                                             |
 | `${workspaceName}`           | Workspace name can be custom in case of [`workspace file`](https://code.visualstudio.com/docs/editor/multi-root-workspaces#_workspace-file-schema).                                          |
 | `${name}`                    | The resolved `executables`'s name. Can be used only in `cwd` and `env`.                                                                                                                      |
 | `${description}`             | The resolved `executables`'s description. Can be used only in `cwd` and `env`.                                                                                                               |
-| `${cwd}`                     | The resolved `executables`'s cwd. Can be used only in `env`.                                                                                                                                 |
+| `${cwd}`                     | The resolved `executables`'s cwd. Can be used only in `env`. Supports [array index]ing.                                                                                                      |
 | `${os_env:<varname>}`        | Resolves it to the given(`<varname>`) environment variable if exists empty string otherwise. Can be used everywhere. On Windows it is case insensitive: `${os_env:pAtH}` == `${os_env:PATH}` |
 | `${os_env_strict:<varname>}` | Resolves it to the given(`<varname>`) environment variable if exists won't set the variable othewise. Can be used ONLY in `env`.                                                             |
+
+[Array index]ing: `(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?`.
+Exmaple: `${relPath[:-2]}`
 
 #### Examples:
 
@@ -180,7 +199,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 		"name": "Test1 suite",
 		"pattern": "dir/test.exe"
 	},
-	"singleTest.exe",
+	"canBeMixed.exe",
 	{
 		"pattern": "${os_env:HOME}/dir2/{t,T}est",
 		"cwd": "out/tmp",
@@ -287,6 +306,27 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 >
 > > Yes. One can enhance their test executable from c++. The example is [here](https://github.com/matepek/vscode-catch2-test-adapter/tree/master/documents/examples/test_wrapper/cppmain_test_wrapper_example)
 
+> Wanna set `cwd` to the _source file_'s dir to use the resources next to it and my structure looks like (because I use cmake):
+>
+> ```
+> <workspaceFolder>/src/a/resources/
+> <workspaceFolder>/src/a/test1.cpp
+> <workspaceFolder>/build/a/test1.exe
+> ```
+>
+> > You can try this:
+> >
+> > ```
+> > "catch2TestExplorer.executables": [
+> >   {
+> >     "pattern": "build/**/test*.exe",
+> >     "cwd": "${relDirpath[1:]}/resources"
+> >   }
+> > ]
+> > ```
+> >
+> > This will remove the `build/` from the beggining of the relative path of the executable.
+
 ## TODOs
 
 - doctest: supporting test suites
@@ -300,3 +340,7 @@ For solving issues use: `catch2TestExplorer.logpanel: true` and check the output
 [The guideline is here.](CONTRIBUTING.md)
 
 [![Buy Me A Coffee](https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png)](https://www.buymeacoffee.com/rtdmjYspB)
+
+```
+
+```

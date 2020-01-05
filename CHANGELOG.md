@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.0]
+
+### Added
+
+- Enhanced variable for `catch2TestExplorer.executables`.
+  From now array indexing is supported like: `${relDirpath[:-1]}`: `a/b/c` => `a/b`
+
+### Removed
+
+- `${base2Filename}` => `${filename[:-2]}`
+- `${ext2Filename}` => `.${filename[-2:-1]}`
+- `${base3Filename}` => `${filename[:-3]}`
+- `${ext3Filename}` => `${filename[-3:-2]}`
+- `${parentDirname}` => `${relPath[-1:]}`
+
 ## [2.7.15] - 2019-12-30
 
 Just some logging related fixes, nothing interesting.

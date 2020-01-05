@@ -17,7 +17,7 @@ describe(path.basename(__filename), function() {
     ] as any; // eslint-disable-line
 
     const executableSchema = executables['oneOf'][0]['items']['oneOf'] as [];
-    assert.strictEqual(executableSchema.length + 1, executables['oneOf'].length);
+    assert.strictEqual(executableSchema.length + 2, executables['oneOf'].length);
 
     for (let i = 0; i < executableSchema.length; ++i) {
       assert.deepStrictEqual(executableSchema[i], executables['oneOf'][i + 1]);

@@ -769,13 +769,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   private _getExecutables(config: vscode.WorkspaceConfiguration, rootSuite: RootTestSuiteInfo): TestExecutableInfo[] {
-    const defaultCwd = this._getDefaultCwd(config);
-    const defaultEnv = this._getDefaultEnvironmentVariables(config);
+    const defaultCwd = this._getDefaultCwd(config) || '${absDirpath}';
+    const defaultEnv = this._getDefaultEnvironmentVariables(config) || {};
 
     let executables: TestExecutableInfo[] = [];
 
     const configExecs:
       | undefined
+      | null
       | string
       | string[]
       | { [prop: string]: string }
@@ -802,15 +803,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       return new TestExecutableInfo(
         this._shared,
         rootSuite,
+        pattern,
         name,
         description,
-        pattern,
-        defaultCwd,
         cwd,
-        defaultEnv,
         env,
-        this._variableToValue,
         dependsOn,
+        defaultCwd,
+        defaultEnv,
+        this._variableToValue,
       );
     };
 
@@ -820,15 +821,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         new TestExecutableInfo(
           this._shared,
           rootSuite,
-          undefined,
-          undefined,
           configExecs,
-          defaultCwd,
           undefined,
-          defaultEnv,
           undefined,
-          this._variableToValue,
+          undefined,
+          undefined,
           [],
+          defaultCwd,
+          defaultEnv,
+          this._variableToValue,
         ),
       );
     } else if (Array.isArray(configExecs)) {
@@ -841,15 +842,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
               new TestExecutableInfo(
                 this._shared,
                 rootSuite,
-                undefined,
-                undefined,
                 configExecsName,
-                defaultCwd,
                 undefined,
-                defaultEnv,
                 undefined,
-                this._variableToValue,
+                undefined,
+                undefined,
                 [],
+                defaultCwd,
+                defaultEnv,
+                this._variableToValue,
               ),
             );
           }
@@ -864,6 +865,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           this._log.error('_getExecutables', configExec, i);
         }
       }
+    } else if (configExecs === null || configExecs === undefined) {
+      return [];
     } else if (typeof configExecs === 'object') {
       try {
         executables.push(createFromObject(configExecs));

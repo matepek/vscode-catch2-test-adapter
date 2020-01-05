@@ -5,7 +5,6 @@ import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
 import { TestAdapter, Imitation, settings, ChildProcessStub } from './Common';
-import { ChildProcess } from 'child_process';
 
 ///
 
@@ -52,7 +51,7 @@ describe(path.basename(__filename), function() {
         sinon.match.any,
       )
       .callsFake(function() {
-        return (new ChildProcessStub(example1.gtest1.gtest_list_tests_output) as unknown) as ChildProcess;
+        return new ChildProcessStub(example1.gtest1.gtest_list_tests_output);
       });
 
     imitation.fsReadFileSyncStub.withArgs(sinon.match(/.*tmp_gtest_output_.+\.xml\.tmp/), 'utf8').returns('not an xml');
@@ -79,7 +78,7 @@ describe(path.basename(__filename), function() {
           sinon.match.any,
         )
         .callsFake(function() {
-          return (new ChildProcessStub(example1.gtest1.gtest_list_tests_output) as unknown) as ChildProcess;
+          return new ChildProcessStub(example1.gtest1.gtest_list_tests_output);
         });
 
       imitation.fsReadFileSyncStub
@@ -669,9 +668,7 @@ describe(path.basename(__filename), function() {
       example1.suite1.outputs[1][0],
       sinon.match.any,
     );
-    withArgs
-      .onCall(withArgs.callCount)
-      .returns((new ChildProcessStub(testListOutput.join(EOL)) as unknown) as ChildProcess);
+    withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
 
     await adapter.load();
 

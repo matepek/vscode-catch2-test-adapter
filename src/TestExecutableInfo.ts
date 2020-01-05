@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import * as c2fs from './FSWrapper';
-import { resolveVariables, resolveOSEnvironmentVariables } from './Util';
+import { resolveVariables, resolveOSEnvironmentVariables, ResolveRulePair } from './Util';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
@@ -14,16 +14,22 @@ export class TestExecutableInfo implements vscode.Disposable {
   public constructor(
     private readonly _shared: SharedVariables,
     private readonly _rootSuite: RootTestSuiteInfo,
-    private readonly _name: string | undefined,
-    private readonly _description: string | undefined,
     private readonly _pattern: string,
-    private readonly _defaultCwd: string,
+    name: string | undefined,
+    description: string | undefined,
     private readonly _cwd: string | undefined,
-    private readonly _defaultEnv: { [prop: string]: string },
     private readonly _env: { [prop: string]: string } | undefined,
-    private readonly _variableToValue: [string, string][],
     private readonly _dependsOn: string[],
-  ) {}
+    private readonly _defaultCwd: string,
+    private readonly _defaultEnv: { [prop: string]: string },
+    private readonly _variableToValue: ResolveRulePair[],
+  ) {
+    this._name = name !== undefined ? name : '${filename}';
+    this._description = description !== undefined ? description : '${relDirpath}/';
+  }
+
+  private readonly _name: string;
+  private readonly _description: string;
 
   private _disposables: vscode.Disposable[] = [];
 
@@ -181,30 +187,42 @@ export class TestExecutableInfo implements vscode.Disposable {
   private _createSuiteByUri(filePath: string): Promise<AbstractTestSuiteInfo> {
     const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
-    let varToValue: [string, string][] = [];
+    let varToValue: ResolveRulePair[] = [];
+
+    const subPath = (pathStr: string) => {
+      const pathArray = pathStr.split(/\/|\\/);
+      return (m: RegExpMatchArray) => {
+        const idx1 = m[1] === undefined ? undefined : Number(m[1]);
+        const idx2 = m[2] === undefined ? undefined : Number(m[2]);
+
+        return path.normalize(pathArray.slice(idx1, idx2).join(path.sep));
+      };
+    };
+
+    const subFilename = (filename: string) => {
+      const filenameArray = filename.split('.');
+      return (m: RegExpMatchArray) => {
+        const idx1 = m[1] === undefined ? undefined : Number(m[1]);
+        const idx2 = m[2] === undefined ? undefined : Number(m[2]);
+
+        return filenameArray.slice(idx1, idx2).join('.');
+      };
+    };
+
     try {
       const filename = path.basename(filePath);
       const extFilename = path.extname(filename);
       const baseFilename = path.basename(filename, extFilename);
-      const ext2Filename = path.extname(baseFilename);
-      const base2Filename = path.basename(baseFilename, ext2Filename);
-      const ext3Filename = path.extname(base2Filename);
-      const base3Filename = path.basename(base2Filename, ext3Filename);
 
       varToValue = [
         ...this._variableToValue,
-        ['${absPath}', filePath],
-        ['${relPath}', relPath],
-        ['${absDirpath}', path.dirname(filePath)],
-        ['${relDirpath}', path.dirname(relPath)],
-        ['${filename}', filename],
-        ['${parentDirname}', path.basename(path.dirname(filePath))],
+        [/\${absPath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(filePath)],
+        [/\${relPath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(relPath)],
+        [/\${absDirpath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(path.dirname(filePath))],
+        [/\${relDirpath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(path.dirname(relPath))],
+        [/\${filename(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subFilename(filename)],
         ['${extFilename}', extFilename],
         ['${baseFilename}', baseFilename],
-        ['${ext2Filename}', ext2Filename],
-        ['${base2Filename}', base2Filename],
-        ['${ext3Filename}', ext3Filename],
-        ['${base3Filename}', base3Filename],
       ];
     } catch (e) {
       this._shared.log.exception(e);
@@ -214,8 +232,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     let resolvedName = relPath;
     try {
-      if (this._name) resolvedName = resolveVariables(this._name, varToValue);
-      else if (!this._description) resolvedName = resolveVariables('${filename}', varToValue);
+      resolvedName = resolveVariables(this._name, varToValue);
       resolvedName = resolveOSEnvironmentVariables(resolvedName, false);
 
       if (resolvedName.match(variableRe)) this._shared.log.warn('Possibly unresolved variable', resolvedName);
@@ -225,38 +242,31 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.error('resolvedLabel', e);
     }
 
-    let resolvedDescription: string | undefined = undefined;
+    let resolvedDescription = '';
     try {
-      if (this._description) {
-        resolvedDescription = resolveVariables(this._description, varToValue);
-        resolvedDescription = resolveOSEnvironmentVariables(resolvedDescription, false);
+      resolvedDescription = resolveVariables(this._description, varToValue);
+      resolvedDescription = resolveOSEnvironmentVariables(resolvedDescription, false);
 
-        if (resolvedDescription.match(variableRe))
-          this._shared.log.warn('Possibly unresolved variable', resolvedDescription);
+      if (resolvedDescription.match(variableRe))
+        this._shared.log.warn('Possibly unresolved variable', resolvedDescription);
 
-        varToValue.push(['${description}', resolvedDescription]);
-      } else if (!this._name) {
-        resolvedDescription = resolveVariables('${relDirpath}/', varToValue);
-        varToValue.push(['${description}', resolvedDescription]);
-      } else {
-        varToValue.push(['${description}', '']);
-      }
+      varToValue.push(['${description}', resolvedDescription]);
     } catch (e) {
       this._shared.log.error('resolvedDescription', e);
     }
 
-    let resolvedCwd = this._defaultCwd;
+    let resolvedCwd = '.';
     try {
-      if (this._cwd) resolvedCwd = this._cwd;
+      if (this._cwd) resolvedCwd = resolveVariables(this._cwd, varToValue);
+      else resolvedCwd = resolveVariables(this._defaultCwd, varToValue);
 
-      resolvedCwd = resolveVariables(resolvedCwd, varToValue);
       resolvedCwd = resolveOSEnvironmentVariables(resolvedCwd, false);
 
       if (resolvedCwd.match(variableRe)) this._shared.log.warn('Possibly unresolved variable', resolvedCwd);
 
       resolvedCwd = path.resolve(this._shared.workspaceFolder.uri.fsPath, resolvedCwd);
 
-      varToValue.push(['${cwd}', resolvedCwd]);
+      varToValue.push([/\${cwd(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(resolvedCwd)]);
     } catch (e) {
       this._shared.log.error('resolvedCwd', e);
     }
@@ -322,7 +332,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         }).catch((reason: Error) => {
           this._shared.log.debug(reason, filePath, suite);
           // eslint-disable-next-line
-          if ((reason as any).code === undefined) this._shared.log.exception(Error('problem under reloading'), reason);
+          if ((reason as any).code === undefined) this._shared.log.warn('problem under reloading', reason);
           return x(suite, false, Math.min(delay * 2, 2000));
         });
       } else {
@@ -338,20 +348,16 @@ export class TestExecutableInfo implements vscode.Disposable {
       }
     };
 
-    let suite = this._executables.get(filePath);
+    const suite = this._executables.get(filePath);
 
-    if (suite == undefined) {
-      this._shared.log.info('new suite: ' + filePath);
+    if (suite === undefined) {
+      this._shared.log.info('possibly new suite: ' + filePath);
       this._createSuiteByUri(filePath).then(
-        (s: AbstractTestSuiteInfo) => {
-          x(s, false, 64);
-        },
-        (reason: Error) => {
-          this._shared.log.info("couldn't add: " + filePath, 'reson:', reason);
-        },
+        (s: AbstractTestSuiteInfo) => x(s, false, 64),
+        (reason: Error) => this._shared.log.info("couldn't add: " + filePath, 'reson:', reason),
       );
     } else {
-      x(suite!, false, 64);
+      x(suite, false, 64);
     }
   }
 }

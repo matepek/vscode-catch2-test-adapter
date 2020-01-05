@@ -67,7 +67,7 @@
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.12.22",
+    "@types/node": "^12.12.24",
     "@types/request-promise": "4.1.43",
     "@types/sinon": "^7.5.1",
     "@types/xml2js": "^0.4.5",
@@ -108,8 +108,6 @@
           "scope": "resource",
           "default": [
             {
-              "name": "${filename}",
-              "description": "${relDirpath}/",
               "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*"
             }
           ],
@@ -203,10 +201,6 @@
                                 "${filename}",
                                 "${baseFilename}",
                                 "${extFilename}",
-                                "${base2Filename}",
-                                "${ext2Filename}",
-                                "${base3Filename}",
-                                "${ext3Filename}",
                                 "${workspaceDirectory}",
                                 "${workspaceFolder}",
                                 "${workspaceName}",
@@ -329,10 +323,6 @@
                           "${filename}",
                           "${baseFilename}",
                           "${extFilename}",
-                          "${base2Filename}",
-                          "${ext2Filename}",
-                          "${base3Filename}",
-                          "${ext3Filename}",
                           "${workspaceDirectory}",
                           "${workspaceFolder}",
                           "${workspaceName}",
@@ -367,6 +357,10 @@
               "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
               "type": "string",
               "minLength": 1
+            },
+            {
+              "type": "null",
+              "description": "null means it is disabled"
             }
           ]
         },
@@ -408,10 +402,6 @@
                   "${filename}",
                   "${baseFilename}",
                   "${extFilename}",
-                  "${base2Filename}",
-                  "${ext2Filename}",
-                  "${base3Filename}",
-                  "${ext3Filename}",
                   "${workspaceDirectory}",
                   "${workspaceFolder}",
                   "${workspaceName}",
