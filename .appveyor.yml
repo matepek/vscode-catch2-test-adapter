@@ -5,7 +5,7 @@ platform:
   - x64
 
 environment:
-  C2_SENTRY_DISABLE: true
+  C2_DEBUG: true
   nodejs_version: "10"
 
   matrix:

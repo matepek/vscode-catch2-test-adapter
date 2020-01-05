@@ -75,7 +75,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       config,
     );
 
-    if (this._getLogSentry(config) === 'question') {
+    // TODO feedback
+    if (false) {
+      'https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter&ssr=false#review-details';
+    }
+
+    if (this._getLogSentry(config) === 'question' && !process.env['C2_DEBUG']) {
       const options = [
         'Sure! I love this extension and happy to help.',
         'Yes, but exclude the current workspace.',
@@ -115,7 +120,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         }
       })();
 
-      const enabled = this._getLogSentry(config) === 'enable' && process.env['C2_SENTRY_DISABLE'] === undefined;
+      const enabled = this._getLogSentry(config) === 'enable' && process.env['C2_DEBUG'] === undefined;
 
       this._log.info('sentry.io is: ', enabled);
 

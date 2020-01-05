@@ -12,11 +12,13 @@
         "--extensionTestsPath=${workspaceFolder}/out/test",
         "${workspaceFolder}/out/tmp/workspaceFolder"
       ],
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "preLaunchTask": "npm: watch",
       "env": {
         "C2AVCVA": "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat",
-        "C2_SENTRY_DISABLE": "true"
+        "C2_DEBUG": "true"
       }
     },
     {
@@ -24,11 +26,16 @@
       "request": "launch",
       "name": "Manual cpp",
       "runtimeExecutable": "${execPath}",
-      "args": ["${workspaceFolder}/out/cpp", "--extensionDevelopmentPath=${workspaceFolder}"],
+      "args": [
+        "${workspaceFolder}/out/cpp",
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
       "env": {
-        "C2_SENTRY_DISABLE": "true"
+        "C2_DEBUG": "true"
       },
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "preLaunchTask": "npm: watch"
     },
     {
@@ -36,11 +43,16 @@
       "request": "launch",
       "name": "Manual chorus",
       "runtimeExecutable": "${execPath}",
-      "args": ["/Users/matepek/repo/ac-chorus-addon/nbschorusconnect", "--extensionDevelopmentPath=${workspaceFolder}"],
+      "args": [
+        "/Users/matepek/repo/ac-chorus-addon/nbschorusconnect",
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
       "env": {
-        "C2_SENTRY_DISABLE": "true"
+        "C2_DEBUG": "true"
       },
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "preLaunchTask": "npm: watch"
     }
   ]
