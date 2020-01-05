@@ -587,13 +587,14 @@ describe(path.basename(__filename), function() {
 
   specify('variable substitution with executables={...}', async function() {
     this.slow(500);
-    const wsPath = settings.workspaceFolderUri.fsPath;
-    const execPath2CopyRelPath = 'a/b/c/d/1.2.3';
-    const execPath2CopyPath = path.join(wsPath, execPath2CopyRelPath);
 
-    const envArray: [string, string][] = [
-      ['${absPath}', execPath2CopyPath],
-      ['${relPath}', path.normalize(execPath2CopyRelPath)],
+    const wsPath = settings.workspaceFolderUri.fsPath;
+    const execRelPath = 'a/b/c/d/1.2.3.exe';
+    const execAbsPath = path.join(wsPath, execRelPath);
+
+    const toResolveAndExpectedResolvedValue: [string, string][] = [
+      ['${absPath}', execAbsPath],
+      ['${relPath}', path.normalize(execRelPath)],
       ['${absDirpath}', path.join(wsPath, 'a/b/c/d')],
       ['${relDirpath}', path.normalize('a/b/c/d')],
       ['${relDirpath[0:0]}', path.normalize('.')],
@@ -605,50 +606,44 @@ describe(path.basename(__filename), function() {
       ['${relDirpath[:1]}', path.normalize('a')],
       ['${relDirpath[1:]}', path.normalize('b/c/d')],
       ['${relDirpath[2:]}', path.normalize('c/d')],
-      ['${filename}', '1.2.3'],
-      ['${baseFilename}', '1.2'],
-      ['${extFilename}', '.3'],
-      ['${filename[:-2]}', '1'],
-      ['${filename[-2:-1]}', '2'],
-      ['${filename[:-3]}', ''],
-      ['${filename[-3:-2]}', '1'],
+      ['${filename}', '1.2.3.exe'],
+      ['${baseFilename}', '1.2.3'],
+      ['${extFilename}', '.exe'],
+      ['${filename[:]}', '1.2.3.exe'],
+      ['${filename[-1:]}', 'exe'],
+      ['${filename[:-2]}', '1.2'],
+      ['${filename[-2:-1]}', '3'],
+      ['${filename[:-3]}', '1'],
+      ['${filename[-3:-2]}', '2'],
       ['${workspaceDirectory}', wsPath],
       ['${workspaceFolder}', wsPath],
     ];
-    const envsStr = envArray
-      .map(v => {
-        return v[0];
-      })
-      .join(' , ');
-    const expectStr = envArray
-      .map(v => {
-        return v[1];
-      })
-      .join(' , ');
+
+    const envsStr = toResolveAndExpectedResolvedValue.map(v => v[0]).join(' | ');
+    const expectStr = toResolveAndExpectedResolvedValue.map(v => v[1]).join(' | ');
 
     await settings.updateConfig('executables', {
       name: envsStr,
-      pattern: execPath2CopyRelPath,
+      pattern: execRelPath,
       cwd: envsStr,
       env: { C2TESTVARS: envsStr },
     });
 
     for (let scenario of example1.suite2.outputs) {
-      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function() {
+      imitation.spawnStub.withArgs(execAbsPath, scenario[0], sinon.match.any).callsFake(function() {
         return (new ChildProcessStub(scenario[1]) as unknown) as ChildProcess;
       });
     }
+
     let exception: Error | undefined = undefined;
-    const spawnWithArgs = imitation.spawnStub.withArgs(
-      execPath2CopyPath,
-      example1.suite2.t1.outputs[0][0],
-      sinon.match.any,
-    );
+
+    const spawnWithArgs = imitation.spawnStub.withArgs(execAbsPath, example1.suite2.t1.outputs[0][0], sinon.match.any);
+
     spawnWithArgs.callsFake(function(p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
       try {
         assert.equal(ops.cwd, expectStr);
-        assert.ok(ops.env!.hasOwnProperty('C2TESTVARS'));
-        assert.equal(ops.env!.C2TESTVARS, expectStr);
+        assert.ok(ops.env && ops.env.C2TESTVARS);
+        assert.equal(ops.env!.C2TESTVARS!, expectStr);
         return (new ChildProcessStub(example1.suite2.t1.outputs[0][1]) as unknown) as ChildProcess;
       } catch (e) {
         exception = e;
@@ -657,16 +652,16 @@ describe(path.basename(__filename), function() {
     });
 
     imitation.fsAccessStub
-      .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
+      .withArgs(execAbsPath, sinon.match.any, sinon.match.any)
       .callsFake(imitation.handleAccessFileExists);
 
     imitation.vsfsWatchStub
-      .withArgs(imitation.createVscodeRelativePatternMatcher(execPath2CopyRelPath))
+      .withArgs(imitation.createVscodeRelativePatternMatcher(execRelPath))
       .callsFake(imitation.createCreateFSWatcherHandler(watchers));
 
     imitation.vsFindFilesStub
-      .withArgs(imitation.createVscodeRelativePatternMatcher(execPath2CopyRelPath))
-      .resolves([vscode.Uri.file(execPath2CopyPath)]);
+      .withArgs(imitation.createVscodeRelativePatternMatcher(execRelPath))
+      .resolves([vscode.Uri.file(execAbsPath)]);
 
     adapter = new TestAdapter();
 
@@ -675,7 +670,10 @@ describe(path.basename(__filename), function() {
     assert.equal(adapter.root.children.length, 1);
     assert.equal(adapter.root.children[0].type, 'suite');
 
-    assert.equal(adapter.suite1.label, expectStr);
+    assert.deepStrictEqual(
+      adapter.suite1.label.split(' | '),
+      toResolveAndExpectedResolvedValue.map(v => v[1]),
+    );
     assert.equal(adapter.suite1.children.length, 3);
 
     const callCount = spawnWithArgs.callCount;
