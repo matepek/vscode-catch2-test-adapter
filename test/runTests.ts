@@ -20,6 +20,7 @@ const out = path.join(__dirname, '..');
       extensionDevelopmentPath,
       extensionTestsPath,
       launchArgs: [testWorkspace, '--disable-extensions'],
+      extensionTestsEnv: { C2_DEBUG: 'true' },
     });
 
     process.exit(0);

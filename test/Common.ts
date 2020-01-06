@@ -69,9 +69,10 @@ export const settings = new (class {
   }
 })();
 
+export const globalExpectedLoggedErrorLine = new Set<string>();
+
 export function expectedLoggedErrorLine(errorLine: string) {
-  // eslint-disable-next-line
-  (globalThis as any).expectedLoggedErrorLine(errorLine);
+  globalExpectedLoggedErrorLine.add(errorLine);
 }
 
 export async function waitFor(context: Mocha.Context, condition: Function, timeout?: number): Promise<void> {

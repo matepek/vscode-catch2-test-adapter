@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as fse from 'fs-extra';
 import * as path from 'path';
 import * as readline from 'readline';
-import { settings } from './Common';
+import { settings, globalExpectedLoggedErrorLine } from './Common';
 
 ///
 
@@ -11,12 +11,6 @@ const failedTestLogDir = path.join(settings.workspaceFolderUri.fsPath, 'FailedTe
 
 let counter = 1;
 let currentLogfilePath: string;
-const currentExpectedLoggedErrors = new Set<string>();
-
-// eslint-disable-next-line
-(globalThis as any).expectedLoggedErrorLine = (errorLine: string) => {
-  currentExpectedLoggedErrors.add(errorLine);
-};
 
 ///
 
@@ -28,7 +22,7 @@ before(function() {
 });
 
 beforeEach(function() {
-  currentExpectedLoggedErrors.clear();
+  globalExpectedLoggedErrorLine.clear();
   currentLogfilePath = path.join(failedTestLogDir, 'log_' + counter++ + '.txt');
 
   const w = fse.createWriteStream(currentLogfilePath, { flags: 'w' });
@@ -67,8 +61,8 @@ afterEach(async function() {
             .split(']')
             .filter((v, i) => i !== 1)
             .join(']');
-          assert.notStrictEqual(currentExpectedLoggedErrors, undefined, title + ': ' + error);
-          assert.ok(currentExpectedLoggedErrors.has(error), title + ': ' + error);
+          assert.notStrictEqual(globalExpectedLoggedErrorLine, undefined, title + ': ' + error);
+          assert.ok(globalExpectedLoggedErrorLine.has(error), title + ': ' + error);
         } else if (line.substr(26, 6) === '[WARN]') {
           // we could test this once
         }
