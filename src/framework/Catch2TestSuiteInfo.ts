@@ -24,7 +24,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     execOptions: c2fs.SpawnOptions,
     catch2Version: [number, number, number] | undefined,
   ) {
-    super(shared, label, desciption, execPath, execOptions, 'Catch2', catch2Version);
+    super(shared, label, desciption, execPath, execOptions, 'Catch2', Promise.resolve(catch2Version));
   }
 
   private _reloadFromString(testListOutput: string, oldChildren: Catch2TestInfo[]): void {

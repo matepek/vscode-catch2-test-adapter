@@ -24,7 +24,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     execOptions: c2fs.SpawnOptions,
     docVersion: [number, number, number] | undefined,
   ) {
-    super(shared, label, desciption, execPath, execOptions, 'doctest', docVersion);
+    super(shared, label, desciption, execPath, execOptions, 'doctest', Promise.resolve(docVersion));
   }
 
   private _reloadFromString(testListOutput: string, oldChildren: DOCTestInfo[]): void {

@@ -10,7 +10,7 @@ import { SharedVariables } from './SharedVariables';
 import { promisify } from 'util';
 
 class GoogleTestVersion {
-  private constructor(public readonly version: [number, number, number] | undefined) {}
+  private constructor() {}
 
   private static readonly _versions: [number, [number, number, number]][] = [
     [48592, [1, 0, 0]],
@@ -28,48 +28,49 @@ class GoogleTestVersion {
     [93924, [1, 10, 0]],
   ];
 
-  private static _version: Promise<GoogleTestVersion> | undefined = undefined;
-  private static _finished: boolean = false;
+  private static _version: Promise<[number, number, number] | undefined> | undefined = undefined;
 
-  public static Get(shared: SharedVariables): Promise<GoogleTestVersion> {
+  public static Get(shared: SharedVariables): Promise<[number, number, number] | undefined> {
     if (this._version === undefined) {
-      this._version = new Promise<vscode.Uri[]>(resolve =>
-        vscode.workspace.findFiles('**/include/gtest/gtest.h', '**/node_modules/**', 2).then(resolve),
-      )
-        .then(async gtests => {
-          this._finished = true;
+      const cancellation = new vscode.CancellationTokenSource();
 
+      promisify(setTimeout)(5000).finally(() => cancellation.cancel());
+
+      this._version = new Promise<vscode.Uri[]>(resolve =>
+        vscode.workspace
+          .findFiles('**/include/gtest/gtest.h', '**/node_modules/**', 3, cancellation.token)
+          .then(resolve),
+      )
+        .finally(() => cancellation.dispose())
+        .then(async gtests => {
           if (gtests.length === 1) {
             const stats = await promisify(fs.stat)(gtests[0].fsPath);
             const fileSizeInBytes = stats['size'];
             const found = GoogleTestVersion._versions.find(x => x[0] === fileSizeInBytes);
 
-            if (found) return new GoogleTestVersion(found[1]);
+            if (found) {
+              return found[1];
+            } else {
+              shared.log.warn('Google Test version cannot be determined', fileSizeInBytes, gtests[0].fsPath);
+            }
+          } else if (gtests.length === 0) {
+            shared.log.warn('Google Test version not found');
+          } else {
+            shared.log.warn(
+              'Google Test version: more than 1 has found',
+              gtests.map(x => x.fsPath),
+            );
           }
 
-          throw Error('Google Test version not found');
+          return undefined;
         })
         .catch(e => {
           shared.log.exception(e);
-          return new GoogleTestVersion(undefined);
+          return undefined;
         });
-
-      return Promise.race([
-        this._version,
-        promisify(setTimeout)(2000).then(() => {
-          throw Error('GoogleTestVersion timeout');
-        }),
-      ]).catch(e => {
-        shared.log.exception(e);
-        return new GoogleTestVersion(undefined);
-      });
     }
 
-    if (this._finished) {
-      return this._version;
-    } else {
-      return Promise.race([this._version, Promise.resolve(new GoogleTestVersion(undefined))]);
-    }
+    return this._version;
   }
 }
 
@@ -95,16 +96,14 @@ export class TestSuiteInfoFactory {
       .then((framework: TestFrameworkInfo) => {
         switch (framework.type) {
           case 'google':
-            return GoogleTestVersion.Get(this._shared).then(g => {
-              return new GoogleTestSuiteInfo(
-                this._shared,
-                this._label,
-                this._description,
-                this._execPath,
-                this._execOptions,
-                g.version,
-              );
-            });
+            return new GoogleTestSuiteInfo(
+              this._shared,
+              this._label,
+              this._description,
+              this._execPath,
+              this._execOptions,
+              GoogleTestVersion.Get(this._shared),
+            );
           case 'catch2':
             return new Catch2TestSuiteInfo(
               this._shared,

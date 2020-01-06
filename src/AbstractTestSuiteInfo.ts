@@ -22,22 +22,24 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     public readonly execPath: string,
     public readonly execOptions: c2fs.SpawnOptions,
     public readonly frameworkName: string,
-    public readonly frameworkVersion: [number, number, number] | undefined,
+    public readonly frameworkVersion: Promise<[number, number, number] | undefined>,
   ) {
     super(shared, label, desciption, undefined);
 
-    if (AbstractTestSuiteInfo._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
-      try {
-        const versionStr = this.frameworkVersion ? this.frameworkVersion.join('.') : 'unknown';
+    frameworkVersion
+      .then(version => {
+        if (AbstractTestSuiteInfo._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
+          const versionStr = version ? version.join('.') : 'unknown';
 
-        shared.log.infoWithTags('Framework', {
-          framework: this.frameworkName,
-          frameworkVersion: `${this.frameworkName}@${versionStr}`,
-        });
+          shared.log.infoWithTags('Framework', {
+            framework: this.frameworkName,
+            frameworkVersion: `${this.frameworkName}@${versionStr}`,
+          });
 
-        AbstractTestSuiteInfo._reportedFrameworks.push(frameworkName);
-      } catch (e) {}
-    }
+          AbstractTestSuiteInfo._reportedFrameworks.push(frameworkName);
+        }
+      })
+      .catch(e => this._shared.log.exception(e));
   }
 
   public get tooltip(): string {
