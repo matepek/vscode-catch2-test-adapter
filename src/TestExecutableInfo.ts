@@ -49,7 +49,8 @@ export class TestExecutableInfo implements vscode.Disposable {
     if (pattern.isAbsolute && pattern.isPartOfWs)
       this._shared.log.info('Absolute path is used for workspace directory. This is unnecessary, but it should work.');
 
-    if (this._pattern.indexOf('\\') != -1) this._shared.log.info('Pattern contains backslash character.');
+    if (this._pattern.indexOf('\\') != -1)
+      this._shared.log.info('Pattern contains backslash character. Try to avoid that.');
 
     let filePaths: string[] = [];
 

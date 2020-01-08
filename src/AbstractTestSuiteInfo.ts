@@ -111,7 +111,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     return taskPool.scheduleTask(runIfNotCancelled).catch((err: Error) => {
       // eslint-disable-next-line
-      if ((err as any).code === 'EBUSY') {
+      if ((err as any).code === 'EBUSY' || (err as any).code === 'ETXTBSY') {
         this._shared.log.info('executable is busy, rescheduled: 2sec', err);
 
         return promisify(setTimeout)(2000).then(() => {
