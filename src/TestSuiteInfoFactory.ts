@@ -9,12 +9,14 @@ import { DOCTestSuiteInfo } from './framework/DOCTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
 import { promisify } from 'util';
 
+type VersionT = [number, number, number];
+
 class GoogleTestVersion {
   private constructor() {}
 
-  private static readonly _versions: [number, [number, number, number]][] = [
-    [48592, [1, 0, 0]],
+  private static readonly _versions: [number, VersionT][] = [
     [47254, [1, 0, 1]],
+    [48592, [1, 0, 0]],
     [48150, [1, 1, 0]],
     [51083, [1, 2, 0]],
     [51083, [1, 2, 1]], // !! Same as prev !! but good enough
@@ -22,15 +24,15 @@ class GoogleTestVersion {
     [74007, [1, 4, 0]],
     [77844, [1, 5, 0]],
     [82450, [1, 6, 0]],
-    [88434, [1, 7, 0]],
     [85459, [1, 8, 0]],
+    [88434, [1, 7, 0]],
     [89088, [1, 8, 1]],
     [93924, [1, 10, 0]],
   ];
 
-  private static _version: Promise<[number, number, number] | undefined> | undefined = undefined;
+  private static _version: Promise<VersionT | undefined> | undefined = undefined;
 
-  public static Get(shared: SharedVariables): Promise<[number, number, number] | undefined> {
+  public static Get(shared: SharedVariables): Promise<VersionT | undefined> {
     if (this._version === undefined) {
       const cancellation = new vscode.CancellationTokenSource();
 
@@ -43,26 +45,48 @@ class GoogleTestVersion {
       )
         .finally(() => cancellation.dispose())
         .then(async gtests => {
-          if (gtests.length === 1) {
-            const stats = await promisify(fs.stat)(gtests[0].fsPath);
-            const fileSizeInBytes = stats['size'];
-            const found = GoogleTestVersion._versions.find(x => x[0] === fileSizeInBytes);
-
-            if (found) {
-              return found[1];
-            } else {
-              shared.log.warn('Google Test version cannot be determined', fileSizeInBytes, gtests[0].fsPath);
-            }
-          } else if (gtests.length === 0) {
+          if (gtests.length === 0) {
             shared.log.warn('Google Test version not found');
-          } else {
+            return undefined;
+          }
+
+          if (gtests.length > 1) {
             shared.log.warn(
               'Google Test version: more than 1 has found',
               gtests.map(x => x.fsPath),
             );
           }
 
-          return undefined;
+          const gtestPath =
+            gtests.length === 1
+              ? gtests[0].fsPath
+              : gtests.reduce((prev: vscode.Uri, current: vscode.Uri) =>
+                  prev.fsPath.length <= current.fsPath.length ? prev : current,
+                ).fsPath;
+
+          const stats = await promisify(fs.stat)(gtestPath);
+          const fileSizeInBytes = stats['size'];
+          const found = GoogleTestVersion._versions.find(x => x[0] === fileSizeInBytes);
+
+          if (found) {
+            return found[1];
+          } else {
+            const distance = (current: [number, VersionT]) => Math.abs(current[0] - fileSizeInBytes);
+
+            const res = GoogleTestVersion._versions.reduce((prev, current) =>
+              distance(prev) <= distance(current) ? prev : current,
+            );
+
+            const resDistance = distance(res);
+
+            if (resDistance < 50) {
+              shared.log.warn('Google Test version is not an exact match', fileSizeInBytes, resDistance, gtestPath);
+              return res[1];
+            } else {
+              shared.log.warn('Google Test version size is not a match', fileSizeInBytes, resDistance, gtestPath);
+              return undefined;
+            }
+          }
         })
         .catch(e => {
           shared.log.exception(e);

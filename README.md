@@ -31,9 +31,9 @@ tests using the [Test Explorer for Visual Studio Code](https://marketplace.visua
 
 ## Configuration
 
-The extension is \*_pre-configured_ and should find executables inside the working directory which match the following [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options):
+The extension is \*_pre-configured_ and it should find executables inside the working directory which match the following [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options):
 
-> `{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*`.
+`"catch2TestExplorer.executables": [ "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*" ]`
 
 This basically means executables inside the `build` and `out` directories (recursive `/**/`) which contain the `test` word in their name (including extensions).
 

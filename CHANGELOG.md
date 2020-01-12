@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.2]
+
+### Added
+
+- Some mechanism which prevent to enumerate test for multiple times when the file hasn't changed.
+
 ## [2.8.1] - 2020-01-06
 
 ### Added
