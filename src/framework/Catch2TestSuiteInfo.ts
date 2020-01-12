@@ -136,7 +136,8 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
             this._shared.log.debug('loading from cache failed because file is empty');
           } else {
             this._reloadFromString(content, oldChildren);
-            return Promise.resolve();
+
+            return;
           }
         }
       } catch (e) {
@@ -144,34 +145,36 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       }
     }
 
-    return c2fs
-      .spawnAsync(
-        this.execPath,
-        ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
-        this.execOptions,
-        30000,
-      )
-      .then(catch2TestListOutput => {
-        if (catch2TestListOutput.stderr) {
-          this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
-          const test = this.addChild(
-            new Catch2TestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
-          );
-          this._shared.sendTestEventEmitter.fire([
-            { type: 'test', test: test, state: 'errored', message: catch2TestListOutput.stderr },
-          ]);
-          return Promise.resolve();
-        }
+    const catch2TestListOutput = await c2fs.spawnAsync(
+      this.execPath,
+      ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
+      this.execOptions,
+      30000,
+    );
 
-        this._reloadFromString(catch2TestListOutput.stdout, oldChildren);
+    if (catch2TestListOutput.stderr) {
+      this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
+      const test = this.addChild(
+        new Catch2TestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
+      );
+      this._shared.sendTestEventEmitter.fire([
+        { type: 'test', test: test, state: 'errored', message: catch2TestListOutput.stderr },
+      ]);
+      return Promise.resolve();
+    }
 
-        if (this._shared.enabledTestListCaching) {
-          return promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>
-            this._shared.log.warn('couldnt write cache file:', err),
-          );
-        }
-        return Promise.resolve();
-      });
+    if (catch2TestListOutput.stdout.length === 0) {
+      this._shared.log.debug(catch2TestListOutput);
+      throw Error('stoud is empty');
+    }
+
+    this._reloadFromString(catch2TestListOutput.stdout, oldChildren);
+
+    if (this._shared.enabledTestListCaching) {
+      return promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>
+        this._shared.log.warn('couldnt write cache file:', err),
+      );
+    }
   }
 
   protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<Catch2TestInfo>): string[] {

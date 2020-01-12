@@ -1,5 +1,6 @@
 import * as cp from 'child_process';
 import * as path from 'path';
+import * as fs from 'fs';
 
 import * as c2fs from './FSWrapper';
 import { AbstractTestInfo } from './AbstractTestInfo';
@@ -14,6 +15,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   private _canceled: boolean = false;
   private _runInfo: RunningTestExecutableInfo | undefined = undefined;
+  private _mtime: number | undefined = undefined;
 
   public constructor(
     shared: SharedVariables,
@@ -53,9 +55,21 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
 
   public reloadTests(taskPool: TaskPool): Promise<void> {
-    return taskPool.scheduleTask(() => {
+    return taskPool.scheduleTask(async () => {
       this._shared.log.info('reloadChildren', this.label, this.frameworkName, this.frameworkVersion, this.execPath);
-      return this._reloadChildren();
+
+      const mtime = await promisify(fs.stat)(this.execPath).then(
+        stat => stat.mtimeMs,
+        () => undefined,
+      );
+
+      if (this._mtime !== undefined && this._mtime === mtime) {
+        // skip
+        this._shared.log.debug('reloadTests was skipped due to mtime', this.origLabel, this.id);
+      } else {
+        this._mtime = mtime;
+        return this._reloadChildren();
+      }
     });
   }
 
@@ -126,7 +140,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): Promise<void> {
     const execParams = this._getRunParams(childrenToRun);
 
-    this._shared.log.info('proc starting: ', this.origLabel);
+    this._shared.log.info('proc starting', this.origLabel, execParams);
 
     this._shared.testStatesEmitter.fire(this.getRunningEvent());
 
