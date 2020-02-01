@@ -50,7 +50,7 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
-    "@sentry/node": "^5.11.0",
+    "@sentry/node": "^5.11.2",
     "debounce-collect": "^1.0.2",
     "entities": "^1.1.2",
     "gaze": "^1.1.3",
@@ -62,12 +62,12 @@
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.7",
+    "@types/chai": "^4.2.8",
     "@types/deep-equal": "^1.0.1",
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.12.24",
+    "@types/node": "^12.12.26",
     "@types/request-promise": "4.1.43",
     "@types/sinon": "^7.5.1",
     "@types/xml2js": "^0.4.5",
@@ -84,8 +84,8 @@
     "request-promise": "4.2.4",
     "sinon": "^7.5.0",
     "ts-loader": "^6.2.1",
-    "typescript": "^3.7.4",
-    "vsce": "^1.71.0",
+    "typescript": "^3.7.5",
+    "vsce": "^1.72.0",
     "vscode": "^1.1.36",
     "vscode-test": "^1.3.0",
     "webpack": "^4.41.5"
