@@ -150,7 +150,9 @@ export class Catch2TestInfo extends AbstractTestInfo {
     }
 
     if (testCase.OverallResult[0].$.success === 'true') {
-      testEventBuilder.setState('passed');
+      testEventBuilder.passed();
+    } else {
+      testEventBuilder.failed();
     }
 
     if (this._sections.length) {
@@ -195,9 +197,9 @@ export class Catch2TestInfo extends AbstractTestInfo {
     {
       Object.getOwnPropertyNames(xml).forEach(n => {
         if (!Catch2TestInfo._expectedPropertyNames.has(n)) {
-          this._shared.log.error('unexpected Catch2 tag', n);
+          this._shared.log.error('unexpected Catch2 tag: ' + n);
           testEventBuilder.appendMessage('unexpected Catch2 tag:' + n, 0);
-          testEventBuilder.setState('errored');
+          testEventBuilder.errored();
         }
       });
     }

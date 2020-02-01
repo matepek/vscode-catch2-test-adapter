@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - experimental support to override test framework recognition.
+- experimental Catch2 benchmark support
+
+### Fixed
+
+- doctest exception handling
 
 ### Removed 🚫
 

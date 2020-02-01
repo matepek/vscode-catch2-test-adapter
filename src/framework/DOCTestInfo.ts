@@ -130,15 +130,17 @@ export class DOCTestInfo extends AbstractTestInfo {
 
     const title: DOCSection = new DOCSection(testCase.$.name, testCase.$.filename, testCase.$.line);
 
+    if (testCase.OverallResultsAsserts[0].$.failures === '0' && testCase.Exception === undefined) {
+      testEventBuilder.passed();
+    } else {
+      testEventBuilder.failed();
+    }
+
     this._processTags(testCase, title, [], testEventBuilder);
 
     this._processXmlTagSubcase(testCase, title, [], testEventBuilder, title);
 
     this._sections = title.children;
-
-    if (testCase.OverallResultsAsserts[0].$.failures === '0') {
-      testEventBuilder.setState('passed');
-    }
 
     if (this._sections.length) {
       let failedBranch = 0;
@@ -170,15 +172,16 @@ export class DOCTestInfo extends AbstractTestInfo {
     'OverallResultsAsserts',
     'Message',
     'Expression',
+    'Exception',
   ]);
 
   private _processTags(xml: XmlObject, title: Frame, stack: DOCSection[], testEventBuilder: TestEventBuilder): void {
     {
       Object.getOwnPropertyNames(xml).forEach(n => {
         if (!DOCTestInfo._expectedPropertyNames.has(n)) {
-          this._shared.log.error('unexpected doctest tag', n);
+          this._shared.log.error('unexpected doctest tag: ' + n);
           testEventBuilder.appendMessage('unexpected doctest tag:' + n, 0);
-          testEventBuilder.setState('errored');
+          testEventBuilder.errored();
         }
       });
     }
@@ -198,6 +201,20 @@ export class DOCTestInfo extends AbstractTestInfo {
             Number(msg.$.line) - 1,
             '⬅ ' + msg.Text.map((x: string) => x.trim()).join(' | '),
           );
+        }
+      }
+    } catch (e) {
+      this._shared.log.exception(e);
+    }
+
+    try {
+      if (xml.Exception) {
+        for (let j = 0; j < xml.Exception.length; ++j) {
+          const e = xml.Exception[j];
+
+          testEventBuilder.failed();
+
+          testEventBuilder.appendMessage('Exception was thrown: ' + e._.trim(), 0);
         }
       }
     } catch (e) {
