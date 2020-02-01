@@ -48,7 +48,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
       const child = this.children[i];
       ps.push(
         child.run(testSet, this._shared.taskPool).catch(err => {
-          this._shared.log.error('RootTestSuite.run.for.child', child.label, child.execPath, err);
+          this._shared.log.error('RootTestSuite.run.for.child', child.label, child.execInfo.path, err);
         }),
       );
     }
@@ -77,12 +77,12 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     {
       // we want to filter the situation when 2 patterns match the same file
       const other = this.children.find((s: AbstractTestSuiteInfo) => {
-        return suite.execPath == s.execPath;
+        return suite.execInfo.path == s.execInfo.path;
       });
       if (other) {
         this._shared.log.warn(
           'execPath duplication: suite is skipped:',
-          suite.execPath,
+          suite.execInfo.path,
           suite.origLabel,
           other.origLabel,
         );

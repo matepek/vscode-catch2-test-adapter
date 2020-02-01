@@ -5,7 +5,7 @@ import * as xml2js from 'xml2js';
 
 import { Catch2TestInfo } from './Catch2TestInfo';
 import * as c2fs from '../FSWrapper';
-import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
+import { AbstractTestSuiteInfo, AbstractTestSuiteExecInfo } from '../AbstractTestSuiteInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 
@@ -20,11 +20,10 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execPath: string,
-    execOptions: c2fs.SpawnOptions,
+    execInfo: AbstractTestSuiteExecInfo,
     catch2Version: [number, number, number] | undefined,
   ) {
-    super(shared, label, desciption, execPath, execOptions, 'Catch2', Promise.resolve(catch2Version));
+    super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(catch2Version));
   }
 
   private _reloadFromString(testListOutput: string, oldChildren: Catch2TestInfo[]): void {
@@ -121,12 +120,12 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     this.children = [];
     this.label = this.origLabel;
 
-    const cacheFile = this.execPath + '.cache.txt';
+    const cacheFile = this.execInfo.path + '.cache.txt';
 
     if (this._shared.enabledTestListCaching) {
       try {
         const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.execPath);
+        const execStat = await promisify(fs.stat)(this.execInfo.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this._shared.log.info('loading from cache: ', cacheFile);
@@ -146,9 +145,9 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     }
 
     const catch2TestListOutput = await c2fs.spawnAsync(
-      this.execPath,
+      this.execInfo.path,
       ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
-      this.execOptions,
+      this.execInfo.options,
       30000,
     );
 

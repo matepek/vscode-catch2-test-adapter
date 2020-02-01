@@ -176,9 +176,10 @@ Exmaple: `${relPath[:-2]}`
 
 One can fine-tune framework related behaviour.
 
-| Property    | Description                                                                                                                                                         |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `helpRegex` | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. |
+| Property                 | Description                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `helpRegex`              | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. |
+| `additionalRunArguments` | Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`.               |
 
 If the regex is too general it will mach all the executables❗️
 One should avoid that❗️

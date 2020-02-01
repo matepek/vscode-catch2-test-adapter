@@ -29,6 +29,17 @@ describe(path.basename(__filename), function() {
       keys.forEach(key => {
         assert.strictEqual(findDescriptionInReadmeTable(key), executableSchemaProp[key]['description']);
       });
+
+      {
+        assert.deepStrictEqual(executableSchemaProp['catch2'], executableSchemaProp['gtest']);
+        assert.deepStrictEqual(executableSchemaProp['catch2'], executableSchemaProp['doctest']);
+
+        const catch2Prop = executableSchemaProp['catch2']['properties'];
+        const keys = Object.keys(catch2Prop);
+        keys.forEach(key => {
+          assert.strictEqual(findDescriptionInReadmeTable(key), catch2Prop[key]['description']);
+        });
+      }
     }
     {
       const keys = Object.keys(properties);

@@ -5,7 +5,7 @@ import * as xml2js from 'xml2js';
 
 import { DOCTestInfo } from './DOCTestInfo';
 import * as c2fs from '../FSWrapper';
-import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
+import { AbstractTestSuiteInfo, AbstractTestSuiteExecInfo } from '../AbstractTestSuiteInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 
@@ -20,11 +20,10 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execPath: string,
-    execOptions: c2fs.SpawnOptions,
+    execInfo: AbstractTestSuiteExecInfo,
     docVersion: [number, number, number] | undefined,
   ) {
-    super(shared, label, desciption, execPath, execOptions, 'doctest', Promise.resolve(docVersion));
+    super(shared, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
   }
 
   private _reloadFromString(testListOutput: string, oldChildren: DOCTestInfo[]): void {
@@ -68,12 +67,12 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     this.children = [];
     this.label = this.origLabel;
 
-    const cacheFile = this.execPath + '.cache.txt';
+    const cacheFile = this.execInfo.path + '.cache.txt';
 
     if (this._shared.enabledTestListCaching) {
       try {
         const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.execPath);
+        const execStat = await promisify(fs.stat)(this.execInfo.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this._shared.log.info('loading from cache: ', cacheFile);
@@ -89,9 +88,9 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
 
     return c2fs
       .spawnAsync(
-        this.execPath,
+        this.execInfo.path,
         ['--list-test-cases', '--reporters=xml', '--no-skip=true', '--no-color=true'],
-        this.execOptions,
+        this.execInfo.options,
         30000,
       )
       .then(docTestListOutput => {

@@ -547,12 +547,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ['${suitelabel}', suiteLabels], // deprecated
       ['${suiteLabel}', suiteLabels],
       ['${label}', testInfo.label],
-      ['${exec}', testSuite.execPath],
+      ['${exec}', testSuite.execInfo.path],
       ['${args}', argsArray], // deprecated
       ['${argsArray}', argsArray],
       ['${argsStr}', '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"'],
-      ['${cwd}', testSuite.execOptions.cwd!],
-      ['${envObj}', Object.assign(Object.assign({}, process.env), testSuite.execOptions.env!)],
+      ['${cwd}', testSuite.execInfo.options.cwd!],
+      ['${envObj}', Object.assign(Object.assign({}, process.env), testSuite.execInfo.options.env!)],
     ]);
 
     // we dont know better :(
@@ -810,6 +810,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         const r: TestExecutableInfoFrameworkSpecific = {};
         if (typeof obj === 'object') {
           if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
+          if (
+            Array.isArray(obj.additionalRunArguments) &&
+            // eslint-disable-next-line
+            (obj.additionalRunArguments as any[]).every(x => typeof x === 'string')
+          )
+            r.additionalRunArguments = obj.additionalRunArguments;
         }
         return r;
       };

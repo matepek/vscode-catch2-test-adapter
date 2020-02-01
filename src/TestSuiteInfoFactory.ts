@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 import * as c2fs from './FSWrapper';
-import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { AbstractTestSuiteInfo, AbstractTestSuiteExecInfo } from './AbstractTestSuiteInfo';
 import { Catch2TestSuiteInfo } from './framework/Catch2TestSuiteInfo';
 import { GoogleTestSuiteInfo } from './framework/GoogleTestSuiteInfo';
 import { DOCTestSuiteInfo } from './framework/DOCTestSuiteInfo';
@@ -128,8 +128,11 @@ export class TestSuiteInfoFactory {
               this._shared,
               this._label,
               this._description,
-              this._execPath,
-              this._execOptions,
+              new AbstractTestSuiteExecInfo(
+                this._execPath,
+                this._execOptions,
+                this._gtest.additionalRunArguments ? this._gtest.additionalRunArguments : [],
+              ),
               GoogleTestVersion.Get(this._shared),
             );
           case 'catch2':
@@ -137,8 +140,11 @@ export class TestSuiteInfoFactory {
               this._shared,
               this._label,
               this._description,
-              this._execPath,
-              this._execOptions,
+              new AbstractTestSuiteExecInfo(
+                this._execPath,
+                this._execOptions,
+                this._catch2.additionalRunArguments ? this._catch2.additionalRunArguments : [],
+              ),
               framework.version,
             );
           case 'doc':
@@ -146,8 +152,11 @@ export class TestSuiteInfoFactory {
               this._shared,
               this._label,
               this._description,
-              this._execPath,
-              this._execOptions,
+              new AbstractTestSuiteExecInfo(
+                this._execPath,
+                this._execOptions,
+                this._doctest.additionalRunArguments ? this._doctest.additionalRunArguments : [],
+              ),
               framework.version,
             );
         }

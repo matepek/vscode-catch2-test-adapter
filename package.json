@@ -222,7 +222,7 @@
                       "dependsOn": {
                         "description": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables.",
                         "type": "array",
-                        "additionalItems": {
+                        "items": {
                           "type": "string",
                           "minLength": 1
                         }
@@ -233,8 +233,17 @@
                         "additionalProperties": false,
                         "properties": {
                           "helpRegex": {
+                            "description": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`.",
                             "type": "string",
                             "minLength": 1
+                          },
+                          "additionalRunArguments": {
+                            "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
                           }
                         }
                       },
@@ -244,8 +253,17 @@
                         "additionalProperties": false,
                         "properties": {
                           "helpRegex": {
+                            "description": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`.",
                             "type": "string",
                             "minLength": 1
+                          },
+                          "additionalRunArguments": {
+                            "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
                           }
                         }
                       },
@@ -255,8 +273,17 @@
                         "additionalProperties": false,
                         "properties": {
                           "helpRegex": {
+                            "description": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`.",
                             "type": "string",
                             "minLength": 1
+                          },
+                          "additionalRunArguments": {
+                            "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
                           }
                         }
                       }

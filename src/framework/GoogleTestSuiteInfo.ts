@@ -5,7 +5,7 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import { GoogleTestInfo } from './GoogleTestInfo';
 import * as c2fs from '../FSWrapper';
 import { AbstractTestInfo } from '../AbstractTestInfo';
-import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
+import { AbstractTestSuiteInfo, AbstractTestSuiteExecInfo } from '../AbstractTestSuiteInfo';
 import { Parser } from 'xml2js';
 import { SharedVariables } from '../SharedVariables';
 import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
@@ -30,11 +30,10 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execPath: string,
-    execOptions: c2fs.SpawnOptions,
+    execInfo: AbstractTestSuiteExecInfo,
     version: Promise<[number, number, number] | undefined>,
   ) {
-    super(shared, label, desciption, execPath, execOptions, 'GoogleTest', version);
+    super(shared, label, desciption, execInfo, 'GoogleTest', version);
   }
 
   private _reloadFromXml(xmlStr: string, oldChildren: GoogleTestGroupSuiteInfo[]): void {
@@ -170,12 +169,12 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     this.children = [];
     this.label = this.origLabel;
 
-    const cacheFile = this.execPath + '.cache.xml';
+    const cacheFile = this.execInfo.path + '.cache.xml';
 
     if (this._shared.enabledTestListCaching) {
       try {
         const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.execPath);
+        const execStat = await promisify(fs.stat)(this.execInfo.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this._shared.log.info('loading from cache: ', cacheFile);
@@ -190,7 +189,12 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     }
 
     return c2fs
-      .spawnAsync(this.execPath, ['--gtest_list_tests', '--gtest_output=xml:' + cacheFile], this.execOptions, 30000)
+      .spawnAsync(
+        this.execInfo.path,
+        ['--gtest_list_tests', '--gtest_output=xml:' + cacheFile],
+        this.execInfo.options,
+        30000,
+      )
       .then(async googleTestListOutput => {
         this.children = [];
         this.label = this.origLabel;
