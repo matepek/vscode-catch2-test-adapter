@@ -282,7 +282,13 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
                   type: 'test',
                   test: data.currentChild,
                   state: 'errored',
-                  message: '😱 Unexpected error under parsing output !! Error: ' + inspect(e) + '\n',
+                  message: [
+                    '😱 Unexpected error under parsing output !! Error: ' + inspect(e),
+                    'Consider opening an issue: https://github.com/matepek/vscode-catch2-test-adapter/issues/new/choose',
+                    '=== Output ===',
+                    testCaseXml,
+                    '==============',
+                  ].join('\n'),
                 });
               }
             } else {

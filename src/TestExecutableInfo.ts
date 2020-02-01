@@ -51,7 +51,7 @@ export class TestExecutableInfo implements vscode.Disposable {
   public async load(): Promise<void> {
     const pattern = this._patternProcessor(this._pattern);
 
-    this._shared.log.info('pattern', pattern);
+    this._shared.log.info('pattern', this._pattern, this._shared.workspaceFolder.uri.fsPath, pattern);
 
     if (pattern.isAbsolute && pattern.isPartOfWs)
       this._shared.log.info('Absolute path is used for workspace directory. This is unnecessary, but it should work.');
