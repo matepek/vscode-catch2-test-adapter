@@ -46,12 +46,17 @@ export class TestEventBuilder {
   }
 
   public appendDecorator(line: number, msg: string | string[] | undefined, hover?: string): void {
-    const reindented =
-      typeof msg === 'string' ? [reindentStr(0, msg)] : Array.isArray(msg) ? reindentLines(0, msg) : [];
+    const reindented = typeof msg === 'string' ? reindentStr(0, msg) : Array.isArray(msg) ? reindentLines(0, msg) : [];
 
     this._decorations.push({
       line,
-      message: '⬅ ' + reindented.length ? reindented.join('; ').substr(0, 200) : 'failed',
+      message:
+        '⬅ ' + reindented.length
+          ? reindented
+              .map((x: string) => x.trim())
+              .join('; ')
+              .substr(0, 200)
+          : 'failed',
       hover: hover ? reindentStr(0, hover).join('\n') : reindented.length ? reindented.join('\n') : undefined,
     });
   }

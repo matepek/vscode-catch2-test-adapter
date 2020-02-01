@@ -37,6 +37,23 @@
         "${workspaceFolder}/out/**/*.js"
       ],
       "preLaunchTask": "npm: watch"
+    },
+    {
+      "type": "extensionHost",
+      "request": "launch",
+      "name": "Manual chorus",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "/Users/matepek/repo/ac-chorus-addon/nbschorusconnect",
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
+      "env": {
+        "C2_DEBUG": "true"
+      },
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
+      "preLaunchTask": "npm: watch"
     }
   ]
 }

@@ -231,7 +231,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
       if (xml.Failure) {
         testEventBuilder.appendMessage('⬇ Failure:', 0);
         for (let i = 0; i < xml.Failure.length; i++)
-          testEventBuilder.appendMessageWithDecorator(Number(xml.Failure[i].$.line) - 1, xml.Failure[i], 1);
+          testEventBuilder.appendMessageWithDecorator(Number(xml.Failure[i].$.line) - 1, xml.Failure[i]._.trim(), 1);
         testEventBuilder.appendMessage('⬆ Failure', 0);
       }
     } catch (e) {

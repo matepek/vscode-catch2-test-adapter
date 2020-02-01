@@ -170,7 +170,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 | `${os_env_strict:<varname>}` | Resolves it to the given(`<varname>`) environment variable if exists won't set the variable othewise. Can be used ONLY in `env`.                                                             |
 
 [Array index]ing: `(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?`.
-Exmaple: `${relPath[:-2]}`
+Exmaple: `${relPath[:-2]}`: 'a/b/c/d' -> 'a/b'
 
 #### Framework specific settings
 
