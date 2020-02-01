@@ -188,13 +188,14 @@ export class Catch2TestInfo extends AbstractTestInfo {
     'OverallResult',
     'OverallResults',
     'FatalErrorCondition',
+    'BenchmarkResults',
   ]);
 
   private _processTags(xml: XmlObject, title: Frame, stack: Catch2Section[], testEventBuilder: TestEventBuilder): void {
     {
       Object.getOwnPropertyNames(xml).forEach(n => {
         if (!Catch2TestInfo._expectedPropertyNames.has(n)) {
-          this._shared.log.error('undexpected Catch2 tag', n);
+          this._shared.log.error('unexpected Catch2 tag', n);
           testEventBuilder.appendMessage('unexpected Catch2 tag:' + n, 0);
           testEventBuilder.setState('errored');
         }
@@ -230,6 +231,54 @@ export class Catch2TestInfo extends AbstractTestInfo {
         for (let i = 0; i < xml.Failure.length; i++)
           testEventBuilder.appendMessageWithDecorator(Number(xml.Failure[i].$.line) - 1, xml.Failure[i], 1);
         testEventBuilder.appendMessage('⬆ Failure', 0);
+      }
+    } catch (e) {
+      this._shared.log.exception(e);
+    }
+
+    try {
+      if (xml.BenchmarkResults) {
+        testEventBuilder.appendMessage('⬇ BenchmarkResults (experimental):', 0);
+        for (let i = 0; i < xml.BenchmarkResults.length; i++) {
+          const b = xml.BenchmarkResults[i];
+          testEventBuilder.appendMessage(
+            Object.keys(b.$)
+              .map(key => `${key}: ${b.$[key]}`)
+              .join('\n'),
+            1,
+          );
+
+          testEventBuilder.appendMessage('Mean:', 1);
+          for (let j = 0; b.mean && j < b.mean.length; ++j) {
+            testEventBuilder.appendMessage(
+              Object.keys(b.mean[j].$)
+                .map(key => `${key}: ${b.mean[j].$[key]} ns`)
+                .join('\n'),
+              2,
+            );
+          }
+
+          testEventBuilder.appendMessage('Standard Deviation:', 1);
+          for (let j = 0; b.standardDeviation && j < b.standardDeviation.length; ++j) {
+            testEventBuilder.appendMessage(
+              Object.keys(b.standardDeviation[j].$)
+                .map(key => `${key}: ${b.standardDeviation[j].$[key]} ns`)
+                .join('\n'),
+              2,
+            );
+          }
+
+          testEventBuilder.appendMessage('Outliers:', 1);
+          for (let j = 0; b.outliers && j < b.outliers.length; ++j) {
+            testEventBuilder.appendMessage(
+              Object.keys(b.outliers[j].$)
+                .map(key => `${key}: ${b.outliers[j].$[key]} ns`)
+                .join('\n'),
+              2,
+            );
+          }
+        }
+        testEventBuilder.appendMessage('⬆ BenchmarkResults', 0);
       }
     } catch (e) {
       this._shared.log.exception(e);

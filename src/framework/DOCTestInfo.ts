@@ -176,7 +176,7 @@ export class DOCTestInfo extends AbstractTestInfo {
     {
       Object.getOwnPropertyNames(xml).forEach(n => {
         if (!DOCTestInfo._expectedPropertyNames.has(n)) {
-          this._shared.log.error('undexpected doctest tag', n);
+          this._shared.log.error('unexpected doctest tag', n);
           testEventBuilder.appendMessage('unexpected doctest tag:' + n, 0);
           testEventBuilder.setState('errored');
         }
