@@ -18,7 +18,7 @@ import { LogWrapper } from './LogWrapper';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { resolveVariables, generateUniqueId, hashString } from './Util';
 import { TaskQueue } from './TaskQueue';
-import { TestExecutableInfo } from './TestExecutableInfo';
+import { TestExecutableInfo, TestExecutableInfoFrameworkSpecific } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { Catch2Section, Catch2TestInfo } from './framework/Catch2TestInfo';
@@ -805,6 +805,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const dependsOn: string[] = Array.isArray(obj.dependsOn) ? obj.dependsOn.filter(v => typeof v === 'string') : [];
 
+      // eslint-disable-next-line
+      const framework = (obj: any): TestExecutableInfoFrameworkSpecific => {
+        const r: TestExecutableInfoFrameworkSpecific = {};
+        if (typeof obj === 'object') {
+          if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
+        }
+        return r;
+      };
+
       return new TestExecutableInfo(
         this._shared,
         rootSuite,
@@ -817,6 +826,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         defaultCwd,
         defaultEnv,
         this._variableToValue,
+        framework(obj['catch2']),
+        framework(obj['gtest']),
+        framework(obj['doctest']),
       );
     };
 
@@ -835,6 +847,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           defaultCwd,
           defaultEnv,
           this._variableToValue,
+          {},
+          {},
+          {},
         ),
       );
     } else if (Array.isArray(configExecs)) {
@@ -856,6 +871,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                 defaultCwd,
                 defaultEnv,
                 this._variableToValue,
+                {},
+                {},
+                {},
               ),
             );
           }

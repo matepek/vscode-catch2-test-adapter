@@ -118,7 +118,9 @@
               "items": {
                 "oneOf": [
                   {
+                    "description": "An object with 'pattern'.",
                     "type": "object",
+                    "additionalProperties": false,
                     "properties": {
                       "pattern": {
                         "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
@@ -218,15 +220,47 @@
                         }
                       },
                       "dependsOn": {
-                        "type": "array",
                         "description": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables.",
+                        "type": "array",
                         "additionalItems": {
                           "type": "string",
                           "minLength": 1
                         }
+                      },
+                      "catch2": {
+                        "description": "Object with framework specific settings. See [here](#Framework-specific-settings).",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "helpRegex": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "gtest": {
+                        "description": "Object with framework specific settings. See [here](#Framework-specific-settings).",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "helpRegex": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "doctest": {
+                        "description": "Object with framework specific settings. See [here](#Framework-specific-settings).",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "helpRegex": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
                       }
                     },
-                    "additionalProperties": false,
                     "required": [
                       "pattern"
                     ]
@@ -240,127 +274,13 @@
               }
             },
             {
-              "type": "object",
-              "properties": {
-                "pattern": {
-                  "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "enum": [
-                        "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
-                        "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*.exe"
-                      ]
-                    },
-                    {
-                      "type": "string",
-                      "minLength": 1
-                    }
-                  ]
-                },
-                "name": {
-                  "description": "The name of the test suite (file). Can contains variables related to `pattern`.",
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "enum": [
-                        "${filename}",
-                        "${relPath}",
-                        "${absPath}"
-                      ]
-                    },
-                    {
-                      "type": "string",
-                      "minLength": 1
-                    }
-                  ]
-                },
-                "description": {
-                  "description": "A less prominent text after the `name`. Can contains variables related to `pattern`.",
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "enum": [
-                        "${relDirpath}/",
-                        "${absDirpath}/"
-                      ]
-                    },
-                    {
-                      "type": "string"
-                    }
-                  ]
-                },
-                "cwd": {
-                  "description": "The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.",
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "enum": [
-                        "${absDirpath}",
-                        "${relDirpath}",
-                        "${workspaceDirectory}",
-                        "${workspaceFolder}"
-                      ]
-                    },
-                    {
-                      "type": "string",
-                      "minLength": 1
-                    }
-                  ]
-                },
-                "env": {
-                  "description": "Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`).",
-                  "type": "object",
-                  "additionalProperties": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          "${absPath}",
-                          "${relPath}",
-                          "${absDirpath}",
-                          "${relDirpath}",
-                          "${filename}",
-                          "${baseFilename}",
-                          "${extFilename}",
-                          "${workspaceDirectory}",
-                          "${workspaceFolder}",
-                          "${workspaceName}",
-                          "${name}",
-                          "${description}",
-                          "${cwd}",
-                          "${os_env:PATH}"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "minLength": 1
-                      }
-                    ]
-                  }
-                },
-                "dependsOn": {
-                  "type": "array",
-                  "description": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables.",
-                  "additionalItems": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                }
-              },
-              "additionalProperties": false,
-              "required": [
-                "pattern"
-              ]
-            },
-            {
               "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
               "type": "string",
               "minLength": 1
             },
             {
-              "type": "null",
-              "description": "null means it is disabled"
+              "description": "null means it is disabled",
+              "type": "null"
             }
           ]
         },

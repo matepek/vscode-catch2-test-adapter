@@ -8,6 +8,7 @@ import { GoogleTestSuiteInfo } from './framework/GoogleTestSuiteInfo';
 import { DOCTestSuiteInfo } from './framework/DOCTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
 import { promisify } from 'util';
+import { TestExecutableInfoFrameworkSpecific } from './TestExecutableInfo';
 
 type VersionT = [number, number, number];
 
@@ -100,7 +101,7 @@ class GoogleTestVersion {
 
 interface TestFrameworkInfo {
   type: 'catch2' | 'google' | 'doc';
-  version: [number, number, number];
+  version: [number, number, number] | undefined;
 }
 
 export class TestSuiteInfoFactory {
@@ -110,12 +111,15 @@ export class TestSuiteInfoFactory {
     private readonly _description: string | undefined,
     private readonly _execPath: string,
     private readonly _execOptions: c2fs.SpawnOptions,
+    private readonly _catch2: TestExecutableInfoFrameworkSpecific,
+    private readonly _gtest: TestExecutableInfoFrameworkSpecific,
+    private readonly _doctest: TestExecutableInfoFrameworkSpecific,
   ) {}
 
   public create(): Promise<AbstractTestSuiteInfo> {
     return this._shared.taskPool
       .scheduleTask(() => {
-        return this._determineTestTypeOfExecutable(this._shared.execParsingTimeout);
+        return this._determineTestTypeOfExecutable();
       })
       .then((framework: TestFrameworkInfo) => {
         switch (framework.type) {
@@ -135,7 +139,7 @@ export class TestSuiteInfoFactory {
               this._description,
               this._execPath,
               this._execOptions,
-              [framework.version[0], framework.version[1], framework.version[2]],
+              framework.version,
             );
           case 'doc':
             return new DOCTestSuiteInfo(
@@ -144,46 +148,74 @@ export class TestSuiteInfoFactory {
               this._description,
               this._execPath,
               this._execOptions,
-              [framework.version[0], framework.version[1], framework.version[2]],
+              framework.version,
             );
         }
-        throw Error('Unknown error:' + framework.type);
+        throw Error('Unknown framework error:' + framework.type);
       });
   }
 
-  private _determineTestTypeOfExecutable(execParsingTimeout: number): Promise<TestFrameworkInfo> {
-    return TestSuiteInfoFactory.determineTestTypeOfExecutable(execParsingTimeout, this._execPath, this._execOptions);
-  }
-
-  public static determineTestTypeOfExecutable(
-    execParsingTimeout: number,
-    execPath: string,
-    execOptions: c2fs.SpawnOptions,
-  ): Promise<TestFrameworkInfo> {
-    return c2fs.isNativeExecutableAsync(execPath).then(() => {
-      return c2fs.spawnAsync(execPath, ['--help'], execOptions, execParsingTimeout).then(
+  private _determineTestTypeOfExecutable(): Promise<TestFrameworkInfo> {
+    return c2fs.isNativeExecutableAsync(this._execPath).then(() => {
+      return c2fs.spawnAsync(this._execPath, ['--help'], this._execOptions, this._shared.execParsingTimeout).then(
         (res): TestFrameworkInfo => {
+          // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+          // s: dotAll
+          // u: unicode
+          const regexFlags = 'su';
           {
-            const catch2 = res.stdout.match(/Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/);
-            if (catch2 && catch2.length == 4) {
-              return { type: 'catch2', version: [Number(catch2[1]), Number(catch2[2]), Number(catch2[3])] };
+            if (this._catch2.helpRegex) this._shared.log.info('Custom regex', 'catch2', this._catch2.helpRegex);
+
+            const catch2 = res.stdout.match(
+              this._catch2.helpRegex
+                ? new RegExp(this._catch2.helpRegex, regexFlags)
+                : /Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/,
+            );
+            if (catch2) {
+              return { type: 'catch2', version: this._parseVersion(catch2) };
             }
           }
           {
-            const google = res.stdout.match(/This program contains tests written using Google Test./);
+            if (this._gtest.helpRegex) this._shared.log.info('Custom regex', 'gtest', this._gtest.helpRegex);
+
+            const google = res.stdout.match(
+              this._gtest.helpRegex
+                ? new RegExp(this._gtest.helpRegex, regexFlags)
+                : /This program contains tests written using Google Test./,
+            );
             if (google) {
-              return { type: 'google', version: [0, 0, 0] };
+              return { type: 'google', version: this._parseVersion(google) };
             }
           }
           {
-            const doc = res.stdout.match(/doctest version is "([0-9]+)\.([0-9]+)\.([0-9]+)"/);
-            if (doc && doc.length == 4) {
-              return { type: 'doc', version: [Number(doc[1]), Number(doc[2]), Number(doc[3])] };
+            if (this._doctest.helpRegex) this._shared.log.info('Custom regex', 'doctest', this._doctest.helpRegex);
+
+            const doc = res.stdout.match(
+              this._doctest.helpRegex
+                ? new RegExp(this._doctest.helpRegex, regexFlags)
+                : /doctest version is "([0-9]+)\.([0-9]+)\.([0-9]+)"/,
+            );
+            if (doc) {
+              return { type: 'doc', version: this._parseVersion(doc) };
             }
           }
-          throw new Error('Not a supported test executable: ' + execPath + '\n output: ' + res);
+          throw new Error('Not a supported test executable: ' + this._execPath + '\n output: ' + res);
         },
       );
     });
+  }
+
+  private _parseVersion(match: RegExpMatchArray): [number, number, number] | undefined {
+    if (
+      match &&
+      match.length === 4 &&
+      Number(match[1]) !== NaN &&
+      Number(match[2]) !== NaN &&
+      Number(match[3]) !== NaN
+    ) {
+      return [Number(match[1]), Number(match[2]), Number(match[3])];
+    } else {
+      return undefined;
+    }
   }
 }

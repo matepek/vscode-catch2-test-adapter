@@ -10,6 +10,10 @@ import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
 
+export interface TestExecutableInfoFrameworkSpecific {
+  helpRegex?: string;
+}
+
 export class TestExecutableInfo implements vscode.Disposable {
   public constructor(
     private readonly _shared: SharedVariables,
@@ -23,6 +27,9 @@ export class TestExecutableInfo implements vscode.Disposable {
     private readonly _defaultCwd: string,
     private readonly _defaultEnv: { [prop: string]: string },
     private readonly _variableToValue: ResolveRulePair[],
+    private readonly _catch2: TestExecutableInfoFrameworkSpecific,
+    private readonly _gtest: TestExecutableInfoFrameworkSpecific,
+    private readonly _doctest: TestExecutableInfoFrameworkSpecific,
   ) {
     this._name = name !== undefined ? name : '${filename}';
     this._description = description !== undefined ? description : '${relDirpath}/';
@@ -284,10 +291,19 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.error('resolvedEnv', e);
     }
 
-    return new TestSuiteInfoFactory(this._shared, resolvedName, resolvedDescription, filePath, {
-      cwd: resolvedCwd,
-      env: Object.assign({}, process.env, resolvedEnv),
-    }).create();
+    return new TestSuiteInfoFactory(
+      this._shared,
+      resolvedName,
+      resolvedDescription,
+      filePath,
+      {
+        cwd: resolvedCwd,
+        env: Object.assign({}, process.env, resolvedEnv),
+      },
+      this._catch2,
+      this._gtest,
+      this._doctest,
+    ).create();
   }
 
   private _handleEverything(filePath: string): void {

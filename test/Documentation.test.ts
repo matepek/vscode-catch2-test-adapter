@@ -9,21 +9,6 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(packageJson['main'], 'out/dist/main.js');
   });
 
-  it('package.json: executables should be consistent', function() {
-    // definitions/$ref combo doesn't work in case of vscode :(
-    const packageJson = fse.readJSONSync(path.join(__dirname, '../..', 'package.json'));
-    const executables = packageJson['contributes']['configuration']['properties'][
-      'catch2TestExplorer.executables'
-    ] as any; // eslint-disable-line
-
-    const executableSchema = executables['oneOf'][0]['items']['oneOf'] as [];
-    assert.strictEqual(executableSchema.length + 2, executables['oneOf'].length);
-
-    for (let i = 0; i < executableSchema.length; ++i) {
-      assert.deepStrictEqual(executableSchema[i], executables['oneOf'][i + 1]);
-    }
-  });
-
   it('package.json should be consistent with README.md', function() {
     const packageJson = fse.readJSONSync(path.join(__dirname, '../..', 'package.json'));
     const properties = packageJson['contributes']['configuration']['properties'];
