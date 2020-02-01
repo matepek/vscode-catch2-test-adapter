@@ -11,10 +11,18 @@ export class TestEventBuilder {
   private _decorations: TestDecoration[] = [];
   private _description: string = '';
   private _tooltip: string[] = [];
-  private _state: TestEventState = 'failed';
+  private _state: TestEventState | undefined = undefined;
 
-  public setState(state: TestEventState): void {
-    this._state = state;
+  public passed(): void {
+    if (this._state === undefined) this._state = 'passed';
+  }
+
+  public failed(): void {
+    if (this._state !== 'errored') this._state = 'failed';
+  }
+
+  public errored(): void {
+    this._state = 'errored';
   }
 
   public appendDescription(str: string): void {
@@ -76,6 +84,8 @@ export class TestEventBuilder {
     tooltip.push(...this._tooltip);
 
     if (duration) tooltip.push(`⏱Duration: ${duration}`);
+
+    if (this._state === undefined) throw Error('TestEventBuilder state was not set');
 
     return {
       type: 'test',

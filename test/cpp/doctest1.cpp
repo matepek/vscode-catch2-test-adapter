@@ -1,3 +1,4 @@
+#include <exception>
 #include <iostream>
 #include <vector>
 
@@ -146,3 +147,5 @@ TEST_CASE(
 }
 
 TEST_CASE("  starts with double space and ends with 2 more ") {}
+
+TEST_CASE("exception1") { throw std::runtime_error("exeception msg"); }

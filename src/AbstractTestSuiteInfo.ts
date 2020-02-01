@@ -10,6 +10,14 @@ import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { promisify } from 'util';
 
+export class AbstractTestSuiteExecInfo {
+  public constructor(
+    public readonly path: string,
+    public readonly options: c2fs.SpawnOptions,
+    public readonly additionalRunArguments: string[],
+  ) {}
+}
+
 export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   private static _reportedFrameworks: string[] = [];
 
@@ -21,8 +29,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    public readonly execPath: string,
-    public readonly execOptions: c2fs.SpawnOptions,
+    public readonly execInfo: AbstractTestSuiteExecInfo,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<[number, number, number] | undefined>,
   ) {
@@ -45,7 +52,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   }
 
   public get tooltip(): string {
-    return super.tooltip + '\n\nPath: ' + this.execPath + '\nCwd: ' + this.execOptions.cwd;
+    return super.tooltip + '\n\nPath: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd;
   }
 
   protected abstract _reloadChildren(): Promise<void>;
@@ -56,9 +63,15 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   public reloadTests(taskPool: TaskPool): Promise<void> {
     return taskPool.scheduleTask(async () => {
-      this._shared.log.info('reloadChildren', this.label, this.frameworkName, this.frameworkVersion, this.execPath);
+      this._shared.log.info(
+        'reloadChildren',
+        this.label,
+        this.frameworkName,
+        this.frameworkVersion,
+        this.execInfo.path,
+      );
 
-      const mtime = await promisify(fs.stat)(this.execPath).then(
+      const mtime = await promisify(fs.stat)(this.execInfo.path).then(
         stat => stat.mtimeMs,
         () => undefined,
       );
@@ -138,17 +151,20 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   }
 
   private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): Promise<void> {
-    const execParams = this._getRunParams(childrenToRun);
+    const execParams = this._getRunParams(childrenToRun).concat(this.execInfo.additionalRunArguments);
 
     this._shared.log.info('proc starting', this.origLabel, execParams);
 
     this._shared.testStatesEmitter.fire(this.getRunningEvent());
 
-    const runInfo = new RunningTestExecutableInfo(cp.spawn(this.execPath, execParams, this.execOptions), childrenToRun);
+    const runInfo = new RunningTestExecutableInfo(
+      cp.spawn(this.execInfo.path, execParams, this.execInfo.options),
+      childrenToRun,
+    );
 
     this._runInfo = runInfo;
 
-    this._shared.log.info('proc started:', this.origLabel, this.execPath, execParams, this.execOptions);
+    this._shared.log.info('proc started:', this.origLabel, this.execInfo, execParams);
 
     runInfo.process.on('error', (err: Error) => {
       this._shared.log.error('process error event:', err, this);
@@ -199,7 +215,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
         this._shared.log.exception(reason);
       })
       .then(() => {
-        this._shared.log.info('proc finished:', this.execPath);
+        this._shared.log.info('proc finished:', this.execInfo.path);
 
         this._shared.testStatesEmitter.fire(this.getCompletedEvent());
 
@@ -215,7 +231,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     try {
       let parent: string;
-      let parentParent = path.dirname(this.execPath);
+      let parentParent = path.dirname(this.execInfo.path);
       do {
         parent = parentParent;
         parentParent = path.dirname(parent);
@@ -225,10 +241,10 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       } while (parent != parentParent);
     } catch {}
 
-    if (this.execOptions.cwd && !this.execPath.startsWith(this.execOptions.cwd))
+    if (this.execInfo.options.cwd && !this.execInfo.path.startsWith(this.execInfo.options.cwd))
       try {
         let parent: string;
-        let parentParent = this.execOptions.cwd;
+        let parentParent = this.execInfo.options.cwd;
         do {
           parent = parentParent;
           parentParent = path.dirname(parent);
@@ -239,8 +255,8 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       } catch {}
 
     if (
-      !this.execPath.startsWith(this._shared.workspaceFolder.uri.fsPath) &&
-      (!this.execOptions.cwd || !this.execOptions.cwd.startsWith(this._shared.workspaceFolder.uri.fsPath))
+      !this.execInfo.path.startsWith(this._shared.workspaceFolder.uri.fsPath) &&
+      (!this.execInfo.options.cwd || !this.execInfo.options.cwd.startsWith(this._shared.workspaceFolder.uri.fsPath))
     )
       try {
         let parent: string;

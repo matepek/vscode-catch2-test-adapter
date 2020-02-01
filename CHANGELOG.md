@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.3]
+
+### Added
+
+- experimental support to override test framework recognition.
+- experimental Catch2 benchmark support
+
+### Fixed
+
+- doctest exception handling
+
+### Removed 🚫
+
+- `catch2TestExplorer.executables` used as an array cannot contain strings anymore.
+  Example: `[ "*.test.exe" ]` --> `[ { "pattern": "*.test.exe" } ]`
+
 ## [2.8.2] - 2020-01-12
 
 ### Added

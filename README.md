@@ -98,7 +98,7 @@ The first example (`.vscode/settings.json` or hit _Ctr/Cmd + ,_):
 This variable can be
 
 - a string (ex.: `"out/**/*test.exe"`) or
-- an array of strings and objects (ex.: `[ "debug/*test.exe", { "pattern": "release/*test.exe" }, ... ]`).
+- an array of objects (ex.: `[ { "pattern": "release/*test.exe" }, ... ]`).
 
 If it is an object it can contains the following properties:
 
@@ -110,6 +110,9 @@ If it is an object it can contains the following properties:
 | `cwd`         | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                       |
 | `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`).                          |
 | `dependsOn`   | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. |
+| `catch2`      | Object with framework specific settings. See [here](#Framework-specific-settings).                                                                                                                                                                                            |
+| `gtest`       | Object with framework specific settings. See [here](#Framework-specific-settings).                                                                                                                                                                                            |
+| `doctest`     | Object with framework specific settings. See [here](#Framework-specific-settings).                                                                                                                                                                                            |
 
 The `pattern` (or the `executables` used as string or an array of strings)
 can contain [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
@@ -168,6 +171,22 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 
 [Array index]ing: `(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?`.
 Exmaple: `${relPath[:-2]}`
+
+#### Framework specific settings
+
+One can fine-tune framework related behaviour.
+
+| Property                 | Description                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `helpRegex`              | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. |
+| `additionalRunArguments` | Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`.               |
+
+If the regex is too general it will mach all the executables❗️
+One should avoid that❗️
+
+**Note**:
+
+- `.*` matches `\n`
 
 #### Examples:
 

@@ -18,7 +18,7 @@ import { LogWrapper } from './LogWrapper';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { resolveVariables, generateUniqueId, hashString } from './Util';
 import { TaskQueue } from './TaskQueue';
-import { TestExecutableInfo } from './TestExecutableInfo';
+import { TestExecutableInfo, TestExecutableInfoFrameworkSpecific } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { Catch2Section, Catch2TestInfo } from './framework/Catch2TestInfo';
@@ -547,12 +547,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ['${suitelabel}', suiteLabels], // deprecated
       ['${suiteLabel}', suiteLabels],
       ['${label}', testInfo.label],
-      ['${exec}', testSuite.execPath],
+      ['${exec}', testSuite.execInfo.path],
       ['${args}', argsArray], // deprecated
       ['${argsArray}', argsArray],
       ['${argsStr}', '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"'],
-      ['${cwd}', testSuite.execOptions.cwd!],
-      ['${envObj}', Object.assign(Object.assign({}, process.env), testSuite.execOptions.env!)],
+      ['${cwd}', testSuite.execInfo.options.cwd!],
+      ['${envObj}', Object.assign(Object.assign({}, process.env), testSuite.execInfo.options.env!)],
     ]);
 
     // we dont know better :(
@@ -805,6 +805,21 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const dependsOn: string[] = Array.isArray(obj.dependsOn) ? obj.dependsOn.filter(v => typeof v === 'string') : [];
 
+      // eslint-disable-next-line
+      const framework = (obj: any): TestExecutableInfoFrameworkSpecific => {
+        const r: TestExecutableInfoFrameworkSpecific = {};
+        if (typeof obj === 'object') {
+          if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
+          if (
+            Array.isArray(obj.additionalRunArguments) &&
+            // eslint-disable-next-line
+            (obj.additionalRunArguments as any[]).every(x => typeof x === 'string')
+          )
+            r.additionalRunArguments = obj.additionalRunArguments;
+        }
+        return r;
+      };
+
       return new TestExecutableInfo(
         this._shared,
         rootSuite,
@@ -817,6 +832,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         defaultCwd,
         defaultEnv,
         this._variableToValue,
+        framework(obj['catch2']),
+        framework(obj['gtest']),
+        framework(obj['doctest']),
       );
     };
 
@@ -835,6 +853,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           defaultCwd,
           defaultEnv,
           this._variableToValue,
+          {},
+          {},
+          {},
         ),
       );
     } else if (Array.isArray(configExecs)) {
@@ -856,6 +877,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                 defaultCwd,
                 defaultEnv,
                 this._variableToValue,
+                {},
+                {},
+                {},
               ),
             );
           }

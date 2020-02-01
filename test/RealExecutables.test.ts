@@ -268,7 +268,7 @@ describe(path.basename(__filename), function() {
 
       const eventCount = adapter.testStatesEvents.length;
       await adapter.run([adapter.root.id]);
-      assert.strictEqual(adapter.testStatesEvents.length - eventCount, 26, inspect(adapter.testStatesEvents));
+      assert.strictEqual(adapter.testStatesEvents.length - eventCount, 28, inspect(adapter.testStatesEvents));
     });
   });
 });
