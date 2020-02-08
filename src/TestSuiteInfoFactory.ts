@@ -19,7 +19,7 @@ class GoogleTestVersion {
     [47254, [1, 0, 1]],
     [48592, [1, 0, 0]],
     [48150, [1, 1, 0]],
-    [51083, [1, 2, 0]],
+    // [51083, [1, 2, 0]],
     [51083, [1, 2, 1]], // !! Same as prev !! but good enough
     [54267, [1, 3, 0]],
     [74007, [1, 4, 0]],
@@ -164,54 +164,53 @@ export class TestSuiteInfoFactory {
       });
   }
 
-  private _determineTestTypeOfExecutable(): Promise<TestFrameworkInfo> {
-    return c2fs.isNativeExecutableAsync(this._execPath).then(() => {
-      return c2fs.spawnAsync(this._execPath, ['--help'], this._execOptions, this._shared.execParsingTimeout).then(
-        (res): TestFrameworkInfo => {
-          // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
-          // s: dotAll
-          // u: unicode
-          const regexFlags = 'su';
-          {
-            if (this._catch2.helpRegex) this._shared.log.info('Custom regex', 'catch2', this._catch2.helpRegex);
+  private async _determineTestTypeOfExecutable(): Promise<TestFrameworkInfo> {
+    await c2fs.isNativeExecutableAsync(this._execPath);
 
-            const catch2 = res.stdout.match(
-              this._catch2.helpRegex
-                ? new RegExp(this._catch2.helpRegex, regexFlags)
-                : /Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/,
-            );
-            if (catch2) {
-              return { type: 'catch2', version: this._parseVersion(catch2) };
-            }
-          }
-          {
-            if (this._gtest.helpRegex) this._shared.log.info('Custom regex', 'gtest', this._gtest.helpRegex);
+    const res = await c2fs.spawnAsync(this._execPath, ['--help'], this._execOptions, this._shared.execParsingTimeout);
 
-            const google = res.stdout.match(
-              this._gtest.helpRegex
-                ? new RegExp(this._gtest.helpRegex, regexFlags)
-                : /This program contains tests written using Google Test./,
-            );
-            if (google) {
-              return { type: 'google', version: this._parseVersion(google) };
-            }
-          }
-          {
-            if (this._doctest.helpRegex) this._shared.log.info('Custom regex', 'doctest', this._doctest.helpRegex);
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+    // s: dotAll
+    // u: unicode
+    const regexFlags = 'su';
+    {
+      if (this._catch2.helpRegex) this._shared.log.info('Custom regex', 'catch2', this._catch2.helpRegex);
 
-            const doc = res.stdout.match(
-              this._doctest.helpRegex
-                ? new RegExp(this._doctest.helpRegex, regexFlags)
-                : /doctest version is "([0-9]+)\.([0-9]+)\.([0-9]+)"/,
-            );
-            if (doc) {
-              return { type: 'doc', version: this._parseVersion(doc) };
-            }
-          }
-          throw new Error('Not a supported test executable: ' + this._execPath + '\n output: ' + res);
-        },
+      const catch2 = res.stdout.match(
+        this._catch2.helpRegex
+          ? new RegExp(this._catch2.helpRegex, regexFlags)
+          : /Catch v([0-9]+)\.([0-9]+)\.([0-9]+)\s?/,
       );
-    });
+      if (catch2) {
+        return { type: 'catch2', version: this._parseVersion(catch2) };
+      }
+    }
+    {
+      if (this._gtest.helpRegex) this._shared.log.info('Custom regex', 'gtest', this._gtest.helpRegex);
+
+      const google = res.stdout.match(
+        this._gtest.helpRegex
+          ? new RegExp(this._gtest.helpRegex, regexFlags)
+          : /This program contains tests written using Google Test./,
+      );
+      if (google) {
+        return { type: 'google', version: this._parseVersion(google) };
+      }
+    }
+    {
+      if (this._doctest.helpRegex) this._shared.log.info('Custom regex', 'doctest', this._doctest.helpRegex);
+
+      const doc = res.stdout.match(
+        this._doctest.helpRegex
+          ? new RegExp(this._doctest.helpRegex, regexFlags)
+          : /doctest version is "([0-9]+)\.([0-9]+)\.([0-9]+)"/,
+      );
+      if (doc) {
+        return { type: 'doc', version: this._parseVersion(doc) };
+      }
+    }
+
+    throw new Error('Not a supported test executable: ' + this._execPath + '\n output: ' + res);
   }
 
   private _parseVersion(match: RegExpMatchArray): [number, number, number] | undefined {

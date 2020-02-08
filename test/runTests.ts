@@ -5,7 +5,7 @@ import { runTests } from 'vscode-test';
 
 const out = path.join(__dirname, '..');
 
-(async function go(): Promise<void> {
+async function main(): Promise<void> {
   try {
     const extensionDevelopmentPath = path.join(__dirname, '../../');
     const extensionTestsPath = path.join(__dirname, '.');
@@ -26,6 +26,8 @@ const out = path.join(__dirname, '..');
     process.exit(0);
   } catch (err) {
     console.error('Failed to run tests', err);
-    process.exit(1);
+    process.exit(-1);
   }
-})();
+}
+
+main();
