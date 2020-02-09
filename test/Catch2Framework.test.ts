@@ -193,7 +193,7 @@ describe(path.basename(__filename), function() {
         test: s1t2,
         decorations: [
           {
-            file: '../vscode-catch2-test-adapter/src/test/suite1.cpp',
+            file: path.normalize('../vscode-catch2-test-adapter/src/test/suite1.cpp'),
             line: 14,
             message: '⬅ false',
             hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
