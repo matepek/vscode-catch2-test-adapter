@@ -33,8 +33,6 @@ export abstract class AbstractTestInfo implements TestInfo {
     if (line && line < 0) throw Error('line smaller than zero');
   }
 
-  abstract getDebugParams(breakOnFailure: boolean): string[];
-
   public getStartEvent(): TestEvent {
     return { type: 'test', test: this, state: 'running' };
   }
@@ -42,6 +40,8 @@ export abstract class AbstractTestInfo implements TestInfo {
   public getSkippedEvent(): TestEvent {
     return { type: 'test', test: this, state: 'skipped' };
   }
+
+  public abstract getDebugParams(breakOnFailure: boolean): string[];
 
   public getTimeoutEvent(milisec: number): TestEvent {
     const ev = this.getFailedEventBase();

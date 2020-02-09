@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.5]
+
+### Fixed
+
+- Text Explorer UI came with a new feature: `"testExplorer.hideWhenEmpty"`. The value is false by default.
+  Since this extension activation is depends on the activation of **Test Explorer** it is "not possible" to activate the extension.
+  For a workaround the activation event is changed to [vscode's startup](https://code.visualstudio.com/api/references/activation-events#Start-up).
+  (Hopefully justfor [temporarily](https://github.com/hbenl/vscode-test-explorer/issues/113).)
+
 ## [2.8.4] - 2020-02-02
 
 ### Fixed
