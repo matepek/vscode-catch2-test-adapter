@@ -14,7 +14,16 @@ import {
 import { inspect, promisify } from 'util';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, waitFor, settings, ChildProcessStub, FileSystemWatcherStub, isWin, expectedLoggedErrorLine } from './Common';
+import {
+  TestAdapter,
+  Imitation,
+  waitFor,
+  settings,
+  ChildProcessStub,
+  FileSystemWatcherStub,
+  isWin,
+  expectedLoggedErrorLine,
+} from './Common';
 import { SpawnOptions } from '../src/FSWrapper';
 
 ///
@@ -167,7 +176,12 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: s1t2,
           decorations: [
-            { line: 14, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+            {
+              file: '../vscode-catch2-test-adapter/src/test/suite1.cpp',
+              line: 14,
+              message: '⬅ false',
+              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+            },
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
@@ -211,7 +225,12 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: s1t2,
           decorations: [
-            { line: 14, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+            {
+              file: '../vscode-catch2-test-adapter/src/test/suite1.cpp',
+              line: 14,
+              message: '⬅ false',
+              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+            },
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
@@ -424,7 +443,12 @@ describe(path.basename(__filename), function() {
         state: 'failed',
         test: s1t2,
         decorations: [
-          { line: 14, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+          {
+            file: '../vscode-catch2-test-adapter/src/test/suite1.cpp',
+            line: 14,
+            message: '⬅ false',
+            hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+          },
         ],
         description: '(0ms)',
         tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
@@ -456,7 +480,12 @@ describe(path.basename(__filename), function() {
         state: 'failed',
         test: s2t3,
         decorations: [
-          { line: 20, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+          {
+            file: '../vscode-catch2-test-adapter/src/test/suite2.cpp',
+            line: 20,
+            message: '⬅ false',
+            hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+          },
         ],
         description: '(0ms)',
         tooltip: 'Name: s2t3\nDescription: tag1\n⏱Duration: 0ms',
@@ -560,7 +589,12 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: s2t3,
           decorations: [
-            { line: 20, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+            {
+              file: '../vscode-catch2-test-adapter/src/test/suite2.cpp',
+              line: 20,
+              message: '⬅ false',
+              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+            },
           ],
           description: '(1ms)',
           message: '⏱Duration: 0.000596 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
@@ -601,7 +635,12 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: s2t3,
           decorations: [
-            { line: 20, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+            {
+              file: '../vscode-catch2-test-adapter/src/test/suite2.cpp',
+              line: 20,
+              message: '⬅ false',
+              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+            },
           ],
           description: '(1ms)',
           message: '⏱Duration: 0.000596 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
@@ -645,7 +684,12 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: s1t2,
           decorations: [
-            { line: 14, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+            {
+              file: '../vscode-catch2-test-adapter/src/test/suite1.cpp',
+              line: 14,
+              message: '⬅ false',
+              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+            },
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
@@ -690,7 +734,12 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: s1t2,
           decorations: [
-            { line: 14, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+            {
+              file: '../vscode-catch2-test-adapter/src/test/suite1.cpp',
+              line: 14,
+              message: '⬅ false',
+              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+            },
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
@@ -1277,7 +1326,12 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: s1t2,
           decorations: [
-            { line: 14, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+            {
+              file: '../vscode-catch2-test-adapter/src/test/suite1.cpp',
+              line: 14,
+              message: '⬅ false',
+              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+            },
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
@@ -1325,7 +1379,12 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: s1t2,
           decorations: [
-            { line: 14, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+            {
+              file: '../vscode-catch2-test-adapter/src/test/suite1.cpp',
+              line: 14,
+              message: '⬅ false',
+              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+            },
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
@@ -1483,7 +1542,12 @@ describe(path.basename(__filename), function() {
           state: 'failed',
           test: s1t2,
           decorations: [
-            { line: 14, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+            {
+              file: '../vscode-catch2-test-adapter/src/test/suite1.cpp',
+              line: 14,
+              message: '⬅ false',
+              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+            },
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
@@ -1745,8 +1809,10 @@ describe(path.basename(__filename), function() {
     });
 
     it('should be debugged', async function() {
-      expectedLoggedErrorLine('[ERROR] Error: Failed starting the debug session. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".');
-      
+      expectedLoggedErrorLine(
+        '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
+      );
+
       await settings.updateConfig('executables', [
         {
           name: 'X${baseFilename}',

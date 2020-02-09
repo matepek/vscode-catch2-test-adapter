@@ -88,8 +88,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
       lines.shift();
       lines.pop();
 
-      const failureRe = /^((.+):([0-9]+):) (Failure.*)$/;
-      const expectRe = /^((.+):([0-9]+):) (EXPECT_CALL\(.+)$/;
+      const reportRe = /^(?:(.+):([0-9]+):) (Failure.*|EXPECT_CALL\(.+)$/;
 
       const addDecoration = (d: TestDecoration): void => {
         const found = ev.decorations!.find(v => v.line === d.line);
@@ -105,113 +104,136 @@ export class GoogleTestInfo extends AbstractTestInfo {
       let gMockWarningCount = 0;
 
       for (let i = 0; i < lines.length; ) {
-        let m = lines[i].match(failureRe);
-        if (m !== null) {
+        const match = lines[i].match(reportRe);
+        if (match !== null) {
           i += 1;
-          const lineNumber = Number(m[3]) - 1 /*It looks vscode works like this.*/;
+          const filePath = match[1];
+          const lineNumber = Number(match[2]) - 1 /*It looks vscode works like this.*/;
 
-          if (i + 1 < lines.length && lines[i + 0].startsWith('Expected: ') && lines[i + 1].startsWith('  Actual: ')) {
-            addDecoration({
-              line: lineNumber,
-              message: '⬅️ ' + lines[i] + ';  ' + lines[i + 1],
-              hover: [lines[i], lines[i + 1]].join('\n'),
-            });
-            i += 2;
-          } else if (i < lines.length && lines[i].startsWith('Expected: ')) {
-            addDecoration({ line: lineNumber, message: '⬅️ ' + lines[i], hover: lines[i] });
-            i += 1;
-          } else if (
-            i + 2 < lines.length &&
-            lines[i + 0].startsWith('Value of: ') &&
-            lines[i + 1].startsWith('  Actual: ') &&
-            lines[i + 2].startsWith('Expected: ')
-          ) {
-            addDecoration({
-              line: lineNumber,
-              message: '⬅️ ' + lines[i + 1].trim() + ';  ' + lines[i + 2].trim() + ';',
-              hover: [lines[i], lines[i + 1], lines[i + 2]].join('\n'),
-            });
-            i += 3;
-          } else if (
-            i + 2 < lines.length &&
-            lines[i + 0].startsWith('Actual function call') &&
-            lines[i + 1].startsWith('         Expected:') &&
-            lines[i + 2].startsWith('           Actual:')
-          ) {
-            addDecoration({
-              line: lineNumber,
-              message: '⬅️ ' + lines[i + 1].trim() + ';  ' + lines[i + 2].trim() + ';',
-              hover: [lines[i], lines[i + 1], lines[i + 2]].join('\n'),
-            });
-            i += 3;
-          } else if (
-            i + 4 < lines.length &&
-            lines[i + 0].startsWith('Mock function call') &&
-            lines[i + 1].startsWith('    Function call:') &&
-            lines[i + 2].startsWith('          Returns:') &&
-            lines[i + 3].startsWith('         Expected:') &&
-            lines[i + 4].startsWith('           Actual:')
-          ) {
-            addDecoration({
-              line: lineNumber,
-              message: '⬅️ ' + lines[i + 3].trim() + ';  ' + lines[i + 4].trim() + ';',
-              hover: lines.slice(i, i + 5).join('\n'),
-            });
-            i += 5;
-          } else if (
-            i + 3 < lines.length &&
-            lines[i + 0].startsWith('Mock function call') &&
-            lines[i + 1].startsWith('    Function call:') &&
-            lines[i + 2].startsWith('         Expected:') &&
-            lines[i + 3].startsWith('           Actual:')
-          ) {
-            addDecoration({
-              line: lineNumber,
-              message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';',
-              hover: lines.slice(i, i + 4).join('\n'),
-            });
-            i += 4;
-          } else if (i < lines.length && lines[i].startsWith('Expected equality of these values:')) {
-            let j = i + 1;
-            while (j < lines.length && lines[j].startsWith('  ')) j++;
-            addDecoration({
-              line: lineNumber,
-              message: '⬅️ Expected: equality',
-              hover: lines.slice(i, j).join('\n'),
-            });
-            i = j;
-          } else if (i < lines.length && lines[i].startsWith('The difference between')) {
-            let j = i + 1;
-            while (j < lines.length && lines[j].indexOf(' evaluates to ') != -1) j++;
-            addDecoration({
-              line: lineNumber,
-              message: '⬅️ ' + lines[i].trim(),
-              hover: lines.slice(i, j).join('\n'),
-            });
-            i = j;
+          if (match[3].startsWith('Failure')) {
+            const failureMsg = match[3];
+            if (
+              i + 1 < lines.length &&
+              lines[i + 0].startsWith('Expected: ') &&
+              lines[i + 1].startsWith('  Actual: ')
+            ) {
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + lines[i] + ';  ' + lines[i + 1],
+                hover: [lines[i], lines[i + 1]].join('\n'),
+              });
+              i += 2;
+            } else if (i < lines.length && lines[i].startsWith('Expected: ')) {
+              addDecoration({ file: filePath, line: lineNumber, message: '⬅️ ' + lines[i], hover: lines[i] });
+              i += 1;
+            } else if (
+              i + 2 < lines.length &&
+              lines[i + 0].startsWith('Value of: ') &&
+              lines[i + 1].startsWith('  Actual: ') &&
+              lines[i + 2].startsWith('Expected: ')
+            ) {
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + lines[i + 1].trim() + ';  ' + lines[i + 2].trim() + ';',
+                hover: [lines[i], lines[i + 1], lines[i + 2]].join('\n'),
+              });
+              i += 3;
+            } else if (
+              i + 2 < lines.length &&
+              lines[i + 0].startsWith('Actual function call') &&
+              lines[i + 1].startsWith('         Expected:') &&
+              lines[i + 2].startsWith('           Actual:')
+            ) {
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + lines[i + 1].trim() + ';  ' + lines[i + 2].trim() + ';',
+                hover: [lines[i], lines[i + 1], lines[i + 2]].join('\n'),
+              });
+              i += 3;
+            } else if (
+              i + 4 < lines.length &&
+              lines[i + 0].startsWith('Mock function call') &&
+              lines[i + 1].startsWith('    Function call:') &&
+              lines[i + 2].startsWith('          Returns:') &&
+              lines[i + 3].startsWith('         Expected:') &&
+              lines[i + 4].startsWith('           Actual:')
+            ) {
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + lines[i + 3].trim() + ';  ' + lines[i + 4].trim() + ';',
+                hover: lines.slice(i, i + 5).join('\n'),
+              });
+              i += 5;
+            } else if (
+              i + 3 < lines.length &&
+              lines[i + 0].startsWith('Mock function call') &&
+              lines[i + 1].startsWith('    Function call:') &&
+              lines[i + 2].startsWith('         Expected:') &&
+              lines[i + 3].startsWith('           Actual:')
+            ) {
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';',
+                hover: lines.slice(i, i + 4).join('\n'),
+              });
+              i += 4;
+            } else if (i < lines.length && lines[i].startsWith('Expected equality of these values:')) {
+              let j = i + 1;
+              while (j < lines.length && lines[j].startsWith('  ')) j++;
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ Expected: equality',
+                hover: lines.slice(i, j).join('\n'),
+              });
+              i = j;
+            } else if (i < lines.length && lines[i].startsWith('The difference between')) {
+              let j = i + 1;
+              while (j < lines.length && lines[j].indexOf(' evaluates to ') != -1) j++;
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + lines[i].trim(),
+                hover: lines.slice(i, j).join('\n'),
+              });
+              i = j;
+            } else {
+              addDecoration({ file: filePath, line: lineNumber, message: '⬅️ ' + failureMsg, hover: '' });
+            }
+          } else if (match[3].startsWith('EXPECT_CALL')) {
+            const expectCallMsg = match[3];
+
+            if (
+              i + 1 < lines.length &&
+              lines[i].startsWith('  Expected') &&
+              lines[i + 1].trim().startsWith('Actual:')
+            ) {
+              let j = i + 1;
+              while (j < lines.length && lines[j].startsWith('  ')) j++;
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + lines[i].trim() + ';  ' + lines[i + 1].trim() + ';',
+                hover: [expectCallMsg, ...lines.slice(i, j)].join('\n'),
+              });
+              i = j;
+            } else {
+              addDecoration({ file: filePath, line: lineNumber, message: '⬅️ ' + expectCallMsg });
+            }
           } else {
-            addDecoration({ line: lineNumber, message: '⬅️ ' + m[4], hover: '' });
-          }
-        } else if ((m = lines[i].match(expectRe))) {
-          i += 1;
-          const lineNumber = Number(m[3]) - 1 /*It looks vscode works like this.*/;
-          if (i + 1 < lines.length && lines[i].startsWith('  Expected') && lines[i + 1].trim().startsWith('Actual:')) {
-            let j = i + 1;
-            while (j < lines.length && lines[j].startsWith('  ')) j++;
-            addDecoration({
-              line: lineNumber,
-              message: '⬅️ ' + lines[i].trim() + ';  ' + lines[i + 1].trim() + ';',
-              hover: [m[4], ...lines.slice(i, j)].join('\n'),
-            });
-            i = j;
-          } else {
-            addDecoration({ line: lineNumber, message: '⬅️ ' + m[4] });
+            throw Error('unexpected case');
           }
         } else {
           if (lines[i].startsWith('GMOCK WARNING:')) {
             gMockWarningCount += 1;
             if (ev.state === 'passed' && this._shared.googleTestTreatGMockWarningAs === 'failure') ev.state = 'failed';
           }
+
           i += 1;
         }
       }

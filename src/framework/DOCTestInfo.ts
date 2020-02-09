@@ -198,6 +198,7 @@ export class DOCTestInfo extends AbstractTestInfo {
           msg.Text.forEach((m: string) => testEventBuilder.appendMessage(m, 1));
 
           testEventBuilder.appendDecorator(
+            msg.$.filename,
             Number(msg.$.line) - 1,
             '⬅ ' + msg.Text.map((x: string) => x.trim()).join(' | '),
           );
@@ -228,6 +229,7 @@ export class DOCTestInfo extends AbstractTestInfo {
 
           testEventBuilder.appendMessage('❕Original:  ' + expr.Original.map((x: string) => x.trim()).join('\n'), 1);
 
+          const file = expr.$.filename;
           const line = Number(expr.$.line) - 1;
 
           try {
@@ -236,7 +238,11 @@ export class DOCTestInfo extends AbstractTestInfo {
                 '❗️Expanded:  ' + expr.Expanded.map((x: string) => x.trim()).join('\n'),
                 1,
               );
-              testEventBuilder.appendDecorator(line, '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join(' | '));
+              testEventBuilder.appendDecorator(
+                file,
+                line,
+                '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join(' | '),
+              );
             }
           } catch (e) {
             this._shared.log.exception(e);
@@ -248,7 +254,11 @@ export class DOCTestInfo extends AbstractTestInfo {
                 '  ❗️Exception:  ' + expr.Exception.map((x: string) => x.trim()).join('\n'),
                 1,
               );
-              testEventBuilder.appendDecorator(line, '⬅ ' + expr.Exception.map((x: string) => x.trim()).join(' | '));
+              testEventBuilder.appendDecorator(
+                file,
+                line,
+                '⬅ ' + expr.Exception.map((x: string) => x.trim()).join(' | '),
+              );
             }
           } catch (e) {
             this._shared.log.exception(e);
@@ -261,6 +271,7 @@ export class DOCTestInfo extends AbstractTestInfo {
                 1,
               );
               testEventBuilder.appendDecorator(
+                file,
                 line,
                 '⬅ ' + expr.ExpectedException.map((x: string) => x.trim()).join(' | '),
               );
@@ -276,6 +287,7 @@ export class DOCTestInfo extends AbstractTestInfo {
                 1,
               );
               testEventBuilder.appendDecorator(
+                file,
                 line,
                 '⬅ ' + expr.ExpectedExceptionString.map((x: string) => x.trim()).join(' | '),
               );

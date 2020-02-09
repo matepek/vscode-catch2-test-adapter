@@ -124,6 +124,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 0, 1),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 18,
               message: '⬅️ Actual: false;  Expected: true;',
               hover: 'Value of: 1 == 2\n  Actual: false\nExpected: true',
@@ -155,27 +156,37 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 1, 0),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 23,
               message: '⬅️ Actual: false;  Expected: true;',
               hover: 'Value of: 1 != 1\n  Actual: false\nExpected: true',
             },
             {
+              file: 'gtest.cpp',
               line: 24,
               message: '⬅️ Actual: true;  Expected: false;',
               hover: 'Value of: 1 == 1\n  Actual: true\nExpected: false',
             },
-            { line: 25, message: '⬅️ Expected: equality', hover: 'Expected equality of these values:\n  1\n  2' },
             {
+              file: 'gtest.cpp',
+              line: 25,
+              message: '⬅️ Expected: equality',
+              hover: 'Expected equality of these values:\n  1\n  2',
+            },
+            {
+              file: 'gtest.cpp',
               line: 26,
               message: '⬅️ Expected: (1) != (1), actual: 1 vs 1',
               hover: 'Expected: (1) != (1), actual: 1 vs 1',
             },
             {
+              file: 'gtest.cpp',
               line: 27,
               message: '⬅️ Expected: (1) < (1), actual: 1 vs 1',
               hover: 'Expected: (1) < (1), actual: 1 vs 1',
             },
             {
+              file: 'gtest.cpp',
               line: 28,
               message: '⬅️ Expected: (1) > (1), actual: 1 vs 1',
               hover: 'Expected: (1) > (1), actual: 1 vs 1',
@@ -213,11 +224,13 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 1, 1),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 31,
               message: '⬅️ Actual: false;  Expected: true;',
               hover: 'Value of: false\n  Actual: false\nExpected: true',
             },
             {
+              file: 'gtest.cpp',
               line: 35,
               message:
                 "⬅️ Expected: magic_func() doesn't generate new fatal failures in the current thread.;    Actual: it does.",
@@ -254,6 +267,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 2, 0),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 69,
               message: '⬅️ Expected: to be called once;  Actual: never called - unsatisfied and active;',
               hover:
@@ -278,6 +292,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 2, 1),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 77,
               message: '⬅️ Expected arg #0: is equal to 4;  Actual: 3;',
               hover: [
@@ -330,6 +345,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 3, 0),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 40,
               message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 2',
@@ -354,6 +370,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 3, 1),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 40,
               message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
@@ -378,6 +395,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 3, 2),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 41,
               message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 2',
@@ -402,6 +420,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 3, 3),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 41,
               message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
@@ -434,6 +453,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 4, 0),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 40,
               message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
@@ -458,6 +478,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 4, 1),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 41,
               message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 3',
@@ -490,6 +511,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 5, 0),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 110,
               message: '⬅️ Actual: false;  Expected: true;',
               hover: 'Value of: std::max<A>(A(-5), B(2)) == 5\n  Actual: false\nExpected: true',
@@ -522,6 +544,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 6, 0),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 110,
               message: '⬅️ Actual: false;  Expected: true;',
               hover: 'Value of: std::max<A>(A(-5), B(2)) == 5\n  Actual: false\nExpected: true',
@@ -616,6 +639,7 @@ describe(path.basename(__filename), function() {
           test: adapter.get(0, 3, 0),
           decorations: [
             {
+              file: 'gtest.cpp',
               line: 40,
               message: '⬅️ Expected: equality',
               hover: 'Expected equality of these values:\n  1\n  GetParam()\n    Which is: 2',

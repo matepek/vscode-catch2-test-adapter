@@ -10,13 +10,7 @@ interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-interface Frame {
-  name: string;
-  filename: string;
-  line: number;
-}
-
-export class Catch2Section implements Frame {
+export class Catch2Section {
   public constructor(name: string, filename: string, line: number) {
     this.name = name;
     // some debug adapter on ubuntu starts debug session in shell,
@@ -193,7 +187,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
     'BenchmarkResults',
   ]);
 
-  private _processTags(xml: XmlObject, title: Frame, stack: Catch2Section[], testEventBuilder: TestEventBuilder): void {
+  private _processTags(
+    xml: XmlObject,
+    title: Catch2Section,
+    stack: Catch2Section[],
+    testEventBuilder: TestEventBuilder,
+  ): void {
     {
       Object.getOwnPropertyNames(xml).forEach(n => {
         if (!Catch2TestInfo._expectedPropertyNames.has(n)) {
@@ -220,7 +219,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
       if (xml.Warning) {
         testEventBuilder.appendMessage('⬇ Warning:', 0);
         for (let i = 0; i < xml.Warning.length; i++)
-          testEventBuilder.appendMessageWithDecorator(Number(xml.Warning[i].$.line) - 1, xml.Warning[i], 1);
+          testEventBuilder.appendMessageWithDecorator(
+            xml.Warning[i].$.filename,
+            Number(xml.Warning[i].$.line) - 1,
+            xml.Warning[i],
+            1,
+          );
         testEventBuilder.appendMessage('⬆ Warning', 0);
       }
     } catch (e) {
@@ -231,7 +235,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
       if (xml.Failure) {
         testEventBuilder.appendMessage('⬇ Failure:', 0);
         for (let i = 0; i < xml.Failure.length; i++)
-          testEventBuilder.appendMessageWithDecorator(Number(xml.Failure[i].$.line) - 1, xml.Failure[i]._.trim(), 1);
+          testEventBuilder.appendMessageWithDecorator(
+            xml.Failure[i].$.filename,
+            Number(xml.Failure[i].$.line) - 1,
+            xml.Failure[i]._.trim(),
+            1,
+          );
         testEventBuilder.appendMessage('⬆ Failure', 0);
       }
     } catch (e) {
@@ -299,6 +308,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
           testEventBuilder.appendMessage(message, 1);
           testEventBuilder.appendDecorator(
+            expr.$.filename,
             Number(expr.$.line) - 1,
             '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join(' | '),
             message,
@@ -312,6 +322,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
     try {
       for (let j = 0; xml.Exception && j < xml.Exception.length; ++j) {
         testEventBuilder.appendMessageWithDecorator(
+          xml.Exception[j].$.filename,
           Number(xml.Exception[j].$.line) - 1,
           'Exception were thrown: "' + xml.Exception[j]._.trim() + '"',
           0,
@@ -326,6 +337,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
         testEventBuilder.appendMessage('⬇ FatalErrorCondition:', 0);
         for (let j = 0; j < xml.FatalErrorCondition.length; ++j) {
           testEventBuilder.appendMessageWithDecorator(
+            xml.FatalErrorCondition[j].$.filename,
             Number(xml.FatalErrorCondition[j].$.line) - 1,
             xml.FatalErrorCondition[j]._,
             0,
@@ -341,7 +353,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
   private _processXmlTagSections(
     xml: XmlObject,
-    title: Frame,
+    title: Catch2Section,
     stack: Catch2Section[],
     testEventBuilder: TestEventBuilder,
     parentSection: Catch2Section,
@@ -350,14 +362,16 @@ export class Catch2TestInfo extends AbstractTestInfo {
       const section = xml.Section[j];
 
       try {
-        let currSection = parentSection.children.find(
-          v => v.name === section.$.name && v.filename === section.$.filename && v.line === section.$.line,
-        );
+        const currSection = (() => {
+          const found = parentSection.children.find(
+            v => v.name === section.$.name && v.filename === section.$.filename && v.line === section.$.line,
+          );
+          if (found) return found;
 
-        if (currSection === undefined) {
-          currSection = new Catch2Section(section.$.name, section.$.filename, section.$.line);
+          const currSection = new Catch2Section(section.$.name, section.$.filename, section.$.line);
           parentSection.children.push(currSection);
-        }
+          return currSection;
+        })();
 
         const isLeaf = section.Section === undefined || section.Section.length === 0;
 
@@ -370,13 +384,12 @@ export class Catch2TestInfo extends AbstractTestInfo {
           currSection.failed = true;
         }
 
-        const msg =
-          '   '.repeat(stack.length) +
-          '⮑ ' +
-          (isLeaf ? (currSection.failed ? ' ❌ ' : ' ✅ ') : '') +
-          `${section.$.name}`;
+        // TODO: ${currSection.filename ? currSection.filename : 'line'}
+        const location = `line:${currSection.line}`;
 
-        testEventBuilder.appendMessage(msg + ` (line:${section.$.line})`, null);
+        const msg = `⮑ ${isLeaf ? (currSection.failed ? ' ❌ ' : ' ✅ ') : ''}${currSection.name} (${location})`;
+
+        testEventBuilder.appendMessage(msg, stack.length, 3);
 
         const currStack = stack.concat(currSection);
 

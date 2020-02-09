@@ -6,7 +6,16 @@ import { inspect } from 'util';
 import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, waitFor, settings, isWin, ChildProcessStub, FileSystemWatcherStub, expectedLoggedErrorLine } from './Common';
+import {
+  TestAdapter,
+  Imitation,
+  waitFor,
+  settings,
+  isWin,
+  ChildProcessStub,
+  FileSystemWatcherStub,
+  expectedLoggedErrorLine,
+} from './Common';
 import { SpawnOptions } from '../src/FSWrapper';
 import { ChildProcess } from 'child_process';
 
@@ -183,7 +192,12 @@ describe(path.basename(__filename), function() {
         state: 'failed',
         test: s1t2,
         decorations: [
-          { line: 14, message: '⬅ false', hover: '❕Original:  std::false_type::value\n❗️Expanded:  false' },
+          {
+            file: '../vscode-catch2-test-adapter/src/test/suite1.cpp',
+            line: 14,
+            message: '⬅ false',
+            hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
+          },
         ],
         description: '(0ms)',
         tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',

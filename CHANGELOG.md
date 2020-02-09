@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- gutter location if the assertion comes from a different file (ex.: `#include`).
 - Text Explorer UI came with a new feature: `"testExplorer.hideWhenEmpty"`. The value is false by default.
   Since this extension activation is depends on the activation of **Test Explorer** it is "not possible" to activate the extension.
   For a workaround the activation event is changed to [vscode's startup](https://code.visualstudio.com/api/references/activation-events#Start-up).
