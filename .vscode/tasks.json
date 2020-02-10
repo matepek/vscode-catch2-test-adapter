@@ -7,7 +7,9 @@
       "label": "createTmpWorkingFolder",
       "type": "shell",
       "command": "mkdir -p out/tmp/workspaceFolder",
-      "windows": { "command": "mkdir out\\tmp\\workspaceFolder" }
+      "windows": {
+        "command": "mkdir out\\tmp\\workspaceFolder"
+      }
     },
     {
       "type": "npm",
@@ -24,7 +26,25 @@
       "runOptions": {
         "runOn": "folderOpen"
       },
-      "dependsOn": ["createTmpWorkingFolder"]
+      "dependsOn": [
+        "createTmpWorkingFolder"
+      ]
+    },
+    {
+      "type": "npm",
+      "script": "webpack",
+      "problemMatcher": "$tsc-watch",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "never"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "dependsOn": [
+        "createTmpWorkingFolder"
+      ]
     }
   ]
 }

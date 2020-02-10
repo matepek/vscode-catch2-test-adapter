@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.5]
+
+### Fixed
+
+- gutter location if the assertion comes from a different file (ex.: `#include`).
+
 ## [2.8.4] - 2020-02-02
 
 ### Fixed

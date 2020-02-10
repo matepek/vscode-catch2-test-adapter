@@ -50,12 +50,12 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
-    "@sentry/node": "^5.11.2",
+    "@sentry/node": "^5.12.3",
     "debounce-collect": "^1.0.2",
     "entities": "^1.1.2",
     "gaze": "^1.1.3",
     "tslib": "^1.10.0",
-    "vscode-test-adapter-api": "^1.7.0",
+    "vscode-test-adapter-api": "^1.8.0",
     "vscode-test-adapter-util": "^0.7.0",
     "webpack-bundle-analyzer": "^3.6.0",
     "webpack-cli": "^3.3.10",
@@ -85,7 +85,7 @@
     "sinon": "^7.5.0",
     "ts-loader": "^6.2.1",
     "typescript": "^3.7.5",
-    "vsce": "^1.72.0",
+    "vsce": "^1.73.0",
     "vscode": "^1.1.36",
     "vscode-test": "^1.3.0",
     "webpack": "^4.41.5"
@@ -94,7 +94,15 @@
     "vscode": "^1.23.0"
   },
   "activationEvents": [
-    "onView:test-explorer"
+    "onView:test-explorer",
+    "onCommand:test-explorer.reload",
+    "onCommand:test-explorer.run-all",
+    "onCommand:test-explorer.run-file",
+    "onCommand:test-explorer.run-test-at-cursor",
+    "onCommand:test-explorer.rerun",
+    "onCommand:test-explorer.debug-test-at-cursor",
+    "onCommand:test-explorer.redebug",
+    "onCommand:test-explorer.cancel"
   ],
   "contributes": {
     "configuration": {

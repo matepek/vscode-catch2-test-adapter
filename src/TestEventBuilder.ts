@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { TestEvent, TestInfo, TestDecoration } from 'vscode-test-adapter-api';
 import { reindentStr, reindentLines, milisecToStr } from './Util';
 
@@ -37,18 +38,24 @@ export class TestEventBuilder {
     this._tooltip.push(str);
   }
 
-  public appendMessage(str: string | undefined, reindent: number | null): void {
+  public appendMessage(str: string | undefined, reindent: number | null, indentWidth?: number): void {
     if (reindent !== null) {
-      this._message.push(...reindentStr(reindent, str));
+      this._message.push(...reindentStr(reindent, str, indentWidth));
     } else if (str) {
       this._message.push(str);
     }
   }
 
-  public appendDecorator(line: number, msg: string | string[] | undefined, hover?: string): void {
+  public appendDecorator(
+    file: string | undefined,
+    line: number,
+    msg: string | string[] | undefined,
+    hover?: string,
+  ): void {
     const reindented = typeof msg === 'string' ? reindentStr(0, msg) : Array.isArray(msg) ? reindentLines(0, msg) : [];
-
+    const normalizedFile = file ? path.normalize(file) : undefined;
     this._decorations.push({
+      file: normalizedFile,
       line,
       message:
         '⬅ ' + reindented.length
@@ -61,9 +68,14 @@ export class TestEventBuilder {
     });
   }
 
-  public appendMessageWithDecorator(line: number, str: string | undefined, reindent: number | null): void {
+  public appendMessageWithDecorator(
+    file: string | undefined,
+    line: number,
+    str: string | undefined,
+    reindent: number | null,
+  ): void {
     this.appendMessage(str, reindent);
-    this.appendDecorator(line, str);
+    this.appendDecorator(file, line, str);
   }
 
   public build(): TestEvent {
