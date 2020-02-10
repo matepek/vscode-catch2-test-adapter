@@ -537,7 +537,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
         pick.sectionStack.forEach(s => {
           argsArray.push('-c');
-          argsArray.push(s.name);
+          argsArray.push(s.escapedName);
         });
       }
     }
