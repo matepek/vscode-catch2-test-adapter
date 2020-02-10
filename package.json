@@ -1,7 +1,7 @@
 {
   "name": "vscode-catch2-test-adapter",
-  "displayName": "Catch2, Google Test and doctest Explorer",
-  "description": "Run your Catch2, Google Test and doctest tests in the Sidebar of Visual Studio Code",
+  "displayName": "Catch2, Google Test and DOCtest Explorer",
+  "description": "Run Catch2, GoogleTest and DOCtest tests from VSCode",
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
