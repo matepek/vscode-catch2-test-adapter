@@ -40,7 +40,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     }
 
     if (i >= lines.length) {
-      this._shared.log.error('Wrong test list output format #1', lines);
+      this._shared.log.error('Wrong test list output format #1', testListOutput);
       throw Error('Wrong test list output format');
     }
 
@@ -48,10 +48,10 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       const m = lines[i].match(endRe);
       if (m !== null) break;
 
-      if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format', lines);
+      if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format', i, lines);
 
       if (lines[i].startsWith('    ')) {
-        this._shared.log.warn('Probably too long test name', lines);
+        this._shared.log.warn('Probably too long test name', i, lines);
         this.children = [];
         const test = this.addChild(
           new Catch2TestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
@@ -157,7 +157,12 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         new Catch2TestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
       );
       this._shared.sendTestEventEmitter.fire([
-        { type: 'test', test: test, state: 'errored', message: catch2TestListOutput.stderr },
+        {
+          type: 'test',
+          test: test,
+          state: 'errored',
+          message: catch2TestListOutput.stderr,
+        },
       ]);
       return Promise.resolve();
     }

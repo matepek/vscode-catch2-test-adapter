@@ -108,7 +108,12 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
             ),
           );
           this._shared.sendTestEventEmitter.fire([
-            { type: 'test', test: test, state: 'errored', message: docTestListOutput.stderr },
+            {
+              type: 'test',
+              test: test,
+              state: 'errored',
+              message: 'spawn result:\n' + JSON.stringify(docTestListOutput),
+            },
           ]);
           return Promise.resolve();
         }

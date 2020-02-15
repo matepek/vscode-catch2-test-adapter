@@ -213,7 +213,12 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           );
           super.addChild(test);
           this._shared.sendTestEventEmitter.fire([
-            { type: 'test', test: test, state: 'errored', message: googleTestListOutput.stderr },
+            {
+              type: 'test',
+              test: test,
+              state: 'errored',
+              message: 'spawn result:\n' + JSON.stringify(googleTestListOutput),
+            },
           ]);
         } else {
           const hasXmlFile = await promisify(fs.exists)(cacheFile);
