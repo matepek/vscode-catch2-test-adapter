@@ -283,7 +283,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     const testBeginRe = /^\[ RUN      \] ((.+)\.(.+))$/m;
 
     return new Promise<ProcessResult>(resolve => {
+      const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
+        chunks.push(chunk);
         data.buffer = data.buffer + chunk;
         let invariant = 99999;
         do {
@@ -303,7 +305,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
                 this._shared.testStatesEmitter.fire(group.getRunningEvent());
               }
             } else {
-              this._shared.log.error('should have found group', groupName, this);
+              this._shared.log.error('should have found group', groupName, chunks, this);
             }
 
             data.beforeFirstTestCase = false;
@@ -365,7 +367,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           }
         } while (data.buffer.length > 0 && --invariant > 0);
         if (invariant == 0) {
-          this._shared.log.error('invariant==0', this, runInfo, data);
+          this._shared.log.error('invariant==0', this, runInfo, data, chunks);
           resolve({ error: new Error('Possible infinite loop of this extension') });
           runInfo.killProcess();
         }

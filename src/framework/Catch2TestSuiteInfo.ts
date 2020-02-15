@@ -215,7 +215,9 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
 
     return new Promise<ProcessResult>(resolve => {
+      const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
+        chunks.push(chunk);
         data.buffer = data.buffer + chunk;
         let invariant = 99999;
         do {
@@ -276,7 +278,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
                 data.processedTestCases.push(data.currentChild);
                 this._shared.testStatesEmitter.fire(ev);
               } catch (e) {
-                this._shared.log.error('parsing and processing test', e, data, testCaseXml);
+                this._shared.log.error('parsing and processing test', e, data, chunks, testCaseXml);
                 this._shared.testStatesEmitter.fire({
                   type: 'test',
                   test: data.currentChild,
@@ -301,7 +303,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
           }
         } while (data.buffer.length > 0 && --invariant > 0);
         if (invariant == 0) {
-          this._shared.log.error('invariant==0', this, runInfo, data);
+          this._shared.log.error('invariant==0', this, runInfo, data, chunks);
           resolve({ error: new Error('Possible infinite loop of this extension') });
           runInfo.killProcess();
         }
