@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 import * as c2fs from './FSWrapper';
-import { AbstractTestSuiteInfo, AbstractTestSuiteExecInfo } from './AbstractTestSuiteInfo';
+import { TestSuiteExecutionInfo } from './TestSuiteExecutionInfo';
+import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { Catch2TestSuiteInfo } from './framework/Catch2TestSuiteInfo';
 import { GoogleTestSuiteInfo } from './framework/GoogleTestSuiteInfo';
 import { DOCTestSuiteInfo } from './framework/DOCTestSuiteInfo';
@@ -128,10 +129,11 @@ export class TestSuiteInfoFactory {
               this._shared,
               this._label,
               this._description,
-              new AbstractTestSuiteExecInfo(
+              new TestSuiteExecutionInfo(
                 this._execPath,
                 this._execOptions,
                 this._gtest.additionalRunArguments ? this._gtest.additionalRunArguments : [],
+                this._gtest.ignoreTestEnumerationStdErr === true,
               ),
               GoogleTestVersion.Get(this._shared),
             );
@@ -140,10 +142,11 @@ export class TestSuiteInfoFactory {
               this._shared,
               this._label,
               this._description,
-              new AbstractTestSuiteExecInfo(
+              new TestSuiteExecutionInfo(
                 this._execPath,
                 this._execOptions,
                 this._catch2.additionalRunArguments ? this._catch2.additionalRunArguments : [],
+                this._catch2.ignoreTestEnumerationStdErr === true,
               ),
               framework.version,
             );
@@ -152,10 +155,11 @@ export class TestSuiteInfoFactory {
               this._shared,
               this._label,
               this._description,
-              new AbstractTestSuiteExecInfo(
+              new TestSuiteExecutionInfo(
                 this._execPath,
                 this._execOptions,
                 this._doctest.additionalRunArguments ? this._doctest.additionalRunArguments : [],
+                this._doctest.ignoreTestEnumerationStdErr === true,
               ),
               framework.version,
             );

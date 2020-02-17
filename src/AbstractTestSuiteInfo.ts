@@ -3,20 +3,13 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import * as c2fs from './FSWrapper';
+import { TestSuiteExecutionInfo } from './TestSuiteExecutionInfo';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { promisify } from 'util';
-
-export class AbstractTestSuiteExecInfo {
-  public constructor(
-    public readonly path: string,
-    public readonly options: c2fs.SpawnOptions,
-    public readonly additionalRunArguments: string[],
-  ) {}
-}
 
 export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   private static _reportedFrameworks: string[] = [];
@@ -29,7 +22,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    public readonly execInfo: AbstractTestSuiteExecInfo,
+    public readonly execInfo: TestSuiteExecutionInfo,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<[number, number, number] | undefined>,
   ) {

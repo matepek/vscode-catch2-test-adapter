@@ -13,6 +13,7 @@ import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
 export interface TestExecutableInfoFrameworkSpecific {
   helpRegex?: string;
   additionalRunArguments?: string[];
+  ignoreTestEnumerationStdErr?: boolean;
 }
 
 export class TestExecutableInfo implements vscode.Disposable {

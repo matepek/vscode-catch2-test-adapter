@@ -176,10 +176,11 @@ Exmaple: `${relPath[:-2]}`: 'a/b/c/d' -> 'a/b'
 
 One can fine-tune framework related behaviour.
 
-| Property                 | Description                                                                                                                                                         |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `helpRegex`              | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. |
-| `additionalRunArguments` | Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`.               |
+| Property                      | Description                                                                                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `helpRegex`                   | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`.             |
+| `additionalRunArguments`      | Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`.                           |
+| `ignoreTestEnumerationStdErr` | If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. |
 
 If the regex is too general it will mach all the executables❗️
 One should avoid that❗️

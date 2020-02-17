@@ -3,9 +3,10 @@ import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
-import { Catch2TestInfo } from './Catch2TestInfo';
 import * as c2fs from '../FSWrapper';
-import { AbstractTestSuiteInfo, AbstractTestSuiteExecInfo } from '../AbstractTestSuiteInfo';
+import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
+import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
+import { Catch2TestInfo } from './Catch2TestInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 
@@ -20,7 +21,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execInfo: AbstractTestSuiteExecInfo,
+    execInfo: TestSuiteExecutionInfo,
     catch2Version: [number, number, number] | undefined,
   ) {
     super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(catch2Version));
@@ -151,7 +152,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       30000,
     );
 
-    if (catch2TestListOutput.stderr) {
+    if (catch2TestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
       const test = this.addChild(
         new Catch2TestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
@@ -161,7 +162,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
           type: 'test',
           test: test,
           state: 'errored',
-          message: catch2TestListOutput.stderr,
+          message: `❗️Unexpected stderr!\nspawn\nstout:\n${catch2TestListOutput.stdout}\nstderr:\n${catch2TestListOutput.stderr}`,
         },
       ]);
       return Promise.resolve();
