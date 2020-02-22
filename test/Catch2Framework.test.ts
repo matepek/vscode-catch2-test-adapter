@@ -271,12 +271,12 @@ describe(path.basename(__filename), function() {
       return adapter!.testStatesEvents.length == 6;
     });
 
-    assert.deepStrictEqual(adapter.testStatesEvents[3], {
-      message: testListErrOutput.join(EOL),
-      state: 'errored',
-      test: suite1.children[0],
-      type: 'test',
-    });
+    assert.strictEqual('test', adapter.testStatesEvents[3].type);
+    if (adapter.testStatesEvents[3].type === 'test') {
+      assert.strictEqual('errored', adapter.testStatesEvents[3].state);
+      assert.strictEqual(suite1.children[0], adapter.testStatesEvents[3].test);
+      assert.ok(adapter.testStatesEvents[3].message?.indexOf(testListErrOutput.join(EOL)));
+    }
   });
 
   specify('custom1 test case list', async function() {

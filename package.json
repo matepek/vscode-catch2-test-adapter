@@ -1,7 +1,7 @@
 {
   "name": "vscode-catch2-test-adapter",
-  "displayName": "Catch2, Google Test and doctest Explorer",
-  "description": "Run your Catch2, Google Test and doctest tests in the Sidebar of Visual Studio Code",
+  "displayName": "Catch2, Google Test and DOCtest Explorer",
+  "description": "Run Catch2, GoogleTest and DOCtest tests from VSCode",
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
@@ -50,24 +50,24 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
-    "@sentry/node": "^5.12.3",
+    "@sentry/node": "^5.12.4",
     "debounce-collect": "^1.0.2",
     "entities": "^1.1.2",
     "gaze": "^1.1.3",
-    "tslib": "^1.10.0",
+    "tslib": "^1.11.0",
     "vscode-test-adapter-api": "^1.8.0",
     "vscode-test-adapter-util": "^0.7.0",
     "webpack-bundle-analyzer": "^3.6.0",
-    "webpack-cli": "^3.3.10",
+    "webpack-cli": "^3.3.11",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.8",
+    "@types/chai": "^4.2.9",
     "@types/deep-equal": "^1.0.1",
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.12.26",
+    "@types/node": "^12.12.28",
     "@types/request-promise": "4.1.43",
     "@types/sinon": "^7.5.1",
     "@types/xml2js": "^0.4.5",
@@ -84,11 +84,11 @@
     "request-promise": "4.2.4",
     "sinon": "^7.5.0",
     "ts-loader": "^6.2.1",
-    "typescript": "^3.7.5",
+    "typescript": "^3.8.2",
     "vsce": "^1.73.0",
     "vscode": "^1.1.36",
     "vscode-test": "^1.3.0",
-    "webpack": "^4.41.5"
+    "webpack": "^4.41.6"
   },
   "engines": {
     "vscode": "^1.23.0"
@@ -252,6 +252,10 @@
                               "type": "string",
                               "minLength": 1
                             }
+                          },
+                          "ignoreTestEnumerationStdErr": {
+                            "description": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`.",
+                            "type": "boolean"
                           }
                         }
                       },
@@ -272,6 +276,10 @@
                               "type": "string",
                               "minLength": 1
                             }
+                          },
+                          "ignoreTestEnumerationStdErr": {
+                            "description": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`.",
+                            "type": "boolean"
                           }
                         }
                       },
@@ -292,6 +300,10 @@
                               "type": "string",
                               "minLength": 1
                             }
+                          },
+                          "ignoreTestEnumerationStdErr": {
+                            "description": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`.",
+                            "type": "boolean"
                           }
                         }
                       }

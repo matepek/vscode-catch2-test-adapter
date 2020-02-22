@@ -150,12 +150,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       {
         let userId = config.get<string>('userId');
         if (!userId) {
-          userId = (process.env['USER'] || process.env['USERNAME'] || 'user') + process.env['USERDOMAIN'];
-          userId += performance.now().toString();
-          userId += process.pid.toString();
-          userId += Date.now().toString();
+          let newUserId = (process.env['USER'] || process.env['USERNAME'] || 'user') + process.env['USERDOMAIN'];
+          newUserId += performance.now().toString();
+          newUserId += process.pid.toString();
+          newUserId += Date.now().toString();
 
-          userId = hashString(userId);
+          userId = hashString(newUserId);
 
           config.update('userId', userId, true);
         }
@@ -810,12 +810,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         const r: TestExecutableInfoFrameworkSpecific = {};
         if (typeof obj === 'object') {
           if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
+
           if (
             Array.isArray(obj.additionalRunArguments) &&
             // eslint-disable-next-line
             (obj.additionalRunArguments as any[]).every(x => typeof x === 'string')
           )
             r.additionalRunArguments = obj.additionalRunArguments;
+
+          if (typeof obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
         }
         return r;
       };

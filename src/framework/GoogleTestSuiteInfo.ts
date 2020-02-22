@@ -2,13 +2,14 @@ import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
-import { GoogleTestInfo } from './GoogleTestInfo';
 import * as c2fs from '../FSWrapper';
 import { AbstractTestInfo } from '../AbstractTestInfo';
-import { AbstractTestSuiteInfo, AbstractTestSuiteExecInfo } from '../AbstractTestSuiteInfo';
-import { Parser } from 'xml2js';
-import { SharedVariables } from '../SharedVariables';
+import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
 import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
+import { GoogleTestInfo } from './GoogleTestInfo';
+import { Parser } from 'xml2js';
+import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
+import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 
 class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
@@ -30,7 +31,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execInfo: AbstractTestSuiteExecInfo,
+    execInfo: TestSuiteExecutionInfo,
     version: Promise<[number, number, number] | undefined>,
   ) {
     super(shared, label, desciption, execInfo, 'GoogleTest', version);
@@ -199,7 +200,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         this.children = [];
         this.label = this.origLabel;
 
-        if (googleTestListOutput.stderr) {
+        if (googleTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
           this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
           const test = new GoogleTestInfo(
             this._shared,
@@ -213,7 +214,12 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           );
           super.addChild(test);
           this._shared.sendTestEventEmitter.fire([
-            { type: 'test', test: test, state: 'errored', message: googleTestListOutput.stderr },
+            {
+              type: 'test',
+              test: test,
+              state: 'errored',
+              message: `❗️Unexpected stderr!\nspawn\nstout:\n${googleTestListOutput.stdout}\nstderr:\n${googleTestListOutput.stderr}`,
+            },
           ]);
         } else {
           const hasXmlFile = await promisify(fs.exists)(cacheFile);
@@ -283,7 +289,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     const testBeginRe = /^\[ RUN      \] ((.+)\.(.+))$/m;
 
     return new Promise<ProcessResult>(resolve => {
+      const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
+        chunks.push(chunk);
         data.buffer = data.buffer + chunk;
         let invariant = 99999;
         do {
@@ -303,7 +311,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
                 this._shared.testStatesEmitter.fire(group.getRunningEvent());
               }
             } else {
-              this._shared.log.error('should have found group', groupName, this);
+              this._shared.log.error('should have found group', groupName, chunks, this);
             }
 
             data.beforeFirstTestCase = false;
@@ -365,7 +373,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           }
         } while (data.buffer.length > 0 && --invariant > 0);
         if (invariant == 0) {
-          this._shared.log.error('invariant==0', this, runInfo, data);
+          this._shared.log.error('invariant==0', this, runInfo, data, chunks);
           resolve({ error: new Error('Possible infinite loop of this extension') });
           runInfo.killProcess();
         }

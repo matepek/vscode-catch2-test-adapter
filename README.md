@@ -1,4 +1,4 @@
-# **Catch2**, **Google Test** and **doctest** Explorer for VSCode
+# **Catch2**, **Google Test** and **DOCtest** Explorer for VSCode
 
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 [![GitHub issues](https://img.shields.io/github/issues/matepek/vscode-catch2-test-adapter?color=green&style=for-the-badge)](https://github.com/matepek/vscode-catch2-test-adapter/issues)
@@ -11,7 +11,7 @@
 
 This extension allows you to run your [Catch2](https://github.com/catchorg/Catch2),
 [Google Test](https://github.com/google/googletest)
-and [doctest](https://github.com/onqtam/doctest) (experimental)
+and [DOCtest](https://github.com/onqtam/doctest) (experimental)
 tests using the [Test Explorer for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
 
 ## Features and Screenshots
@@ -176,10 +176,11 @@ Exmaple: `${relPath[:-2]}`: 'a/b/c/d' -> 'a/b'
 
 One can fine-tune framework related behaviour.
 
-| Property                 | Description                                                                                                                                                         |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `helpRegex`              | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. |
-| `additionalRunArguments` | Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`.               |
+| Property                      | Description                                                                                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `helpRegex`                   | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`.             |
+| `additionalRunArguments`      | Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`.                           |
+| `ignoreTestEnumerationStdErr` | If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. |
 
 If the regex is too general it will mach all the executables❗️
 One should avoid that❗️
@@ -295,6 +296,18 @@ With enabling you support my work. 🙏
 
 [The Unlicense](https://choosealicense.com/licenses/unlicense/)
 
+## Support
+
+For support open an issue with detailed description and please attach logs.
+
+### Getting logs
+
+Set `catch2TestExplorer.logpanel: true` and check the VSCode oputput window. Change the window to "Test Explorer: ...". The log should be there.
+
+Or one can set the `catch2TestExplorer.logfile: "<full path>"`. In this case a logfile will be created to the given path. Close VSCode to flush the log before you attach to an issue.
+
+**Don't forget** to disable after it by un-setting. Unnecessary logging can have a performance impact on VSCode.
+
 ## Known issues
 
 - (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
@@ -302,7 +315,7 @@ With enabling you support my work. 🙏
   Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300` and it has to be defined before every `#include "catch.hpp"` lines.
 - (2019-12-27) doctest 2.3.6 is support file and line informations. Previous version will recognise the tests but navigation will be disabled.
 
-For solving issues use: `catch2TestExplorer.logpanel: true` and check the output window.
+For solving issues use: check [support](#Support).
 
 ## F.A.Q
 

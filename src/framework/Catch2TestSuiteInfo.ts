@@ -3,9 +3,10 @@ import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
-import { Catch2TestInfo } from './Catch2TestInfo';
 import * as c2fs from '../FSWrapper';
-import { AbstractTestSuiteInfo, AbstractTestSuiteExecInfo } from '../AbstractTestSuiteInfo';
+import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
+import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
+import { Catch2TestInfo } from './Catch2TestInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 
@@ -20,7 +21,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execInfo: AbstractTestSuiteExecInfo,
+    execInfo: TestSuiteExecutionInfo,
     catch2Version: [number, number, number] | undefined,
   ) {
     super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(catch2Version));
@@ -40,7 +41,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     }
 
     if (i >= lines.length) {
-      this._shared.log.error('Wrong test list output format #1', lines);
+      this._shared.log.error('Wrong test list output format #1', testListOutput);
       throw Error('Wrong test list output format');
     }
 
@@ -48,10 +49,10 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       const m = lines[i].match(endRe);
       if (m !== null) break;
 
-      if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format', lines);
+      if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format', i, lines);
 
       if (lines[i].startsWith('    ')) {
-        this._shared.log.warn('Probably too long test name', lines);
+        this._shared.log.warn('Probably too long test name', i, lines);
         this.children = [];
         const test = this.addChild(
           new Catch2TestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
@@ -151,13 +152,18 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       30000,
     );
 
-    if (catch2TestListOutput.stderr) {
+    if (catch2TestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
       const test = this.addChild(
         new Catch2TestInfo(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
       );
       this._shared.sendTestEventEmitter.fire([
-        { type: 'test', test: test, state: 'errored', message: catch2TestListOutput.stderr },
+        {
+          type: 'test',
+          test: test,
+          state: 'errored',
+          message: `❗️Unexpected stderr!\nspawn\nstout:\n${catch2TestListOutput.stdout}\nstderr:\n${catch2TestListOutput.stderr}`,
+        },
       ]);
       return Promise.resolve();
     }
@@ -215,7 +221,9 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
 
     return new Promise<ProcessResult>(resolve => {
+      const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
+        chunks.push(chunk);
         data.buffer = data.buffer + chunk;
         let invariant = 99999;
         do {
@@ -276,7 +284,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
                 data.processedTestCases.push(data.currentChild);
                 this._shared.testStatesEmitter.fire(ev);
               } catch (e) {
-                this._shared.log.error('parsing and processing test', e, data, testCaseXml);
+                this._shared.log.error('parsing and processing test', e, data, chunks, testCaseXml);
                 this._shared.testStatesEmitter.fire({
                   type: 'test',
                   test: data.currentChild,
@@ -301,7 +309,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
           }
         } while (data.buffer.length > 0 && --invariant > 0);
         if (invariant == 0) {
-          this._shared.log.error('invariant==0', this, runInfo, data);
+          this._shared.log.error('invariant==0', this, runInfo, data, chunks);
           resolve({ error: new Error('Possible infinite loop of this extension') });
           runInfo.killProcess();
         }

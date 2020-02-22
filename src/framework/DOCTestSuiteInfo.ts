@@ -3,11 +3,12 @@ import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
-import { DOCTestInfo } from './DOCTestInfo';
 import * as c2fs from '../FSWrapper';
-import { AbstractTestSuiteInfo, AbstractTestSuiteExecInfo } from '../AbstractTestSuiteInfo';
+import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
+import { DOCTestInfo } from './DOCTestInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
+import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -20,7 +21,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execInfo: AbstractTestSuiteExecInfo,
+    execInfo: TestSuiteExecutionInfo,
     docVersion: [number, number, number] | undefined,
   ) {
     super(shared, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
@@ -94,7 +95,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
         30000,
       )
       .then(docTestListOutput => {
-        if (docTestListOutput.stderr) {
+        if (docTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
           this._shared.log.warn('reloadChildren -> docTestListOutput.stderr', docTestListOutput);
           const test = this.addChild(
             new DOCTestInfo(
@@ -108,7 +109,12 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
             ),
           );
           this._shared.sendTestEventEmitter.fire([
-            { type: 'test', test: test, state: 'errored', message: docTestListOutput.stderr },
+            {
+              type: 'test',
+              test: test,
+              state: 'errored',
+              message: `❗️Unexpected stderr!\nspawn\nstout:\n${docTestListOutput.stdout}\nstderr:\n${docTestListOutput.stderr}`,
+            },
           ]);
           return Promise.resolve();
         }
@@ -161,7 +167,9 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     const testCaseTagRe = /<TestCase(\s+[^\n\r]+)[^\/](\/)?>/;
 
     return new Promise<ProcessResult>(resolve => {
+      const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
+        chunks.push(chunk);
         data.buffer = data.buffer + chunk;
         let invariant = 99999;
         do {
@@ -256,7 +264,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
                 data.processedTestCases.push(data.currentChild);
                 this._shared.testStatesEmitter.fire(ev);
               } catch (e) {
-                this._shared.log.error('parsing and processing test', e, data, testCaseXml);
+                this._shared.log.error('parsing and processing test', e, data, chunks, testCaseXml);
                 this._shared.testStatesEmitter.fire({
                   type: 'test',
                   test: data.currentChild,
@@ -281,7 +289,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
           }
         } while (data.buffer.length > 0 && --invariant > 0);
         if (invariant == 0) {
-          this._shared.log.error('invariant==0', this, runInfo, data);
+          this._shared.log.error('invariant==0', this, runInfo, data, chunks);
           resolve({ error: new Error('Possible infinite loop of this extension') });
           runInfo.killProcess();
         }
