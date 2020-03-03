@@ -237,13 +237,18 @@ export class Catch2TestInfo extends AbstractTestInfo {
     try {
       if (xml.Failure) {
         testEventBuilder.appendMessage('⬇ Failure:', 0);
-        for (let i = 0; i < xml.Failure.length; i++)
+        for (let i = 0; i < xml.Failure.length; i++) {
+          if (typeof xml.Failure[i]._ === 'string') this._shared.log.warn('No _ under failure', xml.Failure[i]);
+
+          const msg = typeof xml.Failure[i]._ === 'string' ? xml.Failure[i]._.trim() : xml.Failure[i].toString();
+
           testEventBuilder.appendMessageWithDecorator(
             xml.Failure[i].$.filename,
             Number(xml.Failure[i].$.line) - 1,
-            xml.Failure[i]._.trim(),
+            msg,
             1,
           );
+        }
         testEventBuilder.appendMessage('⬆ Failure', 0);
       }
     } catch (e) {
@@ -286,10 +291,14 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     try {
       for (let j = 0; xml.Exception && j < xml.Exception.length; ++j) {
+        if (typeof xml.Exception[j]._ === 'string') this._shared.log.warn('No _ under exception', xml.Exception[j]);
+
+        const msg = typeof xml.Exception[j]._ === 'string' ? xml.Exception[j]._.trim() : xml.Exception[j].toString();
+
         testEventBuilder.appendMessageWithDecorator(
           xml.Exception[j].$.filename,
           Number(xml.Exception[j].$.line) - 1,
-          'Exception were thrown: "' + xml.Exception[j]._.trim() + '"',
+          `Exception were thrown: "${msg}"`,
           0,
         );
       }
