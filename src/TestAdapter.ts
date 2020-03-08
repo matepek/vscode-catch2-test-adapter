@@ -796,7 +796,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       {
         if (typeof obj.pattern == 'string') pattern = obj.pattern;
         else if (typeof obj.path == 'string') pattern = obj.path;
-        else throw Error('Error: pattern property is required.');
+        else {
+          this._log.debug('pattern property is required', obj);
+          throw Error('Error: pattern property is required.');
+        }
       }
 
       const cwd: string | undefined = typeof obj.cwd === 'string' ? obj.cwd : undefined;
