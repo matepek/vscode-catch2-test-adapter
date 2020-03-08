@@ -99,12 +99,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           this._log.info('Sentry consent', value);
 
           if (value === options[0]) {
-            config.update('logSentry', 'enable', true);
+            config.update('logSentry', 'enable', vscode.ConfigurationTarget.Global);
           } else if (value === options[1]) {
-            config.update('logSentry', 'enable', true);
-            config.update('logSentry', 'disable_1', false);
+            config.update('logSentry', 'enable', vscode.ConfigurationTarget.Global);
+            config.update('logSentry', 'disable_1', vscode.ConfigurationTarget.WorkspaceFolder);
           } else if (value === options[2]) {
-            config.update('logSentry', 'disable_1', true);
+            config.update('logSentry', 'disable_1', vscode.ConfigurationTarget.Global);
           }
         });
     }
@@ -157,7 +157,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
           userId = hashString(newUserId);
 
-          config.update('userId', userId, true);
+          config.update('userId', userId, vscode.ConfigurationTarget.Global);
         }
 
         this._log.info('userId', userId);
@@ -714,7 +714,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   private _getLogSentry(config: vscode.WorkspaceConfiguration): 'enable' | 'disable' | 'question' {
-    return config.get<'enable' | 'disable' | 'question'>('logSentry', 'disable');
+    return config.get<'enable' | 'disable' | 'question'>('logSentry', 'question');
   }
 
   private _getDebugBreakOnFailure(config: vscode.WorkspaceConfiguration): boolean {
