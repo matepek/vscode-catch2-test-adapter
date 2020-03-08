@@ -96,7 +96,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           ...options,
         )
         .then((value: string | undefined) => {
-          this._log.info('Sentry consent: ' + value);
+          this._log.info('Sentry consent', value);
 
           if (value === options[0]) {
             config.update('logSentry', 'enable', true);
@@ -122,7 +122,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const enabled = this._getLogSentry(config) === 'enable' && process.env['C2_DEBUG'] === undefined;
 
-      this._log.info('sentry.io is: ', enabled);
+      this._log.info('sentry.io is', enabled);
 
       const release = extensionInfo.publisher + '/' + extensionInfo.name + '@' + extensionInfo.version;
 
@@ -163,12 +163,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         this._log.info('userId', userId);
 
         Sentry.setUser({ id: userId });
-        Sentry.setTag('workspaceFolder', hashString(this.workspaceFolder.uri.fsPath));
+        //Sentry.setTag('workspaceFolder', hashString(this.workspaceFolder.uri.fsPath));
       }
 
       Sentry.setContext('config', config);
 
-      Sentry.captureMessage('Extension was activated', Sentry.Severity.Log);
+      //'Framework' message includes this old message too: Sentry.captureMessage('Extension was activated', Sentry.Severity.Log);
     } catch (e) {
       this._log.exception(e);
     }
@@ -297,6 +297,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       vscode.workspace.onDidChangeConfiguration(configChange => {
         const config = this._getConfiguration();
 
+        try {
+          Sentry.setContext('config', config);
+        } catch (e) {
+          this._log.exception(e);
+        }
+
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultRngSeed', this.workspaceFolder.uri)) {
           this._shared.rngSeed = this._getDefaultRngSeed(config);
           this._retireEmitter.fire({});
@@ -348,7 +354,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   public dispose(): void {
-    this._log.info('dispose: ', this.workspaceFolder);
+    this._log.info('dispose', this.workspaceFolder);
 
     this._disposables.forEach(d => {
       try {
@@ -458,7 +464,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._log.info('Debugging');
 
     if (tests.length !== 1) {
-      this._log.error('unsupported test count: ', tests);
+      this._log.error('unsupported test count', tests);
       throw Error(
         'Unsupported input. It seems you would like to debug more test cases at once. This is not supported currently.',
       );
@@ -484,7 +490,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     if (testSuite === undefined || !(testSuite instanceof AbstractTestSuiteInfo))
       throw Error('Unexpected error. Should have AbstractTestSuiteInfo parent.');
 
-    this._log.info('testInfo: ', testInfo, tests);
+    this._log.info('testInfo', testInfo, tests);
 
     const config = this._getConfiguration();
 
