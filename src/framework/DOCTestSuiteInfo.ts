@@ -96,7 +96,13 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
       )
       .then(docTestListOutput => {
         if (docTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
-          this._shared.log.warn('reloadChildren -> docTestListOutput.stderr', docTestListOutput);
+          this._shared.log.warn(
+            'reloadChildren -> docTestListOutput.stderr',
+            docTestListOutput.stdout,
+            docTestListOutput.stderr,
+            docTestListOutput.error,
+            docTestListOutput.status,
+          );
           const test = this.addChild(
             new DOCTestInfo(
               this._shared,
@@ -113,7 +119,15 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
               type: 'test',
               test: test,
               state: 'errored',
-              message: `❗️Unexpected stderr!\nspawn\nstout:\n${docTestListOutput.stdout}\nstderr:\n${docTestListOutput.stderr}`,
+              message: [
+                `❗️Unexpected stderr!`,
+                `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
+                `spawn`,
+                `stout:`,
+                `${docTestListOutput.stdout}`,
+                `stderr:`,
+                `${docTestListOutput.stderr}`,
+              ].join('\n'),
             },
           ]);
           return Promise.resolve();

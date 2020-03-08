@@ -16,14 +16,13 @@ import * as Sentry from '@sentry/node';
 
 import { LogWrapper } from './LogWrapper';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { resolveVariables, generateUniqueId, hashString } from './Util';
+import { resolveVariables, generateUniqueId } from './Util';
 import { TaskQueue } from './TaskQueue';
-import { TestExecutableInfo, TestExecutableInfoFrameworkSpecific } from './TestExecutableInfo';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { Catch2Section, Catch2TestInfo } from './framework/Catch2TestInfo';
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
-import { performance } from 'perf_hooks';
+import { Config } from './Config';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 
@@ -54,6 +53,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _shared: SharedVariables;
   private _rootSuite: RootTestSuiteInfo;
 
+  private readonly _isDebug: boolean = !!process.env['C2_DEBUG'];
+
   public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
     this._log = new LogWrapper(
       'catch2TestExplorer',
@@ -80,34 +81,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       'https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter&ssr=false#review-details';
     }
 
-    if (this._getLogSentry(config) === 'question' && !process.env['C2_DEBUG']) {
-      const options = [
-        'Sure! I love this extension and happy to help.',
-        'Yes, but exclude the current workspace.',
-        'Over my dead body',
-      ];
-      vscode.window
-        .showInformationMessage(
-          'Hey there! The extension now has [sentry.io](https://sentry.io/welcome) integration to ' +
-            'improve the stability and the development. 🤩 For this, I want to log and send errors ' +
-            'to [sentry.io](https://sentry.io/welcome), but I would NEVER do it without your consent. ' +
-            'Please be understandable and allow it. 🙏' +
-            ' (`catch2TestExplorer.logSentry: "enable"/"disable"`)',
-          ...options,
-        )
-        .then((value: string | undefined) => {
-          this._log.info('Sentry consent: ' + value);
-
-          if (value === options[0]) {
-            config.update('logSentry', 'enable', true);
-          } else if (value === options[1]) {
-            config.update('logSentry', 'enable', true);
-            config.update('logSentry', 'disable_1', false);
-          } else if (value === options[2]) {
-            config.update('logSentry', 'disable_1', true);
-          }
-        });
-    }
+    if (!this._isDebug) config.askSentryConsent();
 
     try {
       const extensionInfo = (() => {
@@ -120,9 +94,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         }
       })();
 
-      const enabled = this._getLogSentry(config) === 'enable' && process.env['C2_DEBUG'] === undefined;
+      const enabled = !this._isDebug && config.isSentryEnabled();
 
-      this._log.info('sentry.io is: ', enabled);
+      this._log.info('sentry.io is', enabled);
 
       const release = extensionInfo.publisher + '/' + extensionInfo.name + '@' + extensionInfo.version;
 
@@ -147,28 +121,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         this._log.exception(e);
       }
 
-      {
-        let userId = config.get<string>('userId');
-        if (!userId) {
-          let newUserId = (process.env['USER'] || process.env['USERNAME'] || 'user') + process.env['USERDOMAIN'];
-          newUserId += performance.now().toString();
-          newUserId += process.pid.toString();
-          newUserId += Date.now().toString();
-
-          userId = hashString(newUserId);
-
-          config.update('userId', userId, true);
-        }
-
-        this._log.info('userId', userId);
-
-        Sentry.setUser({ id: userId });
-        Sentry.setTag('workspaceFolder', hashString(this.workspaceFolder.uri.fsPath));
-      }
+      Sentry.setUser({ id: config.getOrCreateUserId() });
+      //Sentry.setTag('workspaceFolder', hashString(this.workspaceFolder.uri.fsPath));
 
       Sentry.setContext('config', config);
 
-      Sentry.captureMessage('Extension was activated', Sentry.Severity.Log);
+      //'Framework' message includes this old message too: Sentry.captureMessage('Extension was activated', Sentry.Severity.Log);
     } catch (e) {
       this._log.exception(e);
     }
@@ -199,7 +157,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           });
       };
 
-      this._disposables.push(this._sendRetireEmitter.event(debounce(retire, this._getRetireDebounceTime(config))));
+      this._disposables.push(this._sendRetireEmitter.event(debounce(retire, config.getRetireDebounceTime())));
     }
 
     this._disposables.push(this._loadWithTaskEmitter);
@@ -281,52 +239,58 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._loadWithTaskEmitter,
       this._sendTestEventEmitter,
       this._sendRetireEmitter,
-      this._getDefaultRngSeed(config),
-      this._getDefaultExecWatchTimeout(config),
-      this._getRetireDebounceTime(config),
-      this._getDefaultExecRunningTimeout(config),
-      this._getDefaultExecParsingTimeout(config),
-      this._getDefaultNoThrow(config),
-      this._getWorkerMaxNumber(config),
-      this._getEnableTestListCaching(config),
-      this._getGoogleTestTreatGMockWarningAs(config),
-      this._getGoogleTestGMockVerbose(config),
+      config.getDefaultRngSeed(),
+      config.getDefaultExecWatchTimeout(),
+      config.getRetireDebounceTime(),
+      config.getDefaultExecRunningTimeout(),
+      config.getDefaultExecParsingTimeout(),
+      config.getDefaultNoThrow(),
+      config.getWorkerMaxNumber(),
+      config.getEnableTestListCaching(),
+      config.getGoogleTestTreatGMockWarningAs(),
+      config.getGoogleTestGMockVerbose(),
     );
 
     this._disposables.push(
       vscode.workspace.onDidChangeConfiguration(configChange => {
         const config = this._getConfiguration();
 
+        try {
+          Sentry.setContext('config', config);
+        } catch (e) {
+          this._log.exception(e);
+        }
+
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultRngSeed', this.workspaceFolder.uri)) {
-          this._shared.rngSeed = this._getDefaultRngSeed(config);
+          this._shared.rngSeed = config.getDefaultRngSeed();
           this._retireEmitter.fire({});
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultWatchTimeoutSec', this.workspaceFolder.uri)) {
-          this._shared.execWatchTimeout = this._getDefaultExecWatchTimeout(config);
+          this._shared.execWatchTimeout = config.getDefaultExecWatchTimeout();
         }
         if (
           configChange.affectsConfiguration('catch2TestExplorer.retireDebounceTimeMilisec', this.workspaceFolder.uri)
         ) {
-          this._shared.retireDebounceTime = this._getRetireDebounceTime(config);
+          this._shared.retireDebounceTime = config.getRetireDebounceTime();
         }
         if (
           configChange.affectsConfiguration('catch2TestExplorer.defaultRunningTimeoutSec', this.workspaceFolder.uri)
         ) {
-          this._shared.setExecRunningTimeout(this._getDefaultExecRunningTimeout(config));
+          this._shared.setExecRunningTimeout(config.getDefaultExecRunningTimeout());
         }
         if (
           configChange.affectsConfiguration('catch2TestExplorer.defaultExecParsingTimeoutSec', this.workspaceFolder.uri)
         ) {
-          this._shared.setExecRunningTimeout(this._getDefaultExecParsingTimeout(config));
+          this._shared.setExecRunningTimeout(config.getDefaultExecParsingTimeout());
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultNoThrow', this.workspaceFolder.uri)) {
-          this._shared.isNoThrow = this._getDefaultNoThrow(config);
+          this._shared.isNoThrow = config.getDefaultNoThrow();
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.workerMaxNumber', this.workspaceFolder.uri)) {
-          this._shared.taskPool.maxTaskCount = this._getWorkerMaxNumber(config);
+          this._shared.taskPool.maxTaskCount = config.getWorkerMaxNumber();
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.enableTestListCaching', this.workspaceFolder.uri)) {
-          this._shared.enabledTestListCaching = this._getEnableTestListCaching(config);
+          this._shared.enabledTestListCaching = config.getEnableTestListCaching();
         }
         if (
           configChange.affectsConfiguration(
@@ -334,10 +298,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             this.workspaceFolder.uri,
           )
         ) {
-          this._shared.googleTestTreatGMockWarningAs = this._getGoogleTestTreatGMockWarningAs(config);
+          this._shared.googleTestTreatGMockWarningAs = config.getGoogleTestTreatGMockWarningAs();
         }
         if (configChange.affectsConfiguration('catch2TestExplorer.googletest.gmockVerbose', this.workspaceFolder.uri)) {
-          this._shared.googleTestGMockVerbose = this._getGoogleTestGMockVerbose(config);
+          this._shared.googleTestGMockVerbose = config.getGoogleTestGMockVerbose();
         }
 
         Sentry.setContext('config', config);
@@ -348,7 +312,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   public dispose(): void {
-    this._log.info('dispose: ', this.workspaceFolder);
+    this._log.info('dispose', this.workspaceFolder);
 
     this._disposables.forEach(d => {
       try {
@@ -406,7 +370,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       return Promise.resolve()
         .then(() => {
-          return this._getExecutables(config, this._rootSuite);
+          return config.getExecutables(this._shared, this._rootSuite, this._variableToValue);
         })
         .then(exec => {
           return this._rootSuite.load(exec);
@@ -458,7 +422,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._log.info('Debugging');
 
     if (tests.length !== 1) {
-      this._log.error('unsupported test count: ', tests);
+      this._log.error('unsupported test count', tests);
       throw Error(
         'Unsupported input. It seems you would like to debug more test cases at once. This is not supported currently.',
       );
@@ -484,13 +448,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     if (testSuite === undefined || !(testSuite instanceof AbstractTestSuiteInfo))
       throw Error('Unexpected error. Should have AbstractTestSuiteInfo parent.');
 
-    this._log.info('testInfo: ', testInfo, tests);
+    this._log.info('testInfo', testInfo, tests);
 
     const config = this._getConfiguration();
 
-    const template = this._getDebugConfigurationTemplate(config);
+    const template = config.getDebugConfigurationTemplate();
 
-    const argsArray = testInfo.getDebugParams(this._getDebugBreakOnFailure(config));
+    const argsArray = testInfo.getDebugParams(config.getDebugBreakOnFailure());
 
     if (testInfo instanceof Catch2TestInfo) {
       const sections = testInfo.sections;
@@ -602,315 +566,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
   }
 
-  private _getDebugConfigurationTemplate(config: vscode.WorkspaceConfiguration): vscode.DebugConfiguration {
-    const templateFromConfig = config.get<object | null | 'extensionOnly'>('debugConfigTemplate', null);
-
-    if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
-      this._log.info('using user defined debug config');
-      return Object.assign(
-        {
-          name: '${label} (${suiteLabel})',
-          request: 'launch',
-          type: 'cppdbg',
-        },
-        templateFromConfig,
-      );
-    }
-
-    if (templateFromConfig === null) {
-      const wpLaunchConfigs = vscode.workspace
-        .getConfiguration('launch', this.workspaceFolder.uri)
-        .get('configurations');
-
-      if (wpLaunchConfigs && Array.isArray(wpLaunchConfigs) && wpLaunchConfigs.length > 0) {
-        for (let i = 0; i < wpLaunchConfigs.length; ++i) {
-          if (
-            wpLaunchConfigs[i].request == 'launch' &&
-            typeof wpLaunchConfigs[i].type == 'string' &&
-            (wpLaunchConfigs[i].type.startsWith('cpp') ||
-              wpLaunchConfigs[i].type.startsWith('lldb') ||
-              wpLaunchConfigs[i].type.startsWith('gdb'))
-          ) {
-            this._log.info(
-              "using debug config from launch.json. If it doesn't wokr for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
-            );
-            // putting as much known properties as much we can and hoping for the best 🤞
-            return Object.assign({}, wpLaunchConfigs[i], {
-              name: '${label} (${suiteLabel})',
-              program: '${exec}',
-              target: '${exec}',
-              arguments: '${argsStr}',
-              args: '${args}',
-              cwd: '${cwd}',
-              env: '${envObj}',
-            });
-          }
-        }
-      }
-    }
-
-    const template: vscode.DebugConfiguration = {
-      name: '${label} (${suiteLabel})',
-      request: 'launch',
-      type: 'cppdbg',
-    };
-
-    if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
-      this._log.info('using debug extension: vadimcn.vscode-lldb');
-      Object.assign(template, {
-        type: 'cppdbg',
-        MIMode: 'lldb',
-        program: '${exec}',
-        args: '${args}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-      });
-    } else if (vscode.extensions.getExtension('webfreak.debug')) {
-      this._log.info('using debug extension: webfreak.debug');
-      Object.assign(template, {
-        type: 'gdb',
-        target: '${exec}',
-        arguments: '${argsStr}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-        valuesFormatting: 'prettyPrinters',
-      });
-
-      if (process.platform === 'darwin') {
-        template.type = 'lldb-mi';
-        // Note: for LLDB you need to have lldb-mi in your PATH
-        // If you are on OS X you can add lldb-mi to your path using ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi /usr/local/bin/lldb-mi if you have Xcode.
-        template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
-      }
-    } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
-      this._log.info('using debug extension: ms-vscode.cpptools');
-      // documentation says debug"environment" = [{...}] but that doesn't work
-      Object.assign(template, {
-        type: 'cppvsdbg',
-        linux: { type: 'cppdbg', MIMode: 'gdb' },
-        osx: { type: 'cppdbg', MIMode: 'lldb' },
-        windows: { type: 'cppvsdbg' },
-        program: '${exec}',
-        args: '${args}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-      });
-    } else {
-      throw Error(
-        "For debugging 'catch2TestExplorer.debugConfigTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
-      );
-    }
-    return template;
-  }
-
-  private _getConfiguration(): vscode.WorkspaceConfiguration {
-    return vscode.workspace.getConfiguration('catch2TestExplorer', this.workspaceFolder.uri);
-  }
-
-  private _getLogSentry(config: vscode.WorkspaceConfiguration): 'enable' | 'disable' | 'question' {
-    return config.get<'enable' | 'disable' | 'question'>('logSentry', 'disable');
-  }
-
-  private _getDebugBreakOnFailure(config: vscode.WorkspaceConfiguration): boolean {
-    return config.get<boolean>('debugBreakOnFailure', true);
-  }
-
-  private _getDefaultNoThrow(config: vscode.WorkspaceConfiguration): boolean {
-    return config.get<boolean>('defaultNoThrow', false);
-  }
-
-  private _getDefaultCwd(config: vscode.WorkspaceConfiguration): string {
-    const dirname = this.workspaceFolder.uri.fsPath;
-    return config.get<string>('defaultCwd', dirname);
-  }
-
-  private _getDefaultEnvironmentVariables(config: vscode.WorkspaceConfiguration): { [prop: string]: string } {
-    return config.get('defaultEnv', {});
-  }
-
-  private _getDefaultRngSeed(config: vscode.WorkspaceConfiguration): string | number | null {
-    return config.get<null | string | number>('defaultRngSeed', null);
-  }
-
-  private _getWorkerMaxNumber(config: vscode.WorkspaceConfiguration): number {
-    const res = Math.max(1, config.get<number>('workerMaxNumber', 1));
-    if (typeof res != 'number') return 1;
-    else return res;
-  }
-
-  private _getDefaultExecWatchTimeout(config: vscode.WorkspaceConfiguration): number {
-    const res = config.get<number>('defaultWatchTimeoutSec', 10) * 1000;
-    return res;
-  }
-
-  private _getRetireDebounceTime(config: vscode.WorkspaceConfiguration): number {
-    const res = config.get<number>('retireDebounceTimeMilisec', 1000);
-    return res;
-  }
-
-  private _getDefaultExecRunningTimeout(config: vscode.WorkspaceConfiguration): null | number {
-    const r = config.get<null | number>('defaultRunningTimeoutSec', null);
-    return r !== null && r > 0 ? r * 1000 : null;
-  }
-
-  private _getDefaultExecParsingTimeout(config: vscode.WorkspaceConfiguration): number {
-    const r = config.get<number>('defaultExecParsingTimeoutSec', 5);
-    return r * 1000;
-  }
-
-  private _getEnableTestListCaching(config: vscode.WorkspaceConfiguration): boolean {
-    return config.get<boolean>('enableTestListCaching', false);
-  }
-
-  private _getGoogleTestTreatGMockWarningAs(config: vscode.WorkspaceConfiguration): 'nothing' | 'failure' {
-    return config.get<'nothing' | 'failure'>('googletest.treatGmockWarningAs', 'nothing');
-  }
-
-  private _getGoogleTestGMockVerbose(config: vscode.WorkspaceConfiguration): 'default' | 'info' | 'warning' | 'error' {
-    return config.get<'default' | 'info' | 'warning' | 'error'>(
-      'catch2TestExplorer.googletest.gmockVerbose',
-      'default',
-    );
-  }
-
-  private _getExecutables(config: vscode.WorkspaceConfiguration, rootSuite: RootTestSuiteInfo): TestExecutableInfo[] {
-    const defaultCwd = this._getDefaultCwd(config) || '${absDirpath}';
-    const defaultEnv = this._getDefaultEnvironmentVariables(config) || {};
-
-    let executables: TestExecutableInfo[] = [];
-
-    const configExecs:
-      | undefined
-      | null
-      | string
-      | string[]
-      | { [prop: string]: string }
-      | ({ [prop: string]: string } | string)[] = config.get('executables');
-
-    const createFromObject = (obj: { [prop: string]: string }): TestExecutableInfo => {
-      const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
-
-      const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
-
-      let pattern = '';
-      {
-        if (typeof obj.pattern == 'string') pattern = obj.pattern;
-        else if (typeof obj.path == 'string') pattern = obj.path;
-        else throw Error('Error: pattern property is required.');
-      }
-
-      const cwd: string | undefined = typeof obj.cwd === 'string' ? obj.cwd : undefined;
-
-      const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
-
-      const dependsOn: string[] = Array.isArray(obj.dependsOn) ? obj.dependsOn.filter(v => typeof v === 'string') : [];
-
-      // eslint-disable-next-line
-      const framework = (obj: any): TestExecutableInfoFrameworkSpecific => {
-        const r: TestExecutableInfoFrameworkSpecific = {};
-        if (typeof obj === 'object') {
-          if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
-
-          if (
-            Array.isArray(obj.additionalRunArguments) &&
-            // eslint-disable-next-line
-            (obj.additionalRunArguments as any[]).every(x => typeof x === 'string')
-          )
-            r.additionalRunArguments = obj.additionalRunArguments;
-
-          if (typeof obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
-        }
-        return r;
-      };
-
-      return new TestExecutableInfo(
-        this._shared,
-        rootSuite,
-        pattern,
-        name,
-        description,
-        cwd,
-        env,
-        dependsOn,
-        defaultCwd,
-        defaultEnv,
-        this._variableToValue,
-        framework(obj['catch2']),
-        framework(obj['gtest']),
-        framework(obj['doctest']),
-      );
-    };
-
-    if (typeof configExecs === 'string') {
-      if (configExecs.length == 0) return [];
-      executables.push(
-        new TestExecutableInfo(
-          this._shared,
-          rootSuite,
-          configExecs,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          [],
-          defaultCwd,
-          defaultEnv,
-          this._variableToValue,
-          {},
-          {},
-          {},
-        ),
-      );
-    } else if (Array.isArray(configExecs)) {
-      for (var i = 0; i < configExecs.length; ++i) {
-        const configExec = configExecs[i];
-        if (typeof configExec === 'string') {
-          const configExecsName = String(configExec);
-          if (configExecsName.length > 0) {
-            executables.push(
-              new TestExecutableInfo(
-                this._shared,
-                rootSuite,
-                configExecsName,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                [],
-                defaultCwd,
-                defaultEnv,
-                this._variableToValue,
-                {},
-                {},
-                {},
-              ),
-            );
-          }
-        } else if (typeof configExec === 'object') {
-          try {
-            executables.push(createFromObject(configExec));
-          } catch (e) {
-            this._log.warn(e, configExec);
-            throw e;
-          }
-        } else {
-          this._log.error('_getExecutables', configExec, i);
-        }
-      }
-    } else if (configExecs === null || configExecs === undefined) {
-      return [];
-    } else if (typeof configExecs === 'object') {
-      try {
-        executables.push(createFromObject(configExecs));
-      } catch (e) {
-        this._log.warn(e, configExecs);
-        throw e;
-      }
-    } else {
-      this._log.error("executables couldn't be recognised:", executables);
-      throw new Error('Config error: wrong type: executables');
-    }
-
-    return executables;
+  private _getConfiguration(): Config {
+    return new Config(this._log, this.workspaceFolder.uri);
   }
 }

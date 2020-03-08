@@ -348,10 +348,13 @@ export class TestExecutableInfo implements vscode.Disposable {
               })
               .then(resolve, reject);
           });
-        }).catch((reason: Error) => {
-          this._shared.log.debug(reason, filePath, suite);
-          // eslint-disable-next-line
-          if ((reason as any).code === undefined) this._shared.log.warn('problem under reloading', reason);
+        }).catch((reason: Error & { code: undefined | number }) => {
+          if (reason.code === undefined) {
+            this._shared.log.debug('reason', reason);
+            this._shared.log.debug('filePath', filePath);
+            this._shared.log.debug('suite', suite);
+            this._shared.log.warn('problem under reloading', reason);
+          }
           return x(suite, false, Math.min(delay * 2, 2000));
         });
       } else {

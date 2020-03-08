@@ -162,7 +162,15 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
           type: 'test',
           test: test,
           state: 'errored',
-          message: `❗️Unexpected stderr!\nspawn\nstout:\n${catch2TestListOutput.stdout}\nstderr:\n${catch2TestListOutput.stderr}`,
+          message: [
+            `❗️Unexpected stderr!`,
+            `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
+            `spawn`,
+            `stout:`,
+            `${catch2TestListOutput.stdout}`,
+            `stderr:`,
+            `${catch2TestListOutput.stderr}`,
+          ].join('\n'),
         },
       ]);
       return Promise.resolve();

@@ -238,7 +238,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
       if (xml.Failure) {
         testEventBuilder.appendMessage('⬇ Failure:', 0);
         for (let i = 0; i < xml.Failure.length; i++) {
-          if (typeof xml.Failure[i]._ === 'string') this._shared.log.warn('No _ under failure', xml.Failure[i]);
+          if (typeof xml.Failure[i]._ !== 'string') this._shared.log.warn('No _ under failure', xml.Failure[i]);
 
           const msg = typeof xml.Failure[i]._ === 'string' ? xml.Failure[i]._.trim() : xml.Failure[i].toString();
 
@@ -291,7 +291,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
 
     try {
       for (let j = 0; xml.Exception && j < xml.Exception.length; ++j) {
-        if (typeof xml.Exception[j]._ === 'string') this._shared.log.warn('No _ under exception', xml.Exception[j]);
+        if (typeof xml.Exception[j]._ !== 'string') this._shared.log.warn('No _ under exception', xml.Exception[j]);
 
         const msg = typeof xml.Exception[j]._ === 'string' ? xml.Exception[j]._.trim() : xml.Exception[j].toString();
 
