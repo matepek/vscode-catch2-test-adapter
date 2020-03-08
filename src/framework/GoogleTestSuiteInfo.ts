@@ -218,7 +218,15 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
               type: 'test',
               test: test,
               state: 'errored',
-              message: `❗️Unexpected stderr!\nspawn\nstout:\n${googleTestListOutput.stdout}\nstderr:\n${googleTestListOutput.stderr}`,
+              message: [
+                `❗️Unexpected stderr!`,
+                `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
+                `spawn`,
+                `stout:`,
+                `${googleTestListOutput.stdout}`,
+                `stderr:`,
+                `${googleTestListOutput.stderr}`,
+              ].join('\n'),
             },
           ]);
         } else {
