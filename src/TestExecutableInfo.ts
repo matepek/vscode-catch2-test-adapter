@@ -199,25 +199,29 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     let varToValue: ResolveRulePair[] = [];
 
-    const subPath = (pathStr: string) => {
-      const pathArray = pathStr.split(/\/|\\/);
-      return (m: RegExpMatchArray) => {
+    const pathWithArrayIndexing = (
+      varName: string,
+      pathVal: string,
+      separator: string | RegExp,
+      join: string,
+    ): [RegExp, (m: RegExpMatchArray) => string] => {
+      const indexRegex = new RegExp('\\${' + varName + '(?:\\[(-?[0-9]+)?:(-?[0-9]+)?\\])?}');
+
+      const pathArray = pathVal.split(separator);
+      const replacer = (m: RegExpMatchArray) => {
         const idx1 = m[1] === undefined ? undefined : Number(m[1]);
         const idx2 = m[2] === undefined ? undefined : Number(m[2]);
 
-        return path.normalize(pathArray.slice(idx1, idx2).join(path.sep));
+        return pathArray.slice(idx1, idx2).join(join);
       };
+
+      return [indexRegex, replacer];
     };
 
-    const subFilename = (filename: string) => {
-      const filenameArray = filename.split('.');
-      return (m: RegExpMatchArray) => {
-        const idx1 = m[1] === undefined ? undefined : Number(m[1]);
-        const idx2 = m[2] === undefined ? undefined : Number(m[2]);
+    const subPath = (valName: string, pathStr: string) =>
+      pathWithArrayIndexing(valName, path.normalize(pathStr), /\/|\\/, path.sep);
 
-        return filenameArray.slice(idx1, idx2).join('.');
-      };
-    };
+    const subFilename = (valName: string, filename: string) => pathWithArrayIndexing(valName, filename, '.', '.');
 
     try {
       const filename = path.basename(filePath);
@@ -226,11 +230,11 @@ export class TestExecutableInfo implements vscode.Disposable {
 
       varToValue = [
         ...this._variableToValue,
-        [/\${absPath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(filePath)],
-        [/\${relPath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(relPath)],
-        [/\${absDirpath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(path.dirname(filePath))],
-        [/\${relDirpath(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(path.dirname(relPath))],
-        [/\${filename(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subFilename(filename)],
+        subPath('absPath', filePath),
+        subPath('relPath', relPath),
+        subPath('absDirpath', path.dirname(filePath)),
+        subPath('relDirpath', path.dirname(relPath)),
+        subFilename('filename', filename),
         ['${extFilename}', extFilename],
         ['${baseFilename}', baseFilename],
       ];
@@ -276,7 +280,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
       resolvedCwd = path.resolve(this._shared.workspaceFolder.uri.fsPath, resolvedCwd);
 
-      varToValue.push([/\${cwd(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?}/, subPath(resolvedCwd)]);
+      varToValue.push(subPath('cwd', resolvedCwd));
     } catch (e) {
       this._shared.log.error('resolvedCwd', e);
     }
