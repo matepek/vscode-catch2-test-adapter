@@ -98,32 +98,30 @@ export class TestExecutableInfo implements vscode.Disposable {
       const file = filePaths[i];
       this._shared.log.info('Checking file for tests:', file);
 
-      if (file.indexOf('/_deps/') !== -1) {
-        // cmake fetches the dependencies here. we dont care about it 🤞
-        this._shared.log.info('skipping because it is under "/_deps/"', file);
-        continue;
-      }
+      if (this._shouldIgnorePath(file)) continue;
 
       suiteCreationAndLoadingTasks.push(
         c2fs.isNativeExecutableAsync(file).then(
           () => {
-            return this._createSuiteByUri(file).then(
-              (suite: AbstractTestSuiteInfo) => {
-                return suite.reloadTests(this._shared.taskPool).then(
-                  () => {
-                    if (this._rootSuite.insertChild(suite, false /* called later */)) {
-                      this._executables.set(file, suite);
-                    }
-                  },
-                  (reason: Error) => {
-                    this._shared.log.warn("Couldn't load executable:", reason, suite);
-                  },
-                );
-              },
-              (reason: Error) => {
-                this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
-              },
-            );
+            return this._createSuiteByUri(file)
+              .create(false)
+              .then(
+                (suite: AbstractTestSuiteInfo) => {
+                  return suite.reloadTests(this._shared.taskPool).then(
+                    () => {
+                      if (this._rootSuite.insertChild(suite, false /* called later */)) {
+                        this._executables.set(file, suite);
+                      }
+                    },
+                    (reason: Error) => {
+                      this._shared.log.warn("Couldn't load executable:", reason, suite);
+                    },
+                  );
+                },
+                (reason: Error) => {
+                  this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
+                },
+              );
           },
           (reason: Error) => {
             this._shared.log.debug('Not an executable:', file, reason);
@@ -200,7 +198,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     };
   }
 
-  private _createSuiteByUri(filePath: string): Promise<AbstractTestSuiteInfo> {
+  private _createSuiteByUri(filePath: string): TestSuiteInfoFactory {
     const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
     let varToValue: ResolveRulePair[] = [];
@@ -315,7 +313,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._catch2,
       this._gtest,
       this._doctest,
-    ).create();
+    );
   }
 
   private _handleEverything(filePath: string): void {
@@ -324,72 +322,91 @@ export class TestExecutableInfo implements vscode.Disposable {
 
     this._lastEventArrivedAt.set(filePath, Date.now());
 
-    const x = (suite: AbstractTestSuiteInfo, exists: boolean, delay: number): Promise<void> => {
-      let lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
-      if (lastEventArrivedAt === undefined) {
-        this._shared.log.error('assert');
-        debugger;
-        return Promise.resolve();
-      } else if (Date.now() - lastEventArrivedAt > this._shared.execWatchTimeout) {
-        this._shared.log.info('refresh timeout:', filePath);
-        this._lastEventArrivedAt.delete(filePath);
-        if (this._rootSuite.hasChild(suite)) {
-          return new Promise<void>(resolve => {
-            this._shared.loadWithTaskEmitter.fire(() => {
-              this._executables.delete(filePath);
-              this._rootSuite.removeChild(suite);
-              resolve();
-            });
-          });
-        } else {
-          return Promise.resolve();
-        }
-      } else if (exists) {
-        return new Promise<void>((resolve, reject) => {
-          this._shared.loadWithTaskEmitter.fire(() => {
-            return suite
-              .reloadTests(this._shared.taskPool)
-              .then(() => {
-                if (this._rootSuite.insertChild(suite, true)) {
-                  this._executables.set(filePath, suite);
-                }
-                this._lastEventArrivedAt.delete(filePath);
-                this._shared.retire.fire([suite]);
-              })
-              .then(resolve, reject);
-          });
-        }).catch((reason: Error & { code: undefined | number }) => {
-          if (reason.code === undefined) {
-            this._shared.log.debug('reason', reason);
-            this._shared.log.debug('filePath', filePath);
-            this._shared.log.debug('suite', suite);
-            this._shared.log.warn('problem under reloading', reason);
-          }
-          return x(suite, false, Math.min(delay * 2, 2000));
-        });
-      } else {
-        return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
-          return c2fs
-            .isNativeExecutableAsync(filePath)
-            .then(
-              () => true,
-              () => false,
-            )
-            .then(isExec => x(suite, isExec, Math.min(delay * 2, 2000)));
-        });
-      }
-    };
-
     const suite = this._executables.get(filePath);
 
-    if (suite === undefined) {
-      this._shared.log.info('possibly new suite: ' + filePath);
-      this._createSuiteByUri(filePath).then(
-        (s: AbstractTestSuiteInfo) => x(s, false, 64),
-        (reason: Error) => this._shared.log.info("couldn't add: " + filePath, 'reson:', reason),
-      );
+    if (suite !== undefined) {
+      this._recursiveHandleEverything(filePath, suite, false, 128);
     } else {
-      x(suite, false, 64);
+      if (this._shouldIgnorePath(filePath)) return;
+
+      this._shared.log.info('possibly new suite: ' + filePath);
+      this._createSuiteByUri(filePath)
+        .create(true)
+        .then(
+          (s: AbstractTestSuiteInfo) => this._recursiveHandleEverything(filePath, s, false, 128),
+          (reason: Error) => this._shared.log.info("couldn't add: " + filePath, 'reson:', reason),
+        );
+    }
+  }
+
+  private _recursiveHandleEverything(
+    filePath: string,
+    suite: AbstractTestSuiteInfo,
+    exists: boolean,
+    delay: number,
+  ): Promise<void> {
+    let lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
+    if (lastEventArrivedAt === undefined) {
+      this._shared.log.error('assert');
+      debugger;
+      return Promise.resolve();
+    } else if (Date.now() - lastEventArrivedAt > this._shared.execWatchTimeout) {
+      this._shared.log.info('refresh timeout:', filePath);
+      this._lastEventArrivedAt.delete(filePath);
+      if (this._rootSuite.hasChild(suite)) {
+        return new Promise<void>(resolve => {
+          this._shared.loadWithTaskEmitter.fire(() => {
+            this._executables.delete(filePath);
+            this._rootSuite.removeChild(suite);
+            resolve();
+          });
+        });
+      } else {
+        return Promise.resolve();
+      }
+    } else if (exists) {
+      return new Promise<void>((resolve, reject) => {
+        this._shared.loadWithTaskEmitter.fire(() => {
+          return suite
+            .reloadTests(this._shared.taskPool)
+            .then(() => {
+              if (this._rootSuite.insertChild(suite, true)) {
+                this._executables.set(filePath, suite);
+              }
+              this._lastEventArrivedAt.delete(filePath);
+              this._shared.retire.fire([suite]);
+            })
+            .then(resolve, reject);
+        });
+      }).catch((reason: Error & { code: undefined | number }) => {
+        if (reason.code === undefined) {
+          this._shared.log.debug('reason', reason);
+          this._shared.log.debug('filePath', filePath);
+          this._shared.log.debug('suite', suite);
+          this._shared.log.warn('problem under reloading', reason);
+        }
+        return this._recursiveHandleEverything(filePath, suite, false, Math.min(delay * 2, 2000));
+      });
+    } else {
+      return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
+        return c2fs
+          .isNativeExecutableAsync(filePath)
+          .then(
+            () => true,
+            () => false,
+          )
+          .then(isExec => this._recursiveHandleEverything(filePath, suite, isExec, Math.min(delay * 2, 2000)));
+      });
+    }
+  }
+
+  private _shouldIgnorePath(filePath: string): boolean {
+    if (filePath.indexOf('/_deps/') !== -1) {
+      // cmake fetches the dependencies here. we dont care about it 🤞
+      this._shared.log.info('skipping because it is under "/_deps/"', filePath);
+      return true;
+    } else {
+      return false;
     }
   }
 }
