@@ -98,6 +98,12 @@ export class TestExecutableInfo implements vscode.Disposable {
       const file = filePaths[i];
       this._shared.log.info('Checking file for tests:', file);
 
+      if (file.indexOf('/_deps/') !== -1) {
+        // cmake fetches the dependencies here. we dont care about it 🤞
+        this._shared.log.info('skipping because it is under "/_deps/"', file);
+        continue;
+      }
+
       suiteCreationAndLoadingTasks.push(
         c2fs.isNativeExecutableAsync(file).then(
           () => {

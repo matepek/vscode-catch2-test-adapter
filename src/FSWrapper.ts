@@ -83,7 +83,10 @@ function accessAsync(filePath: string, flag: number): Promise<void> {
 
 // https://askubuntu.com/questions/156392/what-is-the-equivalent-of-an-exe-file
 const nativeExecutableExtensionFilter = new Set([
+  '.a',
+  '.bat',
   '.c',
+  '.cc',
   '.cmake',
   '.cpp',
   '.cxx',
@@ -93,14 +96,22 @@ const nativeExecutableExtensionFilter = new Set([
   '.h',
   '.hpp',
   '.hxx',
+  '.in',
+  '.input',
   '.ko',
   '.log',
+  '.md',
+  '.mm',
   '.o',
+  '.pc',
   '.php',
+  '.pyc',
   '.rpm',
   '.so',
   '.tar',
   '.txt',
+  '.vcxproj.user',
+  '.xml',
 ]);
 
 const win32NativeExecutableExtensionFilter = new Set(['.exe', '.cmd', '.bat']);
