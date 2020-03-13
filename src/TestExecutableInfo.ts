@@ -216,14 +216,13 @@ export class TestExecutableInfo implements vscode.Disposable {
         const idx1 = m[1] === undefined ? undefined : Number(m[1]);
         const idx2 = m[2] === undefined ? undefined : Number(m[2]);
 
-        return pathArray.slice(idx1, idx2).join(join);
+        return path.normalize(pathArray.slice(idx1, idx2).join(join));
       };
 
       return [indexRegex, replacer];
     };
 
-    const subPath = (valName: string, pathStr: string) =>
-      pathWithArrayIndexing(valName, path.normalize(pathStr), /\/|\\/, path.sep);
+    const subPath = (valName: string, pathStr: string) => pathWithArrayIndexing(valName, pathStr, /\/|\\/, path.sep);
 
     const subFilename = (valName: string, filename: string) => pathWithArrayIndexing(valName, filename, '.', '.');
 
@@ -345,7 +344,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     exists: boolean,
     delay: number,
   ): Promise<void> {
-    let lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
+    const lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
     if (lastEventArrivedAt === undefined) {
       this._shared.log.error('assert');
       debugger;

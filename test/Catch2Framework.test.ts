@@ -470,7 +470,7 @@ describe(path.basename(__filename), function() {
     this.slow(watchTimeout * 1000 + 2500 /* because of 'delay' */);
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
-    for (let scenario of example1.suite2.outputs) {
+    for (const scenario of example1.suite2.outputs) {
       imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function() {
         return new ChildProcessStub(scenario[1]);
       });
@@ -531,7 +531,7 @@ describe(path.basename(__filename), function() {
     this.slow(watchTimeout * 1000 + 5500 /* because of 'delay' */);
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
-    for (let scenario of example1.suite2.outputs) {
+    for (const scenario of example1.suite2.outputs) {
       imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function() {
         return new ChildProcessStub(scenario[1]);
       });
@@ -631,7 +631,7 @@ describe(path.basename(__filename), function() {
       env: { C2TESTVARS: envsStr },
     });
 
-    for (let scenario of example1.suite2.outputs) {
+    for (const scenario of example1.suite2.outputs) {
       imitation.spawnStub.withArgs(execAbsPath, scenario[0], sinon.match.any).callsFake(function() {
         return new ChildProcessStub(scenario[1]);
       });

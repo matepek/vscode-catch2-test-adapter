@@ -33,8 +33,6 @@ assert.notStrictEqual(vscode.workspace.workspaceFolders, undefined);
 assert.equal(vscode.workspace.workspaceFolders!.length, 1);
 
 export const settings = new (class {
-  public constructor() {}
-
   public readonly workspaceFolderUri = vscode.workspace.workspaceFolders![0].uri;
   public readonly workspaceFolder = vscode.workspace.getWorkspaceFolder(this.workspaceFolderUri)!;
   public readonly dotVscodePath = path.join(this.workspaceFolderUri.fsPath, '.vscode');
@@ -389,13 +387,13 @@ export class ChildProcessStub extends EventEmitter implements ChildProcess {
 
   public readonly stdout: Readable;
   private _stdoutChunks: (string | null)[] = [];
-  private _canPushOut: boolean = false;
+  private _canPushOut = false;
 
   public readonly stderr: Readable;
   private _stderrChunks: (string | null)[] = [];
-  private _canPushErr: boolean = false;
-  public closed: boolean = false;
-  public killed: boolean = false;
+  private _canPushErr = false;
+  public closed = false;
+  public killed = false;
 
   private _writeStdOut(): void {
     while (this._stdoutChunks.length && this._canPushOut)
@@ -439,12 +437,13 @@ export class ChildProcessStub extends EventEmitter implements ChildProcess {
     });
   }
 
-  public kill(signal?: NodeJS.Signals | number): void {
+  public kill(signal?: NodeJS.Signals | number): boolean {
     if (signal === undefined) signal = 'SIGTERM';
     this.killed = true;
     this.emit('close', null, signal);
     this.stdout.push(null);
     this.stderr.push(null);
+    return true;
   }
 
   public write(data: string): void {

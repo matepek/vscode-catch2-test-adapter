@@ -925,7 +925,7 @@ describe(path.basename(__filename), function() {
         sinon.match.any,
       );
       const cp = new ChildProcessStub();
-      const spyKill = sinon.spy(cp, 'kill') as sinon.SinonSpy<[string?], void>;
+      const spyKill = sinon.spy(cp, 'kill') as sinon.SinonSpy<[string?], boolean>;
       cp.write('<?xml version="1.0" encoding="UTF-8"?><Catch name="suite1">'); // no close
       withArgs.onCall(withArgs.callCount).returns(cp);
 
@@ -1025,8 +1025,8 @@ describe(path.basename(__filename), function() {
       // since taskQueue/allTasks has benn added it works differently, so it
       // wont test anything really, but i dont want to delete it either
       await loadAdapterAndAssert();
-      let spyKill1: sinon.SinonSpy<[(NodeJS.Signals | number)?], void>;
-      let spyKill2: sinon.SinonSpy<[(NodeJS.Signals | number)?], void>;
+      let spyKill1: sinon.SinonSpy<[(NodeJS.Signals | number)?], boolean>;
+      let spyKill2: sinon.SinonSpy<[(NodeJS.Signals | number)?], boolean>;
       {
         const spawnEvent = new ChildProcessStub(example1.suite1.outputs[2][1]);
         spyKill1 = sinon.spy(spawnEvent, 'kill');
@@ -1089,8 +1089,8 @@ describe(path.basename(__filename), function() {
 
     it('cancels after run finished', async function() {
       await loadAdapterAndAssert();
-      let spyKill1: sinon.SinonSpy<[(NodeJS.Signals | number)?], void>;
-      let spyKill2: sinon.SinonSpy<[(NodeJS.Signals | number)?], void>;
+      let spyKill1: sinon.SinonSpy<[(NodeJS.Signals | number)?], boolean>;
+      let spyKill2: sinon.SinonSpy<[(NodeJS.Signals | number)?], boolean>;
       {
         const spawnEvent = new ChildProcessStub(example1.suite1.outputs[2][1]);
         spyKill1 = sinon.spy(spawnEvent, 'kill');
@@ -1786,7 +1786,7 @@ describe(path.basename(__filename), function() {
       };
 
       let i = 0;
-      for (let test of suite3.children) {
+      for (const test of suite3.children) {
         assert.equal(test.type, 'test');
         await runAndCheckEvents(test as TestInfo, i++);
       }
