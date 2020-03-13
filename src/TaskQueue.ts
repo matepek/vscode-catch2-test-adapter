@@ -32,7 +32,7 @@ export class TaskQueue {
 
     current = current.then(task).finally(() => --this._count);
 
-    this._queue = current.catch(() => {});
+    this._queue = current.catch((): void => undefined);
 
     return current;
   }
@@ -46,7 +46,7 @@ export class TaskQueue {
     }
   }
 
-  private _count: number = 0;
+  private _count = 0;
   private _queue: Promise<any> = Promise.resolve(); //eslint-disable-line
   private readonly _depends: TaskQueue[] = [];
 

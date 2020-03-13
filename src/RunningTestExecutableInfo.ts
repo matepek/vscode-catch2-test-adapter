@@ -99,7 +99,7 @@ export class RunningTestExecutableInfo {
   }
 
   private _timeout: number | null = null;
-  private _closed: boolean = false;
-  private _killed: boolean = false;
-  private _stderr: string = '';
+  private _closed = false;
+  private _killed = false;
+  private _stderr = '';
 }

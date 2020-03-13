@@ -30,7 +30,7 @@ export class DOCSection implements Frame {
   public readonly filename: string;
   public readonly line: number;
   public readonly children: DOCSection[] = [];
-  public failed: boolean = false;
+  public failed = false;
 }
 
 export class DOCTestInfo extends AbstractTestInfo {

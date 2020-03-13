@@ -246,7 +246,7 @@ export class Config {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultEnv = this.getDefaultEnvironmentVariables() || {};
 
-    let executables: TestExecutableInfo[] = [];
+    const executables: TestExecutableInfo[] = [];
 
     const configExecs:
       | undefined
@@ -334,7 +334,7 @@ export class Config {
         ),
       );
     } else if (Array.isArray(configExecs)) {
-      for (var i = 0; i < configExecs.length; ++i) {
+      for (let i = 0; i < configExecs.length; ++i) {
         const configExec = configExecs[i];
         if (typeof configExec === 'string') {
           const configExecsName = String(configExec);

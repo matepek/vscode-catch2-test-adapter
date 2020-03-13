@@ -27,7 +27,9 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
 
     this._executables = executables;
 
-    return Promise.all(executables.map(v => v.load().catch(e => this._shared.log.exception(e, v)))).then(() => {});
+    return Promise.all(executables.map(v => v.load().catch(e => this._shared.log.exception(e, v)))).then(
+      (): void => undefined,
+    );
   }
 
   public run(tests: string[]): Promise<void> {

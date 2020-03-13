@@ -212,7 +212,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       const indexRegex = new RegExp('\\${' + varName + '(?:\\[(-?[0-9]+)?:(-?[0-9]+)?\\])?}');
 
       const pathArray = pathVal.split(separator);
-      const replacer = (m: RegExpMatchArray) => {
+      const replacer = (m: RegExpMatchArray): string => {
         const idx1 = m[1] === undefined ? undefined : Number(m[1]);
         const idx2 = m[2] === undefined ? undefined : Number(m[2]);
 
@@ -222,9 +222,11 @@ export class TestExecutableInfo implements vscode.Disposable {
       return [indexRegex, replacer];
     };
 
-    const subPath = (valName: string, pathStr: string) => pathWithArrayIndexing(valName, pathStr, /\/|\\/, path.sep);
+    const subPath = (valName: string, pathStr: string): [RegExp, (m: RegExpMatchArray) => string] =>
+      pathWithArrayIndexing(valName, pathStr, /\/|\\/, path.sep);
 
-    const subFilename = (valName: string, filename: string) => pathWithArrayIndexing(valName, filename, '.', '.');
+    const subFilename = (valName: string, filename: string): [RegExp, (m: RegExpMatchArray) => string] =>
+      pathWithArrayIndexing(valName, filename, '.', '.');
 
     try {
       const filename = path.basename(filePath);

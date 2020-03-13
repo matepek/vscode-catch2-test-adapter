@@ -26,7 +26,7 @@ beforeEach(function() {
   currentLogfilePath = path.join(failedTestLogDir, 'log_' + counter++ + '.txt');
 
   const w = fse.createWriteStream(currentLogfilePath, { flags: 'w' });
-  let title = this.currentTest ? this.currentTest.titlePath().join(': ') : '<unknown>';
+  const title = this.currentTest ? this.currentTest.titlePath().join(': ') : '<unknown>';
   w.write('\n' + '#'.repeat(title.length + 6) + '\n## ' + title + ' ##\n' + '#'.repeat(title.length + 6) + '\n');
 
   return settings.updateConfig('logfile', currentLogfilePath);

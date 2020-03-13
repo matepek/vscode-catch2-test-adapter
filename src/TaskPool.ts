@@ -27,7 +27,7 @@ export class TaskPool {
       .finally(() => this._release());
   }
 
-  private _runningTaskCount: number = 0;
+  private _runningTaskCount = 0;
   private readonly _waitingTasks: (() => void)[] = [];
 
   private _acquire(): boolean {

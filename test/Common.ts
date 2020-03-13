@@ -69,7 +69,7 @@ export const settings = new (class {
 
 export const globalExpectedLoggedErrorLine = new Set<string>();
 
-export function expectedLoggedErrorLine(errorLine: string) {
+export function expectedLoggedErrorLine(errorLine: string): void {
   globalExpectedLoggedErrorLine.add(errorLine);
 }
 
@@ -207,7 +207,7 @@ export class Imitation {
       ignoreCreateEvents?: boolean | undefined,
       ignoreChangeEvents?: boolean | undefined,
       ignoreDeleteEvents?: boolean | undefined,
-    ) => {
+    ): FileSystemWatcherStub => {
       const pp = typeof p === 'string' ? p : path.join(p.base, p.pattern);
       const e = new FileSystemWatcherStub(
         vscode.Uri.file(pp),
@@ -417,13 +417,13 @@ export class ChildProcessStub extends EventEmitter implements ChildProcess {
     else throw new Error('assert');
 
     this.stdout = new Readable({
-      read: () => {
+      read: (): void => {
         this._canPushOut = true;
         this._writeStdOut();
       },
     });
     this.stderr = new Readable({
-      read: () => {
+      read: (): void => {
         this._canPushErr = true;
         this._writeStdErr();
       },

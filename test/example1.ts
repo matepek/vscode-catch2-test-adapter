@@ -2321,8 +2321,8 @@ For more detailed usage please see the project docs
   public initImitation(imitation: Imitation): Map<string, FileSystemWatcherStub> {
     const watchers: Map<string, FileSystemWatcherStub> = new Map();
 
-    for (let suite of this.outputs) {
-      for (let scenario of suite[1]) {
+    for (const suite of this.outputs) {
+      for (const scenario of suite[1]) {
         imitation.spawnStub.withArgs(suite[0], scenario[0], sinon.match.any).callsFake(function() {
           return new ChildProcessStub(scenario[1]);
         });
@@ -2338,7 +2338,7 @@ For more detailed usage please see the project docs
     }
 
     const dirContent: Map<string, vscode.Uri[]> = new Map();
-    for (let p of this.outputs) {
+    for (const p of this.outputs) {
       const parent = vscode.Uri.file(path.dirname(p[0])).fsPath;
       let children: vscode.Uri[] = [];
       if (dirContent.has(parent)) children = dirContent.get(parent)!;

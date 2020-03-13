@@ -169,10 +169,10 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
 
   protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
     const data = new (class {
-      public buffer: string = '';
-      public inTestCase: boolean = false;
+      public buffer = '';
+      public inTestCase = false;
       public currentChild: DOCTestInfo | undefined = undefined;
-      public beforeFirstTestCase: boolean = true;
+      public beforeFirstTestCase = true;
       public rngSeed: number | undefined = undefined;
       public unprocessedXmlTestCases: string[] = [];
       public processedTestCases: DOCTestInfo[] = [];

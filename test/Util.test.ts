@@ -5,7 +5,7 @@ import * as utils from '../src/Util';
 
 describe(path.basename(__filename), function() {
   it('resolveVariables', function() {
-    const func1 = () => 'resolvedFunc1';
+    const func1 = (): string => 'resolvedFunc1';
 
     // eslint-disable-next-line
     const varsToResolve: utils.ResolveRulePair[] = [
@@ -19,7 +19,7 @@ describe(path.basename(__filename), function() {
       ['func1', func1],
       [/reg(ex1|ex2)/, '$1'],
       [/Reg(ex1|ex2)/g, '$1'],
-      [/func(ex1|ex2)/, (m: RegExpMatchArray) => m[1] + 'yee'],
+      [/func(ex1|ex2)/, (m: RegExpMatchArray): string => m[1] + 'yee'],
     ];
 
     assert.deepStrictEqual(utils.resolveVariables(null, varsToResolve), null);
@@ -42,7 +42,7 @@ describe(path.basename(__filename), function() {
     assert.deepStrictEqual(utils.resolveVariables('p funcex1 funcex2 s', varsToResolve), 'p ex1yee ex2yee s');
 
     assert.deepStrictEqual(
-      utils.resolveVariables('p funcex1 funcex2 s', [[/func(ex1|ex2)/, () => 'yee']]),
+      utils.resolveVariables('p funcex1 funcex2 s', [[/func(ex1|ex2)/, (): string => 'yee']]),
       'p yee yee s',
     );
 

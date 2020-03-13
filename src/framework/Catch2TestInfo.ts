@@ -22,7 +22,7 @@ export class Catch2Section {
   public readonly filename: string | undefined;
   public readonly line: number;
   public readonly children: Catch2Section[] = [];
-  public failed: boolean = false;
+  public failed = false;
 
   public get escapedName(): string {
     // some debug adapter on ubuntu starts debug session in shell,
@@ -336,7 +336,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
       const section = xml.Section[j];
 
       try {
-        const currSection = (() => {
+        const currSection = ((): Catch2Section => {
           const found = parentSection.children.find(
             v => v.name === section.$.name && v.filename === section.$.filename && v.line === section.$.line,
           );
