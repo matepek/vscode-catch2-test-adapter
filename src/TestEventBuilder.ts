@@ -10,7 +10,7 @@ export class TestEventBuilder {
   private _durationMilisec: number | undefined = undefined;
   private _message: string[] = [];
   private _decorations: TestDecoration[] = [];
-  private _description: string = '';
+  private _description = '';
   private _tooltip: string[] = [];
   private _state: TestEventState | undefined = undefined;
 

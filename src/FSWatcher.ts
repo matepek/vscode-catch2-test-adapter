@@ -110,7 +110,9 @@ export class VSCFSWatcherWrapper implements FSWatcher {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public onError(_handler: (err: Error) => void): void {}
+  public onError(_handler: (err: Error) => void): void {
+    return undefined;
+  }
 
   private readonly _relativePattern: vscode.RelativePattern;
   private readonly _vscWatcher: vscode.FileSystemWatcher;

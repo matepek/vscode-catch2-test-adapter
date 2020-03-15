@@ -118,13 +118,13 @@ export function generateUniqueId(): string {
 
 import * as crypto from 'crypto';
 
-export function hashString<T>(str: string, algorithm: string = 'sha1'): string {
+export function hashString<T>(str: string, algorithm = 'sha1'): string {
   const hash = crypto.createHash(algorithm);
   hash.update(str);
   return hash.digest('hex');
 }
 
-export function reindentLines(indentLevel: number, lines: string[], indentWidth: number = 2): string[] {
+export function reindentLines(indentLevel: number, lines: string[], indentWidth = 2): string[] {
   let indent = 9999;
   lines.forEach(l => {
     let spaces = 0;
@@ -135,7 +135,7 @@ export function reindentLines(indentLevel: number, lines: string[], indentWidth:
   return reindented;
 }
 
-export function reindentStr(indentLevel: number, str: string | undefined, indentWidth: number = 2): string[] {
+export function reindentStr(indentLevel: number, str: string | undefined, indentWidth = 2): string[] {
   if (typeof str !== 'string') return [];
 
   const lines = str.split(/\r?\n/);
@@ -147,7 +147,7 @@ export function milisecToStr(durationInMilisec: number): string {
   const sec = Math.floor((durationInMilisec - minute * 60000) / 1000);
   const miliSec = Math.round(durationInMilisec - minute * 60000 - sec * 1000);
 
-  let durationArr = [
+  const durationArr = [
     [minute, 'm'],
     [sec, 's'],
     [miliSec, 'ms'],
@@ -166,8 +166,6 @@ import { promisify } from 'util';
 import { SharedVariables } from './SharedVariables';
 type VersionT = [number, number, number];
 export class GoogleTestVersionFinder {
-  private constructor() {}
-
   private static readonly _versions: [number, VersionT][] = [
     [47254, [1, 0, 1]],
     [48592, [1, 0, 0]],
@@ -225,7 +223,7 @@ export class GoogleTestVersionFinder {
           if (found) {
             return found[1];
           } else {
-            const distance = (current: [number, VersionT]) => Math.abs(current[0] - fileSizeInBytes);
+            const distance = (current: [number, VersionT]): number => Math.abs(current[0] - fileSizeInBytes);
 
             const res = GoogleTestVersionFinder._versions.reduce((prev, current) =>
               distance(prev) <= distance(current) ? prev : current,

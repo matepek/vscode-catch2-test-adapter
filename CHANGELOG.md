@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.9]
+
+### Changed
+
+- Ignoring more known extensions and also ignoring `_deps` subfolder.
+  This change might cause a problem for some user but hopefully just makes the test discovery much faster.
+
 ## [2.8.8] - 2020-03-08
 
 ### Removed

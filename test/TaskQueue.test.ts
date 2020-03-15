@@ -5,7 +5,7 @@ import * as path from 'path';
 import { TaskQueue } from '../src/TaskQueue';
 
 describe(path.basename(__filename), function() {
-  async function waitFor(test: Mocha.Context, condition: Function, timeout: number = 1000): Promise<void> {
+  async function waitFor(test: Mocha.Context, condition: Function, timeout = 1000): Promise<void> {
     const start = Date.now();
     let c = await condition();
     while (!c && (Date.now() - start < timeout || !test.enableTimeouts())) {

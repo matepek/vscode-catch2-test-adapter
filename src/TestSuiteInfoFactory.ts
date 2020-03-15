@@ -24,10 +24,10 @@ export class TestSuiteInfoFactory {
     private readonly _doctest: TestExecutableInfoFrameworkSpecific,
   ) {}
 
-  public create(): Promise<AbstractTestSuiteInfo> {
+  public create(checkIsNativeExecutable: boolean): Promise<AbstractTestSuiteInfo> {
     return this._shared.taskPool
       .scheduleTask(() => {
-        return this._determineTestTypeOfExecutable();
+        return this._determineTestTypeOfExecutable(checkIsNativeExecutable);
       })
       .then((framework: TestFrameworkInfo) => {
         switch (framework.type) {
@@ -75,8 +75,8 @@ export class TestSuiteInfoFactory {
       });
   }
 
-  private async _determineTestTypeOfExecutable(): Promise<TestFrameworkInfo> {
-    await c2fs.isNativeExecutableAsync(this._execPath);
+  private async _determineTestTypeOfExecutable(checkIsNativeExecutable: boolean): Promise<TestFrameworkInfo> {
+    if (checkIsNativeExecutable) await c2fs.isNativeExecutableAsync(this._execPath);
 
     const res = await c2fs.spawnAsync(this._execPath, ['--help'], this._execOptions, this._shared.execParsingTimeout);
 

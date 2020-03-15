@@ -14,7 +14,7 @@ import { promisify } from 'util';
 export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   private static _reportedFrameworks: string[] = [];
 
-  private _canceled: boolean = false;
+  private _canceled = false;
   private _runInfo: RunningTestExecutableInfo | undefined = undefined;
   private _mtime: number | undefined = undefined;
 
@@ -121,7 +121,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       if (childrenToRun.size == 0) return Promise.resolve();
     }
 
-    const runIfNotCancelled = () => {
+    const runIfNotCancelled = (): Promise<void> => {
       if (this._canceled) {
         this._shared.log.info('test was canceled:', this);
         return Promise.resolve();

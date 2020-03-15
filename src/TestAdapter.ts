@@ -84,7 +84,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     if (!this._isDebug) config.askSentryConsent();
 
     try {
-      const extensionInfo = (() => {
+      const extensionInfo = ((): {
+        version: string;
+        publisher: string;
+        name: string;
+      } => {
         try {
           const pjson = readJSONSync(join(__dirname, '../../package.json'));
           return { version: pjson.version, publisher: pjson.publisher, name: pjson.name };
