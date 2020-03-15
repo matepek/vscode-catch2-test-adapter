@@ -121,7 +121,8 @@ If compilation reaches timeout it will drop the suite (`catch2TestExplorer.defau
 
 - on windows: NOT ends with `.exe`, `.cmd` or `.bat`.
 - on other platforms: ends with one of the following:
-  `'.c', '.cmake', '.cpp', '.cxx', '.deb', '.dir', '.gz', '.h', '.hpp', '.hxx', '.ko', '.log', '.o', '.php', '.rpm', '.so', '.tar', '.txt'`.
+  `'.a', '.bat', '.c', '.cc', '.cmake', '.cpp', '.cxx', '.deb', '.dir', '.gz', '.h', '.hpp', '.hxx', '.in', '.input', '.ko', '.log', '.md', '.mm', '.o', '.pc', '.php', '.pyc', '.rpm', '.so', '.tar', '.txt', '.vcxproj.user', '.xml'`.
+- inside a sub-folder called: `_deps`. Except when it is explicitly contained by the `pattern`.
 
 It won't filter out `'.sh'`, `'.py'` (etc.) files, so that could be used for wrappers.
 

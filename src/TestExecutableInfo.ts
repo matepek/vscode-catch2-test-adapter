@@ -402,7 +402,7 @@ export class TestExecutableInfo implements vscode.Disposable {
   }
 
   private _shouldIgnorePath(filePath: string): boolean {
-    if (filePath.indexOf('/_deps/') !== -1) {
+    if (!this._pattern.match(/(\/|\\)_deps(\/|\\)/) && filePath.indexOf('/_deps/') !== -1) {
       // cmake fetches the dependencies here. we dont care about it 🤞
       this._shared.log.info('skipping because it is under "/_deps/"', filePath);
       return true;
