@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.11]
+
+npm update
+
 ## [2.8.10] - 2020-03-15
 
 README fixes and option to force add `.../_deps/...`.
