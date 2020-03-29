@@ -97,7 +97,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         ++i;
       }
 
-      const index = oldChildren.findIndex((c) => c.testNameAsId == testNameAsId);
+      const index = oldChildren.findIndex(c => c.testNameAsId == testNameAsId);
 
       this.addChild(
         new Catch2TestInfo(
@@ -191,7 +191,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     this._reloadFromString(catch2TestListOutput.stdout, oldChildren);
 
     if (this._shared.enabledTestListCaching) {
-      return promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch((err) =>
+      return promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>
         this._shared.log.warn('couldnt write cache file:', err),
       );
     }
@@ -201,7 +201,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
     const execParams: string[] = [];
 
     if (childrenToRun !== 'runAllTestsExceptSkipped') {
-      const testNames = [...childrenToRun].map((c) => c.getEscapedTestName());
+      const testNames = [...childrenToRun].map(c => c.getEscapedTestName());
       execParams.push(testNames.join(','));
     }
 
@@ -235,7 +235,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
     const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
 
-    return new Promise<ProcessResult>((resolve) => {
+    return new Promise<ProcessResult>(resolve => {
       const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
         chunks.push(chunk);
