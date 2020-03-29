@@ -33,7 +33,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
         if (AbstractTestSuiteInfo._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
           const versionStr = version ? version.join('.') : 'unknown';
 
-          shared.log.infoWithTags('Framework', {
+          shared.log.infoMessageWithTags('Framework', {
             framework: this.frameworkName,
             frameworkVersion: `${this.frameworkName}@${versionStr}`,
           });
@@ -144,7 +144,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   }
 
   private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): Promise<void> {
-    const execParams = this._getRunParams(childrenToRun).concat(this.execInfo.additionalRunArguments);
+    const execParams = this.execInfo.prependTestRunningArgs.concat(this._getRunParams(childrenToRun));
 
     this._shared.log.info('proc starting', this.origLabel, execParams);
 

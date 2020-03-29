@@ -58,14 +58,14 @@
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "@sentry/node": "^5.15.0",
+    "@sentry/node": "^5.15.4",
     "@types/chai": "^4.2.11",
     "@types/deep-equal": "^1.0.1",
     "@types/entities": "^1.1.1",
     "@types/fs-extra": "^8.1.0",
     "@types/mocha": "^7.0.2",
-    "@types/node": "^13.9.3",
-    "@types/request-promise": "4.1.45",
+    "@types/node": "^13.9.5",
+    "@types/request-promise": "4.1.46",
     "@types/sinon": "^7.5.2",
     "@types/xml2js": "^0.4.5",
     "@typescript-eslint/eslint-plugin": "^2.25.0",
@@ -74,9 +74,9 @@
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.1",
     "eslint-plugin-prettier": "^3.1.2",
-    "fs-extra": "^8.1.0",
+    "fs-extra": "^9.0.0",
     "mocha-eslint": "^6.0.0",
-    "prettier": "^1.19.1",
+    "prettier": "^2.0.2",
     "raw-loader": "^4.0.0",
     "request-promise": "4.2.5",
     "sinon": "^9.0.1",
@@ -244,12 +244,18 @@
                             "type": "string",
                             "minLength": 1
                           },
-                          "additionalRunArguments": {
+                          "prependTestRunningArgs": {
                             "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
                             "type": "array",
                             "items": {
-                              "type": "string",
-                              "minLength": 1
+                              "type": "string"
+                            }
+                          },
+                          "prependTestListingArgs": {
+                            "description": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.)",
+                            "type": "array",
+                            "items": {
+                              "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {
@@ -268,12 +274,18 @@
                             "type": "string",
                             "minLength": 1
                           },
-                          "additionalRunArguments": {
+                          "prependTestRunningArgs": {
                             "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
                             "type": "array",
                             "items": {
-                              "type": "string",
-                              "minLength": 1
+                              "type": "string"
+                            }
+                          },
+                          "prependTestListingArgs": {
+                            "description": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.)",
+                            "type": "array",
+                            "items": {
+                              "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {
@@ -292,12 +304,18 @@
                             "type": "string",
                             "minLength": 1
                           },
-                          "additionalRunArguments": {
+                          "prependTestRunningArgs": {
                             "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
                             "type": "array",
                             "items": {
-                              "type": "string",
-                              "minLength": 1
+                              "type": "string"
+                            }
+                          },
+                          "prependTestListingArgs": {
+                            "description": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.)",
+                            "type": "array",
+                            "items": {
+                              "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {

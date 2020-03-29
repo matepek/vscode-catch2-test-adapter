@@ -147,7 +147,14 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
 
     const catch2TestListOutput = await c2fs.spawnAsync(
       this.execInfo.path,
-      ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
+      this.execInfo.prependTestListingArgs.concat([
+        '[.],*',
+        '--verbosity',
+        'high',
+        '--list-tests',
+        '--use-colour',
+        'no',
+      ]),
       this.execInfo.options,
       30000,
     );

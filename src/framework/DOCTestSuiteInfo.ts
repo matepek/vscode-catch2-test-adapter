@@ -90,7 +90,12 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     return c2fs
       .spawnAsync(
         this.execInfo.path,
-        ['--list-test-cases', '--reporters=xml', '--no-skip=true', '--no-color=true'],
+        this.execInfo.prependTestListingArgs.concat([
+          '--list-test-cases',
+          '--reporters=xml',
+          '--no-skip=true',
+          '--no-color=true',
+        ]),
         this.execInfo.options,
         30000,
       )

@@ -16,9 +16,9 @@ export class LogWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public infoWithTags(m: string, tags: { [key: string]: string }): void {
+  public infoMessageWithTags(m: string, tags: { [key: string]: string }): void {
     try {
-      Sentry.withScope(function(scope) {
+      Sentry.withScope(function (scope) {
         scope.setTags(tags);
         Sentry.captureMessage(m, Sentry.Severity.Log);
       });

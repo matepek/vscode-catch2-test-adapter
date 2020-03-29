@@ -8,7 +8,7 @@ import { SharedVariables } from './SharedVariables';
 import { TestExecutableInfoFrameworkSpecific } from './TestExecutableInfo';
 
 interface TestFrameworkInfo {
-  type: 'catch2' | 'google' | 'doc';
+  type: 'catch2' | 'gtest' | 'doctest';
   version: [number, number, number] | undefined;
 }
 
@@ -31,7 +31,7 @@ export class TestSuiteInfoFactory {
       })
       .then((framework: TestFrameworkInfo) => {
         switch (framework.type) {
-          case 'google':
+          case 'gtest':
             return new GoogleTestSuiteInfo(
               this._shared,
               this._label,
@@ -39,7 +39,8 @@ export class TestSuiteInfoFactory {
               new TestSuiteExecutionInfo(
                 this._execPath,
                 this._execOptions,
-                this._gtest.additionalRunArguments ? this._gtest.additionalRunArguments : [],
+                this._gtest.prependTestRunningArgs ? this._gtest.prependTestRunningArgs : [],
+                this._gtest.prependTestListingArgs ? this._gtest.prependTestListingArgs : [],
                 this._gtest.ignoreTestEnumerationStdErr === true,
               ),
               Promise.resolve(undefined), //Util: GoogleTestVersionFinder
@@ -52,12 +53,13 @@ export class TestSuiteInfoFactory {
               new TestSuiteExecutionInfo(
                 this._execPath,
                 this._execOptions,
-                this._catch2.additionalRunArguments ? this._catch2.additionalRunArguments : [],
+                this._catch2.prependTestRunningArgs ? this._catch2.prependTestRunningArgs : [],
+                this._catch2.prependTestListingArgs ? this._catch2.prependTestListingArgs : [],
                 this._catch2.ignoreTestEnumerationStdErr === true,
               ),
               framework.version,
             );
-          case 'doc':
+          case 'doctest':
             return new DOCTestSuiteInfo(
               this._shared,
               this._label,
@@ -65,7 +67,8 @@ export class TestSuiteInfoFactory {
               new TestSuiteExecutionInfo(
                 this._execPath,
                 this._execOptions,
-                this._doctest.additionalRunArguments ? this._doctest.additionalRunArguments : [],
+                this._doctest.prependTestRunningArgs ? this._doctest.prependTestRunningArgs : [],
+                this._doctest.prependTestListingArgs ? this._doctest.prependTestListingArgs : [],
                 this._doctest.ignoreTestEnumerationStdErr === true,
               ),
               framework.version,
@@ -105,7 +108,7 @@ export class TestSuiteInfoFactory {
           : /This program contains tests written using Google Test./,
       );
       if (google) {
-        return { type: 'google', version: this._parseVersion(google) };
+        return { type: 'gtest', version: this._parseVersion(google) };
       }
     }
     {
@@ -117,7 +120,7 @@ export class TestSuiteInfoFactory {
           : /doctest version is "([0-9]+)\.([0-9]+)\.([0-9]+)"/,
       );
       if (doc) {
-        return { type: 'doc', version: this._parseVersion(doc) };
+        return { type: 'doctest', version: this._parseVersion(doc) };
       }
     }
 

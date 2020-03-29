@@ -284,11 +284,18 @@ export class Config {
           if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
 
           if (
-            Array.isArray(obj.additionalRunArguments) &&
+            Array.isArray(obj.prependTestRunningArgs) &&
             // eslint-disable-next-line
-            (obj.additionalRunArguments as any[]).every(x => typeof x === 'string')
+            (obj.prependTestRunningArgs as any[]).every(x => typeof x === 'string')
           )
-            r.additionalRunArguments = obj.additionalRunArguments;
+            r.prependTestRunningArgs = obj.prependTestRunningArgs;
+
+          if (
+            Array.isArray(obj.prependTestListingArgs) &&
+            // eslint-disable-next-line
+            (obj.prependTestListingArgs as any[]).every(x => typeof x === 'string')
+          )
+            r.prependTestListingArgs = obj.prependTestListingArgs;
 
           if (typeof obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
         }

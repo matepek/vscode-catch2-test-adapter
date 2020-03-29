@@ -10,7 +10,7 @@ For that a public access token (PAT) was generated, encrypted and added to [.tra
 - Goto [https://marketplace.visualstudio.com/manage]()
 - Sign in
 - Click on your name at the upper-right corner
-- Change organisation to Micrisift Account
+- Change organisation to Microsoft Account
 - Click on `matepek.visualstudio.com`.
 
 This will bring you to [https://matepek.visualstudio.com/](). One cans start directly from here.

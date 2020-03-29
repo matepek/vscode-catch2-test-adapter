@@ -192,7 +192,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     return c2fs
       .spawnAsync(
         this.execInfo.path,
-        ['--gtest_list_tests', '--gtest_output=xml:' + cacheFile],
+        this.execInfo.prependTestListingArgs.concat(['--gtest_list_tests', '--gtest_output=xml:' + cacheFile]),
         this.execInfo.options,
         30000,
       )

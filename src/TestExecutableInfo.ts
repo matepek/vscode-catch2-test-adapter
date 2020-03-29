@@ -12,7 +12,8 @@ import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
 
 export interface TestExecutableInfoFrameworkSpecific {
   helpRegex?: string;
-  additionalRunArguments?: string[];
+  prependTestRunningArgs?: string[];
+  prependTestListingArgs?: string[];
   ignoreTestEnumerationStdErr?: boolean;
 }
 
@@ -35,6 +36,11 @@ export class TestExecutableInfo implements vscode.Disposable {
   ) {
     this._name = name !== undefined ? name : '${filename}';
     this._description = description !== undefined ? description : '${relDirpath}/';
+
+    if ([_catch2, _gtest, _doctest].some(f => Object.keys(f).length > 0)) {
+      _shared.log.info('TestExecutableInfoFrameworkSpecific', _catch2, _gtest, _doctest);
+      _shared.log.infoMessageWithTags('TestExecutableInfoFrameworkSpecific', {});
+    }
   }
 
   private readonly _name: string;

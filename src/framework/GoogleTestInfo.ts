@@ -108,7 +108,7 @@ export class GoogleTestInfo extends AbstractTestInfo {
         if (match !== null) {
           i += 1;
           const filePath = match[1];
-          const lineNumber = Number(match[2]) - 1 /*It looks vscode works like this.*/;
+          const lineNumber = Number(match[2]) - 1; /*It looks vscode works like this.*/
 
           if (match[3].startsWith('Failure')) {
             const failureMsg = match[3];
