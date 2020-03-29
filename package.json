@@ -244,12 +244,18 @@
                             "type": "string",
                             "minLength": 1
                           },
-                          "additionalRunArguments": {
+                          "prependTestRunningArgs": {
                             "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
                             "type": "array",
                             "items": {
-                              "type": "string",
-                              "minLength": 1
+                              "type": "string"
+                            }
+                          },
+                          "prependTestListingArgs": {
+                            "description": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.)",
+                            "type": "array",
+                            "items": {
+                              "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {
@@ -268,12 +274,18 @@
                             "type": "string",
                             "minLength": 1
                           },
-                          "additionalRunArguments": {
+                          "prependTestRunningArgs": {
                             "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
                             "type": "array",
                             "items": {
-                              "type": "string",
-                              "minLength": 1
+                              "type": "string"
+                            }
+                          },
+                          "prependTestListingArgs": {
+                            "description": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.)",
+                            "type": "array",
+                            "items": {
+                              "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {
@@ -292,12 +304,18 @@
                             "type": "string",
                             "minLength": 1
                           },
-                          "additionalRunArguments": {
+                          "prependTestRunningArgs": {
                             "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
                             "type": "array",
                             "items": {
-                              "type": "string",
-                              "minLength": 1
+                              "type": "string"
+                            }
+                          },
+                          "prependTestListingArgs": {
+                            "description": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.)",
+                            "type": "array",
+                            "items": {
+                              "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {

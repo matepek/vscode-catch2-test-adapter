@@ -55,7 +55,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
       const suiteName = xml.testsuites.testsuite[i].$.name;
 
-      const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
+      const oldGroup = oldChildren.find((v) => v.origLabel === suiteName);
       const oldGroupId = oldGroup ? oldGroup.id : undefined;
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
@@ -70,7 +70,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         const typeParam: string | undefined = test.$.type_param;
         const valueParam: string | undefined = test.$.value_param;
 
-        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
+        const old = this.findTestInfoInArray(oldGroupChildren, (v) => v.testNameAsId === testNameAsId);
 
         const file = test.$.file ? this._findFilePath(test.$.file) : undefined;
         const line = test.$.line ? test.$.line - 1 : undefined;
@@ -89,7 +89,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         );
       }
 
-      if (group.children.length && group.children.every(c => c.description === group.children[0].description))
+      if (group.children.length && group.children.every((c) => c.description === group.children[0].description))
         group.description = group.children[0].description;
     }
   }
@@ -122,7 +122,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
       const suiteName = testGroupMatch[1];
       const typeParam: string | undefined = testGroupMatch[3];
 
-      const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
+      const oldGroup = oldChildren.find((v) => v.origLabel === suiteName);
       const oldGroupId = oldGroup ? oldGroup.id : undefined;
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
@@ -137,7 +137,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         const valueParam: string | undefined = testMatch[3];
         const testNameAsId = testGroupName + '.' + testMatch[1];
 
-        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
+        const old = this.findTestInfoInArray(oldGroupChildren, (v) => v.testNameAsId === testNameAsId);
 
         group.addChild(
           new GoogleTestInfo(
@@ -155,7 +155,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
       }
 
-      if (group.children.length && group.children.every(c => c.description === group.children[0].description))
+      if (group.children.length && group.children.every((c) => c.description === group.children[0].description))
         group.description = group.children[0].description;
 
       if (group.children.length > 0) this.addChild(group);
@@ -192,11 +192,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     return c2fs
       .spawnAsync(
         this.execInfo.path,
-        ['--gtest_list_tests', '--gtest_output=xml:' + cacheFile],
+        this.execInfo.prependTestListingArgs.concat(['--gtest_list_tests', '--gtest_output=xml:' + cacheFile]),
         this.execInfo.options,
         30000,
       )
-      .then(async googleTestListOutput => {
+      .then(async (googleTestListOutput) => {
         this.children = [];
         this.label = this.origLabel;
 
@@ -262,7 +262,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     const execParams: string[] = ['--gtest_color=no'];
 
     if (childrenToRun !== 'runAllTestsExceptSkipped') {
-      const testNames = [...childrenToRun].map(c => c.testNameAsId);
+      const testNames = [...childrenToRun].map((c) => c.testNameAsId);
 
       execParams.push('--gtest_filter=' + testNames.join(':'));
 
@@ -296,7 +296,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
     const testBeginRe = /^\[ RUN      \] ((.+)\.(.+))$/m;
 
-    return new Promise<ProcessResult>(resolve => {
+    return new Promise<ProcessResult>((resolve) => {
       const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
         chunks.push(chunk);
@@ -310,7 +310,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             data.currentTestCaseNameFull = m[1];
 
             const groupName = m[2];
-            const group = this.children.find(c => c.label == groupName);
+            const group = this.children.find((c) => c.label == groupName);
             if (group) {
               if (data.group !== group) {
                 if (data.group) this._shared.testStatesEmitter.fire(data.group.getCompletedEvent());
@@ -323,7 +323,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             }
 
             data.beforeFirstTestCase = false;
-            data.currentChild = this.findTestInfo(v => v.testNameAsId == data.currentTestCaseNameFull);
+            data.currentChild = this.findTestInfo((v) => v.testNameAsId == data.currentTestCaseNameFull);
 
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
@@ -463,7 +463,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
                 const testNameAsId = m[1];
 
-                const currentChild = this.findTestInfo(v => v.testNameAsId == testNameAsId);
+                const currentChild = this.findTestInfo((v) => v.testNameAsId == testNameAsId);
                 if (currentChild === undefined) break;
                 try {
                   const ev = currentChild.parseAndProcessTestCase(testCase, runInfo);

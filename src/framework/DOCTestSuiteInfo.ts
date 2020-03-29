@@ -46,7 +46,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      const index = oldChildren.findIndex(c => c.testNameAsId == testNameAsId);
+      const index = oldChildren.findIndex((c) => c.testNameAsId == testNameAsId);
 
       this.addChild(
         new DOCTestInfo(
@@ -90,11 +90,16 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     return c2fs
       .spawnAsync(
         this.execInfo.path,
-        ['--list-test-cases', '--reporters=xml', '--no-skip=true', '--no-color=true'],
+        this.execInfo.prependTestListingArgs.concat([
+          '--list-test-cases',
+          '--reporters=xml',
+          '--no-skip=true',
+          '--no-color=true',
+        ]),
         this.execInfo.options,
         30000,
       )
-      .then(docTestListOutput => {
+      .then((docTestListOutput) => {
         if (docTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
           this._shared.log.warn(
             'reloadChildren -> docTestListOutput.stderr',
@@ -136,7 +141,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
         this._reloadFromString(docTestListOutput.stdout, oldChildren);
 
         if (this._shared.enabledTestListCaching) {
-          return promisify(fs.writeFile)(cacheFile, docTestListOutput.stdout).catch(err =>
+          return promisify(fs.writeFile)(cacheFile, docTestListOutput.stdout).catch((err) =>
             this._shared.log.warn('couldnt write cache file:', err),
           );
         }
@@ -148,7 +153,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     const execParams: string[] = [];
 
     if (childrenToRun !== 'runAllTestsExceptSkipped') {
-      const testNames = [...childrenToRun].map(c => c.getEscapedTestName());
+      const testNames = [...childrenToRun].map((c) => c.getEscapedTestName());
       execParams.push('--test-case=' + testNames.join(','));
       execParams.push('--no-skip=true');
     }
@@ -180,7 +185,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
 
     const testCaseTagRe = /<TestCase(\s+[^\n\r]+)[^\/](\/)?>/;
 
-    return new Promise<ProcessResult>(resolve => {
+    return new Promise<ProcessResult>((resolve) => {
       const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
         chunks.push(chunk);

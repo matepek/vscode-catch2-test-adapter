@@ -12,7 +12,8 @@ import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
 
 export interface TestExecutableInfoFrameworkSpecific {
   helpRegex?: string;
-  additionalRunArguments?: string[];
+  prependTestRunningArgs?: string[];
+  prependTestListingArgs?: string[];
   ignoreTestEnumerationStdErr?: boolean;
 }
 
@@ -35,6 +36,11 @@ export class TestExecutableInfo implements vscode.Disposable {
   ) {
     this._name = name !== undefined ? name : '${filename}';
     this._description = description !== undefined ? description : '${relDirpath}/';
+
+    if ([_catch2, _gtest, _doctest].some((f) => Object.keys(f).length > 0)) {
+      _shared.log.info('TestExecutableInfoFrameworkSpecific', _catch2, _gtest, _doctest);
+      _shared.log.infoMessageWithTags('TestExecutableInfoFrameworkSpecific', {});
+    }
   }
 
   private readonly _name: string;
@@ -47,7 +53,7 @@ export class TestExecutableInfo implements vscode.Disposable {
   private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
   public dispose(): void {
-    this._disposables.forEach(d => d.dispose());
+    this._disposables.forEach((d) => d.dispose());
   }
 
   public async load(): Promise<void> {
@@ -79,7 +85,7 @@ export class TestExecutableInfo implements vscode.Disposable {
         else this._shared.log.error('watcher error', err);
       });
 
-      execWatcher.onAll(fsPath => {
+      execWatcher.onAll((fsPath) => {
         this._shared.log.info('watcher event:', fsPath);
         this._handleEverything(fsPath);
       });
@@ -355,7 +361,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.info('refresh timeout:', filePath);
       this._lastEventArrivedAt.delete(filePath);
       if (this._rootSuite.hasChild(suite)) {
-        return new Promise<void>(resolve => {
+        return new Promise<void>((resolve) => {
           this._shared.loadWithTaskEmitter.fire(() => {
             this._executables.delete(filePath);
             this._rootSuite.removeChild(suite);
@@ -396,7 +402,7 @@ export class TestExecutableInfo implements vscode.Disposable {
             () => true,
             () => false,
           )
-          .then(isExec => this._recursiveHandleEverything(filePath, suite, isExec, Math.min(delay * 2, 2000)));
+          .then((isExec) => this._recursiveHandleEverything(filePath, suite, isExec, Math.min(delay * 2, 2000)));
       });
     }
   }

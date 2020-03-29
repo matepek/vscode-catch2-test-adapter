@@ -29,11 +29,11 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     super(shared, label, desciption, undefined);
 
     frameworkVersion
-      .then(version => {
-        if (AbstractTestSuiteInfo._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
+      .then((version) => {
+        if (AbstractTestSuiteInfo._reportedFrameworks.findIndex((x) => x === frameworkName) === -1) {
           const versionStr = version ? version.join('.') : 'unknown';
 
-          shared.log.infoWithTags('Framework', {
+          shared.log.infoMessageWithTags('Framework', {
             framework: this.frameworkName,
             frameworkVersion: `${this.frameworkName}@${versionStr}`,
           });
@@ -41,7 +41,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
           AbstractTestSuiteInfo._reportedFrameworks.push(frameworkName);
         }
       })
-      .catch(e => this._shared.log.exception(e));
+      .catch((e) => this._shared.log.exception(e));
   }
 
   public get tooltip(): string {
@@ -65,7 +65,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       );
 
       const mtime = await promisify(fs.stat)(this.execInfo.path).then(
-        stat => stat.mtimeMs,
+        (stat) => stat.mtimeMs,
         () => undefined,
       );
 
@@ -98,7 +98,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     const childrenToRun = tests.delete(this.id) ? 'runAllTestsExceptSkipped' : new Set<AbstractTestInfo>();
 
     if (childrenToRun === 'runAllTestsExceptSkipped') {
-      this.enumerateDescendants(v => {
+      this.enumerateDescendants((v) => {
         tests.delete(v.id);
       });
     } else {
@@ -108,7 +108,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
           if (v instanceof AbstractTestInfo) {
             childrenToRun.add(v);
           } else if (v instanceof AbstractTestSuiteInfoBase) {
-            v.enumerateTestInfos(vv => {
+            v.enumerateTestInfos((vv) => {
               if (!vv.skipped) childrenToRun.add(vv);
             });
           } else {
@@ -144,7 +144,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
   }
 
   private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): Promise<void> {
-    const execParams = this._getRunParams(childrenToRun).concat(this.execInfo.additionalRunArguments);
+    const execParams = this.execInfo.prependTestRunningArgs.concat(this._getRunParams(childrenToRun));
 
     this._shared.log.info('proc starting', this.origLabel, execParams);
 
@@ -176,7 +176,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       });
 
       const shedule = (): Promise<void> => {
-        return new Promise<'reschedule' | 'closed' | 'timeout'>(resolve => {
+        return new Promise<'reschedule' | 'closed' | 'timeout'>((resolve) => {
           trigger = resolve;
 
           if (this._shared.execRunningTimeout !== null) {
@@ -184,7 +184,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
             const left = Math.max(0, this._shared.execRunningTimeout - elapsed);
             setTimeout(resolve, left, 'timeout');
           }
-        }).then(cause => {
+        }).then((cause) => {
           if (cause === 'closed') {
             return Promise.resolve();
           } else if (cause === 'timeout') {

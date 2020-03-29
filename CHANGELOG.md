@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.12]
+
+### Removed
+
+- `additionalRunArguments`
+
+### Added
+
+- `prependTestListingArgs`: Similar to `additionalRunArguments` but it prepends instead of appending.
+- `prependTestRunningArgs`
+
 ## [2.8.11] - 2020-03-18
 
 npm update
