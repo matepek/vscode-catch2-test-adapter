@@ -7,7 +7,7 @@
 
 Any contribution is welcome.
 
-- Create a pull request.
+- Create a pull request (against the development branch or master (if you sure your your PR is ready to be deployed)).
 - Report a bug.
 - Tell me about your desired features.
 - [![Buy Me A Coffee](https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png)](https://www.buymeacoffee.com/rtdmjYspB)
@@ -41,5 +41,5 @@ Then Travis will publish it automatically.
 
 ## Checklist
 
-- Are the tests are running? (`npm test`)
-- Is the `CHANGELOG.md` was updated?
+- [ ] Are the tests are running? (`npm test`)
+- [ ] Is the `CHANGELOG.md` was updated?
