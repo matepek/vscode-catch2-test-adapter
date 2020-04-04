@@ -73,8 +73,8 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
       }
       const testNameAsId = lines[i++].substr(2);
 
-      let filePath = '';
-      let line = 1;
+      let filePath: string | undefined = undefined;
+      let line: number | undefined = undefined;
       {
         const fileLine = lines[i++].substr(4);
         const match = fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
@@ -82,7 +82,9 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
         if (match && match.length == 5) {
           const matchedPath = match[1] ? match[1] : match[3];
           filePath = this._findFilePath(matchedPath);
-          line = Number(match[2] ? match[2] : match[4]);
+          line = Number(match[2] ? match[2] : match[4]) - 1;
+        } else {
+          this._shared.log.error('Could not find catch2 file info', lines);
         }
       }
 
@@ -107,7 +109,7 @@ export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
           description,
           tags,
           filePath,
-          line - 1,
+          line,
           index != -1 ? oldChildren[index].sections : undefined,
         ),
       );

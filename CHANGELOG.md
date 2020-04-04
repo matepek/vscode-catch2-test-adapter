@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.13]
+
+### Fixed
+
+- an issue (#169) when source file path resolution didn't work in case of DOCTest
+
 ## [2.8.12] - 2020-03-29
 
 ### Removed

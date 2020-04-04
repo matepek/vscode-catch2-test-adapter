@@ -38,8 +38,8 @@ export class Catch2TestInfo extends AbstractTestInfo {
     testNameAsId: string,
     catch2Description: string,
     tags: string[],
-    file: string,
-    line: number,
+    file: string | undefined,
+    line: number | undefined,
     sections?: Catch2Section[],
   ) {
     super(
