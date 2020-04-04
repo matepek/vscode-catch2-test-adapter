@@ -41,7 +41,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
       const testCase = res.doctest.TestCase[i].$;
 
       const testNameAsId = testCase.name;
-      const filePath: string | undefined = testCase.filename;
+      const filePath: string | undefined = testCase.filename ? this._findFilePath(testCase.filename) : undefined;
       const line: number | undefined = testCase.line !== undefined ? Number(testCase.line) - 1 : undefined;
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
