@@ -5,7 +5,7 @@ import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
 import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
-import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
+import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
 import { Catch2TestInfo } from './Catch2TestInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
@@ -14,7 +14,7 @@ interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-export class Catch2TestSuiteInfo extends AbstractTestSuiteInfo {
+export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
   public children: Catch2TestInfo[] = [];
 
   public constructor(

@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import * as vscode from 'vscode';
 
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
 import * as c2fs from './FSWrapper';
 import { resolveVariables, resolveOSEnvironmentVariables, ResolveRulePair } from './Util';
 import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
@@ -48,7 +48,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
   private _disposables: vscode.Disposable[] = [];
 
-  private readonly _executables: Map<string /*fsPath*/, AbstractTestSuiteInfo> = new Map();
+  private readonly _executables: Map<string /*fsPath*/, AbstractRunnableTestSuiteInfo> = new Map();
 
   private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
@@ -112,7 +112,7 @@ export class TestExecutableInfo implements vscode.Disposable {
             return this._createSuiteByUri(file)
               .create(false)
               .then(
-                (suite: AbstractTestSuiteInfo) => {
+                (suite: AbstractRunnableTestSuiteInfo) => {
                   return suite.reloadTests(this._shared.taskPool).then(
                     () => {
                       if (this._rootSuite.insertChild(suite, false /* called later */)) {
@@ -340,7 +340,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._createSuiteByUri(filePath)
         .create(true)
         .then(
-          (s: AbstractTestSuiteInfo) => this._recursiveHandleEverything(filePath, s, false, 128),
+          (s: AbstractRunnableTestSuiteInfo) => this._recursiveHandleEverything(filePath, s, false, 128),
           (reason: Error) => this._shared.log.info("couldn't add: " + filePath, 'reson:', reason),
         );
     }
@@ -348,7 +348,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
   private _recursiveHandleEverything(
     filePath: string,
-    suite: AbstractTestSuiteInfo,
+    suite: AbstractRunnableTestSuiteInfo,
     exists: boolean,
     delay: number,
   ): Promise<void> {

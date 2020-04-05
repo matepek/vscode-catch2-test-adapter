@@ -2,12 +2,12 @@ import * as vscode from 'vscode';
 
 import { TestExecutableInfo } from './TestExecutableInfo';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
-import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { SharedVariables } from './SharedVariables';
 
 export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vscode.Disposable {
-  public readonly children: AbstractTestSuiteInfo[] = [];
+  public readonly children: AbstractRunnableTestSuiteInfo[] = [];
   private _executables: TestExecutableInfo[] = [];
 
   public constructor(id: string | undefined, shared: SharedVariables) {
@@ -69,16 +69,16 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
       });
   }
 
-  public hasChild(suite: AbstractTestSuiteInfo): boolean {
+  public hasChild(suite: AbstractRunnableTestSuiteInfo): boolean {
     return this.children.indexOf(suite) != -1;
   }
 
-  public insertChild(suite: AbstractTestSuiteInfo, uniquifyLabels: boolean): boolean {
+  public insertChild(suite: AbstractRunnableTestSuiteInfo, uniquifyLabels: boolean): boolean {
     if (this.hasChild(suite)) return false;
 
     {
       // we want to filter the situation when 2 patterns match the same file
-      const other = this.children.find((s: AbstractTestSuiteInfo) => {
+      const other = this.children.find((s: AbstractRunnableTestSuiteInfo) => {
         return suite.execInfo.path == s.execInfo.path;
       });
       if (other) {
@@ -99,14 +99,14 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     return true;
   }
 
-  public addChild(suite: AbstractTestSuiteInfo): void {
+  public addChild(suite: AbstractRunnableTestSuiteInfo): void {
     super.addChild(suite);
 
     this.file = undefined;
     this.line = undefined;
   }
 
-  public removeChild(child: AbstractTestSuiteInfo): boolean {
+  public removeChild(child: AbstractRunnableTestSuiteInfo): boolean {
     const i = this.children.findIndex(val => val.id == child.id);
     if (i != -1) {
       this.children.splice(i, 1);
@@ -117,7 +117,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
   }
 
   public uniquifySuiteLabels(): void {
-    const uniqueNames = new Map<string /* name */, AbstractTestSuiteInfo[]>();
+    const uniqueNames = new Map<string /* name */, AbstractRunnableTestSuiteInfo[]>();
 
     for (const suite of this.children) {
       const suites = uniqueNames.get(suite.origLabel);

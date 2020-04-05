@@ -4,7 +4,7 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
-import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
+import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
 import { DOCTestInfo } from './DOCTestInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
@@ -14,7 +14,7 @@ interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
+export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
   public children: DOCTestInfo[] = [];
 
   public constructor(

@@ -11,7 +11,7 @@ import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { promisify } from 'util';
 
-export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
+export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInfoBase {
   private static _reportedFrameworks: string[] = [];
 
   private _canceled = false;
@@ -30,7 +30,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     frameworkVersion
       .then(version => {
-        if (AbstractTestSuiteInfo._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
+        if (AbstractRunnableTestSuiteInfo._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
           const versionStr = version ? version.join('.') : 'unknown';
 
           shared.log.infoMessageWithTags('Framework', {
@@ -38,7 +38,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
             frameworkVersion: `${this.frameworkName}@${versionStr}`,
           });
 
-          AbstractTestSuiteInfo._reportedFrameworks.push(frameworkName);
+          AbstractRunnableTestSuiteInfo._reportedFrameworks.push(frameworkName);
         }
       })
       .catch(e => this._shared.log.exception(e));

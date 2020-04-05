@@ -21,7 +21,7 @@ import { TaskQueue } from './TaskQueue';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { Catch2Section, Catch2TestInfo } from './framework/Catch2TestInfo';
-import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
 import { Config } from './Config';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
@@ -45,7 +45,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
 
-  private readonly _sendRetireEmitter = new vscode.EventEmitter<AbstractTestSuiteInfo[]>();
+  private readonly _sendRetireEmitter = new vscode.EventEmitter<AbstractRunnableTestSuiteInfo[]>();
 
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
@@ -146,9 +146,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(this._sendRetireEmitter);
     {
-      const unique = new Set<AbstractTestSuiteInfo>();
+      const unique = new Set<AbstractRunnableTestSuiteInfo>();
 
-      const retire = (aggregatedArgs: [AbstractTestSuiteInfo[]][]): void => {
+      const retire = (aggregatedArgs: [AbstractRunnableTestSuiteInfo[]][]): void => {
         const isScheduled = unique.size > 0;
         aggregatedArgs.forEach(args => args[0].forEach(test => unique.add(test)));
 
@@ -206,13 +206,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             if (route !== undefined && route.length > 1) {
               this._testStatesEmitter.fire({ type: 'started', tests: [id] });
 
-              for (let j = 0; j < route.length - 1; ++j) (route[j] as AbstractTestSuiteInfo).sendRunningEventIfNeeded();
+              for (let j = 0; j < route.length - 1; ++j)
+                (route[j] as AbstractRunnableTestSuiteInfo).sendRunningEventIfNeeded();
 
               this._testStatesEmitter.fire((testEvents[i].test as AbstractTestInfo).getStartEvent());
               this._testStatesEmitter.fire(testEvents[i]);
 
               for (let j = route.length - 2; j >= 0; --j)
-                (route[j] as AbstractTestSuiteInfo).sendCompletedEventIfNeeded();
+                (route[j] as AbstractRunnableTestSuiteInfo).sendCompletedEventIfNeeded();
 
               this._testStatesEmitter.fire({ type: 'finished' });
             } else {
@@ -447,8 +448,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     route.pop();
     const suiteLabels = route.map(s => s.label).join(' ➡️ ');
 
-    const testSuite = route.find(v => v instanceof AbstractTestSuiteInfo);
-    if (testSuite === undefined || !(testSuite instanceof AbstractTestSuiteInfo))
+    const testSuite = route.find(v => v instanceof AbstractRunnableTestSuiteInfo);
+    if (testSuite === undefined || !(testSuite instanceof AbstractRunnableTestSuiteInfo))
       throw Error('Unexpected error. Should have AbstractTestSuiteInfo parent.');
 
     this._log.info('testInfo', testInfo, tests);

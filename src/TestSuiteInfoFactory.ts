@@ -1,6 +1,6 @@
 import * as c2fs from './FSWrapper';
 import { TestSuiteExecutionInfo } from './TestSuiteExecutionInfo';
-import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
 import { Catch2TestSuiteInfo } from './framework/Catch2TestSuiteInfo';
 import { GoogleTestSuiteInfo } from './framework/GoogleTestSuiteInfo';
 import { DOCTestSuiteInfo } from './framework/DOCTestSuiteInfo';
@@ -24,7 +24,7 @@ export class TestSuiteInfoFactory {
     private readonly _doctest: TestExecutableInfoFrameworkSpecific,
   ) {}
 
-  public create(checkIsNativeExecutable: boolean): Promise<AbstractTestSuiteInfo> {
+  public create(checkIsNativeExecutable: boolean): Promise<AbstractRunnableTestSuiteInfo> {
     return this._shared.taskPool
       .scheduleTask(() => {
         return this._determineTestTypeOfExecutable(checkIsNativeExecutable);

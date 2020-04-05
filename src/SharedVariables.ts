@@ -1,7 +1,7 @@
 import { LogWrapper } from './LogWrapper';
 import * as vscode from 'vscode';
 import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
-import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
 import { TaskPool } from './TaskPool';
 
 type TestStateEmitterType = vscode.EventEmitter<
@@ -18,7 +18,7 @@ export class SharedVariables implements vscode.Disposable {
     public readonly testStatesEmitter: TestStateEmitterType,
     public readonly loadWithTaskEmitter: vscode.EventEmitter<() => void | PromiseLike<void>>,
     public readonly sendTestEventEmitter: vscode.EventEmitter<TestEvent[]>,
-    public readonly retire: vscode.EventEmitter<AbstractTestSuiteInfo[]>,
+    public readonly retire: vscode.EventEmitter<AbstractRunnableTestSuiteInfo[]>,
     public rngSeed: string | number | null,
     public execWatchTimeout: number,
     public retireDebounceTime: number,

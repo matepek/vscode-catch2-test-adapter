@@ -4,7 +4,7 @@ import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
 import { AbstractTestInfo } from '../AbstractTestInfo';
-import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
+import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
 import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
 import { GoogleTestInfo } from './GoogleTestInfo';
 import { Parser } from 'xml2js';
@@ -24,7 +24,7 @@ class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
   }
 }
 
-export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
+export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
   public children: GoogleTestGroupSuiteInfo[] = [];
 
   public constructor(
@@ -313,7 +313,6 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             const group = this.children.find(c => c.label == groupName);
             if (group) {
               if (data.group !== group) {
-                //TODO
                 if (data.group) data.group.sendCompletedEventIfNeeded();
 
                 data.group = group;
