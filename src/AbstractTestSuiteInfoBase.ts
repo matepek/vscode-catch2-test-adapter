@@ -14,6 +14,7 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
   public file?: string;
   public line?: number;
   private _tooltip: string;
+  private _runningCounter = 0;
 
   public constructor(
     protected readonly _shared: SharedVariables,
@@ -30,11 +31,15 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     return this._tooltip;
   }
 
-  public getRunningEvent(): TestSuiteEvent {
+  private _getRunningEvent(): TestSuiteEvent {
     return { type: 'suite', suite: this, state: 'running' };
   }
 
-  public getCompletedEvent(): TestSuiteEvent {
+  public sendRunningEventIfNeeded(): void {
+    if (this._runningCounter++ === 0) this._shared.testStatesEmitter.fire(this._getRunningEvent());
+  }
+
+  private _getCompletedEvent(): TestSuiteEvent {
     let testCount = 0;
     let durationSum: number | undefined = undefined;
     const stateStat: { [prop: string]: number } = {};
@@ -70,6 +75,11 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     }
 
     return { type: 'suite', suite: this, state: 'completed', description, tooltip };
+  }
+
+  public sendCompletedEventIfNeeded(): void {
+    if (this._runningCounter < 1) this._shared.log.error('running counter is too low');
+    if (this._runningCounter-- === 1) this._shared.testStatesEmitter.fire(this._getCompletedEvent());
   }
 
   public addChild(child: AbstractTestSuiteInfoBase | AbstractTestInfo): void {

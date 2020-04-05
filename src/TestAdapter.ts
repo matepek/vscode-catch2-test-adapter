@@ -206,14 +206,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             if (route !== undefined && route.length > 1) {
               this._testStatesEmitter.fire({ type: 'started', tests: [id] });
 
-              for (let j = 0; j < route.length - 1; ++j)
-                this._testStatesEmitter.fire((route[j] as AbstractTestSuiteInfo).getRunningEvent());
+              for (let j = 0; j < route.length - 1; ++j) (route[j] as AbstractTestSuiteInfo).sendRunningEventIfNeeded();
 
               this._testStatesEmitter.fire((testEvents[i].test as AbstractTestInfo).getStartEvent());
               this._testStatesEmitter.fire(testEvents[i]);
 
               for (let j = route.length - 2; j >= 0; --j)
-                this._testStatesEmitter.fire((route[j] as AbstractTestSuiteInfo).getCompletedEvent());
+                (route[j] as AbstractTestSuiteInfo).sendCompletedEventIfNeeded();
 
               this._testStatesEmitter.fire({ type: 'finished' });
             } else {

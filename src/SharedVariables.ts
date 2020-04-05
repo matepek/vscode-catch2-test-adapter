@@ -4,6 +4,10 @@ import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } 
 import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
 import { TaskPool } from './TaskPool';
 
+type TestStateEmitterType = vscode.EventEmitter<
+  TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
+>;
+
 export class SharedVariables implements vscode.Disposable {
   private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
   public readonly taskPool: TaskPool;
@@ -11,9 +15,7 @@ export class SharedVariables implements vscode.Disposable {
   public constructor(
     public readonly log: LogWrapper,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
-    public readonly testStatesEmitter: vscode.EventEmitter<
-      TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
-    >,
+    public readonly testStatesEmitter: TestStateEmitterType,
     public readonly loadWithTaskEmitter: vscode.EventEmitter<() => void | PromiseLike<void>>,
     public readonly sendTestEventEmitter: vscode.EventEmitter<TestEvent[]>,
     public readonly retire: vscode.EventEmitter<AbstractTestSuiteInfo[]>,

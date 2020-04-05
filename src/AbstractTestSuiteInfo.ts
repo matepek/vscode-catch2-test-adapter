@@ -148,7 +148,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     this._shared.log.info('proc starting', this.origLabel, execParams);
 
-    this._shared.testStatesEmitter.fire(this.getRunningEvent());
+    this.sendRunningEventIfNeeded();
 
     const runInfo = new RunningTestExecutableInfo(
       cp.spawn(this.execInfo.path, execParams, this.execInfo.options),
@@ -210,7 +210,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       .then(() => {
         this._shared.log.info('proc finished:', this.execInfo.path);
 
-        this._shared.testStatesEmitter.fire(this.getCompletedEvent());
+        this.sendCompletedEventIfNeeded();
 
         if (this._runInfo !== runInfo) {
           this._shared.log.error("assertion: shouldn't be here", this._runInfo, runInfo);

@@ -313,10 +313,11 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             const group = this.children.find(c => c.label == groupName);
             if (group) {
               if (data.group !== group) {
-                if (data.group) this._shared.testStatesEmitter.fire(data.group.getCompletedEvent());
+                //TODO
+                if (data.group) data.group.sendCompletedEventIfNeeded();
 
                 data.group = group;
-                this._shared.testStatesEmitter.fire(group.getRunningEvent());
+                group.sendRunningEventIfNeeded();
               }
             } else {
               this._shared.log.error('should have found group', groupName, chunks, this);
@@ -434,7 +435,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         }
 
         if (data.group) {
-          this._shared.testStatesEmitter.fire(data.group.getCompletedEvent());
+          data.group.sendCompletedEventIfNeeded();
         }
 
         const isTestRemoved =
