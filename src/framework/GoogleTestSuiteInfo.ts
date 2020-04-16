@@ -4,28 +4,16 @@ import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
 import { AbstractTestInfo } from '../AbstractTestInfo';
+import { AbstractGroupTestSuiteInfo } from '../AbstractGroupTestSuiteInfo';
 import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
-import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
 import { GoogleTestInfo } from './GoogleTestInfo';
 import { Parser } from 'xml2js';
 import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 
-class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
-  public children: GoogleTestInfo[] = [];
-
-  public constructor(shared: SharedVariables, label: string, id?: string) {
-    super(shared, label, undefined, id);
-  }
-
-  public addChild(test: GoogleTestInfo): void {
-    super.addChild(test);
-  }
-}
-
 export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
-  public children: GoogleTestGroupSuiteInfo[] = [];
+  public children: AbstractGroupTestSuiteInfo[] = [];
 
   public constructor(
     shared: SharedVariables,
@@ -37,7 +25,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     super(shared, label, desciption, execInfo, 'GoogleTest', version);
   }
 
-  private _reloadFromXml(xmlStr: string, oldChildren: GoogleTestGroupSuiteInfo[]): void {
+  private _reloadFromXml(xmlStr: string, oldChildren: AbstractGroupTestSuiteInfo[]): void {
     interface XmlObject {
       [prop: string]: any; //eslint-disable-line
     }
@@ -60,7 +48,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
       // we need the oldGroup.id because that preserves the node's expanded/collapsed state
-      const group = new GoogleTestGroupSuiteInfo(this._shared, suiteName, oldGroupId);
+      const group = new AbstractGroupTestSuiteInfo(this._shared, suiteName, oldGroupId);
       this.addChild(group);
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
@@ -94,7 +82,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     }
   }
 
-  private _reloadFromStdOut(stdOutStr: string, oldChildren: GoogleTestGroupSuiteInfo[]): void {
+  private _reloadFromStdOut(stdOutStr: string, oldChildren: AbstractGroupTestSuiteInfo[]): void {
     this.children = [];
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -126,7 +114,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
       const oldGroupId = oldGroup ? oldGroup.id : undefined;
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
-      const group = new GoogleTestGroupSuiteInfo(this._shared, suiteName, oldGroupId);
+      const group = new AbstractGroupTestSuiteInfo(this._shared, suiteName, oldGroupId);
 
       let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 
@@ -288,7 +276,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
       public buffer = '';
       public currentTestCaseNameFull: string | undefined = undefined;
       public currentChild: GoogleTestInfo | undefined = undefined;
-      public group: GoogleTestGroupSuiteInfo | undefined = undefined;
+      public group: AbstractGroupTestSuiteInfo | undefined = undefined;
       public beforeFirstTestCase = true;
       public unprocessedTestCases: string[] = [];
       public processedTestCases: GoogleTestInfo[] = [];
@@ -483,7 +471,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
       });
   }
 
-  public addChild(group: GoogleTestGroupSuiteInfo): void {
+  public addChild(group: AbstractGroupTestSuiteInfo): void {
     super.addChild(group);
   }
 
