@@ -92,18 +92,14 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
       }
     }
 
-    this.addChild(suite);
+    super._addChild(suite);
+
+    this.file = undefined;
+    this.line = undefined;
 
     uniquifyLabels && this.uniquifySuiteLabels();
 
     return true;
-  }
-
-  public addChild(suite: AbstractRunnableTestSuiteInfo): void {
-    super.addChild(suite);
-
-    this.file = undefined;
-    this.line = undefined;
   }
 
   public removeChild(child: AbstractRunnableTestSuiteInfo): boolean {

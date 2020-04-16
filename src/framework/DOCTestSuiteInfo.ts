@@ -17,8 +17,6 @@ interface XmlObject {
 }
 
 export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
-  public children: DOCTestInfo[] = [];
-
   public constructor(
     shared: SharedVariables,
     label: string,
@@ -29,7 +27,10 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     super(shared, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: DOCTestInfo[]): void {
+  private _reloadFromString(
+    testListOutput: string,
+    oldChildren: (AbstractTestSuiteInfoBase | AbstractTestInfo)[],
+  ): void {
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
       if (err) {
@@ -48,7 +49,7 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      const index = oldChildren.findIndex(c => c.testNameAsId == testNameAsId);
+      const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
 
       this.addChild(
         new DOCTestInfo(
@@ -59,7 +60,7 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
           skipped,
           filePath,
           line,
-          index != -1 ? oldChildren[index] : undefined,
+          old as DOCTestInfo,
         ),
       );
     }
@@ -409,10 +410,9 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
                 );
                 if (name === undefined) break;
 
-                const currentChild = this.children.find((v: DOCTestInfo) => {
-                  // xml output trimmes the name of the test
-                  return v.testNameAsId.trim() == name;
-                });
+                // xml output trimmes the name of the test
+                const currentChild = this.findTestInfo(v => v.testNameAsId === name);
+
                 if (currentChild === undefined) break;
 
                 try {
@@ -432,10 +432,5 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
           );
         }
       });
-  }
-
-  public addChild(test: DOCTestInfo): DOCTestInfo {
-    super.addChild(test);
-    return test;
   }
 }

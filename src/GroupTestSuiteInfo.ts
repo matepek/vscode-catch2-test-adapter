@@ -8,8 +8,4 @@ export class GroupTestSuiteInfo extends AbstractTestSuiteInfoBase {
   public constructor(shared: SharedVariables, label: string, id?: string) {
     super(shared, label, undefined, id);
   }
-
-  public addChild(test: AbstractTestInfo): void {
-    super.addChild(test);
-  }
 }

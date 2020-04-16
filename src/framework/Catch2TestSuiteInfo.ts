@@ -11,14 +11,13 @@ import { Catch2TestInfo } from './Catch2TestInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { AbstractTestInfo } from '../AbstractTestInfo';
+//import { GroupTestSuiteInfo } from '../GroupTestSuiteInfo';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
 export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
-  public children: Catch2TestInfo[] = [];
-
   public constructor(
     shared: SharedVariables,
     label: string,
@@ -29,7 +28,10 @@ export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(catch2Version));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: Catch2TestInfo[]): void {
+  private _reloadFromString(
+    testListOutput: string,
+    oldChildren: (AbstractTestSuiteInfoBase | AbstractTestInfo)[],
+  ): void {
     const lines = testListOutput.split(/\r?\n/);
 
     const startRe = /Matching test cases:/;
@@ -101,18 +103,26 @@ export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
         ++i;
       }
 
-      const index = oldChildren.findIndex(c => c.testNameAsId == testNameAsId);
+      // const group: AbstractTestSuiteInfoBase = ((): AbstractTestSuiteInfoBase => {
+      //   const group = new GroupTestSuiteInfo(this._shared, tags.join(''));
+      //   this.addChild(group);
+      //   return group;
+      // })();
+
+      // this.addChild(group);
+
+      const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
 
       this.addChild(
         new Catch2TestInfo(
           this._shared,
-          index != -1 ? oldChildren[index].id : undefined,
+          old ? old.id : undefined,
           testNameAsId,
           description,
           tags,
           filePath,
           line,
-          index != -1 ? oldChildren[index].sections : undefined,
+          old ? (old as Catch2TestInfo).sections : undefined,
         ),
       );
     }
@@ -428,10 +438,9 @@ export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
                 );
                 if (name === undefined) break;
 
-                const currentChild = this.children.find((v: Catch2TestInfo) => {
-                  // xml output trimmes the name of the test
-                  return v.testNameAsId.trim() == name;
-                });
+                // xml output trimmes the name of the test
+                const currentChild = this.findTestInfo(v => v.testNameAsId.trim() == name);
+
                 if (currentChild === undefined) break;
 
                 try {
@@ -450,10 +459,5 @@ export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
           );
         }
       });
-  }
-
-  public addChild(test: Catch2TestInfo): Catch2TestInfo {
-    super.addChild(test);
-    return test;
   }
 }

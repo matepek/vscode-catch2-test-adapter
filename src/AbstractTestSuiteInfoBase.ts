@@ -113,7 +113,7 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     }
   }
 
-  public addChild(child: AbstractTestSuiteInfoBase | AbstractTestInfo): void {
+  protected _addChild(child: AbstractTestSuiteInfoBase | AbstractTestInfo): void {
     if (this.children.indexOf(child) != -1) {
       this._shared.log.error('should not try to add the child twice', this, child);
       return;
@@ -128,6 +128,11 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     }
 
     this.children.push(child);
+  }
+
+  public addChild<T extends AbstractTestSuiteInfoBase | AbstractTestInfo>(child: T): T {
+    this._addChild(child);
+    return child;
   }
 
   public enumerateDescendants(fn: (v: AbstractTestSuiteInfoBase | AbstractTestInfo) => void): void {
