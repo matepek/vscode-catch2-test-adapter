@@ -1,6 +1,6 @@
 import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
 
-import { generateUniqueId, milisecToStr } from './Util';
+import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTest } from './AbstractTest';
 import { GroupSuite } from './GroupSuite';
@@ -24,7 +24,7 @@ export abstract class AbstractSuit implements TestSuiteInfo {
     id: string | undefined,
   ) {
     this.origLabel = label;
-    this.id = id ? id : generateUniqueId();
+    this.id = id ? id : generateId();
     this._tooltip = 'Name: ' + this.origLabel + (description ? '\nDescription: ' + description : '');
   }
 

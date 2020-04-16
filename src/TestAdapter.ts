@@ -15,7 +15,7 @@ import * as Sentry from '@sentry/node';
 
 import { LoggerWrapper } from './LoggerWrapper';
 import { RootSuite } from './RootSuite';
-import { resolveVariables, generateUniqueId } from './Util';
+import { resolveVariables, generateId } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { SharedVariables } from './SharedVariables';
 import { Catch2Section, Catch2Test } from './framework/Catch2Test';
@@ -517,7 +517,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     // we dont know better :(
     // https://github.com/Microsoft/vscode/issues/70125
     const magicValueKey = 'magic variable  🤦🏼‍';
-    const magicValue = generateUniqueId();
+    const magicValue = generateId();
     debugConfig[magicValueKey] = magicValue;
 
     this._log.info('Debug: resolved debugConfig:', debugConfig);

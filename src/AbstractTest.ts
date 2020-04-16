@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
-import { generateUniqueId, milisecToStr } from './Util';
+import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { AbstractSuit } from './AbstractSuit';
@@ -28,7 +28,7 @@ export abstract class AbstractTest implements TestInfo {
     description: string | undefined,
     tooltip: string | undefined,
   ) {
-    this.id = id ? id : generateUniqueId();
+    this.id = id ? id : generateId();
     this.origLabel = label;
     this.description = description ? description : '';
     this.file = file ? path.normalize(file) : undefined;

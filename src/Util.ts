@@ -112,7 +112,7 @@ export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolea
 
 let uidCounter = 0;
 
-export function generateUniqueId(): string {
+export function generateId(): string {
   return (++uidCounter).toString();
 }
 
