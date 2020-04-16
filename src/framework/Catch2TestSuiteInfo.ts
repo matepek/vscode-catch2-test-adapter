@@ -6,9 +6,11 @@ import * as xml2js from 'xml2js';
 import * as c2fs from '../FSWrapper';
 import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
 import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
+import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
 import { Catch2TestInfo } from './Catch2TestInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
+import { AbstractTestInfo } from '../AbstractTestInfo';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -228,11 +230,12 @@ export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     const data = new (class {
       public buffer = '';
       public inTestCase = false;
-      public currentChild: Catch2TestInfo | undefined = undefined;
+      public currentChild: AbstractTestInfo | undefined = undefined;
+      public route: AbstractTestSuiteInfoBase[] = [];
       public beforeFirstTestCase = true;
       public rngSeed: number | undefined = undefined;
       public unprocessedXmlTestCases: string[] = [];
-      public processedTestCases: Catch2TestInfo[] = [];
+      public processedTestCases: AbstractTestInfo[] = [];
     })();
 
     const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
@@ -274,12 +277,17 @@ export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
             }
 
             data.beforeFirstTestCase = false;
-            data.currentChild = this.children.find((v: Catch2TestInfo) => {
+
+            const [route, testInfo] = this.findRouteToTestInfo(v => {
               // xml output trimmes the name of the test
               return v.testNameAsId.trim() == name;
             });
 
-            if (data.currentChild !== undefined) {
+            if (testInfo !== undefined) {
+              this.sendMinimalEventsIfNeeded(data.route, route);
+              data.route = route;
+
+              data.currentChild = testInfo;
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
@@ -297,9 +305,11 @@ export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
-                const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
-                data.processedTestCases.push(data.currentChild);
+                const ev = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
+
                 this._shared.testStatesEmitter.fire(ev);
+
+                data.processedTestCases.push(data.currentChild);
               } catch (e) {
                 this._shared.log.error('parsing and processing test', e, data, chunks, testCaseXml);
                 this._shared.testStatesEmitter.fire({
@@ -322,6 +332,7 @@ export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
 
             data.inTestCase = false;
             data.currentChild = undefined;
+            // do not clear data.route
             data.buffer = data.buffer.substr(b + endTestCase.length);
           }
         } while (data.buffer.length > 0 && --invariant > 0);
@@ -376,6 +387,9 @@ export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
             this._shared.log.warn('data.inTestCase: ', data);
           }
         }
+
+        this.sendMinimalEventsIfNeeded(data.route, []);
+        data.route = [];
 
         const isTestRemoved =
           runInfo.timeout === null &&

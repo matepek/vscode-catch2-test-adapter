@@ -2,7 +2,7 @@ import { AbstractTestInfo } from './AbstractTestInfo';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { SharedVariables } from './SharedVariables';
 
-export class AbstractGroupTestSuiteInfo extends AbstractTestSuiteInfoBase {
+export class GroupTestSuiteInfo extends AbstractTestSuiteInfoBase {
   public children: AbstractTestInfo[] = [];
 
   public constructor(shared: SharedVariables, label: string, id?: string) {

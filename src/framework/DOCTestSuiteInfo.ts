@@ -5,6 +5,8 @@ import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
 import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
+import { AbstractTestInfo } from '../AbstractTestInfo';
+import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
 import { DOCTestInfo } from './DOCTestInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
@@ -176,11 +178,12 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     const data = new (class {
       public buffer = '';
       public inTestCase = false;
-      public currentChild: DOCTestInfo | undefined = undefined;
+      public currentChild: AbstractTestInfo | undefined = undefined;
+      public route: AbstractTestSuiteInfoBase[] = [];
       public beforeFirstTestCase = true;
       public rngSeed: number | undefined = undefined;
       public unprocessedXmlTestCases: string[] = [];
-      public processedTestCases: DOCTestInfo[] = [];
+      public processedTestCases: AbstractTestInfo[] = [];
     })();
 
     const testCaseTagRe = /<TestCase(\s+[^\n\r]+)[^\/](\/)?>/;
@@ -231,11 +234,14 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
             }
 
             data.beforeFirstTestCase = false;
-            data.currentChild = this.children.find((v: DOCTestInfo) => {
-              return v.testNameAsId == name;
-            });
 
-            if (data.currentChild !== undefined) {
+            const [route, testInfo] = this.findRouteToTestInfo(v => v.testNameAsId == name);
+
+            if (testInfo !== undefined) {
+              this.sendMinimalEventsIfNeeded(data.route, route);
+              data.route = route;
+
+              data.currentChild = testInfo;
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
 
               if (!skipped) {
@@ -279,9 +285,11 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
-                const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
-                data.processedTestCases.push(data.currentChild);
+                const ev = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
+
                 this._shared.testStatesEmitter.fire(ev);
+
+                data.processedTestCases.push(data.currentChild);
               } catch (e) {
                 this._shared.log.error('parsing and processing test', e, data, chunks, testCaseXml);
                 this._shared.testStatesEmitter.fire({
@@ -304,6 +312,7 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
 
             data.inTestCase = false;
             data.currentChild = undefined;
+            // do not clear data.route
             data.buffer = data.buffer.substr(b + endTestCase.length);
           }
         } while (data.buffer.length > 0 && --invariant > 0);
@@ -358,6 +367,9 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
             this._shared.log.warn('data.inTestCase: ', data);
           }
         }
+
+        this.sendMinimalEventsIfNeeded(data.route, []);
+        data.route = [];
 
         // skipped test handling is wrong. I just disable this feature
         // const isTestRemoved =

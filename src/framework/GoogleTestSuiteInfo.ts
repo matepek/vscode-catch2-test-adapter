@@ -4,16 +4,17 @@ import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
 import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
-import { AbstractGroupTestSuiteInfo } from '../AbstractGroupTestSuiteInfo';
+import { GroupTestSuiteInfo } from '../GroupTestSuiteInfo';
 import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
 import { GoogleTestInfo } from './GoogleTestInfo';
 import { Parser } from 'xml2js';
 import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
+import { AbstractTestInfo } from '../AbstractTestInfo';
 
 export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
-  public children: AbstractGroupTestSuiteInfo[] = [];
+  public children: GroupTestSuiteInfo[] = [];
 
   public constructor(
     shared: SharedVariables,
@@ -25,7 +26,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     super(shared, label, desciption, execInfo, 'GoogleTest', version);
   }
 
-  private _reloadFromXml(xmlStr: string, oldChildren: AbstractGroupTestSuiteInfo[]): void {
+  private _reloadFromXml(xmlStr: string, oldChildren: GroupTestSuiteInfo[]): void {
     interface XmlObject {
       [prop: string]: any; //eslint-disable-line
     }
@@ -48,7 +49,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
       // we need the oldGroup.id because that preserves the node's expanded/collapsed state
-      const group = new AbstractGroupTestSuiteInfo(this._shared, suiteName, oldGroupId);
+      const group = new GroupTestSuiteInfo(this._shared, suiteName, oldGroupId);
       this.addChild(group);
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
@@ -82,7 +83,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     }
   }
 
-  private _reloadFromStdOut(stdOutStr: string, oldChildren: AbstractGroupTestSuiteInfo[]): void {
+  private _reloadFromStdOut(stdOutStr: string, oldChildren: GroupTestSuiteInfo[]): void {
     this.children = [];
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -114,7 +115,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
       const oldGroupId = oldGroup ? oldGroup.id : undefined;
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
-      const group = new AbstractGroupTestSuiteInfo(this._shared, suiteName, oldGroupId);
+      const group = new GroupTestSuiteInfo(this._shared, suiteName, oldGroupId);
 
       let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 
@@ -275,11 +276,10 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     const data = new (class {
       public buffer = '';
       public currentTestCaseNameFull: string | undefined = undefined;
-      public currentChild: GoogleTestInfo | undefined = undefined;
+      public currentChild: AbstractTestInfo | undefined = undefined;
       public route: AbstractTestSuiteInfoBase[] = [];
-      public beforeFirstTestCase = true;
       public unprocessedTestCases: string[] = [];
-      public processedTestCases: GoogleTestInfo[] = [];
+      public processedTestCases: AbstractTestInfo[] = [];
     })();
 
     const testBeginRe = /^\[ RUN      \] ((.+)\.(.+))$/m;
@@ -297,7 +297,6 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
             if (m == null) return;
 
             data.currentTestCaseNameFull = m[1];
-            data.beforeFirstTestCase = false;
 
             const [route, testInfo] = this.findRouteToTestInfo(v => v.testNameAsId == data.currentTestCaseNameFull);
 
