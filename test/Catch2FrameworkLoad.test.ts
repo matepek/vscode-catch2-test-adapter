@@ -1230,7 +1230,7 @@ describe(path.basename(__filename), function () {
         assert.deepStrictEqual(
           [c1.file, c1.id, c1.label, c1.line, c1.skipped, c1.type],
           [c2.file, c2.id, c2.label, c2.line, c2.skipped, c2.type],
-          inspect(i),
+          `at index: ${i}`,
         );
       }
       const newTest = suite1.children[0];
@@ -1493,6 +1493,7 @@ describe(path.basename(__filename), function () {
         assert.deepStrictEqual(
           [c1.file, c1.id, c1.label, c1.line, c1.skipped, c1.type],
           [c2.file, c2.id, c2.label, c2.line, c2.skipped, c2.type],
+          `at index: ${i}`,
         );
       }
 

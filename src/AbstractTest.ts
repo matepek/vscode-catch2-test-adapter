@@ -29,7 +29,7 @@ export abstract class AbstractTest implements TestInfo {
     description: string | undefined,
     tooltip: string | undefined,
   ) {
-    this.id = id && id.startsWith(parent.id) ? id : generateId();
+    this.id = id && id.startsWith(parent.id) ? id : parent.id + '/' + generateId();
     this.origLabel = label;
     this.description = description ? description : '';
     this.file = file ? path.normalize(file) : undefined;

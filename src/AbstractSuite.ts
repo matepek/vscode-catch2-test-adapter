@@ -19,12 +19,13 @@ export abstract class AbstractSuite implements TestSuiteInfo {
 
   public constructor(
     protected readonly _shared: SharedVariables,
+    parent: AbstractSuite,
     public label: string,
     public description: string | undefined,
     id: string | undefined,
   ) {
     this.origLabel = label;
-    this.id = id ? id : generateId();
+    this.id = id && id.startsWith(parent.id) ? id : parent.id + '/' + generateId();
     this._tooltip = 'Name: ' + this.origLabel + (description ? '\nDescription: ' + description : '');
   }
 
