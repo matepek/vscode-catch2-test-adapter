@@ -8,22 +8,22 @@ import { TestAdapter, Imitation, settings, ChildProcessStub, expectedLoggedError
 
 ///
 
-describe(path.basename(__filename), function() {
+describe(path.basename(__filename), function () {
   this.timeout(10000);
 
   let imitation: Imitation;
   let adapter: TestAdapter | undefined = undefined;
 
-  before(function() {
+  before(function () {
     imitation = new Imitation();
     fse.removeSync(settings.dotVscodePath);
   });
 
-  after(function() {
+  after(function () {
     imitation.restore();
   });
 
-  beforeEach(function() {
+  beforeEach(function () {
     adapter = undefined;
 
     imitation.resetToCallThrough();
@@ -32,11 +32,11 @@ describe(path.basename(__filename), function() {
     return settings.resetConfig();
   });
 
-  afterEach(async function() {
+  afterEach(async function () {
     if (adapter) await adapter.waitAndDispose(this);
   });
 
-  it('loads gtest1 from output because there is xml parsing error', async function() {
+  it('loads gtest1 from output because there is xml parsing error', async function () {
     expectedLoggedErrorLine('[ERROR] Error: Google Test version not found');
 
     this.slow(500);
@@ -52,7 +52,7 @@ describe(path.basename(__filename), function() {
         }),
         sinon.match.any,
       )
-      .callsFake(function() {
+      .callsFake(function () {
         return new ChildProcessStub(example1.gtest1.gtest_list_tests_output);
       });
 
@@ -65,10 +65,10 @@ describe(path.basename(__filename), function() {
     assert.equal(adapter.suite1.children.length, 7);
   });
 
-  describe('load gtest1', function() {
+  describe('load gtest1', function () {
     let adapter: TestAdapter;
 
-    beforeEach(async function() {
+    beforeEach(async function () {
       await settings.updateConfig('executables', example1.gtest1.execPath);
 
       imitation.spawnStub
@@ -79,7 +79,7 @@ describe(path.basename(__filename), function() {
           }),
           sinon.match.any,
         )
-        .callsFake(function() {
+        .callsFake(function () {
           return new ChildProcessStub(example1.gtest1.gtest_list_tests_output);
         });
 
@@ -96,11 +96,11 @@ describe(path.basename(__filename), function() {
       assert.equal(adapter.suite1.children.length, 7);
     });
 
-    afterEach(function() {
+    afterEach(function () {
       return adapter.waitAndDispose(this);
     });
 
-    specify('run all', async function() {
+    specify('run all', async function () {
       this.slow(500);
 
       const expected = [
@@ -582,10 +582,10 @@ describe(path.basename(__filename), function() {
 
       await adapter.run([adapter.root.id]);
 
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
     });
 
-    specify('run first', async function() {
+    specify('run first', async function () {
       this.slow(500);
 
       const expected = [
@@ -622,10 +622,10 @@ describe(path.basename(__filename), function() {
 
       await adapter.run([adapter.get(0, 0, 0).id]);
 
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
     });
 
-    specify('run param', async function() {
+    specify('run param', async function () {
       this.slow(500);
 
       const expected = [
@@ -677,11 +677,11 @@ describe(path.basename(__filename), function() {
 
       await adapter.run([adapter.get(0, 3, 0).id]);
 
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
     });
   });
 
-  specify.skip('custom1 test case list', async function() {
+  specify.skip('custom1 test case list', async function () {
     this.slow(500);
     await settings.updateConfig('executables', example1.gtest1.execPath);
 

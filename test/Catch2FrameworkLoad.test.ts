@@ -148,7 +148,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       await adapter.run([s1t1.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -197,7 +197,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       await adapter.run([suite1.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -246,7 +246,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       await adapter.run([root.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -286,11 +286,11 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       adapter.cancel();
       assert.deepStrictEqual(adapter.testLoadsEvents, []);
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
     });
 
     context('with config: defaultRngSeed=2', function () {
@@ -324,7 +324,7 @@ describe(path.basename(__filename), function () {
           },
           { type: 'finished' },
         ];
-        assert.deepStrictEqual(adapter.testStatesEvents, expected);
+        adapter.testStatesEventsAssertDeepEqual(expected);
 
         await adapter.run([s1t1.id]);
         assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -539,7 +539,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       await adapter.run([s1t1.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -571,7 +571,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       await adapter.run([s2t2.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -610,7 +610,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       await adapter.run([s2t3.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -656,7 +656,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       await adapter.run([s2t3.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -705,7 +705,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       await adapter.run([suite1.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -774,7 +774,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
     });
 
     it('should run with wrong xml with exit code', async function () {
@@ -813,7 +813,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       // this tests the sinon stubs too
       await adapter.run([s1t1.id]);
@@ -882,7 +882,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       // this tests the sinon stubs too
       await adapter.run([s1t1.id]);
@@ -1282,7 +1282,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       await waitFor(this, function () {
         return suite1.children.length == 2 && adapter.testStatesEvents.length >= 4 + 8;
@@ -1398,7 +1398,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       await waitFor(
         this,
@@ -1445,7 +1445,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
 
       await waitFor(
         this,
@@ -1582,7 +1582,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      assert.deepStrictEqual(adapter.testStatesEvents, expected);
+      adapter.testStatesEventsAssertDeepEqual(expected);
     });
 
     it('data arrives in pieces', async function () {

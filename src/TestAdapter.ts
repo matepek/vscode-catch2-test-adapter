@@ -59,7 +59,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this.workspaceFolder,
       'Test Explorer: ' + this.workspaceFolder.name,
       { showProxy: true, depth: 3 },
-      true,
+      this._isDebug,
     );
 
     const config = this._getConfiguration();

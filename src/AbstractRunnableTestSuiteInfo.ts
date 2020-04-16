@@ -146,7 +146,8 @@ export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInf
   private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): Promise<void> {
     const execParams = this.execInfo.prependTestRunningArgs.concat(this._getRunParams(childrenToRun));
 
-    this._shared.log.info('proc starting', this.origLabel, execParams);
+    this._shared.log.info('proc starting', this.origLabel);
+    this._shared.log.local.debug('proc starting', this.origLabel, execParams);
 
     this.sendRunningEventIfNeeded();
 
@@ -157,7 +158,8 @@ export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInf
 
     this._runInfo = runInfo;
 
-    this._shared.log.info('proc started:', this.origLabel, this.execInfo, execParams);
+    this._shared.log.info('proc started:', this.origLabel);
+    this._shared.log.local.debug('proc started:', this.origLabel, this.execInfo, execParams);
 
     runInfo.process.on('error', (err: Error) => {
       this._shared.log.error('process error event:', err, this);
@@ -171,7 +173,7 @@ export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInf
       });
 
       runInfo.process.once('close', (...args) => {
-        this._shared.log.debug('proc close:', this.origLabel, args);
+        this._shared.log.local.debug('proc close:', this.origLabel, args);
         trigger('closed');
       });
 

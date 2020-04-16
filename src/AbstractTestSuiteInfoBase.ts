@@ -36,7 +36,10 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
   }
 
   public sendRunningEventIfNeeded(): void {
-    if (this._runningCounter++ === 0) this._shared.testStatesEmitter.fire(this._getRunningEvent());
+    if (this._runningCounter++ === 0) {
+      this._shared.log.local.debug('Suite running event fired', this.label, this.origLabel);
+      this._shared.testStatesEmitter.fire(this._getRunningEvent());
+    }
   }
 
   private _getCompletedEvent(): TestSuiteEvent {
@@ -78,8 +81,36 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
   }
 
   public sendCompletedEventIfNeeded(): void {
-    if (this._runningCounter < 1) this._shared.log.error('running counter is too low');
-    if (this._runningCounter-- === 1) this._shared.testStatesEmitter.fire(this._getCompletedEvent());
+    if (this._runningCounter < 1) {
+      this._shared.log.error('running counter is too low');
+      this._runningCounter = 0;
+      return;
+    }
+    if (this._runningCounter-- === 1) {
+      this._shared.log.local.debug('Suite completed event fired', this.label, this.origLabel);
+      this._shared.testStatesEmitter.fire(this._getCompletedEvent());
+    }
+  }
+
+  public sendMinimalEventsIfNeeded(completed: AbstractTestSuiteInfoBase[], running: AbstractTestSuiteInfoBase[]): void {
+    if (completed.length === 0) {
+      running.forEach(v => v.sendRunningEventIfNeeded());
+    } else if (running.length === 0) {
+      completed.reverse().forEach(v => v.sendCompletedEventIfNeeded());
+    } else if (completed[completed.length - 1] === running[running.length - 1]) {
+      if (completed.length !== running.length) this._shared.log.error('completed.length !== running.length');
+    } else {
+      let completedIndex = completed.length;
+      let runningIndex = 0;
+
+      do {
+        --completedIndex;
+        runningIndex = running.lastIndexOf(completed[completedIndex]);
+      } while (completedIndex >= 0 && runningIndex === -1);
+
+      for (let i = completedIndex + 1; i < completed.length; ++i) completed[i].sendCompletedEventIfNeeded();
+      for (let i = running.length - 1; i > runningIndex; --i) running[i].sendRunningEventIfNeeded();
+    }
   }
 
   public addChild(child: AbstractTestSuiteInfoBase | AbstractTestInfo): void {

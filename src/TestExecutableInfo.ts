@@ -125,12 +125,12 @@ export class TestExecutableInfo implements vscode.Disposable {
                   );
                 },
                 (reason: Error) => {
-                  this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
+                  this._shared.log.local.debug('Not a test executable:', file, 'reason:', reason);
                 },
               );
           },
           (reason: Error) => {
-            this._shared.log.debug('Not an executable:', file, reason);
+            this._shared.log.local.debug('Not an executable:', file, reason);
           },
         ),
       );
@@ -387,9 +387,9 @@ export class TestExecutableInfo implements vscode.Disposable {
         });
       }).catch((reason: Error & { code: undefined | number }) => {
         if (reason.code === undefined) {
-          this._shared.log.debug('reason', reason);
-          this._shared.log.debug('filePath', filePath);
-          this._shared.log.debug('suite', suite);
+          this._shared.log.local.debug('reason', reason);
+          this._shared.log.local.debug('filePath', filePath);
+          this._shared.log.local.debug('suite', suite);
           this._shared.log.warn('problem under reloading', reason);
         }
         return this._recursiveHandleEverything(filePath, suite, false, Math.min(delay * 2, 2000));

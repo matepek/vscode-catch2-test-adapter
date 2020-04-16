@@ -3,6 +3,7 @@ import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
+import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
 import { AbstractGroupTestSuiteInfo } from '../AbstractGroupTestSuiteInfo';
 import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
 import { GoogleTestInfo } from './GoogleTestInfo';
@@ -275,7 +276,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
       public buffer = '';
       public currentTestCaseNameFull: string | undefined = undefined;
       public currentChild: GoogleTestInfo | undefined = undefined;
-      public group: AbstractGroupTestSuiteInfo | undefined = undefined;
+      public route: AbstractTestSuiteInfoBase[] = [];
       public beforeFirstTestCase = true;
       public unprocessedTestCases: string[] = [];
       public processedTestCases: GoogleTestInfo[] = [];
@@ -296,29 +297,15 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
             if (m == null) return;
 
             data.currentTestCaseNameFull = m[1];
-
-            ///
-            //const route = this.findRouteToTestInfo(v => v.testNameAsId == data.currentTestCaseNameFull);
-            //data.currentChild = route![route!.length - 1];
-            ///
-
-            const groupName = m[2];
-            const group = this.children.find(c => c.label == groupName);
-            if (group) {
-              if (data.group !== group) {
-                if (data.group) data.group.sendCompletedEventIfNeeded();
-
-                data.group = group;
-                group.sendRunningEventIfNeeded();
-              }
-            } else {
-              this._shared.log.error('should have found group', groupName, chunks, this);
-            }
-
             data.beforeFirstTestCase = false;
-            data.currentChild = this.findTestInfo(v => v.testNameAsId == data.currentTestCaseNameFull);
 
-            if (data.currentChild !== undefined) {
+            const [route, testInfo] = this.findRouteToTestInfo(v => v.testNameAsId == data.currentTestCaseNameFull);
+
+            if (testInfo !== undefined) {
+              this.sendMinimalEventsIfNeeded(data.route, route);
+              data.route = route;
+
+              data.currentChild = testInfo;
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
@@ -370,6 +357,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
 
             data.currentTestCaseNameFull = undefined;
             data.currentChild = undefined;
+            // do not clear data.route
             data.buffer = data.buffer.substr(m.index! + m[0].length);
           }
         } while (data.buffer.length > 0 && --invariant > 0);
@@ -426,9 +414,8 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
           }
         }
 
-        if (data.group) {
-          data.group.sendCompletedEventIfNeeded();
-        }
+        this.sendMinimalEventsIfNeeded(data.route, []);
+        data.route = [];
 
         const isTestRemoved =
           runInfo.timeout === null &&
