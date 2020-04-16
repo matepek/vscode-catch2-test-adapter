@@ -7,7 +7,7 @@ import * as pathlib from 'path';
 import * as c2fs from '../FSWrapper';
 import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
 import { AbstractTest } from '../AbstractTest';
-import { AbstractSuit } from '../AbstractSuit';
+import { AbstractSuite } from '../AbstractSuite';
 import { DOCTest } from './DOCTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
@@ -29,7 +29,7 @@ export class DOCSuite extends AbstractRunnableSuite {
     super(shared, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: (AbstractSuit | AbstractTest)[]): void {
+  private _reloadFromString(testListOutput: string, oldChildren: (AbstractSuite | AbstractTest)[]): void {
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
       if (err) {
@@ -50,21 +50,10 @@ export class DOCSuite extends AbstractRunnableSuite {
 
       const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
 
-      const test = new DOCTest(
-        this._shared,
-        undefined,
-        testNameAsId,
-        suite !== undefined ? `[${suite}]` : undefined,
-        skipped,
-        filePath,
-        line,
-        old as DOCTest,
-      );
+      let group = this as AbstractSuite;
 
-      let group = this as AbstractSuit;
-
-      if (this.execInfo.groupBySource && test.file) {
-        const fileStr = pathlib.basename(test.file);
+      if (this.execInfo.groupBySource && filePath) {
+        const fileStr = pathlib.basename(filePath);
         const found = this.findGroup(v => v.origLabel === fileStr);
         if (found) {
           group = found;
@@ -73,6 +62,18 @@ export class DOCSuite extends AbstractRunnableSuite {
           group = group.addChild(new GroupSuite(this._shared, fileStr, oldGroup));
         }
       }
+
+      const test = new DOCTest(
+        this._shared,
+        group,
+        undefined,
+        testNameAsId,
+        suite !== undefined ? `[${suite}]` : undefined,
+        skipped,
+        filePath,
+        line,
+        old as DOCTest,
+      );
 
       group.addChild(test);
     }
@@ -126,6 +127,7 @@ export class DOCSuite extends AbstractRunnableSuite {
           const test = this.addChild(
             new DOCTest(
               this._shared,
+              this,
               undefined,
               'Check the test output message for details ⚠️',
               undefined,
@@ -192,7 +194,7 @@ export class DOCSuite extends AbstractRunnableSuite {
       public buffer = '';
       public inTestCase = false;
       public currentChild: AbstractTest | undefined = undefined;
-      public route: AbstractSuit[] = [];
+      public route: AbstractSuite[] = [];
       public beforeFirstTestCase = true;
       public rngSeed: number | undefined = undefined;
       public unprocessedXmlTestCases: string[] = [];

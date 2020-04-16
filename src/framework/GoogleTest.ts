@@ -1,12 +1,14 @@
 import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
 
 import { AbstractTest } from '../AbstractTest';
+import { AbstractSuite } from '../AbstractSuite';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 
 export class GoogleTest extends AbstractTest {
   public constructor(
     shared: SharedVariables,
+    parent: AbstractSuite,
     id: string | undefined,
     testNameAsId: string,
     label: string,
@@ -30,6 +32,7 @@ export class GoogleTest extends AbstractTest {
 
     super(
       shared,
+      parent,
       id,
       testNameAsId,
       label,

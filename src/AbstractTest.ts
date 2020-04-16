@@ -3,7 +3,7 @@ import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
-import { AbstractSuit } from './AbstractSuit';
+import { AbstractSuite } from './AbstractSuite';
 import { GroupSuite } from './GroupSuite';
 
 export abstract class AbstractTest implements TestInfo {
@@ -19,6 +19,7 @@ export abstract class AbstractTest implements TestInfo {
 
   protected constructor(
     protected readonly _shared: SharedVariables,
+    parent: AbstractSuite,
     id: string | undefined,
     public readonly testNameAsId: string,
     public readonly label: string,
@@ -28,7 +29,7 @@ export abstract class AbstractTest implements TestInfo {
     description: string | undefined,
     tooltip: string | undefined,
   ) {
-    this.id = id ? id : generateId();
+    this.id = id && id.startsWith(parent.id) ? id : generateId();
     this.origLabel = label;
     this.description = description ? description : '';
     this.file = file ? path.normalize(file) : undefined;
@@ -86,7 +87,7 @@ export abstract class AbstractTest implements TestInfo {
     return pred(this) ? this : undefined;
   }
 
-  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuit[], AbstractTest | undefined] {
+  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuite[], AbstractTest | undefined] {
     return [[], pred(this) ? this : undefined];
   }
 

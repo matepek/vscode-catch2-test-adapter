@@ -1,8 +1,8 @@
 import { AbstractTest } from './AbstractTest';
-import { AbstractSuit } from './AbstractSuit';
+import { AbstractSuite } from './AbstractSuite';
 import { SharedVariables } from './SharedVariables';
 
-export class GroupSuite extends AbstractSuit {
+export class GroupSuite extends AbstractSuite {
   public children: AbstractTest[] = [];
 
   public constructor(shared: SharedVariables, label: string, old?: GroupSuite) {

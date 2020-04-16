@@ -3,7 +3,7 @@ import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
-import { AbstractSuit } from '../AbstractSuit';
+import { AbstractSuite } from '../AbstractSuite';
 import { GroupSuite } from '../GroupSuite';
 import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
 import { GoogleTest } from './GoogleTest';
@@ -66,6 +66,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
         group.addChild(
           new GoogleTest(
             this._shared,
+            group,
             old ? old.id : undefined,
             testNameAsId,
             testName,
@@ -129,6 +130,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
         group.addChild(
           new GoogleTest(
             this._shared,
+            group,
             old ? old.id : undefined,
             testNameAsId,
             testName,
@@ -189,17 +191,19 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
         if (googleTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
           this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
-          const test = new GoogleTest(
-            this._shared,
-            undefined,
-            '<dummy>',
-            'Check the test output message for details ⚠️',
-            '',
-            undefined,
-            undefined,
-            undefined,
+          const test = this.addChild(
+            new GoogleTest(
+              this._shared,
+              this,
+              undefined,
+              '<dummy>',
+              'Check the test output message for details ⚠️',
+              '',
+              undefined,
+              undefined,
+              undefined,
+            ),
           );
-          super.addChild(test);
           this._shared.sendTestEventEmitter.fire([
             {
               type: 'test',
@@ -275,7 +279,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
       public buffer = '';
       public currentTestCaseNameFull: string | undefined = undefined;
       public currentChild: AbstractTest | undefined = undefined;
-      public route: AbstractSuit[] = [];
+      public route: AbstractSuite[] = [];
       public unprocessedTestCases: string[] = [];
       public processedTestCases: AbstractTest[] = [];
     })();

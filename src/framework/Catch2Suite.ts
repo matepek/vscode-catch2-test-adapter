@@ -7,7 +7,7 @@ import * as pathlib from 'path';
 import * as c2fs from '../FSWrapper';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
-import { AbstractSuit } from '../AbstractSuit';
+import { AbstractSuite } from '../AbstractSuite';
 import { Catch2Test } from './Catch2Test';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
@@ -29,7 +29,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
     super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(catch2Version));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: (AbstractSuit | AbstractTest)[]): void {
+  private _reloadFromString(testListOutput: string, oldChildren: (AbstractSuite | AbstractTest)[]): void {
     const lines = testListOutput.split(/\r?\n/);
 
     const startRe = /Matching test cases:/;
@@ -57,7 +57,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
         this._shared.log.warn('Probably too long test name', i, lines);
         this.children = [];
         const test = this.addChild(
-          new Catch2Test(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
+          new Catch2Test(this._shared, this, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
         );
         this._shared.sendTestEventEmitter.fire([
           {
@@ -103,21 +103,10 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
       const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
 
-      const test = new Catch2Test(
-        this._shared,
-        old ? old.id : undefined,
-        testNameAsId,
-        description,
-        tags,
-        filePath,
-        line,
-        old ? (old as Catch2Test).sections : undefined,
-      );
+      let group = this as AbstractSuite;
 
-      let group = this as AbstractSuit;
-
-      if (this.execInfo.groupBySource && test.file) {
-        const fileStr = pathlib.basename(test.file);
+      if (this.execInfo.groupBySource && filePath) {
+        const fileStr = pathlib.basename(filePath);
         const found = this.findGroup(v => v.origLabel === fileStr);
         if (found) {
           group = found;
@@ -140,6 +129,18 @@ export class Catch2Suite extends AbstractRunnableSuite {
           group = group.addChild(new GroupSuite(this._shared, tagsStr, oldGroup));
         }
       }
+
+      const test = new Catch2Test(
+        this._shared,
+        group,
+        old ? old.id : undefined,
+        testNameAsId,
+        description,
+        tags,
+        filePath,
+        line,
+        old ? (old as Catch2Test).sections : undefined,
+      );
 
       group.addChild(test);
     }
@@ -193,7 +194,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
     if (catch2TestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
       const test = this.addChild(
-        new Catch2Test(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
+        new Catch2Test(this._shared, this, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
       );
       this._shared.sendTestEventEmitter.fire([
         {
@@ -258,7 +259,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
       public buffer = '';
       public inTestCase = false;
       public currentChild: AbstractTest | undefined = undefined;
-      public route: AbstractSuit[] = [];
+      public route: AbstractSuite[] = [];
       public beforeFirstTestCase = true;
       public rngSeed: number | undefined = undefined;
       public unprocessedXmlTestCases: string[] = [];

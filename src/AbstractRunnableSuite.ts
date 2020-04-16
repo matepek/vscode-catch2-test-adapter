@@ -5,13 +5,13 @@ import * as fs from 'fs';
 import * as c2fs from './FSWrapper';
 import { RunnableSuiteProperties } from './RunnableSuiteProperties';
 import { AbstractTest } from './AbstractTest';
-import { AbstractSuit } from './AbstractSuit';
+import { AbstractSuite } from './AbstractSuite';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { promisify } from 'util';
 
-export abstract class AbstractRunnableSuite extends AbstractSuit {
+export abstract class AbstractRunnableSuite extends AbstractSuite {
   private static _reportedFrameworks: string[] = [];
 
   private _canceled = false;
@@ -102,12 +102,12 @@ export abstract class AbstractRunnableSuite extends AbstractSuit {
         tests.delete(v.id);
       });
     } else {
-      this.enumerateDescendants((v: AbstractSuit | AbstractTest) => {
+      this.enumerateDescendants((v: AbstractSuite | AbstractTest) => {
         const explicitlyIn = tests.delete(v.id);
         if (explicitlyIn) {
           if (v instanceof AbstractTest) {
             childrenToRun.add(v);
-          } else if (v instanceof AbstractSuit) {
+          } else if (v instanceof AbstractSuite) {
             v.enumerateTestInfos(vv => {
               if (!vv.skipped) childrenToRun.add(vv);
             });

@@ -7,11 +7,11 @@ import { GroupSuite } from './GroupSuite';
 
 ///
 
-export abstract class AbstractSuit implements TestSuiteInfo {
+export abstract class AbstractSuite implements TestSuiteInfo {
   public readonly type: 'suite' = 'suite';
   public readonly id: string;
   public readonly origLabel: string;
-  public children: (AbstractSuit | AbstractTest)[] = [];
+  public children: (AbstractSuite | AbstractTest)[] = [];
   public file?: string;
   public line?: number;
   private _tooltip: string;
@@ -93,7 +93,7 @@ export abstract class AbstractSuit implements TestSuiteInfo {
     }
   }
 
-  public sendMinimalEventsIfNeeded(completed: AbstractSuit[], running: AbstractSuit[]): void {
+  public sendMinimalEventsIfNeeded(completed: AbstractSuite[], running: AbstractSuite[]): void {
     if (completed.length === 0) {
       running.forEach(v => v.sendRunningEventIfNeeded());
     } else if (running.length === 0) {
@@ -114,7 +114,7 @@ export abstract class AbstractSuit implements TestSuiteInfo {
     }
   }
 
-  protected _addChild(child: AbstractSuit | AbstractTest): void {
+  protected _addChild(child: AbstractSuite | AbstractTest): void {
     if (this.children.indexOf(child) != -1) {
       this._shared.log.error('should not try to add the child twice', this, child);
       return;
@@ -131,19 +131,19 @@ export abstract class AbstractSuit implements TestSuiteInfo {
     this.children.push(child);
   }
 
-  public addChild<T extends AbstractSuit | AbstractTest>(child: T): T {
+  public addChild<T extends AbstractSuite | AbstractTest>(child: T): T {
     this._addChild(child);
     return child;
   }
 
-  public enumerateDescendants(fn: (v: AbstractSuit | AbstractTest) => void): void {
+  public enumerateDescendants(fn: (v: AbstractSuite | AbstractTest) => void): void {
     this.enumerateChildren(child => {
       fn(child);
-      if (child instanceof AbstractSuit) child.enumerateDescendants(fn);
+      if (child instanceof AbstractSuite) child.enumerateDescendants(fn);
     });
   }
 
-  public enumerateChildren(fn: (v: AbstractSuit | AbstractTest) => void): void {
+  public enumerateChildren(fn: (v: AbstractSuite | AbstractTest) => void): void {
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i];
       fn(child);
@@ -156,7 +156,7 @@ export abstract class AbstractSuit implements TestSuiteInfo {
     });
   }
 
-  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuit[], AbstractTest | undefined] {
+  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuite[], AbstractTest | undefined] {
     for (let i = 0; i < this.children.length; ++i) {
       const [route, test] = this.children[i].findRouteToTestInfo(pred);
       if (test !== undefined) {
@@ -172,7 +172,7 @@ export abstract class AbstractSuit implements TestSuiteInfo {
   }
 
   public findTestInfoInArray(
-    array: (AbstractSuit | AbstractTest)[],
+    array: (AbstractSuite | AbstractTest)[],
     pred: (v: AbstractTest) => boolean,
   ): AbstractTest | undefined {
     for (let i = 0; i < array.length; i++) {
@@ -187,7 +187,7 @@ export abstract class AbstractSuit implements TestSuiteInfo {
   }
 
   public findGroupInArray(
-    array: (AbstractSuit | AbstractTest)[],
+    array: (AbstractSuite | AbstractTest)[],
     pred: (v: GroupSuite) => boolean,
   ): GroupSuite | undefined {
     for (let i = 0; i < array.length; i++) {

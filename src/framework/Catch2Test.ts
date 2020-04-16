@@ -1,6 +1,7 @@
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { AbstractTest } from '../AbstractTest';
+import { AbstractSuite } from '../AbstractSuite';
 import { inspect } from 'util';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
@@ -34,6 +35,7 @@ export class Catch2Section {
 export class Catch2Test extends AbstractTest {
   public constructor(
     shared: SharedVariables,
+    parent: AbstractSuite,
     id: string | undefined,
     testNameAsId: string,
     catch2Description: string,
@@ -44,6 +46,7 @@ export class Catch2Test extends AbstractTest {
   ) {
     super(
       shared,
+      parent,
       id,
       testNameAsId,
       testNameAsId,
