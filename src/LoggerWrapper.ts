@@ -5,7 +5,7 @@ import { inspect } from 'util';
 
 ///
 
-export class LogWrapper implements Disposable {
+export class LoggerWrapper implements Disposable {
   public readonly local: util.Log;
 
   public constructor(

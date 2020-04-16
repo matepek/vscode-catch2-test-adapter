@@ -15,6 +15,8 @@ export interface TestExecutableInfoFrameworkSpecific {
   prependTestRunningArgs?: string[];
   prependTestListingArgs?: string[];
   ignoreTestEnumerationStdErr?: boolean;
+  groupBySource?: boolean;
+  groupByTags?: boolean;
 }
 
 export class TestExecutableInfo implements vscode.Disposable {

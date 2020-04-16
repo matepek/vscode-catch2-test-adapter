@@ -1,4 +1,4 @@
-import { LogWrapper } from './LogWrapper';
+import { LoggerWrapper } from './LoggerWrapper';
 import * as vscode from 'vscode';
 import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
 import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
@@ -13,7 +13,7 @@ export class SharedVariables implements vscode.Disposable {
   public readonly taskPool: TaskPool;
 
   public constructor(
-    public readonly log: LogWrapper,
+    public readonly log: LoggerWrapper,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
     public readonly testStatesEmitter: TestStateEmitterType,
     public readonly loadWithTaskEmitter: vscode.EventEmitter<() => void | PromiseLike<void>>,

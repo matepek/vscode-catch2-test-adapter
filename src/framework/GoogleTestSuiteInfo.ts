@@ -8,7 +8,7 @@ import { GroupTestSuiteInfo } from '../GroupTestSuiteInfo';
 import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
 import { GoogleTestInfo } from './GoogleTestInfo';
 import { Parser } from 'xml2js';
-import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
+import { RunnableTestSuiteProperties } from '../RunnableTestSuiteProperties';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { AbstractTestInfo } from '../AbstractTestInfo';
@@ -20,7 +20,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execInfo: TestSuiteExecutionInfo,
+    execInfo: RunnableTestSuiteProperties,
     version: Promise<[number, number, number] | undefined>,
   ) {
     super(shared, label, desciption, execInfo, 'GoogleTest', version);
@@ -44,12 +44,11 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
       const suiteName = xml.testsuites.testsuite[i].$.name;
 
-      const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
-      const oldGroupId = oldGroup ? oldGroup.id : undefined;
+      const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === suiteName);
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
       // we need the oldGroup.id because that preserves the node's expanded/collapsed state
-      const group = new GroupTestSuiteInfo(this._shared, suiteName, oldGroupId);
+      const group = new GroupTestSuiteInfo(this._shared, suiteName, oldGroup);
       this.addChild(group);
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
@@ -112,10 +111,9 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
       const typeParam: string | undefined = testGroupMatch[3];
 
       const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
-      const oldGroupId = oldGroup ? oldGroup.id : undefined;
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
-      const group = new GroupTestSuiteInfo(this._shared, suiteName, oldGroupId);
+      const group = new GroupTestSuiteInfo(this._shared, suiteName, oldGroup);
 
       let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 

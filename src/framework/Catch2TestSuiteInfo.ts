@@ -2,16 +2,17 @@ import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
+import * as pathlib from 'path';
 
 import * as c2fs from '../FSWrapper';
-import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
+import { RunnableTestSuiteProperties } from '../RunnableTestSuiteProperties';
 import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
 import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
 import { Catch2TestInfo } from './Catch2TestInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { AbstractTestInfo } from '../AbstractTestInfo';
-//import { GroupTestSuiteInfo } from '../GroupTestSuiteInfo';
+import { GroupTestSuiteInfo } from '../GroupTestSuiteInfo';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -22,7 +23,7 @@ export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execInfo: TestSuiteExecutionInfo,
+    execInfo: RunnableTestSuiteProperties,
     catch2Version: [number, number, number] | undefined,
   ) {
     super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(catch2Version));
@@ -103,28 +104,47 @@ export class Catch2TestSuiteInfo extends AbstractRunnableTestSuiteInfo {
         ++i;
       }
 
-      // const group: AbstractTestSuiteInfoBase = ((): AbstractTestSuiteInfoBase => {
-      //   const group = new GroupTestSuiteInfo(this._shared, tags.join(''));
-      //   this.addChild(group);
-      //   return group;
-      // })();
-
-      // this.addChild(group);
-
       const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
 
-      this.addChild(
-        new Catch2TestInfo(
-          this._shared,
-          old ? old.id : undefined,
-          testNameAsId,
-          description,
-          tags,
-          filePath,
-          line,
-          old ? (old as Catch2TestInfo).sections : undefined,
-        ),
+      const test = new Catch2TestInfo(
+        this._shared,
+        old ? old.id : undefined,
+        testNameAsId,
+        description,
+        tags,
+        filePath,
+        line,
+        old ? (old as Catch2TestInfo).sections : undefined,
       );
+
+      let group = this as AbstractTestSuiteInfoBase;
+
+      if (this.execInfo.groupBySource && test.file) {
+        const fileStr = pathlib.basename(test.file);
+        const found = this.findGroup(v => v.origLabel === fileStr);
+        if (found) {
+          group = found;
+        } else {
+          const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === fileStr);
+          group = group.addChild(new GroupTestSuiteInfo(this._shared, fileStr, oldGroup));
+        }
+      }
+
+      if (this.execInfo.groupByTags && tags.length > 0) {
+        const tagsStr = tags
+          .filter(v => v != '[.]' && v != '[hide]')
+          .sort()
+          .join('');
+        const found = this.findGroup(v => v.origLabel === tagsStr);
+        if (found) {
+          group = found;
+        } else {
+          const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === tagsStr);
+          group = group.addChild(new GroupTestSuiteInfo(this._shared, tagsStr, oldGroup));
+        }
+      }
+
+      group.addChild(test);
     }
 
     if (i >= lines.length) this._shared.log.error('Wrong test list output format #2', lines);

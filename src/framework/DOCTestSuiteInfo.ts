@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
+import * as pathlib from 'path';
 
 import * as c2fs from '../FSWrapper';
 import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
@@ -10,7 +11,8 @@ import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
 import { DOCTestInfo } from './DOCTestInfo';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
-import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
+import { RunnableTestSuiteProperties } from '../RunnableTestSuiteProperties';
+import { GroupTestSuiteInfo } from '../GroupTestSuiteInfo';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -21,7 +23,7 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execInfo: TestSuiteExecutionInfo,
+    execInfo: RunnableTestSuiteProperties,
     docVersion: [number, number, number] | undefined,
   ) {
     super(shared, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
@@ -51,18 +53,31 @@ export class DOCTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
 
       const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
 
-      this.addChild(
-        new DOCTestInfo(
-          this._shared,
-          undefined,
-          testNameAsId,
-          suite !== undefined ? `[${suite}]` : undefined,
-          skipped,
-          filePath,
-          line,
-          old as DOCTestInfo,
-        ),
+      const test = new DOCTestInfo(
+        this._shared,
+        undefined,
+        testNameAsId,
+        suite !== undefined ? `[${suite}]` : undefined,
+        skipped,
+        filePath,
+        line,
+        old as DOCTestInfo,
       );
+
+      let group = this as AbstractTestSuiteInfoBase;
+
+      if (this.execInfo.groupBySource && test.file) {
+        const fileStr = pathlib.basename(test.file);
+        const found = this.findGroup(v => v.origLabel === fileStr);
+        if (found) {
+          group = found;
+        } else {
+          const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === fileStr);
+          group = group.addChild(new GroupTestSuiteInfo(this._shared, fileStr, oldGroup));
+        }
+      }
+
+      group.addChild(test);
     }
   }
 

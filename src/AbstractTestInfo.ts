@@ -4,6 +4,7 @@ import { generateUniqueId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
+import { GroupTestSuiteInfo } from './GroupTestSuiteInfo';
 
 export abstract class AbstractTestInfo implements TestInfo {
   public readonly type: 'test' = 'test';
@@ -89,5 +90,10 @@ export abstract class AbstractTestInfo implements TestInfo {
     pred: (v: AbstractTestInfo) => boolean,
   ): [AbstractTestSuiteInfoBase[], AbstractTestInfo | undefined] {
     return [[], pred(this) ? this : undefined];
+  }
+
+  // eslint-disable-next-line
+  public findGroup(_pred: (v: GroupTestSuiteInfo) => boolean): undefined {
+    return undefined;
   }
 }

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LogWrapper } from './LogWrapper';
+import { LoggerWrapper } from './LoggerWrapper';
 import { TestExecutableInfo, TestExecutableInfoFrameworkSpecific } from './TestExecutableInfo';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { SharedVariables } from './SharedVariables';
@@ -9,7 +9,7 @@ import { performance } from 'perf_hooks';
 export class Config {
   private _vsConfig: vscode.WorkspaceConfiguration;
 
-  public constructor(public _log: LogWrapper, private _workspaceFolderUri: vscode.Uri) {
+  public constructor(public _log: LoggerWrapper, private _workspaceFolderUri: vscode.Uri) {
     this._vsConfig = vscode.workspace.getConfiguration('catch2TestExplorer', _workspaceFolderUri);
   }
 

@@ -1,5 +1,5 @@
 import * as c2fs from './FSWrapper';
-import { TestSuiteExecutionInfo } from './TestSuiteExecutionInfo';
+import { RunnableTestSuiteProperties } from './RunnableTestSuiteProperties';
 import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
 import { Catch2TestSuiteInfo } from './framework/Catch2TestSuiteInfo';
 import { GoogleTestSuiteInfo } from './framework/GoogleTestSuiteInfo';
@@ -36,13 +36,7 @@ export class TestSuiteInfoFactory {
               this._shared,
               this._label,
               this._description,
-              new TestSuiteExecutionInfo(
-                this._execPath,
-                this._execOptions,
-                this._gtest.prependTestRunningArgs ? this._gtest.prependTestRunningArgs : [],
-                this._gtest.prependTestListingArgs ? this._gtest.prependTestListingArgs : [],
-                this._gtest.ignoreTestEnumerationStdErr === true,
-              ),
+              new RunnableTestSuiteProperties(this._execPath, this._execOptions, this._gtest),
               Promise.resolve(undefined), //Util: GoogleTestVersionFinder
             );
           case 'catch2':
@@ -50,13 +44,7 @@ export class TestSuiteInfoFactory {
               this._shared,
               this._label,
               this._description,
-              new TestSuiteExecutionInfo(
-                this._execPath,
-                this._execOptions,
-                this._catch2.prependTestRunningArgs ? this._catch2.prependTestRunningArgs : [],
-                this._catch2.prependTestListingArgs ? this._catch2.prependTestListingArgs : [],
-                this._catch2.ignoreTestEnumerationStdErr === true,
-              ),
+              new RunnableTestSuiteProperties(this._execPath, this._execOptions, this._catch2),
               framework.version,
             );
           case 'doctest':
@@ -64,13 +52,7 @@ export class TestSuiteInfoFactory {
               this._shared,
               this._label,
               this._description,
-              new TestSuiteExecutionInfo(
-                this._execPath,
-                this._execOptions,
-                this._doctest.prependTestRunningArgs ? this._doctest.prependTestRunningArgs : [],
-                this._doctest.prependTestListingArgs ? this._doctest.prependTestListingArgs : [],
-                this._doctest.ignoreTestEnumerationStdErr === true,
-              ),
+              new RunnableTestSuiteProperties(this._execPath, this._execOptions, this._doctest),
               framework.version,
             );
         }

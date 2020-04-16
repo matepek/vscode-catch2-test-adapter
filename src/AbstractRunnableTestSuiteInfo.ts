@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import * as c2fs from './FSWrapper';
-import { TestSuiteExecutionInfo } from './TestSuiteExecutionInfo';
+import { RunnableTestSuiteProperties } from './RunnableTestSuiteProperties';
 import { AbstractTestInfo } from './AbstractTestInfo';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { TaskPool } from './TaskPool';
@@ -22,7 +22,7 @@ export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInf
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    public readonly execInfo: TestSuiteExecutionInfo,
+    public readonly execInfo: RunnableTestSuiteProperties,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<[number, number, number] | undefined>,
   ) {

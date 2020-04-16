@@ -3,6 +3,7 @@ import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
 import { generateUniqueId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTestInfo } from './AbstractTestInfo';
+import { GroupTestSuiteInfo } from './GroupTestSuiteInfo';
 
 ///
 
@@ -178,6 +179,21 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
   ): AbstractTestInfo | undefined {
     for (let i = 0; i < array.length; i++) {
       const res = array[i].findTestInfo(pred);
+      if (res !== undefined) return res;
+    }
+    return undefined;
+  }
+
+  public findGroup(pred: (v: GroupTestSuiteInfo) => boolean): GroupTestSuiteInfo | undefined {
+    return this.findGroupInArray(this.children, pred);
+  }
+
+  public findGroupInArray(
+    array: (AbstractTestSuiteInfoBase | AbstractTestInfo)[],
+    pred: (v: GroupTestSuiteInfo) => boolean,
+  ): GroupTestSuiteInfo | undefined {
+    for (let i = 0; i < array.length; i++) {
+      const res = array[i].findGroup(pred);
       if (res !== undefined) return res;
     }
     return undefined;

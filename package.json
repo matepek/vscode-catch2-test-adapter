@@ -32,7 +32,7 @@
     "doctest",
     "onqtam"
   ],
-  "main": "out/src/main.js",
+  "main": "out/dist/main.js",
   "scripts": {
     "postinstall": "node ./node_modules/vscode/bin/install",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
@@ -80,7 +80,7 @@
     "raw-loader": "^4.0.1",
     "request-promise": "4.2.5",
     "sinon": "^9.0.2",
-    "ts-loader": "^6.2.2",
+    "ts-loader": "^7.0.0",
     "typescript": "^3.8.3",
     "vsce": "^1.75.0",
     "vscode": "^1.1.36",
@@ -261,6 +261,21 @@
                           "ignoreTestEnumerationStdErr": {
                             "description": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`.",
                             "type": "boolean"
+                          },
+                          "testGrouping": {
+                            "description": "Groups the tests inside the executable.",
+                            "additionalProperties": false,
+                            "properties": {
+                              "disabled": {
+                                "type": "boolean"
+                              },
+                              "groupBySource": {
+                                "type": "boolean"
+                              },
+                              "groupByTags": {
+                                "type": "boolean"
+                              }
+                            }
                           }
                         }
                       },

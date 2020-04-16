@@ -13,7 +13,7 @@ import * as api from 'vscode-test-adapter-api';
 import debounce = require('debounce-collect');
 import * as Sentry from '@sentry/node';
 
-import { LogWrapper } from './LogWrapper';
+import { LoggerWrapper } from './LoggerWrapper';
 import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { resolveVariables, generateUniqueId } from './Util';
 import { TaskQueue } from './TaskQueue';
@@ -25,7 +25,7 @@ import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
-  private readonly _log: LogWrapper;
+  private readonly _log: LoggerWrapper;
   private readonly _testsEmitter = new vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>();
   private readonly _testStatesEmitter = new vscode.EventEmitter<
     TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
@@ -54,7 +54,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _isDebug: boolean = !!process.env['C2_DEBUG'];
 
   public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
-    this._log = new LogWrapper(
+    this._log = new LoggerWrapper(
       'catch2TestExplorer',
       this.workspaceFolder,
       'Test Explorer: ' + this.workspaceFolder.name,
