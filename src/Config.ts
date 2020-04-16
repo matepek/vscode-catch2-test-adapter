@@ -302,6 +302,7 @@ export class Config {
           if (typeof obj.testGrouping) {
             if (typeof obj.testGrouping.groupBySource) r.groupBySource = obj.testGrouping.groupBySource;
             if (typeof obj.testGrouping.groupByTags) r.groupByTags = obj.testGrouping.groupByTags;
+            if (typeof obj.testGrouping.groupBySingleRegex) r.groupBySingleRegex = obj.testGrouping.groupBySingleRegex;
           }
         }
         return r;

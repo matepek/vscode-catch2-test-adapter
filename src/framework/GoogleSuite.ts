@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
+import * as pathlib from 'path';
 
 import * as c2fs from '../FSWrapper';
 import { AbstractSuite } from '../AbstractSuite';
@@ -48,8 +49,8 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
       // we need the oldGroup.id because that preserves the node's expanded/collapsed state
-      const group = new GroupSuite(this._shared, suiteName, oldGroup);
-      this.addChild(group);
+      const gGroup = new GroupSuite(this._shared, suiteName, oldGroup);
+      this.addChild(gGroup);
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
         const test = xml.testsuites.testsuite[i].testcase[j];
@@ -62,6 +63,35 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
         const file = test.$.file ? this._findFilePath(test.$.file) : undefined;
         const line = test.$.line ? test.$.line - 1 : undefined;
+
+        let group = gGroup;
+
+        if (this.execInfo.groupBySource && file) {
+          this._shared.log.info('groupBySource');
+          const fileStr = pathlib.basename(file);
+          const found = this.findGroup(v => v.origLabel === fileStr);
+          if (found) {
+            group = found;
+          } else {
+            const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === fileStr);
+            group = group.addChild(new GroupSuite(this._shared, fileStr, oldGroup));
+          }
+        }
+
+        if (this.execInfo.groupBySingleRegex) {
+          this._shared.log.info('groupBySingleRegex');
+          const match = testName.match(this.execInfo.groupBySingleRegex);
+          if (match && match[1]) {
+            const firstMatchGroup = match[1];
+            const found = this.findGroup(v => v.origLabel === firstMatchGroup);
+            if (found) {
+              group = found;
+            } else {
+              const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === firstMatchGroup);
+              group = group.addChild(new GroupSuite(this._shared, firstMatchGroup, oldGroup));
+            }
+          }
+        }
 
         group.addChild(
           new GoogleTest(
@@ -77,8 +107,8 @@ export class GoogleSuite extends AbstractRunnableSuite {
         );
       }
 
-      if (group.children.length && group.children.every(c => c.description === group.children[0].description))
-        group.description = group.children[0].description;
+      if (gGroup.children.length && gGroup.children.every(c => c.description === gGroup.children[0].description))
+        gGroup.description = gGroup.children[0].description;
     }
   }
 

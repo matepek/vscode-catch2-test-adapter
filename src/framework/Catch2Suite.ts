@@ -130,6 +130,21 @@ export class Catch2Suite extends AbstractRunnableSuite {
         }
       }
 
+      if (this.execInfo.groupBySingleRegex) {
+        this._shared.log.info('groupBySingleRegex');
+        const match = testNameAsId.match(this.execInfo.groupBySingleRegex);
+        if (match && match[1]) {
+          const firstMatchGroup = match[1];
+          const found = this.findGroup(v => v.origLabel === firstMatchGroup);
+          if (found) {
+            group = found;
+          } else {
+            const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === firstMatchGroup);
+            group = group.addChild(new GroupSuite(this._shared, firstMatchGroup, oldGroup));
+          }
+        }
+      }
+
       const test = new Catch2Test(
         this._shared,
         old ? old.id : undefined,

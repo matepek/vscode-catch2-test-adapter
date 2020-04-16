@@ -1,7 +1,6 @@
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { AbstractTest } from '../AbstractTest';
-import { AbstractSuite } from '../AbstractSuite';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 import { TestEventBuilder } from '../TestEventBuilder';
@@ -37,7 +36,6 @@ export class DOCSection implements Frame {
 export class DOCTest extends AbstractTest {
   public constructor(
     shared: SharedVariables,
-    parent: AbstractSuite,
     id: string | undefined,
     testNameAsId: string,
     description: string | undefined,

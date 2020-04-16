@@ -17,6 +17,7 @@ export interface TestExecutableInfoFrameworkSpecific {
   ignoreTestEnumerationStdErr?: boolean;
   groupBySource?: boolean;
   groupByTags?: boolean;
+  groupBySingleRegex?: string;
 }
 
 export class Executable implements vscode.Disposable {

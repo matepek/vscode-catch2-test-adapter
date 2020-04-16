@@ -53,6 +53,7 @@ export class DOCSuite extends AbstractRunnableSuite {
       let group = this as AbstractSuite;
 
       if (this.execInfo.groupBySource && filePath) {
+        this._shared.log.info('groupBySource');
         const fileStr = pathlib.basename(filePath);
         const found = this.findGroup(v => v.origLabel === fileStr);
         if (found) {
@@ -63,9 +64,23 @@ export class DOCSuite extends AbstractRunnableSuite {
         }
       }
 
+      if (this.execInfo.groupBySingleRegex) {
+        this._shared.log.info('groupBySingleRegex');
+        const match = testNameAsId.match(this.execInfo.groupBySingleRegex);
+        if (match && match[1]) {
+          const firstMatchGroup = match[1];
+          const found = this.findGroup(v => v.origLabel === firstMatchGroup);
+          if (found) {
+            group = found;
+          } else {
+            const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === firstMatchGroup);
+            group = group.addChild(new GroupSuite(this._shared, firstMatchGroup, oldGroup));
+          }
+        }
+      }
+
       const test = new DOCTest(
         this._shared,
-        group,
         undefined,
         testNameAsId,
         suite !== undefined ? `[${suite}]` : undefined,
@@ -127,7 +142,6 @@ export class DOCSuite extends AbstractRunnableSuite {
           const test = this.addChild(
             new DOCTest(
               this._shared,
-              this,
               undefined,
               'Check the test output message for details ⚠️',
               undefined,

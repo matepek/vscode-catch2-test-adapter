@@ -266,14 +266,16 @@
                             "description": "Groups the tests inside the executable.",
                             "additionalProperties": false,
                             "properties": {
-                              "disabled": {
-                                "type": "boolean"
-                              },
                               "groupBySource": {
                                 "type": "boolean"
                               },
                               "groupByTags": {
                                 "type": "boolean"
+                              },
+                              "groupBySingleRegex": {
+                                "description": "Groups tests by the first match group. Example: \"(?:good|bad) (apple|peach)\" will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group.",
+                                "type": "string",
+                                "minLength": "3"
                               }
                             }
                           }
@@ -311,14 +313,13 @@
                             "description": "Groups the tests inside the executable.",
                             "additionalProperties": false,
                             "properties": {
-                              "disabled": {
-                                "type": "boolean"
-                              },
                               "groupBySource": {
                                 "type": "boolean"
                               },
-                              "groupByTags": {
-                                "type": "boolean"
+                              "groupBySingleRegex": {
+                                "description": "Groups tests by the first match group. Example: \"(?:good|bad) (apple|peach)\" will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group.",
+                                "type": "string",
+                                "minLength": "3"
                               }
                             }
                           }
@@ -351,6 +352,20 @@
                           "ignoreTestEnumerationStdErr": {
                             "description": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`.",
                             "type": "boolean"
+                          },
+                          "testGrouping": {
+                            "description": "Groups the tests inside the executable.",
+                            "additionalProperties": false,
+                            "properties": {
+                              "groupBySource": {
+                                "type": "boolean"
+                              },
+                              "groupBySingleRegex": {
+                                "description": "Groups tests by the first match group. Example: \"(?:good|bad) (apple|peach)\" will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group.",
+                                "type": "string",
+                                "minLength": "3"
+                              }
+                            }
                           }
                         }
                       }
