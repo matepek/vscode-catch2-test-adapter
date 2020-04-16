@@ -99,14 +99,6 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     this.children.push(child);
   }
 
-  public findRouteToTestById(id: string): (AbstractTestSuiteInfoBase | AbstractTestInfo)[] | undefined {
-    for (let i = 0; i < this.children.length; ++i) {
-      const res = this.children[i].findRouteToTestById(id);
-      if (res !== undefined) return [this, ...res];
-    }
-    return undefined;
-  }
-
   public enumerateDescendants(fn: (v: AbstractTestSuiteInfoBase | AbstractTestInfo) => void): void {
     this.enumerateChildren(child => {
       fn(child);
@@ -125,6 +117,19 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     this.enumerateDescendants(v => {
       if (v instanceof AbstractTestInfo) fn(v);
     });
+  }
+
+  public findRouteToTestInfo(
+    pred: (v: AbstractTestInfo) => boolean,
+  ): [AbstractTestSuiteInfoBase[], AbstractTestInfo | undefined] {
+    for (let i = 0; i < this.children.length; ++i) {
+      const [route, test] = this.children[i].findRouteToTestInfo(pred);
+      if (test !== undefined) {
+        route.unshift(this);
+        return [route, test];
+      }
+    }
+    return [[], undefined];
   }
 
   public findTestInfo(pred: (v: AbstractTestInfo) => boolean): AbstractTestInfo | undefined {

@@ -28,7 +28,7 @@ import { SpawnOptions } from '../src/FSWrapper';
 
 ///
 
-describe(path.basename(__filename), function() {
+describe(path.basename(__filename), function () {
   this.timeout(20000);
   this.slow(3000);
 
@@ -37,17 +37,17 @@ describe(path.basename(__filename), function() {
   let watchers: Map<string, FileSystemWatcherStub>;
   const uniqueIdC = new Set<string>();
 
-  before(function() {
+  before(function () {
     imitation = new Imitation();
     fse.removeSync(settings.dotVscodePath);
   });
 
-  after(function() {
+  after(function () {
     imitation.restore();
     return settings.resetConfig();
   });
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     imitation.resetToCallThrough();
     watchers = example1.initImitation(imitation);
 
@@ -55,7 +55,7 @@ describe(path.basename(__filename), function() {
     await settings.updateConfig('workerMaxNumber', 3);
   });
 
-  afterEach(async function() {
+  afterEach(async function () {
     await adapter.waitAndDispose(this);
     uniqueIdC.clear();
   });
@@ -89,8 +89,8 @@ describe(path.basename(__filename), function() {
     example1.assertWithoutChildren(root, uniqueIdC);
   }
 
-  context('executables="execPath1.exe"', function() {
-    beforeEach(function() {
+  context('executables="execPath1.exe"', function () {
+    beforeEach(function () {
       return settings.updateConfig('executables', 'execPath1.exe');
     });
 
@@ -109,7 +109,7 @@ describe(path.basename(__filename), function() {
       s1t2 = suite1.children[1] as TestInfo;
     }
 
-    it('should run with not existing test id', async function() {
+    it('should run with not existing test id', async function () {
       expectedLoggedErrorLine("[ERROR] Some tests have remained:  Set { 'not existing id' }");
 
       await loadAdapterAndAssert();
@@ -121,7 +121,7 @@ describe(path.basename(__filename), function() {
       ]);
     });
 
-    it('should run s1t1 with success', async function() {
+    it('should run s1t1 with success', async function () {
       await loadAdapterAndAssert();
       assert.deepStrictEqual(settings.getConfig().get<string>('executables'), 'execPath1.exe');
       await adapter.run([s1t1.id]);
@@ -154,7 +154,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
     });
 
-    it('should run suite1', async function() {
+    it('should run suite1', async function () {
       await loadAdapterAndAssert();
       await adapter.run([suite1.id]);
       const expected = [
@@ -203,7 +203,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
     });
 
-    it('should run all', async function() {
+    it('should run all', async function () {
       await loadAdapterAndAssert();
       await adapter.run([root.id]);
       const expected = [
@@ -252,7 +252,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
     });
 
-    it('cancels without any problem', async function() {
+    it('cancels without any problem', async function () {
       await loadAdapterAndAssert();
       adapter.cancel();
       assert.deepStrictEqual(adapter.testLoadsEvents, []);
@@ -293,12 +293,12 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
     });
 
-    context('with config: defaultRngSeed=2', function() {
-      beforeEach(function() {
+    context('with config: defaultRngSeed=2', function () {
+      beforeEach(function () {
         return settings.updateConfig('defaultRngSeed', 2);
       });
 
-      it('should run s1t1 with success', async function() {
+      it('should run s1t1 with success', async function () {
         await loadAdapterAndAssert();
         await adapter.run([s1t1.id]);
         const expected = [
@@ -332,7 +332,7 @@ describe(path.basename(__filename), function() {
     });
   });
 
-  context('executables=["execPath1.exe", "execPath2.exe"]', function() {
+  context('executables=["execPath1.exe", "execPath2.exe"]', function () {
     let suite1Watcher: FileSystemWatcherStub;
 
     async function loadAdapterAndAssert(): Promise<void> {
@@ -373,11 +373,11 @@ describe(path.basename(__filename), function() {
       example1.suite2.assert('execPath2.exe', ['s2t1', 's2t2', 's2t3'], ['', '[.]', ''], suite2, uniqueIdC);
     }
 
-    beforeEach(function() {
+    beforeEach(function () {
       return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe']);
     });
 
-    it('test variables are fine, suite1 and suite1 are loaded', async function() {
+    it('test variables are fine, suite1 and suite1 are loaded', async function () {
       await loadAdapterAndAssert();
       assert.equal(root.children.length, 2);
       assert.ok(suite1 != undefined);
@@ -389,7 +389,7 @@ describe(path.basename(__filename), function() {
       assert.ok(s2t3 != undefined);
     });
 
-    it('should run all', async function() {
+    it('should run all', async function () {
       await loadAdapterAndAssert();
       assert.equal(root.children.length, 2);
       await adapter.run([root.id]);
@@ -501,7 +501,7 @@ describe(path.basename(__filename), function() {
       assert.equal(adapter.testStatesEvents.length, 14, inspect(adapter.testStatesEvents));
     });
 
-    it('should run with not existing test id', async function() {
+    it('should run with not existing test id', async function () {
       expectedLoggedErrorLine("[ERROR] Some tests have remained:  Set { 'not existing id' }");
 
       await loadAdapterAndAssert();
@@ -513,7 +513,7 @@ describe(path.basename(__filename), function() {
       ]);
     });
 
-    it('should run s1t1', async function() {
+    it('should run s1t1', async function () {
       await loadAdapterAndAssert();
       await adapter.run([s1t1.id]);
       const expected = [
@@ -545,7 +545,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
     });
 
-    it('should run skipped s2t2', async function() {
+    it('should run skipped s2t2', async function () {
       await loadAdapterAndAssert();
       await adapter.run([s2t2.id]);
       const expected = [
@@ -577,7 +577,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
     });
 
-    it('should run failing test s2t3', async function() {
+    it('should run failing test s2t3', async function () {
       await loadAdapterAndAssert();
       await adapter.run([s2t3.id]);
       const expected = [
@@ -616,7 +616,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
     });
 
-    it('should run failing test s2t3 with chunks', async function() {
+    it('should run failing test s2t3 with chunks', async function () {
       await loadAdapterAndAssert();
       const withArgs = imitation.spawnStub.withArgs(
         example1.suite2.execPath,
@@ -662,7 +662,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
     });
 
-    it('should run suite1', async function() {
+    it('should run suite1', async function () {
       await loadAdapterAndAssert();
       await adapter.run([suite1.id]);
       const expected = [
@@ -711,7 +711,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
     });
 
-    it('should run with [suite1.id,s2t2.id]', async function() {
+    it('should run with [suite1.id,s2t2.id]', async function () {
       await settings.updateConfig('workerMaxNumber', 1);
       await loadAdapterAndAssert();
       await adapter.run([suite1.id, s2t2.id]);
@@ -777,7 +777,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
     });
 
-    it('should run with wrong xml with exit code', async function() {
+    it('should run with wrong xml with exit code', async function () {
       await loadAdapterAndAssert();
       const m = example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');
       assert.notStrictEqual(m, undefined);
@@ -846,7 +846,7 @@ describe(path.basename(__filename), function() {
       ]);
     });
 
-    it('should run with wrong xml with signal', async function() {
+    it('should run with wrong xml with signal', async function () {
       await loadAdapterAndAssert();
       const m = example1.suite1.t1.outputs[0][1].match('<TestCase[^>]+>');
       assert.notStrictEqual(m, undefined);
@@ -915,7 +915,7 @@ describe(path.basename(__filename), function() {
       ]);
     });
 
-    it('should timeout not inside a test case', async function() {
+    it('should timeout not inside a test case', async function () {
       this.slow(7000);
       await settings.updateConfig('defaultRunningTimeoutSec', 3);
       await loadAdapterAndAssert();
@@ -958,7 +958,7 @@ describe(path.basename(__filename), function() {
       ]);
     });
 
-    it('should timeout inside a test case', async function() {
+    it('should timeout inside a test case', async function () {
       this.slow(7000);
       await settings.updateConfig('defaultRunningTimeoutSec', 3);
       await loadAdapterAndAssert();
@@ -1016,12 +1016,12 @@ describe(path.basename(__filename), function() {
       ]);
     });
 
-    it('should cancel without error', async function() {
+    it('should cancel without error', async function () {
       await loadAdapterAndAssert();
       adapter.cancel();
     });
 
-    it('cancels', async function() {
+    it('cancels', async function () {
       // since taskQueue/allTasks has benn added it works differently, so it
       // wont test anything really, but i dont want to delete it either
       await loadAdapterAndAssert();
@@ -1087,7 +1087,7 @@ describe(path.basename(__filename), function() {
       assert.equal(adapter.testStatesEvents.length, 14, inspect(adapter.testStatesEvents));
     });
 
-    it('cancels after run finished', async function() {
+    it('cancels after run finished', async function () {
       await loadAdapterAndAssert();
       let spyKill1: sinon.SinonSpy<[(NodeJS.Signals | number)?], boolean>;
       let spyKill2: sinon.SinonSpy<[(NodeJS.Signals | number)?], boolean>;
@@ -1117,7 +1117,7 @@ describe(path.basename(__filename), function() {
       assert.equal(spyKill2.callCount, 0);
     });
 
-    it('reloads because of fswatcher event: touch(changed)', async function() {
+    it('reloads because of fswatcher event: touch(changed)', async function () {
       await loadAdapterAndAssert();
       const newRoot = await adapter.doAndWaitForReloadEvent(this, () => {
         suite1Watcher.sendChange();
@@ -1126,7 +1126,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testLoadsEvents, [{ type: 'started' }, { type: 'finished', suite: root }]);
     });
 
-    it('reloads because of fswatcher event: double touch(changed)', async function() {
+    it('reloads because of fswatcher event: double touch(changed)', async function () {
       await loadAdapterAndAssert();
       const oldRoot = root;
       suite1Watcher.sendChange();
@@ -1140,7 +1140,7 @@ describe(path.basename(__filename), function() {
       adapter.testLoadsEvents.pop();
     });
 
-    it('reloads because of fswatcher event: double touch(changed) with delay', async function() {
+    it('reloads because of fswatcher event: double touch(changed) with delay', async function () {
       await loadAdapterAndAssert();
       const oldRoot = root;
       suite1Watcher.sendChange();
@@ -1156,7 +1156,7 @@ describe(path.basename(__filename), function() {
       adapter.testLoadsEvents.pop();
     });
 
-    it('reloads because of fswatcher event: touch(delete,create)', async function() {
+    it('reloads because of fswatcher event: touch(delete,create)', async function () {
       await loadAdapterAndAssert();
       const newRoot = await adapter.doAndWaitForReloadEvent(this, () => {
         suite1Watcher.sendDelete();
@@ -1166,7 +1166,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testLoadsEvents, [{ type: 'started' }, { type: 'finished', suite: root }]);
     });
 
-    it('reloads because of fswatcher event: double touch(delete,create)', async function() {
+    it('reloads because of fswatcher event: double touch(delete,create)', async function () {
       await loadAdapterAndAssert();
       const oldRoot = root;
       suite1Watcher.sendChange();
@@ -1180,7 +1180,7 @@ describe(path.basename(__filename), function() {
       adapter.testLoadsEvents.pop();
     });
 
-    it('reloads because of fswatcher event: double touch(delete,create) with delay', async function() {
+    it('reloads because of fswatcher event: double touch(delete,create) with delay', async function () {
       await loadAdapterAndAssert();
       const oldRoot = root;
       suite1Watcher.sendChange();
@@ -1196,7 +1196,7 @@ describe(path.basename(__filename), function() {
       adapter.testLoadsEvents.pop();
     });
 
-    it('reloads because of fswatcher event: test added', async function() {
+    it('reloads because of fswatcher event: test added', async function () {
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
       assert.equal(testListOutput.length, 10);
@@ -1243,7 +1243,7 @@ describe(path.basename(__filename), function() {
       }
     });
 
-    it('reloads because new tests found under run', async function() {
+    it('reloads because new tests found under run', async function () {
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
       assert.equal(testListOutput.length, 10);
@@ -1284,7 +1284,7 @@ describe(path.basename(__filename), function() {
       ];
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
 
-      await waitFor(this, function() {
+      await waitFor(this, function () {
         return suite1.children.length == 2 && adapter.testStatesEvents.length >= 4 + 8;
       });
 
@@ -1297,7 +1297,7 @@ describe(path.basename(__filename), function() {
 
       assert.deepStrictEqual(adapter.testStatesEvents, [
         ...expected,
-        { type: 'started', tests: [s1t1.id] },
+        { type: 'started', tests: [s1t1.id, s1t2.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
         {
@@ -1317,8 +1317,6 @@ describe(path.basename(__filename), function() {
           tooltip:
             'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱Duration: 0ms',
         },
-        { type: 'finished' },
-        { type: 'started', tests: [s1t2.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t2 },
         {
@@ -1349,7 +1347,7 @@ describe(path.basename(__filename), function() {
       ]);
     });
 
-    it('reloads because removed test found under running suite', async function() {
+    it('reloads because removed test found under running suite', async function () {
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
       assert.equal(testListOutput.length, 10);
@@ -1404,7 +1402,7 @@ describe(path.basename(__filename), function() {
 
       await waitFor(
         this,
-        function() {
+        function () {
           return suite1.children.length == 1 && adapter.testLoadsEvents.length == testLoadEventCount + 2;
         },
         2000,
@@ -1414,7 +1412,7 @@ describe(path.basename(__filename), function() {
       assert.strictEqual(suite1.children.length, 1);
     });
 
-    it('reloads because removed test found under running the removed one', async function() {
+    it('reloads because removed test found under running the removed one', async function () {
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
       assert.equal(testListOutput.length, 10);
@@ -1451,7 +1449,7 @@ describe(path.basename(__filename), function() {
 
       await waitFor(
         this,
-        function() {
+        function () {
           return suite1.children.length == 1 && adapter.testLoadsEvents.length == testLoadEventCount + 2;
         },
         2000,
@@ -1461,7 +1459,7 @@ describe(path.basename(__filename), function() {
       assert.strictEqual(suite1.children.length, 1);
     });
 
-    it('reloads because of fswatcher event: test deleted', async function() {
+    it('reloads because of fswatcher event: test deleted', async function () {
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
       assert.equal(testListOutput.length, 10);
@@ -1504,7 +1502,7 @@ describe(path.basename(__filename), function() {
       }
     });
 
-    it('reloads because test was renamed', async function() {
+    it('reloads because test was renamed', async function () {
       await loadAdapterAndAssert();
       assert.ok(example1.suite1.outputs[1][1].indexOf('s1t1') != -1);
       const testListOutput = example1.suite1.outputs[1][1].replace('s1t1', 's1-t1');
@@ -1523,7 +1521,7 @@ describe(path.basename(__filename), function() {
 
       await waitFor(
         this,
-        function() {
+        function () {
           return adapter.testStatesEvents.length >= 6 + 6 && adapter.testLoadsEvents.length == 2;
         },
         2000,
@@ -1587,7 +1585,7 @@ describe(path.basename(__filename), function() {
       assert.deepStrictEqual(adapter.testStatesEvents, expected);
     });
 
-    it('data arrives in pieces', async function() {
+    it('data arrives in pieces', async function () {
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[2][1].split('\n');
       assert.equal(testListOutput.length, 21);
@@ -1617,8 +1615,8 @@ describe(path.basename(__filename), function() {
     });
   });
 
-  context('executables=[{<regex>}] and env={...}', function() {
-    beforeEach(async function() {
+  context('executables=[{<regex>}] and env={...}', function () {
+    beforeEach(async function () {
       await settings.updateConfig('executables', [
         {
           name: '${baseFilename}',
@@ -1658,7 +1656,7 @@ describe(path.basename(__filename), function() {
         .resolves([vscode.Uri.file(example1.suite1.execPath), vscode.Uri.file(example1.suite2.execPath)]);
     });
 
-    it('should get execution options', async function() {
+    it('should get execution options', async function () {
       await loadAdapter();
       {
         let exception: Error | undefined = undefined;
@@ -1727,12 +1725,12 @@ describe(path.basename(__filename), function() {
   });
 
   // TODO: not so bad test but need time to calibrate
-  context.skip('executables=["execPath1.exe", "execPath2.exe", "execPath3.exe"]', async function() {
-    beforeEach(function() {
+  context.skip('executables=["execPath1.exe", "execPath2.exe", "execPath3.exe"]', async function () {
+    beforeEach(function () {
       return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);
     });
 
-    it('run suite3 one-by-one', async function() {
+    it('run suite3 one-by-one', async function () {
       await loadAdapter();
       assert.equal(root.children.length, 3);
       assert.equal(root.children[0].type, 'suite');
@@ -1793,22 +1791,22 @@ describe(path.basename(__filename), function() {
     });
   });
 
-  context('vscode.debug', function() {
+  context('vscode.debug', function () {
     let startDebuggingStub: sinon.SinonStub<
       [vscode.WorkspaceFolder | undefined, string | vscode.DebugConfiguration],
       Thenable<boolean>
     >;
 
-    beforeEach(function() {
+    beforeEach(function () {
       startDebuggingStub = imitation.sinonSandbox.stub(vscode.debug, 'startDebugging');
       startDebuggingStub.throws();
     });
 
-    afterEach(function() {
+    afterEach(function () {
       startDebuggingStub.restore();
     });
 
-    it('should be debugged', async function() {
+    it('should be debugged', async function () {
       expectedLoggedErrorLine(
         '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
       );

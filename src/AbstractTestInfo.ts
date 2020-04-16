@@ -3,6 +3,7 @@ import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import { generateUniqueId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 
 export abstract class AbstractTestInfo implements TestInfo {
   public readonly type: 'test' = 'test';
@@ -76,15 +77,17 @@ export abstract class AbstractTestInfo implements TestInfo {
     ev.tooltip = this.tooltip + (this.tooltip ? '\n\n' : '') + '⏱Duration: ' + durationStr;
   }
 
-  public findRouteToTestById(id: string): AbstractTestInfo[] | undefined {
-    return this.id === id ? [this] : undefined;
-  }
-
   public enumerateTestInfos(fn: (v: AbstractTestInfo) => void): void {
     fn(this);
   }
 
   public findTestInfo(pred: (v: AbstractTestInfo) => boolean): AbstractTestInfo | undefined {
     return pred(this) ? this : undefined;
+  }
+
+  public findRouteToTestInfo(
+    pred: (v: AbstractTestInfo) => boolean,
+  ): [AbstractTestSuiteInfoBase[], AbstractTestInfo | undefined] {
+    return [[], pred(this) ? this : undefined];
   }
 }

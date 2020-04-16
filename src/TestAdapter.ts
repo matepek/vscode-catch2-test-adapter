@@ -1,7 +1,6 @@
 import { inspect } from 'util';
 import * as vscode from 'vscode';
 import {
-  TestInfo,
   TestEvent,
   TestLoadFinishedEvent,
   TestLoadStartedEvent,
@@ -19,7 +18,6 @@ import { RootTestSuiteInfo } from './RootTestSuiteInfo';
 import { resolveVariables, generateUniqueId } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { SharedVariables } from './SharedVariables';
-import { AbstractTestInfo } from './AbstractTestInfo';
 import { Catch2Section, Catch2TestInfo } from './framework/Catch2TestInfo';
 import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
 import { Config } from './Config';
@@ -196,29 +194,30 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._disposables.push(
       this._sendTestEventEmitter.event((testEvents: TestEvent[]) => {
         this._mainTaskQueue.then(() => {
-          for (let i = 0; i < testEvents.length; ++i) {
-            const id: string =
-              typeof testEvents[i].test === 'string'
-                ? (testEvents[i].test as string)
-                : (testEvents[i].test as TestInfo).id;
-            const route = this._rootSuite.findRouteToTestById(id);
+          if (testEvents.length > 0) {
+            this._testStatesEmitter.fire({
+              type: 'started',
+              tests: testEvents
+                .filter(v => v.type == 'test')
+                .map(v => (typeof v.test == 'string' ? v.test : v.test.id)),
+            });
 
-            if (route !== undefined && route.length > 1) {
-              this._testStatesEmitter.fire({ type: 'started', tests: [id] });
+            for (let i = 0; i < testEvents.length; ++i) {
+              const [route, test] = this._rootSuite.findRouteToTest(testEvents[i].test);
 
-              for (let j = 0; j < route.length - 1; ++j)
-                (route[j] as AbstractRunnableTestSuiteInfo).sendRunningEventIfNeeded();
+              if (test !== undefined && route.length > 0) {
+                route.forEach(v => v.sendRunningEventIfNeeded());
 
-              this._testStatesEmitter.fire((testEvents[i].test as AbstractTestInfo).getStartEvent());
-              this._testStatesEmitter.fire(testEvents[i]);
+                this._testStatesEmitter.fire(test.getStartEvent());
+                this._testStatesEmitter.fire(testEvents[i]);
 
-              for (let j = route.length - 2; j >= 0; --j)
-                (route[j] as AbstractRunnableTestSuiteInfo).sendCompletedEventIfNeeded();
-
-              this._testStatesEmitter.fire({ type: 'finished' });
-            } else {
-              this._log.error('sendTestEventEmitter.event', testEvents[i], route, this._rootSuite);
+                route.forEach(v => v.sendCompletedEventIfNeeded());
+              } else {
+                this._log.error('sendTestEventEmitter.event', testEvents[i], route, this._rootSuite);
+              }
             }
+
+            this._testStatesEmitter.fire({ type: 'finished' });
           }
         });
       }),
@@ -432,20 +431,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       );
     }
 
-    const route = this._rootSuite.findRouteToTestById(tests[0]);
-    if (route === undefined) {
+    const [route, testInfo] = this._rootSuite.findRouteToTest(tests[0]);
+    if (testInfo === undefined) {
       this._log.warn('route === undefined', tests);
       throw Error('Not existing test id.');
-    } else if (route.length == 0) {
-      this._log.error('route.length == 0', tests);
-      throw Error('Unexpected error.');
-    } else if (route[route.length - 1].type !== 'test') {
-      this._log.error("route[route.length-1].type !== 'test'", tests);
-      throw Error('Unexpected error.');
     }
 
-    const testInfo = route[route.length - 1] as AbstractTestInfo;
-    route.pop();
     const suiteLabels = route.map(s => s.label).join(' ➡️ ');
 
     const testSuite = route.find(v => v instanceof AbstractRunnableTestSuiteInfo);

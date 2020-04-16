@@ -282,6 +282,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
     })();
 
     const testBeginRe = /^\[ RUN      \] ((.+)\.(.+))$/m;
+    const rngSeed: number | undefined = typeof this._shared.rngSeed === 'number' ? this._shared.rngSeed : undefined;
 
     return new Promise<ProcessResult>(resolve => {
       const chunks: string[] = [];
@@ -295,6 +296,11 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
             if (m == null) return;
 
             data.currentTestCaseNameFull = m[1];
+
+            ///
+            //const route = this.findRouteToTestInfo(v => v.testNameAsId == data.currentTestCaseNameFull);
+            //data.currentChild = route![route!.length - 1];
+            ///
 
             const groupName = m[2];
             const group = this.children.find(c => c.label == groupName);
@@ -334,7 +340,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
-                const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, undefined, runInfo);
+                const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo);
 
                 this._shared.testStatesEmitter.fire(ev);
 
@@ -453,7 +459,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
                 const currentChild = this.findTestInfo(v => v.testNameAsId == testNameAsId);
                 if (currentChild === undefined) break;
                 try {
-                  const ev = currentChild.parseAndProcessTestCase(testCase, undefined, runInfo);
+                  const ev = currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo);
                   events.push(ev);
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCase);
@@ -468,9 +474,5 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
           );
         }
       });
-  }
-
-  public addChild(group: AbstractGroupTestSuiteInfo): void {
-    super.addChild(group);
   }
 }

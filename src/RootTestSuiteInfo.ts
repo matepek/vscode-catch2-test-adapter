@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-
+import { TestInfo } from 'vscode-test-adapter-api';
 import { TestExecutableInfo } from './TestExecutableInfo';
 import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
 import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
@@ -138,9 +138,20 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     }
   }
 
-  public findRouteToTestById(id: string): (AbstractTestSuiteInfoBase | AbstractTestInfo)[] | undefined {
-    const res = super.findRouteToTestById(id);
-    if (res !== undefined) res.shift(); // remove Root/this
-    return res;
+  public findRouteToTestInfo(
+    pred: (v: AbstractTestInfo) => boolean,
+  ): [AbstractTestSuiteInfoBase[], AbstractTestInfo | undefined] {
+    for (let i = 0; i < this.children.length; ++i) {
+      const found = this.children[i].findRouteToTestInfo(pred);
+      if (found[1] !== undefined) {
+        return found;
+      }
+    }
+    return [[], undefined];
+  }
+
+  public findRouteToTest(idOrInfo: string | TestInfo): [AbstractTestSuiteInfoBase[], AbstractTestInfo | undefined] {
+    if (typeof idOrInfo === 'string') return this.findRouteToTestInfo(x => x.id === idOrInfo);
+    else return this.findRouteToTestInfo(x => x === idOrInfo);
   }
 }
