@@ -306,6 +306,21 @@
                           "ignoreTestEnumerationStdErr": {
                             "description": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`.",
                             "type": "boolean"
+                          },
+                          "testGrouping": {
+                            "description": "Groups the tests inside the executable.",
+                            "additionalProperties": false,
+                            "properties": {
+                              "disabled": {
+                                "type": "boolean"
+                              },
+                              "groupBySource": {
+                                "type": "boolean"
+                              },
+                              "groupByTags": {
+                                "type": "boolean"
+                              }
+                            }
                           }
                         }
                       },

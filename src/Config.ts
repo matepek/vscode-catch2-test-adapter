@@ -298,6 +298,11 @@ export class Config {
             r.prependTestListingArgs = obj.prependTestListingArgs;
 
           if (typeof obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
+
+          if (typeof obj.testGrouping) {
+            if (typeof obj.testGrouping.groupBySource) r.groupBySource = obj.testGrouping.groupBySource;
+            if (typeof obj.testGrouping.groupByTags) r.groupByTags = obj.testGrouping.groupByTags;
+          }
         }
         return r;
       };

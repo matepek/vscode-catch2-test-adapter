@@ -11,7 +11,7 @@ export class RootSuite extends AbstractSuit implements vscode.Disposable {
   private _executables: Executable[] = [];
 
   public constructor(id: string | undefined, shared: SharedVariables) {
-    super(shared, 'Catch2 and Google tests', undefined, id);
+    super(shared, 'Catch2/GTest/DOCTest', undefined, id);
   }
 
   public dispose(): void {
