@@ -138,7 +138,6 @@ export class Config {
   }
 
   public askSentryConsent(): void {
-    // TODO: enable it in the next month
     return;
 
     const logSentry = this._vsConfig.get<'enable' | 'disable' | 'disable_1' | 'disable_2' | 'question'>(

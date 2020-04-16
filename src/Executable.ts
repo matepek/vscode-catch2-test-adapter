@@ -15,7 +15,7 @@ export interface TestExecutableInfoFrameworkSpecific {
   prependTestRunningArgs?: string[];
   prependTestListingArgs?: string[];
   ignoreTestEnumerationStdErr?: boolean;
-  groupBySource?: boolean;
+  groupBySource?: string;
   groupByTags?: boolean;
   groupBySingleRegex?: string;
 }

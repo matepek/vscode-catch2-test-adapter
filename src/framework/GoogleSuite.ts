@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
-import * as pathlib from 'path';
 
 import * as c2fs from '../FSWrapper';
 import { AbstractSuite } from '../AbstractSuite';
@@ -68,9 +67,9 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
         if (this.execInfo.groupBySource && file) {
           this._shared.log.info('groupBySource');
-          const fileStr = pathlib.basename(file);
+          const fileStr = this.execInfo.getSourcePartForGrouping(file);
           const found = this.findGroup(v => v.origLabel === fileStr);
-          if (found) {
+          if (fileStr.length > 0 && found) {
             group = found;
           } else {
             const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === fileStr);

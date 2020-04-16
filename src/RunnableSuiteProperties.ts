@@ -1,3 +1,4 @@
+import * as pathlib from 'path';
 import * as c2fs from './FSWrapper';
 import { TestExecutableInfoFrameworkSpecific } from './Executable';
 
@@ -10,6 +11,13 @@ export class RunnableSuiteProperties {
     this.groupBySingleRegex = _frameworkSpecific.groupBySingleRegex
       ? new RegExp(_frameworkSpecific.groupBySingleRegex)
       : undefined;
+
+    if (_frameworkSpecific.groupBySource) {
+      const m = _frameworkSpecific.groupBySource.match(this._validationRegex);
+      this._groupBySourceIndexes = m ? [m[1] ? Number(m[1]) : undefined, m[2] ? Number(m[2]) : undefined] : undefined;
+    } else {
+      this._groupBySourceIndexes = undefined;
+    }
   }
 
   public get prependTestRunningArgs(): string[] {
@@ -24,8 +32,23 @@ export class RunnableSuiteProperties {
     return this._frameworkSpecific.ignoreTestEnumerationStdErr === true;
   }
 
+  private readonly _validationRegex = /^\[(-?[0-9]+)?:(-?[0-9]+)?\]$/;
+  private readonly _groupBySourceIndexes: [number | undefined, number | undefined] | undefined;
+
   public get groupBySource(): boolean {
-    return this._frameworkSpecific.groupBySource === true;
+    return this._groupBySourceIndexes !== undefined;
+  }
+
+  public getSourcePartForGrouping(path: string): string {
+    if (this._groupBySourceIndexes) {
+      return pathlib
+        .normalize(path)
+        .split('/')
+        .slice(this._groupBySourceIndexes[0], this._groupBySourceIndexes[1])
+        .join('/');
+    } else {
+      throw Error('assertion: getSourcePartForGrouping');
+    }
   }
 
   public get groupByTags(): boolean {

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.0]
+
+### Added
+
+Experiment feature: `testGrouping`: Groups the tests inside the executable.
+Examples:
+
+```
+"catch2TestExplorer.executables": [
+	{
+		"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+    "catch2": {
+      groupBySource: "[-1:]",
+      "groupByTag": true,
+      "groupBySingleRegex": "(apple|peach)"
+    },
+    "gtest": {
+      groupBySource: "[-3:-1]",
+      "groupBySingleRegex": "(?:good|bad) (apple|peach)"
+    },
+    "doctest": {
+      groupBySource: "[-1:]",
+      "groupBySingleRegex": "(apple|peach)"
+    }
+	}
+]
+```
+
+Note: This example overused it.
+
 ## [2.8.13] - 2020-04-04
 
 ### Fixed

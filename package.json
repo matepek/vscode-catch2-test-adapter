@@ -267,7 +267,10 @@
                             "additionalProperties": false,
                             "properties": {
                               "groupBySource": {
-                                "type": "boolean"
+                                "description": "Source path is split by '/' (and '\\') and can be (python-like) indexed. Example: '[-2:]': last 2 segments of the path.",
+                                "type": "string",
+                                "default": "[-1:]",
+                                "pattern": "^\\[(-?[0-9]+)?:(-?[0-9]+)?\\]$"
                               },
                               "groupByTags": {
                                 "type": "boolean"
@@ -314,7 +317,10 @@
                             "additionalProperties": false,
                             "properties": {
                               "groupBySource": {
-                                "type": "boolean"
+                                "description": "Source path is split by '/' (and '\\') and can be (python-like) indexed. Example: '[-2:]': last 2 segments of the path.",
+                                "type": "string",
+                                "default": "[-1:]",
+                                "pattern": "^\\[(-?[0-9]+)?:(-?[0-9]+)?\\]$"
                               },
                               "groupBySingleRegex": {
                                 "description": "Groups tests by the first match group. Example: \"(?:good|bad) (apple|peach)\" will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group.",
@@ -358,7 +364,10 @@
                             "additionalProperties": false,
                             "properties": {
                               "groupBySource": {
-                                "type": "boolean"
+                                "description": "Source path is split by '/' (and '\\') and can be (python-like) indexed. Example: '[-2:]': last 2 segments of the path.",
+                                "type": "string",
+                                "default": "[-1:]",
+                                "pattern": "^\\[(-?[0-9]+)?:(-?[0-9]+)?\\]$"
                               },
                               "groupBySingleRegex": {
                                 "description": "Groups tests by the first match group. Example: \"(?:good|bad) (apple|peach)\" will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group.",

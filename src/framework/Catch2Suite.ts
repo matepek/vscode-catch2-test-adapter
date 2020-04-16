@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
-import * as pathlib from 'path';
 
 import * as c2fs from '../FSWrapper';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
@@ -106,9 +105,10 @@ export class Catch2Suite extends AbstractRunnableSuite {
       let group = this as AbstractSuite;
 
       if (this.execInfo.groupBySource && filePath) {
-        const fileStr = pathlib.basename(filePath);
+        this._shared.log.info('groupBySource');
+        const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
         const found = this.findGroup(v => v.origLabel === fileStr);
-        if (found) {
+        if (fileStr.length > 0 && found) {
           group = found;
         } else {
           const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === fileStr);
@@ -117,6 +117,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
       }
 
       if (this.execInfo.groupByTags && tags.length > 0) {
+        this._shared.log.info('groupByTags');
         const tagsStr = tags
           .filter(v => v != '[.]' && v != '[hide]')
           .sort()
