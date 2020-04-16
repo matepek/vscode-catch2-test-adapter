@@ -3,7 +3,6 @@ import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
-import { AbstractTestInfo } from '../AbstractTestInfo';
 import { AbstractGroupTestSuiteInfo } from '../AbstractGroupTestSuiteInfo';
 import { AbstractRunnableTestSuiteInfo } from '../AbstractRunnableTestSuiteInfo';
 import { GoogleTestInfo } from './GoogleTestInfo';
@@ -335,7 +334,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
-                const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, runInfo);
+                const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, undefined, runInfo);
 
                 this._shared.testStatesEmitter.fire(ev);
 
@@ -454,7 +453,7 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
                 const currentChild = this.findTestInfo(v => v.testNameAsId == testNameAsId);
                 if (currentChild === undefined) break;
                 try {
-                  const ev = currentChild.parseAndProcessTestCase(testCase, runInfo);
+                  const ev = currentChild.parseAndProcessTestCase(testCase, undefined, runInfo);
                   events.push(ev);
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCase);
@@ -473,9 +472,5 @@ export class GoogleTestSuiteInfo extends AbstractRunnableTestSuiteInfo {
 
   public addChild(group: AbstractGroupTestSuiteInfo): void {
     super.addChild(group);
-  }
-
-  public findTestInfo(pred: (v: GoogleTestInfo) => boolean): GoogleTestInfo | undefined {
-    return super.findTestInfo(pred as (v: AbstractTestInfo) => boolean) as GoogleTestInfo;
   }
 }

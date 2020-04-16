@@ -48,7 +48,11 @@ export class GoogleTestInfo extends AbstractTestInfo {
     return debugParams;
   }
 
-  public parseAndProcessTestCase(output: string, runInfo: RunningTestExecutableInfo): TestEvent {
+  public parseAndProcessTestCase(
+    output: string,
+    rngSeed: number | undefined,
+    runInfo: RunningTestExecutableInfo,
+  ): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);
       this.lastRunEvent = ev;

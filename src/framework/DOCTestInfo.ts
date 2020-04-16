@@ -88,7 +88,7 @@ export class DOCTestInfo extends AbstractTestInfo {
   }
 
   public parseAndProcessTestCase(
-    xmlStr: string,
+    output: string,
     rngSeed: number | undefined,
     runInfo: RunningTestExecutableInfo,
   ): TestEvent {
@@ -99,7 +99,7 @@ export class DOCTestInfo extends AbstractTestInfo {
     }
 
     let res: XmlObject = {};
-    new xml2js.Parser({ explicitArray: true }).parseString(xmlStr, (err: Error, result: XmlObject) => {
+    new xml2js.Parser({ explicitArray: true }).parseString(output, (err: Error, result: XmlObject) => {
       if (err) {
         throw err;
       } else {

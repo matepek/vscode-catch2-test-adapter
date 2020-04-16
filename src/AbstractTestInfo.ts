@@ -2,6 +2,7 @@ import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import { generateUniqueId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
+import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 
 export abstract class AbstractTestInfo implements TestInfo {
   public readonly type: 'test' = 'test';
@@ -42,6 +43,12 @@ export abstract class AbstractTestInfo implements TestInfo {
   }
 
   public abstract getDebugParams(breakOnFailure: boolean): string[];
+
+  public abstract parseAndProcessTestCase(
+    output: string,
+    rngSeed: number | undefined,
+    runInfo: RunningTestExecutableInfo,
+  ): TestEvent;
 
   public getTimeoutEvent(milisec: number): TestEvent {
     const ev = this.getFailedEventBase();
