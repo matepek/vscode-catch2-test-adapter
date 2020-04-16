@@ -66,7 +66,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
         group.addChild(
           new GoogleTest(
             this._shared,
-            group,
             old ? old.id : undefined,
             testNameAsId,
             testName,
@@ -130,7 +129,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
         group.addChild(
           new GoogleTest(
             this._shared,
-            group,
             old ? old.id : undefined,
             testNameAsId,
             testName,
@@ -194,7 +192,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
           const test = this.addChild(
             new GoogleTest(
               this._shared,
-              this,
               undefined,
               '<dummy>',
               'Check the test output message for details ⚠️',

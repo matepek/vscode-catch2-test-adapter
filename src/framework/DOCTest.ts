@@ -48,7 +48,6 @@ export class DOCTest extends AbstractTest {
   ) {
     super(
       shared,
-      parent,
       id != undefined ? id : old ? old.id : undefined,
       testNameAsId,
       testNameAsId.startsWith('  Scenario:') ? '⒮' + testNameAsId.substr(11) : testNameAsId,

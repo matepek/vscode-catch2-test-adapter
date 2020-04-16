@@ -57,7 +57,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
         this._shared.log.warn('Probably too long test name', i, lines);
         this.children = [];
         const test = this.addChild(
-          new Catch2Test(this._shared, this, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
+          new Catch2Test(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
         );
         this._shared.sendTestEventEmitter.fire([
           {
@@ -132,7 +132,6 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
       const test = new Catch2Test(
         this._shared,
-        group,
         old ? old.id : undefined,
         testNameAsId,
         description,
@@ -194,7 +193,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
     if (catch2TestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
       const test = this.addChild(
-        new Catch2Test(this._shared, this, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
+        new Catch2Test(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
       );
       this._shared.sendTestEventEmitter.fire([
         {
