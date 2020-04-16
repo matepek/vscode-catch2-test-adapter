@@ -14,12 +14,12 @@ import debounce = require('debounce-collect');
 import * as Sentry from '@sentry/node';
 
 import { LoggerWrapper } from './LoggerWrapper';
-import { RootTestSuiteInfo } from './RootTestSuiteInfo';
+import { RootSuite } from './RootSuite';
 import { resolveVariables, generateUniqueId } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { SharedVariables } from './SharedVariables';
-import { Catch2Section, Catch2TestInfo } from './framework/Catch2TestInfo';
-import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
+import { Catch2Section, Catch2Test } from './framework/Catch2Test';
+import { AbstractRunnableSuite } from './AbstractRunnableSuite';
 import { Config } from './Config';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
@@ -43,13 +43,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
 
-  private readonly _sendRetireEmitter = new vscode.EventEmitter<AbstractRunnableTestSuiteInfo[]>();
+  private readonly _sendRetireEmitter = new vscode.EventEmitter<AbstractRunnableSuite[]>();
 
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
 
   private readonly _shared: SharedVariables;
-  private _rootSuite: RootTestSuiteInfo;
+  private _rootSuite: RootSuite;
 
   private readonly _isDebug: boolean = !!process.env['C2_DEBUG'];
 
@@ -144,9 +144,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(this._sendRetireEmitter);
     {
-      const unique = new Set<AbstractRunnableTestSuiteInfo>();
+      const unique = new Set<AbstractRunnableSuite>();
 
-      const retire = (aggregatedArgs: [AbstractRunnableTestSuiteInfo[]][]): void => {
+      const retire = (aggregatedArgs: [AbstractRunnableSuite[]][]): void => {
         const isScheduled = unique.size > 0;
         aggregatedArgs.forEach(args => args[0].forEach(test => unique.add(test)));
 
@@ -311,7 +311,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
-    this._rootSuite = new RootTestSuiteInfo(undefined, this._shared);
+    this._rootSuite = new RootSuite(undefined, this._shared);
   }
 
   public dispose(): void {
@@ -364,7 +364,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._rootSuite.dispose();
 
-    this._rootSuite = new RootTestSuiteInfo(this._rootSuite.id, this._shared);
+    this._rootSuite = new RootSuite(this._rootSuite.id, this._shared);
 
     return this._mainTaskQueue.then(() => {
       this._log.info('load started');
@@ -439,8 +439,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const suiteLabels = route.map(s => s.label).join(' ➡️ ');
 
-    const testSuite = route.find(v => v instanceof AbstractRunnableTestSuiteInfo);
-    if (testSuite === undefined || !(testSuite instanceof AbstractRunnableTestSuiteInfo))
+    const testSuite = route.find(v => v instanceof AbstractRunnableSuite);
+    if (testSuite === undefined || !(testSuite instanceof AbstractRunnableSuite))
       throw Error('Unexpected error. Should have AbstractTestSuiteInfo parent.');
 
     this._log.info('testInfo', testInfo, tests);
@@ -451,7 +451,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const argsArray = testInfo.getDebugParams(config.getDebugBreakOnFailure());
 
-    if (testInfo instanceof Catch2TestInfo) {
+    if (testInfo instanceof Catch2Test) {
       const sections = testInfo.sections;
       if (sections && sections.length > 0) {
         interface QuickPickItem extends vscode.QuickPickItem {

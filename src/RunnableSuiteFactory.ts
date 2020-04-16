@@ -1,18 +1,18 @@
 import * as c2fs from './FSWrapper';
-import { RunnableTestSuiteProperties } from './RunnableTestSuiteProperties';
-import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
-import { Catch2TestSuiteInfo } from './framework/Catch2TestSuiteInfo';
-import { GoogleTestSuiteInfo } from './framework/GoogleTestSuiteInfo';
-import { DOCTestSuiteInfo } from './framework/DOCTestSuiteInfo';
+import { RunnableSuiteProperties } from './RunnableSuiteProperties';
+import { AbstractRunnableSuite } from './AbstractRunnableSuite';
+import { Catch2Suite } from './framework/Catch2Suite';
+import { GoogleSuite } from './framework/GoogleSuite';
+import { DOCSuite } from './framework/DOCSuite';
 import { SharedVariables } from './SharedVariables';
-import { TestExecutableInfoFrameworkSpecific } from './TestExecutableInfo';
+import { TestExecutableInfoFrameworkSpecific } from './Executable';
 
 interface TestFrameworkInfo {
   type: 'catch2' | 'gtest' | 'doctest';
   version: [number, number, number] | undefined;
 }
 
-export class TestSuiteInfoFactory {
+export class RunnableSuiteFactory {
   public constructor(
     private readonly _shared: SharedVariables,
     private readonly _label: string,
@@ -24,7 +24,7 @@ export class TestSuiteInfoFactory {
     private readonly _doctest: TestExecutableInfoFrameworkSpecific,
   ) {}
 
-  public create(checkIsNativeExecutable: boolean): Promise<AbstractRunnableTestSuiteInfo> {
+  public create(checkIsNativeExecutable: boolean): Promise<AbstractRunnableSuite> {
     return this._shared.taskPool
       .scheduleTask(() => {
         return this._determineTestTypeOfExecutable(checkIsNativeExecutable);
@@ -32,27 +32,27 @@ export class TestSuiteInfoFactory {
       .then((framework: TestFrameworkInfo) => {
         switch (framework.type) {
           case 'gtest':
-            return new GoogleTestSuiteInfo(
+            return new GoogleSuite(
               this._shared,
               this._label,
               this._description,
-              new RunnableTestSuiteProperties(this._execPath, this._execOptions, this._gtest),
+              new RunnableSuiteProperties(this._execPath, this._execOptions, this._gtest),
               Promise.resolve(undefined), //Util: GoogleTestVersionFinder
             );
           case 'catch2':
-            return new Catch2TestSuiteInfo(
+            return new Catch2Suite(
               this._shared,
               this._label,
               this._description,
-              new RunnableTestSuiteProperties(this._execPath, this._execOptions, this._catch2),
+              new RunnableSuiteProperties(this._execPath, this._execOptions, this._catch2),
               framework.version,
             );
           case 'doctest':
-            return new DOCTestSuiteInfo(
+            return new DOCSuite(
               this._shared,
               this._label,
               this._description,
-              new RunnableTestSuiteProperties(this._execPath, this._execOptions, this._doctest),
+              new RunnableSuiteProperties(this._execPath, this._execOptions, this._doctest),
               framework.version,
             );
         }

@@ -3,15 +3,15 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import * as c2fs from './FSWrapper';
-import { RunnableTestSuiteProperties } from './RunnableTestSuiteProperties';
-import { AbstractTestInfo } from './AbstractTestInfo';
-import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
+import { RunnableSuiteProperties } from './RunnableSuiteProperties';
+import { AbstractTest } from './AbstractTest';
+import { AbstractSuit } from './AbstractSuit';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { promisify } from 'util';
 
-export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInfoBase {
+export abstract class AbstractRunnableSuite extends AbstractSuit {
   private static _reportedFrameworks: string[] = [];
 
   private _canceled = false;
@@ -22,7 +22,7 @@ export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInf
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    public readonly execInfo: RunnableTestSuiteProperties,
+    public readonly execInfo: RunnableSuiteProperties,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<[number, number, number] | undefined>,
   ) {
@@ -30,7 +30,7 @@ export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInf
 
     frameworkVersion
       .then(version => {
-        if (AbstractRunnableTestSuiteInfo._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
+        if (AbstractRunnableSuite._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
           const versionStr = version ? version.join('.') : 'unknown';
 
           shared.log.infoMessageWithTags('Framework', {
@@ -38,7 +38,7 @@ export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInf
             frameworkVersion: `${this.frameworkName}@${versionStr}`,
           });
 
-          AbstractRunnableTestSuiteInfo._reportedFrameworks.push(frameworkName);
+          AbstractRunnableSuite._reportedFrameworks.push(frameworkName);
         }
       })
       .catch(e => this._shared.log.exception(e));
@@ -50,7 +50,7 @@ export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInf
 
   protected abstract _reloadChildren(): Promise<void>;
 
-  protected abstract _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): string[];
+  protected abstract _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTest>): string[];
 
   protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
 
@@ -95,19 +95,19 @@ export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInf
       this._runInfo = undefined;
     }
 
-    const childrenToRun = tests.delete(this.id) ? 'runAllTestsExceptSkipped' : new Set<AbstractTestInfo>();
+    const childrenToRun = tests.delete(this.id) ? 'runAllTestsExceptSkipped' : new Set<AbstractTest>();
 
     if (childrenToRun === 'runAllTestsExceptSkipped') {
       this.enumerateDescendants(v => {
         tests.delete(v.id);
       });
     } else {
-      this.enumerateDescendants((v: AbstractTestSuiteInfoBase | AbstractTestInfo) => {
+      this.enumerateDescendants((v: AbstractSuit | AbstractTest) => {
         const explicitlyIn = tests.delete(v.id);
         if (explicitlyIn) {
-          if (v instanceof AbstractTestInfo) {
+          if (v instanceof AbstractTest) {
             childrenToRun.add(v);
-          } else if (v instanceof AbstractTestSuiteInfoBase) {
+          } else if (v instanceof AbstractSuit) {
             v.enumerateTestInfos(vv => {
               if (!vv.skipped) childrenToRun.add(vv);
             });
@@ -143,7 +143,7 @@ export abstract class AbstractRunnableTestSuiteInfo extends AbstractTestSuiteInf
     });
   }
 
-  private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): Promise<void> {
+  private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTest>): Promise<void> {
     const execParams = this.execInfo.prependTestRunningArgs.concat(this._getRunParams(childrenToRun));
 
     this._shared.log.info('proc starting', this.origLabel);

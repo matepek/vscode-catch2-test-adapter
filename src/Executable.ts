@@ -2,11 +2,11 @@ import * as path from 'path';
 import { promisify } from 'util';
 import * as vscode from 'vscode';
 
-import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { AbstractRunnableTestSuiteInfo } from './AbstractRunnableTestSuiteInfo';
+import { RootSuite } from './RootSuite';
+import { AbstractRunnableSuite } from './AbstractRunnableSuite';
 import * as c2fs from './FSWrapper';
 import { resolveVariables, resolveOSEnvironmentVariables, ResolveRulePair } from './Util';
-import { TestSuiteInfoFactory } from './TestSuiteInfoFactory';
+import { RunnableSuiteFactory } from './RunnableSuiteFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
 
@@ -19,10 +19,10 @@ export interface TestExecutableInfoFrameworkSpecific {
   groupByTags?: boolean;
 }
 
-export class TestExecutableInfo implements vscode.Disposable {
+export class Executable implements vscode.Disposable {
   public constructor(
     private readonly _shared: SharedVariables,
-    private readonly _rootSuite: RootTestSuiteInfo,
+    private readonly _rootSuite: RootSuite,
     private readonly _pattern: string,
     name: string | undefined,
     description: string | undefined,
@@ -50,7 +50,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
   private _disposables: vscode.Disposable[] = [];
 
-  private readonly _executables: Map<string /*fsPath*/, AbstractRunnableTestSuiteInfo> = new Map();
+  private readonly _executables: Map<string /*fsPath*/, AbstractRunnableSuite> = new Map();
 
   private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
@@ -114,7 +114,7 @@ export class TestExecutableInfo implements vscode.Disposable {
             return this._createSuiteByUri(file)
               .create(false)
               .then(
-                (suite: AbstractRunnableTestSuiteInfo) => {
+                (suite: AbstractRunnableSuite) => {
                   return suite.reloadTests(this._shared.taskPool).then(
                     () => {
                       if (this._rootSuite.insertChild(suite, false /* called later */)) {
@@ -206,7 +206,7 @@ export class TestExecutableInfo implements vscode.Disposable {
     };
   }
 
-  private _createSuiteByUri(filePath: string): TestSuiteInfoFactory {
+  private _createSuiteByUri(filePath: string): RunnableSuiteFactory {
     const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
     let varToValue: ResolveRulePair[] = [];
@@ -310,7 +310,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._shared.log.error('resolvedEnv', e);
     }
 
-    return new TestSuiteInfoFactory(
+    return new RunnableSuiteFactory(
       this._shared,
       resolvedName,
       resolvedDescription,
@@ -342,7 +342,7 @@ export class TestExecutableInfo implements vscode.Disposable {
       this._createSuiteByUri(filePath)
         .create(true)
         .then(
-          (s: AbstractRunnableTestSuiteInfo) => this._recursiveHandleEverything(filePath, s, false, 128),
+          (s: AbstractRunnableSuite) => this._recursiveHandleEverything(filePath, s, false, 128),
           (reason: Error) => this._shared.log.info("couldn't add: " + filePath, 'reson:', reason),
         );
     }
@@ -350,7 +350,7 @@ export class TestExecutableInfo implements vscode.Disposable {
 
   private _recursiveHandleEverything(
     filePath: string,
-    suite: AbstractRunnableTestSuiteInfo,
+    suite: AbstractRunnableSuite,
     exists: boolean,
     delay: number,
   ): Promise<void> {

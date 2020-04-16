@@ -1,6 +1,6 @@
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
-import { AbstractTestInfo } from '../AbstractTestInfo';
+import { AbstractTest } from '../AbstractTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 import { TestEventBuilder } from '../TestEventBuilder';
@@ -33,7 +33,7 @@ export class DOCSection implements Frame {
   public failed = false;
 }
 
-export class DOCTestInfo extends AbstractTestInfo {
+export class DOCTest extends AbstractTest {
   public constructor(
     shared: SharedVariables,
     id: string | undefined,
@@ -42,7 +42,7 @@ export class DOCTestInfo extends AbstractTestInfo {
     skipped: boolean | undefined,
     file: string | undefined,
     line: number | undefined,
-    old?: DOCTestInfo,
+    old?: DOCTest,
   ) {
     super(
       shared,
@@ -178,7 +178,7 @@ export class DOCTestInfo extends AbstractTestInfo {
   private _processTags(xml: XmlObject, title: Frame, stack: DOCSection[], testEventBuilder: TestEventBuilder): void {
     {
       Object.getOwnPropertyNames(xml).forEach(n => {
-        if (!DOCTestInfo._expectedPropertyNames.has(n)) {
+        if (!DOCTest._expectedPropertyNames.has(n)) {
           this._shared.log.error('unexpected doctest tag: ' + n);
           testEventBuilder.appendMessage('unexpected doctest tag:' + n, 0);
           testEventBuilder.errored();

@@ -2,16 +2,16 @@ import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
 
 import { generateUniqueId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
-import { AbstractTestInfo } from './AbstractTestInfo';
-import { GroupTestSuiteInfo } from './GroupTestSuiteInfo';
+import { AbstractTest } from './AbstractTest';
+import { GroupSuite } from './GroupSuite';
 
 ///
 
-export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
+export abstract class AbstractSuit implements TestSuiteInfo {
   public readonly type: 'suite' = 'suite';
   public readonly id: string;
   public readonly origLabel: string;
-  public children: (AbstractTestSuiteInfoBase | AbstractTestInfo)[] = [];
+  public children: (AbstractSuit | AbstractTest)[] = [];
   public file?: string;
   public line?: number;
   private _tooltip: string;
@@ -48,7 +48,7 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     let durationSum: number | undefined = undefined;
     const stateStat: { [prop: string]: number } = {};
 
-    this.enumerateTestInfos((test: AbstractTestInfo) => {
+    this.enumerateTestInfos((test: AbstractTest) => {
       testCount++;
       if (test.lastRunMilisec !== undefined) durationSum = (durationSum ? durationSum : 0) + test.lastRunMilisec;
       if (test.lastRunEvent) {
@@ -93,7 +93,7 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     }
   }
 
-  public sendMinimalEventsIfNeeded(completed: AbstractTestSuiteInfoBase[], running: AbstractTestSuiteInfoBase[]): void {
+  public sendMinimalEventsIfNeeded(completed: AbstractSuit[], running: AbstractSuit[]): void {
     if (completed.length === 0) {
       running.forEach(v => v.sendRunningEventIfNeeded());
     } else if (running.length === 0) {
@@ -114,7 +114,7 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     }
   }
 
-  protected _addChild(child: AbstractTestSuiteInfoBase | AbstractTestInfo): void {
+  protected _addChild(child: AbstractSuit | AbstractTest): void {
     if (this.children.indexOf(child) != -1) {
       this._shared.log.error('should not try to add the child twice', this, child);
       return;
@@ -131,34 +131,32 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     this.children.push(child);
   }
 
-  public addChild<T extends AbstractTestSuiteInfoBase | AbstractTestInfo>(child: T): T {
+  public addChild<T extends AbstractSuit | AbstractTest>(child: T): T {
     this._addChild(child);
     return child;
   }
 
-  public enumerateDescendants(fn: (v: AbstractTestSuiteInfoBase | AbstractTestInfo) => void): void {
+  public enumerateDescendants(fn: (v: AbstractSuit | AbstractTest) => void): void {
     this.enumerateChildren(child => {
       fn(child);
-      if (child instanceof AbstractTestSuiteInfoBase) child.enumerateDescendants(fn);
+      if (child instanceof AbstractSuit) child.enumerateDescendants(fn);
     });
   }
 
-  public enumerateChildren(fn: (v: AbstractTestSuiteInfoBase | AbstractTestInfo) => void): void {
+  public enumerateChildren(fn: (v: AbstractSuit | AbstractTest) => void): void {
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i];
       fn(child);
     }
   }
 
-  public enumerateTestInfos(fn: (v: AbstractTestInfo) => void): void {
+  public enumerateTestInfos(fn: (v: AbstractTest) => void): void {
     this.enumerateDescendants(v => {
-      if (v instanceof AbstractTestInfo) fn(v);
+      if (v instanceof AbstractTest) fn(v);
     });
   }
 
-  public findRouteToTestInfo(
-    pred: (v: AbstractTestInfo) => boolean,
-  ): [AbstractTestSuiteInfoBase[], AbstractTestInfo | undefined] {
+  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuit[], AbstractTest | undefined] {
     for (let i = 0; i < this.children.length; ++i) {
       const [route, test] = this.children[i].findRouteToTestInfo(pred);
       if (test !== undefined) {
@@ -169,14 +167,14 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     return [[], undefined];
   }
 
-  public findTestInfo(pred: (v: AbstractTestInfo) => boolean): AbstractTestInfo | undefined {
+  public findTestInfo(pred: (v: AbstractTest) => boolean): AbstractTest | undefined {
     return this.findTestInfoInArray(this.children, pred);
   }
 
   public findTestInfoInArray(
-    array: (AbstractTestSuiteInfoBase | AbstractTestInfo)[],
-    pred: (v: AbstractTestInfo) => boolean,
-  ): AbstractTestInfo | undefined {
+    array: (AbstractSuit | AbstractTest)[],
+    pred: (v: AbstractTest) => boolean,
+  ): AbstractTest | undefined {
     for (let i = 0; i < array.length; i++) {
       const res = array[i].findTestInfo(pred);
       if (res !== undefined) return res;
@@ -184,14 +182,14 @@ export abstract class AbstractTestSuiteInfoBase implements TestSuiteInfo {
     return undefined;
   }
 
-  public findGroup(pred: (v: GroupTestSuiteInfo) => boolean): GroupTestSuiteInfo | undefined {
+  public findGroup(pred: (v: GroupSuite) => boolean): GroupSuite | undefined {
     return this.findGroupInArray(this.children, pred);
   }
 
   public findGroupInArray(
-    array: (AbstractTestSuiteInfoBase | AbstractTestInfo)[],
-    pred: (v: GroupTestSuiteInfo) => boolean,
-  ): GroupTestSuiteInfo | undefined {
+    array: (AbstractSuit | AbstractTest)[],
+    pred: (v: GroupSuite) => boolean,
+  ): GroupSuite | undefined {
     for (let i = 0; i < array.length; i++) {
       const res = array[i].findGroup(pred);
       if (res !== undefined) return res;

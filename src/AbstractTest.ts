@@ -3,10 +3,10 @@ import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import { generateUniqueId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
-import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
-import { GroupTestSuiteInfo } from './GroupTestSuiteInfo';
+import { AbstractSuit } from './AbstractSuit';
+import { GroupSuite } from './GroupSuite';
 
-export abstract class AbstractTestInfo implements TestInfo {
+export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
   public readonly id: string;
   public readonly origLabel: string;
@@ -78,22 +78,20 @@ export abstract class AbstractTestInfo implements TestInfo {
     ev.tooltip = this.tooltip + (this.tooltip ? '\n\n' : '') + '⏱Duration: ' + durationStr;
   }
 
-  public enumerateTestInfos(fn: (v: AbstractTestInfo) => void): void {
+  public enumerateTestInfos(fn: (v: AbstractTest) => void): void {
     fn(this);
   }
 
-  public findTestInfo(pred: (v: AbstractTestInfo) => boolean): AbstractTestInfo | undefined {
+  public findTestInfo(pred: (v: AbstractTest) => boolean): AbstractTest | undefined {
     return pred(this) ? this : undefined;
   }
 
-  public findRouteToTestInfo(
-    pred: (v: AbstractTestInfo) => boolean,
-  ): [AbstractTestSuiteInfoBase[], AbstractTestInfo | undefined] {
+  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuit[], AbstractTest | undefined] {
     return [[], pred(this) ? this : undefined];
   }
 
   // eslint-disable-next-line
-  public findGroup(_pred: (v: GroupTestSuiteInfo) => boolean): undefined {
+  public findGroup(_pred: (v: GroupSuite) => boolean): undefined {
     return undefined;
   }
 }

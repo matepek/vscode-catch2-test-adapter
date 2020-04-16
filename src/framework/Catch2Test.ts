@@ -1,6 +1,6 @@
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
-import { AbstractTestInfo } from '../AbstractTestInfo';
+import { AbstractTest } from '../AbstractTest';
 import { inspect } from 'util';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
@@ -31,7 +31,7 @@ export class Catch2Section {
   }
 }
 
-export class Catch2TestInfo extends AbstractTestInfo {
+export class Catch2Test extends AbstractTest {
   public constructor(
     shared: SharedVariables,
     id: string | undefined,
@@ -198,7 +198,7 @@ export class Catch2TestInfo extends AbstractTestInfo {
   ): void {
     {
       Object.getOwnPropertyNames(xml).forEach(n => {
-        if (!Catch2TestInfo._expectedPropertyNames.has(n)) {
+        if (!Catch2Test._expectedPropertyNames.has(n)) {
           this._shared.log.error('unexpected Catch2 tag: ' + n);
           testEventBuilder.appendMessage('unexpected Catch2 tag:' + n, 0);
           testEventBuilder.errored();

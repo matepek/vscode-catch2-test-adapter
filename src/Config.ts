@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { LoggerWrapper } from './LoggerWrapper';
-import { TestExecutableInfo, TestExecutableInfoFrameworkSpecific } from './TestExecutableInfo';
-import { RootTestSuiteInfo } from './RootTestSuiteInfo';
+import { Executable, TestExecutableInfoFrameworkSpecific } from './Executable';
+import { RootSuite } from './RootSuite';
 import { SharedVariables } from './SharedVariables';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
@@ -240,13 +240,13 @@ export class Config {
 
   public getExecutables(
     shared: SharedVariables,
-    rootSuite: RootTestSuiteInfo,
+    rootSuite: RootSuite,
     variableToValue: [string, string][],
-  ): TestExecutableInfo[] {
+  ): Executable[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultEnv = this.getDefaultEnvironmentVariables() || {};
 
-    const executables: TestExecutableInfo[] = [];
+    const executables: Executable[] = [];
 
     const configExecs:
       | undefined
@@ -256,7 +256,7 @@ export class Config {
       | { [prop: string]: string }
       | ({ [prop: string]: string } | string)[] = this._vsConfig.get('executables');
 
-    const createFromObject = (obj: { [prop: string]: string }): TestExecutableInfo => {
+    const createFromObject = (obj: { [prop: string]: string }): Executable => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 
       const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
@@ -302,7 +302,7 @@ export class Config {
         return r;
       };
 
-      return new TestExecutableInfo(
+      return new Executable(
         shared,
         rootSuite,
         pattern,
@@ -323,7 +323,7 @@ export class Config {
     if (typeof configExecs === 'string') {
       if (configExecs.length == 0) return [];
       executables.push(
-        new TestExecutableInfo(
+        new Executable(
           shared,
           rootSuite,
           configExecs,
@@ -347,7 +347,7 @@ export class Config {
           const configExecsName = String(configExec);
           if (configExecsName.length > 0) {
             executables.push(
-              new TestExecutableInfo(
+              new Executable(
                 shared,
                 rootSuite,
                 configExecsName,
