@@ -19,17 +19,17 @@ Examples:
 	{
 		"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
     "catch2": {
-      groupBySource: "[-1:]",
-      "groupByTag": true, // or ["[1][2]", "[2]", "[3]"],
+      groupBySource: "[-3:]",
+      "groupByTags": true, // or ["[1][2]", "[2]", "[3]"],
       "groupBySingleRegex": "(apple|peach)",
       "groupUngroupablesTo": "ungrouped"
     },
     "gtest": {
-      groupBySource: "[-3:-1]",
+      "groupBySource": "[-3:-1]",
       "groupBySingleRegex": "(?:good|bad) (apple|peach)"
     },
     "doctest": {
-      groupBySource: "[-1:]",
+      "groupBySource": "[-1]",
       "groupBySingleRegex": "(apple|peach)"
     }
 	}

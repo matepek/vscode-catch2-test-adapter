@@ -1,6 +1,7 @@
 import * as pathlib from 'path';
 import * as c2fs from './FSWrapper';
 import { TestExecutableInfoFrameworkSpecific } from './Executable';
+import { processArrayWithPythonIndexer, PythonIndexerRegexStr } from './Util';
 
 export class RunnableSuiteProperties {
   public constructor(
@@ -13,10 +14,9 @@ export class RunnableSuiteProperties {
       : undefined;
 
     if (_frameworkSpecific.groupBySource) {
-      const m = _frameworkSpecific.groupBySource.match(this._validationRegex);
-      this._groupBySourceIndexes = m ? [m[1] ? Number(m[1]) : undefined, m[2] ? Number(m[2]) : undefined] : undefined;
+      this._groupBySourceIndexes = _frameworkSpecific.groupBySource.match(PythonIndexerRegexStr);
     } else {
-      this._groupBySourceIndexes = undefined;
+      this._groupBySourceIndexes = null;
     }
 
     this.populateGroupTags();
@@ -34,20 +34,16 @@ export class RunnableSuiteProperties {
     return this._frameworkSpecific.ignoreTestEnumerationStdErr === true;
   }
 
-  private readonly _validationRegex = /^\[(-?[0-9]+)?:(-?[0-9]+)?\]$/;
-  private readonly _groupBySourceIndexes: [number | undefined, number | undefined] | undefined;
+  private readonly _groupBySourceIndexes: RegExpMatchArray | null;
 
   public get groupBySource(): boolean {
-    return this._groupBySourceIndexes !== undefined;
+    return this._groupBySourceIndexes !== null;
   }
 
   public getSourcePartForGrouping(path: string): string {
     if (this._groupBySourceIndexes) {
-      return pathlib
-        .normalize(path)
-        .split('/')
-        .slice(this._groupBySourceIndexes[0], this._groupBySourceIndexes[1])
-        .join('/');
+      const pathArray = path.split(/\/|\\/);
+      return pathlib.join(...processArrayWithPythonIndexer(pathArray, this._groupBySourceIndexes));
     } else {
       throw Error('assertion: getSourcePartForGrouping');
     }

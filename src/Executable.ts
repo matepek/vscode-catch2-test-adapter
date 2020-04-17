@@ -5,7 +5,13 @@ import * as vscode from 'vscode';
 import { RootSuite } from './RootSuite';
 import { AbstractRunnableSuite } from './AbstractRunnableSuite';
 import * as c2fs from './FSWrapper';
-import { resolveVariables, resolveOSEnvironmentVariables, ResolveRulePair } from './Util';
+import {
+  resolveVariables,
+  resolveOSEnvironmentVariables,
+  ResolveRulePair,
+  PythonIndexerRegexStr,
+  processArrayWithPythonIndexer,
+} from './Util';
 import { RunnableSuiteFactory } from './RunnableSuiteFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
@@ -219,14 +225,11 @@ export class Executable implements vscode.Disposable {
       separator: string | RegExp,
       join: string,
     ): [RegExp, (m: RegExpMatchArray) => string] => {
-      const indexRegex = new RegExp('\\${' + varName + '(?:\\[(-?[0-9]+)?:(-?[0-9]+)?\\])?}');
+      const indexRegex = new RegExp('\\${' + varName + PythonIndexerRegexStr + '?}');
 
       const pathArray = pathVal.split(separator);
       const replacer = (m: RegExpMatchArray): string => {
-        const idx1 = m[1] === undefined ? undefined : Number(m[1]);
-        const idx2 = m[2] === undefined ? undefined : Number(m[2]);
-
-        return path.normalize(pathArray.slice(idx1, idx2).join(join));
+        return path.normalize(processArrayWithPythonIndexer(pathArray, m).join(join));
       };
 
       return [indexRegex, replacer];

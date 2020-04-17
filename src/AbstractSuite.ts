@@ -120,12 +120,16 @@ export abstract class AbstractSuite implements TestSuiteInfo {
       return;
     }
 
-    if (this.children.length == 0) {
-      this.file = child.file;
-      this.line = child.file ? 0 : undefined;
-    } else if (this.file != child.file) {
-      this.file = undefined;
-      this.line = undefined;
+    if (child.file !== undefined) {
+      if (this.children.length == 0) {
+        this.file = child.file;
+        this.line = child.line ? child.line : 0;
+      } else if (this.file === child.file) {
+        this.line = child.line && this.line && child.line < this.line ? child.line : this.line;
+      } else {
+        delete this.file;
+        delete this.line;
+      }
     }
 
     this.children.push(child);

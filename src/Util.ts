@@ -110,6 +110,20 @@ export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolea
   });
 }
 
+export const PythonIndexerRegexStr = '(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])';
+
+export function processArrayWithPythonIndexer<T>(arr: ReadonlyArray<T>, match: RegExpMatchArray): T[] {
+  if (match[1]) {
+    const idx = Number(match[1]);
+    if (idx < 0) return [arr[arr.length + idx]];
+    else return [arr[idx]];
+  } else {
+    const idx1 = match[2] === undefined ? undefined : Number(match[2]);
+    const idx2 = match[3] === undefined ? undefined : Number(match[3]);
+    return arr.slice(idx1, idx2);
+  }
+}
+
 let uidCounter = 0;
 
 export function generateId(): string {
