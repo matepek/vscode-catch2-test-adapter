@@ -1,10 +1,10 @@
 import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
 
-import { AbstractTestInfo } from '../AbstractTestInfo';
+import { AbstractTest } from '../AbstractTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 
-export class GoogleTestInfo extends AbstractTestInfo {
+export class GoogleTest extends AbstractTest {
   public constructor(
     shared: SharedVariables,
     id: string | undefined,
@@ -48,7 +48,11 @@ export class GoogleTestInfo extends AbstractTestInfo {
     return debugParams;
   }
 
-  public parseAndProcessTestCase(output: string, runInfo: RunningTestExecutableInfo): TestEvent {
+  public parseAndProcessTestCase(
+    output: string,
+    rngSeed: number | undefined,
+    runInfo: RunningTestExecutableInfo,
+  ): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);
       this.lastRunEvent = ev;

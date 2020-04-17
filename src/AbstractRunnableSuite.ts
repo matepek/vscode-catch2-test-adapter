@@ -3,15 +3,15 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import * as c2fs from './FSWrapper';
-import { TestSuiteExecutionInfo } from './TestSuiteExecutionInfo';
-import { AbstractTestInfo } from './AbstractTestInfo';
-import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
+import { RunnableSuiteProperties } from './RunnableSuiteProperties';
+import { AbstractTest } from './AbstractTest';
+import { AbstractSuite } from './AbstractSuite';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { promisify } from 'util';
 
-export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
+export abstract class AbstractRunnableSuite extends AbstractSuite {
   private static _reportedFrameworks: string[] = [];
 
   private _canceled = false;
@@ -22,7 +22,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    public readonly execInfo: TestSuiteExecutionInfo,
+    public readonly execInfo: RunnableSuiteProperties,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<[number, number, number] | undefined>,
   ) {
@@ -30,7 +30,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     frameworkVersion
       .then(version => {
-        if (AbstractTestSuiteInfo._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
+        if (AbstractRunnableSuite._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
           const versionStr = version ? version.join('.') : 'unknown';
 
           shared.log.infoMessageWithTags('Framework', {
@@ -38,7 +38,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
             frameworkVersion: `${this.frameworkName}@${versionStr}`,
           });
 
-          AbstractTestSuiteInfo._reportedFrameworks.push(frameworkName);
+          AbstractRunnableSuite._reportedFrameworks.push(frameworkName);
         }
       })
       .catch(e => this._shared.log.exception(e));
@@ -50,7 +50,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
   protected abstract _reloadChildren(): Promise<void>;
 
-  protected abstract _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): string[];
+  protected abstract _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTest>): string[];
 
   protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
 
@@ -95,19 +95,19 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       this._runInfo = undefined;
     }
 
-    const childrenToRun = tests.delete(this.id) ? 'runAllTestsExceptSkipped' : new Set<AbstractTestInfo>();
+    const childrenToRun = tests.delete(this.id) ? 'runAllTestsExceptSkipped' : new Set<AbstractTest>();
 
     if (childrenToRun === 'runAllTestsExceptSkipped') {
       this.enumerateDescendants(v => {
         tests.delete(v.id);
       });
     } else {
-      this.enumerateDescendants((v: AbstractTestSuiteInfoBase | AbstractTestInfo) => {
+      this.enumerateDescendants((v: AbstractSuite | AbstractTest) => {
         const explicitlyIn = tests.delete(v.id);
         if (explicitlyIn) {
-          if (v instanceof AbstractTestInfo) {
+          if (v instanceof AbstractTest) {
             childrenToRun.add(v);
-          } else if (v instanceof AbstractTestSuiteInfoBase) {
+          } else if (v instanceof AbstractSuite) {
             v.enumerateTestInfos(vv => {
               if (!vv.skipped) childrenToRun.add(vv);
             });
@@ -143,12 +143,13 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
     });
   }
 
-  private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>): Promise<void> {
+  private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTest>): Promise<void> {
     const execParams = this.execInfo.prependTestRunningArgs.concat(this._getRunParams(childrenToRun));
 
-    this._shared.log.info('proc starting', this.origLabel, execParams);
+    this._shared.log.info('proc starting', this.origLabel);
+    this._shared.log.local.debug('proc starting', this.origLabel, execParams);
 
-    this._shared.testStatesEmitter.fire(this.getRunningEvent());
+    this.sendRunningEventIfNeeded();
 
     const runInfo = new RunningTestExecutableInfo(
       cp.spawn(this.execInfo.path, execParams, this.execInfo.options),
@@ -157,7 +158,8 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
 
     this._runInfo = runInfo;
 
-    this._shared.log.info('proc started:', this.origLabel, this.execInfo, execParams);
+    this._shared.log.info('proc started:', this.origLabel);
+    this._shared.log.local.debug('proc started:', this.origLabel, this.execInfo, execParams);
 
     runInfo.process.on('error', (err: Error) => {
       this._shared.log.error('process error event:', err, this);
@@ -171,7 +173,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       });
 
       runInfo.process.once('close', (...args) => {
-        this._shared.log.debug('proc close:', this.origLabel, args);
+        this._shared.log.local.debug('proc close:', this.origLabel, args);
         trigger('closed');
       });
 
@@ -210,7 +212,7 @@ export abstract class AbstractTestSuiteInfo extends AbstractTestSuiteInfoBase {
       .then(() => {
         this._shared.log.info('proc finished:', this.execInfo.path);
 
-        this._shared.testStatesEmitter.fire(this.getCompletedEvent());
+        this.sendCompletedEventIfNeeded();
 
         if (this._runInfo !== runInfo) {
           this._shared.log.error("assertion: shouldn't be here", this._runInfo, runInfo);

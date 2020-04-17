@@ -3,41 +3,30 @@ import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
-import { AbstractTestInfo } from '../AbstractTestInfo';
-import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
-import { AbstractTestSuiteInfoBase } from '../AbstractTestSuiteInfoBase';
-import { GoogleTestInfo } from './GoogleTestInfo';
+import { AbstractSuite } from '../AbstractSuite';
+import { GroupSuite } from '../GroupSuite';
+import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
+import { GoogleTest } from './GoogleTest';
 import { Parser } from 'xml2js';
-import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
+import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
+import { AbstractTest } from '../AbstractTest';
 
-class GoogleTestGroupSuiteInfo extends AbstractTestSuiteInfoBase {
-  public children: GoogleTestInfo[] = [];
-
-  public constructor(shared: SharedVariables, label: string, id?: string) {
-    super(shared, label, undefined, id);
-  }
-
-  public addChild(test: GoogleTestInfo): void {
-    super.addChild(test);
-  }
-}
-
-export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
-  public children: GoogleTestGroupSuiteInfo[] = [];
+export class GoogleSuite extends AbstractRunnableSuite {
+  public children: GroupSuite[] = [];
 
   public constructor(
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execInfo: TestSuiteExecutionInfo,
+    execInfo: RunnableSuiteProperties,
     version: Promise<[number, number, number] | undefined>,
   ) {
     super(shared, label, desciption, execInfo, 'GoogleTest', version);
   }
 
-  private _reloadFromXml(xmlStr: string, oldChildren: GoogleTestGroupSuiteInfo[]): void {
+  private _reloadFromXml(xmlStr: string, oldChildren: GroupSuite[]): void {
     interface XmlObject {
       [prop: string]: any; //eslint-disable-line
     }
@@ -55,13 +44,12 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
       const suiteName = xml.testsuites.testsuite[i].$.name;
 
-      const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
-      const oldGroupId = oldGroup ? oldGroup.id : undefined;
-      const oldGroupChildren = oldGroup ? oldGroup.children : [];
+      const oldFixtureGroup = this.findGroupInArray(oldChildren, v => v.origLabel === suiteName);
+      const oldFixtureGroupChildren: (AbstractSuite | AbstractTest)[] = oldFixtureGroup ? oldFixtureGroup.children : [];
 
-      // we need the oldGroup.id because that preserves the node's expanded/collapsed state
-      const group = new GoogleTestGroupSuiteInfo(this._shared, suiteName, oldGroupId);
-      this.addChild(group);
+      // we need the oldFixtureGroup.id because that preserves the node's expanded/collapsed state
+      const fixtureGroup = new GroupSuite(this._shared, suiteName, oldFixtureGroup);
+      this.addChild(fixtureGroup);
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
         const test = xml.testsuites.testsuite[i].testcase[j];
@@ -70,13 +58,66 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         const typeParam: string | undefined = test.$.type_param;
         const valueParam: string | undefined = test.$.value_param;
 
-        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
-
         const file = test.$.file ? this._findFilePath(test.$.file) : undefined;
         const line = test.$.line ? test.$.line - 1 : undefined;
 
+        let group: AbstractSuite = fixtureGroup;
+        let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldFixtureGroupChildren;
+
+        const addNewSubGroup = (label: string): void => {
+          const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.origLabel === label);
+          group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
+          oldGroupChildren = oldGroup ? oldGroup.children : [];
+        };
+
+        const setUngroupableGroup = (): void => {
+          if (this.execInfo.groupUngroupablesTo) {
+            const found = group.children.find(
+              v => v.type === 'suite' && v.origLabel === this.execInfo.groupUngroupablesTo,
+            );
+            if (found && found.type == 'suite') {
+              group = found;
+            } else {
+              addNewSubGroup(this.execInfo.groupUngroupablesTo);
+            }
+          }
+        };
+
+        if (this.execInfo.groupBySource) {
+          if (file) {
+            this._shared.log.info('groupBySource');
+            const fileStr = this.execInfo.getSourcePartForGrouping(file);
+            const found = group.findGroup(v => v.origLabel === fileStr);
+            if (fileStr.length > 0 && found) {
+              group = found;
+            } else {
+              addNewSubGroup(fileStr);
+            }
+          } else if (this.execInfo.groupUngroupablesTo) {
+            setUngroupableGroup();
+          }
+        }
+
+        if (this.execInfo.groupBySingleRegex) {
+          this._shared.log.info('groupBySingleRegex');
+          const match = testName.match(this.execInfo.groupBySingleRegex);
+          if (match && match[1]) {
+            const firstMatchGroup = match[1];
+            const found = group.findGroup(v => v.origLabel === firstMatchGroup);
+            if (found) {
+              group = found;
+            } else {
+              addNewSubGroup(firstMatchGroup);
+            }
+          } else if (this.execInfo.groupUngroupablesTo) {
+            setUngroupableGroup();
+          }
+        }
+
+        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
+
         group.addChild(
-          new GoogleTestInfo(
+          new GoogleTest(
             this._shared,
             old ? old.id : undefined,
             testNameAsId,
@@ -89,12 +130,15 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         );
       }
 
-      if (group.children.length && group.children.every(c => c.description === group.children[0].description))
-        group.description = group.children[0].description;
+      if (
+        fixtureGroup.children.length &&
+        fixtureGroup.children.every(c => c.description === fixtureGroup.children[0].description)
+      )
+        fixtureGroup.description = fixtureGroup.children[0].description;
     }
   }
 
-  private _reloadFromStdOut(stdOutStr: string, oldChildren: GoogleTestGroupSuiteInfo[]): void {
+  private _reloadFromStdOut(stdOutStr: string, oldChildren: GroupSuite[]): void {
     this.children = [];
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -123,10 +167,9 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
       const typeParam: string | undefined = testGroupMatch[3];
 
       const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
-      const oldGroupId = oldGroup ? oldGroup.id : undefined;
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
-      const group = new GoogleTestGroupSuiteInfo(this._shared, suiteName, oldGroupId);
+      const group = new GroupSuite(this._shared, suiteName, oldGroup);
 
       let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 
@@ -140,7 +183,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
         const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
 
         group.addChild(
-          new GoogleTestInfo(
+          new GoogleTest(
             this._shared,
             old ? old.id : undefined,
             testNameAsId,
@@ -202,17 +245,18 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
         if (googleTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
           this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
-          const test = new GoogleTestInfo(
-            this._shared,
-            undefined,
-            '<dummy>',
-            'Check the test output message for details ⚠️',
-            '',
-            undefined,
-            undefined,
-            undefined,
+          const test = this.addChild(
+            new GoogleTest(
+              this._shared,
+              undefined,
+              '<dummy>',
+              'Check the test output message for details ⚠️',
+              '',
+              undefined,
+              undefined,
+              undefined,
+            ),
           );
-          super.addChild(test);
           this._shared.sendTestEventEmitter.fire([
             {
               type: 'test',
@@ -258,7 +302,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
       });
   }
 
-  protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<GoogleTestInfo>): string[] {
+  protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<GoogleTest>): string[] {
     const execParams: string[] = ['--gtest_color=no'];
 
     if (childrenToRun !== 'runAllTestsExceptSkipped') {
@@ -287,14 +331,14 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
     const data = new (class {
       public buffer = '';
       public currentTestCaseNameFull: string | undefined = undefined;
-      public currentChild: GoogleTestInfo | undefined = undefined;
-      public group: GoogleTestGroupSuiteInfo | undefined = undefined;
-      public beforeFirstTestCase = true;
+      public currentChild: AbstractTest | undefined = undefined;
+      public route: AbstractSuite[] = [];
       public unprocessedTestCases: string[] = [];
-      public processedTestCases: GoogleTestInfo[] = [];
+      public processedTestCases: AbstractTest[] = [];
     })();
 
     const testBeginRe = /^\[ RUN      \] ((.+)\.(.+))$/m;
+    const rngSeed: number | undefined = typeof this._shared.rngSeed === 'number' ? this._shared.rngSeed : undefined;
 
     return new Promise<ProcessResult>(resolve => {
       const chunks: string[] = [];
@@ -309,23 +353,13 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
             data.currentTestCaseNameFull = m[1];
 
-            const groupName = m[2];
-            const group = this.children.find(c => c.label == groupName);
-            if (group) {
-              if (data.group !== group) {
-                if (data.group) this._shared.testStatesEmitter.fire(data.group.getCompletedEvent());
+            const [route, testInfo] = this.findRouteToTestInfo(v => v.testNameAsId == data.currentTestCaseNameFull);
 
-                data.group = group;
-                this._shared.testStatesEmitter.fire(group.getRunningEvent());
-              }
-            } else {
-              this._shared.log.error('should have found group', groupName, chunks, this);
-            }
+            if (testInfo !== undefined) {
+              this.sendMinimalEventsIfNeeded(data.route, route);
+              data.route = route;
 
-            data.beforeFirstTestCase = false;
-            data.currentChild = this.findTestInfo(v => v.testNameAsId == data.currentTestCaseNameFull);
-
-            if (data.currentChild !== undefined) {
+              data.currentChild = testInfo;
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
@@ -347,7 +381,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
-                const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, runInfo);
+                const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo);
 
                 this._shared.testStatesEmitter.fire(ev);
 
@@ -377,6 +411,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
 
             data.currentTestCaseNameFull = undefined;
             data.currentChild = undefined;
+            // do not clear data.route
             data.buffer = data.buffer.substr(m.index! + m[0].length);
           }
         } while (data.buffer.length > 0 && --invariant > 0);
@@ -433,9 +468,8 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           }
         }
 
-        if (data.group) {
-          this._shared.testStatesEmitter.fire(data.group.getCompletedEvent());
-        }
+        this.sendMinimalEventsIfNeeded(data.route, []);
+        data.route = [];
 
         const isTestRemoved =
           runInfo.timeout === null &&
@@ -466,7 +500,7 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
                 const currentChild = this.findTestInfo(v => v.testNameAsId == testNameAsId);
                 if (currentChild === undefined) break;
                 try {
-                  const ev = currentChild.parseAndProcessTestCase(testCase, runInfo);
+                  const ev = currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo);
                   events.push(ev);
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCase);
@@ -481,13 +515,5 @@ export class GoogleTestSuiteInfo extends AbstractTestSuiteInfo {
           );
         }
       });
-  }
-
-  public addChild(group: GoogleTestGroupSuiteInfo): void {
-    super.addChild(group);
-  }
-
-  public findTestInfo(pred: (v: GoogleTestInfo) => boolean): GoogleTestInfo | undefined {
-    return super.findTestInfo(pred as (v: AbstractTestInfo) => boolean) as GoogleTestInfo;
   }
 }

@@ -1,7 +1,6 @@
 import { inspect } from 'util';
 import * as vscode from 'vscode';
 import {
-  TestInfo,
   TestEvent,
   TestLoadFinishedEvent,
   TestLoadStartedEvent,
@@ -14,20 +13,19 @@ import * as api from 'vscode-test-adapter-api';
 import debounce = require('debounce-collect');
 import * as Sentry from '@sentry/node';
 
-import { LogWrapper } from './LogWrapper';
-import { RootTestSuiteInfo } from './RootTestSuiteInfo';
-import { resolveVariables, generateUniqueId } from './Util';
+import { LoggerWrapper } from './LoggerWrapper';
+import { RootSuite } from './RootSuite';
+import { resolveVariables, generateId } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { SharedVariables } from './SharedVariables';
-import { AbstractTestInfo } from './AbstractTestInfo';
-import { Catch2Section, Catch2TestInfo } from './framework/Catch2TestInfo';
-import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { Catch2Section, Catch2Test } from './framework/Catch2Test';
+import { AbstractRunnableSuite } from './AbstractRunnableSuite';
 import { Config } from './Config';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
-  private readonly _log: LogWrapper;
+  private readonly _log: LoggerWrapper;
   private readonly _testsEmitter = new vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>();
   private readonly _testStatesEmitter = new vscode.EventEmitter<
     TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
@@ -45,23 +43,23 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
 
-  private readonly _sendRetireEmitter = new vscode.EventEmitter<AbstractTestSuiteInfo[]>();
+  private readonly _sendRetireEmitter = new vscode.EventEmitter<AbstractRunnableSuite[]>();
 
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
 
   private readonly _shared: SharedVariables;
-  private _rootSuite: RootTestSuiteInfo;
+  private _rootSuite: RootSuite;
 
   private readonly _isDebug: boolean = !!process.env['C2_DEBUG'];
 
   public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
-    this._log = new LogWrapper(
+    this._log = new LoggerWrapper(
       'catch2TestExplorer',
       this.workspaceFolder,
       'Test Explorer: ' + this.workspaceFolder.name,
       { showProxy: true, depth: 3 },
-      true,
+      this._isDebug,
     );
 
     const config = this._getConfiguration();
@@ -146,9 +144,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(this._sendRetireEmitter);
     {
-      const unique = new Set<AbstractTestSuiteInfo>();
+      const unique = new Set<AbstractRunnableSuite>();
 
-      const retire = (aggregatedArgs: [AbstractTestSuiteInfo[]][]): void => {
+      const retire = (aggregatedArgs: [AbstractRunnableSuite[]][]): void => {
         const isScheduled = unique.size > 0;
         aggregatedArgs.forEach(args => args[0].forEach(test => unique.add(test)));
 
@@ -196,29 +194,30 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._disposables.push(
       this._sendTestEventEmitter.event((testEvents: TestEvent[]) => {
         this._mainTaskQueue.then(() => {
-          for (let i = 0; i < testEvents.length; ++i) {
-            const id: string =
-              typeof testEvents[i].test === 'string'
-                ? (testEvents[i].test as string)
-                : (testEvents[i].test as TestInfo).id;
-            const route = this._rootSuite.findRouteToTestById(id);
+          if (testEvents.length > 0) {
+            this._testStatesEmitter.fire({
+              type: 'started',
+              tests: testEvents
+                .filter(v => v.type == 'test')
+                .map(v => (typeof v.test == 'string' ? v.test : v.test.id)),
+            });
 
-            if (route !== undefined && route.length > 1) {
-              this._testStatesEmitter.fire({ type: 'started', tests: [id] });
+            for (let i = 0; i < testEvents.length; ++i) {
+              const [route, test] = this._rootSuite.findRouteToTest(testEvents[i].test);
 
-              for (let j = 0; j < route.length - 1; ++j)
-                this._testStatesEmitter.fire((route[j] as AbstractTestSuiteInfo).getRunningEvent());
+              if (test !== undefined && route.length > 0) {
+                route.forEach(v => v.sendRunningEventIfNeeded());
 
-              this._testStatesEmitter.fire((testEvents[i].test as AbstractTestInfo).getStartEvent());
-              this._testStatesEmitter.fire(testEvents[i]);
+                this._testStatesEmitter.fire(test.getStartEvent());
+                this._testStatesEmitter.fire(testEvents[i]);
 
-              for (let j = route.length - 2; j >= 0; --j)
-                this._testStatesEmitter.fire((route[j] as AbstractTestSuiteInfo).getCompletedEvent());
-
-              this._testStatesEmitter.fire({ type: 'finished' });
-            } else {
-              this._log.error('sendTestEventEmitter.event', testEvents[i], route, this._rootSuite);
+                route.forEach(v => v.sendCompletedEventIfNeeded());
+              } else {
+                this._log.error('sendTestEventEmitter.event', testEvents[i], route, this._rootSuite);
+              }
             }
+
+            this._testStatesEmitter.fire({ type: 'finished' });
           }
         });
       }),
@@ -312,7 +311,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
-    this._rootSuite = new RootTestSuiteInfo(undefined, this._shared);
+    this._rootSuite = new RootSuite(undefined, this._shared);
   }
 
   public dispose(): void {
@@ -365,7 +364,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._rootSuite.dispose();
 
-    this._rootSuite = new RootTestSuiteInfo(this._rootSuite.id, this._shared);
+    this._rootSuite = new RootSuite(this._rootSuite.id, this._shared);
 
     return this._mainTaskQueue.then(() => {
       this._log.info('load started');
@@ -432,24 +431,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       );
     }
 
-    const route = this._rootSuite.findRouteToTestById(tests[0]);
-    if (route === undefined) {
+    const [route, testInfo] = this._rootSuite.findRouteToTest(tests[0]);
+    if (testInfo === undefined) {
       this._log.warn('route === undefined', tests);
       throw Error('Not existing test id.');
-    } else if (route.length == 0) {
-      this._log.error('route.length == 0', tests);
-      throw Error('Unexpected error.');
-    } else if (route[route.length - 1].type !== 'test') {
-      this._log.error("route[route.length-1].type !== 'test'", tests);
-      throw Error('Unexpected error.');
     }
 
-    const testInfo = route[route.length - 1] as AbstractTestInfo;
-    route.pop();
     const suiteLabels = route.map(s => s.label).join(' ➡️ ');
 
-    const testSuite = route.find(v => v instanceof AbstractTestSuiteInfo);
-    if (testSuite === undefined || !(testSuite instanceof AbstractTestSuiteInfo))
+    const testSuite = route.find(v => v instanceof AbstractRunnableSuite);
+    if (testSuite === undefined || !(testSuite instanceof AbstractRunnableSuite))
       throw Error('Unexpected error. Should have AbstractTestSuiteInfo parent.');
 
     this._log.info('testInfo', testInfo, tests);
@@ -460,7 +451,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const argsArray = testInfo.getDebugParams(config.getDebugBreakOnFailure());
 
-    if (testInfo instanceof Catch2TestInfo) {
+    if (testInfo instanceof Catch2Test) {
       const sections = testInfo.sections;
       if (sections && sections.length > 0) {
         interface QuickPickItem extends vscode.QuickPickItem {
@@ -526,7 +517,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     // we dont know better :(
     // https://github.com/Microsoft/vscode/issues/70125
     const magicValueKey = 'magic variable  🤦🏼‍';
-    const magicValue = generateUniqueId();
+    const magicValue = generateId();
     debugConfig[magicValueKey] = magicValue;
 
     this._log.info('Debug: resolved debugConfig:', debugConfig);

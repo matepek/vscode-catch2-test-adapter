@@ -1,7 +1,7 @@
 import * as os from 'os';
 import { ChildProcess } from 'child_process';
 
-import { AbstractTestInfo } from './AbstractTestInfo';
+import { AbstractTest } from './AbstractTest';
 
 export class ProcessResult {
   public error?: Error;
@@ -60,7 +60,7 @@ export class ProcessResult {
 export class RunningTestExecutableInfo {
   public constructor(
     public readonly process: ChildProcess,
-    public readonly childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTestInfo>,
+    public readonly childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTest>,
   ) {
     process.once('close', () => {
       this._closed = true;

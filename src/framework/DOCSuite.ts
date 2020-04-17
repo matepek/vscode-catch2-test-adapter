@@ -4,30 +4,31 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
-import { AbstractTestSuiteInfo } from '../AbstractTestSuiteInfo';
-import { DOCTestInfo } from './DOCTestInfo';
+import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
+import { AbstractTest } from '../AbstractTest';
+import { AbstractSuite } from '../AbstractSuite';
+import { DOCTest } from './DOCTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
-import { TestSuiteExecutionInfo } from '../TestSuiteExecutionInfo';
+import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
+import { GroupSuite } from '../GroupSuite';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
-  public children: DOCTestInfo[] = [];
-
+export class DOCSuite extends AbstractRunnableSuite {
   public constructor(
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
-    execInfo: TestSuiteExecutionInfo,
+    execInfo: RunnableSuiteProperties,
     docVersion: [number, number, number] | undefined,
   ) {
     super(shared, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: DOCTestInfo[]): void {
+  private _reloadFromString(testListOutput: string, oldChildren: (AbstractSuite | AbstractTest)[]): void {
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
       if (err) {
@@ -46,20 +47,73 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      const index = oldChildren.findIndex(c => c.testNameAsId == testNameAsId);
+      let group: AbstractSuite = this as AbstractSuite;
+      let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldChildren;
 
-      this.addChild(
-        new DOCTestInfo(
-          this._shared,
-          undefined,
-          testNameAsId,
-          suite !== undefined ? `[${suite}]` : undefined,
-          skipped,
-          filePath,
-          line,
-          index != -1 ? oldChildren[index] : undefined,
-        ),
+      const addNewSubGroup = (label: string): void => {
+        const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.origLabel === label);
+        group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
+        oldGroupChildren = oldGroup ? oldGroup.children : [];
+      };
+
+      const setUngroupableGroup = (): void => {
+        if (this.execInfo.groupUngroupablesTo) {
+          const found = group.children.find(
+            v => v.type === 'suite' && v.origLabel === this.execInfo.groupUngroupablesTo,
+          );
+          if (found && found.type == 'suite') {
+            group = found;
+          } else {
+            addNewSubGroup(this.execInfo.groupUngroupablesTo);
+          }
+        }
+      };
+
+      if (this.execInfo.groupBySource) {
+        if (filePath) {
+          this._shared.log.info('groupBySource');
+          const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
+          const found = group.findGroup(v => v.origLabel === fileStr);
+          if (fileStr.length > 0 && found) {
+            group = found;
+          } else {
+            addNewSubGroup(fileStr);
+          }
+        } else if (this.execInfo.groupUngroupablesTo) {
+          setUngroupableGroup();
+        }
+      }
+
+      if (this.execInfo.groupBySingleRegex) {
+        this._shared.log.info('groupBySingleRegex');
+        const match = testNameAsId.match(this.execInfo.groupBySingleRegex);
+        if (match && match[1]) {
+          const firstMatchGroup = match[1];
+          const found = group.findGroup(v => v.origLabel === firstMatchGroup);
+          if (found) {
+            group = found;
+          } else {
+            addNewSubGroup(firstMatchGroup);
+          }
+        } else if (this.execInfo.groupUngroupablesTo) {
+          setUngroupableGroup();
+        }
+      }
+
+      const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
+
+      const test = new DOCTest(
+        this._shared,
+        undefined,
+        testNameAsId,
+        suite !== undefined ? `[${suite}]` : undefined,
+        skipped,
+        filePath,
+        line,
+        old as DOCTest,
       );
+
+      group.addChild(test);
     }
   }
 
@@ -109,7 +163,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
             docTestListOutput.status,
           );
           const test = this.addChild(
-            new DOCTestInfo(
+            new DOCTest(
               this._shared,
               undefined,
               'Check the test output message for details ⚠️',
@@ -149,7 +203,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
       });
   }
 
-  protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<DOCTestInfo>): string[] {
+  protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<DOCTest>): string[] {
     const execParams: string[] = [];
 
     if (childrenToRun !== 'runAllTestsExceptSkipped') {
@@ -176,11 +230,12 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
     const data = new (class {
       public buffer = '';
       public inTestCase = false;
-      public currentChild: DOCTestInfo | undefined = undefined;
+      public currentChild: AbstractTest | undefined = undefined;
+      public route: AbstractSuite[] = [];
       public beforeFirstTestCase = true;
       public rngSeed: number | undefined = undefined;
       public unprocessedXmlTestCases: string[] = [];
-      public processedTestCases: DOCTestInfo[] = [];
+      public processedTestCases: AbstractTest[] = [];
     })();
 
     const testCaseTagRe = /<TestCase(\s+[^\n\r]+)[^\/](\/)?>/;
@@ -231,11 +286,14 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
             }
 
             data.beforeFirstTestCase = false;
-            data.currentChild = this.children.find((v: DOCTestInfo) => {
-              return v.testNameAsId == name;
-            });
 
-            if (data.currentChild !== undefined) {
+            const [route, testInfo] = this.findRouteToTestInfo(v => v.testNameAsId == name);
+
+            if (testInfo !== undefined) {
+              this.sendMinimalEventsIfNeeded(data.route, route);
+              data.route = route;
+
+              data.currentChild = testInfo;
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
 
               if (!skipped) {
@@ -279,9 +337,11 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
-                const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
-                data.processedTestCases.push(data.currentChild);
+                const ev = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
+
                 this._shared.testStatesEmitter.fire(ev);
+
+                data.processedTestCases.push(data.currentChild);
               } catch (e) {
                 this._shared.log.error('parsing and processing test', e, data, chunks, testCaseXml);
                 this._shared.testStatesEmitter.fire({
@@ -304,6 +364,7 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
 
             data.inTestCase = false;
             data.currentChild = undefined;
+            // do not clear data.route
             data.buffer = data.buffer.substr(b + endTestCase.length);
           }
         } while (data.buffer.length > 0 && --invariant > 0);
@@ -359,6 +420,9 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
           }
         }
 
+        this.sendMinimalEventsIfNeeded(data.route, []);
+        data.route = [];
+
         // skipped test handling is wrong. I just disable this feature
         // const isTestRemoved =
         //   runInfo.timeout === null &&
@@ -397,10 +461,9 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
                 );
                 if (name === undefined) break;
 
-                const currentChild = this.children.find((v: DOCTestInfo) => {
-                  // xml output trimmes the name of the test
-                  return v.testNameAsId.trim() == name;
-                });
+                // xml output trimmes the name of the test
+                const currentChild = this.findTestInfo(v => v.testNameAsId === name);
+
                 if (currentChild === undefined) break;
 
                 try {
@@ -420,10 +483,5 @@ export class DOCTestSuiteInfo extends AbstractTestSuiteInfo {
           );
         }
       });
-  }
-
-  public addChild(test: DOCTestInfo): DOCTestInfo {
-    super.addChild(test);
-    return test;
   }
 }

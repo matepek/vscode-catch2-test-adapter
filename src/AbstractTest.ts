@@ -1,9 +1,12 @@
 import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
-import { generateUniqueId, milisecToStr } from './Util';
+import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
+import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { AbstractSuite } from './AbstractSuite';
+import { GroupSuite } from './GroupSuite';
 
-export abstract class AbstractTestInfo implements TestInfo {
+export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
   public readonly id: string;
   public readonly origLabel: string;
@@ -25,7 +28,7 @@ export abstract class AbstractTestInfo implements TestInfo {
     description: string | undefined,
     tooltip: string | undefined,
   ) {
-    this.id = id ? id : generateUniqueId();
+    this.id = id ? id : generateId();
     this.origLabel = label;
     this.description = description ? description : '';
     this.file = file ? path.normalize(file) : undefined;
@@ -42,6 +45,12 @@ export abstract class AbstractTestInfo implements TestInfo {
   }
 
   public abstract getDebugParams(breakOnFailure: boolean): string[];
+
+  public abstract parseAndProcessTestCase(
+    output: string,
+    rngSeed: number | undefined,
+    runInfo: RunningTestExecutableInfo,
+  ): TestEvent;
 
   public getTimeoutEvent(milisec: number): TestEvent {
     const ev = this.getFailedEventBase();
@@ -69,15 +78,20 @@ export abstract class AbstractTestInfo implements TestInfo {
     ev.tooltip = this.tooltip + (this.tooltip ? '\n\n' : '') + '⏱Duration: ' + durationStr;
   }
 
-  public findRouteToTestById(id: string): AbstractTestInfo[] | undefined {
-    return this.id === id ? [this] : undefined;
-  }
-
-  public enumerateTestInfos(fn: (v: AbstractTestInfo) => void): void {
+  public enumerateTestInfos(fn: (v: AbstractTest) => void): void {
     fn(this);
   }
 
-  public findTestInfo(pred: (v: AbstractTestInfo) => boolean): AbstractTestInfo | undefined {
+  public findTestInfo(pred: (v: AbstractTest) => boolean): AbstractTest | undefined {
     return pred(this) ? this : undefined;
+  }
+
+  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuite[], AbstractTest | undefined] {
+    return [[], pred(this) ? this : undefined];
+  }
+
+  // eslint-disable-next-line
+  public findGroup(_pred: (v: GroupSuite) => boolean): undefined {
+    return undefined;
   }
 }

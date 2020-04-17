@@ -1,17 +1,17 @@
 import * as vscode from 'vscode';
-
-import { TestExecutableInfo } from './TestExecutableInfo';
-import { AbstractTestSuiteInfoBase } from './AbstractTestSuiteInfoBase';
-import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
-import { AbstractTestInfo } from './AbstractTestInfo';
+import { TestInfo } from 'vscode-test-adapter-api';
+import { Executable } from './Executable';
+import { AbstractSuite } from './AbstractSuite';
+import { AbstractRunnableSuite } from './AbstractRunnableSuite';
+import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
 
-export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vscode.Disposable {
-  public readonly children: AbstractTestSuiteInfo[] = [];
-  private _executables: TestExecutableInfo[] = [];
+export class RootSuite extends AbstractSuite implements vscode.Disposable {
+  public readonly children: AbstractRunnableSuite[] = [];
+  private _executables: Executable[] = [];
 
   public constructor(id: string | undefined, shared: SharedVariables) {
-    super(shared, 'Catch2 and Google tests', undefined, id);
+    super(shared, 'Catch2/GTest/DOCTest', undefined, id);
   }
 
   public dispose(): void {
@@ -22,7 +22,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     this.children.forEach(c => c.cancel());
   }
 
-  public load(executables: TestExecutableInfo[]): Promise<void> {
+  public load(executables: Executable[]): Promise<void> {
     this._executables.forEach(e => e.dispose());
 
     this._executables = executables;
@@ -69,16 +69,16 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
       });
   }
 
-  public hasChild(suite: AbstractTestSuiteInfo): boolean {
+  public hasChild(suite: AbstractRunnableSuite): boolean {
     return this.children.indexOf(suite) != -1;
   }
 
-  public insertChild(suite: AbstractTestSuiteInfo, uniquifyLabels: boolean): boolean {
+  public insertChild(suite: AbstractRunnableSuite, uniquifyLabels: boolean): boolean {
     if (this.hasChild(suite)) return false;
 
     {
       // we want to filter the situation when 2 patterns match the same file
-      const other = this.children.find((s: AbstractTestSuiteInfo) => {
+      const other = this.children.find((s: AbstractRunnableSuite) => {
         return suite.execInfo.path == s.execInfo.path;
       });
       if (other) {
@@ -92,21 +92,17 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
       }
     }
 
-    this.addChild(suite);
+    super._addChild(suite);
+
+    this.file = undefined;
+    this.line = undefined;
 
     uniquifyLabels && this.uniquifySuiteLabels();
 
     return true;
   }
 
-  public addChild(suite: AbstractTestSuiteInfo): void {
-    super.addChild(suite);
-
-    this.file = undefined;
-    this.line = undefined;
-  }
-
-  public removeChild(child: AbstractTestSuiteInfo): boolean {
+  public removeChild(child: AbstractRunnableSuite): boolean {
     const i = this.children.findIndex(val => val.id == child.id);
     if (i != -1) {
       this.children.splice(i, 1);
@@ -117,7 +113,7 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
   }
 
   public uniquifySuiteLabels(): void {
-    const uniqueNames = new Map<string /* name */, AbstractTestSuiteInfo[]>();
+    const uniqueNames = new Map<string /* name */, AbstractRunnableSuite[]>();
 
     for (const suite of this.children) {
       const suites = uniqueNames.get(suite.origLabel);
@@ -138,9 +134,18 @@ export class RootTestSuiteInfo extends AbstractTestSuiteInfoBase implements vsco
     }
   }
 
-  public findRouteToTestById(id: string): (AbstractTestSuiteInfoBase | AbstractTestInfo)[] | undefined {
-    const res = super.findRouteToTestById(id);
-    if (res !== undefined) res.shift(); // remove Root/this
-    return res;
+  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuite[], AbstractTest | undefined] {
+    for (let i = 0; i < this.children.length; ++i) {
+      const found = this.children[i].findRouteToTestInfo(pred);
+      if (found[1] !== undefined) {
+        return found;
+      }
+    }
+    return [[], undefined];
+  }
+
+  public findRouteToTest(idOrInfo: string | TestInfo): [AbstractSuite[], AbstractTest | undefined] {
+    if (typeof idOrInfo === 'string') return this.findRouteToTestInfo(x => x.id === idOrInfo);
+    else return this.findRouteToTestInfo(x => x === idOrInfo);
   }
 }

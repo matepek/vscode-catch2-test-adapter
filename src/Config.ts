@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { LogWrapper } from './LogWrapper';
-import { TestExecutableInfo, TestExecutableInfoFrameworkSpecific } from './TestExecutableInfo';
-import { RootTestSuiteInfo } from './RootTestSuiteInfo';
+import { LoggerWrapper } from './LoggerWrapper';
+import { Executable, TestExecutableInfoFrameworkSpecific } from './Executable';
+import { RootSuite } from './RootSuite';
 import { SharedVariables } from './SharedVariables';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
@@ -9,7 +9,7 @@ import { performance } from 'perf_hooks';
 export class Config {
   private _vsConfig: vscode.WorkspaceConfiguration;
 
-  public constructor(public _log: LogWrapper, private _workspaceFolderUri: vscode.Uri) {
+  public constructor(public _log: LoggerWrapper, private _workspaceFolderUri: vscode.Uri) {
     this._vsConfig = vscode.workspace.getConfiguration('catch2TestExplorer', _workspaceFolderUri);
   }
 
@@ -138,7 +138,6 @@ export class Config {
   }
 
   public askSentryConsent(): void {
-    // TODO: enable it in the next month
     return;
 
     const logSentry = this._vsConfig.get<'enable' | 'disable' | 'disable_1' | 'disable_2' | 'question'>(
@@ -240,13 +239,13 @@ export class Config {
 
   public getExecutables(
     shared: SharedVariables,
-    rootSuite: RootTestSuiteInfo,
+    rootSuite: RootSuite,
     variableToValue: [string, string][],
-  ): TestExecutableInfo[] {
+  ): Executable[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultEnv = this.getDefaultEnvironmentVariables() || {};
 
-    const executables: TestExecutableInfo[] = [];
+    const executables: Executable[] = [];
 
     const configExecs:
       | undefined
@@ -256,7 +255,7 @@ export class Config {
       | { [prop: string]: string }
       | ({ [prop: string]: string } | string)[] = this._vsConfig.get('executables');
 
-    const createFromObject = (obj: { [prop: string]: string }): TestExecutableInfo => {
+    const createFromObject = (obj: { [prop: string]: string }): Executable => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 
       const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
@@ -298,11 +297,19 @@ export class Config {
             r.prependTestListingArgs = obj.prependTestListingArgs;
 
           if (typeof obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
+
+          if (typeof obj.testGrouping) {
+            if (typeof obj.testGrouping.groupBySource) r.groupBySource = obj.testGrouping.groupBySource;
+            if (typeof obj.testGrouping.groupByTags) r.groupByTags = obj.testGrouping.groupByTags;
+            if (typeof obj.testGrouping.groupBySingleRegex) r.groupBySingleRegex = obj.testGrouping.groupBySingleRegex;
+            if (typeof obj.testGrouping.groupUngroupablesTo)
+              r.groupUngroupablesTo = obj.testGrouping.groupUngroupablesTo;
+          }
         }
         return r;
       };
 
-      return new TestExecutableInfo(
+      return new Executable(
         shared,
         rootSuite,
         pattern,
@@ -323,7 +330,7 @@ export class Config {
     if (typeof configExecs === 'string') {
       if (configExecs.length == 0) return [];
       executables.push(
-        new TestExecutableInfo(
+        new Executable(
           shared,
           rootSuite,
           configExecs,
@@ -347,7 +354,7 @@ export class Config {
           const configExecsName = String(configExec);
           if (configExecsName.length > 0) {
             executables.push(
-              new TestExecutableInfo(
+              new Executable(
                 shared,
                 rootSuite,
                 configExecsName,

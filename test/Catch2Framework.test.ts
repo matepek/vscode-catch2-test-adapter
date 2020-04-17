@@ -21,7 +21,7 @@ import { ChildProcess } from 'child_process';
 
 ///
 
-describe(path.basename(__filename), function() {
+describe(path.basename(__filename), function () {
   let imitation: Imitation;
   let adapter: TestAdapter | undefined = undefined;
   let watchers: Map<string, FileSystemWatcherStub>;
@@ -29,17 +29,17 @@ describe(path.basename(__filename), function() {
   this.timeout(8000);
   this.slow(1000);
 
-  before(function() {
+  before(function () {
     imitation = new Imitation();
     fse.removeSync(settings.dotVscodePath);
   });
 
-  after(function() {
+  after(function () {
     imitation.restore();
     return settings.resetConfig();
   });
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     adapter = undefined;
 
     imitation.resetToCallThrough();
@@ -49,11 +49,11 @@ describe(path.basename(__filename), function() {
     await settings.resetConfig();
   });
 
-  afterEach(async function() {
+  afterEach(async function () {
     if (adapter) await adapter.waitAndDispose(this);
   });
 
-  specify('resolving relative defaultCwd', async function() {
+  specify('resolving relative defaultCwd', async function () {
     this.slow(1000);
     await settings.updateConfig('executables', example1.suite1.execPath);
     await settings.updateConfig('defaultCwd', 'defaultCwdStr');
@@ -65,7 +65,7 @@ describe(path.basename(__filename), function() {
       example1.suite1.outputs[1][0],
       sinon.match.any,
     );
-    spawnWithArgs.callsFake(function(p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
+    spawnWithArgs.callsFake(function (p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
       try {
         assert.strictEqual(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'defaultCwdStr'));
         return new ChildProcessStub(example1.suite1.outputs[1][1]);
@@ -81,7 +81,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(exception, undefined);
   });
 
-  specify('resolving absolute defaultCwd', async function() {
+  specify('resolving absolute defaultCwd', async function () {
     this.slow(500);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
@@ -97,7 +97,7 @@ describe(path.basename(__filename), function() {
       example1.suite1.outputs[1][0],
       sinon.match.any,
     );
-    spawnWithArgs.callsFake(function(p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
+    spawnWithArgs.callsFake(function (p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
       try {
         cwd = ops.cwd!;
         if (isWin) assert.strictEqual(ops.cwd, 'C:\\defaultCwdStr');
@@ -115,7 +115,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(exception, undefined, cwd);
   });
 
-  specify('using defaultEnv', async function() {
+  specify('using defaultEnv', async function () {
     this.slow(500);
     await settings.updateConfig('executables', example1.suite1.execPath);
     await settings.updateConfig('defaultEnv', { ENVTEST: 'envtest' });
@@ -128,7 +128,7 @@ describe(path.basename(__filename), function() {
       example1.suite1.outputs[1][0],
       sinon.match.any,
     );
-    spawnWithArgs.callsFake(function(p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
+    spawnWithArgs.callsFake(function (p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
       try {
         assert.ok(ops.env!.hasOwnProperty('ENVTEST'));
         assert.equal(ops.env!.ENVTEST, 'envtest');
@@ -145,7 +145,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(exception, undefined);
   });
 
-  specify('arriving <TestCase> for missing TestInfo', async function() {
+  specify('arriving <TestCase> for missing TestInfo', async function () {
     this.slow(4000);
     this.timeout(15000);
     await settings.updateConfig('executables', example1.suite1.execPath);
@@ -236,7 +236,7 @@ describe(path.basename(__filename), function() {
     ]);
   });
 
-  specify('test list error: duplicated test name', async function() {
+  specify('test list error: duplicated test name', async function () {
     this.slow(500);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
@@ -279,7 +279,7 @@ describe(path.basename(__filename), function() {
     }
   });
 
-  specify('custom1 test case list', async function() {
+  specify('custom1 test case list', async function () {
     this.slow(500);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
@@ -317,7 +317,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(suite1.children[1].label, 'second');
   });
 
-  specify('custom2 test case list', async function() {
+  specify('custom2 test case list', async function () {
     this.slow(500);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
@@ -350,7 +350,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(suite1.children[0].label, 'first');
   });
 
-  specify('custom3 test case list: extra lines before and after', async function() {
+  specify('custom3 test case list: extra lines before and after', async function () {
     this.slow(500);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
@@ -386,7 +386,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(suite1.children[0].label, 'first');
   });
 
-  specify.skip('custom4 test', async function() {
+  specify.skip('custom4 test', async function () {
     this.slow(500);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
@@ -419,7 +419,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(suite1.label, 'execPath1.exe');
     assert.strictEqual(suite1.children[0].label, 'first');
 
-    imitation.spawnStub.withArgs(sinon.match.any, sinon.match.any, sinon.match.any).callsFake(function() {
+    imitation.spawnStub.withArgs(sinon.match.any, sinon.match.any, sinon.match.any).callsFake(function () {
       return new ChildProcessStub([
         `<TestCase name="${suite1.children[0].label}" tags="[tag1]" filename="/home/master-kenobi/test.cpp" line="4">`,
         '      <OverallResult success="true" durationInSeconds="0.724167">',
@@ -438,7 +438,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(adapter.testStatesEvents.length, 6);
   });
 
-  specify('load executables=<full path of execPath1>', async function() {
+  specify('load executables=<full path of execPath1>', async function () {
     this.slow(500);
     await settings.updateConfig('executables', example1.suite1.execPath);
     adapter = new TestAdapter();
@@ -447,7 +447,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(adapter.root.children.length, 1);
   });
 
-  specify('load executables=["execPath1.exe", "./execPath2.exe"] with error', async function() {
+  specify('load executables=["execPath1.exe", "./execPath2.exe"] with error', async function () {
     this.slow(500);
     await settings.updateConfig('executables', ['execPath1.exe', './execPath2.exe']);
     adapter = new TestAdapter();
@@ -463,7 +463,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(adapter.root.children.length, 1);
   });
 
-  specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete; sleep 3; create', async function() {
+  specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete; sleep 3; create', async function () {
     const watchTimeout = 6;
     await settings.updateConfig('defaultWatchTimeoutSec', watchTimeout);
     this.timeout(watchTimeout * 1000 + 2500 /* because of 'delay' */);
@@ -471,7 +471,7 @@ describe(path.basename(__filename), function() {
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
     for (const scenario of example1.suite2.outputs) {
-      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function() {
+      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function () {
         return new ChildProcessStub(scenario[1]);
       });
     }
@@ -524,7 +524,7 @@ describe(path.basename(__filename), function() {
     assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
   });
 
-  specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete second', async function() {
+  specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete second', async function () {
     const watchTimeout = 5;
     await settings.updateConfig('defaultWatchTimeoutSec', watchTimeout);
     this.timeout(watchTimeout * 1000 + 7500 /* because of 'delay' */);
@@ -532,7 +532,7 @@ describe(path.basename(__filename), function() {
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
     for (const scenario of example1.suite2.outputs) {
-      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function() {
+      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function () {
         return new ChildProcessStub(scenario[1]);
       });
     }
@@ -574,7 +574,7 @@ describe(path.basename(__filename), function() {
     assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
   });
 
-  specify('wrong executables format', async function() {
+  specify('wrong executables format', async function () {
     expectedLoggedErrorLine('[ERROR] Error: Error: pattern property is required.');
 
     this.slow(5000);
@@ -587,7 +587,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(adapter.root.children.length, 0);
   });
 
-  specify('variable substitution with executables={...}', async function() {
+  specify('variable substitution with executables={...}', async function () {
     this.slow(500);
 
     const wsPath = settings.workspaceFolderUri.fsPath;
@@ -632,7 +632,7 @@ describe(path.basename(__filename), function() {
     });
 
     for (const scenario of example1.suite2.outputs) {
-      imitation.spawnStub.withArgs(execAbsPath, scenario[0], sinon.match.any).callsFake(function() {
+      imitation.spawnStub.withArgs(execAbsPath, scenario[0], sinon.match.any).callsFake(function () {
         return new ChildProcessStub(scenario[1]);
       });
     }
@@ -641,7 +641,7 @@ describe(path.basename(__filename), function() {
 
     const spawnWithArgs = imitation.spawnStub.withArgs(execAbsPath, example1.suite2.t1.outputs[0][0], sinon.match.any);
 
-    spawnWithArgs.callsFake(function(p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
+    spawnWithArgs.callsFake(function (p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
       try {
         assert.equal(ops.cwd, expectStr);
         assert.ok(ops.env && ops.env.C2TESTVARS);
@@ -684,7 +684,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(exception, undefined);
   });
 
-  specify('duplicated suite names from different pattern', async function() {
+  specify('duplicated suite names from different pattern', async function () {
     this.slow(500);
     await settings.updateConfig('executables', [
       { name: 'dup', pattern: example1.suite1.execPath },
@@ -706,7 +706,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(adapter.suite2.label, '2) dup');
   });
 
-  specify('duplicated suite names from same pattern', async function() {
+  specify('duplicated suite names from same pattern', async function () {
     this.slow(500);
     await settings.updateConfig('executables', { name: 'dup', pattern: 'dummy' });
 
@@ -729,7 +729,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(adapter.suite2.label, '2) dup');
   });
 
-  specify('duplicated suite names from different and same pattern', async function() {
+  specify('duplicated suite names from different and same pattern', async function () {
     this.slow(500);
     await settings.updateConfig('executables', [
       { name: 'dup', pattern: 'dummy' },
@@ -757,7 +757,7 @@ describe(path.basename(__filename), function() {
     assert.strictEqual(adapter.suite3.label, '3) dup');
   });
 
-  specify('duplicated executable from different and same pattern', async function() {
+  specify('duplicated executable from different and same pattern', async function () {
     this.slow(500);
     await settings.updateConfig('executables', [
       { name: 'name1 ${relPath}', pattern: 'dummy1' },

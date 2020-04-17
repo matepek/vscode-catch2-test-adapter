@@ -45,7 +45,7 @@ async function spawn(command: string, cwd: string, ...args: string[]): Promise<v
 
 ///
 
-describe(path.basename(__filename), function() {
+describe(path.basename(__filename), function () {
   async function compile(): Promise<void> {
     await fse.mkdirp(cppUri.fsPath);
 
@@ -60,7 +60,7 @@ describe(path.basename(__filename), function() {
 
   this.timeout(352000);
 
-  before(async function() {
+  before(async function () {
     const exec = ['suite1.exe', 'suite2.exe', 'suite3.exe', 'gtest1.exe'];
 
     for (const e of exec) {
@@ -75,7 +75,7 @@ describe(path.basename(__filename), function() {
     }
   });
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     await settings.resetConfig();
     await fse.remove(inWSTmp('.'));
     await fse.mkdirp(inWSTmp('.'));
@@ -83,11 +83,11 @@ describe(path.basename(__filename), function() {
 
   let adapter: TestAdapter;
 
-  afterEach(async function() {
+  afterEach(async function () {
     if (adapter !== undefined) await adapter.waitAndDispose(this);
   });
 
-  after(async function() {
+  after(async function () {
     await fse.remove(inWSTmp('.'));
     await settings.resetConfig();
   });
@@ -96,8 +96,8 @@ describe(path.basename(__filename), function() {
     return fse.copy(from, to);
   }
 
-  context('Catch2 tests', function() {
-    it('should be found and run withouth error', async function() {
+  context('Catch2 tests', function () {
+    it('should be found and run withouth error', async function () {
       if (process.env['TRAVIS'] == 'true') this.skip();
 
       this.timeout(8000);
@@ -149,7 +149,7 @@ describe(path.basename(__filename), function() {
       );
     });
 
-    it.skip('should be notified by watcher', async function() {
+    it.skip('should be notified by watcher', async function () {
       this.timeout(8000);
       this.slow(4000);
 
@@ -212,8 +212,8 @@ describe(path.basename(__filename), function() {
     });
   });
 
-  context('Google tests', function() {
-    it('should be found and run withouth error', async function() {
+  context('Google tests', function () {
+    it('should be found and run withouth error', async function () {
       if (process.env['TRAVIS'] == 'true') this.skip();
 
       this.timeout(8000);
@@ -242,8 +242,8 @@ describe(path.basename(__filename), function() {
     });
   });
 
-  context('doctest tests', function() {
-    it('should be found and run withouth error', async function() {
+  context('doctest tests', function () {
+    it('should be found and run withouth error', async function () {
       if (process.env['TRAVIS'] == 'true') this.skip();
 
       this.timeout(8000);
@@ -270,5 +270,45 @@ describe(path.basename(__filename), function() {
       await adapter.run([adapter.root.id]);
       assert.strictEqual(adapter.testStatesEvents.length - eventCount, 28, inspect(adapter.testStatesEvents));
     });
+  });
+
+  context('spawn parameter', function () {
+    const testWithArgC = function (count: number) {
+      return async function (): Promise<void> {
+        // FSWrapper spawnAsync uses cp.spawn too so it is convenient to use it for testing
+
+        const args = Array.from(Array(count).keys()).map(x => (x % 10).toString().repeat(10));
+
+        const res = await c2fs.spawnAsync(inCpp('echo_args.exe'), args);
+
+        const stdout = res.stdout.trimRight().split(/\r?\n/);
+
+        assert.deepStrictEqual(stdout, args);
+      };
+    };
+
+    it('should work with argc=10', testWithArgC(10));
+    it('should work with argc=100', testWithArgC(100));
+    it('should work with argc=1000', testWithArgC(1000));
+
+    const testWithLength = function (length: number) {
+      return async function (): Promise<void> {
+        // FSWrapper spawnAsync uses cp.spawn too so it is convenient to use it for testing
+
+        const args = ['x'.repeat(length)];
+
+        const res = await c2fs.spawnAsync(inCpp('echo_args.exe'), args);
+
+        const stdout = res.stdout.trimRight().split(/\r?\n/);
+
+        assert.deepStrictEqual(stdout, args);
+      };
+    };
+
+    it('should work with long argv.length=10', testWithLength(10));
+    it('should work with long argv.length=100', testWithLength(100));
+    it('should work with long argv.length=1000', testWithLength(1000));
+    it('should work with long argv.length=10000', testWithLength(1000));
+    it('should work with long argv.length=100000', testWithLength(10000));
   });
 });

@@ -1,22 +1,24 @@
-import { LogWrapper } from './LogWrapper';
+import { LoggerWrapper } from './LoggerWrapper';
 import * as vscode from 'vscode';
 import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
-import { AbstractTestSuiteInfo } from './AbstractTestSuiteInfo';
+import { AbstractRunnableSuite } from './AbstractRunnableSuite';
 import { TaskPool } from './TaskPool';
+
+type TestStateEmitterType = vscode.EventEmitter<
+  TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
+>;
 
 export class SharedVariables implements vscode.Disposable {
   private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
   public readonly taskPool: TaskPool;
 
   public constructor(
-    public readonly log: LogWrapper,
+    public readonly log: LoggerWrapper,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
-    public readonly testStatesEmitter: vscode.EventEmitter<
-      TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
-    >,
+    public readonly testStatesEmitter: TestStateEmitterType,
     public readonly loadWithTaskEmitter: vscode.EventEmitter<() => void | PromiseLike<void>>,
     public readonly sendTestEventEmitter: vscode.EventEmitter<TestEvent[]>,
-    public readonly retire: vscode.EventEmitter<AbstractTestSuiteInfo[]>,
+    public readonly retire: vscode.EventEmitter<AbstractRunnableSuite[]>,
     public rngSeed: string | number | null,
     public execWatchTimeout: number,
     public retireDebounceTime: number,

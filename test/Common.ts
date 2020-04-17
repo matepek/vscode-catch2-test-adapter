@@ -43,11 +43,7 @@ export const settings = new (class {
 
   // eslint-disable-next-line
   public updateConfig(key: string, value: any): Promise<void> {
-    return new Promise(r =>
-      this.getConfig()
-        .update(key, value)
-        .then(r),
-    );
+    return new Promise(r => this.getConfig().update(key, value).then(r));
   }
 
   public resetConfig(): Promise<void> {
@@ -304,6 +300,19 @@ export class TestAdapter extends my.TestAdapter {
       if (v.tooltip) v.tooltip = (v.tooltip as string).replace(/(Path|Cwd): .*/g, '$1: <masked>');
       return v;
     });
+  }
+
+  public testStatesEventsAssertDeepEqual(expected: object[]): void {
+    if (this._testStatesEvents.length != expected.length)
+      console.log(
+        `this._testStatesEvents.length(${this._testStatesEvents.length}) != expected.length(${expected.length})`,
+      );
+
+    const testStatesEvents = this.testStatesEvents;
+
+    for (let i = 0; i < expected.length; ++i) {
+      assert.deepStrictEqual(testStatesEvents[i], expected[i], `index: ${i}`);
+    }
   }
 
   public getTestStatesEventIndex(
