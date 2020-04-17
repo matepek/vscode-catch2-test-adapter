@@ -6,7 +6,7 @@ import * as xml2js from 'xml2js';
 import * as c2fs from '../FSWrapper';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
-import { AbstractSuite } from '../AbstractSuite';
+import { Suite } from '../Suite';
 import { Catch2Test } from './Catch2Test';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
@@ -27,7 +27,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
     super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(catch2Version));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: (AbstractSuite | AbstractTest)[]): void {
+  private _reloadFromString(testListOutput: string, oldChildren: (Suite | AbstractTest)[]): void {
     const lines = testListOutput.split(/\r?\n/);
 
     const startRe = /Matching test cases:/;
@@ -99,12 +99,12 @@ export class Catch2Suite extends AbstractRunnableSuite {
         ++i;
       }
 
-      let group: AbstractSuite = this as AbstractSuite;
-      let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldChildren;
+      let group: Suite = this as Suite;
+      let oldGroupChildren: (Suite | AbstractTest)[] = oldChildren;
 
       const addNewSubGroup = (label: string): void => {
         const oldGroup = this.findChildSuiteInArray(oldGroupChildren, v => v.label === label);
-        group = group.addChild(new AbstractSuite(this._shared, label, undefined, oldGroup));
+        group = group.addChild(new Suite(this._shared, label, undefined, oldGroup));
         oldGroupChildren = oldGroup ? oldGroup.children : [];
       };
 
@@ -192,7 +192,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
             group = found;
           } else {
             const oldGroup = this.findChildSuiteInArray(oldChildren, v => v.label === firstMatchGroup);
-            group = group.addChild(new AbstractSuite(this._shared, firstMatchGroup, undefined, oldGroup));
+            group = group.addChild(new Suite(this._shared, firstMatchGroup, undefined, oldGroup));
           }
         } else if (this.execInfo.groupUngroupablesTo) {
           setUngroupableGroup();
@@ -328,7 +328,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
       public buffer = '';
       public inTestCase = false;
       public currentChild: AbstractTest | undefined = undefined;
-      public route: AbstractSuite[] = [];
+      public route: Suite[] = [];
       public beforeFirstTestCase = true;
       public rngSeed: number | undefined = undefined;
       public unprocessedXmlTestCases: string[] = [];

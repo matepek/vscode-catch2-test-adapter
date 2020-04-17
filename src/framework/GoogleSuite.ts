@@ -3,7 +3,7 @@ import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
-import { AbstractSuite } from '../AbstractSuite';
+import { Suite } from '../Suite';
 import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
 import { GoogleTest } from './GoogleTest';
 import { Parser } from 'xml2js';
@@ -13,7 +13,7 @@ import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutab
 import { AbstractTest } from '../AbstractTest';
 
 export class GoogleSuite extends AbstractRunnableSuite {
-  public children: AbstractSuite[] = [];
+  public children: Suite[] = [];
 
   public constructor(
     shared: SharedVariables,
@@ -25,7 +25,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
     super(shared, label, desciption, execInfo, 'GoogleTest', version);
   }
 
-  private _reloadFromXml(xmlStr: string, oldChildren: AbstractSuite[]): void {
+  private _reloadFromXml(xmlStr: string, oldChildren: Suite[]): void {
     interface XmlObject {
       [prop: string]: any; //eslint-disable-line
     }
@@ -44,10 +44,10 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const suiteName = xml.testsuites.testsuite[i].$.name;
 
       const oldFixtureGroup = this.findChildSuiteInArray(oldChildren, v => v.label === suiteName);
-      const oldFixtureGroupChildren: (AbstractSuite | AbstractTest)[] = oldFixtureGroup ? oldFixtureGroup.children : [];
+      const oldFixtureGroupChildren: (Suite | AbstractTest)[] = oldFixtureGroup ? oldFixtureGroup.children : [];
 
       // we need the oldFixtureGroup.id because that preserves the node's expanded/collapsed state
-      const fixtureGroup = new AbstractSuite(this._shared, suiteName, undefined, oldFixtureGroup);
+      const fixtureGroup = new Suite(this._shared, suiteName, undefined, oldFixtureGroup);
       this.addChild(fixtureGroup);
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
@@ -60,12 +60,12 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const file = test.$.file ? this._findFilePath(test.$.file) : undefined;
         const line = test.$.line ? test.$.line - 1 : undefined;
 
-        let group: AbstractSuite = fixtureGroup;
-        let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldFixtureGroupChildren;
+        let group: Suite = fixtureGroup;
+        let oldGroupChildren: (Suite | AbstractTest)[] = oldFixtureGroupChildren;
 
         const addNewSubGroup = (label: string): void => {
           const oldGroup = this.findChildSuiteInArray(oldGroupChildren, v => v.label === label);
-          group = group.addChild(new AbstractSuite(this._shared, label, undefined, oldGroup));
+          group = group.addChild(new Suite(this._shared, label, undefined, oldGroup));
           oldGroupChildren = oldGroup ? oldGroup.children : [];
         };
 
@@ -129,7 +129,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
     }
   }
 
-  private _reloadFromStdOut(stdOutStr: string, oldChildren: AbstractSuite[]): void {
+  private _reloadFromStdOut(stdOutStr: string, oldChildren: Suite[]): void {
     this.children = [];
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -160,7 +160,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const oldGroup = oldChildren.find(v => v.label === suiteName);
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
-      const group = new AbstractSuite(this._shared, suiteName, undefined, oldGroup);
+      const group = new Suite(this._shared, suiteName, undefined, oldGroup);
 
       let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 
@@ -318,7 +318,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
       public buffer = '';
       public currentTestCaseNameFull: string | undefined = undefined;
       public currentChild: AbstractTest | undefined = undefined;
-      public route: AbstractSuite[] = [];
+      public route: Suite[] = [];
       public unprocessedTestCases: string[] = [];
       public processedTestCases: AbstractTest[] = [];
     })();

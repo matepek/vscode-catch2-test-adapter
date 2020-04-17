@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 import { TestInfo } from 'vscode-test-adapter-api';
 import { Executable } from './Executable';
-import { AbstractSuite } from './AbstractSuite';
+import { Suite } from './Suite';
 import { AbstractRunnableSuite } from './AbstractRunnableSuite';
 import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
 
-export class RootSuite extends AbstractSuite implements vscode.Disposable {
+export class RootSuite extends Suite implements vscode.Disposable {
   public readonly children: AbstractRunnableSuite[] = [];
   private _executables: Executable[] = [];
 
@@ -135,7 +135,7 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
     }
   }
 
-  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuite[], AbstractTest | undefined] {
+  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [Suite[], AbstractTest | undefined] {
     for (let i = 0; i < this.children.length; ++i) {
       const found = this.children[i].findRouteToTestInfo(pred);
       if (found[1] !== undefined) {
@@ -145,7 +145,7 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
     return [[], undefined];
   }
 
-  public findRouteToTest(idOrInfo: string | TestInfo): [AbstractSuite[], AbstractTest | undefined] {
+  public findRouteToTest(idOrInfo: string | TestInfo): [Suite[], AbstractTest | undefined] {
     if (typeof idOrInfo === 'string') return this.findRouteToTestInfo(x => x.id === idOrInfo);
     else return this.findRouteToTestInfo(x => x === idOrInfo);
   }

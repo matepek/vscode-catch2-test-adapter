@@ -6,7 +6,7 @@ import * as xml2js from 'xml2js';
 import * as c2fs from '../FSWrapper';
 import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
 import { AbstractTest } from '../AbstractTest';
-import { AbstractSuite } from '../AbstractSuite';
+import { Suite } from '../Suite';
 import { DOCTest } from './DOCTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
@@ -27,7 +27,7 @@ export class DOCSuite extends AbstractRunnableSuite {
     super(shared, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: (AbstractSuite | AbstractTest)[]): void {
+  private _reloadFromString(testListOutput: string, oldChildren: (Suite | AbstractTest)[]): void {
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
       if (err) {
@@ -46,12 +46,12 @@ export class DOCSuite extends AbstractRunnableSuite {
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      let group: AbstractSuite = this as AbstractSuite;
-      let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldChildren;
+      let group: Suite = this as Suite;
+      let oldGroupChildren: (Suite | AbstractTest)[] = oldChildren;
 
       const addNewSubGroup = (label: string): void => {
         const oldGroup = this.findChildSuiteInArray(oldGroupChildren, v => v.label === label);
-        group = group.addChild(new AbstractSuite(this._shared, label, undefined, oldGroup));
+        group = group.addChild(new Suite(this._shared, label, undefined, oldGroup));
         oldGroupChildren = oldGroup ? oldGroup.children : [];
       };
 
@@ -227,7 +227,7 @@ export class DOCSuite extends AbstractRunnableSuite {
       public buffer = '';
       public inTestCase = false;
       public currentChild: AbstractTest | undefined = undefined;
-      public route: AbstractSuite[] = [];
+      public route: Suite[] = [];
       public beforeFirstTestCase = true;
       public rngSeed: number | undefined = undefined;
       public unprocessedXmlTestCases: string[] = [];
