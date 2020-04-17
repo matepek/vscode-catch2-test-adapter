@@ -44,6 +44,12 @@ export abstract class AbstractRunnableSuite extends AbstractSuite {
       .catch(e => this._shared.log.exception(e));
   }
 
+  public labelPrefix = '';
+
+  public get label(): string {
+    return this.labelPrefix + super.label;
+  }
+
   public get tooltip(): string {
     return super.tooltip + '\n\nPath: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd;
   }
@@ -71,7 +77,7 @@ export abstract class AbstractRunnableSuite extends AbstractSuite {
 
       if (this._mtime !== undefined && this._mtime === mtime) {
         // skip
-        this._shared.log.debug('reloadTests was skipped due to mtime', this.origLabel, this.id);
+        this._shared.log.debug('reloadTests was skipped due to mtime', this.label, this.id);
       } else {
         this._mtime = mtime;
         return this._reloadChildren();
@@ -146,8 +152,8 @@ export abstract class AbstractRunnableSuite extends AbstractSuite {
   private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTest>): Promise<void> {
     const execParams = this.execInfo.prependTestRunningArgs.concat(this._getRunParams(childrenToRun));
 
-    this._shared.log.info('proc starting', this.origLabel);
-    this._shared.log.local.debug('proc starting', this.origLabel, execParams);
+    this._shared.log.info('proc starting', this.label);
+    this._shared.log.local.debug('proc starting', this.label, execParams);
 
     this.sendRunningEventIfNeeded();
 
@@ -158,8 +164,8 @@ export abstract class AbstractRunnableSuite extends AbstractSuite {
 
     this._runInfo = runInfo;
 
-    this._shared.log.info('proc started:', this.origLabel);
-    this._shared.log.local.debug('proc started:', this.origLabel, this.execInfo, execParams);
+    this._shared.log.info('proc started:', this.label);
+    this._shared.log.local.debug('proc started:', this.label, this.execInfo, execParams);
 
     runInfo.process.on('error', (err: Error) => {
       this._shared.log.error('process error event:', err, this);
@@ -173,7 +179,7 @@ export abstract class AbstractRunnableSuite extends AbstractSuite {
       });
 
       runInfo.process.once('close', (...args) => {
-        this._shared.log.local.debug('proc close:', this.origLabel, args);
+        this._shared.log.local.debug('proc close:', this.label, args);
         trigger('closed');
       });
 

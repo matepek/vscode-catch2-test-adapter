@@ -72,7 +72,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
         ]);
         return;
       }
-      const testNameAsId = lines[i++].substr(2);
+      const testName = lines[i++].substr(2);
 
       let filePath: string | undefined = undefined;
       let line: number | undefined = undefined;
@@ -104,16 +104,14 @@ export class Catch2Suite extends AbstractRunnableSuite {
       let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldChildren;
 
       const addNewSubGroup = (label: string): void => {
-        const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.origLabel === label);
+        const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.label === label);
         group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
         oldGroupChildren = oldGroup ? oldGroup.children : [];
       };
 
       const setUngroupableGroup = (): void => {
         if (this.execInfo.groupUngroupablesTo) {
-          const found = group.children.find(
-            v => v.type === 'suite' && v.origLabel === this.execInfo.groupUngroupablesTo,
-          );
+          const found = group.children.find(v => v.type === 'suite' && v.label === this.execInfo.groupUngroupablesTo);
           if (found && found.type == 'suite') {
             group = found;
           } else {
@@ -126,7 +124,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
         if (filePath) {
           this._shared.log.info('groupBySource');
           const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
-          const found = group.findGroup(v => v.origLabel === fileStr);
+          const found = group.findGroup(v => v.label === fileStr);
           if (fileStr.length > 0 && found) {
             group = found;
           } else {
@@ -149,7 +147,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
                 .filter(v => v != '[.]' && v != '[hide]')
                 .sort()
                 .join('');
-              const found = group.findGroup(v => v.origLabel === tagsStr);
+              const found = group.findGroup(v => v.label === tagsStr);
               if (found) {
                 group = found;
               } else {
@@ -168,7 +166,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
                 if (foundCombo) {
                   const comboStr = foundCombo.join('');
 
-                  const found = group.findGroup(v => v.origLabel === comboStr);
+                  const found = group.findGroup(v => v.label === comboStr);
                   if (found) {
                     group = found;
                   } else {
@@ -187,14 +185,14 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
       if (this.execInfo.groupBySingleRegex) {
         this._shared.log.info('groupBySingleRegex');
-        const match = testNameAsId.match(this.execInfo.groupBySingleRegex);
+        const match = testName.match(this.execInfo.groupBySingleRegex);
         if (match && match[1]) {
           const firstMatchGroup = match[1];
-          const found = group.findGroup(v => v.origLabel === firstMatchGroup);
+          const found = group.findGroup(v => v.label === firstMatchGroup);
           if (found) {
             group = found;
           } else {
-            const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === firstMatchGroup);
+            const oldGroup = this.findGroupInArray(oldChildren, v => v.label === firstMatchGroup);
             group = group.addChild(new GroupSuite(this._shared, firstMatchGroup, oldGroup));
           }
         } else if (this.execInfo.groupUngroupablesTo) {
@@ -202,12 +200,12 @@ export class Catch2Suite extends AbstractRunnableSuite {
         }
       }
 
-      const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
+      const old = this.findTestInfoInArray(oldChildren, v => v.testName === testName);
 
       const test = new Catch2Test(
         this._shared,
         old ? old.id : undefined,
-        testNameAsId,
+        testName,
         description,
         tags,
         filePath,
@@ -224,7 +222,6 @@ export class Catch2Suite extends AbstractRunnableSuite {
   protected async _reloadChildren(): Promise<void> {
     const oldChildren = this.children;
     this.children = [];
-    this.label = this.origLabel;
 
     const cacheFile = this.execInfo.path + '.cache.txt';
 
@@ -381,7 +378,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
             const [route, testInfo] = this.findRouteToTestInfo(v => {
               // xml output trimmes the name of the test
-              return v.testNameAsId.trim() == name;
+              return v.testName.trim() == name;
             });
 
             if (testInfo !== undefined) {
@@ -389,7 +386,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
               data.route = route;
 
               data.currentChild = testInfo;
-              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
+              this._shared.log.info('Test', data.currentChild.testName, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
               this._shared.log.info('TestCase not found in children', name);
@@ -404,7 +401,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
             const testCaseXml = data.buffer.substring(0, b + endTestCase.length);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
+              this._shared.log.info('Test ', data.currentChild.testName, 'has finished.');
               try {
                 const ev = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
 
@@ -530,7 +527,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
                 if (name === undefined) break;
 
                 // xml output trimmes the name of the test
-                const currentChild = this.findTestInfo(v => v.testNameAsId.trim() == name);
+                const currentChild = this.findTestInfo(v => v.testName.trim() == name);
 
                 if (currentChild === undefined) break;
 

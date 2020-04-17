@@ -68,7 +68,7 @@ export class Catch2Test extends AbstractTest {
 
   public getEscapedTestName(): string {
     /* ',' has special meaning */
-    let t = this.testNameAsId;
+    let t = this.testName;
     t = t.replace(/,/g, '\\,');
     t = t.replace(/\[/g, '\\[');
     t = t.replace(/\*/g, '\\*');

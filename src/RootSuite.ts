@@ -90,12 +90,7 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
         return suite.execInfo.path == s.execInfo.path;
       });
       if (other) {
-        this._shared.log.warn(
-          'execPath duplication: suite is skipped:',
-          suite.execInfo.path,
-          suite.origLabel,
-          other.origLabel,
-        );
+        this._shared.log.warn('execPath duplication: suite is skipped:', suite.execInfo.path, suite.label, other.label);
         return false;
       }
     }
@@ -121,11 +116,12 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
     const uniqueNames = new Map<string /* name */, AbstractRunnableSuite[]>();
 
     for (const suite of this.children) {
-      const suites = uniqueNames.get(suite.origLabel);
+      suite.labelPrefix = '';
+      const suites = uniqueNames.get(suite.label);
       if (suites) {
         suites.push(suite);
       } else {
-        uniqueNames.set(suite.origLabel, [suite]);
+        uniqueNames.set(suite.label, [suite]);
       }
     }
 
@@ -133,7 +129,7 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
       if (suites.length > 1) {
         let i = 1;
         for (const suite of suites) {
-          suite.label = String(i++) + ') ' + suite.origLabel;
+          suite.labelPrefix = String(i++) + ') ';
         }
       }
     }

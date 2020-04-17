@@ -44,7 +44,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
     for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
       const suiteName = xml.testsuites.testsuite[i].$.name;
 
-      const oldFixtureGroup = this.findGroupInArray(oldChildren, v => v.origLabel === suiteName);
+      const oldFixtureGroup = this.findGroupInArray(oldChildren, v => v.label === suiteName);
       const oldFixtureGroupChildren: (AbstractSuite | AbstractTest)[] = oldFixtureGroup ? oldFixtureGroup.children : [];
 
       // we need the oldFixtureGroup.id because that preserves the node's expanded/collapsed state
@@ -65,16 +65,14 @@ export class GoogleSuite extends AbstractRunnableSuite {
         let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldFixtureGroupChildren;
 
         const addNewSubGroup = (label: string): void => {
-          const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.origLabel === label);
+          const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.label === label);
           group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
           oldGroupChildren = oldGroup ? oldGroup.children : [];
         };
 
         const setUngroupableGroup = (): void => {
           if (this.execInfo.groupUngroupablesTo) {
-            const found = group.children.find(
-              v => v.type === 'suite' && v.origLabel === this.execInfo.groupUngroupablesTo,
-            );
+            const found = group.children.find(v => v.type === 'suite' && v.label === this.execInfo.groupUngroupablesTo);
             if (found && found.type == 'suite') {
               group = found;
             } else {
@@ -87,7 +85,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
           if (file) {
             this._shared.log.info('groupBySource');
             const fileStr = this.execInfo.getSourcePartForGrouping(file);
-            const found = group.findGroup(v => v.origLabel === fileStr);
+            const found = group.findGroup(v => v.label === fileStr);
             if (fileStr.length > 0 && found) {
               group = found;
             } else {
@@ -103,7 +101,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
           const match = testName.match(this.execInfo.groupBySingleRegex);
           if (match && match[1]) {
             const firstMatchGroup = match[1];
-            const found = group.findGroup(v => v.origLabel === firstMatchGroup);
+            const found = group.findGroup(v => v.label === firstMatchGroup);
             if (found) {
               group = found;
             } else {
@@ -114,7 +112,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
           }
         }
 
-        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
+        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testName === testNameAsId);
 
         group.addChild(
           new GoogleTest(
@@ -129,12 +127,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
           ),
         );
       }
-
-      if (
-        fixtureGroup.children.length &&
-        fixtureGroup.children.every(c => c.description === fixtureGroup.children[0].description)
-      )
-        fixtureGroup.description = fixtureGroup.children[0].description;
     }
   }
 
@@ -166,7 +158,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const suiteName = testGroupMatch[1];
       const typeParam: string | undefined = testGroupMatch[3];
 
-      const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
+      const oldGroup = oldChildren.find(v => v.label === suiteName);
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
       const group = new GroupSuite(this._shared, suiteName, oldGroup);
@@ -180,7 +172,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const valueParam: string | undefined = testMatch[3];
         const testNameAsId = testGroupName + '.' + testMatch[1];
 
-        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
+        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testName === testNameAsId);
 
         group.addChild(
           new GoogleTest(
@@ -198,9 +190,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
         testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
       }
 
-      if (group.children.length && group.children.every(c => c.description === group.children[0].description))
-        group.description = group.children[0].description;
-
       if (group.children.length > 0) this.addChild(group);
       else this._shared.log.error('group without test', this, group, lines);
 
@@ -211,7 +200,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
   protected async _reloadChildren(): Promise<void> {
     const oldChildren = this.children;
     this.children = [];
-    this.label = this.origLabel;
 
     const cacheFile = this.execInfo.path + '.cache.xml';
 
@@ -241,7 +229,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
       )
       .then(async googleTestListOutput => {
         this.children = [];
-        this.label = this.origLabel;
 
         if (googleTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
           this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
@@ -306,7 +293,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
     const execParams: string[] = ['--gtest_color=no'];
 
     if (childrenToRun !== 'runAllTestsExceptSkipped') {
-      const testNames = [...childrenToRun].map(c => c.testNameAsId);
+      const testNames = [...childrenToRun].map(c => c.testName);
 
       execParams.push('--gtest_filter=' + testNames.join(':'));
 
@@ -353,14 +340,14 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
             data.currentTestCaseNameFull = m[1];
 
-            const [route, testInfo] = this.findRouteToTestInfo(v => v.testNameAsId == data.currentTestCaseNameFull);
+            const [route, testInfo] = this.findRouteToTestInfo(v => v.testName == data.currentTestCaseNameFull);
 
             if (testInfo !== undefined) {
               this.sendMinimalEventsIfNeeded(data.route, route);
               data.route = route;
 
               data.currentChild = testInfo;
-              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
+              this._shared.log.info('Test', data.currentChild.testName, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
               this._shared.log.info('TestCase not found in children', data.currentTestCaseNameFull);
@@ -379,7 +366,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
             const testCase = data.buffer.substring(0, m.index! + m[0].length);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
+              this._shared.log.info('Test ', data.currentChild.testName, 'has finished.');
               try {
                 const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo);
 
@@ -497,7 +484,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
                 const testNameAsId = m[1];
 
-                const currentChild = this.findTestInfo(v => v.testNameAsId == testNameAsId);
+                const currentChild = this.findTestInfo(v => v.testName == testNameAsId);
                 if (currentChild === undefined) break;
                 try {
                   const ev = currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo);

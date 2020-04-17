@@ -9,10 +9,10 @@ import { GroupSuite } from './GroupSuite';
 export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
   public readonly id: string;
-  public readonly origLabel: string;
   public readonly description: string;
   public readonly tooltip: string;
   public readonly file: string | undefined;
+  public readonly line: number | undefined;
 
   public lastRunEvent: TestEvent | undefined = undefined;
   public lastRunMilisec: number | undefined = undefined;
@@ -20,20 +20,25 @@ export abstract class AbstractTest implements TestInfo {
   protected constructor(
     protected readonly _shared: SharedVariables,
     id: string | undefined,
-    public readonly testNameAsId: string,
-    public readonly label: string,
+    public readonly testName: string,
+    private readonly _label: string,
     public readonly skipped: boolean,
     file: string | undefined,
-    public readonly line: number | undefined,
+    line: number | undefined,
     description: string | undefined,
     tooltip: string | undefined,
   ) {
     this.id = id ? id : generateId();
-    this.origLabel = label;
     this.description = description ? description : '';
     this.file = file ? path.normalize(file) : undefined;
-    this.tooltip = 'Name: ' + testNameAsId + (tooltip ? '\n' + tooltip : '');
+    this.line = file ? line : undefined;
+    this.tooltip = 'Name: ' + testName + (tooltip ? '\n' + tooltip : '');
     if (line && line < 0) throw Error('line smaller than zero');
+  }
+
+  public get label(): string {
+    // TODO if force ignore
+    return this._label;
   }
 
   public getStartEvent(): TestEvent {
@@ -95,11 +100,11 @@ export abstract class AbstractTest implements TestInfo {
     return undefined;
   }
 
-  // public collectTestInfoToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
-  //   if (!this.ignored && ((isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1)) {
-  //     return [this];
-  //   } else {
-  //     return [];
-  //   }
-  // }
+  public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
+    if (/*!this._forceIgnore && */ (isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1) {
+      return [this];
+    } else {
+      return [];
+    }
+  }
 }

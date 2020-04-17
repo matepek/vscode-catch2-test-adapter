@@ -41,7 +41,7 @@ export class DOCSuite extends AbstractRunnableSuite {
     for (let i = 0; i < res.doctest.TestCase.length; ++i) {
       const testCase = res.doctest.TestCase[i].$;
 
-      const testNameAsId = testCase.name;
+      const testName = testCase.name;
       const filePath: string | undefined = testCase.filename ? this._findFilePath(testCase.filename) : undefined;
       const line: number | undefined = testCase.line !== undefined ? Number(testCase.line) - 1 : undefined;
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
@@ -51,16 +51,14 @@ export class DOCSuite extends AbstractRunnableSuite {
       let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldChildren;
 
       const addNewSubGroup = (label: string): void => {
-        const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.origLabel === label);
+        const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.label === label);
         group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
         oldGroupChildren = oldGroup ? oldGroup.children : [];
       };
 
       const setUngroupableGroup = (): void => {
         if (this.execInfo.groupUngroupablesTo) {
-          const found = group.children.find(
-            v => v.type === 'suite' && v.origLabel === this.execInfo.groupUngroupablesTo,
-          );
+          const found = group.children.find(v => v.type === 'suite' && v.label === this.execInfo.groupUngroupablesTo);
           if (found && found.type == 'suite') {
             group = found;
           } else {
@@ -73,7 +71,7 @@ export class DOCSuite extends AbstractRunnableSuite {
         if (filePath) {
           this._shared.log.info('groupBySource');
           const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
-          const found = group.findGroup(v => v.origLabel === fileStr);
+          const found = group.findGroup(v => v.label === fileStr);
           if (fileStr.length > 0 && found) {
             group = found;
           } else {
@@ -86,10 +84,10 @@ export class DOCSuite extends AbstractRunnableSuite {
 
       if (this.execInfo.groupBySingleRegex) {
         this._shared.log.info('groupBySingleRegex');
-        const match = testNameAsId.match(this.execInfo.groupBySingleRegex);
+        const match = testName.match(this.execInfo.groupBySingleRegex);
         if (match && match[1]) {
           const firstMatchGroup = match[1];
-          const found = group.findGroup(v => v.origLabel === firstMatchGroup);
+          const found = group.findGroup(v => v.label === firstMatchGroup);
           if (found) {
             group = found;
           } else {
@@ -100,12 +98,12 @@ export class DOCSuite extends AbstractRunnableSuite {
         }
       }
 
-      const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
+      const old = this.findTestInfoInArray(oldChildren, v => v.testName === testName);
 
       const test = new DOCTest(
         this._shared,
         undefined,
-        testNameAsId,
+        testName,
         suite !== undefined ? `[${suite}]` : undefined,
         skipped,
         filePath,
@@ -120,7 +118,6 @@ export class DOCSuite extends AbstractRunnableSuite {
   protected async _reloadChildren(): Promise<void> {
     const oldChildren = this.children;
     this.children = [];
-    this.label = this.origLabel;
 
     const cacheFile = this.execInfo.path + '.cache.txt';
 
@@ -287,20 +284,20 @@ export class DOCSuite extends AbstractRunnableSuite {
 
             data.beforeFirstTestCase = false;
 
-            const [route, testInfo] = this.findRouteToTestInfo(v => v.testNameAsId == name);
+            const [route, testInfo] = this.findRouteToTestInfo(v => v.testName == name);
 
             if (testInfo !== undefined) {
               this.sendMinimalEventsIfNeeded(data.route, route);
               data.route = route;
 
               data.currentChild = testInfo;
-              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
+              this._shared.log.info('Test', data.currentChild.testName, 'has started.');
 
               if (!skipped) {
                 this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
                 data.buffer = data.buffer.substr(m.index!);
               } else {
-                this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has skipped.');
+                this._shared.log.info('Test ', data.currentChild.testName, 'has skipped.');
 
                 // this always comes so we skip it
                 //const testCaseXml = m[0];
@@ -335,7 +332,7 @@ export class DOCSuite extends AbstractRunnableSuite {
             const testCaseXml = data.buffer.substring(0, b + endTestCase.length);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
+              this._shared.log.info('Test ', data.currentChild.testName, 'has finished.');
               try {
                 const ev = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
 
@@ -462,7 +459,7 @@ export class DOCSuite extends AbstractRunnableSuite {
                 if (name === undefined) break;
 
                 // xml output trimmes the name of the test
-                const currentChild = this.findTestInfo(v => v.testNameAsId === name);
+                const currentChild = this.findTestInfo(v => v.testName === name);
 
                 if (currentChild === undefined) break;
 

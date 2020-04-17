@@ -460,7 +460,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
         const items: QuickPickItem[] = [
           {
-            label: testInfo.origLabel,
+            label: testInfo.label,
             sectionStack: [],
             description: 'Select the section combo you wish to debug or choose this to debug all of it.',
           },

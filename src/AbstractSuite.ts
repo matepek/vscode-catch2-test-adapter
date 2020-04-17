@@ -10,20 +10,28 @@ import { GroupSuite } from './GroupSuite';
 export abstract class AbstractSuite implements TestSuiteInfo {
   public readonly type: 'suite' = 'suite';
   public readonly id: string;
-  public readonly origLabel: string;
   public children: (AbstractSuite | AbstractTest)[] = [];
-  private _tooltip: string;
   private _runningCounter = 0;
 
   public constructor(
     protected readonly _shared: SharedVariables,
-    public label: string,
-    public description: string | undefined,
+    private readonly _label: string,
+    private readonly _description: string | undefined,
     id: string | undefined,
   ) {
-    this.origLabel = label;
     this.id = id !== undefined ? id : generateId();
-    this._tooltip = 'Name: ' + this.origLabel + (description ? '\nDescription: ' + description : '');
+  }
+
+  public get label(): string {
+    return this._label;
+  }
+
+  public get description(): string | undefined {
+    return this._description;
+  }
+
+  public get tooltip(): string {
+    return 'Name: ' + this._label + (this._description ? '\nDescription: ' + this._description : '');
   }
 
   public get file(): string | undefined {
@@ -68,17 +76,13 @@ export abstract class AbstractSuite implements TestSuiteInfo {
     }
   }
 
-  public get tooltip(): string {
-    return this._tooltip;
-  }
-
   private _getRunningEvent(): TestSuiteEvent {
     return { type: 'suite', suite: this, state: 'running' };
   }
 
   public sendRunningEventIfNeeded(): void {
     if (this._runningCounter++ === 0) {
-      this._shared.log.local.debug('Suite running event fired', this.label, this.origLabel);
+      this._shared.log.local.debug('Suite running event fired', this.label);
       this._shared.testStatesEmitter.fire(this._getRunningEvent());
     }
   }
@@ -128,7 +132,7 @@ export abstract class AbstractSuite implements TestSuiteInfo {
       return;
     }
     if (this._runningCounter-- === 1) {
-      this._shared.log.local.debug('Suite completed event fired', this.label, this.origLabel);
+      this._shared.log.local.debug('Suite completed event fired', this.label);
       this._shared.testStatesEmitter.fire(this._getCompletedEvent());
     }
   }
@@ -233,13 +237,13 @@ export abstract class AbstractSuite implements TestSuiteInfo {
   }
 
   /** If the return value is not empty then we should run the parent */
-  // public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
-  //   const isCurrParentIn = isParentIn || tests.indexOf(this.id) != -1;
+  public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
+    const isCurrParentIn = isParentIn || tests.indexOf(this.id) != -1;
 
-  //   return this.children
-  //     .map(v => v.collectTestToRun(tests, isCurrParentIn))
-  //     .reduce((prev: AbstractTest[], curr: AbstractTest[]) => prev.concat(...curr), []);
-  // }
+    return this.children
+      .map(v => v.collectTestToRun(tests, isCurrParentIn))
+      .reduce((prev: AbstractTest[], curr: AbstractTest[]) => prev.concat(...curr), []);
+  }
 
   public getTestInfoCount(countSkipped: boolean): number {
     let count = 0;
