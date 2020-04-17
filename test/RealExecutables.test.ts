@@ -281,7 +281,7 @@ describe(path.basename(__filename), function () {
 
         const res = await c2fs.spawnAsync(inCpp('echo_args.exe'), args);
 
-        const stdout = res.stdout.trimRight().split('\n');
+        const stdout = res.stdout.trimRight().split(/\r?\n/);
 
         assert.deepStrictEqual(stdout, args);
       };
@@ -299,7 +299,7 @@ describe(path.basename(__filename), function () {
 
         const res = await c2fs.spawnAsync(inCpp('echo_args.exe'), args);
 
-        const stdout = res.stdout.trimRight().split('\n');
+        const stdout = res.stdout.trimRight().split(/\r?\n/);
 
         assert.deepStrictEqual(stdout, args);
       };
