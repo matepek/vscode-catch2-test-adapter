@@ -288,7 +288,6 @@ describe(path.basename(__filename), function () {
     };
 
     it('should work with argc=10', testWithArgC(10));
-    it('should work with argc=100', testWithArgC(100));
     it('should work with argc=1000', testWithArgC(1000));
 
     const testWithLength = function (length: number) {
@@ -306,9 +305,6 @@ describe(path.basename(__filename), function () {
     };
 
     it('should work with long argv.length=10', testWithLength(10));
-    it('should work with long argv.length=100', testWithLength(100));
-    it('should work with long argv.length=1000', testWithLength(1000));
-    it('should work with long argv.length=10000', testWithLength(1000));
     it('should work with long argv.length=100000', testWithLength(10000));
   });
 });

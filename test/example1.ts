@@ -188,7 +188,7 @@ export const example1 = new (class {
       assert.equal(suite.type, 'suite');
       assert.equal(suite.label, label);
       assert.equal(suite.file, 'suite1.cpp');
-      assert.equal(suite.line, 0);
+      assert.equal(suite.line, 6);
       assert.equal(suite.children.length, 2);
       assert.equal(childLabels.length, suite.children.length);
       this.t1.assert(childLabels[0], suite.children[0] as TestInfo, uniqeIdContainer);
@@ -367,7 +367,7 @@ export const example1 = new (class {
       assert.equal(suite.type, 'suite');
       assert.equal(suite.label, label);
       assert.equal(suite.file, 'suite2.cpp');
-      assert.equal(suite.line, 0);
+      assert.equal(suite.line, 6);
       assert.equal(suite.children.length, 3);
       assert.equal(childLabels.length, suite.children.length);
       this.t1.assert(childLabels[0], childDescs[0], suite.children[0] as TestInfo, uniqeIdContainer);

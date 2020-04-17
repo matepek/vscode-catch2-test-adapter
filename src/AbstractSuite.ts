@@ -12,8 +12,6 @@ export abstract class AbstractSuite implements TestSuiteInfo {
   public readonly id: string;
   public readonly origLabel: string;
   public children: (AbstractSuite | AbstractTest)[] = [];
-  public file?: string;
-  public line?: number;
   private _tooltip: string;
   private _runningCounter = 0;
 
@@ -26,6 +24,48 @@ export abstract class AbstractSuite implements TestSuiteInfo {
     this.origLabel = label;
     this.id = id !== undefined ? id : generateId();
     this._tooltip = 'Name: ' + this.origLabel + (description ? '\nDescription: ' + description : '');
+  }
+
+  public get file(): string | undefined {
+    this._calculateFileAndLine();
+    return this._file!;
+  }
+
+  public get line(): number | undefined {
+    this._calculateFileAndLine();
+    return this._line!;
+  }
+
+  private _file: null | string | undefined = null; // null means has to be calculated
+  private _line: null | number | undefined = null; // null means has to be calculated
+
+  private _calculateFileAndLine(): void {
+    if (this._file === null || this._line === null) {
+      this._file = undefined;
+      this._line = undefined;
+
+      if (this.children.length === 0) return;
+
+      const children = this.children.map(v => {
+        return {
+          file: v.file,
+          line: v.line,
+        };
+      });
+
+      if (children.some(v => children[0].file !== v.file)) return;
+
+      this._file = children[0].file;
+
+      if (this._file === undefined) return;
+
+      this._line = children
+        .filter(v => v.line !== undefined)
+        .reduce(
+          (prev, curr) => (curr.line === undefined ? prev : prev === 0 ? curr.line : Math.min(prev, curr.line)),
+          0,
+        );
+    }
   }
 
   public get tooltip(): string {
@@ -120,17 +160,8 @@ export abstract class AbstractSuite implements TestSuiteInfo {
       return;
     }
 
-    if (child.file !== undefined) {
-      if (this.children.length == 0) {
-        this.file = child.file;
-        this.line = child.line ? child.line : 0;
-      } else if (this.file === child.file) {
-        this.line = child.line && this.line && child.line < this.line ? child.line : this.line;
-      } else {
-        delete this.file;
-        delete this.line;
-      }
-    }
+    this._file = null;
+    this._line = null;
 
     this.children.push(child);
   }
@@ -200,6 +231,15 @@ export abstract class AbstractSuite implements TestSuiteInfo {
     }
     return undefined;
   }
+
+  /** If the return value is not empty then we should run the parent */
+  // public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
+  //   const isCurrParentIn = isParentIn || tests.indexOf(this.id) != -1;
+
+  //   return this.children
+  //     .map(v => v.collectTestToRun(tests, isCurrParentIn))
+  //     .reduce((prev: AbstractTest[], curr: AbstractTest[]) => prev.concat(...curr), []);
+  // }
 
   public getTestInfoCount(countSkipped: boolean): number {
     let count = 0;

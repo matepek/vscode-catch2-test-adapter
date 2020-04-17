@@ -94,4 +94,12 @@ export abstract class AbstractTest implements TestInfo {
   public findGroup(_pred: (v: GroupSuite) => boolean): undefined {
     return undefined;
   }
+
+  // public collectTestInfoToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
+  //   if (!this.ignored && ((isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1)) {
+  //     return [this];
+  //   } else {
+  //     return [];
+  //   }
+  // }
 }

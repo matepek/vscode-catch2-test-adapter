@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.1]
+
+Pesky bug fixes.
+
 ## [2.9.0] - 2020-04-17
 
 ### Added
@@ -19,18 +23,24 @@ Examples:
 	{
 		"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
     "catch2": {
-      groupBySource: "[-3:]",
-      "groupByTags": true, // or ["[1][2]", "[2]", "[3]"],
-      "groupBySingleRegex": "(apple|peach)",
-      "groupUngroupablesTo": "ungrouped"
+      "testGrouping": {
+        "groupBySource": "[-3:]",
+        "groupByTags": true, // or ["[1][2]", "[2]", "[3]"],
+        "groupBySingleRegex": "(apple|peach)",
+        "groupUngroupablesTo": "ungrouped"
+      }
     },
     "gtest": {
-      "groupBySource": "[-3:-1]",
-      "groupBySingleRegex": "(?:good|bad) (apple|peach)"
+      "testGrouping": {
+        "groupBySource": "[-3:-1]",
+        "groupBySingleRegex": "(?:good|bad) (apple|peach)"
+      }
     },
     "doctest": {
-      "groupBySource": "[-1]",
-      "groupBySingleRegex": "(apple|peach)"
+      "testGrouping": {
+        "groupBySource": "[-1]",
+        "groupBySingleRegex": "(apple|peach)"
+      }
     }
 	}
 ]

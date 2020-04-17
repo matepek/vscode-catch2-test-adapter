@@ -14,6 +14,14 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
     super(shared, 'Catch2/GTest/DOCTest', undefined, id);
   }
 
+  public get file(): string | undefined {
+    return undefined;
+  }
+
+  public get line(): number | undefined {
+    return undefined;
+  }
+
   public dispose(): void {
     this._executables.forEach(e => e.dispose());
   }
@@ -93,9 +101,6 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
     }
 
     super._addChild(suite);
-
-    this.file = undefined;
-    this.line = undefined;
 
     uniquifyLabels && this.uniquifySuiteLabels();
 
