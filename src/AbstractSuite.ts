@@ -3,11 +3,10 @@ import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
 import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTest } from './AbstractTest';
-import { GroupSuite } from './GroupSuite';
 
 ///
 
-export abstract class AbstractSuite implements TestSuiteInfo {
+export class AbstractSuite implements TestSuiteInfo {
   public readonly type: 'suite' = 'suite';
   public readonly id: string;
   public children: (AbstractSuite | AbstractTest)[] = [];
@@ -175,6 +174,15 @@ export abstract class AbstractSuite implements TestSuiteInfo {
     return child;
   }
 
+  // protected _addSubGroup(
+  //   label: string,
+  //   oldGroups: (AbstractSuite | AbstractTest)[],
+  // ): [GroupSuite, (AbstractSuite | AbstractTest)[]] {
+  //   const old: AbstractSuite | undefined = oldGroups.find(v => v.type === 'suite' && v.label === label);
+  //   const newG = this.addChild(new GroupSuite(this._shared, label, old));
+  //   return [newG, old ? old.children : []];
+  // }
+
   public enumerateDescendants(fn: (v: AbstractSuite | AbstractTest) => void): void {
     this.enumerateChildren(child => {
       fn(child);
@@ -221,17 +229,16 @@ export abstract class AbstractSuite implements TestSuiteInfo {
     return undefined;
   }
 
-  public findGroup(pred: (v: GroupSuite) => boolean): GroupSuite | undefined {
-    return this.findGroupInArray(this.children, pred);
+  public findChildSuite(pred: (v: AbstractSuite) => boolean): AbstractSuite | undefined {
+    return this.findChildSuiteInArray(this.children, pred);
   }
 
-  public findGroupInArray(
+  public findChildSuiteInArray(
     array: (AbstractSuite | AbstractTest)[],
-    pred: (v: GroupSuite) => boolean,
-  ): GroupSuite | undefined {
+    pred: (v: AbstractSuite) => boolean,
+  ): AbstractSuite | undefined {
     for (let i = 0; i < array.length; i++) {
-      const res = array[i].findGroup(pred);
-      if (res !== undefined) return res;
+      if (array[i].type === 'suite' && pred(array[i] as AbstractSuite)) return array[i] as AbstractSuite;
     }
     return undefined;
   }

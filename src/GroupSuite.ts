@@ -5,12 +5,7 @@ import { SharedVariables } from './SharedVariables';
 export class GroupSuite extends AbstractSuite {
   public children: AbstractTest[] = [];
 
-  public constructor(shared: SharedVariables, label: string, old?: GroupSuite) {
+  public constructor(shared: SharedVariables, label: string, old?: AbstractSuite) {
     super(shared, label, undefined, old ? old.id : undefined);
-  }
-
-  public findGroup(pred: (v: GroupSuite) => boolean): GroupSuite | undefined {
-    if (pred(this)) return this;
-    else return super.findGroup(pred);
   }
 }

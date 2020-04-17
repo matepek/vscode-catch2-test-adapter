@@ -51,7 +51,7 @@ export class DOCSuite extends AbstractRunnableSuite {
       let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldChildren;
 
       const addNewSubGroup = (label: string): void => {
-        const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.label === label);
+        const oldGroup = this.findChildSuiteInArray(oldGroupChildren, v => v.label === label);
         group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
         oldGroupChildren = oldGroup ? oldGroup.children : [];
       };
@@ -71,7 +71,7 @@ export class DOCSuite extends AbstractRunnableSuite {
         if (filePath) {
           this._shared.log.info('groupBySource');
           const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
-          const found = group.findGroup(v => v.label === fileStr);
+          const found = group.findChildSuite(v => v.label === fileStr);
           if (fileStr.length > 0 && found) {
             group = found;
           } else {
@@ -87,7 +87,7 @@ export class DOCSuite extends AbstractRunnableSuite {
         const match = testName.match(this.execInfo.groupBySingleRegex);
         if (match && match[1]) {
           const firstMatchGroup = match[1];
-          const found = group.findGroup(v => v.label === firstMatchGroup);
+          const found = group.findChildSuite(v => v.label === firstMatchGroup);
           if (found) {
             group = found;
           } else {
