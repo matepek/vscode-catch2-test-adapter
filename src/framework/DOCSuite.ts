@@ -49,35 +49,22 @@ export class DOCSuite extends AbstractRunnableSuite {
       let group: Suite = this as Suite;
       let oldGroupChildren: (Suite | AbstractTest)[] = oldChildren;
 
-      const addNewSubGroup = (label: string): void => {
-        const oldGroup = this.findChildSuiteInArray(oldGroupChildren, v => v.label === label);
-        group = group.addChild(new Suite(this._shared, label, undefined, oldGroup));
-        oldGroupChildren = oldGroup ? oldGroup.children : [];
+      const getOrCreateChildSuite = (label: string): void => {
+        [group, oldGroupChildren] = group.getOrCreateChildSuite(label, oldGroupChildren);
       };
 
-      const setUngroupableGroup = (): void => {
-        if (this.execInfo.groupUngroupablesTo) {
-          const found = group.children.find(v => v.type === 'suite' && v.label === this.execInfo.groupUngroupablesTo);
-          if (found && found.type == 'suite') {
-            group = found;
-          } else {
-            addNewSubGroup(this.execInfo.groupUngroupablesTo);
-          }
-        }
+      const setUngroupableGroupIfEnabled = (): void => {
+        if (this.execInfo.groupUngroupablesTo)
+          [group, oldGroupChildren] = group.getOrCreateChildSuite(this.execInfo.groupUngroupablesTo, oldGroupChildren);
       };
 
       if (this.execInfo.groupBySource) {
         if (filePath) {
           this._shared.log.info('groupBySource');
           const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
-          const found = group.findChildSuite(v => v.label === fileStr);
-          if (fileStr.length > 0 && found) {
-            group = found;
-          } else {
-            addNewSubGroup(fileStr);
-          }
-        } else if (this.execInfo.groupUngroupablesTo) {
-          setUngroupableGroup();
+          getOrCreateChildSuite(fileStr);
+        } else {
+          setUngroupableGroupIfEnabled();
         }
       }
 
@@ -86,14 +73,9 @@ export class DOCSuite extends AbstractRunnableSuite {
         const match = testName.match(this.execInfo.groupBySingleRegex);
         if (match && match[1]) {
           const firstMatchGroup = match[1];
-          const found = group.findChildSuite(v => v.label === firstMatchGroup);
-          if (found) {
-            group = found;
-          } else {
-            addNewSubGroup(firstMatchGroup);
-          }
-        } else if (this.execInfo.groupUngroupablesTo) {
-          setUngroupableGroup();
+          getOrCreateChildSuite(firstMatchGroup);
+        } else {
+          setUngroupableGroupIfEnabled();
         }
       }
 

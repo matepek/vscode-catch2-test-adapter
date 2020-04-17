@@ -43,12 +43,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
     for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
       const suiteName = xml.testsuites.testsuite[i].$.name;
 
-      const oldFixtureGroup = this.findChildSuiteInArray(oldChildren, v => v.label === suiteName);
-      const oldFixtureGroupChildren: (Suite | AbstractTest)[] = oldFixtureGroup ? oldFixtureGroup.children : [];
-
-      // we need the oldFixtureGroup.id because that preserves the node's expanded/collapsed state
-      const fixtureGroup = new Suite(this._shared, suiteName, undefined, oldFixtureGroup);
-      this.addChild(fixtureGroup);
+      const [fixtureGroup, fixtureOldGroupChildren] = this.getOrCreateChildSuite(suiteName, oldChildren);
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
         const test = xml.testsuites.testsuite[i].testcase[j];
@@ -61,37 +56,27 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const line = test.$.line ? test.$.line - 1 : undefined;
 
         let group: Suite = fixtureGroup;
-        let oldGroupChildren: (Suite | AbstractTest)[] = oldFixtureGroupChildren;
+        let oldGroupChildren = fixtureOldGroupChildren;
 
-        const addNewSubGroup = (label: string): void => {
-          const oldGroup = this.findChildSuiteInArray(oldGroupChildren, v => v.label === label);
-          group = group.addChild(new Suite(this._shared, label, undefined, oldGroup));
-          oldGroupChildren = oldGroup ? oldGroup.children : [];
+        const getOrCreateChildSuite = (label: string): void => {
+          [group, oldGroupChildren] = group.getOrCreateChildSuite(label, oldGroupChildren);
         };
 
-        const setUngroupableGroup = (): void => {
-          if (this.execInfo.groupUngroupablesTo) {
-            const found = group.children.find(v => v.type === 'suite' && v.label === this.execInfo.groupUngroupablesTo);
-            if (found && found.type == 'suite') {
-              group = found;
-            } else {
-              addNewSubGroup(this.execInfo.groupUngroupablesTo);
-            }
-          }
+        const setUngroupableGroupIfEnabled = (): void => {
+          if (this.execInfo.groupUngroupablesTo)
+            [group, oldGroupChildren] = group.getOrCreateChildSuite(
+              this.execInfo.groupUngroupablesTo,
+              oldGroupChildren,
+            );
         };
 
         if (this.execInfo.groupBySource) {
           if (file) {
             this._shared.log.info('groupBySource');
             const fileStr = this.execInfo.getSourcePartForGrouping(file);
-            const found = group.findChildSuite(v => v.label === fileStr);
-            if (fileStr.length > 0 && found) {
-              group = found;
-            } else {
-              addNewSubGroup(fileStr);
-            }
-          } else if (this.execInfo.groupUngroupablesTo) {
-            setUngroupableGroup();
+            getOrCreateChildSuite(fileStr);
+          } else {
+            setUngroupableGroupIfEnabled();
           }
         }
 
@@ -100,14 +85,9 @@ export class GoogleSuite extends AbstractRunnableSuite {
           const match = testName.match(this.execInfo.groupBySingleRegex);
           if (match && match[1]) {
             const firstMatchGroup = match[1];
-            const found = group.findChildSuite(v => v.label === firstMatchGroup);
-            if (found) {
-              group = found;
-            } else {
-              addNewSubGroup(firstMatchGroup);
-            }
-          } else if (this.execInfo.groupUngroupablesTo) {
-            setUngroupableGroup();
+            getOrCreateChildSuite(firstMatchGroup);
+          } else {
+            setUngroupableGroupIfEnabled();
           }
         }
 
@@ -157,10 +137,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const suiteName = testGroupMatch[1];
       const typeParam: string | undefined = testGroupMatch[3];
 
-      const oldGroup = oldChildren.find(v => v.label === suiteName);
-      const oldGroupChildren = oldGroup ? oldGroup.children : [];
-
-      const group = new Suite(this._shared, suiteName, undefined, oldGroup);
+      const [fixtureGroup, fixtureOldGroupChildren] = this.getOrCreateChildSuite(suiteName, oldChildren);
 
       let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 
@@ -170,6 +147,32 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const testName = testMatch[1].startsWith('DISABLED_') ? testMatch[1].substr(9) : testMatch[1];
         const valueParam: string | undefined = testMatch[3];
         const testNameAsId = testGroupName + '.' + testMatch[1];
+
+        let group: Suite = fixtureGroup;
+        let oldGroupChildren = fixtureOldGroupChildren;
+
+        const getOrCreateChildSuite = (label: string): void => {
+          [group, oldGroupChildren] = group.getOrCreateChildSuite(label, oldGroupChildren);
+        };
+
+        const setUngroupableGroupIfEnabled = (): void => {
+          if (this.execInfo.groupUngroupablesTo)
+            [group, oldGroupChildren] = group.getOrCreateChildSuite(
+              this.execInfo.groupUngroupablesTo,
+              oldGroupChildren,
+            );
+        };
+
+        if (this.execInfo.groupBySingleRegex) {
+          this._shared.log.info('groupBySingleRegex');
+          const match = testName.match(this.execInfo.groupBySingleRegex);
+          if (match && match[1]) {
+            const firstMatchGroup = match[1];
+            getOrCreateChildSuite(firstMatchGroup);
+          } else {
+            setUngroupableGroupIfEnabled();
+          }
+        }
 
         const old = this.findTestInfoInArray(oldGroupChildren, v => v.testName === testNameAsId);
 
@@ -188,9 +191,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
         testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
       }
-
-      if (group.children.length > 0) this.addChild(group);
-      else this._shared.log.error('group without test', this, group, lines);
 
       testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
     }
