@@ -51,15 +51,31 @@ export class DOCSuite extends AbstractRunnableSuite {
 
       let group = this as AbstractSuite;
 
-      if (this.execInfo.groupBySource && filePath) {
-        this._shared.log.info('groupBySource');
-        const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
-        const found = this.findGroup(v => v.origLabel === fileStr);
-        if (fileStr.length > 0 && found) {
-          group = found;
-        } else {
-          const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === fileStr);
-          group = group.addChild(new GroupSuite(this._shared, fileStr, oldGroup));
+      const getUngroupableGroup = (group: AbstractSuite): AbstractSuite => {
+        if (this.execInfo.groupUngroupablesTo) {
+          const found = group.findGroup(v => v.origLabel === this.execInfo.groupUngroupablesTo);
+          if (found) {
+            group = found;
+          } else {
+            group = group.addChild(new GroupSuite(this._shared, this.execInfo.groupUngroupablesTo, undefined));
+          }
+        }
+        return group;
+      };
+
+      if (this.execInfo.groupBySource) {
+        if (filePath) {
+          this._shared.log.info('groupBySource');
+          const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
+          const found = group.findGroup(v => v.origLabel === fileStr);
+          if (fileStr.length > 0 && found) {
+            group = found;
+          } else {
+            const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === fileStr);
+            group = group.addChild(new GroupSuite(this._shared, fileStr, oldGroup));
+          }
+        } else if (this.execInfo.groupUngroupablesTo) {
+          group = getUngroupableGroup(group);
         }
       }
 
@@ -68,13 +84,15 @@ export class DOCSuite extends AbstractRunnableSuite {
         const match = testNameAsId.match(this.execInfo.groupBySingleRegex);
         if (match && match[1]) {
           const firstMatchGroup = match[1];
-          const found = this.findGroup(v => v.origLabel === firstMatchGroup);
+          const found = group.findGroup(v => v.origLabel === firstMatchGroup);
           if (found) {
             group = found;
           } else {
             const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === firstMatchGroup);
             group = group.addChild(new GroupSuite(this._shared, firstMatchGroup, oldGroup));
           }
+        } else if (this.execInfo.groupUngroupablesTo) {
+          group = getUngroupableGroup(group);
         }
       }
 

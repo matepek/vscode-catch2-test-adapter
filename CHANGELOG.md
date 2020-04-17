@@ -20,8 +20,9 @@ Examples:
 		"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
     "catch2": {
       groupBySource: "[-1:]",
-      "groupByTag": true,
-      "groupBySingleRegex": "(apple|peach)"
+      "groupByTag": true, // or ["[1][2]", "[2]", "[3]"],
+      "groupBySingleRegex": "(apple|peach)",
+      "groupUngroupablesTo": "ungrouped"
     },
     "gtest": {
       groupBySource: "[-3:-1]",

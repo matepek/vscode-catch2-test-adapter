@@ -273,12 +273,28 @@
                                 "pattern": "^\\[(-?[0-9]+)?:(-?[0-9]+)?\\]$"
                               },
                               "groupByTags": {
-                                "type": "boolean"
+                                "description": "True to group by every exiting combination of the tags. Or an array of tags.",
+                                "oneOf": [
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                ]
                               },
                               "groupBySingleRegex": {
                                 "description": "Groups tests by the first match group. Example: \"(?:good|bad) (apple|peach)\" will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group.",
                                 "type": "string",
                                 "minLength": "3"
+                              },
+                              "groupUngroupablesTo": {
+                                "desciption": "If a test is not groupable it will be grouped by the given name.",
+                                "type": "string",
+                                "minLength": "1"
                               }
                             }
                           }
@@ -326,6 +342,11 @@
                                 "description": "Groups tests by the first match group. Example: \"(?:good|bad) (apple|peach)\" will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group.",
                                 "type": "string",
                                 "minLength": "3"
+                              },
+                              "groupUngroupablesTo": {
+                                "desciption": "If a test is not groupable it will be grouped by the given name.",
+                                "type": "string",
+                                "minLength": "1"
                               }
                             }
                           }
@@ -373,6 +394,11 @@
                                 "description": "Groups tests by the first match group. Example: \"(?:good|bad) (apple|peach)\" will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group.",
                                 "type": "string",
                                 "minLength": "3"
+                              },
+                              "groupUngroupablesTo": {
+                                "desciption": "If a test is not groupable it will be grouped by the given name.",
+                                "type": "string",
+                                "minLength": "1"
                               }
                             }
                           }

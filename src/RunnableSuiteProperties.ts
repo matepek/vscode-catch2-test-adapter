@@ -18,6 +18,8 @@ export class RunnableSuiteProperties {
     } else {
       this._groupBySourceIndexes = undefined;
     }
+
+    this.populateGroupTags();
   }
 
   public get prependTestRunningArgs(): string[] {
@@ -51,9 +53,30 @@ export class RunnableSuiteProperties {
     }
   }
 
-  public get groupByTags(): boolean {
-    return this._frameworkSpecific.groupByTags === true;
+  private readonly _tagGroups: string[][] = [];
+
+  private populateGroupTags(): void {
+    if (!Array.isArray(this._frameworkSpecific.groupByTags)) return;
+
+    for (const v of this._frameworkSpecific.groupByTags) {
+      const m = v.match(/(\[[^\[\]]+\])/g);
+      if (m) this._tagGroups.push(m.sort());
+    }
+  }
+
+  public get groupByTagsType(): 'disabled' | 'allCombination' | 'byArray' {
+    if (this._frameworkSpecific.groupByTags === true) return 'allCombination';
+    else if (this._tagGroups.length > 0) return 'byArray';
+    else return 'disabled';
+  }
+
+  public getTagGroupArray(): string[][] {
+    return this._tagGroups;
   }
 
   public readonly groupBySingleRegex: RegExp | undefined;
+
+  public get groupUngroupablesTo(): string {
+    return this._frameworkSpecific.groupUngroupablesTo ? this._frameworkSpecific.groupUngroupablesTo : '';
+  }
 }
