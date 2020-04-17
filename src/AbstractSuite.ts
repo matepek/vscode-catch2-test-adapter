@@ -16,9 +16,9 @@ export class AbstractSuite implements TestSuiteInfo {
     protected readonly _shared: SharedVariables,
     private readonly _label: string,
     private readonly _description: string | undefined,
-    id: string | undefined,
+    id: string | undefined | AbstractSuite,
   ) {
-    this.id = id !== undefined ? id : generateId();
+    this.id = id === undefined ? generateId() : typeof id === 'string' ? id : id.id;
   }
 
   public get label(): string {

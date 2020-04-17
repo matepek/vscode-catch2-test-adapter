@@ -4,7 +4,6 @@ import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
 import { AbstractSuite } from '../AbstractSuite';
-import { GroupSuite } from '../GroupSuite';
 import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
 import { GoogleTest } from './GoogleTest';
 import { Parser } from 'xml2js';
@@ -14,7 +13,7 @@ import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutab
 import { AbstractTest } from '../AbstractTest';
 
 export class GoogleSuite extends AbstractRunnableSuite {
-  public children: GroupSuite[] = [];
+  public children: AbstractSuite[] = [];
 
   public constructor(
     shared: SharedVariables,
@@ -26,7 +25,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
     super(shared, label, desciption, execInfo, 'GoogleTest', version);
   }
 
-  private _reloadFromXml(xmlStr: string, oldChildren: GroupSuite[]): void {
+  private _reloadFromXml(xmlStr: string, oldChildren: AbstractSuite[]): void {
     interface XmlObject {
       [prop: string]: any; //eslint-disable-line
     }
@@ -48,7 +47,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const oldFixtureGroupChildren: (AbstractSuite | AbstractTest)[] = oldFixtureGroup ? oldFixtureGroup.children : [];
 
       // we need the oldFixtureGroup.id because that preserves the node's expanded/collapsed state
-      const fixtureGroup = new GroupSuite(this._shared, suiteName, oldFixtureGroup);
+      const fixtureGroup = new AbstractSuite(this._shared, suiteName, undefined, oldFixtureGroup);
       this.addChild(fixtureGroup);
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
@@ -66,7 +65,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
         const addNewSubGroup = (label: string): void => {
           const oldGroup = this.findChildSuiteInArray(oldGroupChildren, v => v.label === label);
-          group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
+          group = group.addChild(new AbstractSuite(this._shared, label, undefined, oldGroup));
           oldGroupChildren = oldGroup ? oldGroup.children : [];
         };
 
@@ -130,7 +129,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
     }
   }
 
-  private _reloadFromStdOut(stdOutStr: string, oldChildren: GroupSuite[]): void {
+  private _reloadFromStdOut(stdOutStr: string, oldChildren: AbstractSuite[]): void {
     this.children = [];
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -161,7 +160,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const oldGroup = oldChildren.find(v => v.label === suiteName);
       const oldGroupChildren = oldGroup ? oldGroup.children : [];
 
-      const group = new GroupSuite(this._shared, suiteName, oldGroup);
+      const group = new AbstractSuite(this._shared, suiteName, undefined, oldGroup);
 
       let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 

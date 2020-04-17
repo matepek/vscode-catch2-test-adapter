@@ -11,7 +11,6 @@ import { Catch2Test } from './Catch2Test';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { AbstractTest } from '../AbstractTest';
-import { GroupSuite } from '../GroupSuite';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -105,7 +104,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
       const addNewSubGroup = (label: string): void => {
         const oldGroup = this.findChildSuiteInArray(oldGroupChildren, v => v.label === label);
-        group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
+        group = group.addChild(new AbstractSuite(this._shared, label, undefined, oldGroup));
         oldGroupChildren = oldGroup ? oldGroup.children : [];
       };
 
@@ -193,7 +192,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
             group = found;
           } else {
             const oldGroup = this.findChildSuiteInArray(oldChildren, v => v.label === firstMatchGroup);
-            group = group.addChild(new GroupSuite(this._shared, firstMatchGroup, oldGroup));
+            group = group.addChild(new AbstractSuite(this._shared, firstMatchGroup, undefined, oldGroup));
           }
         } else if (this.execInfo.groupUngroupablesTo) {
           setUngroupableGroup();

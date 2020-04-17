@@ -4,7 +4,6 @@ import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { AbstractSuite } from './AbstractSuite';
-import { GroupSuite } from './GroupSuite';
 
 export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
@@ -93,11 +92,6 @@ export abstract class AbstractTest implements TestInfo {
 
   public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuite[], AbstractTest | undefined] {
     return [[], pred(this) ? this : undefined];
-  }
-
-  // eslint-disable-next-line
-  public findGroup(_pred: (v: GroupSuite) => boolean): undefined {
-    return undefined;
   }
 
   public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {

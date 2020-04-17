@@ -11,7 +11,6 @@ import { DOCTest } from './DOCTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
-import { GroupSuite } from '../GroupSuite';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -52,7 +51,7 @@ export class DOCSuite extends AbstractRunnableSuite {
 
       const addNewSubGroup = (label: string): void => {
         const oldGroup = this.findChildSuiteInArray(oldGroupChildren, v => v.label === label);
-        group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
+        group = group.addChild(new AbstractSuite(this._shared, label, undefined, oldGroup));
         oldGroupChildren = oldGroup ? oldGroup.children : [];
       };
 
