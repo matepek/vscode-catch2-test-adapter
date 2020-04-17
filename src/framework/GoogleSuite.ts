@@ -44,12 +44,12 @@ export class GoogleSuite extends AbstractRunnableSuite {
     for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
       const suiteName = xml.testsuites.testsuite[i].$.name;
 
-      const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === suiteName);
-      const oldGroupChildren = oldGroup ? oldGroup.children : [];
+      const oldFixtureGroup = this.findGroupInArray(oldChildren, v => v.origLabel === suiteName);
+      const oldFixtureGroupChildren: (AbstractSuite | AbstractTest)[] = oldFixtureGroup ? oldFixtureGroup.children : [];
 
-      // we need the oldGroup.id because that preserves the node's expanded/collapsed state
-      const gGroup = new GroupSuite(this._shared, suiteName, oldGroup);
-      this.addChild(gGroup);
+      // we need the oldFixtureGroup.id because that preserves the node's expanded/collapsed state
+      const fixtureGroup = new GroupSuite(this._shared, suiteName, oldFixtureGroup);
+      this.addChild(fixtureGroup);
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
         const test = xml.testsuites.testsuite[i].testcase[j];
@@ -58,23 +58,29 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const typeParam: string | undefined = test.$.type_param;
         const valueParam: string | undefined = test.$.value_param;
 
-        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
-
         const file = test.$.file ? this._findFilePath(test.$.file) : undefined;
         const line = test.$.line ? test.$.line - 1 : undefined;
 
-        let group: AbstractSuite = gGroup;
+        let group: AbstractSuite = fixtureGroup;
+        let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldFixtureGroupChildren;
 
-        const getUngroupableGroup = (group: AbstractSuite): AbstractSuite => {
+        const addNewSubGroup = (label: string): void => {
+          const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.origLabel === label);
+          group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
+          oldGroupChildren = oldGroup ? oldGroup.children : [];
+        };
+
+        const setUngroupableGroup = (): void => {
           if (this.execInfo.groupUngroupablesTo) {
-            const found = group.findGroup(v => v.origLabel === this.execInfo.groupUngroupablesTo);
-            if (found) {
+            const found = group.children.find(
+              v => v.type === 'suite' && v.origLabel === this.execInfo.groupUngroupablesTo,
+            );
+            if (found && found.type == 'suite') {
               group = found;
             } else {
-              group = group.addChild(new GroupSuite(this._shared, this.execInfo.groupUngroupablesTo, undefined));
+              addNewSubGroup(this.execInfo.groupUngroupablesTo);
             }
           }
-          return group;
         };
 
         if (this.execInfo.groupBySource) {
@@ -85,11 +91,10 @@ export class GoogleSuite extends AbstractRunnableSuite {
             if (fileStr.length > 0 && found) {
               group = found;
             } else {
-              const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === fileStr);
-              group = group.addChild(new GroupSuite(this._shared, fileStr, oldGroup));
+              addNewSubGroup(fileStr);
             }
           } else if (this.execInfo.groupUngroupablesTo) {
-            group = getUngroupableGroup(group);
+            setUngroupableGroup();
           }
         }
 
@@ -102,13 +107,14 @@ export class GoogleSuite extends AbstractRunnableSuite {
             if (found) {
               group = found;
             } else {
-              const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === firstMatchGroup);
-              group = group.addChild(new GroupSuite(this._shared, firstMatchGroup, oldGroup));
+              addNewSubGroup(firstMatchGroup);
             }
           } else if (this.execInfo.groupUngroupablesTo) {
-            group = getUngroupableGroup(group);
+            setUngroupableGroup();
           }
         }
+
+        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
 
         group.addChild(
           new GoogleTest(
@@ -124,8 +130,11 @@ export class GoogleSuite extends AbstractRunnableSuite {
         );
       }
 
-      if (gGroup.children.length && gGroup.children.every(c => c.description === gGroup.children[0].description))
-        gGroup.description = gGroup.children[0].description;
+      if (
+        fixtureGroup.children.length &&
+        fixtureGroup.children.every(c => c.description === fixtureGroup.children[0].description)
+      )
+        fixtureGroup.description = fixtureGroup.children[0].description;
     }
   }
 

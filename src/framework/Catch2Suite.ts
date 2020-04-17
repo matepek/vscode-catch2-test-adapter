@@ -100,20 +100,26 @@ export class Catch2Suite extends AbstractRunnableSuite {
         ++i;
       }
 
-      const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
+      let group: AbstractSuite = this as AbstractSuite;
+      let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldChildren;
 
-      let group = this as AbstractSuite;
+      const addNewSubGroup = (label: string): void => {
+        const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.origLabel === label);
+        group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
+        oldGroupChildren = oldGroup ? oldGroup.children : [];
+      };
 
-      const getUngroupableGroup = (group: AbstractSuite): AbstractSuite => {
+      const setUngroupableGroup = (): void => {
         if (this.execInfo.groupUngroupablesTo) {
-          const found = group.findGroup(v => v.origLabel === this.execInfo.groupUngroupablesTo);
-          if (found) {
+          const found = group.children.find(
+            v => v.type === 'suite' && v.origLabel === this.execInfo.groupUngroupablesTo,
+          );
+          if (found && found.type == 'suite') {
             group = found;
           } else {
-            group = group.addChild(new GroupSuite(this._shared, this.execInfo.groupUngroupablesTo, undefined));
+            addNewSubGroup(this.execInfo.groupUngroupablesTo);
           }
         }
-        return group;
       };
 
       if (this.execInfo.groupBySource) {
@@ -124,11 +130,10 @@ export class Catch2Suite extends AbstractRunnableSuite {
           if (fileStr.length > 0 && found) {
             group = found;
           } else {
-            const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === fileStr);
-            group = group.addChild(new GroupSuite(this._shared, fileStr, oldGroup));
+            addNewSubGroup(fileStr);
           }
         } else if (this.execInfo.groupUngroupablesTo) {
-          group = getUngroupableGroup(group);
+          setUngroupableGroup();
         }
       }
 
@@ -148,8 +153,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
               if (found) {
                 group = found;
               } else {
-                const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === tagsStr);
-                group = group.addChild(new GroupSuite(this._shared, tagsStr, oldGroup));
+                addNewSubGroup(tagsStr);
               }
               break;
             }
@@ -168,17 +172,16 @@ export class Catch2Suite extends AbstractRunnableSuite {
                   if (found) {
                     group = found;
                   } else {
-                    const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === comboStr);
-                    group = group.addChild(new GroupSuite(this._shared, comboStr, oldGroup));
+                    addNewSubGroup(comboStr);
                   }
                 } else if (this.execInfo.groupUngroupablesTo) {
-                  group = getUngroupableGroup(group);
+                  setUngroupableGroup();
                 }
               }
               break;
           }
         } else if (this.execInfo.groupUngroupablesTo) {
-          group = getUngroupableGroup(group);
+          setUngroupableGroup();
         }
       }
 
@@ -195,9 +198,11 @@ export class Catch2Suite extends AbstractRunnableSuite {
             group = group.addChild(new GroupSuite(this._shared, firstMatchGroup, oldGroup));
           }
         } else if (this.execInfo.groupUngroupablesTo) {
-          group = getUngroupableGroup(group);
+          setUngroupableGroup();
         }
       }
+
+      const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
 
       const test = new Catch2Test(
         this._shared,
