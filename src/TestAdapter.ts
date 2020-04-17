@@ -203,7 +203,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             });
 
             for (let i = 0; i < testEvents.length; ++i) {
-              const [route, test] = this._rootSuite.findRouteToTest(testEvents[i].test);
+              const [route, test] = this._rootSuite.findRouteToTestById(testEvents[i].test);
 
               if (test !== undefined && route.length > 0) {
                 route.forEach(v => v.sendRunningEventIfNeeded());
@@ -431,7 +431,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       );
     }
 
-    const [route, testInfo] = this._rootSuite.findRouteToTest(tests[0]);
+    const [route, testInfo] = this._rootSuite.findRouteToTestById(tests[0]);
     if (testInfo === undefined) {
       this._log.warn('route === undefined', tests);
       throw Error('Not existing test id.');

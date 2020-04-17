@@ -86,11 +86,7 @@ export abstract class AbstractTest implements TestInfo {
     fn(this);
   }
 
-  public findTestInfo(pred: (v: AbstractTest) => boolean): AbstractTest | undefined {
-    return pred(this) ? this : undefined;
-  }
-
-  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [Suite[], AbstractTest | undefined] {
+  public findRouteToTest(pred: (v: AbstractTest) => boolean): [Suite[], AbstractTest | undefined] {
     return [[], pred(this) ? this : undefined];
   }
 

@@ -206,30 +206,15 @@ export class Suite implements TestSuiteInfo {
     });
   }
 
-  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [Suite[], AbstractTest | undefined] {
+  public findRouteToTest(pred: (v: AbstractTest) => boolean): [Suite[], AbstractTest | undefined] {
     for (let i = 0; i < this.children.length; ++i) {
-      const [route, test] = this.children[i].findRouteToTestInfo(pred);
+      const [route, test] = this.children[i].findRouteToTest(pred);
       if (test !== undefined) {
         route.unshift(this);
         return [route, test];
       }
     }
     return [[], undefined];
-  }
-
-  public findTestInfo(pred: (v: AbstractTest) => boolean): AbstractTest | undefined {
-    return this.findTestInfoInArray(this.children, pred);
-  }
-
-  public findTestInfoInArray(
-    array: (Suite | AbstractTest)[],
-    pred: (v: AbstractTest) => boolean,
-  ): AbstractTest | undefined {
-    for (let i = 0; i < array.length; i++) {
-      const res = array[i].findTestInfo(pred);
-      if (res !== undefined) return res;
-    }
-    return undefined;
   }
 
   public findChildSuite(pred: (v: Suite) => boolean): Suite | undefined {

@@ -169,7 +169,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
         }
       }
 
-      const old = this.findTestInfoInArray(oldChildren, v => v.testName === testName);
+      const old = oldGroupChildren.find(v => v.type === 'test' && v.testName === testName);
 
       const test = new Catch2Test(
         this._shared,
@@ -345,7 +345,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
             data.beforeFirstTestCase = false;
 
-            const [route, testInfo] = this.findRouteToTestInfo(v => {
+            const [route, testInfo] = this.findRouteToTest(v => {
               // xml output trimmes the name of the test
               return v.testName.trim() == name;
             });
@@ -496,7 +496,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
                 if (name === undefined) break;
 
                 // xml output trimmes the name of the test
-                const currentChild = this.findTestInfo(v => v.testName.trim() == name);
+                const [, currentChild] = this.findRouteToTest(v => v.testName.trim() == name);
 
                 if (currentChild === undefined) break;
 

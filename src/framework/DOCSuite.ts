@@ -79,7 +79,7 @@ export class DOCSuite extends AbstractRunnableSuite {
         }
       }
 
-      const old = this.findTestInfoInArray(oldChildren, v => v.testName === testName);
+      const old = oldGroupChildren.find(v => v.type === 'test' && v.testName === testName);
 
       const test = new DOCTest(
         this._shared,
@@ -265,7 +265,7 @@ export class DOCSuite extends AbstractRunnableSuite {
 
             data.beforeFirstTestCase = false;
 
-            const [route, testInfo] = this.findRouteToTestInfo(v => v.testName == name);
+            const [route, testInfo] = this.findRouteToTest(v => v.testName == name);
 
             if (testInfo !== undefined) {
               this.sendMinimalEventsIfNeeded(data.route, route);
@@ -440,7 +440,7 @@ export class DOCSuite extends AbstractRunnableSuite {
                 if (name === undefined) break;
 
                 // xml output trimmes the name of the test
-                const currentChild = this.findTestInfo(v => v.testName === name);
+                const [, currentChild] = this.findRouteToTest(v => v.testName === name);
 
                 if (currentChild === undefined) break;
 

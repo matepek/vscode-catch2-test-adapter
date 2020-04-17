@@ -91,7 +91,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
           }
         }
 
-        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testName === testNameAsId);
+        const old = oldGroupChildren.find(v => v.type === 'test' && v.testName === testNameAsId);
 
         group.addChild(
           new GoogleTest(
@@ -174,7 +174,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
           }
         }
 
-        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testName === testNameAsId);
+        const old = oldGroupChildren.find(v => v.type === 'test' && v.testName === testNameAsId);
 
         group.addChild(
           new GoogleTest(
@@ -339,7 +339,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
             data.currentTestCaseNameFull = m[1];
 
-            const [route, testInfo] = this.findRouteToTestInfo(v => v.testName == data.currentTestCaseNameFull);
+            const [route, testInfo] = this.findRouteToTest(v => v.testName == data.currentTestCaseNameFull);
 
             if (testInfo !== undefined) {
               this.sendMinimalEventsIfNeeded(data.route, route);
@@ -483,7 +483,8 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
                 const testNameAsId = m[1];
 
-                const currentChild = this.findTestInfo(v => v.testName == testNameAsId);
+                const [, currentChild] = this.findRouteToTest(v => v.testName == testNameAsId);
+
                 if (currentChild === undefined) break;
                 try {
                   const ev = currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo);
