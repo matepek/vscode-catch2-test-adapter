@@ -12,6 +12,7 @@ export abstract class AbstractTest implements TestInfo {
   public readonly tooltip: string;
   public readonly file: string | undefined;
   public readonly line: number | undefined;
+  public readonly skipped: boolean;
 
   public lastRunEvent: TestEvent | undefined = undefined;
   public lastRunMilisec: number | undefined = undefined;
@@ -20,24 +21,53 @@ export abstract class AbstractTest implements TestInfo {
     protected readonly _shared: SharedVariables,
     id: string | undefined,
     public readonly testName: string,
-    private readonly _label: string,
-    public readonly skipped: boolean,
+    public readonly label: string,
     file: string | undefined,
     line: number | undefined,
-    description: string | undefined,
-    tooltip: string | undefined,
+    skipped: boolean,
+    _forceIgnore: boolean,
+    private readonly _pureTags: string[], // without brackets
+    _testDescription: string | undefined,
+    _typeParam: string | undefined, // gtest specific
+    _valueParam: string | undefined, // gtest specific
   ) {
+    if (line && line < 0) throw Error('line smaller than zero');
+
     this.id = id ? id : generateId();
-    this.description = description ? description : '';
     this.file = file ? path.normalize(file) : undefined;
     this.line = file ? line : undefined;
-    this.tooltip = 'Name: ' + testName + (tooltip ? '\n' + tooltip : '');
-    if (line && line < 0) throw Error('line smaller than zero');
+    this.skipped = skipped || _forceIgnore;
+
+    const description: string[] = [];
+
+    const tooltip = [`Name: ${testName}`];
+
+    if (_pureTags.length > 0) {
+      const tagsStr = _pureTags.map(t => `[${t}]`).join('');
+      description.push(tagsStr);
+      tooltip.push(`Tags: ${tagsStr}`);
+    }
+
+    if (_testDescription) {
+      tooltip.push(`Description: ${_testDescription}`);
+    }
+
+    if (_typeParam) {
+      description.push(`#️⃣Type: ${_typeParam}`);
+      tooltip.push(`#️⃣TypeParam() = ${_typeParam}`);
+    }
+
+    if (_valueParam) {
+      description.push(`#️⃣Value: ${_valueParam}`);
+      tooltip.push(`#️⃣GetParam() = ${_valueParam}`);
+    }
+
+    this.description = description.join('');
+    this.tooltip = tooltip.join('\n');
   }
 
-  public get label(): string {
-    // TODO if force ignore
-    return this._label;
+  public get tags(): string[] {
+    return this._pureTags.filter(v => v != '.' && v != 'hide');
   }
 
   public getStartEvent(): TestEvent {
@@ -79,7 +109,7 @@ export abstract class AbstractTest implements TestInfo {
     const durationStr = milisecToStr(durationInMilisec);
 
     ev.description = this.description + (this.description ? ' ' : '') + '(' + durationStr + ')';
-    ev.tooltip = this.tooltip + (this.tooltip ? '\n\n' : '') + '⏱Duration: ' + durationStr;
+    ev.tooltip = this.tooltip + (this.tooltip ? '\n' : '') + '⏱Duration: ' + durationStr;
   }
 
   public enumerateTestInfos(fn: (v: AbstractTest) => void): void {

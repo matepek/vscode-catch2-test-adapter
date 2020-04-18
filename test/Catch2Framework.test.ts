@@ -209,7 +209,7 @@ describe(path.basename(__filename), function () {
         suite: adapter.suite1,
         description: './ (0ms)',
         tooltip:
-          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 1\n  - failed: 1\n\n⏱Duration: 0ms',
+          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 1\n  - failed: 1\n⏱Duration: 0ms',
       },
       { type: 'finished' },
       { type: 'started', tests: [s1t1.id] },
@@ -230,7 +230,7 @@ describe(path.basename(__filename), function () {
         suite: adapter.suite1,
         description: './ (0ms)',
         tooltip:
-          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱Duration: 0ms',
+          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
       },
       { type: 'finished' },
     ]);
@@ -265,7 +265,7 @@ describe(path.basename(__filename), function () {
     assert.equal(suite1.children.length, 1, inspect([testListErrOutput, adapter.testLoadsEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
-    assert.strictEqual(suite1.children[0].label, 'Check the test output message for details ⚠️');
+    assert.strictEqual(suite1.children[0].label, '--> ⚠️ ERROR ⚠️ <--');
 
     await waitFor(this, () => {
       return adapter!.testStatesEvents.length == 6;

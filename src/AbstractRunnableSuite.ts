@@ -10,6 +10,7 @@ import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { promisify } from 'util';
+import { TestEvent } from 'vscode-test-adapter-api';
 
 export abstract class AbstractRunnableSuite extends Suite {
   private static _reportedFrameworks: string[] = [];
@@ -52,6 +53,137 @@ export abstract class AbstractRunnableSuite extends Suite {
 
   public get tooltip(): string {
     return super.tooltip + '\n\nPath: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd;
+  }
+
+  public createAndAddToSubSuite(test: AbstractTest, oldChildren: (Suite | AbstractTest)[], base?: Suite): void {
+    let group: Suite = base ? base : (this as Suite);
+    let oldGroupChildren: (Suite | AbstractTest)[] = oldChildren;
+
+    const getOrCreateChildSuite = (label: string): void => {
+      [group, oldGroupChildren] = group.getOrCreateChildSuite(label, oldGroupChildren);
+    };
+
+    const setUngroupableGroupIfEnabled = (): void => {
+      if (this.execInfo.groupUngroupablesTo)
+        [group, oldGroupChildren] = group.getOrCreateChildSuite(this.execInfo.groupUngroupablesTo, oldGroupChildren);
+    };
+
+    if (this.execInfo.groupBySource) {
+      if (test.file) {
+        this._shared.log.info('groupBySource');
+        const fileStr = this.execInfo.getSourcePartForGrouping(test.file);
+        getOrCreateChildSuite(fileStr);
+      } else {
+        setUngroupableGroupIfEnabled();
+      }
+    }
+
+    if (this.execInfo.groupByTagsType !== 'disabled') {
+      if (test.tags.length > 0) {
+        const tags = test.tags;
+        switch (this.execInfo.groupByTagsType) {
+          default: {
+            break;
+          }
+          case 'allCombination': {
+            this._shared.log.info('groupByTags: allCombination');
+            const tagsStr = tags.sort().join('');
+            getOrCreateChildSuite(tagsStr);
+            break;
+          }
+          case 'byArray':
+            {
+              this._shared.log.info('groupByTags: byArray');
+
+              const foundCombo = this.execInfo
+                .getTagGroupArray()
+                .find(combo => combo.every(tag => tags.indexOf(tag) != -1));
+
+              if (foundCombo) {
+                const comboStr = foundCombo.map(t => `[${t}]`).join('');
+                getOrCreateChildSuite(comboStr);
+              } else {
+                setUngroupableGroupIfEnabled();
+              }
+            }
+            break;
+        }
+      } else {
+        setUngroupableGroupIfEnabled();
+      }
+    }
+
+    if (this.execInfo.groupBySingleRegex) {
+      this._shared.log.info('groupBySingleRegex');
+      const match = test.label.match(this.execInfo.groupBySingleRegex);
+      if (match && match[1]) {
+        const firstMatchGroup = match[1];
+        getOrCreateChildSuite(firstMatchGroup);
+      } else {
+        setUngroupableGroupIfEnabled();
+      }
+    }
+
+    group.addChild(test);
+  }
+
+  protected _addError(message: string): void {
+    const shared = this._shared;
+    const errorIndicatorDummyTest = this.addChild(
+      new (class extends AbstractTest {
+        public constructor() {
+          super(
+            shared,
+            undefined,
+            'dummyErrorTest',
+            '--> ⚠️ ERROR ⚠️ <--',
+            undefined,
+            undefined,
+            true,
+            true,
+            [],
+            'click here ⚠️',
+            undefined,
+            undefined,
+          );
+        }
+
+        // public get tooltip(): string {
+        //   return message;
+        // }
+
+        public getDebugParams(): string[] {
+          throw Error('assert');
+        }
+
+        public parseAndProcessTestCase(): TestEvent {
+          throw Error('assert');
+        }
+      })(),
+    );
+
+    this._shared.sendTestEventEmitter.fire([
+      {
+        type: 'test',
+        test: errorIndicatorDummyTest,
+        state: 'errored',
+        message,
+      },
+    ]);
+  }
+
+  protected _addUnexpectedStdError(stdout: string, stderr: string): void {
+    this._addError(
+      [
+        `❗️Unexpected stderr!`,
+        `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
+        `spawn`,
+        `stout:`,
+        `${stdout}`,
+        `stderr:`,
+        `${stderr}`,
+      ].join('\n'),
+    );
   }
 
   protected abstract _reloadChildren(): Promise<void>;

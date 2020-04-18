@@ -54,21 +54,13 @@ export class Catch2Suite extends AbstractRunnableSuite {
       if (lines[i].startsWith('    ')) {
         this._shared.log.warn('Probably too long test name', i, lines);
         this.children = [];
-        const test = this.addChild(
-          new Catch2Test(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
+        this._addError(
+          [
+            '⚠️ Probably too long test name or the test name starts with space characters!',
+            '🛠 - Try to define `CATCH_CONFIG_CONSOLE_WIDTH 300` before `catch2.hpp` is included.',
+            '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
+          ].join('\n'),
         );
-        this._shared.sendTestEventEmitter.fire([
-          {
-            type: 'test',
-            test: test,
-            state: 'errored',
-            message: [
-              '⚠️ Probably too long test name or the test name starts with space characters!',
-              '🛠 - Try to define `CATCH_CONFIG_CONSOLE_WIDTH 300` before `catch2.hpp` is included.',
-              '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
-            ].join('\n'),
-          },
-        ]);
         return;
       }
       const testName = lines[i++].substr(2);
@@ -91,98 +83,26 @@ export class Catch2Suite extends AbstractRunnableSuite {
       let description = lines[i++].substr(4);
       if (description.startsWith('(NO DESCRIPTION)')) description = '';
 
-      let tags: string[] = [];
-      if (i < lines.length && lines[i].length > 6 && lines[i][6] === '[') {
-        tags = lines[i].trim().split(']');
-        tags.pop();
-        for (let j = 0; j < tags.length; ++j) tags[j] += ']';
+      const tags: string[] = [];
+      if (i < lines.length && lines[i].startsWith('      [')) {
+        const matches = lines[i].match(/\[[^\[\]]+\]/g);
+        if (matches) matches.forEach(t => tags.push(t.substring(1, t.length - 1)));
         ++i;
       }
 
-      let group: Suite = this as Suite;
-      let oldGroupChildren: (Suite | AbstractTest)[] = oldChildren;
-
-      const getOrCreateChildSuite = (label: string): void => {
-        [group, oldGroupChildren] = group.getOrCreateChildSuite(label, oldGroupChildren);
-      };
-
-      const setUngroupableGroupIfEnabled = (): void => {
-        if (this.execInfo.groupUngroupablesTo)
-          [group, oldGroupChildren] = group.getOrCreateChildSuite(this.execInfo.groupUngroupablesTo, oldGroupChildren);
-      };
-
-      if (this.execInfo.groupBySource) {
-        if (filePath) {
-          this._shared.log.info('groupBySource');
-          const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
-          getOrCreateChildSuite(fileStr);
-        } else {
-          setUngroupableGroupIfEnabled();
-        }
-      }
-
-      if (this.execInfo.groupByTagsType !== 'disabled') {
-        if (tags.length > 0) {
-          switch (this.execInfo.groupByTagsType) {
-            default: {
-              break;
-            }
-            case 'allCombination': {
-              this._shared.log.info('groupByTags: allCombination');
-              const tagsStr = tags
-                .filter(v => v != '[.]' && v != '[hide]')
-                .sort()
-                .join('');
-              getOrCreateChildSuite(tagsStr);
-              break;
-            }
-            case 'byArray':
-              {
-                this._shared.log.info('groupByTags: byArray');
-
-                const foundCombo = this.execInfo
-                  .getTagGroupArray()
-                  .find(combo => combo.every(tag => tags.indexOf(tag) != -1));
-
-                if (foundCombo) {
-                  const comboStr = foundCombo.join('');
-                  getOrCreateChildSuite(comboStr);
-                } else {
-                  setUngroupableGroupIfEnabled();
-                }
-              }
-              break;
-          }
-        } else {
-          setUngroupableGroupIfEnabled();
-        }
-      }
-
-      if (this.execInfo.groupBySingleRegex) {
-        this._shared.log.info('groupBySingleRegex');
-        const match = testName.match(this.execInfo.groupBySingleRegex);
-        if (match && match[1]) {
-          const firstMatchGroup = match[1];
-          getOrCreateChildSuite(firstMatchGroup);
-        } else {
-          setUngroupableGroupIfEnabled();
-        }
-      }
-
-      const old = oldGroupChildren.find(v => v.type === 'test' && v.testName === testName);
+      const [, old] = Suite.findRouteToTestInArray(oldChildren, v => v.testName === testName);
 
       const test = new Catch2Test(
         this._shared,
-        old ? old.id : undefined,
         testName,
-        description,
         tags,
         filePath,
         line,
-        old ? (old as Catch2Test).sections : undefined,
+        description,
+        old as Catch2Test | undefined,
       );
 
-      group.addChild(test);
+      this.createAndAddToSubSuite(test, oldChildren);
     }
 
     if (i >= lines.length) this._shared.log.error('Wrong test list output format #2', lines);
@@ -232,25 +152,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
     if (catch2TestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
-      const test = this.addChild(
-        new Catch2Test(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
-      );
-      this._shared.sendTestEventEmitter.fire([
-        {
-          type: 'test',
-          test: test,
-          state: 'errored',
-          message: [
-            `❗️Unexpected stderr!`,
-            `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
-            `spawn`,
-            `stout:`,
-            `${catch2TestListOutput.stdout}`,
-            `stderr:`,
-            `${catch2TestListOutput.stderr}`,
-          ].join('\n'),
-        },
-      ]);
+      this._addUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
       return Promise.resolve();
     }
 

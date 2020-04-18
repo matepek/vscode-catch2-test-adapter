@@ -56,7 +56,7 @@ export class RunnableSuiteProperties {
 
     for (const v of this._frameworkSpecific.groupByTags) {
       const m = v.match(/(\[[^\[\]]+\])/g);
-      if (m) this._tagGroups.push(m.sort());
+      if (m) this._tagGroups.push(m.map(t => t.substring(1, t.length - 1)).sort());
     }
   }
 

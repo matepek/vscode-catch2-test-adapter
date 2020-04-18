@@ -117,7 +117,7 @@ export class Suite implements TestSuiteInfo {
         Object.keys(stateStat)
           .map(state => '  - ' + state + ': ' + stateStat[state])
           .join('\n') +
-        '\n\n⏱Duration: ' +
+        '\n⏱Duration: ' +
         durationStr;
     }
 
@@ -207,21 +207,31 @@ export class Suite implements TestSuiteInfo {
   }
 
   public findRouteToTest(pred: (v: AbstractTest) => boolean): [Suite[], AbstractTest | undefined] {
-    for (let i = 0; i < this.children.length; ++i) {
-      const [route, test] = this.children[i].findRouteToTest(pred);
-      if (test !== undefined) {
-        route.unshift(this);
-        return [route, test];
-      }
+    const [route, test] = Suite.findRouteToTestInArray(this.children, pred);
+    if (test !== undefined) {
+      route.unshift(this);
+      return [route, test];
+    } else {
+      return [route, test];
+    }
+  }
+
+  public static findRouteToTestInArray(
+    array: (Suite | AbstractTest)[],
+    pred: (v: AbstractTest) => boolean,
+  ): [Suite[], AbstractTest | undefined] {
+    for (let i = 0; i < array.length; ++i) {
+      const [route, test] = array[i].findRouteToTest(pred);
+      if (test !== undefined) return [route, test];
     }
     return [[], undefined];
   }
 
   public findChildSuite(pred: (v: Suite) => boolean): Suite | undefined {
-    return this.findChildSuiteInArray(this.children, pred);
+    return Suite.findChildSuiteInArray(this.children, pred);
   }
 
-  public findChildSuiteInArray(array: (Suite | AbstractTest)[], pred: (v: Suite) => boolean): Suite | undefined {
+  public static findChildSuiteInArray(array: (Suite | AbstractTest)[], pred: (v: Suite) => boolean): Suite | undefined {
     for (let i = 0; i < array.length; i++) {
       if (array[i].type === 'suite' && pred(array[i] as Suite)) return array[i] as Suite;
     }

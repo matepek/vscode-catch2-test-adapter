@@ -15,29 +15,19 @@ export class GoogleTest extends AbstractTest {
     file: string | undefined,
     line: number | undefined,
   ) {
-    let desciption = '';
-    let tooltip = '';
-
-    if (typeParam) {
-      desciption += '#️⃣Type: ' + typeParam;
-      tooltip += '\n#️⃣TypeParam() = ' + typeParam;
-    }
-
-    if (valueParam) {
-      desciption += '#️⃣Value: ' + valueParam;
-      tooltip += '\n#️⃣GetParam() = ' + valueParam;
-    }
-
     super(
       shared,
       id,
       testNameAsId,
       label,
-      testNameAsId.startsWith('DISABLED_') || testNameAsId.indexOf('.DISABLED_') != -1,
       file,
       line,
-      desciption,
-      tooltip ? tooltip : undefined,
+      testNameAsId.startsWith('DISABLED_') || testNameAsId.indexOf('.DISABLED_') != -1,
+      false,
+      [],
+      undefined,
+      typeParam,
+      valueParam,
     );
   }
 

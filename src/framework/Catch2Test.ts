@@ -34,30 +34,28 @@ export class Catch2Section {
 export class Catch2Test extends AbstractTest {
   public constructor(
     shared: SharedVariables,
-    id: string | undefined,
     testNameAsId: string,
-    catch2Description: string,
     tags: string[],
     file: string | undefined,
     line: number | undefined,
-    sections?: Catch2Section[],
+    description: string | undefined,
+    old?: Catch2Test | undefined,
   ) {
     super(
       shared,
-      id,
+      old ? old.id : undefined,
       testNameAsId,
       testNameAsId,
-      tags.some((v: string) => {
-        return v.startsWith('[.') || v == '[hide]';
-      }) || testNameAsId.startsWith('./'),
       file,
       line,
-      tags.join(''),
-      [tags.length > 0 ? 'Tags: ' + tags.join('') : '', catch2Description ? 'Description: ' + catch2Description : '']
-        .filter(v => v.length)
-        .join('\n'),
+      tags.some((v: string) => v.startsWith('.') || v == 'hide') || testNameAsId.startsWith('./'),
+      false,
+      tags,
+      description,
+      undefined,
+      undefined,
     );
-    this._sections = sections;
+    this._sections = old ? old.sections : undefined;
   }
 
   private _sections: undefined | Catch2Section[];

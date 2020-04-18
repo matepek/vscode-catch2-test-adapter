@@ -46,53 +46,20 @@ export class DOCSuite extends AbstractRunnableSuite {
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      let group: Suite = this as Suite;
-      let oldGroupChildren: (Suite | AbstractTest)[] = oldChildren;
-
-      const getOrCreateChildSuite = (label: string): void => {
-        [group, oldGroupChildren] = group.getOrCreateChildSuite(label, oldGroupChildren);
-      };
-
-      const setUngroupableGroupIfEnabled = (): void => {
-        if (this.execInfo.groupUngroupablesTo)
-          [group, oldGroupChildren] = group.getOrCreateChildSuite(this.execInfo.groupUngroupablesTo, oldGroupChildren);
-      };
-
-      if (this.execInfo.groupBySource) {
-        if (filePath) {
-          this._shared.log.info('groupBySource');
-          const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
-          getOrCreateChildSuite(fileStr);
-        } else {
-          setUngroupableGroupIfEnabled();
-        }
-      }
-
-      if (this.execInfo.groupBySingleRegex) {
-        this._shared.log.info('groupBySingleRegex');
-        const match = testName.match(this.execInfo.groupBySingleRegex);
-        if (match && match[1]) {
-          const firstMatchGroup = match[1];
-          getOrCreateChildSuite(firstMatchGroup);
-        } else {
-          setUngroupableGroupIfEnabled();
-        }
-      }
-
-      const old = oldGroupChildren.find(v => v.type === 'test' && v.testName === testName);
+      const [, old] = Suite.findRouteToTestInArray(oldChildren, v => v.testName === testName);
 
       const test = new DOCTest(
         this._shared,
         undefined,
         testName,
-        suite !== undefined ? `[${suite}]` : undefined,
         skipped,
         filePath,
         line,
+        suite !== undefined ? [`${suite}`] : [],
         old as DOCTest,
       );
 
-      group.addChild(test);
+      this.createAndAddToSubSuite(test, oldChildren);
     }
   }
 
@@ -140,33 +107,7 @@ export class DOCSuite extends AbstractRunnableSuite {
             docTestListOutput.error,
             docTestListOutput.status,
           );
-          const test = this.addChild(
-            new DOCTest(
-              this._shared,
-              undefined,
-              'Check the test output message for details ⚠️',
-              undefined,
-              false,
-              undefined,
-              undefined,
-            ),
-          );
-          this._shared.sendTestEventEmitter.fire([
-            {
-              type: 'test',
-              test: test,
-              state: 'errored',
-              message: [
-                `❗️Unexpected stderr!`,
-                `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
-                `spawn`,
-                `stout:`,
-                `${docTestListOutput.stdout}`,
-                `stderr:`,
-                `${docTestListOutput.stderr}`,
-              ].join('\n'),
-            },
-          ]);
+          this._addUnexpectedStdError(docTestListOutput.stdout, docTestListOutput.stderr);
           return Promise.resolve();
         }
 

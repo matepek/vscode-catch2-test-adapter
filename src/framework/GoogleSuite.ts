@@ -46,65 +46,29 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const [fixtureGroup, fixtureOldGroupChildren] = this.getOrCreateChildSuite(suiteName, oldChildren);
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
-        const test = xml.testsuites.testsuite[i].testcase[j];
-        const testName = test.$.name.startsWith('DISABLED_') ? test.$.name.substr(9) : test.$.name;
-        const testNameAsId = suiteName + '.' + test.$.name;
-        const typeParam: string | undefined = test.$.type_param;
-        const valueParam: string | undefined = test.$.value_param;
+        const testCase = xml.testsuites.testsuite[i].testcase[j];
+        const testName = testCase.$.name.startsWith('DISABLED_') ? testCase.$.name.substr(9) : testCase.$.name;
+        const testNameAsId = suiteName + '.' + testCase.$.name;
+        const typeParam: string | undefined = testCase.$.type_param;
+        const valueParam: string | undefined = testCase.$.value_param;
 
-        const file = test.$.file ? this._findFilePath(test.$.file) : undefined;
-        const line = test.$.line ? test.$.line - 1 : undefined;
+        const file = testCase.$.file ? this._findFilePath(testCase.$.file) : undefined;
+        const line = testCase.$.line ? testCase.$.line - 1 : undefined;
 
-        let group: Suite = fixtureGroup;
-        let oldGroupChildren = fixtureOldGroupChildren;
+        const [, old] = Suite.findRouteToTestInArray(fixtureOldGroupChildren, v => v.testName === testNameAsId);
 
-        const getOrCreateChildSuite = (label: string): void => {
-          [group, oldGroupChildren] = group.getOrCreateChildSuite(label, oldGroupChildren);
-        };
-
-        const setUngroupableGroupIfEnabled = (): void => {
-          if (this.execInfo.groupUngroupablesTo)
-            [group, oldGroupChildren] = group.getOrCreateChildSuite(
-              this.execInfo.groupUngroupablesTo,
-              oldGroupChildren,
-            );
-        };
-
-        if (this.execInfo.groupBySource) {
-          if (file) {
-            this._shared.log.info('groupBySource');
-            const fileStr = this.execInfo.getSourcePartForGrouping(file);
-            getOrCreateChildSuite(fileStr);
-          } else {
-            setUngroupableGroupIfEnabled();
-          }
-        }
-
-        if (this.execInfo.groupBySingleRegex) {
-          this._shared.log.info('groupBySingleRegex');
-          const match = testName.match(this.execInfo.groupBySingleRegex);
-          if (match && match[1]) {
-            const firstMatchGroup = match[1];
-            getOrCreateChildSuite(firstMatchGroup);
-          } else {
-            setUngroupableGroupIfEnabled();
-          }
-        }
-
-        const old = oldGroupChildren.find(v => v.type === 'test' && v.testName === testNameAsId);
-
-        group.addChild(
-          new GoogleTest(
-            this._shared,
-            old ? old.id : undefined,
-            testNameAsId,
-            testName,
-            typeParam,
-            valueParam,
-            file,
-            line,
-          ),
+        const test = new GoogleTest(
+          this._shared,
+          old ? old.id : undefined,
+          testNameAsId,
+          testName,
+          typeParam,
+          valueParam,
+          file,
+          line,
         );
+
+        this.createAndAddToSubSuite(test, fixtureOldGroupChildren, fixtureGroup);
       }
     }
   }
@@ -148,46 +112,20 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const valueParam: string | undefined = testMatch[3];
         const testNameAsId = testGroupName + '.' + testMatch[1];
 
-        let group: Suite = fixtureGroup;
-        let oldGroupChildren = fixtureOldGroupChildren;
+        const [, old] = Suite.findRouteToTestInArray(fixtureOldGroupChildren, v => v.testName === testNameAsId);
 
-        const getOrCreateChildSuite = (label: string): void => {
-          [group, oldGroupChildren] = group.getOrCreateChildSuite(label, oldGroupChildren);
-        };
-
-        const setUngroupableGroupIfEnabled = (): void => {
-          if (this.execInfo.groupUngroupablesTo)
-            [group, oldGroupChildren] = group.getOrCreateChildSuite(
-              this.execInfo.groupUngroupablesTo,
-              oldGroupChildren,
-            );
-        };
-
-        if (this.execInfo.groupBySingleRegex) {
-          this._shared.log.info('groupBySingleRegex');
-          const match = testName.match(this.execInfo.groupBySingleRegex);
-          if (match && match[1]) {
-            const firstMatchGroup = match[1];
-            getOrCreateChildSuite(firstMatchGroup);
-          } else {
-            setUngroupableGroupIfEnabled();
-          }
-        }
-
-        const old = oldGroupChildren.find(v => v.type === 'test' && v.testName === testNameAsId);
-
-        group.addChild(
-          new GoogleTest(
-            this._shared,
-            old ? old.id : undefined,
-            testNameAsId,
-            testName,
-            typeParam,
-            valueParam,
-            undefined,
-            undefined,
-          ),
+        const test = new GoogleTest(
+          this._shared,
+          old ? old.id : undefined,
+          testNameAsId,
+          testName,
+          typeParam,
+          valueParam,
+          undefined,
+          undefined,
         );
+
+        this.createAndAddToSubSuite(test, fixtureOldGroupChildren, fixtureGroup);
 
         testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
       }
@@ -231,34 +169,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
         if (googleTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
           this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
-          const test = this.addChild(
-            new GoogleTest(
-              this._shared,
-              undefined,
-              '<dummy>',
-              'Check the test output message for details ⚠️',
-              '',
-              undefined,
-              undefined,
-              undefined,
-            ),
-          );
-          this._shared.sendTestEventEmitter.fire([
-            {
-              type: 'test',
-              test: test,
-              state: 'errored',
-              message: [
-                `❗️Unexpected stderr!`,
-                `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
-                `spawn`,
-                `stout:`,
-                `${googleTestListOutput.stdout}`,
-                `stderr:`,
-                `${googleTestListOutput.stderr}`,
-              ].join('\n'),
-            },
-          ]);
+          this._addUnexpectedStdError(googleTestListOutput.stdout, googleTestListOutput.stderr);
         } else {
           const hasXmlFile = await promisify(fs.exists)(cacheFile);
 

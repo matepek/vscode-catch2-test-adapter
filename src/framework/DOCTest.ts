@@ -38,10 +38,10 @@ export class DOCTest extends AbstractTest {
     shared: SharedVariables,
     id: string | undefined,
     testNameAsId: string,
-    description: string | undefined,
     skipped: boolean | undefined,
     file: string | undefined,
     line: number | undefined,
+    tags: string[],
     old?: DOCTest,
   ) {
     super(
@@ -49,10 +49,13 @@ export class DOCTest extends AbstractTest {
       id != undefined ? id : old ? old.id : undefined,
       testNameAsId,
       testNameAsId.startsWith('  Scenario:') ? '⒮' + testNameAsId.substr(11) : testNameAsId,
-      skipped !== undefined ? skipped : false,
       file,
       line,
-      description,
+      skipped !== undefined ? skipped : false,
+      false,
+      tags,
+      undefined,
+      undefined,
       undefined,
     );
     this._sections = old ? old.sections : undefined;
