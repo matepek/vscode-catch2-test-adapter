@@ -1,6 +1,6 @@
 import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
 
-import { generateId, milisecToStr, AdvancedII, reverse } from './Util';
+import { generateId, milisecToStr, reverse } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTest } from './AbstractTest';
 
@@ -14,6 +14,7 @@ export class Suite implements TestSuiteInfo {
 
   public constructor(
     protected readonly _shared: SharedVariables,
+    public readonly parent: Suite | undefined,
     private readonly _label: string,
     private readonly _description: string | undefined,
     id: string | undefined | Suite,
@@ -169,7 +170,7 @@ export class Suite implements TestSuiteInfo {
     this.children.push(child);
   }
 
-  public addChild<T extends Suite | AbstractTest>(child: T): T {
+  public addTest(child: AbstractTest): AbstractTest {
     this._addChild(child);
     return child;
   }
@@ -181,7 +182,8 @@ export class Suite implements TestSuiteInfo {
       return [found, oldGroups];
     } else {
       const old = oldGroups.find(cond) as Suite | undefined;
-      const newG = this.addChild(new Suite(this._shared, label, undefined, old));
+      const newG = new Suite(this._shared, this, label, undefined, old);
+      this._addChild(newG);
       return [newG, old ? old.children : []];
     }
   }

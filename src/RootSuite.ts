@@ -11,7 +11,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
   private _executables: Executable[] = [];
 
   public constructor(id: string | undefined, shared: SharedVariables) {
-    super(shared, 'Catch2/GTest/DOCTest', undefined, id);
+    super(shared, undefined, 'Catch2/GTest/DOCTest', undefined, id);
   }
 
   public get file(): string | undefined {

@@ -47,20 +47,23 @@ export class DOCSuite extends AbstractRunnableSuite {
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      const [old] = Suite.findRouteToTestInArray(oldChildren, v => v.testName === testName);
+      const [group, oldGroupChildren] = this.createAndAddToSubSuite(testName, filePath, [], oldChildren);
 
-      const test = new DOCTest(
-        this._shared,
-        undefined,
-        testName,
-        skipped,
-        filePath,
-        line,
-        suite !== undefined ? [`${suite}`] : [],
-        old as DOCTest,
+      const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testName);
+
+      group.addTest(
+        new DOCTest(
+          this._shared,
+          group,
+          undefined,
+          testName,
+          skipped,
+          filePath,
+          line,
+          suite !== undefined ? [`${suite}`] : [],
+          old as DOCTest,
+        ),
       );
-
-      this.createAndAddToSubSuite(test, oldChildren);
     }
   }
 

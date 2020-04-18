@@ -7,6 +7,7 @@ import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 import { TestEventBuilder } from '../TestEventBuilder';
 import * as pathlib from 'path';
 import { Version } from '../Util';
+import { Suite } from '../Suite';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -37,6 +38,7 @@ const EscapeCharParserFix = new Version(2, 11, 4);
 export class Catch2Test extends AbstractTest {
   public constructor(
     shared: SharedVariables,
+    parent: Suite,
     frameworkVersion: Version,
     testNameAsId: string,
     tags: string[],
@@ -63,6 +65,7 @@ export class Catch2Test extends AbstractTest {
 
     super(
       shared,
+      parent,
       old ? old.id : undefined,
       testNameAsId,
       testNameAsId,

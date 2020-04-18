@@ -28,7 +28,7 @@ export abstract class AbstractRunnableSuite extends Suite {
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<Version | undefined>,
   ) {
-    super(shared, label, desciption, undefined);
+    super(shared, undefined, label, desciption, undefined);
 
     frameworkVersion
       .then(version => {
@@ -56,7 +56,13 @@ export abstract class AbstractRunnableSuite extends Suite {
     return super.tooltip + '\n\nPath: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd;
   }
 
-  public createAndAddToSubSuite(test: AbstractTest, oldChildren: (Suite | AbstractTest)[], base?: Suite): void {
+  public createAndAddToSubSuite(
+    label: string,
+    file: string | undefined,
+    tags: string[],
+    oldChildren: (Suite | AbstractTest)[],
+    base?: Suite,
+  ): [Suite, (Suite | AbstractTest)[]] {
     let group: Suite = base ? base : (this as Suite);
     let oldGroupChildren: (Suite | AbstractTest)[] = oldChildren;
 
@@ -70,9 +76,9 @@ export abstract class AbstractRunnableSuite extends Suite {
     };
 
     if (this.execInfo.groupBySource) {
-      if (test.file) {
+      if (file) {
         this._shared.log.info('groupBySource');
-        const fileStr = this.execInfo.getSourcePartForGrouping(test.file);
+        const fileStr = this.execInfo.getSourcePartForGrouping(file);
         getOrCreateChildSuite(fileStr);
       } else {
         setUngroupableGroupIfEnabled();
@@ -80,8 +86,7 @@ export abstract class AbstractRunnableSuite extends Suite {
     }
 
     if (this.execInfo.groupByTagsType !== 'disabled') {
-      if (test.tags.length > 0) {
-        const tags = test.tags;
+      if (tags.length > 0) {
         switch (this.execInfo.groupByTagsType) {
           default: {
             break;
@@ -116,7 +121,7 @@ export abstract class AbstractRunnableSuite extends Suite {
 
     if (this.execInfo.groupBySingleRegex) {
       this._shared.log.info('groupBySingleRegex');
-      const match = test.label.match(this.execInfo.groupBySingleRegex);
+      const match = label.match(this.execInfo.groupBySingleRegex);
       if (match && match[1]) {
         const firstMatchGroup = match[1];
         getOrCreateChildSuite(firstMatchGroup);
@@ -125,16 +130,18 @@ export abstract class AbstractRunnableSuite extends Suite {
       }
     }
 
-    group.addChild(test);
+    return [group, oldGroupChildren];
   }
 
   protected _addError(message: string): void {
     const shared = this._shared;
-    const test = this.addChild(
+    const parent = this as Suite;
+    const test = this.addTest(
       new (class extends AbstractTest {
         public constructor() {
           super(
             shared,
+            parent,
             undefined,
             'dummyErrorTest',
             '⚡️ ERROR (run me to see the issue)',

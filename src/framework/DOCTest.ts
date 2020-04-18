@@ -4,6 +4,7 @@ import { AbstractTest } from '../AbstractTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 import { TestEventBuilder } from '../TestEventBuilder';
+import { Suite } from '../Suite';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -36,6 +37,7 @@ export class DOCSection implements Frame {
 export class DOCTest extends AbstractTest {
   public constructor(
     shared: SharedVariables,
+    parent: Suite,
     id: string | undefined,
     testNameAsId: string,
     skipped: boolean | undefined,
@@ -46,6 +48,7 @@ export class DOCTest extends AbstractTest {
   ) {
     super(
       shared,
+      parent,
       id != undefined ? id : old ? old.id : undefined,
       testNameAsId,
       testNameAsId.startsWith('  Scenario:') ? '⒮' + testNameAsId.substr(11) : testNameAsId,

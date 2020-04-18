@@ -91,20 +91,23 @@ export class Catch2Suite extends AbstractRunnableSuite {
         ++i;
       }
 
-      const [old] = Suite.findRouteToTestInArray(oldChildren, v => v.testName === testName);
+      const [group, oldGroupChildren] = this.createAndAddToSubSuite(testName, filePath, tags, oldChildren);
 
-      const test = new Catch2Test(
-        this._shared,
-        this._catch2Version,
-        testName,
-        tags,
-        filePath,
-        line,
-        description,
-        old as Catch2Test | undefined,
+      const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testName);
+
+      group.addTest(
+        new Catch2Test(
+          this._shared,
+          group,
+          this._catch2Version,
+          testName,
+          tags,
+          filePath,
+          line,
+          description,
+          old as Catch2Test | undefined,
+        ),
       );
-
-      this.createAndAddToSubSuite(test, oldChildren);
     }
 
     if (i >= lines.length) this._shared.log.error('Wrong test list output format #2', lines);

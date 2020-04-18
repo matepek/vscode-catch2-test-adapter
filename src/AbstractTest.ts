@@ -18,6 +18,7 @@ export abstract class AbstractTest implements TestInfo {
 
   protected constructor(
     protected readonly _shared: SharedVariables,
+    public readonly parent: Suite, // ascending
     id: string | undefined,
     public readonly testName: string,
     public readonly label: string,

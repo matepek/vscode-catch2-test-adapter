@@ -56,20 +56,29 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const file = testCase.$.file ? this._findFilePath(testCase.$.file) : undefined;
         const line = testCase.$.line ? testCase.$.line - 1 : undefined;
 
-        const [old] = Suite.findRouteToTestInArray(fixtureOldGroupChildren, v => v.testName === testNameAsId);
-
-        const test = new GoogleTest(
-          this._shared,
-          old ? old.id : undefined,
-          testNameAsId,
+        const [group, oldGroupChildren] = this.createAndAddToSubSuite(
           testName,
-          typeParam,
-          valueParam,
           file,
-          line,
+          [],
+          fixtureOldGroupChildren,
+          fixtureGroup,
         );
 
-        this.createAndAddToSubSuite(test, fixtureOldGroupChildren, fixtureGroup);
+        const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testNameAsId);
+
+        group.addTest(
+          new GoogleTest(
+            this._shared,
+            group,
+            old ? old.id : undefined,
+            testNameAsId,
+            testName,
+            typeParam,
+            valueParam,
+            file,
+            line,
+          ),
+        );
       }
     }
   }
@@ -113,20 +122,29 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const valueParam: string | undefined = testMatch[3];
         const testNameAsId = testGroupName + '.' + testMatch[1];
 
-        const [old] = Suite.findRouteToTestInArray(fixtureOldGroupChildren, v => v.testName === testNameAsId);
-
-        const test = new GoogleTest(
-          this._shared,
-          old ? old.id : undefined,
-          testNameAsId,
+        const [group, oldGroupChildren] = this.createAndAddToSubSuite(
           testName,
-          typeParam,
-          valueParam,
           undefined,
-          undefined,
+          [],
+          fixtureOldGroupChildren,
+          fixtureGroup,
         );
 
-        this.createAndAddToSubSuite(test, fixtureOldGroupChildren, fixtureGroup);
+        const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testNameAsId);
+
+        group.addTest(
+          new GoogleTest(
+            this._shared,
+            group,
+            old ? old.id : undefined,
+            testNameAsId,
+            testName,
+            typeParam,
+            valueParam,
+            undefined,
+            undefined,
+          ),
+        );
 
         testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
       }
