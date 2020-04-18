@@ -11,6 +11,7 @@ import { DOCTest } from './DOCTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
+import { Version } from '../Util';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -22,7 +23,7 @@ export class DOCSuite extends AbstractRunnableSuite {
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
-    docVersion: [number, number, number] | undefined,
+    docVersion: Version,
   ) {
     super(shared, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
   }
@@ -122,14 +123,12 @@ export class DOCSuite extends AbstractRunnableSuite {
       });
   }
 
-  protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<DOCTest>): string[] {
+  protected _getRunParams(childrenToRun: ReadonlyArray<DOCTest>): string[] {
     const execParams: string[] = [];
 
-    if (childrenToRun !== 'runAllTestsExceptSkipped') {
-      const testNames = [...childrenToRun].map(c => c.getEscapedTestName());
-      execParams.push('--test-case=' + testNames.join(','));
-      execParams.push('--no-skip=true');
-    }
+    const testNames = childrenToRun.map(c => c.getEscapedTestName());
+    execParams.push('--test-case=' + testNames.join(','));
+    execParams.push('--no-skip=true');
 
     execParams.push('--case-sensitive=true');
     execParams.push('--reporters=xml');
@@ -348,15 +347,13 @@ export class DOCSuite extends AbstractRunnableSuite {
         this.sendMinimalEventsIfNeeded(data.route, []);
         data.route = [];
 
-        // skipped test handling is wrong. I just disable this feature
-        // const isTestRemoved =
-        //   runInfo.timeout === null &&
-        //   result.error === undefined &&
-        //   ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
-        //     this.getTestInfoCount(false) > data.processedTestCases.length) ||
-        //     (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
+        const isTestRemoved =
+          runInfo.timeout === null &&
+          !this.isCancelled() &&
+          result.error === undefined &&
+          data.processedTestCases.length < runInfo.childrenToRun.length;
 
-        if (data.unprocessedXmlTestCases.length > 0 /*|| isTestRemoved*/) {
+        if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
           new Promise<void>((resolve, reject) => {
             this._shared.loadWithTaskEmitter.fire(() => {
               return this.reloadTests(this._shared.taskPool).then(resolve, reject);

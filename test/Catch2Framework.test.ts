@@ -145,7 +145,8 @@ describe(path.basename(__filename), function () {
     assert.strictEqual(exception, undefined);
   });
 
-  specify('arriving <TestCase> for missing TestInfo', async function () {
+  // multirun disables this feature
+  specify.skip('arriving <TestCase> for missing TestInfo', async function () {
     this.slow(4000);
     this.timeout(15000);
     await settings.updateConfig('executables', example1.suite1.execPath);
@@ -265,7 +266,7 @@ describe(path.basename(__filename), function () {
     assert.equal(suite1.children.length, 1, inspect([testListErrOutput, adapter.testLoadsEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
-    assert.strictEqual(suite1.children[0].label, '--> ⚠️ ERROR ⚠️ <--');
+    assert.strictEqual(suite1.children[0].label, '⚡️ ERROR (run me to see the issue)');
 
     await waitFor(this, () => {
       return adapter!.testStatesEvents.length == 6;
@@ -575,7 +576,7 @@ describe(path.basename(__filename), function () {
   });
 
   specify('wrong executables format', async function () {
-    expectedLoggedErrorLine('[ERROR] Error: Error: pattern property is required.');
+    expectedLoggedErrorLine('Error: Error: pattern property is required.');
 
     this.slow(5000);
     await settings.updateConfig('executables', { name: '' });

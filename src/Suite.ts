@@ -10,7 +10,7 @@ export class Suite implements TestSuiteInfo {
   public readonly type: 'suite' = 'suite';
   public readonly id: string;
   public children: (Suite | AbstractTest)[] = [];
-  private _runningCounter = 0;
+  protected _runningCounter = 0;
 
   public constructor(
     protected readonly _shared: SharedVariables,
@@ -81,7 +81,7 @@ export class Suite implements TestSuiteInfo {
 
   public sendRunningEventIfNeeded(): void {
     if (this._runningCounter++ === 0) {
-      this._shared.log.local.debug('Suite running event fired', this.label);
+      this._shared.log.localDebug('Suite running event fired', this.label);
       this._shared.testStatesEmitter.fire(this._getRunningEvent());
     }
   }
@@ -126,12 +126,12 @@ export class Suite implements TestSuiteInfo {
 
   public sendCompletedEventIfNeeded(): void {
     if (this._runningCounter < 1) {
-      this._shared.log.error('running counter is too low');
+      this._shared.log.error('Suite running counter is too low');
       this._runningCounter = 0;
       return;
     }
     if (this._runningCounter-- === 1) {
-      this._shared.log.local.debug('Suite completed event fired', this.label);
+      this._shared.log.localDebug('Suite completed event fired', this.label);
       this._shared.testStatesEmitter.fire(this._getCompletedEvent());
     }
   }

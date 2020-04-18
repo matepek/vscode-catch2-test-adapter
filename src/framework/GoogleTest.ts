@@ -23,7 +23,7 @@ export class GoogleTest extends AbstractTest {
       file,
       line,
       testNameAsId.startsWith('DISABLED_') || testNameAsId.indexOf('.DISABLED_') != -1,
-      false,
+      undefined,
       [],
       undefined,
       typeParam,

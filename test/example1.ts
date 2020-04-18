@@ -132,7 +132,7 @@ export const example1 = new (class {
           '2 matching test cases\n\n',
       ],
       [
-        ['--reporter', 'xml', '--durations', 'yes'],
+        ['s1t1,s1t2', '--reporter', 'xml', '--durations', 'yes'],
         `<?xml version="1.0" encoding="UTF-8"?>
           <Catch name="suite1">
             <Group name="suite1">
@@ -397,7 +397,7 @@ export const example1 = new (class {
           '3 matching test cases\n\n',
       ],
       [
-        ['--reporter', 'xml', '--durations', 'yes'],
+        ['s2t1,s2t3', '--reporter', 'xml', '--durations', 'yes'],
         `<?xml version="1.0" encoding="UTF-8"?>
           <Catch name="suite2">
             <Group name="suite2">
@@ -610,7 +610,13 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['--reporter', 'xml', '--durations', 'yes'],
+        [
+          'test name with space ,SECTION tree,spec ! char,spec @ char,spec # char,spec $ char,spec % char,spec ^ char,spec & char,spec * char,spec (a) char,spec {a} char,spec ; char,spec \' char,spec , char,spec . char,spec / char,spec < char,spec > char,spec ? char,spec - char,spec = char,spec _ char,spec + char,spec ~ char,spec § char,spec ± char,spec " char,spec | char',
+          '--reporter',
+          'xml',
+          '--durations',
+          'yes',
+        ],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Group name="suite3">
@@ -778,7 +784,17 @@ For more detailed usage please see the project docs
 `,
       ],
       [
-        ['--reporter', 'xml', '--durations', 'yes', '--order', 'rand', '--rng-seed', '2'],
+        [
+          'test name with space ,SECTION tree,spec ! char,spec @ char,spec # char,spec $ char,spec % char,spec ^ char,spec & char,spec * char,spec (a) char,spec {a} char,spec ; char,spec \' char,spec , char,spec . char,spec / char,spec < char,spec > char,spec ? char,spec - char,spec = char,spec _ char,spec + char,spec ~ char,spec § char,spec ± char,spec " char,spec | char',
+          '--reporter',
+          'xml',
+          '--durations',
+          'yes',
+          '--order',
+          'rand',
+          '--rng-seed',
+          '2',
+        ],
         `<?xml version="1.0" encoding="UTF-8"?>
 <Catch name="suite3">
   <Randomness seed="2"/>
@@ -2099,7 +2115,11 @@ For more detailed usage please see the project docs
     public readonly outputs: [string[], string][] = [
       [['--help'], 'This program contains tests written using Google Test. Yo'],
       [
-        ['--gtest_color=no'],
+        [
+          '--gtest_color=no',
+          '--gtest_filter=TestCas1.test1:TestCas1.test2:TestCas2.test1:TestCas2.test2:MockTestCase.expect1:MockTestCase.expect2:PrintingFailingParams1/FailingParamTest.Fails1/0:PrintingFailingParams1/FailingParamTest.Fails1/1:PrintingFailingParams1/FailingParamTest.Fails2/0:PrintingFailingParams1/FailingParamTest.Fails2/1:PrintingFailingParams2/FailingParamTest.Fails1/0:PrintingFailingParams2/FailingParamTest.Fails2/0:TestThreeParams/0.MaximumTest:TestThreeParams/1.MaximumTest',
+          '--gtest_also_run_disabled_tests',
+        ],
         [
           '[==========] Running 12 tests from 5 test cases.',
           '[----------] Global test environment set-up.',

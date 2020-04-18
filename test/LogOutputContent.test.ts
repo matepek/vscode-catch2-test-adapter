@@ -15,13 +15,13 @@ let currentLogfilePath: string;
 ///
 
 // this is "global". it will run before every test
-before(function() {
+before(function () {
   fse.removeSync(aggregatedLogFilePath);
   fse.removeSync(failedTestLogDir);
   fse.mkdirSync(failedTestLogDir);
 });
 
-beforeEach(function() {
+beforeEach(function () {
   globalExpectedLoggedErrorLine.clear();
   currentLogfilePath = path.join(failedTestLogDir, 'log_' + counter++ + '.txt');
 
@@ -32,7 +32,7 @@ beforeEach(function() {
   return settings.updateConfig('logfile', currentLogfilePath);
 });
 
-afterEach(async function() {
+afterEach(async function () {
   this.timeout(2000);
 
   // function(){
@@ -55,14 +55,10 @@ afterEach(async function() {
     inputLineStream.on('line', (line: string) => {
       try {
         const index = line.indexOf('[ERROR]');
-        if (index != -1) {
-          const error = line
-            .substr(index)
-            .split(']')
-            .filter((v, i) => i !== 1)
-            .join(']');
-          assert.notStrictEqual(globalExpectedLoggedErrorLine, undefined, title + ': ' + error);
-          assert.ok(globalExpectedLoggedErrorLine.has(error), title + ': ' + error);
+        if (index !== -1) {
+          const error = line.substr(index + '[ERROR]'.length).trim();
+          assert.notStrictEqual(globalExpectedLoggedErrorLine, undefined, title + '>>>' + error + '<<<');
+          assert.ok(globalExpectedLoggedErrorLine.has(error), title + '>>>' + error + '<<<');
         } else if (line.substr(26, 6) === '[WARN]') {
           // we could test this once
         }

@@ -6,6 +6,7 @@ import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 import { TestEventBuilder } from '../TestEventBuilder';
 import * as pathlib from 'path';
+import { Version } from '../Util';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -31,9 +32,12 @@ export class Catch2Section {
   }
 }
 
+const EscapeCharParserFix = new Version(2, 11, 4);
+
 export class Catch2Test extends AbstractTest {
   public constructor(
     shared: SharedVariables,
+    frameworkVersion: Version,
     testNameAsId: string,
     tags: string[],
     file: string | undefined,
@@ -41,6 +45,22 @@ export class Catch2Test extends AbstractTest {
     description: string | undefined,
     old?: Catch2Test | undefined,
   ) {
+    const forceIgnoreEvent: TestEvent | undefined =
+      frameworkVersion.smaller(EscapeCharParserFix) && testNameAsId.match(/\[|\\|,/)
+        ? {
+            type: 'test',
+            test: '',
+            state: 'errored',
+            message: [
+              '⚡️ This extension is unable to run this test.',
+              '',
+              `Current Catch2 framework version ${frameworkVersion} has a bug (https://github.com/catchorg/Catch2/issues/1905).`,
+              `Please refresh your framework to at least ${EscapeCharParserFix}.`,
+            ].join('\n'),
+            description: '⚡️ See output for details ⚡️',
+          }
+        : undefined;
+
     super(
       shared,
       old ? old.id : undefined,
@@ -49,12 +69,13 @@ export class Catch2Test extends AbstractTest {
       file,
       line,
       tags.some((v: string) => v.startsWith('.') || v == 'hide') || testNameAsId.startsWith('./'),
-      false,
+      forceIgnoreEvent,
       tags,
       description,
       undefined,
       undefined,
     );
+
     this._sections = old ? old.sections : undefined;
   }
 
@@ -65,14 +86,8 @@ export class Catch2Test extends AbstractTest {
   }
 
   public getEscapedTestName(): string {
-    /* ',' has special meaning */
-    let t = this.testName;
-    t = t.replace(/,/g, '\\,');
-    t = t.replace(/\[/g, '\\[');
-    t = t.replace(/\*/g, '\\*');
-    t = t.replace(/`/g, '\\`');
-    if (t.startsWith(' ')) t = '*' + t.trimLeft();
-    return t;
+    /* ',' and '[' has special meaning */
+    return this.testName.replace(/,/g, '\\,').replace(/\[/g, '\\[');
   }
 
   public getDebugParams(breakOnFailure: boolean): string[] {

@@ -12,7 +12,6 @@ export abstract class AbstractTest implements TestInfo {
   public readonly tooltip: string;
   public readonly file: string | undefined;
   public readonly line: number | undefined;
-  public readonly skipped: boolean;
 
   public lastRunEvent: TestEvent | undefined = undefined;
   public lastRunMilisec: number | undefined = undefined;
@@ -24,8 +23,8 @@ export abstract class AbstractTest implements TestInfo {
     public readonly label: string,
     file: string | undefined,
     line: number | undefined,
-    skipped: boolean,
-    _forceIgnore: boolean,
+    public readonly skipped: boolean,
+    public readonly staticEvent: TestEvent | undefined,
     private readonly _pureTags: string[], // without brackets
     _testDescription: string | undefined,
     _typeParam: string | undefined, // gtest specific
@@ -36,7 +35,6 @@ export abstract class AbstractTest implements TestInfo {
     this.id = id ? id : generateId();
     this.file = file ? path.normalize(file) : undefined;
     this.line = file ? line : undefined;
-    this.skipped = skipped || _forceIgnore;
 
     const description: string[] = [];
 
@@ -64,6 +62,10 @@ export abstract class AbstractTest implements TestInfo {
 
     this.description = description.join('');
     this.tooltip = tooltip.join('\n');
+
+    if (staticEvent) {
+      staticEvent.test = this;
+    }
   }
 
   public get tags(): string[] {
@@ -130,7 +132,7 @@ export abstract class AbstractTest implements TestInfo {
   }
 
   public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
-    if (/*!this._forceIgnore && */ (isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1) {
+    if ((isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1) {
       return [this];
     } else {
       return [];

@@ -1,3 +1,36 @@
+export class Version {
+  public constructor(
+    public readonly major: number,
+    private readonly _minor?: number,
+    private readonly _patch?: number,
+  ) {}
+
+  public get minor(): number {
+    return this._minor ? this._minor : 0;
+  }
+
+  public get patch(): number {
+    return this._patch ? this._patch : 0;
+  }
+
+  public smaller(right: Version): boolean {
+    if (this.major < right.major) return true;
+    else if (this.major > right.major) return false;
+
+    if (this.minor < right.minor) return true;
+    else if (this.minor > right.minor) return false;
+
+    if (this.patch < right.patch) return true;
+    else if (this.patch > right.patch) return false;
+
+    return false;
+  }
+
+  public toString(): string {
+    return `${this.major}.${this.minor}.${this.patch}`;
+  }
+}
+
 // eslint-disable-next-line
 function _mapAllStrings<T>(value: T, mapperFunc: (s: string) => any): T {
   if (value === null || value === undefined || typeof value === 'function') {

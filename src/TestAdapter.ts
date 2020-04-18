@@ -59,7 +59,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this.workspaceFolder,
       'Test Explorer: ' + this.workspaceFolder.name,
       { showProxy: true, depth: 3 },
-      this._isDebug,
     );
 
     const config = this._getConfiguration();
@@ -195,12 +194,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._sendTestEventEmitter.event((testEvents: TestEvent[]) => {
         this._mainTaskQueue.then(() => {
           if (testEvents.length > 0) {
-            this._testStatesEmitter.fire({
-              type: 'started',
-              tests: testEvents
-                .filter(v => v.type == 'test')
-                .map(v => (typeof v.test == 'string' ? v.test : v.test.id)),
-            });
+            this._rootSuite.sendStartEventIfNeeded(
+              testEvents.filter(v => v.type == 'test').map(v => (typeof v.test === 'string' ? v.test : v.test.id)),
+            );
 
             for (let i = 0; i < testEvents.length; ++i) {
               const [route, test] = this._rootSuite.findRouteToTestById(testEvents[i].test);
@@ -217,7 +213,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
               }
             }
 
-            this._testStatesEmitter.fire({ type: 'finished' });
+            this._rootSuite.sendFinishedventIfNeeded();
           }
         });
       }),

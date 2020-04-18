@@ -11,6 +11,7 @@ import { Catch2Test } from './Catch2Test';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { AbstractTest } from '../AbstractTest';
+import { Version } from '../Util';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -22,9 +23,9 @@ export class Catch2Suite extends AbstractRunnableSuite {
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
-    catch2Version: [number, number, number] | undefined,
+    private readonly _catch2Version: Version,
   ) {
-    super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(catch2Version));
+    super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(_catch2Version));
   }
 
   private _reloadFromString(testListOutput: string, oldChildren: (Suite | AbstractTest)[]): void {
@@ -94,6 +95,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
       const test = new Catch2Test(
         this._shared,
+        this._catch2Version,
         testName,
         tags,
         filePath,
@@ -170,13 +172,11 @@ export class Catch2Suite extends AbstractRunnableSuite {
     }
   }
 
-  protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<Catch2Test>): string[] {
+  protected _getRunParams(childrenToRun: ReadonlyArray<Catch2Test>): string[] {
     const execParams: string[] = [];
 
-    if (childrenToRun !== 'runAllTestsExceptSkipped') {
-      const testNames = [...childrenToRun].map(c => c.getEscapedTestName());
-      execParams.push(testNames.join(','));
-    }
+    const testNames = childrenToRun.map(c => c.getEscapedTestName());
+    execParams.push(testNames.join(','));
 
     execParams.push('--reporter');
     execParams.push('xml');
@@ -368,10 +368,9 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
         const isTestRemoved =
           runInfo.timeout === null &&
+          !this.isCancelled() &&
           result.error === undefined &&
-          ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
-            this.getTestInfoCount(false) > data.processedTestCases.length) ||
-            (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
+          data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
           new Promise<void>((resolve, reject) => {

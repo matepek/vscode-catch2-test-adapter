@@ -11,6 +11,7 @@ import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { AbstractTest } from '../AbstractTest';
+import { Version } from '../Util';
 
 export class GoogleSuite extends AbstractRunnableSuite {
   public children: Suite[] = [];
@@ -20,7 +21,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
-    version: Promise<[number, number, number] | undefined>,
+    version: Promise<Version | undefined>,
   ) {
     super(shared, label, desciption, execInfo, 'GoogleTest', version);
   }
@@ -199,16 +200,14 @@ export class GoogleSuite extends AbstractRunnableSuite {
       });
   }
 
-  protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<GoogleTest>): string[] {
+  protected _getRunParams(childrenToRun: ReadonlyArray<GoogleTest>): string[] {
     const execParams: string[] = ['--gtest_color=no'];
 
-    if (childrenToRun !== 'runAllTestsExceptSkipped') {
-      const testNames = [...childrenToRun].map(c => c.testName);
+    const testNames = childrenToRun.map(c => c.testName);
 
-      execParams.push('--gtest_filter=' + testNames.join(':'));
+    execParams.push('--gtest_filter=' + testNames.join(':'));
 
-      execParams.push('--gtest_also_run_disabled_tests');
-    }
+    execParams.push('--gtest_also_run_disabled_tests');
 
     if (this._shared.rngSeed !== null) {
       execParams.push('--gtest_shuffle');
@@ -376,10 +375,9 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
         const isTestRemoved =
           runInfo.timeout === null &&
+          !this.isCancelled() &&
           result.error === undefined &&
-          ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
-            this.getTestInfoCount(false) > data.processedTestCases.length) ||
-            (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
+          data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedTestCases.length > 0 || isTestRemoved) {
           new Promise<void>((resolve, reject) => {

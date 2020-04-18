@@ -52,7 +52,7 @@ export class DOCTest extends AbstractTest {
       file,
       line,
       skipped !== undefined ? skipped : false,
-      false,
+      undefined,
       tags,
       undefined,
       undefined,
@@ -75,13 +75,7 @@ export class DOCTest extends AbstractTest {
 
   public getEscapedTestName(): string {
     /* ',' has special meaning */
-    let t = this.testName;
-    t = t.replace(/,/g, '\\,');
-    t = t.replace(/\[/g, '\\[');
-    t = t.replace(/\*/g, '\\*');
-    t = t.replace(/`/g, '\\`');
-    if (t.startsWith(' ')) t = '*' + t.trimLeft();
-    return t;
+    return this.testName.replace(/,/g, '\\,');
   }
 
   // eslint-disable-next-line

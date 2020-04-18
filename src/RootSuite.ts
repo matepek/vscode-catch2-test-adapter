@@ -40,31 +40,38 @@ export class RootSuite extends Suite implements vscode.Disposable {
     );
   }
 
-  public run(tests: string[]): Promise<void> {
-    this._shared.testStatesEmitter.fire({ type: 'started', tests: tests });
-
-    // everybody should remove what they use from it.
-    // and put their children into if they are in it
-    const testSet = new Set(tests);
-
-    if (testSet.delete(this.id)) {
-      this.children.forEach(child => {
-        testSet.add(child.id);
-      });
+  public sendStartEventIfNeeded(tests: string[]): void {
+    if (this._runningCounter++ === 0) {
+      this._shared.log.localDebug('RootSuite start event fired', this.label);
+      this._shared.testStatesEmitter.fire({ type: 'started', tests: tests });
     }
+  }
+
+  public sendFinishedventIfNeeded(): void {
+    if (this._runningCounter < 1) {
+      this._shared.log.error('Root Suite running counter is too low');
+      this._runningCounter = 0;
+      return;
+    }
+    if (this._runningCounter-- === 1) {
+      this._shared.log.localDebug('RootSuite finished event fired', this.label);
+      this._shared.testStatesEmitter.fire({ type: 'finished' });
+    }
+  }
+
+  public run(tests: string[]): Promise<void> {
+    this.sendStartEventIfNeeded(tests);
+
+    const childrenToRun = tests.indexOf(this.id) !== -1 ? [...tests, ...this.children.map(s => s.id)] : tests;
 
     const ps: Promise<void>[] = [];
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i];
       ps.push(
-        child.run(testSet, this._shared.taskPool).catch(err => {
+        child.run(childrenToRun, this._shared.taskPool).catch(err => {
           this._shared.log.error('RootTestSuite.run.for.child', child.label, child.execInfo.path, err);
         }),
       );
-    }
-
-    if (testSet.size > 0) {
-      this._shared.log.error('Some tests have remained: ', testSet);
     }
 
     return Promise.all(ps)
@@ -73,7 +80,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
         this._shared.log.error('everything should be handled', e);
       })
       .then(() => {
-        this._shared.testStatesEmitter.fire({ type: 'finished' });
+        this.sendFinishedventIfNeeded();
       });
   }
 

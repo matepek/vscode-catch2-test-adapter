@@ -11,12 +11,13 @@ import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
+import { Version } from './Util';
 
 export abstract class AbstractRunnableSuite extends Suite {
   private static _reportedFrameworks: string[] = [];
 
   private _canceled = false;
-  private _runInfo: RunningTestExecutableInfo | undefined = undefined;
+  private _runInfos: RunningTestExecutableInfo[] = [];
   private _mtime: number | undefined = undefined;
 
   public constructor(
@@ -25,14 +26,14 @@ export abstract class AbstractRunnableSuite extends Suite {
     desciption: string | undefined,
     public readonly execInfo: RunnableSuiteProperties,
     public readonly frameworkName: string,
-    public readonly frameworkVersion: Promise<[number, number, number] | undefined>,
+    public readonly frameworkVersion: Promise<Version | undefined>,
   ) {
     super(shared, label, desciption, undefined);
 
     frameworkVersion
       .then(version => {
         if (AbstractRunnableSuite._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
-          const versionStr = version ? version.join('.') : 'unknown';
+          const versionStr = version ? version.toString() : 'unknown';
 
           shared.log.infoMessageWithTags('Framework', {
             framework: this.frameworkName,
@@ -129,28 +130,29 @@ export abstract class AbstractRunnableSuite extends Suite {
 
   protected _addError(message: string): void {
     const shared = this._shared;
-    const errorIndicatorDummyTest = this.addChild(
+    const test = this.addChild(
       new (class extends AbstractTest {
         public constructor() {
           super(
             shared,
             undefined,
             'dummyErrorTest',
-            '--> ⚠️ ERROR ⚠️ <--',
+            '⚡️ ERROR (run me to see the issue)',
             undefined,
             undefined,
             true,
-            true,
+            {
+              type: 'test',
+              test: '',
+              state: 'errored',
+              message,
+            },
             [],
-            'click here ⚠️',
+            'Run this test to see the error message in the output.',
             undefined,
             undefined,
           );
         }
-
-        // public get tooltip(): string {
-        //   return message;
-        // }
 
         public getDebugParams(): string[] {
           throw Error('assert');
@@ -162,14 +164,7 @@ export abstract class AbstractRunnableSuite extends Suite {
       })(),
     );
 
-    this._shared.sendTestEventEmitter.fire([
-      {
-        type: 'test',
-        test: errorIndicatorDummyTest,
-        state: 'errored',
-        message,
-      },
-    ]);
+    this._shared.sendTestEventEmitter.fire([test.staticEvent!]);
   }
 
   protected _addUnexpectedStdError(stdout: string, stderr: string): void {
@@ -188,7 +183,7 @@ export abstract class AbstractRunnableSuite extends Suite {
 
   protected abstract _reloadChildren(): Promise<void>;
 
-  protected abstract _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTest>): string[];
+  protected abstract _getRunParams(childrenToRun: ReadonlyArray<AbstractTest>): string[];
 
   protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
 
@@ -222,45 +217,20 @@ export abstract class AbstractRunnableSuite extends Suite {
   }
 
   public cancel(): void {
-    this._shared.log.info('canceled:', this.id, this.label, this._runInfo);
+    this._shared.log.info('canceled:', this.id, this.label, this._runInfos);
 
-    this._runInfo && this._runInfo.killProcess();
+    this._runInfos.forEach(r => r.killProcess());
 
     this._canceled = true;
   }
 
-  public run(tests: Set<string>, taskPool: TaskPool): Promise<void> {
+  public run(tests: ReadonlyArray<string>, taskPool: TaskPool): Promise<void> {
     this._canceled = false;
 
-    if (this._runInfo) {
-      this._shared.log.error('runInfo should be undefined', this._runInfo);
-      this._runInfo = undefined;
-    }
+    const childrenToRun = this.collectTestToRun(tests, false);
 
-    const childrenToRun = tests.delete(this.id) ? 'runAllTestsExceptSkipped' : new Set<AbstractTest>();
-
-    if (childrenToRun === 'runAllTestsExceptSkipped') {
-      this.enumerateDescendants(v => {
-        tests.delete(v.id);
-      });
-    } else {
-      this.enumerateDescendants((v: Suite | AbstractTest) => {
-        const explicitlyIn = tests.delete(v.id);
-        if (explicitlyIn) {
-          if (v instanceof AbstractTest) {
-            childrenToRun.add(v);
-          } else if (v instanceof Suite) {
-            v.enumerateTestInfos(vv => {
-              if (!vv.skipped) childrenToRun.add(vv);
-            });
-          } else {
-            this._shared.log.error('unknown case', v, this);
-            debugger;
-          }
-        }
-      });
-
-      if (childrenToRun.size == 0) return Promise.resolve();
+    if (childrenToRun.length === 0) {
+      return Promise.resolve();
     }
 
     const runIfNotCancelled = (): Promise<void> => {
@@ -285,23 +255,48 @@ export abstract class AbstractRunnableSuite extends Suite {
     });
   }
 
-  private _runInner(childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTest>): Promise<void> {
-    const execParams = this.execInfo.prependTestRunningArgs.concat(this._getRunParams(childrenToRun));
+  private _runInner(childrenToRun: ReadonlyArray<AbstractTest>): Promise<void> {
+    const descendantsWithStaticEvent: AbstractTest[] = [];
+    const runnableDescendant: AbstractTest[] = [];
 
-    this._shared.log.info('proc starting', this.label);
-    this._shared.log.local.debug('proc starting', this.label, execParams);
+    childrenToRun.forEach(t => {
+      if (t.staticEvent) descendantsWithStaticEvent.push(t);
+      else runnableDescendant.push(t);
+    });
 
     this.sendRunningEventIfNeeded();
 
+    if (descendantsWithStaticEvent.length > 0) {
+      descendantsWithStaticEvent
+        .map(t => this.findRouteToTest(s => s === t))
+        .forEach(v => {
+          const [route, test] = v;
+          route.forEach(s => s.sendRunningEventIfNeeded());
+          this._shared.testStatesEmitter.fire(test!.getStartEvent());
+          this._shared.testStatesEmitter.fire(test!.staticEvent);
+          route.reverse().forEach(s => s.sendCompletedEventIfNeeded());
+        });
+
+      if (runnableDescendant.length === 0) {
+        this.sendCompletedEventIfNeeded();
+        return Promise.resolve();
+      }
+    }
+
+    const execParams = this.execInfo.prependTestRunningArgs.concat(this._getRunParams(runnableDescendant));
+
+    this._shared.log.info('proc starting', this.label);
+    this._shared.log.localDebug('proc starting', this.label, execParams);
+
     const runInfo = new RunningTestExecutableInfo(
       cp.spawn(this.execInfo.path, execParams, this.execInfo.options),
-      childrenToRun,
+      runnableDescendant,
     );
 
-    this._runInfo = runInfo;
+    this._runInfos.push(runInfo);
 
     this._shared.log.info('proc started:', this.label);
-    this._shared.log.local.debug('proc started:', this.label, this.execInfo, execParams);
+    this._shared.log.localDebug('proc started:', this.label, this.execInfo, execParams);
 
     runInfo.process.on('error', (err: Error) => {
       this._shared.log.error('process error event:', err, this);
@@ -315,7 +310,7 @@ export abstract class AbstractRunnableSuite extends Suite {
       });
 
       runInfo.process.once('close', (...args) => {
-        this._shared.log.local.debug('proc close:', this.label, args);
+        this._shared.log.localDebug('proc close:', this.label, args);
         trigger('closed');
       });
 
@@ -356,10 +351,12 @@ export abstract class AbstractRunnableSuite extends Suite {
 
         this.sendCompletedEventIfNeeded();
 
-        if (this._runInfo !== runInfo) {
-          this._shared.log.error("assertion: shouldn't be here", this._runInfo, runInfo);
+        const index = this._runInfos.indexOf(runInfo);
+        if (index === -1) {
+          this._shared.log.error("assertion: shouldn't be here", this._runInfos, runInfo);
+        } else {
+          this._runInfos.splice(index, 1);
         }
-        this._runInfo = undefined;
       });
   }
 
