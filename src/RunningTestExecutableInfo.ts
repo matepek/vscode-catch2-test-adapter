@@ -6,6 +6,10 @@ import { AbstractTest } from './AbstractTest';
 export class ProcessResult {
   public error?: Error;
 
+  public static ok(): ProcessResult {
+    return {};
+  }
+
   public static createFromSignal(signal: string): ProcessResult {
     return { error: new Error('Signal received: ' + signal) };
   }

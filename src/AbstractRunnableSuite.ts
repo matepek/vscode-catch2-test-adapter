@@ -217,6 +217,10 @@ export abstract class AbstractRunnableSuite extends Suite {
     });
   }
 
+  protected isCancelled(): boolean {
+    return this._canceled;
+  }
+
   public cancel(): void {
     this._shared.log.info('canceled:', this.id, this.label, this._runInfo);
 

@@ -86,6 +86,15 @@ export abstract class AbstractTest implements TestInfo {
     runInfo: RunningTestExecutableInfo,
   ): TestEvent;
 
+  public getCancelledEvent(testOutput: string): TestEvent {
+    const ev = this.getFailedEventBase();
+    ev.message += '⏹ Run is stopped by user. ✋';
+    ev.message += '\n\nTest Output : R"""';
+    ev.message += testOutput;
+    ev.message += '"""';
+    return ev;
+  }
+
   public getTimeoutEvent(milisec: number): TestEvent {
     const ev = this.getFailedEventBase();
     ev.message += '⌛️ Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": ' + milisec / 1000 + ' second(s).';
