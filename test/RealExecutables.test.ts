@@ -305,7 +305,7 @@ describe(path.basename(__filename), function () {
     };
 
     it('should work with long argv.length=10', testWithLength(10));
-    it('should work with long argv.length=100000', testWithLength(10000));
+    it('should work with long argv.length=1000000', testWithLength(100000));
   });
 
   context('parallel spawn', function () {

@@ -313,7 +313,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
         } while (data.buffer.length > 0 && --invariant > 0);
         if (invariant == 0) {
           this._shared.log.error('invariant==0', this, runInfo, data, chunks);
-          resolve({ error: new Error('Possible infinite loop of this extension') });
+          resolve(ProcessResult.error('Possible infinite loop of this extension'));
           runInfo.killProcess();
         }
       };
@@ -327,7 +327,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
         } else {
           if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
           else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
-          else resolve({ error: new Error('unknown sfngvdlfkxdvgn') });
+          else resolve(ProcessResult.error('unknown sfngvdlfkxdvgn'));
         }
       });
     })
@@ -335,7 +335,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
         // eslint-disable-next-line
         if ((reason as any).code === undefined) this._shared.log.exception(reason);
 
-        return { error: reason };
+        return new ProcessResult(reason);
       })
       .then((result: ProcessResult) => {
         result.error && this._shared.log.info(result.error.toString(), result, runInfo, this, data);

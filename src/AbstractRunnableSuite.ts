@@ -18,7 +18,7 @@ export abstract class AbstractRunnableSuite extends Suite {
 
   private _canceled = false;
   private _runInfos: RunningTestExecutableInfo[] = [];
-  private _mtime: number | undefined = undefined;
+  private _lastReloadTime: number | undefined = undefined;
 
   public constructor(
     shared: SharedVariables,
@@ -181,6 +181,23 @@ export abstract class AbstractRunnableSuite extends Suite {
     );
   }
 
+  private _getModiTime(): Promise<number | undefined> {
+    return promisify(fs.stat)(this.execInfo.path).then(
+      stat => stat.mtimeMs,
+      () => undefined,
+    );
+  }
+
+  private async _isOutDated(): Promise<boolean> {
+    const lastModiTime = await this._getModiTime();
+
+    return this._lastReloadTime !== undefined && lastModiTime !== undefined && this._lastReloadTime !== lastModiTime;
+  }
+
+  // private _splitTestSetForMultirun(tests: AbstractTest[]): AbstractTest[][] {
+  //   return [];
+  // }
+
   protected abstract _reloadChildren(): Promise<void>;
 
   protected abstract _getRunParams(childrenToRun: ReadonlyArray<AbstractTest>): string[];
@@ -197,17 +214,13 @@ export abstract class AbstractRunnableSuite extends Suite {
         this.execInfo.path,
       );
 
-      const mtime = await promisify(fs.stat)(this.execInfo.path).then(
-        stat => stat.mtimeMs,
-        () => undefined,
-      );
+      const lastModiTime = await this._getModiTime();
 
-      if (this._mtime !== undefined && this._mtime === mtime) {
-        // skip
-        this._shared.log.debug('reloadTests was skipped due to mtime', this.label, this.id);
-      } else {
-        this._mtime = mtime;
+      if (this._lastReloadTime === undefined || lastModiTime === undefined || this._lastReloadTime !== lastModiTime) {
+        this._lastReloadTime = lastModiTime;
         return this._reloadChildren();
+      } else {
+        this._shared.log.debug('reloadTests was skipped due to mtime', this.label, this.id);
       }
     });
   }
@@ -241,18 +254,29 @@ export abstract class AbstractRunnableSuite extends Suite {
       return this._runInner(childrenToRun);
     };
 
-    return taskPool.scheduleTask(runIfNotCancelled).catch((err: Error) => {
-      // eslint-disable-next-line
-      if ((err as any).code === 'EBUSY' || (err as any).code === 'ETXTBSY') {
-        this._shared.log.info('executable is busy, rescheduled: 2sec', err);
+    return taskPool
+      .scheduleTask(runIfNotCancelled)
+      .catch((err: Error) => {
+        // eslint-disable-next-line
+        if ((err as any).code === 'EBUSY' || (err as any).code === 'ETXTBSY') {
+          this._shared.log.info('executable is busy, rescheduled: 2sec', err);
 
-        return promisify(setTimeout)(2000).then(() => {
-          taskPool.scheduleTask(runIfNotCancelled);
-        });
-      } else {
-        throw err;
-      }
-    });
+          return promisify(setTimeout)(2000).then(() => {
+            taskPool.scheduleTask(runIfNotCancelled);
+          });
+        } else {
+          throw err;
+        }
+      })
+      .finally(() => {
+        // last resort: if no fswatcher are functioning, this might notice the change
+        this._isOutDated().then(
+          (isOutDated: boolean) => {
+            if (isOutDated) this._shared.loadWithTaskEmitter.fire(() => this.reloadTests(this._shared.taskPool));
+          },
+          err => this._shared.log.exception(err),
+        );
+      });
   }
 
   private _runInner(childrenToRun: ReadonlyArray<AbstractTest>): Promise<void> {
