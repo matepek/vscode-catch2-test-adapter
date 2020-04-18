@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as cp from 'child_process';
 import * as fse from 'fs-extra';
 import * as path from 'path';
-import { inspect } from 'util';
+import { inspect, promisify } from 'util';
 import * as vscode from 'vscode';
 
 import { TestAdapter, settings, isWin, waitFor } from './Common';
@@ -279,7 +279,7 @@ describe(path.basename(__filename), function () {
 
         const args = Array.from(Array(count).keys()).map(x => (x % 10).toString().repeat(10));
 
-        const res = await c2fs.spawnAsync(inCpp('echo_args.exe'), args);
+        const res = await c2fs.spawnAsync(inCpp('echo_args.exe'), ['0', ...args]);
 
         const stdout = res.stdout.trimRight().split(/\r?\n/);
 
@@ -306,5 +306,50 @@ describe(path.basename(__filename), function () {
 
     it('should work with long argv.length=10', testWithLength(10));
     it('should work with long argv.length=100000', testWithLength(10000));
+  });
+
+  context('parallel spawn', function () {
+    async function waitFor(condition: Function, timeout: number): Promise<void> {
+      const start = Date.now();
+      let c = await condition();
+      while (!(c = await condition()) && Date.now() - start < timeout) await promisify(setTimeout)(128);
+      if (!c) throw Error('assert');
+    }
+
+    const testWith = function (count: number) {
+      return async function (): Promise<void> {
+        let max = 0;
+        let running = 0;
+        let finished = 0;
+        const processes: cp.ChildProcessWithoutNullStreams[] = [];
+
+        for (let i = 0; i < count; ++i) {
+          const p = cp.spawn(inCpp('echo_args.exe'), ['3', 'before', 'after']);
+          processes.push(p);
+
+          p.on('close', () => {
+            running--;
+            finished++;
+          });
+
+          p.stdout!.on('data', (chunk: Uint8Array) => {
+            const output = chunk.toString();
+
+            if (output.indexOf('before') != -1 && output.indexOf('after') == -1) running++;
+
+            max = Math.max(max, running);
+          });
+        }
+
+        await waitFor(() => {
+          return finished == count;
+        }, count * 3500);
+
+        assert.strictEqual(max, count);
+      };
+    };
+
+    it('should work with 3', testWith(10));
+    it('should work with 3', testWith(500));
   });
 });
