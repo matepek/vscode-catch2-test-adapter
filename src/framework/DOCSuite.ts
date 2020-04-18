@@ -208,13 +208,14 @@ export class DOCSuite extends AbstractRunnableSuite {
 
             data.beforeFirstTestCase = false;
 
-            const [testInfo, route] = this.findRouteToTest(v => v.testName == name);
+            const test = this.findTest(v => v.testName == name);
 
-            if (testInfo !== undefined) {
+            if (test) {
+              const route = [...test.route()];
               this.sendMinimalEventsIfNeeded(data.route, route);
               data.route = route;
 
-              data.currentChild = testInfo;
+              data.currentChild = test;
               this._shared.log.info('Test', data.currentChild.testName, 'has started.');
 
               if (!skipped) {
@@ -387,7 +388,7 @@ export class DOCSuite extends AbstractRunnableSuite {
                 if (name === undefined) break;
 
                 // xml output trimmes the name of the test
-                const [currentChild] = this.findRouteToTest(v => v.testName === name);
+                const currentChild = this.findTest(v => v.testName === name);
 
                 if (currentChild === undefined) break;
 

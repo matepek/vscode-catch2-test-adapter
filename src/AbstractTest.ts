@@ -73,6 +73,14 @@ export abstract class AbstractTest implements TestInfo {
     return this._pureTags.filter(v => v != '.' && v != 'hide');
   }
 
+  public *route(): IterableIterator<Suite> {
+    let parent: Suite | undefined = this.parent;
+    do {
+      yield parent;
+      parent = parent.parent;
+    } while (parent);
+  }
+
   public getStartEvent(): TestEvent {
     return { type: 'test', test: this, state: 'running' };
   }
@@ -128,8 +136,8 @@ export abstract class AbstractTest implements TestInfo {
     fn(this);
   }
 
-  public findRouteToTest(pred: (v: AbstractTest) => boolean): [AbstractTest | undefined, Suite[]] {
-    return [pred(this) ? this : undefined, []];
+  public findTest(pred: (v: AbstractTest) => boolean): AbstractTest | undefined {
+    return pred(this) ? this : undefined;
   }
 
   public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {

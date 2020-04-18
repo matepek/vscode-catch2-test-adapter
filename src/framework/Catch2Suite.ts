@@ -250,16 +250,17 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
             data.beforeFirstTestCase = false;
 
-            const [testInfo, route] = this.findRouteToTest(v => {
+            const test = this.findTest(v => {
               // xml output trimmes the name of the test
               return v.testName.trim() == name;
             });
 
-            if (testInfo !== undefined) {
+            if (test) {
+              const route = [...test.route()];
               this.sendMinimalEventsIfNeeded(data.route, route);
               data.route = route;
 
-              data.currentChild = testInfo;
+              data.currentChild = test;
               this._shared.log.info('Test', data.currentChild.testName, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
@@ -406,7 +407,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
                 if (name === undefined) break;
 
                 // xml output trimmes the name of the test
-                const [currentChild] = this.findRouteToTest(v => v.testName.trim() == name);
+                const currentChild = this.findTest(v => v.testName.trim() == name);
 
                 if (currentChild === undefined) break;
 

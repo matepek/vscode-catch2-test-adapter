@@ -267,13 +267,14 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
             data.currentTestCaseNameFull = m[1];
 
-            const [testInfo, route] = this.findRouteToTest(v => v.testName == data.currentTestCaseNameFull);
+            const test = this.findTest(v => v.testName == data.currentTestCaseNameFull);
 
-            if (testInfo !== undefined) {
+            if (test) {
+              const route = [...test.route()];
               this.sendMinimalEventsIfNeeded(data.route, route);
               data.route = route;
 
-              data.currentChild = testInfo;
+              data.currentChild = test;
               this._shared.log.info('Test', data.currentChild.testName, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
@@ -416,7 +417,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
                 const testNameAsId = m[1];
 
-                const [currentChild] = this.findRouteToTest(v => v.testName == testNameAsId);
+                const currentChild = this.findTest(v => v.testName == testNameAsId);
 
                 if (currentChild === undefined) break;
                 try {

@@ -142,16 +142,8 @@ export class RootSuite extends Suite implements vscode.Disposable {
     }
   }
 
-  public findRouteToTest(pred: (v: AbstractTest) => boolean): [AbstractTest | undefined, Suite[]] {
-    for (let i = 0; i < this.children.length; ++i) {
-      const found = this.children[i].findRouteToTest(pred);
-      if (found[0] !== undefined) return found;
-    }
-    return [undefined, []];
-  }
-
-  public findRouteToTestById(idOrInfo: string | TestInfo): [AbstractTest | undefined, Suite[]] {
-    if (typeof idOrInfo === 'string') return this.findRouteToTest(x => x.id === idOrInfo);
-    else return this.findRouteToTest(x => x === idOrInfo);
+  public findTestById(idOrInfo: string | TestInfo): AbstractTest | undefined {
+    if (typeof idOrInfo === 'string') return this.findTest(x => x.id === idOrInfo);
+    else return this.findTest(x => x === idOrInfo);
   }
 }

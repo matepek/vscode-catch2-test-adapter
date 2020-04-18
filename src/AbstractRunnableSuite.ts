@@ -299,13 +299,15 @@ export abstract class AbstractRunnableSuite extends Suite {
 
     if (descendantsWithStaticEvent.length > 0) {
       descendantsWithStaticEvent
-        .map(t => this.findRouteToTest(s => s === t))
-        .forEach(testWR => {
-          const [test, route] = testWR;
-          reverse(route)((s: Suite): void => s.sendRunningEventIfNeeded());
-          this._shared.testStatesEmitter.fire(test!.getStartEvent());
-          this._shared.testStatesEmitter.fire(test!.staticEvent);
-          route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
+        .map(t => this.findTest(s => s === t))
+        .forEach(test => {
+          if (test) {
+            const route = [...test.route()];
+            reverse(route)((s: Suite): void => s.sendRunningEventIfNeeded());
+            this._shared.testStatesEmitter.fire(test!.getStartEvent());
+            this._shared.testStatesEmitter.fire(test!.staticEvent);
+            route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
+          }
         });
 
       if (runnableDescendant.length === 0) {

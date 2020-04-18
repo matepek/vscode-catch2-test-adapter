@@ -199,9 +199,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             );
 
             for (let i = 0; i < testEvents.length; ++i) {
-              const [test, route] = this._rootSuite.findRouteToTestById(testEvents[i].test);
+              const test = this._rootSuite.findTestById(testEvents[i].test);
 
-              if (test !== undefined && route.length > 0) {
+              if (test) {
+                const route = [...test.route()];
                 reverse(route)(v => v.sendRunningEventIfNeeded());
 
                 this._testStatesEmitter.fire(test.getStartEvent());
@@ -209,7 +210,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
                 route.forEach(v => v.sendCompletedEventIfNeeded());
               } else {
-                this._log.error('sendTestEventEmitter.event', testEvents[i], route, this._rootSuite);
+                this._log.error('sendTestEventEmitter.event', testEvents[i], this._rootSuite);
               }
             }
 
@@ -427,11 +428,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       );
     }
 
-    const [testInfo, route] = this._rootSuite.findRouteToTestById(tests[0]);
-    if (testInfo === undefined) {
+    const test = this._rootSuite.findTestById(tests[0]);
+
+    if (test === undefined) {
       this._log.warn('route === undefined', tests);
       throw Error('Not existing test id.');
     }
+
+    const route = [...test.route()];
 
     const suiteLabels = route.map(s => s.label).join(' ← ');
 
@@ -439,16 +443,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     if (testSuite === undefined || !(testSuite instanceof AbstractRunnableSuite))
       throw Error('Unexpected error. Should have AbstractTestSuiteInfo parent.');
 
-    this._log.info('testInfo', testInfo, tests);
+    this._log.info('test', test, tests);
 
     const config = this._getConfiguration();
 
     const template = config.getDebugConfigurationTemplate();
 
-    const argsArray = testInfo.getDebugParams(config.getDebugBreakOnFailure());
+    const argsArray = test.getDebugParams(config.getDebugBreakOnFailure());
 
-    if (testInfo instanceof Catch2Test) {
-      const sections = testInfo.sections;
+    if (test instanceof Catch2Test) {
+      const sections = test.sections;
       if (sections && sections.length > 0) {
         interface QuickPickItem extends vscode.QuickPickItem {
           sectionStack: Catch2Section[];
@@ -456,7 +460,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
         const items: QuickPickItem[] = [
           {
-            label: testInfo.label,
+            label: test.label,
             sectionStack: [],
             description: 'Select the section combo you wish to debug or choose this to debug all of it.',
           },
@@ -501,7 +505,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ...this._variableToValue,
       ['${suitelabel}', suiteLabels], // deprecated
       ['${suiteLabel}', suiteLabels],
-      ['${label}', testInfo.label],
+      ['${label}', test.label],
       ['${exec}', testSuite.execInfo.path],
       ['${args}', argsArray], // deprecated
       ['${argsArray}', argsArray],
