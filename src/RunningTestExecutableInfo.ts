@@ -81,6 +81,13 @@ export class RunningTestExecutableInfo {
     process.stderr && process.stderr.on('data', (chunk: Uint8Array) => (this._stderr += chunk.toString()));
   }
 
+  public isCancelled = false;
+
+  public cancel(): void {
+    this.isCancelled = true;
+    this.killProcess();
+  }
+
   public killProcess(timeout: number | null = null): void {
     if (!this._closed && !this._killed) {
       this._killed = true;

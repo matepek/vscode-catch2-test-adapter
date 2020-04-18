@@ -320,7 +320,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
       runInfo.process.stderr!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
 
       runInfo.process.once('close', (code: number | null, signal: string | null) => {
-        if (this.isCancelled()) {
+        if (runInfo.isCancelled) {
           resolve(ProcessResult.ok());
         } else {
           if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
@@ -343,7 +343,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
             this._shared.log.info('data.currentChild !== undefined', data);
             let ev: TestEvent;
 
-            if (this.isCancelled()) {
+            if (runInfo.isCancelled) {
               ev = data.currentChild.getCancelledEvent(data.buffer);
             } else if (runInfo.timeout !== null) {
               ev = data.currentChild.getTimeoutEvent(runInfo.timeout);
@@ -372,7 +372,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
         const isTestRemoved =
           runInfo.timeout === null &&
-          !this.isCancelled() &&
+          !runInfo.isCancelled &&
           result.error === undefined &&
           data.processedTestCases.length < runInfo.childrenToRun.length;
 

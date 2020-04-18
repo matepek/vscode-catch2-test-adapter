@@ -201,9 +201,39 @@ export abstract class AbstractRunnableSuite extends Suite {
     return this._lastReloadTime !== undefined && lastModiTime !== undefined && this._lastReloadTime !== lastModiTime;
   }
 
-  // private _splitTestSetForMultirun(tests: AbstractTest[]): AbstractTest[][] {
-  //   return [];
-  // }
+  private _splitTestSetForMultirun(tests: AbstractTest[]): AbstractTest[][] {
+    // const maxGroupNumber = 10;
+    // const minimumMilisecForGroup = 2000;
+
+    // const hasRuntime: AbstractTest[] = [];
+    // const noHasRuntime: AbstractTest[] = [];
+
+    // let durationSum = 0;
+    // let durationCount = 0;
+
+    // for (const t of tests) {
+    //   if (t.lastRunMilisec !== undefined) {
+    //     durationCount++;
+    //     durationSum += t.lastRunMilisec;
+    //   }
+    // }
+
+    // const noDurationCount = tests.length - durationCount;
+
+    // for (const t of tests) {
+    //   if (t.lastRunMilisec) {
+    //     hasRuntime.push(t);
+    //   } else {
+    //     noHasRuntime.pu;
+    //   }
+    // }
+
+    const buckets: AbstractTest[][] = [];
+
+    tests.forEach(t => buckets.push([t]));
+
+    return buckets;
+  }
 
   protected abstract _reloadChildren(): Promise<void>;
 
@@ -232,14 +262,10 @@ export abstract class AbstractRunnableSuite extends Suite {
     });
   }
 
-  protected isCancelled(): boolean {
-    return this._canceled;
-  }
-
   public cancel(): void {
     this._shared.log.info('canceled:', this.id, this.label, this._runInfos);
 
-    this._runInfos.forEach(r => r.killProcess());
+    this._runInfos.forEach(r => r.cancel());
 
     this._canceled = true;
   }
@@ -253,28 +279,13 @@ export abstract class AbstractRunnableSuite extends Suite {
       return Promise.resolve();
     }
 
-    const runIfNotCancelled = (): Promise<void> => {
-      if (this._canceled) {
-        this._shared.log.info('test was canceled:', this);
-        return Promise.resolve();
-      }
-      return this._runInner(childrenToRun);
-    };
+    const buckets = this._splitTestSetForMultirun(childrenToRun);
 
-    return taskPool
-      .scheduleTask(runIfNotCancelled)
-      .catch((err: Error) => {
-        // eslint-disable-next-line
-        if ((err as any).code === 'EBUSY' || (err as any).code === 'ETXTBSY') {
-          this._shared.log.info('executable is busy, rescheduled: 2sec', err);
-
-          return promisify(setTimeout)(2000).then(() => {
-            taskPool.scheduleTask(runIfNotCancelled);
-          });
-        } else {
-          throw err;
-        }
-      })
+    return Promise.all(
+      buckets.map(b => {
+        return this._runInner(b, taskPool);
+      }),
+    )
       .finally(() => {
         // last resort: if no fswatcher are functioning, this might notice the change
         this._isOutDated().then(
@@ -283,10 +294,34 @@ export abstract class AbstractRunnableSuite extends Suite {
           },
           err => this._shared.log.exception(err),
         );
-      });
+      })
+      .then();
   }
 
-  private _runInner(childrenToRun: ReadonlyArray<AbstractTest>): Promise<void> {
+  private _runInner(childrenToRun: ReadonlyArray<AbstractTest>, taskPool: TaskPool): Promise<void> {
+    const runIfNotCancelled = (): Promise<void> => {
+      if (this._canceled) {
+        this._shared.log.info('test was canceled:', this);
+        return Promise.resolve();
+      }
+      return this._runProcess(childrenToRun);
+    };
+
+    return taskPool.scheduleTask(runIfNotCancelled).catch((err: Error) => {
+      // eslint-disable-next-line
+      if ((err as any).code === 'EBUSY' || (err as any).code === 'ETXTBSY') {
+        this._shared.log.info('executable is busy, rescheduled: 2sec', err);
+
+        return promisify(setTimeout)(2000).then(() => {
+          taskPool.scheduleTask(runIfNotCancelled);
+        });
+      } else {
+        throw err;
+      }
+    });
+  }
+
+  private _runProcess(childrenToRun: ReadonlyArray<AbstractTest>): Promise<void> {
     const descendantsWithStaticEvent: AbstractTest[] = [];
     const runnableDescendant: AbstractTest[] = [];
 
