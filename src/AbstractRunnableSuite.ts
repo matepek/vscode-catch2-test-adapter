@@ -203,7 +203,9 @@ export abstract class AbstractRunnableSuite extends Suite {
 
   private _splitTestSetForMultirun(tests: AbstractTest[]): AbstractTest[][] {
     // const maxGroupNumber = 10;
-    // const minimumMilisecForGroup = 2000;
+    // const maxBucket = 100;
+    // const minMilisecForGroup = 2000;
+    // const maxMilisecForGroup = 10000;
 
     // const hasRuntime: AbstractTest[] = [];
     // const noHasRuntime: AbstractTest[] = [];
@@ -219,14 +221,11 @@ export abstract class AbstractRunnableSuite extends Suite {
     // }
 
     // const noDurationCount = tests.length - durationCount;
+    // const avgDuration = durationSum / durationCount;
+    // const extrapolatedDuration = avgDuration * noDurationCount + durationSum;
+    // const bucketTreshold = extrapolatedDuration / maxGroupNumber;
 
-    // for (const t of tests) {
-    //   if (t.lastRunMilisec) {
-    //     hasRuntime.push(t);
-    //   } else {
-    //     noHasRuntime.pu;
-    //   }
-    // }
+    // let bucketNumber = extrapolatedDuration/maxMilisecForGroup;
 
     const buckets: AbstractTest[][] = [];
 

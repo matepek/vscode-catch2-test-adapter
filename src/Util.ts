@@ -303,6 +303,10 @@ export function reverse<T>(array: ReadonlyArray<T>): (func: (t: T) => void) => v
   };
 }
 
+export function unique<T>(array: ReadonlyArray<T>): ReadonlyArray<T> {
+  return array.filter((v, i, a) => a.indexOf(v) === i);
+}
+
 export class AdvancedII<T> implements IterableIterator<T> {
   public constructor(public readonly next: () => IteratorResult<T>) {}
 
