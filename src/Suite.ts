@@ -138,22 +138,22 @@ export class Suite implements TestSuiteInfo {
 
   public sendMinimalEventsIfNeeded(completed: Suite[], running: Suite[]): void {
     if (completed.length === 0) {
-      running.forEach(v => v.sendRunningEventIfNeeded());
+      running.reverse().forEach(v => v.sendRunningEventIfNeeded());
     } else if (running.length === 0) {
-      completed.reverse().forEach(v => v.sendCompletedEventIfNeeded());
-    } else if (completed[completed.length - 1] === running[running.length - 1]) {
+      completed.forEach(v => v.sendCompletedEventIfNeeded());
+    } else if (completed[0] === running[0]) {
       if (completed.length !== running.length) this._shared.log.error('completed.length !== running.length');
     } else {
-      let completedIndex = completed.length;
-      let runningIndex = 0;
+      let completedIndex = -1;
+      let runningIndex = -1;
 
       do {
-        --completedIndex;
-        runningIndex = running.lastIndexOf(completed[completedIndex]);
-      } while (completedIndex >= 0 && runningIndex === -1);
+        ++completedIndex;
+        runningIndex = running.indexOf(completed[completedIndex]);
+      } while (completedIndex < completed.length && runningIndex === -1);
 
-      for (let i = completedIndex + 1; i < completed.length; ++i) completed[i].sendCompletedEventIfNeeded();
-      for (let i = running.length - 1; i > runningIndex; --i) running[i].sendRunningEventIfNeeded();
+      for (let i = 0; i <= completedIndex; ++i) completed[i].sendCompletedEventIfNeeded();
+      for (let i = runningIndex - 1; i >= 0; --i) running[i].sendRunningEventIfNeeded();
     }
   }
 
@@ -206,25 +206,21 @@ export class Suite implements TestSuiteInfo {
     });
   }
 
-  public findRouteToTest(pred: (v: AbstractTest) => boolean): [Suite[], AbstractTest | undefined] {
-    const [route, test] = Suite.findRouteToTestInArray(this.children, pred);
-    if (test !== undefined) {
-      route.unshift(this);
-      return [route, test];
-    } else {
-      return [route, test];
-    }
+  public findRouteToTest(pred: (v: AbstractTest) => boolean): [AbstractTest | undefined, Suite[]] {
+    const found = Suite.findRouteToTestInArray(this.children, pred);
+    if (found[0] !== undefined) found[1].push(this);
+    return found;
   }
 
   public static findRouteToTestInArray(
     array: (Suite | AbstractTest)[],
     pred: (v: AbstractTest) => boolean,
-  ): [Suite[], AbstractTest | undefined] {
+  ): [AbstractTest | undefined, Suite[]] {
     for (let i = 0; i < array.length; ++i) {
-      const [route, test] = array[i].findRouteToTest(pred);
-      if (test !== undefined) return [route, test];
+      const found = array[i].findRouteToTest(pred);
+      if (found[0] !== undefined) return found;
     }
-    return [[], undefined];
+    return [undefined, []];
   }
 
   public findChildSuite(pred: (v: Suite) => boolean): Suite | undefined {

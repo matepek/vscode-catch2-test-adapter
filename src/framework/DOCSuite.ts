@@ -47,7 +47,7 @@ export class DOCSuite extends AbstractRunnableSuite {
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      const [, old] = Suite.findRouteToTestInArray(oldChildren, v => v.testName === testName);
+      const [old] = Suite.findRouteToTestInArray(oldChildren, v => v.testName === testName);
 
       const test = new DOCTest(
         this._shared,
@@ -205,7 +205,7 @@ export class DOCSuite extends AbstractRunnableSuite {
 
             data.beforeFirstTestCase = false;
 
-            const [route, testInfo] = this.findRouteToTest(v => v.testName == name);
+            const [testInfo, route] = this.findRouteToTest(v => v.testName == name);
 
             if (testInfo !== undefined) {
               this.sendMinimalEventsIfNeeded(data.route, route);
@@ -384,7 +384,7 @@ export class DOCSuite extends AbstractRunnableSuite {
                 if (name === undefined) break;
 
                 // xml output trimmes the name of the test
-                const [, currentChild] = this.findRouteToTest(v => v.testName === name);
+                const [currentChild] = this.findRouteToTest(v => v.testName === name);
 
                 if (currentChild === undefined) break;
 

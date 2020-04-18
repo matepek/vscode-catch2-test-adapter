@@ -56,7 +56,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const file = testCase.$.file ? this._findFilePath(testCase.$.file) : undefined;
         const line = testCase.$.line ? testCase.$.line - 1 : undefined;
 
-        const [, old] = Suite.findRouteToTestInArray(fixtureOldGroupChildren, v => v.testName === testNameAsId);
+        const [old] = Suite.findRouteToTestInArray(fixtureOldGroupChildren, v => v.testName === testNameAsId);
 
         const test = new GoogleTest(
           this._shared,
@@ -113,7 +113,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const valueParam: string | undefined = testMatch[3];
         const testNameAsId = testGroupName + '.' + testMatch[1];
 
-        const [, old] = Suite.findRouteToTestInArray(fixtureOldGroupChildren, v => v.testName === testNameAsId);
+        const [old] = Suite.findRouteToTestInArray(fixtureOldGroupChildren, v => v.testName === testNameAsId);
 
         const test = new GoogleTest(
           this._shared,
@@ -249,7 +249,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
             data.currentTestCaseNameFull = m[1];
 
-            const [route, testInfo] = this.findRouteToTest(v => v.testName == data.currentTestCaseNameFull);
+            const [testInfo, route] = this.findRouteToTest(v => v.testName == data.currentTestCaseNameFull);
 
             if (testInfo !== undefined) {
               this.sendMinimalEventsIfNeeded(data.route, route);
@@ -398,7 +398,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
                 const testNameAsId = m[1];
 
-                const [, currentChild] = this.findRouteToTest(v => v.testName == testNameAsId);
+                const [currentChild] = this.findRouteToTest(v => v.testName == testNameAsId);
 
                 if (currentChild === undefined) break;
                 try {

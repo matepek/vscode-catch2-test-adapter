@@ -127,8 +127,8 @@ export abstract class AbstractTest implements TestInfo {
     fn(this);
   }
 
-  public findRouteToTest(pred: (v: AbstractTest) => boolean): [Suite[], AbstractTest | undefined] {
-    return [[], pred(this) ? this : undefined];
+  public findRouteToTest(pred: (v: AbstractTest) => boolean): [AbstractTest | undefined, Suite[]] {
+    return [pred(this) ? this : undefined, []];
   }
 
   public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {

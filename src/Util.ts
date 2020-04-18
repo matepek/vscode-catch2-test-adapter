@@ -296,3 +296,46 @@ export class GoogleTestVersionFinder {
     return this._version;
   }
 }
+
+export class AdvancedII<T> implements IterableIterator<T> {
+  public constructor(public readonly next: () => IteratorResult<T>) {}
+
+  public static from<T>(iterable: Iterable<T>): AdvancedII<T> {
+    return new AdvancedII<T>(iterable[Symbol.iterator]().next);
+  }
+
+  public toArray(): T[] {
+    return [...this];
+  }
+
+  [Symbol.iterator](): AdvancedII<T> {
+    return this;
+  }
+
+  public map<U>(func: (t: T) => U): AdvancedII<U> {
+    const nextFunc = this.next;
+    let next: IteratorResult<T> = (undefined as unknown) as IteratorResult<T>;
+
+    return new AdvancedII<U>(
+      (): IteratorResult<U> => {
+        next = nextFunc();
+
+        return next.done ? { value: undefined, done: true } : { value: func(next.value), done: false };
+      },
+    );
+  }
+
+  public filter(func: (t: T) => boolean): AdvancedII<T> {
+    const nextFunc = this.next;
+    let next: IteratorResult<T> = (undefined as unknown) as IteratorResult<T>;
+
+    return new AdvancedII<T>(
+      (): IteratorResult<T> => {
+        next = nextFunc();
+        while (!next.done && !func(next.value)) next = nextFunc();
+
+        return next.done ? { value: undefined, done: true } : { value: next.value, done: false };
+      },
+    );
+  }
+}
