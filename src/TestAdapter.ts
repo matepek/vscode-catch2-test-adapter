@@ -15,7 +15,7 @@ import * as Sentry from '@sentry/node';
 
 import { LoggerWrapper } from './LoggerWrapper';
 import { RootSuite } from './RootSuite';
-import { resolveVariables, generateId } from './Util';
+import { resolveVariables, generateId, reverse } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { SharedVariables } from './SharedVariables';
 import { Catch2Section, Catch2Test } from './framework/Catch2Test';
@@ -202,7 +202,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
               const [test, route] = this._rootSuite.findRouteToTestById(testEvents[i].test);
 
               if (test !== undefined && route.length > 0) {
-                route.reverse().forEach(v => v.sendRunningEventIfNeeded());
+                reverse(route)(v => v.sendRunningEventIfNeeded());
 
                 this._testStatesEmitter.fire(test.getStartEvent());
                 this._testStatesEmitter.fire(testEvents[i]);

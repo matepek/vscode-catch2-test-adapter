@@ -11,7 +11,7 @@ import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
-import { Version } from './Util';
+import { Version, reverse } from './Util';
 
 export abstract class AbstractRunnableSuite extends Suite {
   private static _reportedFrameworks: string[] = [];
@@ -295,7 +295,7 @@ export abstract class AbstractRunnableSuite extends Suite {
         .map(t => this.findRouteToTest(s => s === t))
         .forEach(testWR => {
           const [test, route] = testWR;
-          route.reverse().forEach((s: Suite): void => s.sendRunningEventIfNeeded());
+          reverse(route)((s: Suite): void => s.sendRunningEventIfNeeded());
           this._shared.testStatesEmitter.fire(test!.getStartEvent());
           this._shared.testStatesEmitter.fire(test!.staticEvent);
           route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());

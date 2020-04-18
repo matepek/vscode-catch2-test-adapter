@@ -297,6 +297,12 @@ export class GoogleTestVersionFinder {
   }
 }
 
+export function reverse<T>(array: ReadonlyArray<T>): (func: (t: T) => void) => void {
+  return (func: (t: T) => void): void => {
+    for (let i = array.length - 1; i >= 0; --i) func(array[i]);
+  };
+}
+
 export class AdvancedII<T> implements IterableIterator<T> {
   public constructor(public readonly next: () => IteratorResult<T>) {}
 

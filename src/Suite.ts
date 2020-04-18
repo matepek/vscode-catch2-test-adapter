@@ -1,6 +1,6 @@
 import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
 
-import { generateId, milisecToStr } from './Util';
+import { generateId, milisecToStr, AdvancedII, reverse } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTest } from './AbstractTest';
 
@@ -138,7 +138,7 @@ export class Suite implements TestSuiteInfo {
 
   public sendMinimalEventsIfNeeded(completed: Suite[], running: Suite[]): void {
     if (completed.length === 0) {
-      running.reverse().forEach(v => v.sendRunningEventIfNeeded());
+      reverse(running)(v => v.sendRunningEventIfNeeded());
     } else if (running.length === 0) {
       completed.forEach(v => v.sendCompletedEventIfNeeded());
     } else if (completed[0] === running[0]) {
@@ -152,7 +152,7 @@ export class Suite implements TestSuiteInfo {
         runningIndex = running.indexOf(completed[completedIndex]);
       } while (completedIndex < completed.length && runningIndex === -1);
 
-      for (let i = 0; i <= completedIndex; ++i) completed[i].sendCompletedEventIfNeeded();
+      for (let i = 0; i < completedIndex; ++i) completed[i].sendCompletedEventIfNeeded();
       for (let i = runningIndex - 1; i >= 0; --i) running[i].sendRunningEventIfNeeded();
     }
   }
