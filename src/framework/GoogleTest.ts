@@ -49,6 +49,7 @@ export class GoogleTest extends AbstractTest {
     output: string,
     rngSeed: number | undefined,
     runInfo: RunningTestExecutableInfo,
+    stderr: string | undefined, //eslint-disable-line
   ): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);

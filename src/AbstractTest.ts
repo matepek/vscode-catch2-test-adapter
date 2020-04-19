@@ -97,6 +97,7 @@ export abstract class AbstractTest implements TestInfo {
     output: string,
     rngSeed: number | undefined,
     runInfo: RunningTestExecutableInfo,
+    stderr: string | undefined,
   ): TestEvent;
 
   public getCancelledEvent(testOutput: string): TestEvent {

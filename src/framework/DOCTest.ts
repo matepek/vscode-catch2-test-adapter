@@ -95,6 +95,7 @@ export class DOCTest extends AbstractTest {
     output: string,
     rngSeed: number | undefined,
     runInfo: RunningTestExecutableInfo,
+    stderr: string | undefined,
   ): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);
@@ -118,6 +119,12 @@ export class DOCTest extends AbstractTest {
     this._processXmlTagTestCaseInner(res.TestCase, testEventBuilder);
 
     const testEvent = testEventBuilder.build();
+
+    if (stderr) {
+      testEventBuilder.appendMessage('stderr arrived during running this test >>>', null);
+      testEventBuilder.appendMessage(stderr, 1);
+      testEventBuilder.appendMessage('<<<', null);
+    }
 
     this.lastRunEvent = testEvent;
 

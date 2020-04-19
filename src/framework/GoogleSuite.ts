@@ -243,7 +243,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
   protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
     const data = new (class {
-      public buffer = '';
+      public stdoutAndErrBuffer = ''; // no reason to separate
       public currentTestCaseNameFull: string | undefined = undefined;
       public currentChild: AbstractTest | undefined = undefined;
       public route: Suite[] = [];
@@ -258,11 +258,11 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
         chunks.push(chunk);
-        data.buffer = data.buffer + chunk;
+        data.stdoutAndErrBuffer = data.stdoutAndErrBuffer + chunk;
         let invariant = 99999;
         do {
           if (data.currentTestCaseNameFull === undefined) {
-            const m = data.buffer.match(testBeginRe);
+            const m = data.stdoutAndErrBuffer.match(testBeginRe);
             if (m == null) return;
 
             data.currentTestCaseNameFull = m[1];
@@ -281,22 +281,22 @@ export class GoogleSuite extends AbstractRunnableSuite {
               this._shared.log.info('TestCase not found in children', data.currentTestCaseNameFull);
             }
 
-            data.buffer = data.buffer.substr(m.index!);
+            data.stdoutAndErrBuffer = data.stdoutAndErrBuffer.substr(m.index!);
           } else {
             const testEndRe = new RegExp(
               '(?!\\[ RUN      \\])\\[..........\\] ' + data.currentTestCaseNameFull.replace('.', '\\.') + '.*$',
               'm',
             );
 
-            const m = data.buffer.match(testEndRe);
+            const m = data.stdoutAndErrBuffer.match(testEndRe);
             if (m == null) return;
 
-            const testCase = data.buffer.substring(0, m.index! + m[0].length);
+            const testCase = data.stdoutAndErrBuffer.substring(0, m.index! + m[0].length);
 
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test ', data.currentChild.testName, 'has finished.');
               try {
-                const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo);
+                const ev = data.currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo, undefined);
 
                 this._shared.testStatesEmitter.fire(ev);
 
@@ -327,9 +327,9 @@ export class GoogleSuite extends AbstractRunnableSuite {
             data.currentTestCaseNameFull = undefined;
             data.currentChild = undefined;
             // do not clear data.route
-            data.buffer = data.buffer.substr(m.index! + m[0].length);
+            data.stdoutAndErrBuffer = data.stdoutAndErrBuffer.substr(m.index! + m[0].length);
           }
-        } while (data.buffer.length > 0 && --invariant > 0);
+        } while (data.stdoutAndErrBuffer.length > 0 && --invariant > 0);
         if (invariant == 0) {
           this._shared.log.error('invariant==0', this, runInfo, data, chunks);
           resolve(ProcessResult.error('Possible infinite loop of this extension'));
@@ -366,7 +366,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
             let ev: TestEvent;
 
             if (runInfo.isCancelled) {
-              ev = data.currentChild.getCancelledEvent(data.buffer);
+              ev = data.currentChild.getCancelledEvent(data.stdoutAndErrBuffer);
             } else if (runInfo.timeout !== null) {
               ev = data.currentChild.getTimeoutEvent(runInfo.timeout);
             } else {
@@ -379,7 +379,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
                 ev.message += '\n' + result.error.message;
               }
 
-              ev.message += data.buffer ? `\n\n>>>${data.buffer}<<<` : '';
+              ev.message += data.stdoutAndErrBuffer ? `\n\n>>>${data.stdoutAndErrBuffer}<<<` : '';
             }
 
             data.currentChild.lastRunEvent = ev;
@@ -421,7 +421,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
                 if (currentChild === undefined) break;
                 try {
-                  const ev = currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo);
+                  const ev = currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo, undefined);
                   events.push(ev);
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCase);

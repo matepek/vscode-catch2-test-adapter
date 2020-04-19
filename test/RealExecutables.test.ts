@@ -349,7 +349,7 @@ describe(path.basename(__filename), function () {
       };
     };
 
-    it('should work with 3', testWith(10));
-    it('should work with 3', testWith(500));
+    it('should work with 10', testWith(10));
+    it('should work with 100', testWith(100));
   });
 });

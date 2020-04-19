@@ -108,6 +108,7 @@ export class Catch2Test extends AbstractTest {
     output: string,
     rngSeed: number | undefined,
     runInfo: RunningTestExecutableInfo,
+    stderr: string | undefined,
   ): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);
@@ -129,6 +130,12 @@ export class Catch2Test extends AbstractTest {
     if (rngSeed) testEventBuilder.appendMessage(`🔀 Randomness seeded to: ${rngSeed.toString()}`, 0);
 
     this._processXmlTagTestCaseInner(res.TestCase, testEventBuilder);
+
+    if (stderr) {
+      testEventBuilder.appendMessage('stderr arrived during running this test >>>', null);
+      testEventBuilder.appendMessage(stderr, 1);
+      testEventBuilder.appendMessage('<<<', null);
+    }
 
     const testEvent = testEventBuilder.build();
 
