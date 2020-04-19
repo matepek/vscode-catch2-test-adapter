@@ -33,14 +33,14 @@ describe(path.basename(__filename), function () {
       ] as any; //eslint-disable-line
       const keys = Object.keys(executableSchemaProp);
       keys.forEach(key => {
-        assert.strictEqual(findDescriptionInReadmeTable(key), executableSchemaProp[key]['description'], key);
+        assert.strictEqual(findDescriptionInReadmeTable(key), executableSchemaProp[key]['markdownDescription'], key);
       });
 
       {
         const catch2Prop = executableSchemaProp['catch2']['properties'];
         const keys = Object.keys(catch2Prop);
         keys.forEach(key => {
-          assert.strictEqual(findDescriptionInReadmeTable(key), catch2Prop[key]['description']);
+          assert.strictEqual(findDescriptionInReadmeTable(key), catch2Prop[key]['markdownDescription']);
         });
       }
 
@@ -48,7 +48,7 @@ describe(path.basename(__filename), function () {
         const catch2Prop = executableSchemaProp['catch2']['properties'];
         const keys = Object.keys(catch2Prop);
         keys.forEach(key => {
-          assert.strictEqual(findDescriptionInReadmeTable(key), catch2Prop[key]['description']);
+          assert.strictEqual(findDescriptionInReadmeTable(key), catch2Prop[key]['markdownDescription']);
         });
       }
 
@@ -56,7 +56,7 @@ describe(path.basename(__filename), function () {
         const catch2Prop = executableSchemaProp['doctest']['properties'];
         const keys = Object.keys(catch2Prop);
         keys.forEach(key => {
-          assert.strictEqual(findDescriptionInReadmeTable(key), catch2Prop[key]['description']);
+          assert.strictEqual(findDescriptionInReadmeTable(key), catch2Prop[key]['markdownDescription']);
         });
       }
     }
@@ -71,7 +71,7 @@ describe(path.basename(__filename), function () {
           const trimmedKey = key.substring('catch2TestExplorer.'.length);
           const descriptionInReadme = findDescriptionInReadmeTable(trimmedKey);
           assert.strictEqual(descriptionInReadme, properties[key]['markdownDescription'], key);
-          assert.strictEqual(descriptionInReadme, properties[key]['description'], key);
+          assert.strictEqual(descriptionInReadme, properties[key]['markdownDescription'], key);
         }
       });
     }
