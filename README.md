@@ -28,7 +28,7 @@ tests using the [Test Explorer for Visual Studio Code](https://marketplace.visua
 ![Screenshot1](resources/Screenshot_2019-05-28.png)
 ![Screenshot2](resources/Screenshot_2019-05-29.png)
 
-## [Configuration](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration)
+## [Configuration](https://github.com/matepek/vscode-catch2-test-adapter/tree/master/documents/configuration)
 
 [settings.json]: https://code.visualstudio.com/docs/getstarted/settings
 [executables]: https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md
