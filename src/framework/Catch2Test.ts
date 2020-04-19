@@ -57,7 +57,7 @@ export class Catch2Test extends AbstractTest {
               '⚡️ This extension is unable to run this test.',
               '',
               `Current Catch2 framework version ${frameworkVersion} has a bug (https://github.com/catchorg/Catch2/issues/1905).`,
-              `Please refresh your framework to at least ${EscapeCharParserFix}.`,
+              `Update your framework to at least ${EscapeCharParserFix}.`,
             ].join('\n'),
             description: '⚡️ See output for details ⚡️',
           }

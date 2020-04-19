@@ -147,8 +147,10 @@ describe(path.basename(__filename), function () {
           35 * 2, // suite3 tests
         inspect(
           adapter.testStatesEvents.map(v => {
-            if (v.type === 'suite' && typeof v.suite != 'string') return { type: v.type, label: v.suite.label };
-            if (v.type === 'test' && typeof v.test != 'string') return { type: v.type, label: v.test.label };
+            if (v.type === 'suite' && typeof v.suite != 'string')
+              return { type: v.type, state: v.state, label: v.suite.label };
+            if (v.type === 'test' && typeof v.test != 'string')
+              return { type: v.type, state: v.state, label: v.test.label };
             else return { type: v.type };
           }),
         ),
