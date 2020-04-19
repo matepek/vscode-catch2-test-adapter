@@ -131,11 +131,6 @@ describe(path.basename(__filename), function () {
       const eventCount = adapter.testStatesEvents.length;
       await adapter.run([adapter.root.id]);
 
-      const labels: string[] = [];
-      adapter.testStatesEvents.forEach(x => {
-        if (x.type == 'test' && x.state == 'running' && typeof x.test != 'string') labels.push(x.test.label);
-      });
-
       assert.strictEqual(
         adapter.testStatesEvents.length - eventCount,
         2 + // start,fin
@@ -147,11 +142,9 @@ describe(path.basename(__filename), function () {
           35 * 2, // suite3 tests
         inspect(
           adapter.testStatesEvents.map(v => {
-            if (v.type === 'suite' && typeof v.suite != 'string')
-              return { type: v.type, state: v.state, label: v.suite.label };
-            if (v.type === 'test' && typeof v.test != 'string')
-              return { type: v.type, state: v.state, label: v.test.label };
-            else return { type: v.type };
+            if (v.type === 'suite' && typeof v.suite != 'string') return `[${v.type} ${v.state}: "${v.suite.label}" ]`;
+            if (v.type === 'test' && typeof v.test != 'string') return `[${v.type} ${v.state}: "${v.test.label}" ]`;
+            else return `[${v.type}]`;
           }),
         ),
       );

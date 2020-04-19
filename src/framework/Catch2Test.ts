@@ -47,8 +47,9 @@ export class Catch2Test extends AbstractTest {
     description: string | undefined,
     old?: Catch2Test | undefined,
   ) {
+    const badChars = ['[', '\\', ',', '±', '§'];
     const forceIgnoreEvent: TestEvent | undefined =
-      frameworkVersion.smaller(EscapeCharParserFix) && testNameAsId.match(/\[|\\|,/)
+      frameworkVersion.smaller(EscapeCharParserFix) && badChars.some(b => testNameAsId.indexOf(b) != -1)
         ? {
             type: 'test',
             test: '',
@@ -58,6 +59,8 @@ export class Catch2Test extends AbstractTest {
               '',
               `Current Catch2 framework version ${frameworkVersion} has a bug (https://github.com/catchorg/Catch2/issues/1905).`,
               `Update your framework to at least ${EscapeCharParserFix}.`,
+              'Avoid test names with:',
+              ...badChars.map(b => ` - ${b}`),
             ].join('\n'),
             description: '⚡️ See output for details ⚡️',
           }
