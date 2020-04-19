@@ -26,9 +26,17 @@
       "runOptions": {
         "runOn": "folderOpen"
       },
-      "dependsOn": [
-        "createTmpWorkingFolder"
-      ]
+      "dependsOn": ["createTmpWorkingFolder"]
+    },
+    {
+      "label": "preDebug",
+      "type": "shell",
+      "command": "sed -i '' 's/\"main\": \"out\\/dist\\/main.js\"/\"main\": \"out\\/src\\/main.js\"/' package.json"
+    },
+    {
+      "label": "postDebug",
+      "type": "shell",
+      "command": "sed -i '' 's/\"main\": \"out\\/src\\/main.js\"/\"main\": \"out\\/dist\\/main.js\"/' package.json"
     },
     {
       "type": "npm",
@@ -42,9 +50,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "dependsOn": [
-        "createTmpWorkingFolder"
-      ]
+      "dependsOn": ["createTmpWorkingFolder"]
     }
   ]
 }

@@ -47,7 +47,15 @@ export class Catch2Test extends AbstractTest {
     description: string | undefined,
     old?: Catch2Test | undefined,
   ) {
-    const badChars = ['[', '\\', ',', '±', '§'];
+    const badChars = [
+      // this 3 relates some catch2 bug
+      '[',
+      '\\',
+      ',',
+      // this two has some on windows
+      '±',
+      '§',
+    ];
     const forceIgnoreEvent: TestEvent | undefined =
       frameworkVersion.smaller(EscapeCharParserFix) && badChars.some(b => testNameAsId.indexOf(b) != -1)
         ? {
