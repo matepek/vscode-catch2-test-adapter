@@ -145,7 +145,13 @@ describe(path.basename(__filename), function () {
         2 * 2 + // suite2 tests
         2 + //suite3 start,fin
           35 * 2, // suite3 tests
-        inspect(labels),
+        inspect(
+          adapter.testStatesEvents.map(v => {
+            if (v.type === 'suite' && typeof v.suite != 'string') return { type: v.type, label: v.suite.label };
+            if (v.type === 'test' && typeof v.test != 'string') return { type: v.type, label: v.test.label };
+            else return { type: v.type };
+          }),
+        ),
       );
     });
 
@@ -305,7 +311,7 @@ describe(path.basename(__filename), function () {
     };
 
     it('should work with long argv.length=10', testWithLength(10));
-    it('should work with long argv.length=1000000', testWithLength(100000));
+    it('should work with long argv.length=100000', testWithLength(10000));
   });
 
   context('parallel spawn', function () {
@@ -316,7 +322,7 @@ describe(path.basename(__filename), function () {
       if (!c) throw Error('assert');
     }
 
-    const testWith = function (count: number) {
+    const testWith = function (count: number, atLeast: number) {
       return async function (): Promise<void> {
         let max = 0;
         let running = 0;
@@ -345,11 +351,11 @@ describe(path.basename(__filename), function () {
           return finished == count;
         }, count * 3500);
 
-        assert.strictEqual(max, count);
+        assert.ok(max >= atLeast, `Failed: ${max} >= ${atLeast}`);
       };
     };
 
-    it('should work with 10', testWith(10));
-    it('should work with 100', testWith(100));
+    it('should work with 10', testWith(10, 10));
+    it('should work with 100', testWith(100, 10));
   });
 });
