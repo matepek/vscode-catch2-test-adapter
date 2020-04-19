@@ -69,6 +69,8 @@ export abstract class AbstractTest implements TestInfo {
     }
   }
 
+  public abstract get testNameInOutput(): string;
+
   public get tags(): string[] {
     return this._pureTags.filter(v => v != '.' && v != 'hide');
   }

@@ -82,6 +82,11 @@ export class Catch2Test extends AbstractTest {
     this._sections = old ? old.sections : undefined;
   }
 
+  public get testNameInOutput(): string {
+    // xml output trimmes the name of the test
+    return this.testName.trim();
+  }
+
   private _sections: undefined | Catch2Section[];
 
   public get sections(): undefined | Catch2Section[] {

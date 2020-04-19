@@ -338,7 +338,7 @@ export class DOCSuite extends AbstractRunnableSuite {
                 ev.message += '\n' + result.error.message;
               }
 
-              ev.message += runInfo.stderr ? '\n' + runInfo.stderr : '';
+              ev.message += data.buffer ? `\n\n>>>${data.buffer}<<<` : '';
             }
 
             data.currentChild.lastRunEvent = ev;

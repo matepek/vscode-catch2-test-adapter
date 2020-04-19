@@ -9,13 +9,19 @@ describe(path.basename(__filename), function () {
     assert.strictEqual(packageJson['main'], 'out/dist/main.js');
   });
 
-  it('package.json should be consistent with README.md', function () {
+  it('package.json should be consistent with documentation', function () {
     const packageJson = fse.readJSONSync(path.join(__dirname, '../..', 'package.json'));
     const properties = packageJson['contributes']['configuration']['properties'];
 
     const readme = fse.readFileSync(path.join(__dirname, '../..', 'README.md')).toString();
+    const executables = fse
+      .readFileSync(path.join(__dirname, '../..', 'documents/configuraiton', 'executables.config.md'))
+      .toString();
+
+    const documents = readme + executables;
+
     const findDescriptionInReadmeTable = (name: string): string => {
-      const match = readme.match(new RegExp('^\\| *`' + name + '` *\\|([^\\|]*)\\|', 'm'));
+      const match = documents.match(new RegExp('^\\| *(?:`|\\[)' + name + '(?:`|\\]) *\\|([^\\|]*)\\|', 'm'));
       if (match) {
         return match[1].trim();
       }

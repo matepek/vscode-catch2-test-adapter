@@ -34,6 +34,10 @@ export class GoogleTest extends AbstractTest {
     );
   }
 
+  public get testNameInOutput(): string {
+    return this.testName;
+  }
+
   public getDebugParams(breakOnFailure: boolean): string[] {
     const debugParams: string[] = ['--gtest_color=no', '--gtest_filter=' + this.testName];
     if (breakOnFailure) debugParams.push('--gtest_break_on_failure');

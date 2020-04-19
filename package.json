@@ -110,8 +110,8 @@
       "$comment": "Enums will cause that the vscode will offer auto-completion.",
       "properties": {
         "catch2TestExplorer.executables": {
-          "markdownDescription": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerexecutables)",
-          "description": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerexecutables)",
+          "markdownDescription": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting.",
+          "description": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting.",
           "scope": "resource",
           "default": [
             {
@@ -546,8 +546,8 @@
           "minimum": 1
         },
         "catch2TestExplorer.debugConfigTemplate": {
-          "markdownDescription": "Set the necessary debug configurations and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",
-          "description": "Set the necessary debug configurations and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",
+          "markdownDescription": "Set the necessary debug configurations and the debug button will work.",
+          "description": "Set the necessary debug configurations and the debug button will work.",
           "scope": "resource",
           "default": null,
           "oneOf": [

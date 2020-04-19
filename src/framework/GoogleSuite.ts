@@ -49,7 +49,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
         const testCase = xml.testsuites.testsuite[i].testcase[j];
         const testName = testCase.$.name.startsWith('DISABLED_') ? testCase.$.name.substr(9) : testCase.$.name;
-        const testNameAsId = suiteName + '.' + testCase.$.name;
+        const testNameInOutput = suiteName + '.' + testCase.$.name;
         const typeParam: string | undefined = testCase.$.type_param;
         const valueParam: string | undefined = testCase.$.value_param;
 
@@ -64,14 +64,14 @@ export class GoogleSuite extends AbstractRunnableSuite {
           fixtureGroup,
         );
 
-        const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testNameAsId);
+        const old = oldGroupChildren.find(t => t.type === 'test' && t.testNameInOutput === testNameInOutput);
 
         group.addTest(
           new GoogleTest(
             this._shared,
             group,
             old ? old.id : undefined,
-            testNameAsId,
+            testNameInOutput,
             testName,
             typeParam,
             valueParam,
@@ -120,7 +120,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
         const testName = testMatch[1].startsWith('DISABLED_') ? testMatch[1].substr(9) : testMatch[1];
         const valueParam: string | undefined = testMatch[3];
-        const testNameAsId = testGroupName + '.' + testMatch[1];
+        const testNameInOutput = testGroupName + '.' + testMatch[1];
 
         const [group, oldGroupChildren] = this.createAndAddToSubSuite(
           testName,
@@ -130,14 +130,14 @@ export class GoogleSuite extends AbstractRunnableSuite {
           fixtureGroup,
         );
 
-        const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testNameAsId);
+        const old = oldGroupChildren.find(t => t.type === 'test' && t.testNameInOutput === testNameInOutput);
 
         group.addTest(
           new GoogleTest(
             this._shared,
             group,
             old ? old.id : undefined,
-            testNameAsId,
+            testNameInOutput,
             testName,
             typeParam,
             valueParam,
@@ -379,7 +379,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
                 ev.message += '\n' + result.error.message;
               }
 
-              ev.message += data.buffer ? '\n' + data.buffer : '';
+              ev.message += data.buffer ? `\n\n>>>${data.buffer}<<<` : '';
             }
 
             data.currentChild.lastRunEvent = ev;
@@ -415,9 +415,9 @@ export class GoogleSuite extends AbstractRunnableSuite {
                 const m = testCase.match(testBeginRe);
                 if (m == null) break;
 
-                const testNameAsId = m[1];
+                const testNameInOutput = m[1];
 
-                const currentChild = this.findTest(v => v.testName == testNameAsId);
+                const currentChild = this.findTest(v => v.testNameInOutput == testNameInOutput);
 
                 if (currentChild === undefined) break;
                 try {

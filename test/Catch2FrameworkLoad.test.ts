@@ -802,7 +802,8 @@ describe(path.basename(__filename), function () {
           state: 'failed',
           test: s1t1,
           decorations: [],
-          message: '😱 Unexpected error !!',
+          message:
+            '😱 Unexpected error !!\n\n>>><TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7"><<<',
         },
         {
           type: 'suite',
@@ -871,7 +872,8 @@ describe(path.basename(__filename), function () {
           state: 'errored',
           test: s1t1,
           decorations: [],
-          message: '😱 Unexpected error !!\nSignal received: SIGTERM',
+          message:
+            '😱 Unexpected error !!\nSignal received: SIGTERM\n\n>>><TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7"><<<',
         },
         {
           type: 'suite',

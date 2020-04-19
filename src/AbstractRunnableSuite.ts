@@ -23,12 +23,12 @@ export abstract class AbstractRunnableSuite extends Suite {
   public constructor(
     shared: SharedVariables,
     label: string,
-    desciption: string | undefined,
+    description: string | undefined,
     public readonly execInfo: RunnableSuiteProperties,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<Version | undefined>,
   ) {
-    super(shared, undefined, label, desciption, undefined);
+    super(shared, undefined, label, description, undefined);
 
     frameworkVersion
       .then(version => {
@@ -159,6 +159,10 @@ export abstract class AbstractRunnableSuite extends Suite {
             undefined,
             undefined,
           );
+        }
+
+        public get testNameInOutput(): string {
+          return this.testName;
         }
 
         public getDebugParams(): string[] {

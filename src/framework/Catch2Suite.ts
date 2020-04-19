@@ -250,10 +250,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
             data.beforeFirstTestCase = false;
 
-            const test = this.findTest(v => {
-              // xml output trimmes the name of the test
-              return v.testName.trim() == name;
-            });
+            const test = this.findTest(v => v.testNameInOutput == name);
 
             if (test) {
               const route = [...test.route()];
@@ -357,7 +354,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
                 ev.message += '\n' + result.error.message;
               }
 
-              ev.message += runInfo.stderr ? '\n' + runInfo.stderr : '';
+              ev.message += data.buffer ? `\n\n>>>${data.buffer}<<<` : '';
             }
 
             data.currentChild.lastRunEvent = ev;
@@ -406,8 +403,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
                 );
                 if (name === undefined) break;
 
-                // xml output trimmes the name of the test
-                const currentChild = this.findTest(v => v.testName.trim() == name);
+                const currentChild = this.findTest(v => v.testNameInOutput === name);
 
                 if (currentChild === undefined) break;
 

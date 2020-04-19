@@ -69,6 +69,10 @@ export class DOCTest extends AbstractTest {
     }
   }
 
+  public get testNameInOutput(): string {
+    return this.testName.trim();
+  }
+
   private _sections: undefined | DOCSection[];
   private _isSecnario: boolean;
 
