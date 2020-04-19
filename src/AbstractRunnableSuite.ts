@@ -227,11 +227,13 @@ export abstract class AbstractRunnableSuite extends Suite {
 
     // let bucketNumber = extrapolatedDuration/maxMilisecForGroup;
 
-    const buckets: AbstractTest[][] = [];
+    //const buckets: AbstractTest[][] = [];
 
-    tests.forEach(t => buckets.push([t]));
+    //tests.forEach(t => buckets.push([t]));
 
-    return buckets;
+    //return buckets;
+
+    return [tests];
   }
 
   protected abstract _reloadChildren(): Promise<void>;
