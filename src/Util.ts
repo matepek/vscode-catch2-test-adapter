@@ -1,3 +1,36 @@
+export class Version {
+  public constructor(
+    public readonly major: number,
+    private readonly _minor?: number,
+    private readonly _patch?: number,
+  ) {}
+
+  public get minor(): number {
+    return this._minor ? this._minor : 0;
+  }
+
+  public get patch(): number {
+    return this._patch ? this._patch : 0;
+  }
+
+  public smaller(right: Version): boolean {
+    if (this.major < right.major) return true;
+    else if (this.major > right.major) return false;
+
+    if (this.minor < right.minor) return true;
+    else if (this.minor > right.minor) return false;
+
+    if (this.patch < right.patch) return true;
+    else if (this.patch > right.patch) return false;
+
+    return false;
+  }
+
+  public toString(): string {
+    return `${this.major}.${this.minor}.${this.patch}`;
+  }
+}
+
 // eslint-disable-next-line
 function _mapAllStrings<T>(value: T, mapperFunc: (s: string) => any): T {
   if (value === null || value === undefined || typeof value === 'function') {
@@ -108,6 +141,20 @@ export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolea
       s = s.substring(match.index! + match[0].length);
     }
   });
+}
+
+export const PythonIndexerRegexStr = '(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])';
+
+export function processArrayWithPythonIndexer<T>(arr: ReadonlyArray<T>, match: RegExpMatchArray): T[] {
+  if (match[1]) {
+    const idx = Number(match[1]);
+    if (idx < 0) return [arr[arr.length + idx]];
+    else return [arr[idx]];
+  } else {
+    const idx1 = match[2] === undefined ? undefined : Number(match[2]);
+    const idx2 = match[3] === undefined ? undefined : Number(match[3]);
+    return arr.slice(idx1, idx2);
+  }
 }
 
 let uidCounter = 0;
@@ -247,5 +294,58 @@ export class GoogleTestVersionFinder {
     }
 
     return this._version;
+  }
+}
+
+export function reverse<T>(array: ReadonlyArray<T>): (func: (t: T) => void) => void {
+  return (func: (t: T) => void): void => {
+    for (let i = array.length - 1; i >= 0; --i) func(array[i]);
+  };
+}
+
+export function unique<T>(array: ReadonlyArray<T>): ReadonlyArray<T> {
+  return array.filter((v, i, a) => a.indexOf(v) === i);
+}
+
+export class AdvancedII<T> implements IterableIterator<T> {
+  public constructor(public readonly next: () => IteratorResult<T>) {}
+
+  public static from<T>(iterable: Iterable<T>): AdvancedII<T> {
+    return new AdvancedII<T>(iterable[Symbol.iterator]().next);
+  }
+
+  public toArray(): T[] {
+    return [...this];
+  }
+
+  [Symbol.iterator](): AdvancedII<T> {
+    return this;
+  }
+
+  public map<U>(func: (t: T) => U): AdvancedII<U> {
+    const nextFunc = this.next;
+    let next: IteratorResult<T> = (undefined as unknown) as IteratorResult<T>;
+
+    return new AdvancedII<U>(
+      (): IteratorResult<U> => {
+        next = nextFunc();
+
+        return next.done ? { value: undefined, done: true } : { value: func(next.value), done: false };
+      },
+    );
+  }
+
+  public filter(func: (t: T) => boolean): AdvancedII<T> {
+    const nextFunc = this.next;
+    let next: IteratorResult<T> = (undefined as unknown) as IteratorResult<T>;
+
+    return new AdvancedII<T>(
+      (): IteratorResult<T> => {
+        next = nextFunc();
+        while (!next.done && !func(next.value)) next = nextFunc();
+
+        return next.done ? { value: undefined, done: true } : { value: next.value, done: false };
+      },
+    );
   }
 }

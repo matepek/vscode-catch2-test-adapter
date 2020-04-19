@@ -110,8 +110,7 @@
       "$comment": "Enums will cause that the vscode will offer auto-completion.",
       "properties": {
         "catch2TestExplorer.executables": {
-          "markdownDescription": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerexecutables)",
-          "description": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerexecutables)",
+          "markdownDescription": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting.",
           "scope": "resource",
           "default": [
             {
@@ -125,12 +124,12 @@
               "items": {
                 "oneOf": [
                   {
-                    "description": "An object with 'pattern'.",
+                    "markdownDescription": "An object with 'pattern'.",
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
                       "pattern": {
-                        "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
+                        "markdownDescription": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                         "anyOf": [
                           {
                             "type": "string",
@@ -146,7 +145,7 @@
                         ]
                       },
                       "name": {
-                        "description": "The name of the test suite (file). Can contains variables related to `pattern`.",
+                        "markdownDescription": "The name of the test suite (file). Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                         "anyOf": [
                           {
                             "type": "string",
@@ -163,7 +162,7 @@
                         ]
                       },
                       "description": {
-                        "description": "A less prominent text after the `name`. Can contains variables related to `pattern`.",
+                        "markdownDescription": "A less prominent text after the `name`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                         "anyOf": [
                           {
                             "type": "string",
@@ -178,7 +177,7 @@
                         ]
                       },
                       "cwd": {
-                        "description": "The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.",
+                        "markdownDescription": "The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                         "anyOf": [
                           {
                             "type": "string",
@@ -197,7 +196,7 @@
                       },
                       "env": {
                         "type": "object",
-                        "description": "Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`).",
+                        "markdownDescription": "Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                         "additionalProperties": {
                           "anyOf": [
                             {
@@ -227,7 +226,7 @@
                         }
                       },
                       "dependsOn": {
-                        "description": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables.",
+                        "markdownDescription": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                         "type": "array",
                         "items": {
                           "type": "string",
@@ -235,45 +234,45 @@
                         }
                       },
                       "catch2": {
-                        "description": "Object with framework specific settings. See [here](#Framework-specific-settings).",
+                        "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#framework-specific-settings)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
                           "helpRegex": {
-                            "description": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`.",
+                            "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "string",
                             "minLength": 1
                           },
                           "prependTestRunningArgs": {
-                            "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "prependTestListingArgs": {
-                            "description": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.)",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {
-                            "description": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`.",
+                            "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "boolean"
                           },
                           "testGrouping": {
-                            "description": "Groups the tests inside the executable.",
+                            "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
                             "additionalProperties": false,
                             "properties": {
                               "groupBySource": {
-                                "description": "Source path is split by '/' (and '\\') and can be (python-like) indexed. Example: '[-2:]': last 2 segments of the path.",
+                                "markdownDescription": "It sorts the tests into the related source file group. Source file can be indexed like `\"[1:]\"`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
                                 "type": "string",
                                 "default": "[-1:]",
-                                "pattern": "^\\[(-?[0-9]+)?:(-?[0-9]+)?\\]$"
+                                "pattern": "^(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])$"
                               },
                               "groupByTags": {
-                                "description": "True to group by every exiting combination of the tags. Or an array of tags.",
+                                "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
                                 "oneOf": [
                                   {
                                     "type": "boolean"
@@ -286,13 +285,16 @@
                                   }
                                 ]
                               },
-                              "groupBySingleRegex": {
-                                "description": "Groups tests by the first match group. Example: \"(?:good|bad) (apple|peach)\" will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group.",
-                                "type": "string",
-                                "minLength": "3"
+                              "groupByRegex": {
+                                "markdownDescription": "Groups tests by the first match group of the first matching regex. Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": "3"
+                                }
                               },
                               "groupUngroupablesTo": {
-                                "desciption": "If a test is not groupable it will be grouped by the given name.",
+                                "markdownDescription": "If a test is not groupable it will be grouped by the given name. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
                                 "type": "string",
                                 "minLength": "1"
                               }
@@ -301,50 +303,53 @@
                         }
                       },
                       "gtest": {
-                        "description": "Object with framework specific settings. See [here](#Framework-specific-settings).",
+                        "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#framework-specific-settings)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
                           "helpRegex": {
-                            "description": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`.",
+                            "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "string",
                             "minLength": 1
                           },
                           "prependTestRunningArgs": {
-                            "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "prependTestListingArgs": {
-                            "description": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.)",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {
-                            "description": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`.",
+                            "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "boolean"
                           },
                           "testGrouping": {
-                            "description": "Groups the tests inside the executable.",
+                            "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
                             "additionalProperties": false,
                             "properties": {
                               "groupBySource": {
-                                "description": "Source path is split by '/' (and '\\') and can be (python-like) indexed. Example: '[-2:]': last 2 segments of the path.",
+                                "markdownDescription": "It sorts the tests into the related source file group. Source file can be indexed like `\"[1:]\"`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
                                 "type": "string",
                                 "default": "[-1:]",
-                                "pattern": "^\\[(-?[0-9]+)?:(-?[0-9]+)?\\]$"
+                                "pattern": "^(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])$"
                               },
-                              "groupBySingleRegex": {
-                                "description": "Groups tests by the first match group. Example: \"(?:good|bad) (apple|peach)\" will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group.",
-                                "type": "string",
-                                "minLength": "3"
+                              "groupByRegex": {
+                                "markdownDescription": "Groups tests by the first match group of the first matching regex. Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": "3"
+                                }
                               },
                               "groupUngroupablesTo": {
-                                "desciption": "If a test is not groupable it will be grouped by the given name.",
+                                "markdownDescription": "If a test is not groupable it will be grouped by the given name. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
                                 "type": "string",
                                 "minLength": "1"
                               }
@@ -353,50 +358,53 @@
                         }
                       },
                       "doctest": {
-                        "description": "Object with framework specific settings. See [here](#Framework-specific-settings).",
+                        "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#framework-specific-settings)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
                           "helpRegex": {
-                            "description": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`.",
+                            "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "string",
                             "minLength": 1
                           },
                           "prependTestRunningArgs": {
-                            "description": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`.",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "prependTestListingArgs": {
-                            "description": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.)",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {
-                            "description": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`.",
+                            "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)",
                             "type": "boolean"
                           },
                           "testGrouping": {
-                            "description": "Groups the tests inside the executable.",
+                            "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
                             "additionalProperties": false,
                             "properties": {
                               "groupBySource": {
-                                "description": "Source path is split by '/' (and '\\') and can be (python-like) indexed. Example: '[-2:]': last 2 segments of the path.",
+                                "markdownDescription": "It sorts the tests into the related source file group. Source file can be indexed like `\"[1:]\"`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
                                 "type": "string",
                                 "default": "[-1:]",
-                                "pattern": "^\\[(-?[0-9]+)?:(-?[0-9]+)?\\]$"
+                                "pattern": "^(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])$"
                               },
-                              "groupBySingleRegex": {
-                                "description": "Groups tests by the first match group. Example: \"(?:good|bad) (apple|peach)\" will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group.",
-                                "type": "string",
-                                "minLength": "3"
+                              "groupByRegex": {
+                                "markdownDescription": "Groups tests by the first match group of the first matching regex. Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": "3"
+                                }
                               },
                               "groupUngroupablesTo": {
-                                "desciption": "If a test is not groupable it will be grouped by the given name.",
+                                "markdownDescription": "If a test is not groupable it will be grouped by the given name. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)",
                                 "type": "string",
                                 "minLength": "1"
                               }
@@ -410,7 +418,7 @@
                     ]
                   },
                   {
-                    "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
+                    "markdownDescription": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
                     "type": "string",
                     "minLength": 1
                   }
@@ -418,19 +426,18 @@
               }
             },
             {
-              "description": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
+              "markdownDescription": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required)",
               "type": "string",
               "minLength": 1
             },
             {
-              "description": "null means it is disabled",
+              "markdownDescription": "null means it is disabled",
               "type": "null"
             }
           ]
         },
         "catch2TestExplorer.defaultCwd": {
           "markdownDescription": "The working directory where the test is run (relative to the workspace folder or absolute path), if it isn't provided in \"executables\". (It resolves variables.)",
-          "description": "The working directory where the test is run (relative to the workspace folder or absolute path), if it isn't provided in \"executables\". (It resolves variables.)",
           "scope": "resource",
           "type": "string",
           "default": "${absDirpath}",
@@ -452,7 +459,6 @@
         },
         "catch2TestExplorer.defaultEnv": {
           "markdownDescription": "Environment variables to be set when running the tests. (It resolves variables.)",
-          "description": "Environment variables to be set when running the tests. (It resolves variables.)",
           "type": "object",
           "additionalProperties": {
             "anyOf": [
@@ -485,7 +491,6 @@
         },
         "catch2TestExplorer.defaultRngSeed": {
           "markdownDescription": "Shuffles the tests with the given random. Catch2: [--rng-seed (<integer> or 'time')](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed); Google Test: [--gtest_random_seed=<integer>](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#shuffling-the-tests);",
-          "description": "Shuffles the tests with the given random. Catch2: [--rng-seed (<integer> or 'time')](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed); Google Test: [--gtest_random_seed=<integer>](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#shuffling-the-tests);",
           "scope": "resource",
           "default": null,
           "oneOf": [
@@ -506,7 +511,6 @@
         },
         "catch2TestExplorer.defaultWatchTimeoutSec": {
           "markdownDescription": "Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.",
-          "description": "Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.",
           "scope": "resource",
           "type": "integer",
           "default": 10,
@@ -514,7 +518,6 @@
         },
         "catch2TestExplorer.retireDebounceTimeMilisec": {
           "markdownDescription": "Retire events will be held back for the given duration. (Reload is required)",
-          "description": "Retire events will be held back for the given duration. (Reload is required)",
           "scope": "resource",
           "type": "integer",
           "default": 1000,
@@ -522,7 +525,6 @@
         },
         "catch2TestExplorer.defaultRunningTimeoutSec": {
           "markdownDescription": "Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
-          "description": "Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
           "scope": "resource",
           "type": "integer",
           "default": 600,
@@ -530,7 +532,6 @@
         },
         "catch2TestExplorer.defaultExecParsingTimeoutSec": {
           "markdownDescription": "The timeout duration (in seconds) of the test-executable identifier (Calls the exec with `--help`).",
-          "description": "The timeout duration (in seconds) of the test-executable identifier (Calls the exec with `--help`).",
           "scope": "resource",
           "type": "integer",
           "default": 5,
@@ -539,15 +540,13 @@
         },
         "catch2TestExplorer.workerMaxNumber": {
           "markdownDescription": "The variable maximize the number of the parallel test execution. It applies instantly.",
-          "description": "The variable maximize the number of the parallel test execution. It applies instantly.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
           "minimum": 1
         },
         "catch2TestExplorer.debugConfigTemplate": {
-          "markdownDescription": "Set the necessary debug configurations and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",
-          "description": "Set the necessary debug configurations and the debug button will work. [Details](https://github.com/matepek/vscode-catch2-test-adapter#catch2TestExplorerdebugConfigTemplate)",
+          "markdownDescription": "Set the necessary debug configurations and the debug button will work.",
           "scope": "resource",
           "default": null,
           "oneOf": [
@@ -602,35 +601,30 @@
         },
         "catch2TestExplorer.debugBreakOnFailure": {
           "markdownDescription": "Debugger breaks on failure while debugging the test. Catch2: [--break](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#breaking-into-the-debugger); Google Test: [--gtest_break_on_failure](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#turning-assertion-failures-into-break-points);",
-          "description": "Debugger breaks on failure while debugging the test. Catch2: [--break](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#breaking-into-the-debugger); Google Test: [--gtest_break_on_failure](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#turning-assertion-failures-into-break-points);",
           "scope": "resource",
           "type": "boolean",
           "default": true
         },
         "catch2TestExplorer.defaultNoThrow": {
           "markdownDescription": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: [--nothrow](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#eliding-assertions-expected-to-throw);",
-          "description": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: [--nothrow](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#eliding-assertions-expected-to-throw);",
           "scope": "resource",
           "type": "boolean",
           "default": false
         },
         "catch2TestExplorer.logpanel": {
           "markdownDescription": "Creates a new output channel and write the log messages there. For debugging. Enabling it could slow down your vscode.",
-          "description": "Creates a new output channel and write the log messages there. For debugging. Enabling it could slow down your vscode.",
           "scope": "resource",
           "type": "boolean",
           "default": false
         },
         "catch2TestExplorer.logfile": {
           "markdownDescription": "Writes the log message into the given file. Empty means disabled.",
-          "description": "Writes the log message into the given file. Empty means disabled.",
           "scope": "resource",
           "type": "string",
           "default": ""
         },
         "catch2TestExplorer.logSentry": {
           "markdownDescription": "Errors/Exceptions will be logged and sent automatically for further analysis.",
-          "description": "Errors/Exceptions will be logged and sent automatically for further analysis.",
           "scope": "resource",
           "type": "string",
           "default": "question",
@@ -642,21 +636,19 @@
           ]
         },
         "catch2TestExplorer.userId": {
-          "description": "A locally generated identifier which is used to group the errors/events.",
+          "markdownDescription": "A locally generated identifier which is used to group the errors/events.",
           "scope": "resource",
           "type": "string",
           "default": ""
         },
         "catch2TestExplorer.enableTestListCaching": {
           "markdownDescription": "(Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.) (Click [here](http://bit.ly/2HFcAC6), if you think it is a useful feature!)",
-          "description": "(Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.) (Click [here](http://bit.ly/2HFcAC6), if you think it is a useful feature!)",
           "scope": "resource",
           "type": "boolean",
           "default": false
         },
         "catch2TestExplorer.googletest.treatGmockWarningAs": {
           "markdownDescription": "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/cook_book.md#the-nice-the-strict-and-the-naggy-nicestrictnaggy))",
-          "description": "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/cook_book.md#the-nice-the-strict-and-the-naggy-nicestrictnaggy))",
           "scope": "resource",
           "type": "string",
           "default": "nothing",
@@ -671,7 +663,6 @@
         },
         "catch2TestExplorer.googletest.gmockVerbose": {
           "markdownDescription": "Sets [--gmock_verbose=...](https://github.com/google/googletest/blob/master/googlemock/docs/cheat_sheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
-          "description": "Sets [--gmock_verbose=...](https://github.com/google/googletest/blob/master/googlemock/docs/cheat_sheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
           "scope": "resource",
           "type": "string",
           "default": "default",

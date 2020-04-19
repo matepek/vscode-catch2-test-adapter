@@ -3,8 +3,8 @@ import * as path from 'path';
 
 import * as utils from '../src/Util';
 
-describe(path.basename(__filename), function() {
-  it('resolveVariables', function() {
+describe(path.basename(__filename), function () {
+  it('resolveVariables', function () {
     const func1 = (): string => 'resolvedFunc1';
 
     // eslint-disable-next-line
@@ -109,5 +109,11 @@ describe(path.basename(__filename), function() {
     assert.deepStrictEqual(utils.resolveVariables(input, varsToResolve), expected);
     assert.deepStrictEqual(utils.resolveVariables({ a: input, b: input }, varsToResolve), { a: expected, b: expected });
     assert.deepStrictEqual(utils.resolveVariables([input, input], varsToResolve), [expected, expected]);
+  });
+
+  // experimental and todo
+  it.skip('AdvancedII', function () {
+    const x = utils.AdvancedII.from([1, 2, 3]);
+    assert.deepStrictEqual(x.toArray(), [1, 2, 3]);
   });
 });

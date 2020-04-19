@@ -6,7 +6,7 @@ about: Create a report to help us improve
 **Checklist**
 
 - [ ] The issue is about this extension and NOT about a fork.
-- [ ] Check the [known issues](https://github.com/matepek/vscode-catch2-test-adapter#known-issues) list.
+- [ ] Check the [known issues](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/support.md#known-issues) list.
 - [ ] The latest version of the extension was used.
 
 **Describe the bug**

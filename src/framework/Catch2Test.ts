@@ -6,6 +6,8 @@ import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 import { TestEventBuilder } from '../TestEventBuilder';
 import * as pathlib from 'path';
+import { Version } from '../Util';
+import { Suite } from '../Suite';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -31,33 +33,69 @@ export class Catch2Section {
   }
 }
 
+const EscapeCharParserFix = new Version(2, 11, 4);
+
 export class Catch2Test extends AbstractTest {
   public constructor(
     shared: SharedVariables,
-    id: string | undefined,
+    parent: Suite,
+    frameworkVersion: Version,
     testNameAsId: string,
-    catch2Description: string,
     tags: string[],
     file: string | undefined,
     line: number | undefined,
-    sections?: Catch2Section[],
+    description: string | undefined,
+    old?: Catch2Test | undefined,
   ) {
+    const badChars = [
+      // this 3 relates some catch2 bug
+      '[',
+      '\\',
+      ',',
+      // this two has some on windows
+      '±',
+      '§',
+    ];
+    const forceIgnoreEvent: TestEvent | undefined =
+      frameworkVersion.smaller(EscapeCharParserFix) && badChars.some(b => testNameAsId.indexOf(b) != -1)
+        ? {
+            type: 'test',
+            test: '',
+            state: 'errored',
+            message: [
+              '⚡️ This extension is unable to run this test.',
+              '',
+              `Current Catch2 framework version ${frameworkVersion} has a bug (https://github.com/catchorg/Catch2/issues/1905).`,
+              `Update your framework to at least ${EscapeCharParserFix}.`,
+              'Avoid test names with:',
+              ...badChars.map(b => ` - ${b}`),
+            ].join('\n'),
+            description: '⚡️ See output for details ⚡️',
+          }
+        : undefined;
+
     super(
       shared,
-      id,
+      parent,
+      old ? old.id : undefined,
       testNameAsId,
       testNameAsId,
-      tags.some((v: string) => {
-        return v.startsWith('[.') || v == '[hide]';
-      }) || testNameAsId.startsWith('./'),
       file,
       line,
-      tags.join(''),
-      [tags.length > 0 ? 'Tags: ' + tags.join('') : '', catch2Description ? 'Description: ' + catch2Description : '']
-        .filter(v => v.length)
-        .join('\n'),
+      tags.some((v: string) => v.startsWith('.') || v == 'hide') || testNameAsId.startsWith('./'),
+      forceIgnoreEvent,
+      tags,
+      description,
+      undefined,
+      undefined,
     );
-    this._sections = sections;
+
+    this._sections = old ? old.sections : undefined;
+  }
+
+  public get testNameInOutput(): string {
+    // xml output trimmes the name of the test
+    return this.testName.trim();
   }
 
   private _sections: undefined | Catch2Section[];
@@ -67,14 +105,8 @@ export class Catch2Test extends AbstractTest {
   }
 
   public getEscapedTestName(): string {
-    /* ',' has special meaning */
-    let t = this.testNameAsId;
-    t = t.replace(/,/g, '\\,');
-    t = t.replace(/\[/g, '\\[');
-    t = t.replace(/\*/g, '\\*');
-    t = t.replace(/`/g, '\\`');
-    if (t.startsWith(' ')) t = '*' + t.trimLeft();
-    return t;
+    /* ',' and '[' has special meaning */
+    return this.testName.replace(/,/g, '\\,').replace(/\[/g, '\\[');
   }
 
   public getDebugParams(breakOnFailure: boolean): string[] {
@@ -87,6 +119,7 @@ export class Catch2Test extends AbstractTest {
     output: string,
     rngSeed: number | undefined,
     runInfo: RunningTestExecutableInfo,
+    stderr: string | undefined,
   ): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);
@@ -108,6 +141,12 @@ export class Catch2Test extends AbstractTest {
     if (rngSeed) testEventBuilder.appendMessage(`🔀 Randomness seeded to: ${rngSeed.toString()}`, 0);
 
     this._processXmlTagTestCaseInner(res.TestCase, testEventBuilder);
+
+    if (stderr) {
+      testEventBuilder.appendMessage('stderr arrived during running this test >>>', null);
+      testEventBuilder.appendMessage(stderr, 1);
+      testEventBuilder.appendMessage('<<<', null);
+    }
 
     const testEvent = testEventBuilder.build();
 

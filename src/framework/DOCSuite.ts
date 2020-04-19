@@ -6,12 +6,12 @@ import * as xml2js from 'xml2js';
 import * as c2fs from '../FSWrapper';
 import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
 import { AbstractTest } from '../AbstractTest';
-import { AbstractSuite } from '../AbstractSuite';
+import { Suite } from '../Suite';
 import { DOCTest } from './DOCTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
-import { GroupSuite } from '../GroupSuite';
+import { Version } from '../Util';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -23,12 +23,12 @@ export class DOCSuite extends AbstractRunnableSuite {
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
-    docVersion: [number, number, number] | undefined,
+    docVersion: Version,
   ) {
     super(shared, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: (AbstractSuite | AbstractTest)[]): void {
+  private _reloadFromString(testListOutput: string, oldChildren: (Suite | AbstractTest)[]): void {
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
       if (err) {
@@ -41,86 +41,35 @@ export class DOCSuite extends AbstractRunnableSuite {
     for (let i = 0; i < res.doctest.TestCase.length; ++i) {
       const testCase = res.doctest.TestCase[i].$;
 
-      const testNameAsId = testCase.name;
+      const testName = testCase.name;
       const filePath: string | undefined = testCase.filename ? this._findFilePath(testCase.filename) : undefined;
       const line: number | undefined = testCase.line !== undefined ? Number(testCase.line) - 1 : undefined;
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      let group: AbstractSuite = this as AbstractSuite;
-      let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldChildren;
+      const [group, oldGroupChildren] = this.createAndAddToSubSuite(testName, filePath, [], oldChildren);
 
-      const addNewSubGroup = (label: string): void => {
-        const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.origLabel === label);
-        group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
-        oldGroupChildren = oldGroup ? oldGroup.children : [];
-      };
+      const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testName);
 
-      const setUngroupableGroup = (): void => {
-        if (this.execInfo.groupUngroupablesTo) {
-          const found = group.children.find(
-            v => v.type === 'suite' && v.origLabel === this.execInfo.groupUngroupablesTo,
-          );
-          if (found && found.type == 'suite') {
-            group = found;
-          } else {
-            addNewSubGroup(this.execInfo.groupUngroupablesTo);
-          }
-        }
-      };
-
-      if (this.execInfo.groupBySource) {
-        if (filePath) {
-          this._shared.log.info('groupBySource');
-          const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
-          const found = group.findGroup(v => v.origLabel === fileStr);
-          if (fileStr.length > 0 && found) {
-            group = found;
-          } else {
-            addNewSubGroup(fileStr);
-          }
-        } else if (this.execInfo.groupUngroupablesTo) {
-          setUngroupableGroup();
-        }
-      }
-
-      if (this.execInfo.groupBySingleRegex) {
-        this._shared.log.info('groupBySingleRegex');
-        const match = testNameAsId.match(this.execInfo.groupBySingleRegex);
-        if (match && match[1]) {
-          const firstMatchGroup = match[1];
-          const found = group.findGroup(v => v.origLabel === firstMatchGroup);
-          if (found) {
-            group = found;
-          } else {
-            addNewSubGroup(firstMatchGroup);
-          }
-        } else if (this.execInfo.groupUngroupablesTo) {
-          setUngroupableGroup();
-        }
-      }
-
-      const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
-
-      const test = new DOCTest(
-        this._shared,
-        undefined,
-        testNameAsId,
-        suite !== undefined ? `[${suite}]` : undefined,
-        skipped,
-        filePath,
-        line,
-        old as DOCTest,
+      group.addTest(
+        new DOCTest(
+          this._shared,
+          group,
+          undefined,
+          testName,
+          skipped,
+          filePath,
+          line,
+          suite !== undefined ? [`${suite}`] : [],
+          old as DOCTest,
+        ),
       );
-
-      group.addChild(test);
     }
   }
 
   protected async _reloadChildren(): Promise<void> {
     const oldChildren = this.children;
     this.children = [];
-    this.label = this.origLabel;
 
     const cacheFile = this.execInfo.path + '.cache.txt';
 
@@ -162,33 +111,7 @@ export class DOCSuite extends AbstractRunnableSuite {
             docTestListOutput.error,
             docTestListOutput.status,
           );
-          const test = this.addChild(
-            new DOCTest(
-              this._shared,
-              undefined,
-              'Check the test output message for details ⚠️',
-              undefined,
-              false,
-              undefined,
-              undefined,
-            ),
-          );
-          this._shared.sendTestEventEmitter.fire([
-            {
-              type: 'test',
-              test: test,
-              state: 'errored',
-              message: [
-                `❗️Unexpected stderr!`,
-                `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
-                `spawn`,
-                `stout:`,
-                `${docTestListOutput.stdout}`,
-                `stderr:`,
-                `${docTestListOutput.stderr}`,
-              ].join('\n'),
-            },
-          ]);
+          this._addUnexpectedStdError(docTestListOutput.stdout, docTestListOutput.stderr);
           return Promise.resolve();
         }
 
@@ -203,14 +126,12 @@ export class DOCSuite extends AbstractRunnableSuite {
       });
   }
 
-  protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<DOCTest>): string[] {
+  protected _getRunParams(childrenToRun: ReadonlyArray<DOCTest>): string[] {
     const execParams: string[] = [];
 
-    if (childrenToRun !== 'runAllTestsExceptSkipped') {
-      const testNames = [...childrenToRun].map(c => c.getEscapedTestName());
-      execParams.push('--test-case=' + testNames.join(','));
-      execParams.push('--no-skip=true');
-    }
+    const testNames = childrenToRun.map(c => c.getEscapedTestName());
+    execParams.push('--test-case=' + testNames.join(','));
+    execParams.push('--no-skip=true');
 
     execParams.push('--case-sensitive=true');
     execParams.push('--reporters=xml');
@@ -228,13 +149,14 @@ export class DOCSuite extends AbstractRunnableSuite {
 
   protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
     const data = new (class {
-      public buffer = '';
+      public stdoutBuffer = '';
+      public stderrBuffer = '';
       public inTestCase = false;
       public currentChild: AbstractTest | undefined = undefined;
-      public route: AbstractSuite[] = [];
+      public route: Suite[] = [];
       public beforeFirstTestCase = true;
       public rngSeed: number | undefined = undefined;
-      public unprocessedXmlTestCases: string[] = [];
+      public unprocessedXmlTestCases: [string, string][] = [];
       public processedTestCases: AbstractTest[] = [];
     })();
 
@@ -244,18 +166,18 @@ export class DOCSuite extends AbstractRunnableSuite {
       const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
         chunks.push(chunk);
-        data.buffer = data.buffer + chunk;
+        data.stdoutBuffer = data.stdoutBuffer + chunk;
         let invariant = 99999;
         do {
           if (!data.inTestCase) {
             if (data.beforeFirstTestCase && data.rngSeed === undefined) {
-              const ri = data.buffer.match(/<Options\s+[^>\n]*rand_seed="([0-9]+)"/);
+              const ri = data.stdoutBuffer.match(/<Options\s+[^>\n]*rand_seed="([0-9]+)"/);
               if (ri != null && ri.length == 2) {
                 data.rngSeed = Number(ri[1]);
               }
             }
 
-            const m = data.buffer.match(testCaseTagRe);
+            const m = data.stdoutBuffer.match(testCaseTagRe);
             if (m == null) return;
 
             const skipped = m[2] === '/';
@@ -287,20 +209,21 @@ export class DOCSuite extends AbstractRunnableSuite {
 
             data.beforeFirstTestCase = false;
 
-            const [route, testInfo] = this.findRouteToTestInfo(v => v.testNameAsId == name);
+            const test = this.findTest(v => v.testName == name);
 
-            if (testInfo !== undefined) {
+            if (test) {
+              const route = [...test.route()];
               this.sendMinimalEventsIfNeeded(data.route, route);
               data.route = route;
 
-              data.currentChild = testInfo;
-              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
+              data.currentChild = test;
+              this._shared.log.info('Test', data.currentChild.testName, 'has started.');
 
               if (!skipped) {
                 this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
-                data.buffer = data.buffer.substr(m.index!);
+                data.stdoutBuffer = data.stdoutBuffer.substr(m.index!);
               } else {
-                this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has skipped.');
+                this._shared.log.info('Test ', data.currentChild.testName, 'has skipped.');
 
                 // this always comes so we skip it
                 //const testCaseXml = m[0];
@@ -321,23 +244,28 @@ export class DOCSuite extends AbstractRunnableSuite {
 
                 data.inTestCase = false;
                 data.currentChild = undefined;
-                data.buffer = data.buffer.substr(m.index! + m[0].length);
+                data.stdoutBuffer = data.stdoutBuffer.substr(m.index! + m[0].length);
               }
             } else {
               this._shared.log.info('TestCase not found in children', name);
             }
           } else {
             const endTestCase = '</TestCase>';
-            const b = data.buffer.indexOf(endTestCase);
+            const b = data.stdoutBuffer.indexOf(endTestCase);
 
             if (b == -1) return;
 
-            const testCaseXml = data.buffer.substring(0, b + endTestCase.length);
+            const testCaseXml = data.stdoutBuffer.substring(0, b + endTestCase.length);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
+              this._shared.log.info('Test ', data.currentChild.testName, 'has finished.');
               try {
-                const ev = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
+                const ev = data.currentChild.parseAndProcessTestCase(
+                  testCaseXml,
+                  data.rngSeed,
+                  runInfo,
+                  data.stderrBuffer,
+                );
 
                 this._shared.testStatesEmitter.fire(ev);
 
@@ -351,44 +279,50 @@ export class DOCSuite extends AbstractRunnableSuite {
                   message: [
                     '😱 Unexpected error under parsing output !! Error: ' + inspect(e),
                     'Consider opening an issue: https://github.com/matepek/vscode-catch2-test-adapter/issues/new/choose',
-                    '=== Output ===',
-                    testCaseXml,
-                    '==============',
+                    '',
+                    'stdout >>>' + data.stdoutBuffer + '<<<',
+                    '',
+                    'stderr >>>' + data.stderrBuffer + '<<<',
                   ].join('\n'),
                 });
               }
             } else {
               this._shared.log.info('<TestCase> found without TestInfo: ', this, '; ', testCaseXml);
-              data.unprocessedXmlTestCases.push(testCaseXml);
+              data.unprocessedXmlTestCases.push([testCaseXml, data.stderrBuffer]);
             }
 
             data.inTestCase = false;
             data.currentChild = undefined;
             // do not clear data.route
-            data.buffer = data.buffer.substr(b + endTestCase.length);
+            data.stdoutBuffer = data.stdoutBuffer.substr(b + endTestCase.length);
+            data.stderrBuffer = '';
           }
-        } while (data.buffer.length > 0 && --invariant > 0);
+        } while (data.stdoutBuffer.length > 0 && --invariant > 0);
         if (invariant == 0) {
           this._shared.log.error('invariant==0', this, runInfo, data, chunks);
-          resolve({ error: new Error('Possible infinite loop of this extension') });
+          resolve(ProcessResult.error('Possible infinite loop of this extension'));
           runInfo.killProcess();
         }
       };
 
       runInfo.process.stdout!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
-      runInfo.process.stderr!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
+      runInfo.process.stderr!.on('data', (chunk: Uint8Array) => (data.stderrBuffer += chunk.toLocaleString()));
 
       runInfo.process.once('close', (code: number | null, signal: string | null) => {
-        if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
-        else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
-        else resolve({ error: new Error('unknown sfngvdlfkxdvgn') });
+        if (runInfo.isCancelled) {
+          resolve(ProcessResult.ok());
+        } else {
+          if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
+          else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
+          else resolve(ProcessResult.error('unknown sfngvdlfkxdvgn'));
+        }
       });
     })
       .catch((reason: Error) => {
         // eslint-disable-next-line
         if ((reason as any).code === undefined) this._shared.log.exception(reason);
 
-        return { error: reason };
+        return new ProcessResult(reason);
       })
       .then((result: ProcessResult) => {
         result.error && this._shared.log.info(result.error.toString(), result, runInfo, this, data);
@@ -398,7 +332,9 @@ export class DOCSuite extends AbstractRunnableSuite {
             this._shared.log.info('data.currentChild !== undefined: ', data);
             let ev: TestEvent;
 
-            if (runInfo.timeout !== null) {
+            if (runInfo.isCancelled) {
+              ev = data.currentChild.getCancelledEvent(data.stdoutBuffer);
+            } else if (runInfo.timeout !== null) {
               ev = data.currentChild.getTimeoutEvent(runInfo.timeout);
             } else {
               ev = data.currentChild.getFailedEventBase();
@@ -410,7 +346,8 @@ export class DOCSuite extends AbstractRunnableSuite {
                 ev.message += '\n' + result.error.message;
               }
 
-              ev.message += runInfo.stderr ? '\n' + runInfo.stderr : '';
+              ev.message += `\n\nstdout >>>${data.stdoutBuffer}<<<`;
+              ev.message += `\n\nstderr >>>${data.stderrBuffer}<<<`;
             }
 
             data.currentChild.lastRunEvent = ev;
@@ -423,15 +360,13 @@ export class DOCSuite extends AbstractRunnableSuite {
         this.sendMinimalEventsIfNeeded(data.route, []);
         data.route = [];
 
-        // skipped test handling is wrong. I just disable this feature
-        // const isTestRemoved =
-        //   runInfo.timeout === null &&
-        //   result.error === undefined &&
-        //   ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
-        //     this.getTestInfoCount(false) > data.processedTestCases.length) ||
-        //     (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
+        const isTestRemoved =
+          runInfo.timeout === null &&
+          !runInfo.isCancelled &&
+          result.error === undefined &&
+          data.processedTestCases.length < runInfo.childrenToRun.length;
 
-        if (data.unprocessedXmlTestCases.length > 0 /*|| isTestRemoved*/) {
+        if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
           new Promise<void>((resolve, reject) => {
             this._shared.loadWithTaskEmitter.fire(() => {
               return this.reloadTests(this._shared.taskPool).then(resolve, reject);
@@ -443,7 +378,7 @@ export class DOCSuite extends AbstractRunnableSuite {
               const events: TestEvent[] = [];
 
               for (let i = 0; i < data.unprocessedXmlTestCases.length; i++) {
-                const testCaseXml = data.unprocessedXmlTestCases[i];
+                const [testCaseXml, stderr] = data.unprocessedXmlTestCases[i];
 
                 const m = testCaseXml.match(testCaseTagRe);
                 if (m == null || m.length != 1) break;
@@ -462,12 +397,12 @@ export class DOCSuite extends AbstractRunnableSuite {
                 if (name === undefined) break;
 
                 // xml output trimmes the name of the test
-                const currentChild = this.findTestInfo(v => v.testNameAsId === name);
+                const currentChild = this.findTest(v => v.testName === name);
 
                 if (currentChild === undefined) break;
 
                 try {
-                  const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
+                  const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo, stderr);
                   events.push(ev);
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCaseXml);

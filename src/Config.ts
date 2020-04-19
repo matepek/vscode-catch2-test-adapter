@@ -296,14 +296,13 @@ export class Config {
           )
             r.prependTestListingArgs = obj.prependTestListingArgs;
 
-          if (typeof obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
+          if (obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
 
-          if (typeof obj.testGrouping) {
-            if (typeof obj.testGrouping.groupBySource) r.groupBySource = obj.testGrouping.groupBySource;
-            if (typeof obj.testGrouping.groupByTags) r.groupByTags = obj.testGrouping.groupByTags;
-            if (typeof obj.testGrouping.groupBySingleRegex) r.groupBySingleRegex = obj.testGrouping.groupBySingleRegex;
-            if (typeof obj.testGrouping.groupUngroupablesTo)
-              r.groupUngroupablesTo = obj.testGrouping.groupUngroupablesTo;
+          if (obj.testGrouping) {
+            if (obj.testGrouping.groupBySource) r.groupBySource = obj.testGrouping.groupBySource;
+            if (obj.testGrouping.groupByTags) r.groupByTags = obj.testGrouping.groupByTags;
+            if (obj.testGrouping.groupByRegex) r.groupByRegex = obj.testGrouping.groupByRegex;
+            if (obj.testGrouping.groupUngroupablesTo) r.groupUngroupablesTo = obj.testGrouping.groupUngroupablesTo;
           }
         }
         return r;

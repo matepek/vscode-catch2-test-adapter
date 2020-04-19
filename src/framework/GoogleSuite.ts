@@ -3,8 +3,7 @@ import { inspect, promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
-import { AbstractSuite } from '../AbstractSuite';
-import { GroupSuite } from '../GroupSuite';
+import { Suite } from '../Suite';
 import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
 import { GoogleTest } from './GoogleTest';
 import { Parser } from 'xml2js';
@@ -12,21 +11,22 @@ import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { AbstractTest } from '../AbstractTest';
+import { Version } from '../Util';
 
 export class GoogleSuite extends AbstractRunnableSuite {
-  public children: GroupSuite[] = [];
+  public children: Suite[] = [];
 
   public constructor(
     shared: SharedVariables,
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
-    version: Promise<[number, number, number] | undefined>,
+    version: Promise<Version | undefined>,
   ) {
     super(shared, label, desciption, execInfo, 'GoogleTest', version);
   }
 
-  private _reloadFromXml(xmlStr: string, oldChildren: GroupSuite[]): void {
+  private _reloadFromXml(xmlStr: string, oldChildren: Suite[]): void {
     interface XmlObject {
       [prop: string]: any; //eslint-disable-line
     }
@@ -44,83 +44,34 @@ export class GoogleSuite extends AbstractRunnableSuite {
     for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
       const suiteName = xml.testsuites.testsuite[i].$.name;
 
-      const oldFixtureGroup = this.findGroupInArray(oldChildren, v => v.origLabel === suiteName);
-      const oldFixtureGroupChildren: (AbstractSuite | AbstractTest)[] = oldFixtureGroup ? oldFixtureGroup.children : [];
-
-      // we need the oldFixtureGroup.id because that preserves the node's expanded/collapsed state
-      const fixtureGroup = new GroupSuite(this._shared, suiteName, oldFixtureGroup);
-      this.addChild(fixtureGroup);
+      const [fixtureGroup, fixtureOldGroupChildren] = this.getOrCreateChildSuite(suiteName, oldChildren);
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
-        const test = xml.testsuites.testsuite[i].testcase[j];
-        const testName = test.$.name.startsWith('DISABLED_') ? test.$.name.substr(9) : test.$.name;
-        const testNameAsId = suiteName + '.' + test.$.name;
-        const typeParam: string | undefined = test.$.type_param;
-        const valueParam: string | undefined = test.$.value_param;
+        const testCase = xml.testsuites.testsuite[i].testcase[j];
+        const testName = testCase.$.name.startsWith('DISABLED_') ? testCase.$.name.substr(9) : testCase.$.name;
+        const testNameInOutput = suiteName + '.' + testCase.$.name;
+        const typeParam: string | undefined = testCase.$.type_param;
+        const valueParam: string | undefined = testCase.$.value_param;
 
-        const file = test.$.file ? this._findFilePath(test.$.file) : undefined;
-        const line = test.$.line ? test.$.line - 1 : undefined;
+        const file = testCase.$.file ? this._findFilePath(testCase.$.file) : undefined;
+        const line = testCase.$.line ? testCase.$.line - 1 : undefined;
 
-        let group: AbstractSuite = fixtureGroup;
-        let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldFixtureGroupChildren;
+        const [group, oldGroupChildren] = this.createAndAddToSubSuite(
+          testName,
+          file,
+          [],
+          fixtureOldGroupChildren,
+          fixtureGroup,
+        );
 
-        const addNewSubGroup = (label: string): void => {
-          const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.origLabel === label);
-          group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
-          oldGroupChildren = oldGroup ? oldGroup.children : [];
-        };
+        const old = oldGroupChildren.find(t => t.type === 'test' && t.testNameInOutput === testNameInOutput);
 
-        const setUngroupableGroup = (): void => {
-          if (this.execInfo.groupUngroupablesTo) {
-            const found = group.children.find(
-              v => v.type === 'suite' && v.origLabel === this.execInfo.groupUngroupablesTo,
-            );
-            if (found && found.type == 'suite') {
-              group = found;
-            } else {
-              addNewSubGroup(this.execInfo.groupUngroupablesTo);
-            }
-          }
-        };
-
-        if (this.execInfo.groupBySource) {
-          if (file) {
-            this._shared.log.info('groupBySource');
-            const fileStr = this.execInfo.getSourcePartForGrouping(file);
-            const found = group.findGroup(v => v.origLabel === fileStr);
-            if (fileStr.length > 0 && found) {
-              group = found;
-            } else {
-              addNewSubGroup(fileStr);
-            }
-          } else if (this.execInfo.groupUngroupablesTo) {
-            setUngroupableGroup();
-          }
-        }
-
-        if (this.execInfo.groupBySingleRegex) {
-          this._shared.log.info('groupBySingleRegex');
-          const match = testName.match(this.execInfo.groupBySingleRegex);
-          if (match && match[1]) {
-            const firstMatchGroup = match[1];
-            const found = group.findGroup(v => v.origLabel === firstMatchGroup);
-            if (found) {
-              group = found;
-            } else {
-              addNewSubGroup(firstMatchGroup);
-            }
-          } else if (this.execInfo.groupUngroupablesTo) {
-            setUngroupableGroup();
-          }
-        }
-
-        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
-
-        group.addChild(
+        group.addTest(
           new GoogleTest(
             this._shared,
+            group,
             old ? old.id : undefined,
-            testNameAsId,
+            testNameInOutput,
             testName,
             typeParam,
             valueParam,
@@ -129,16 +80,10 @@ export class GoogleSuite extends AbstractRunnableSuite {
           ),
         );
       }
-
-      if (
-        fixtureGroup.children.length &&
-        fixtureGroup.children.every(c => c.description === fixtureGroup.children[0].description)
-      )
-        fixtureGroup.description = fixtureGroup.children[0].description;
     }
   }
 
-  private _reloadFromStdOut(stdOutStr: string, oldChildren: GroupSuite[]): void {
+  private _reloadFromStdOut(stdOutStr: string, oldChildren: Suite[]): void {
     this.children = [];
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -166,10 +111,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const suiteName = testGroupMatch[1];
       const typeParam: string | undefined = testGroupMatch[3];
 
-      const oldGroup = oldChildren.find(v => v.origLabel === suiteName);
-      const oldGroupChildren = oldGroup ? oldGroup.children : [];
-
-      const group = new GroupSuite(this._shared, suiteName, oldGroup);
+      const [fixtureGroup, fixtureOldGroupChildren] = this.getOrCreateChildSuite(suiteName, oldChildren);
 
       let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 
@@ -178,15 +120,24 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
         const testName = testMatch[1].startsWith('DISABLED_') ? testMatch[1].substr(9) : testMatch[1];
         const valueParam: string | undefined = testMatch[3];
-        const testNameAsId = testGroupName + '.' + testMatch[1];
+        const testNameInOutput = testGroupName + '.' + testMatch[1];
 
-        const old = this.findTestInfoInArray(oldGroupChildren, v => v.testNameAsId === testNameAsId);
+        const [group, oldGroupChildren] = this.createAndAddToSubSuite(
+          testName,
+          undefined,
+          [],
+          fixtureOldGroupChildren,
+          fixtureGroup,
+        );
 
-        group.addChild(
+        const old = oldGroupChildren.find(t => t.type === 'test' && t.testNameInOutput === testNameInOutput);
+
+        group.addTest(
           new GoogleTest(
             this._shared,
+            group,
             old ? old.id : undefined,
-            testNameAsId,
+            testNameInOutput,
             testName,
             typeParam,
             valueParam,
@@ -198,12 +149,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
         testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
       }
 
-      if (group.children.length && group.children.every(c => c.description === group.children[0].description))
-        group.description = group.children[0].description;
-
-      if (group.children.length > 0) this.addChild(group);
-      else this._shared.log.error('group without test', this, group, lines);
-
       testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
     }
   }
@@ -211,7 +156,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
   protected async _reloadChildren(): Promise<void> {
     const oldChildren = this.children;
     this.children = [];
-    this.label = this.origLabel;
 
     const cacheFile = this.execInfo.path + '.cache.xml';
 
@@ -241,38 +185,10 @@ export class GoogleSuite extends AbstractRunnableSuite {
       )
       .then(async googleTestListOutput => {
         this.children = [];
-        this.label = this.origLabel;
 
         if (googleTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
           this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
-          const test = this.addChild(
-            new GoogleTest(
-              this._shared,
-              undefined,
-              '<dummy>',
-              'Check the test output message for details ⚠️',
-              '',
-              undefined,
-              undefined,
-              undefined,
-            ),
-          );
-          this._shared.sendTestEventEmitter.fire([
-            {
-              type: 'test',
-              test: test,
-              state: 'errored',
-              message: [
-                `❗️Unexpected stderr!`,
-                `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
-                `spawn`,
-                `stout:`,
-                `${googleTestListOutput.stdout}`,
-                `stderr:`,
-                `${googleTestListOutput.stderr}`,
-              ].join('\n'),
-            },
-          ]);
+          this._addUnexpectedStdError(googleTestListOutput.stdout, googleTestListOutput.stderr);
         } else {
           const hasXmlFile = await promisify(fs.exists)(cacheFile);
 
@@ -302,16 +218,14 @@ export class GoogleSuite extends AbstractRunnableSuite {
       });
   }
 
-  protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<GoogleTest>): string[] {
+  protected _getRunParams(childrenToRun: ReadonlyArray<GoogleTest>): string[] {
     const execParams: string[] = ['--gtest_color=no'];
 
-    if (childrenToRun !== 'runAllTestsExceptSkipped') {
-      const testNames = [...childrenToRun].map(c => c.testNameAsId);
+    const testNames = childrenToRun.map(c => c.testName);
 
-      execParams.push('--gtest_filter=' + testNames.join(':'));
+    execParams.push('--gtest_filter=' + testNames.join(':'));
 
-      execParams.push('--gtest_also_run_disabled_tests');
-    }
+    execParams.push('--gtest_also_run_disabled_tests');
 
     if (this._shared.rngSeed !== null) {
       execParams.push('--gtest_shuffle');
@@ -329,10 +243,10 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
   protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
     const data = new (class {
-      public buffer = '';
+      public stdoutAndErrBuffer = ''; // no reason to separate
       public currentTestCaseNameFull: string | undefined = undefined;
       public currentChild: AbstractTest | undefined = undefined;
-      public route: AbstractSuite[] = [];
+      public route: Suite[] = [];
       public unprocessedTestCases: string[] = [];
       public processedTestCases: AbstractTest[] = [];
     })();
@@ -344,44 +258,45 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
         chunks.push(chunk);
-        data.buffer = data.buffer + chunk;
+        data.stdoutAndErrBuffer = data.stdoutAndErrBuffer + chunk;
         let invariant = 99999;
         do {
           if (data.currentTestCaseNameFull === undefined) {
-            const m = data.buffer.match(testBeginRe);
+            const m = data.stdoutAndErrBuffer.match(testBeginRe);
             if (m == null) return;
 
             data.currentTestCaseNameFull = m[1];
 
-            const [route, testInfo] = this.findRouteToTestInfo(v => v.testNameAsId == data.currentTestCaseNameFull);
+            const test = this.findTest(v => v.testName == data.currentTestCaseNameFull);
 
-            if (testInfo !== undefined) {
+            if (test) {
+              const route = [...test.route()];
               this.sendMinimalEventsIfNeeded(data.route, route);
               data.route = route;
 
-              data.currentChild = testInfo;
-              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
+              data.currentChild = test;
+              this._shared.log.info('Test', data.currentChild.testName, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
               this._shared.log.info('TestCase not found in children', data.currentTestCaseNameFull);
             }
 
-            data.buffer = data.buffer.substr(m.index!);
+            data.stdoutAndErrBuffer = data.stdoutAndErrBuffer.substr(m.index!);
           } else {
             const testEndRe = new RegExp(
               '(?!\\[ RUN      \\])\\[..........\\] ' + data.currentTestCaseNameFull.replace('.', '\\.') + '.*$',
               'm',
             );
 
-            const m = data.buffer.match(testEndRe);
+            const m = data.stdoutAndErrBuffer.match(testEndRe);
             if (m == null) return;
 
-            const testCase = data.buffer.substring(0, m.index! + m[0].length);
+            const testCase = data.stdoutAndErrBuffer.substring(0, m.index! + m[0].length);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
+              this._shared.log.info('Test ', data.currentChild.testName, 'has finished.');
               try {
-                const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo);
+                const ev = data.currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo, undefined);
 
                 this._shared.testStatesEmitter.fire(ev);
 
@@ -412,12 +327,12 @@ export class GoogleSuite extends AbstractRunnableSuite {
             data.currentTestCaseNameFull = undefined;
             data.currentChild = undefined;
             // do not clear data.route
-            data.buffer = data.buffer.substr(m.index! + m[0].length);
+            data.stdoutAndErrBuffer = data.stdoutAndErrBuffer.substr(m.index! + m[0].length);
           }
-        } while (data.buffer.length > 0 && --invariant > 0);
+        } while (data.stdoutAndErrBuffer.length > 0 && --invariant > 0);
         if (invariant == 0) {
           this._shared.log.error('invariant==0', this, runInfo, data, chunks);
-          resolve({ error: new Error('Possible infinite loop of this extension') });
+          resolve(ProcessResult.error('Possible infinite loop of this extension'));
           runInfo.killProcess();
         }
       };
@@ -426,16 +341,20 @@ export class GoogleSuite extends AbstractRunnableSuite {
       runInfo.process.stderr!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
 
       runInfo.process.once('close', (code: number | null, signal: string | null) => {
-        if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
-        else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
-        else resolve({ error: new Error('unknown sfngvdlfkxdvgn') });
+        if (runInfo.isCancelled) {
+          resolve(ProcessResult.ok());
+        } else {
+          if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
+          else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
+          else resolve(ProcessResult.error('unknown sfngvdlfkxdvgn'));
+        }
       });
     })
       .catch((reason: Error) => {
         // eslint-disable-next-line
         if ((reason as any).code === undefined) this._shared.log.exception(reason);
 
-        return { error: reason };
+        return new ProcessResult(reason);
       })
       .then((result: ProcessResult) => {
         result.error && this._shared.log.info(result.error.toString(), result, runInfo, this, data);
@@ -446,7 +365,9 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
             let ev: TestEvent;
 
-            if (runInfo.timeout !== null) {
+            if (runInfo.isCancelled) {
+              ev = data.currentChild.getCancelledEvent(data.stdoutAndErrBuffer);
+            } else if (runInfo.timeout !== null) {
               ev = data.currentChild.getTimeoutEvent(runInfo.timeout);
             } else {
               ev = data.currentChild.getFailedEventBase();
@@ -458,7 +379,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
                 ev.message += '\n' + result.error.message;
               }
 
-              ev.message += data.buffer ? '\n' + data.buffer : '';
+              ev.message += data.stdoutAndErrBuffer ? `\n\n>>>${data.stdoutAndErrBuffer}<<<` : '';
             }
 
             data.currentChild.lastRunEvent = ev;
@@ -473,10 +394,9 @@ export class GoogleSuite extends AbstractRunnableSuite {
 
         const isTestRemoved =
           runInfo.timeout === null &&
+          !runInfo.isCancelled &&
           result.error === undefined &&
-          ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
-            this.getTestInfoCount(false) > data.processedTestCases.length) ||
-            (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
+          data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedTestCases.length > 0 || isTestRemoved) {
           new Promise<void>((resolve, reject) => {
@@ -495,12 +415,13 @@ export class GoogleSuite extends AbstractRunnableSuite {
                 const m = testCase.match(testBeginRe);
                 if (m == null) break;
 
-                const testNameAsId = m[1];
+                const testNameInOutput = m[1];
 
-                const currentChild = this.findTestInfo(v => v.testNameAsId == testNameAsId);
+                const currentChild = this.findTest(v => v.testNameInOutput == testNameInOutput);
+
                 if (currentChild === undefined) break;
                 try {
-                  const ev = currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo);
+                  const ev = currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo, undefined);
                   events.push(ev);
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCase);

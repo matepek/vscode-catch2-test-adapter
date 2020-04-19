@@ -144,7 +144,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -193,7 +193,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -242,7 +242,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -282,7 +282,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -320,7 +320,7 @@ describe(path.basename(__filename), function () {
             suite: suite1,
             description: './ (0ms)',
             tooltip:
-              'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱Duration: 0ms',
+              'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
           },
           { type: 'finished' },
         ];
@@ -403,7 +403,7 @@ describe(path.basename(__filename), function () {
         suite: suite1,
         description: './ (0ms)',
         tooltip:
-          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱Duration: 0ms',
+          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
       };
       adapter.testStateEventIndexLess(running, s1running);
       adapter.testStateEventIndexLess(s1running, s1finished);
@@ -415,7 +415,7 @@ describe(path.basename(__filename), function () {
         suite: suite2,
         description: './ (1ms)',
         tooltip:
-          'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n\n⏱Duration: 1ms',
+          'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n⏱Duration: 1ms',
       };
       adapter.testStateEventIndexLess(running, s1running);
       adapter.testStateEventIndexLess(s2running, s2finished);
@@ -535,7 +535,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -567,7 +567,7 @@ describe(path.basename(__filename), function () {
           suite: suite2,
           description: './ (1ms)',
           tooltip:
-            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n\n⏱Duration: 1ms',
+            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n⏱Duration: 1ms',
         },
         { type: 'finished' },
       ];
@@ -606,7 +606,7 @@ describe(path.basename(__filename), function () {
           suite: suite2,
           description: './ (1ms)',
           tooltip:
-            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n\n⏱Duration: 1ms',
+            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n⏱Duration: 1ms',
         },
         { type: 'finished' },
       ];
@@ -652,7 +652,7 @@ describe(path.basename(__filename), function () {
           suite: suite2,
           description: './ (1ms)',
           tooltip:
-            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n\n⏱Duration: 1ms',
+            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n⏱Duration: 1ms',
         },
         { type: 'finished' },
       ];
@@ -701,7 +701,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -751,7 +751,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'suite', state: 'running', suite: suite2 },
         { type: 'test', state: 'running', test: s2t2 },
@@ -770,7 +770,7 @@ describe(path.basename(__filename), function () {
           suite: suite2,
           description: './ (1ms)',
           tooltip:
-            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n\n⏱Duration: 1ms',
+            'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n⏱Duration: 1ms',
         },
         { type: 'finished' },
       ];
@@ -802,7 +802,8 @@ describe(path.basename(__filename), function () {
           state: 'failed',
           test: s1t1,
           decorations: [],
-          message: '😱 Unexpected error !!',
+          message:
+            '😱 Unexpected error !!\n\nstdout >>><TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7"><<<\n\nstderr >>><<<',
         },
         {
           type: 'suite',
@@ -840,7 +841,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ]);
@@ -871,7 +872,8 @@ describe(path.basename(__filename), function () {
           state: 'errored',
           test: s1t1,
           decorations: [],
-          message: '😱 Unexpected error !!\nSignal received: SIGTERM',
+          message:
+            '😱 Unexpected error !!\nSignal received: SIGTERM\n\nstdout >>><TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7"><<<\n\nstderr >>><<<',
         },
         {
           type: 'suite',
@@ -909,7 +911,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ]);
@@ -1063,7 +1065,7 @@ describe(path.basename(__filename), function () {
         suite: suite1,
         description: './ (0ms)',
         tooltip:
-          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱Duration: 0ms',
+          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
       };
       adapter.testStateEventIndexLess(running, s1running);
       adapter.testStateEventIndexLess(s1running, s1finished);
@@ -1075,7 +1077,7 @@ describe(path.basename(__filename), function () {
         suite: suite2,
         description: './ (1ms)',
         tooltip:
-          'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n\n⏱Duration: 1ms',
+          'Name: execPath2.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n⏱Duration: 1ms',
       };
       adapter.testStateEventIndexLess(running, s1running);
       adapter.testStateEventIndexLess(s2running, s2finished);
@@ -1243,7 +1245,8 @@ describe(path.basename(__filename), function () {
       }
     });
 
-    it('reloads because new tests found under run', async function () {
+    // incompatible with multirun
+    it.skip('reloads because new tests found under run', async function () {
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
       assert.equal(testListOutput.length, 10);
@@ -1315,7 +1318,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t2 },
@@ -1341,7 +1344,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ]);
@@ -1394,7 +1397,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -1558,7 +1561,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
         { type: 'started', tests: [s1t1.id] },
@@ -1579,7 +1582,7 @@ describe(path.basename(__filename), function () {
           suite: suite1,
           description: './ (0ms)',
           tooltip:
-            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱Duration: 0ms',
+            'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -1761,12 +1764,12 @@ describe(path.basename(__filename), function () {
         assert.equal((adapter.testStatesEvents[6 * i + 3] as TestEvent).test, test);
 
         const tooltips = [
-          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: 1\n\n⏱Duration: 0ms',
-          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: 2\n\n⏱Duration: 0ms',
+          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: 1\n⏱Duration: 0ms',
+          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: 2\n⏱Duration: 0ms',
         ];
         const tooltipTemplate = [
-          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: ${num}\n  - failed: 1\n\n⏱Duration: 1ms',
-          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: ${num}\n  - failed: 1\n\n⏱Duration: 2ms',
+          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: ${num}\n  - failed: 1\n⏱Duration: 1ms',
+          'Name: execPath3.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: ${num}\n  - failed: 1\n⏱Duration: 2ms',
         ];
 
         assert.deepStrictEqual(

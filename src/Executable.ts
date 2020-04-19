@@ -5,7 +5,13 @@ import * as vscode from 'vscode';
 import { RootSuite } from './RootSuite';
 import { AbstractRunnableSuite } from './AbstractRunnableSuite';
 import * as c2fs from './FSWrapper';
-import { resolveVariables, resolveOSEnvironmentVariables, ResolveRulePair } from './Util';
+import {
+  resolveVariables,
+  resolveOSEnvironmentVariables,
+  ResolveRulePair,
+  PythonIndexerRegexStr,
+  processArrayWithPythonIndexer,
+} from './Util';
 import { RunnableSuiteFactory } from './RunnableSuiteFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
@@ -17,7 +23,7 @@ export interface TestExecutableInfoFrameworkSpecific {
   ignoreTestEnumerationStdErr?: boolean;
   groupBySource?: string;
   groupByTags?: boolean | string[];
-  groupBySingleRegex?: string;
+  groupByRegex?: string[];
   groupUngroupablesTo?: string;
 }
 
@@ -129,12 +135,12 @@ export class Executable implements vscode.Disposable {
                   );
                 },
                 (reason: Error) => {
-                  this._shared.log.local.debug('Not a test executable:', file, 'reason:', reason);
+                  this._shared.log.localDebug('Not a test executable:', file, 'reason:', reason);
                 },
               );
           },
           (reason: Error) => {
-            this._shared.log.local.debug('Not an executable:', file, reason);
+            this._shared.log.localDebug('Not an executable:', file, reason);
           },
         ),
       );
@@ -219,14 +225,11 @@ export class Executable implements vscode.Disposable {
       separator: string | RegExp,
       join: string,
     ): [RegExp, (m: RegExpMatchArray) => string] => {
-      const indexRegex = new RegExp('\\${' + varName + '(?:\\[(-?[0-9]+)?:(-?[0-9]+)?\\])?}');
+      const indexRegex = new RegExp('\\${' + varName + PythonIndexerRegexStr + '?}');
 
       const pathArray = pathVal.split(separator);
       const replacer = (m: RegExpMatchArray): string => {
-        const idx1 = m[1] === undefined ? undefined : Number(m[1]);
-        const idx2 = m[2] === undefined ? undefined : Number(m[2]);
-
-        return path.normalize(pathArray.slice(idx1, idx2).join(join));
+        return path.normalize(processArrayWithPythonIndexer(pathArray, m).join(join));
       };
 
       return [indexRegex, replacer];
@@ -391,9 +394,9 @@ export class Executable implements vscode.Disposable {
         });
       }).catch((reason: Error & { code: undefined | number }) => {
         if (reason.code === undefined) {
-          this._shared.log.local.debug('reason', reason);
-          this._shared.log.local.debug('filePath', filePath);
-          this._shared.log.local.debug('suite', suite);
+          this._shared.log.localDebug('reason', reason);
+          this._shared.log.localDebug('filePath', filePath);
+          this._shared.log.localDebug('suite', suite);
           this._shared.log.warn('problem under reloading', reason);
         }
         return this._recursiveHandleEverything(filePath, suite, false, Math.min(delay * 2, 2000));

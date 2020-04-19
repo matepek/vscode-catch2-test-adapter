@@ -310,7 +310,7 @@ export class TestAdapter extends my.TestAdapter {
 
     const testStatesEvents = this.testStatesEvents;
 
-    for (let i = 0; i < expected.length; ++i) {
+    for (let i = 0; i < expected.length && i < testStatesEvents.length; ++i) {
       assert.deepStrictEqual(testStatesEvents[i], expected[i], `index: ${i}`);
     }
   }

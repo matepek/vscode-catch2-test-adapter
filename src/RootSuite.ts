@@ -1,17 +1,25 @@
 import * as vscode from 'vscode';
 import { TestInfo } from 'vscode-test-adapter-api';
 import { Executable } from './Executable';
-import { AbstractSuite } from './AbstractSuite';
+import { Suite } from './Suite';
 import { AbstractRunnableSuite } from './AbstractRunnableSuite';
 import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
 
-export class RootSuite extends AbstractSuite implements vscode.Disposable {
+export class RootSuite extends Suite implements vscode.Disposable {
   public readonly children: AbstractRunnableSuite[] = [];
   private _executables: Executable[] = [];
 
   public constructor(id: string | undefined, shared: SharedVariables) {
-    super(shared, 'Catch2/GTest/DOCTest', undefined, id);
+    super(shared, undefined, 'Catch2/GTest/DOCTest', undefined, id);
+  }
+
+  public get file(): string | undefined {
+    return undefined;
+  }
+
+  public get line(): number | undefined {
+    return undefined;
   }
 
   public dispose(): void {
@@ -32,31 +40,38 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
     );
   }
 
-  public run(tests: string[]): Promise<void> {
-    this._shared.testStatesEmitter.fire({ type: 'started', tests: tests });
-
-    // everybody should remove what they use from it.
-    // and put their children into if they are in it
-    const testSet = new Set(tests);
-
-    if (testSet.delete(this.id)) {
-      this.children.forEach(child => {
-        testSet.add(child.id);
-      });
+  public sendStartEventIfNeeded(tests: string[]): void {
+    if (this._runningCounter++ === 0) {
+      this._shared.log.localDebug('RootSuite start event fired', this.label);
+      this._shared.testStatesEmitter.fire({ type: 'started', tests: tests });
     }
+  }
+
+  public sendFinishedventIfNeeded(): void {
+    if (this._runningCounter < 1) {
+      this._shared.log.error('Root Suite running counter is too low');
+      this._runningCounter = 0;
+      return;
+    }
+    if (this._runningCounter-- === 1) {
+      this._shared.log.localDebug('RootSuite finished event fired', this.label);
+      this._shared.testStatesEmitter.fire({ type: 'finished' });
+    }
+  }
+
+  public run(tests: string[]): Promise<void> {
+    this.sendStartEventIfNeeded(tests);
+
+    const childrenToRun = tests.indexOf(this.id) !== -1 ? [...tests, ...this.children.map(s => s.id)] : tests;
 
     const ps: Promise<void>[] = [];
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i];
       ps.push(
-        child.run(testSet, this._shared.taskPool).catch(err => {
+        child.run(childrenToRun, this._shared.taskPool).catch(err => {
           this._shared.log.error('RootTestSuite.run.for.child', child.label, child.execInfo.path, err);
         }),
       );
-    }
-
-    if (testSet.size > 0) {
-      this._shared.log.error('Some tests have remained: ', testSet);
     }
 
     return Promise.all(ps)
@@ -65,7 +80,7 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
         this._shared.log.error('everything should be handled', e);
       })
       .then(() => {
-        this._shared.testStatesEmitter.fire({ type: 'finished' });
+        this.sendFinishedventIfNeeded();
       });
   }
 
@@ -82,20 +97,12 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
         return suite.execInfo.path == s.execInfo.path;
       });
       if (other) {
-        this._shared.log.warn(
-          'execPath duplication: suite is skipped:',
-          suite.execInfo.path,
-          suite.origLabel,
-          other.origLabel,
-        );
+        this._shared.log.warn('execPath duplication: suite is skipped:', suite.execInfo.path, suite.label, other.label);
         return false;
       }
     }
 
     super._addChild(suite);
-
-    this.file = undefined;
-    this.line = undefined;
 
     uniquifyLabels && this.uniquifySuiteLabels();
 
@@ -116,11 +123,12 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
     const uniqueNames = new Map<string /* name */, AbstractRunnableSuite[]>();
 
     for (const suite of this.children) {
-      const suites = uniqueNames.get(suite.origLabel);
+      suite.labelPrefix = '';
+      const suites = uniqueNames.get(suite.label);
       if (suites) {
         suites.push(suite);
       } else {
-        uniqueNames.set(suite.origLabel, [suite]);
+        uniqueNames.set(suite.label, [suite]);
       }
     }
 
@@ -128,24 +136,14 @@ export class RootSuite extends AbstractSuite implements vscode.Disposable {
       if (suites.length > 1) {
         let i = 1;
         for (const suite of suites) {
-          suite.label = String(i++) + ') ' + suite.origLabel;
+          suite.labelPrefix = String(i++) + ') ';
         }
       }
     }
   }
 
-  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuite[], AbstractTest | undefined] {
-    for (let i = 0; i < this.children.length; ++i) {
-      const found = this.children[i].findRouteToTestInfo(pred);
-      if (found[1] !== undefined) {
-        return found;
-      }
-    }
-    return [[], undefined];
-  }
-
-  public findRouteToTest(idOrInfo: string | TestInfo): [AbstractSuite[], AbstractTest | undefined] {
-    if (typeof idOrInfo === 'string') return this.findRouteToTestInfo(x => x.id === idOrInfo);
-    else return this.findRouteToTestInfo(x => x === idOrInfo);
+  public findTestById(idOrInfo: string | TestInfo): AbstractTest | undefined {
+    if (typeof idOrInfo === 'string') return this.findTest(x => x.id === idOrInfo);
+    else return this.findTest(x => x === idOrInfo);
   }
 }

@@ -1,25 +1,18 @@
 import * as util from 'vscode-test-adapter-util';
-import { WorkspaceFolder, Disposable } from 'vscode';
+import { WorkspaceFolder } from 'vscode';
 import * as Sentry from '@sentry/node';
 import { inspect } from 'util';
 
 ///
 
-export class LoggerWrapper implements Disposable {
-  public readonly local: util.Log;
-
+export class LoggerWrapper extends util.Log {
   public constructor(
     configSection: string,
     workspaceFolder: WorkspaceFolder | undefined,
     outputChannelName: string,
     inspectOptions?: util.InspectOptions,
-    includeLocation?: boolean,
   ) {
-    this.local = new util.Log(configSection, workspaceFolder, outputChannelName, inspectOptions, includeLocation);
-  }
-
-  public dispose(): void {
-    this.local.dispose();
+    super(configSection, workspaceFolder, outputChannelName, inspectOptions, false);
   }
 
   //eslint-disable-next-line
@@ -27,9 +20,14 @@ export class LoggerWrapper implements Disposable {
     try {
       Sentry.addBreadcrumb({ message: JSON.stringify(msg), data: msg, level: Sentry.Severity.Debug });
     } catch (e) {
-      this.local.error(e);
+      super.error(e);
     }
-    return this.local.debug(...msg);
+    return super.debug(...msg);
+  }
+
+  //eslint-disable-next-line
+  public localDebug(...msg: any[]): void {
+    return super.debug(...msg);
   }
 
   //eslint-disable-next-line
@@ -40,9 +38,9 @@ export class LoggerWrapper implements Disposable {
         Sentry.captureMessage(m, Sentry.Severity.Log);
       });
     } catch (e) {
-      this.local.error(e);
+      super.error(e);
     }
-    return this.local.info(m, tags);
+    return super.info(m, tags);
   }
 
   //eslint-disable-next-line
@@ -50,9 +48,9 @@ export class LoggerWrapper implements Disposable {
     try {
       Sentry.addBreadcrumb({ message: inspect(msg), data: msg, level: Sentry.Severity.Info });
     } catch (e) {
-      this.local.error(e);
+      super.error(e);
     }
-    return this.local.info(...msg);
+    return super.info(...msg);
   }
 
   //eslint-disable-next-line
@@ -62,9 +60,9 @@ export class LoggerWrapper implements Disposable {
         Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), data: msg, level: Sentry.Severity.Warning });
       Sentry.captureMessage(m, Sentry.Severity.Warning);
     } catch (e) {
-      this.local.error(e);
+      super.error(e);
     }
-    return this.local.warn(m, ...msg);
+    return super.warn(m, ...msg);
   }
 
   //eslint-disable-next-line
@@ -74,9 +72,9 @@ export class LoggerWrapper implements Disposable {
         Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), level: Sentry.Severity.Error });
       Sentry.captureMessage(m, Sentry.Severity.Error);
     } catch (e) {
-      this.local.error(e);
+      super.error(e);
     }
-    return this.local.error(m, ...msg);
+    return super.error(m, ...msg);
   }
 
   //eslint-disable-next-line
@@ -90,8 +88,8 @@ export class LoggerWrapper implements Disposable {
         });
       Sentry.captureException(e);
     } catch (e) {
-      this.local.error(e);
+      super.error(e);
     }
-    return this.local.error(e, ...msg);
+    return super.error(e, ...msg);
   }
 }

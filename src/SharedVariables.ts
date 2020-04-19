@@ -1,5 +1,6 @@
 import { LoggerWrapper } from './LoggerWrapper';
 import * as vscode from 'vscode';
+import * as pathlib from 'path';
 import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
 import { AbstractRunnableSuite } from './AbstractRunnableSuite';
 import { TaskPool } from './TaskPool';
@@ -47,4 +48,8 @@ export class SharedVariables implements vscode.Disposable {
   }
 
   public readonly onDidChangeExecRunningTimeout = this._execRunningTimeoutChangeEmitter.event;
+
+  public getPathRelativeToWorkspace(path: string): string {
+    return pathlib.relative(this.workspaceFolder.uri.fsPath, path);
+  }
 }

@@ -102,14 +102,6 @@
   },
   "editor.formatOnSaveTimeout": 5000,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "eslint.autoFixOnSave": true,
-  "eslint.validate": [
-    "javascript",
-    {
-      "language": "typescript",
-      "autoFix": true
-    }
-  ],
   "[javascript]": {
     "editor.formatOnSave": false
   },

@@ -1,6 +1,7 @@
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { promisify } from 'util';
 
 export interface SpawnReturns extends cp.SpawnSyncReturns<string> {
   closed: boolean;
@@ -136,4 +137,10 @@ export function isNativeExecutableAsync(filePath: string): Promise<void> {
 
 export function existsSync(filePath: string): boolean {
   return fs.existsSync(filePath);
+}
+
+export function getLastModiTime(filePath: string): Promise<number> {
+  return promisify(fs.stat)(filePath).then((stat: fs.Stats) => {
+    return stat.mtimeMs;
+  });
 }

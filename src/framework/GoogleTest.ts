@@ -3,10 +3,12 @@ import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
 import { AbstractTest } from '../AbstractTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
+import { Suite } from '../Suite';
 
 export class GoogleTest extends AbstractTest {
   public constructor(
     shared: SharedVariables,
+    parent: Suite,
     id: string | undefined,
     testNameAsId: string,
     label: string,
@@ -15,34 +17,29 @@ export class GoogleTest extends AbstractTest {
     file: string | undefined,
     line: number | undefined,
   ) {
-    let desciption = '';
-    let tooltip = '';
-
-    if (typeParam) {
-      desciption += '#️⃣Type: ' + typeParam;
-      tooltip += '\n#️⃣TypeParam() = ' + typeParam;
-    }
-
-    if (valueParam) {
-      desciption += '#️⃣Value: ' + valueParam;
-      tooltip += '\n#️⃣GetParam() = ' + valueParam;
-    }
-
     super(
       shared,
+      parent,
       id,
       testNameAsId,
       label,
-      testNameAsId.startsWith('DISABLED_') || testNameAsId.indexOf('.DISABLED_') != -1,
       file,
       line,
-      desciption,
-      tooltip ? tooltip : undefined,
+      testNameAsId.startsWith('DISABLED_') || testNameAsId.indexOf('.DISABLED_') != -1,
+      undefined,
+      [],
+      undefined,
+      typeParam,
+      valueParam,
     );
   }
 
+  public get testNameInOutput(): string {
+    return this.testName;
+  }
+
   public getDebugParams(breakOnFailure: boolean): string[] {
-    const debugParams: string[] = ['--gtest_color=no', '--gtest_filter=' + this.testNameAsId];
+    const debugParams: string[] = ['--gtest_color=no', '--gtest_filter=' + this.testName];
     if (breakOnFailure) debugParams.push('--gtest_break_on_failure');
     debugParams.push('--gtest_also_run_disabled_tests');
     return debugParams;
@@ -52,6 +49,7 @@ export class GoogleTest extends AbstractTest {
     output: string,
     rngSeed: number | undefined,
     runInfo: RunningTestExecutableInfo,
+    stderr: string | undefined, //eslint-disable-line
   ): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);

@@ -6,12 +6,12 @@ import * as xml2js from 'xml2js';
 import * as c2fs from '../FSWrapper';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
-import { AbstractSuite } from '../AbstractSuite';
+import { Suite } from '../Suite';
 import { Catch2Test } from './Catch2Test';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { AbstractTest } from '../AbstractTest';
-import { GroupSuite } from '../GroupSuite';
+import { Version } from '../Util';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -23,12 +23,12 @@ export class Catch2Suite extends AbstractRunnableSuite {
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
-    catch2Version: [number, number, number] | undefined,
+    private readonly _catch2Version: Version,
   ) {
-    super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(catch2Version));
+    super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(_catch2Version));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: (AbstractSuite | AbstractTest)[]): void {
+  private _reloadFromString(testListOutput: string, oldChildren: (Suite | AbstractTest)[]): void {
     const lines = testListOutput.split(/\r?\n/);
 
     const startRe = /Matching test cases:/;
@@ -55,24 +55,16 @@ export class Catch2Suite extends AbstractRunnableSuite {
       if (lines[i].startsWith('    ')) {
         this._shared.log.warn('Probably too long test name', i, lines);
         this.children = [];
-        const test = this.addChild(
-          new Catch2Test(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
+        this._addError(
+          [
+            '⚠️ Probably too long test name or the test name starts with space characters!',
+            '🛠 - Try to define `CATCH_CONFIG_CONSOLE_WIDTH 300` before `catch2.hpp` is included.',
+            '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
+          ].join('\n'),
         );
-        this._shared.sendTestEventEmitter.fire([
-          {
-            type: 'test',
-            test: test,
-            state: 'errored',
-            message: [
-              '⚠️ Probably too long test name or the test name starts with space characters!',
-              '🛠 - Try to define `CATCH_CONFIG_CONSOLE_WIDTH 300` before `catch2.hpp` is included.',
-              '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
-            ].join('\n'),
-          },
-        ]);
         return;
       }
-      const testNameAsId = lines[i++].substr(2);
+      const testName = lines[i++].substr(2);
 
       let filePath: string | undefined = undefined;
       let line: number | undefined = undefined;
@@ -92,130 +84,30 @@ export class Catch2Suite extends AbstractRunnableSuite {
       let description = lines[i++].substr(4);
       if (description.startsWith('(NO DESCRIPTION)')) description = '';
 
-      let tags: string[] = [];
-      if (i < lines.length && lines[i].length > 6 && lines[i][6] === '[') {
-        tags = lines[i].trim().split(']');
-        tags.pop();
-        for (let j = 0; j < tags.length; ++j) tags[j] += ']';
+      const tags: string[] = [];
+      if (i < lines.length && lines[i].startsWith('      [')) {
+        const matches = lines[i].match(/\[[^\[\]]+\]/g);
+        if (matches) matches.forEach(t => tags.push(t.substring(1, t.length - 1)));
         ++i;
       }
 
-      let group: AbstractSuite = this as AbstractSuite;
-      let oldGroupChildren: (AbstractSuite | AbstractTest)[] = oldChildren;
+      const [group, oldGroupChildren] = this.createAndAddToSubSuite(testName, filePath, tags, oldChildren);
 
-      const addNewSubGroup = (label: string): void => {
-        const oldGroup = this.findGroupInArray(oldGroupChildren, v => v.origLabel === label);
-        group = group.addChild(new GroupSuite(this._shared, label, oldGroup));
-        oldGroupChildren = oldGroup ? oldGroup.children : [];
-      };
+      const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testName);
 
-      const setUngroupableGroup = (): void => {
-        if (this.execInfo.groupUngroupablesTo) {
-          const found = group.children.find(
-            v => v.type === 'suite' && v.origLabel === this.execInfo.groupUngroupablesTo,
-          );
-          if (found && found.type == 'suite') {
-            group = found;
-          } else {
-            addNewSubGroup(this.execInfo.groupUngroupablesTo);
-          }
-        }
-      };
-
-      if (this.execInfo.groupBySource) {
-        if (filePath) {
-          this._shared.log.info('groupBySource');
-          const fileStr = this.execInfo.getSourcePartForGrouping(filePath);
-          const found = group.findGroup(v => v.origLabel === fileStr);
-          if (fileStr.length > 0 && found) {
-            group = found;
-          } else {
-            addNewSubGroup(fileStr);
-          }
-        } else if (this.execInfo.groupUngroupablesTo) {
-          setUngroupableGroup();
-        }
-      }
-
-      if (this.execInfo.groupByTagsType !== 'disabled') {
-        if (tags.length > 0) {
-          switch (this.execInfo.groupByTagsType) {
-            default: {
-              break;
-            }
-            case 'allCombination': {
-              this._shared.log.info('groupByTags: allCombination');
-              const tagsStr = tags
-                .filter(v => v != '[.]' && v != '[hide]')
-                .sort()
-                .join('');
-              const found = group.findGroup(v => v.origLabel === tagsStr);
-              if (found) {
-                group = found;
-              } else {
-                addNewSubGroup(tagsStr);
-              }
-              break;
-            }
-            case 'byArray':
-              {
-                this._shared.log.info('groupByTags: byArray');
-
-                const foundCombo = this.execInfo
-                  .getTagGroupArray()
-                  .find(combo => combo.every(tag => tags.indexOf(tag) != -1));
-
-                if (foundCombo) {
-                  const comboStr = foundCombo.join('');
-
-                  const found = group.findGroup(v => v.origLabel === comboStr);
-                  if (found) {
-                    group = found;
-                  } else {
-                    addNewSubGroup(comboStr);
-                  }
-                } else if (this.execInfo.groupUngroupablesTo) {
-                  setUngroupableGroup();
-                }
-              }
-              break;
-          }
-        } else if (this.execInfo.groupUngroupablesTo) {
-          setUngroupableGroup();
-        }
-      }
-
-      if (this.execInfo.groupBySingleRegex) {
-        this._shared.log.info('groupBySingleRegex');
-        const match = testNameAsId.match(this.execInfo.groupBySingleRegex);
-        if (match && match[1]) {
-          const firstMatchGroup = match[1];
-          const found = group.findGroup(v => v.origLabel === firstMatchGroup);
-          if (found) {
-            group = found;
-          } else {
-            const oldGroup = this.findGroupInArray(oldChildren, v => v.origLabel === firstMatchGroup);
-            group = group.addChild(new GroupSuite(this._shared, firstMatchGroup, oldGroup));
-          }
-        } else if (this.execInfo.groupUngroupablesTo) {
-          setUngroupableGroup();
-        }
-      }
-
-      const old = this.findTestInfoInArray(oldChildren, v => v.testNameAsId === testNameAsId);
-
-      const test = new Catch2Test(
-        this._shared,
-        old ? old.id : undefined,
-        testNameAsId,
-        description,
-        tags,
-        filePath,
-        line,
-        old ? (old as Catch2Test).sections : undefined,
+      group.addTest(
+        new Catch2Test(
+          this._shared,
+          group,
+          this._catch2Version,
+          testName,
+          tags,
+          filePath,
+          line,
+          description,
+          old as Catch2Test | undefined,
+        ),
       );
-
-      group.addChild(test);
     }
 
     if (i >= lines.length) this._shared.log.error('Wrong test list output format #2', lines);
@@ -224,7 +116,6 @@ export class Catch2Suite extends AbstractRunnableSuite {
   protected async _reloadChildren(): Promise<void> {
     const oldChildren = this.children;
     this.children = [];
-    this.label = this.origLabel;
 
     const cacheFile = this.execInfo.path + '.cache.txt';
 
@@ -266,25 +157,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
     if (catch2TestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
-      const test = this.addChild(
-        new Catch2Test(this._shared, undefined, 'Check the test output message for details ⚠️', '', [], '', 0),
-      );
-      this._shared.sendTestEventEmitter.fire([
-        {
-          type: 'test',
-          test: test,
-          state: 'errored',
-          message: [
-            `❗️Unexpected stderr!`,
-            `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
-            `spawn`,
-            `stout:`,
-            `${catch2TestListOutput.stdout}`,
-            `stderr:`,
-            `${catch2TestListOutput.stderr}`,
-          ].join('\n'),
-        },
-      ]);
+      this._addUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
       return Promise.resolve();
     }
 
@@ -302,13 +175,11 @@ export class Catch2Suite extends AbstractRunnableSuite {
     }
   }
 
-  protected _getRunParams(childrenToRun: 'runAllTestsExceptSkipped' | Set<Catch2Test>): string[] {
+  protected _getRunParams(childrenToRun: ReadonlyArray<Catch2Test>): string[] {
     const execParams: string[] = [];
 
-    if (childrenToRun !== 'runAllTestsExceptSkipped') {
-      const testNames = [...childrenToRun].map(c => c.getEscapedTestName());
-      execParams.push(testNames.join(','));
-    }
+    const testNames = childrenToRun.map(c => c.getEscapedTestName());
+    execParams.push(testNames.join(','));
 
     execParams.push('--reporter');
     execParams.push('xml');
@@ -329,13 +200,14 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
   protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
     const data = new (class {
-      public buffer = '';
+      public stdoutBuffer = '';
+      public stderrBuffer = '';
       public inTestCase = false;
       public currentChild: AbstractTest | undefined = undefined;
-      public route: AbstractSuite[] = [];
+      public route: Suite[] = [];
       public beforeFirstTestCase = true;
       public rngSeed: number | undefined = undefined;
-      public unprocessedXmlTestCases: string[] = [];
+      public unprocessedXmlTestCases: [string, string][] = [];
       public processedTestCases: AbstractTest[] = [];
     })();
 
@@ -345,14 +217,14 @@ export class Catch2Suite extends AbstractRunnableSuite {
       const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
         chunks.push(chunk);
-        data.buffer = data.buffer + chunk;
+        data.stdoutBuffer = data.stdoutBuffer + chunk;
         let invariant = 99999;
         do {
           if (!data.inTestCase) {
-            const b = data.buffer.indexOf('<TestCase');
+            const b = data.stdoutBuffer.indexOf('<TestCase');
             if (b == -1) return;
 
-            const m = data.buffer.match(testCaseTagRe);
+            const m = data.stdoutBuffer.match(testCaseTagRe);
             if (m == null || m.length != 1) return;
 
             data.inTestCase = true;
@@ -371,7 +243,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
             );
 
             if (data.beforeFirstTestCase) {
-              const ri = data.buffer.match(/<Randomness\s+seed="([0-9]+)"\s*\/?>/);
+              const ri = data.stdoutBuffer.match(/<Randomness\s+seed="([0-9]+)"\s*\/?>/);
               if (ri != null && ri.length == 2) {
                 data.rngSeed = Number(ri[1]);
               }
@@ -379,34 +251,37 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
             data.beforeFirstTestCase = false;
 
-            const [route, testInfo] = this.findRouteToTestInfo(v => {
-              // xml output trimmes the name of the test
-              return v.testNameAsId.trim() == name;
-            });
+            const test = this.findTest(v => v.testNameInOutput == name);
 
-            if (testInfo !== undefined) {
+            if (test) {
+              const route = [...test.route()];
               this.sendMinimalEventsIfNeeded(data.route, route);
               data.route = route;
 
-              data.currentChild = testInfo;
-              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
+              data.currentChild = test;
+              this._shared.log.info('Test', data.currentChild.testName, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
               this._shared.log.info('TestCase not found in children', name);
             }
 
-            data.buffer = data.buffer.substr(b);
+            data.stdoutBuffer = data.stdoutBuffer.substr(b);
           } else {
             const endTestCase = '</TestCase>';
-            const b = data.buffer.indexOf(endTestCase);
+            const b = data.stdoutBuffer.indexOf(endTestCase);
             if (b == -1) return;
 
-            const testCaseXml = data.buffer.substring(0, b + endTestCase.length);
+            const testCaseXml = data.stdoutBuffer.substring(0, b + endTestCase.length);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
+              this._shared.log.info('Test ', data.currentChild.testName, 'has finished.');
               try {
-                const ev = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
+                const ev = data.currentChild.parseAndProcessTestCase(
+                  testCaseXml,
+                  data.rngSeed,
+                  runInfo,
+                  data.stderrBuffer,
+                );
 
                 this._shared.testStatesEmitter.fire(ev);
 
@@ -420,44 +295,50 @@ export class Catch2Suite extends AbstractRunnableSuite {
                   message: [
                     '😱 Unexpected error under parsing output !! Error: ' + inspect(e),
                     'Consider opening an issue: https://github.com/matepek/vscode-catch2-test-adapter/issues/new/choose',
-                    '=== Output ===',
-                    testCaseXml,
-                    '==============',
+                    '',
+                    'stdout >>>' + data.stdoutBuffer + '<<<',
+                    '',
+                    'stderr >>>' + data.stderrBuffer + '<<<',
                   ].join('\n'),
                 });
               }
             } else {
               this._shared.log.info('<TestCase> found without TestInfo', this, testCaseXml);
-              data.unprocessedXmlTestCases.push(testCaseXml);
+              data.unprocessedXmlTestCases.push([testCaseXml, data.stderrBuffer]);
             }
 
             data.inTestCase = false;
             data.currentChild = undefined;
             // do not clear data.route
-            data.buffer = data.buffer.substr(b + endTestCase.length);
+            data.stdoutBuffer = data.stdoutBuffer.substr(b + endTestCase.length);
+            data.stderrBuffer = '';
           }
-        } while (data.buffer.length > 0 && --invariant > 0);
+        } while (data.stdoutBuffer.length > 0 && --invariant > 0);
         if (invariant == 0) {
           this._shared.log.error('invariant==0', this, runInfo, data, chunks);
-          resolve({ error: new Error('Possible infinite loop of this extension') });
+          resolve(ProcessResult.error('Possible infinite loop of this extension'));
           runInfo.killProcess();
         }
       };
 
       runInfo.process.stdout!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
-      runInfo.process.stderr!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
+      runInfo.process.stderr!.on('data', (chunk: Uint8Array) => (data.stderrBuffer += chunk.toLocaleString()));
 
       runInfo.process.once('close', (code: number | null, signal: string | null) => {
-        if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
-        else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
-        else resolve({ error: new Error('unknown sfngvdlfkxdvgn') });
+        if (runInfo.isCancelled) {
+          resolve(ProcessResult.ok());
+        } else {
+          if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
+          else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
+          else resolve(ProcessResult.error('unknown sfngvdlfkxdvgn'));
+        }
       });
     })
       .catch((reason: Error) => {
         // eslint-disable-next-line
         if ((reason as any).code === undefined) this._shared.log.exception(reason);
 
-        return { error: reason };
+        return new ProcessResult(reason);
       })
       .then((result: ProcessResult) => {
         result.error && this._shared.log.info(result.error.toString(), result, runInfo, this, data);
@@ -467,7 +348,9 @@ export class Catch2Suite extends AbstractRunnableSuite {
             this._shared.log.info('data.currentChild !== undefined', data);
             let ev: TestEvent;
 
-            if (runInfo.timeout !== null) {
+            if (runInfo.isCancelled) {
+              ev = data.currentChild.getCancelledEvent(data.stdoutBuffer);
+            } else if (runInfo.timeout !== null) {
               ev = data.currentChild.getTimeoutEvent(runInfo.timeout);
             } else {
               ev = data.currentChild.getFailedEventBase();
@@ -479,7 +362,8 @@ export class Catch2Suite extends AbstractRunnableSuite {
                 ev.message += '\n' + result.error.message;
               }
 
-              ev.message += runInfo.stderr ? '\n' + runInfo.stderr : '';
+              ev.message += `\n\nstdout >>>${data.stdoutBuffer}<<<`;
+              ev.message += `\n\nstderr >>>${data.stderrBuffer}<<<`;
             }
 
             data.currentChild.lastRunEvent = ev;
@@ -494,10 +378,9 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
         const isTestRemoved =
           runInfo.timeout === null &&
+          !runInfo.isCancelled &&
           result.error === undefined &&
-          ((runInfo.childrenToRun === 'runAllTestsExceptSkipped' &&
-            this.getTestInfoCount(false) > data.processedTestCases.length) ||
-            (runInfo.childrenToRun !== 'runAllTestsExceptSkipped' && data.processedTestCases.length == 0));
+          data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
           new Promise<void>((resolve, reject) => {
@@ -511,7 +394,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
               const events: TestEvent[] = [];
 
               for (let i = 0; i < data.unprocessedXmlTestCases.length; i++) {
-                const testCaseXml = data.unprocessedXmlTestCases[i];
+                const [testCaseXml, stderr] = data.unprocessedXmlTestCases[i];
 
                 const m = testCaseXml.match(testCaseTagRe);
                 if (m == null || m.length != 1) break;
@@ -529,13 +412,12 @@ export class Catch2Suite extends AbstractRunnableSuite {
                 );
                 if (name === undefined) break;
 
-                // xml output trimmes the name of the test
-                const currentChild = this.findTestInfo(v => v.testNameAsId.trim() == name);
+                const currentChild = this.findTest(v => v.testNameInOutput === name);
 
                 if (currentChild === undefined) break;
 
                 try {
-                  const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
+                  const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo, stderr);
                   events.push(ev);
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCaseXml);

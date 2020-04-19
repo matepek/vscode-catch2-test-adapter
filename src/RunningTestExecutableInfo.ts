@@ -4,10 +4,22 @@ import { ChildProcess } from 'child_process';
 import { AbstractTest } from './AbstractTest';
 
 export class ProcessResult {
-  public error?: Error;
+  public constructor(public readonly error?: Error) {}
+
+  public get noError(): boolean {
+    return this.error === undefined;
+  }
+
+  public static ok(): ProcessResult {
+    return new ProcessResult(undefined);
+  }
+
+  public static error(message: string): ProcessResult {
+    return new ProcessResult(Error(message));
+  }
 
   public static createFromSignal(signal: string): ProcessResult {
-    return { error: new Error('Signal received: ' + signal) };
+    return new ProcessResult(Error('Signal received: ' + signal));
   }
   public static createFromErrorCode(code: number): ProcessResult {
     if (os.platform() === 'win32') {
@@ -51,22 +63,29 @@ export class ProcessResult {
         [-532459699, 'Unhandled exception in .NET application. More details may be available in Windows Event log.'],
       ]);
       const curr = badCodes.get(code);
-      if (curr) return { error: new Error('Process error: ' + curr) };
+      if (curr) return ProcessResult.error('Process error: ' + curr);
     }
-    return {};
+    return ProcessResult.ok();
   }
 }
 
 export class RunningTestExecutableInfo {
   public constructor(
     public readonly process: ChildProcess,
-    public readonly childrenToRun: 'runAllTestsExceptSkipped' | Set<AbstractTest>,
+    public readonly childrenToRun: ReadonlyArray<AbstractTest>,
   ) {
     process.once('close', () => {
       this._closed = true;
     });
 
     process.stderr && process.stderr.on('data', (chunk: Uint8Array) => (this._stderr += chunk.toString()));
+  }
+
+  public isCancelled = false;
+
+  public cancel(): void {
+    this.isCancelled = true;
+    this.killProcess();
   }
 
   public killProcess(timeout: number | null = null): void {

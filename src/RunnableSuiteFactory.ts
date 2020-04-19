@@ -6,10 +6,11 @@ import { GoogleSuite } from './framework/GoogleSuite';
 import { DOCSuite } from './framework/DOCSuite';
 import { SharedVariables } from './SharedVariables';
 import { TestExecutableInfoFrameworkSpecific } from './Executable';
+import { Version } from './Util';
 
 interface TestFrameworkInfo {
   type: 'catch2' | 'gtest' | 'doctest';
-  version: [number, number, number] | undefined;
+  version: Version | undefined;
 }
 
 export class RunnableSuiteFactory {
@@ -45,7 +46,7 @@ export class RunnableSuiteFactory {
               this._label,
               this._description,
               new RunnableSuiteProperties(this._execPath, this._execOptions, this._catch2),
-              framework.version,
+              framework.version!,
             );
           case 'doctest':
             return new DOCSuite(
@@ -53,7 +54,7 @@ export class RunnableSuiteFactory {
               this._label,
               this._description,
               new RunnableSuiteProperties(this._execPath, this._execOptions, this._doctest),
-              framework.version,
+              framework.version!,
             );
         }
         throw Error('Unknown framework error:' + framework.type);
@@ -109,7 +110,7 @@ export class RunnableSuiteFactory {
     throw new Error('Not a supported test executable: ' + this._execPath + '\n output: ' + res);
   }
 
-  private _parseVersion(match: RegExpMatchArray): [number, number, number] | undefined {
+  private _parseVersion(match: RegExpMatchArray): Version | undefined {
     if (
       match &&
       match.length === 4 &&
@@ -117,7 +118,7 @@ export class RunnableSuiteFactory {
       Number(match[2]) !== NaN &&
       Number(match[3]) !== NaN
     ) {
-      return [Number(match[1]), Number(match[2]), Number(match[3])];
+      return new Version(Number(match[1]), Number(match[2]), Number(match[3]));
     } else {
       return undefined;
     }

@@ -4,6 +4,7 @@ import { AbstractTest } from '../AbstractTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 import { TestEventBuilder } from '../TestEventBuilder';
+import { Suite } from '../Suite';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -36,23 +37,28 @@ export class DOCSection implements Frame {
 export class DOCTest extends AbstractTest {
   public constructor(
     shared: SharedVariables,
+    parent: Suite,
     id: string | undefined,
     testNameAsId: string,
-    description: string | undefined,
     skipped: boolean | undefined,
     file: string | undefined,
     line: number | undefined,
+    tags: string[],
     old?: DOCTest,
   ) {
     super(
       shared,
+      parent,
       id != undefined ? id : old ? old.id : undefined,
       testNameAsId,
       testNameAsId.startsWith('  Scenario:') ? '⒮' + testNameAsId.substr(11) : testNameAsId,
-      skipped !== undefined ? skipped : false,
       file,
       line,
-      description,
+      skipped !== undefined ? skipped : false,
+      undefined,
+      tags,
+      undefined,
+      undefined,
       undefined,
     );
     this._sections = old ? old.sections : undefined;
@@ -61,6 +67,10 @@ export class DOCTest extends AbstractTest {
       this.lastRunEvent = old.lastRunEvent;
       this.lastRunMilisec = old.lastRunMilisec;
     }
+  }
+
+  public get testNameInOutput(): string {
+    return this.testName.trim();
   }
 
   private _sections: undefined | DOCSection[];
@@ -72,13 +82,7 @@ export class DOCTest extends AbstractTest {
 
   public getEscapedTestName(): string {
     /* ',' has special meaning */
-    let t = this.testNameAsId;
-    t = t.replace(/,/g, '\\,');
-    t = t.replace(/\[/g, '\\[');
-    t = t.replace(/\*/g, '\\*');
-    t = t.replace(/`/g, '\\`');
-    if (t.startsWith(' ')) t = '*' + t.trimLeft();
-    return t;
+    return this.testName.replace(/,/g, '\\,');
   }
 
   // eslint-disable-next-line
@@ -91,6 +95,7 @@ export class DOCTest extends AbstractTest {
     output: string,
     rngSeed: number | undefined,
     runInfo: RunningTestExecutableInfo,
+    stderr: string | undefined,
   ): TestEvent {
     if (runInfo.timeout !== null) {
       const ev = this.getTimeoutEvent(runInfo.timeout);
@@ -114,6 +119,12 @@ export class DOCTest extends AbstractTest {
     this._processXmlTagTestCaseInner(res.TestCase, testEventBuilder);
 
     const testEvent = testEventBuilder.build();
+
+    if (stderr) {
+      testEventBuilder.appendMessage('stderr arrived during running this test >>>', null);
+      testEventBuilder.appendMessage(stderr, 1);
+      testEventBuilder.appendMessage('<<<', null);
+    }
 
     this.lastRunEvent = testEvent;
 

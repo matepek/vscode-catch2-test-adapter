@@ -145,7 +145,8 @@ describe(path.basename(__filename), function () {
     assert.strictEqual(exception, undefined);
   });
 
-  specify('arriving <TestCase> for missing TestInfo', async function () {
+  // multirun disables this feature
+  specify.skip('arriving <TestCase> for missing TestInfo', async function () {
     this.slow(4000);
     this.timeout(15000);
     await settings.updateConfig('executables', example1.suite1.execPath);
@@ -209,7 +210,7 @@ describe(path.basename(__filename), function () {
         suite: adapter.suite1,
         description: './ (0ms)',
         tooltip:
-          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 1\n  - failed: 1\n\n⏱Duration: 0ms',
+          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 1\n  - failed: 1\n⏱Duration: 0ms',
       },
       { type: 'finished' },
       { type: 'started', tests: [s1t1.id] },
@@ -230,7 +231,7 @@ describe(path.basename(__filename), function () {
         suite: adapter.suite1,
         description: './ (0ms)',
         tooltip:
-          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n\n⏱Duration: 0ms',
+          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
       },
       { type: 'finished' },
     ]);
@@ -265,7 +266,7 @@ describe(path.basename(__filename), function () {
     assert.equal(suite1.children.length, 1, inspect([testListErrOutput, adapter.testLoadsEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
-    assert.strictEqual(suite1.children[0].label, 'Check the test output message for details ⚠️');
+    assert.strictEqual(suite1.children[0].label, '⚡️ ERROR (run me to see the issue)');
 
     await waitFor(this, () => {
       return adapter!.testStatesEvents.length == 6;
@@ -575,7 +576,7 @@ describe(path.basename(__filename), function () {
   });
 
   specify('wrong executables format', async function () {
-    expectedLoggedErrorLine('[ERROR] Error: Error: pattern property is required.');
+    expectedLoggedErrorLine('Error: Error: pattern property is required.');
 
     this.slow(5000);
     await settings.updateConfig('executables', { name: '' });

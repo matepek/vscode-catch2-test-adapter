@@ -3,37 +3,84 @@ import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
-import { AbstractSuite } from './AbstractSuite';
-import { GroupSuite } from './GroupSuite';
+import { Suite } from './Suite';
 
 export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
   public readonly id: string;
-  public readonly origLabel: string;
   public readonly description: string;
   public readonly tooltip: string;
   public readonly file: string | undefined;
+  public readonly line: number | undefined;
 
   public lastRunEvent: TestEvent | undefined = undefined;
   public lastRunMilisec: number | undefined = undefined;
 
   protected constructor(
     protected readonly _shared: SharedVariables,
+    public readonly parent: Suite, // ascending
     id: string | undefined,
-    public readonly testNameAsId: string,
+    public readonly testName: string,
     public readonly label: string,
-    public readonly skipped: boolean,
     file: string | undefined,
-    public readonly line: number | undefined,
-    description: string | undefined,
-    tooltip: string | undefined,
+    line: number | undefined,
+    public readonly skipped: boolean,
+    public readonly staticEvent: TestEvent | undefined,
+    private readonly _pureTags: string[], // without brackets
+    _testDescription: string | undefined,
+    _typeParam: string | undefined, // gtest specific
+    _valueParam: string | undefined, // gtest specific
   ) {
-    this.id = id ? id : generateId();
-    this.origLabel = label;
-    this.description = description ? description : '';
-    this.file = file ? path.normalize(file) : undefined;
-    this.tooltip = 'Name: ' + testNameAsId + (tooltip ? '\n' + tooltip : '');
     if (line && line < 0) throw Error('line smaller than zero');
+
+    this.id = id ? id : generateId();
+    this.file = file ? path.normalize(file) : undefined;
+    this.line = file ? line : undefined;
+
+    const description: string[] = [];
+
+    const tooltip = [`Name: ${testName}`];
+
+    if (_pureTags.length > 0) {
+      const tagsStr = _pureTags.map(t => `[${t}]`).join('');
+      description.push(tagsStr);
+      tooltip.push(`Tags: ${tagsStr}`);
+    }
+
+    if (_testDescription) {
+      tooltip.push(`Description: ${_testDescription}`);
+    }
+
+    if (_typeParam) {
+      description.push(`#️⃣Type: ${_typeParam}`);
+      tooltip.push(`#️⃣TypeParam() = ${_typeParam}`);
+    }
+
+    if (_valueParam) {
+      description.push(`#️⃣Value: ${_valueParam}`);
+      tooltip.push(`#️⃣GetParam() = ${_valueParam}`);
+    }
+
+    this.description = description.join('');
+    this.tooltip = tooltip.join('\n');
+
+    if (staticEvent) {
+      staticEvent.test = this;
+    }
+  }
+
+  public abstract get testNameInOutput(): string;
+
+  public get tags(): string[] {
+    return this._pureTags.filter(v => v != '.' && v != 'hide');
+  }
+
+  public *route(): IterableIterator<Suite> {
+    let parent: Suite | undefined = this.parent;
+    do {
+      yield parent;
+      parent = parent.parent;
+    } while (parent);
   }
 
   public getStartEvent(): TestEvent {
@@ -50,7 +97,17 @@ export abstract class AbstractTest implements TestInfo {
     output: string,
     rngSeed: number | undefined,
     runInfo: RunningTestExecutableInfo,
+    stderr: string | undefined,
   ): TestEvent;
+
+  public getCancelledEvent(testOutput: string): TestEvent {
+    const ev = this.getFailedEventBase();
+    ev.message += '⏹ Run is stopped by user. ✋';
+    ev.message += '\n\nTest Output : R"""';
+    ev.message += testOutput;
+    ev.message += '"""';
+    return ev;
+  }
 
   public getTimeoutEvent(milisec: number): TestEvent {
     const ev = this.getFailedEventBase();
@@ -75,23 +132,22 @@ export abstract class AbstractTest implements TestInfo {
     const durationStr = milisecToStr(durationInMilisec);
 
     ev.description = this.description + (this.description ? ' ' : '') + '(' + durationStr + ')';
-    ev.tooltip = this.tooltip + (this.tooltip ? '\n\n' : '') + '⏱Duration: ' + durationStr;
+    ev.tooltip = this.tooltip + (this.tooltip ? '\n' : '') + '⏱Duration: ' + durationStr;
   }
 
   public enumerateTestInfos(fn: (v: AbstractTest) => void): void {
     fn(this);
   }
 
-  public findTestInfo(pred: (v: AbstractTest) => boolean): AbstractTest | undefined {
+  public findTest(pred: (v: AbstractTest) => boolean): AbstractTest | undefined {
     return pred(this) ? this : undefined;
   }
 
-  public findRouteToTestInfo(pred: (v: AbstractTest) => boolean): [AbstractSuite[], AbstractTest | undefined] {
-    return [[], pred(this) ? this : undefined];
-  }
-
-  // eslint-disable-next-line
-  public findGroup(_pred: (v: GroupSuite) => boolean): undefined {
-    return undefined;
+  public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
+    if ((isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1) {
+      return [this];
+    } else {
+      return [];
+    }
   }
 }

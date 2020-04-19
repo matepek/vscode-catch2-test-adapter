@@ -1,6 +1,7 @@
 import * as pathlib from 'path';
 import * as c2fs from './FSWrapper';
 import { TestExecutableInfoFrameworkSpecific } from './Executable';
+import { processArrayWithPythonIndexer, PythonIndexerRegexStr } from './Util';
 
 export class RunnableSuiteProperties {
   public constructor(
@@ -8,15 +9,16 @@ export class RunnableSuiteProperties {
     public readonly options: c2fs.SpawnOptions,
     private readonly _frameworkSpecific: TestExecutableInfoFrameworkSpecific,
   ) {
-    this.groupBySingleRegex = _frameworkSpecific.groupBySingleRegex
-      ? new RegExp(_frameworkSpecific.groupBySingleRegex)
-      : undefined;
+    if (Array.isArray(_frameworkSpecific.groupByRegex)) {
+      this.groupByRegex = _frameworkSpecific.groupByRegex.map(r => new RegExp(r));
+    } else {
+      this.groupByRegex = [];
+    }
 
     if (_frameworkSpecific.groupBySource) {
-      const m = _frameworkSpecific.groupBySource.match(this._validationRegex);
-      this._groupBySourceIndexes = m ? [m[1] ? Number(m[1]) : undefined, m[2] ? Number(m[2]) : undefined] : undefined;
+      this._groupBySourceIndexes = _frameworkSpecific.groupBySource.match(PythonIndexerRegexStr);
     } else {
-      this._groupBySourceIndexes = undefined;
+      this._groupBySourceIndexes = null;
     }
 
     this.populateGroupTags();
@@ -34,20 +36,17 @@ export class RunnableSuiteProperties {
     return this._frameworkSpecific.ignoreTestEnumerationStdErr === true;
   }
 
-  private readonly _validationRegex = /^\[(-?[0-9]+)?:(-?[0-9]+)?\]$/;
-  private readonly _groupBySourceIndexes: [number | undefined, number | undefined] | undefined;
+  private readonly _groupBySourceIndexes: RegExpMatchArray | null;
 
   public get groupBySource(): boolean {
-    return this._groupBySourceIndexes !== undefined;
+    return this._groupBySourceIndexes !== null;
   }
 
-  public getSourcePartForGrouping(path: string): string {
+  public getSourcePartForGrouping(path: string, relativeTo: string): string {
     if (this._groupBySourceIndexes) {
-      return pathlib
-        .normalize(path)
-        .split('/')
-        .slice(this._groupBySourceIndexes[0], this._groupBySourceIndexes[1])
-        .join('/');
+      const relPath = pathlib.relative(relativeTo, path);
+      const pathArray = relPath.split(/\/|\\/);
+      return pathlib.join(...processArrayWithPythonIndexer(pathArray, this._groupBySourceIndexes));
     } else {
       throw Error('assertion: getSourcePartForGrouping');
     }
@@ -60,7 +59,7 @@ export class RunnableSuiteProperties {
 
     for (const v of this._frameworkSpecific.groupByTags) {
       const m = v.match(/(\[[^\[\]]+\])/g);
-      if (m) this._tagGroups.push(m.sort());
+      if (m) this._tagGroups.push(m.map(t => t.substring(1, t.length - 1)).sort());
     }
   }
 
@@ -74,7 +73,7 @@ export class RunnableSuiteProperties {
     return this._tagGroups;
   }
 
-  public readonly groupBySingleRegex: RegExp | undefined;
+  public readonly groupByRegex: RegExp[];
 
   public get groupUngroupablesTo(): string {
     return this._frameworkSpecific.groupUngroupablesTo ? this._frameworkSpecific.groupUngroupablesTo : '';
