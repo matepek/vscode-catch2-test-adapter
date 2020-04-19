@@ -23,7 +23,7 @@ export interface TestExecutableInfoFrameworkSpecific {
   ignoreTestEnumerationStdErr?: boolean;
   groupBySource?: string;
   groupByTags?: boolean | string[];
-  groupBySingleRegex?: string;
+  groupByRegex?: string[];
   groupUngroupablesTo?: string;
 }
 

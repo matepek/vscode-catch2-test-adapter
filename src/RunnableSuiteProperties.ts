@@ -9,9 +9,11 @@ export class RunnableSuiteProperties {
     public readonly options: c2fs.SpawnOptions,
     private readonly _frameworkSpecific: TestExecutableInfoFrameworkSpecific,
   ) {
-    this.groupBySingleRegex = _frameworkSpecific.groupBySingleRegex
-      ? new RegExp(_frameworkSpecific.groupBySingleRegex)
-      : undefined;
+    if (Array.isArray(_frameworkSpecific.groupByRegex)) {
+      this.groupByRegex = _frameworkSpecific.groupByRegex.map(r => new RegExp(r));
+    } else {
+      this.groupByRegex = [];
+    }
 
     if (_frameworkSpecific.groupBySource) {
       this._groupBySourceIndexes = _frameworkSpecific.groupBySource.match(PythonIndexerRegexStr);
@@ -40,9 +42,10 @@ export class RunnableSuiteProperties {
     return this._groupBySourceIndexes !== null;
   }
 
-  public getSourcePartForGrouping(path: string): string {
+  public getSourcePartForGrouping(path: string, relativeTo: string): string {
     if (this._groupBySourceIndexes) {
-      const pathArray = path.split(/\/|\\/);
+      const relPath = pathlib.relative(relativeTo, path);
+      const pathArray = relPath.split(/\/|\\/);
       return pathlib.join(...processArrayWithPythonIndexer(pathArray, this._groupBySourceIndexes));
     } else {
       throw Error('assertion: getSourcePartForGrouping');
@@ -70,7 +73,7 @@ export class RunnableSuiteProperties {
     return this._tagGroups;
   }
 
-  public readonly groupBySingleRegex: RegExp | undefined;
+  public readonly groupByRegex: RegExp[];
 
   public get groupUngroupablesTo(): string {
     return this._frameworkSpecific.groupUngroupablesTo ? this._frameworkSpecific.groupUngroupablesTo : '';

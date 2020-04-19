@@ -42,17 +42,17 @@ This variable can be
 
 If it is an object it can contains the following properties:
 
-| Property      | Description                                                                                                                                                                                                                                                                   |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`        | The name of the test suite (file). Can contains variables related to `pattern`.                                                                                                                                                                                               |
-| `pattern`     | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required)                                                                  |
-| `description` | A less prominent text after the `name`. Can contains variables related to `pattern`.                                                                                                                                                                                          |
-| `cwd`         | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`.                                                                                                       |
-| `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`).                          |
-| `dependsOn`   | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. |
-| `catch2`      | Object with framework specific settings. See [here](#Framework-specific-settings).                                                                                                                                                                                            |
-| `gtest`       | Object with framework specific settings. See [here](#Framework-specific-settings).                                                                                                                                                                                            |
-| `doctest`     | Object with framework specific settings. See [here](#Framework-specific-settings).                                                                                                                                                                                            |
+| Property      | Description                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | The name of the test suite (file). Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)                                                                                                                                                                                               |
+| `pattern`     | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)                                                                  |
+| `description` | A less prominent text after the `name`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)                                                                                                                                                                                          |
+| `cwd`         | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)                                                                                                       |
+| `env`         | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)                          |
+| `dependsOn`   | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md) |
+| `catch2`      | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#framework-specific-settings)                                                                                                                                                                                                          |
+| `gtest`       | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#framework-specific-settings)                                                                                                                                                                                                          |
+| `doctest`     | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#framework-specific-settings)                                                                                                                                                                                                          |
 
 The `pattern` (or the `executables` used as string or an array of strings)
 can contain [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
@@ -88,7 +88,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
   - Paths on different drive in the same `dependsOn` array maybe won't work.
   - (If you find another corner case, feel free to open an issue. It could be handy once in the future.)
 
-#### Variables which can be used in `name`, `description`, `cwd` and `env` of `executables`:
+## Variables which can be used in `name`, `description`, `cwd` and `env` of `executables`:
 
 [array index]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
 
@@ -113,26 +113,77 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 [Array index]ing: `(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?`.
 Exmaple: `${relPath[:-2]}`: 'a/b/c/d' -> 'a/b'
 
-#### Framework specific settings
+## Framework specific settings
+
+Under property: `catc2`, `gtest`, `doctest`.
 
 One can fine-tune framework related behaviour.
 
-| Property                      | Description                                                                                                                                                                     |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `helpRegex`                   | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`.             |
-| `prependTestRunningArgs`      | Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`.                           |
-| `prependTestListingArgs`      | Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.)                           |
-| `ignoreTestEnumerationStdErr` | If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. |
-| `testGrouping`                | Groups the tests inside the executable.                                                                                                                                         |
+[testgrouping]: #testgrouping
+
+| Property                      | Description                                                                                                                                                                                                                                                                                               |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `helpRegex`                   | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)             |
+| `prependTestRunningArgs`      | Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)                           |
+| `prependTestListingArgs`      | Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md)                           |
+| `ignoreTestEnumerationStdErr` | If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md) |
+| [testGrouping]                | Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)                                                                                                                            |
 
 If the regex is too general it will mach all the executables❗️
 One should avoid that❗️
 
-**Note**:
+**Note** `.*` matches `\n`
 
-- `.*` matches `\n`
+## testGrouping
 
-#### Examples:
+```
+catch2TestExplorer.executables: [
+	{
+		"testGrouping": ...
+	}
+]
+```
+
+| Property              | Description                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `groupBySource`       | It sorts the tests into the related source file group. Source file can be indexed like `"[1:]"`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)                                                                                                                                         |
+| `groupByTags`         | True to group by every exiting combination of the tags. Or it can be an array of tags: `["[tag1]["tag2"]", "tag2", "tag3"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)                                                                                                              |
+| `groupByRegex`        | Groups tests by the first match group of the first matching regex. Example: `["(?:good|bad) (apple|peach)"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping) |
+| `groupUngroupablesTo` | If a test is not groupable it will be grouped by the given name. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping)                                                                                                                                                                         |
+
+Examples:
+
+```
+"catch2TestExplorer.executables": [
+	{
+		"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+    "catch2": {
+      "testGrouping": {
+        "groupBySource": "[-3:]",
+        "groupByTags": true, // or ["[1][2]", "[2]", "[3]"],
+        "groupByRegex": [ "(apple|peach)" ],
+        "groupUngroupablesTo": "ungrouped"
+      }
+    },
+    "gtest": {
+      "testGrouping": {
+        "groupBySource": "[-3:-1]",
+        "groupByRegex": [ "(?:good|bad) (apple|peach)" ]
+      }
+    },
+    "doctest": {
+      "testGrouping": {
+        "groupBySource": "[-1]",
+        "groupByRegex": ["apple", "peach"]
+      }
+    }
+	}
+]
+```
+
+Note: This example overused it.
+
+## Examples:
 
 ```json
 "catch2TestExplorer.executables": "dir/test.exe"

@@ -78,7 +78,7 @@ export abstract class AbstractRunnableSuite extends Suite {
     if (this.execInfo.groupBySource) {
       if (file) {
         this._shared.log.info('groupBySource');
-        const fileStr = this.execInfo.getSourcePartForGrouping(file);
+        const fileStr = this.execInfo.getSourcePartForGrouping(this._shared.workspaceFolder.uri.fsPath, file);
         getOrCreateChildSuite(fileStr);
       } else {
         setUngroupableGroupIfEnabled();
@@ -119,12 +119,18 @@ export abstract class AbstractRunnableSuite extends Suite {
       }
     }
 
-    if (this.execInfo.groupBySingleRegex) {
-      this._shared.log.info('groupBySingleRegex');
-      const match = label.match(this.execInfo.groupBySingleRegex);
-      if (match && match[1]) {
-        const firstMatchGroup = match[1];
-        getOrCreateChildSuite(firstMatchGroup);
+    if (this.execInfo.groupByRegex.length > 0) {
+      this._shared.log.info('groupByRegex');
+      let match: RegExpMatchArray | null = null;
+
+      let index = 0;
+      while (index < this.execInfo.groupByRegex.length && match == null)
+        match = label.match(this.execInfo.groupByRegex[index++]);
+
+      if (match) {
+        this._shared.log.info('matched on', label, this.execInfo.groupByRegex[index - 1]);
+        const group = match[1] ? match[1] : match[0];
+        getOrCreateChildSuite(group);
       } else {
         setUngroupableGroupIfEnabled();
       }

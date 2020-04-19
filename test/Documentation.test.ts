@@ -33,7 +33,7 @@ describe(path.basename(__filename), function () {
       ] as any; //eslint-disable-line
       const keys = Object.keys(executableSchemaProp);
       keys.forEach(key => {
-        assert.strictEqual(findDescriptionInReadmeTable(key), executableSchemaProp[key]['description']);
+        assert.strictEqual(findDescriptionInReadmeTable(key), executableSchemaProp[key]['description'], key);
       });
 
       {

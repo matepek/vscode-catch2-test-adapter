@@ -7,46 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.9.1]
-
 Pesky bug fixes and improvements
 
 ## [2.9.0] - 2020-04-17
 
 ### Added
 
-Experiment feature: `testGrouping`: Groups the tests inside the executable.
-Examples:
-
-```
-"catch2TestExplorer.executables": [
-	{
-		"pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
-    "catch2": {
-      "testGrouping": {
-        "groupBySource": "[-3:]",
-        "groupByTags": true, // or ["[1][2]", "[2]", "[3]"],
-        "groupBySingleRegex": "(apple|peach)",
-        "groupUngroupablesTo": "ungrouped"
-      }
-    },
-    "gtest": {
-      "testGrouping": {
-        "groupBySource": "[-3:-1]",
-        "groupBySingleRegex": "(?:good|bad) (apple|peach)"
-      }
-    },
-    "doctest": {
-      "testGrouping": {
-        "groupBySource": "[-1]",
-        "groupBySingleRegex": "(apple|peach)"
-      }
-    }
-	}
-]
-```
-
-Note: This example overused it.
+Experiment feature: `testGrouping`: Groups the tests inside the executable. ([Example](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping))
 
 ## [2.8.13] - 2020-04-04
 

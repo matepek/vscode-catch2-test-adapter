@@ -301,7 +301,7 @@ export class Config {
           if (typeof obj.testGrouping) {
             if (typeof obj.testGrouping.groupBySource) r.groupBySource = obj.testGrouping.groupBySource;
             if (typeof obj.testGrouping.groupByTags) r.groupByTags = obj.testGrouping.groupByTags;
-            if (typeof obj.testGrouping.groupBySingleRegex) r.groupBySingleRegex = obj.testGrouping.groupBySingleRegex;
+            if (typeof obj.testGrouping.groupByRegex) r.groupByRegex = obj.testGrouping.groupByRegex;
             if (typeof obj.testGrouping.groupUngroupablesTo)
               r.groupUngroupablesTo = obj.testGrouping.groupUngroupablesTo;
           }
