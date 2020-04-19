@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.9.1]
 
-Pesky bug fixes.
+Pesky bug fixes and improvements
 
 ## [2.9.0] - 2020-04-17
 

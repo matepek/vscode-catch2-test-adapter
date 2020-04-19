@@ -43,3 +43,11 @@ Then Travis will publish it automatically.
 
 - [ ] Are the tests are running? (`npm test`)
 - [ ] Is the `CHANGELOG.md` was updated?
+
+## TODOs
+
+- doctest: supporting test suites
+- Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip, gmock_verbose
+- gaze is not good enough: detects change and delete, but not creation
+- `dependsOn` could contain variables
+- https://github.com/nodejs/node-gyp
