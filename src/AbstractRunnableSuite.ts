@@ -1,5 +1,5 @@
 import * as cp from 'child_process';
-import * as path from 'path';
+import * as pathlib from 'path';
 import * as fs from 'fs';
 
 import * as c2fs from './FSWrapper';
@@ -11,7 +11,8 @@ import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
-import { Version, reverse } from './Util';
+import { Version, reverse, PythonIndexerRegexStr, processArrayWithPythonIndexer } from './Util';
+import { TestGrouping } from './TestGroupingInterface';
 
 export abstract class AbstractRunnableSuite extends Suite {
   private static _reportedFrameworks: string[] = [];
@@ -56,84 +57,127 @@ export abstract class AbstractRunnableSuite extends Suite {
     return super.tooltip + '\n\nPath: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd;
   }
 
-  public createAndAddToSubSuite(
+  public createOrGetSubSuite(
     label: string,
     file: string | undefined,
-    tags: string[],
+    tags: string[], // in case of google test it is the TestCase
     oldChildren: (Suite | AbstractTest)[],
-    base?: Suite,
+    testGrouping: TestGrouping,
   ): [Suite, (Suite | AbstractTest)[]] {
-    let group: Suite = base ? base : (this as Suite);
+    let group: Suite = this as Suite;
     let oldGroupChildren: (Suite | AbstractTest)[] = oldChildren;
 
     const getOrCreateChildSuite = (label: string): void => {
       [group, oldGroupChildren] = group.getOrCreateChildSuite(label, oldGroupChildren);
     };
 
-    const setUngroupableGroupIfEnabled = (): void => {
-      if (this.execInfo.groupUngroupablesTo)
-        [group, oldGroupChildren] = group.getOrCreateChildSuite(this.execInfo.groupUngroupablesTo, oldGroupChildren);
-    };
+    let currentGrouping: TestGrouping = testGrouping;
 
-    if (this.execInfo.groupBySource) {
-      if (file) {
-        this._shared.log.info('groupBySource');
-        const fileStr = this.execInfo.getSourcePartForGrouping(this._shared.workspaceFolder.uri.fsPath, file);
-        getOrCreateChildSuite(fileStr);
-      } else {
-        setUngroupableGroupIfEnabled();
-      }
-    }
+    //TODO add label to package.json
 
-    if (this.execInfo.groupByTagsType !== 'disabled') {
-      if (tags.length > 0) {
-        switch (this.execInfo.groupByTagsType) {
-          default: {
-            break;
-          }
-          case 'allCombination': {
-            this._shared.log.info('groupByTags: allCombination');
-            const tagsStr = tags.sort().join('');
-            getOrCreateChildSuite(tagsStr);
-            break;
-          }
-          case 'byArray':
-            {
-              this._shared.log.info('groupByTags: byArray');
-
-              const foundCombo = this.execInfo
-                .getTagGroupArray()
-                .find(combo => combo.every(tag => tags.indexOf(tag) != -1));
-
-              if (foundCombo) {
-                const comboStr = foundCombo.map(t => `[${t}]`).join('');
-                getOrCreateChildSuite(comboStr);
+    try {
+      while (true) {
+        if (currentGrouping.groupBySource) {
+          const g = currentGrouping.groupBySource;
+          if (g.sourceIndex) {
+            if (typeof g.sourceIndex === 'string') {
+              const sourceIndicies = g.sourceIndex.match(PythonIndexerRegexStr);
+              if (sourceIndicies) {
+                if (file) {
+                  this._shared.log.info('groupBySource', g.sourceIndex);
+                  const relPath = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file);
+                  const pathArray = relPath.split(/\/|\\/);
+                  const fileStr = pathlib.join(...processArrayWithPythonIndexer(pathArray, sourceIndicies));
+                  getOrCreateChildSuite(g.label ? g.label : fileStr);
+                } else if (g.groupUngroupedTo) {
+                  getOrCreateChildSuite(g.groupUngroupedTo);
+                }
               } else {
-                setUngroupableGroupIfEnabled();
+                this._shared.log.warn("Couldn't parse", g.sourceIndex);
               }
+            } else {
+              this._shared.log.warn('sourceIndex has to be string', g.sourceIndex);
             }
-            break;
+          } else {
+            this._shared.log.warn('missing "sourceIndex": skipping grouping level');
+          }
+          currentGrouping = g;
+        } else if (currentGrouping.groupByTags) {
+          const g = currentGrouping.groupByTags;
+          if (g.tags) {
+            this._shared.log.info('groupBySource', g.tags);
+
+            if (Array.isArray(g.tags) && g.tags.every(v => typeof v === 'string')) {
+              if (g.tags.length === 0) {
+                if (tags.length > 0) {
+                  const tagsStr = tags.sort().join('');
+                  getOrCreateChildSuite(g.label ? g.label : tagsStr);
+                } else if (g.groupUngroupedTo) {
+                  getOrCreateChildSuite(g.groupUngroupedTo);
+                }
+              } else {
+                const combos = g.tags
+                  .map(tt => {
+                    const m = tt.match(/(\[[^\[\]]+\])/g);
+                    if (m) {
+                      return m.map(t => t.substring(1, t.length - 1)).sort();
+                    } else {
+                      this._shared.log.warn(
+                        'groupByTags.tags array element format should be like: "[tag1][tag2]".',
+                        tt,
+                      );
+                      return [];
+                    }
+                  })
+                  .filter(arr => arr.length > 0);
+
+                const foundCombo = combos.find(combo => combo.every(t => tags.indexOf(t) !== -1));
+
+                if (foundCombo) {
+                  const comboStr = foundCombo.map(t => `[${t}]`).join('');
+                  getOrCreateChildSuite(g.label ? g.label : comboStr);
+                } else if (g.groupUngroupedTo) {
+                  getOrCreateChildSuite(g.groupUngroupedTo);
+                }
+              }
+            } else {
+              this._shared.log.warn('groupByTags.tags should be an array of strings. Empty array is OK.', g.tags);
+            }
+          } else {
+            this._shared.log.warn('missing "tags": skipping grouping level');
+          }
+          currentGrouping = g;
+        } else if (currentGrouping.groupByRegex) {
+          const g = currentGrouping.groupByRegex;
+          if (g.regexes) {
+            this._shared.log.info('groupByRegex', g.regexes);
+
+            if (Array.isArray(g.regexes) && g.regexes.length > 0 && g.regexes.every(v => typeof v === 'string')) {
+              let match: RegExpMatchArray | null = null;
+
+              let index = 0;
+              while (index < g.regexes.length && match == null) match = label.match(g.regexes[index++]);
+
+              if (match) {
+                this._shared.log.info('groupByRegex matched on', label, g.regexes[index - 1]);
+                const group = match[1] ? match[1] : match[0];
+                getOrCreateChildSuite(g.label ? g.label : group);
+              } else if (g.groupUngroupedTo) {
+                getOrCreateChildSuite(g.groupUngroupedTo);
+              }
+            } else {
+              this._shared.log.warn('groupByTags.tags should be a non-empty array of strings.', g.regexes);
+            }
+          } else {
+            this._shared.log.warn('missing "regexes": skipping grouping level');
+          }
+          currentGrouping = g;
+        } else {
+          break;
         }
-      } else {
-        setUngroupableGroupIfEnabled();
       }
-    }
-
-    if (this.execInfo.groupByRegex.length > 0) {
-      this._shared.log.info('groupByRegex');
-      let match: RegExpMatchArray | null = null;
-
-      let index = 0;
-      while (index < this.execInfo.groupByRegex.length && match == null)
-        match = label.match(this.execInfo.groupByRegex[index++]);
-
-      if (match) {
-        this._shared.log.info('matched on', label, this.execInfo.groupByRegex[index - 1]);
-        const group = match[1] ? match[1] : match[0];
-        getOrCreateChildSuite(group);
-      } else {
-        setUngroupableGroupIfEnabled();
-      }
+    } catch (e) {
+      this._shared.log.exception(e);
     }
 
     return [group, oldGroupChildren];
@@ -440,16 +484,16 @@ export abstract class AbstractRunnableSuite extends Suite {
   }
 
   protected _findFilePath(matchedPath: string): string {
-    if (path.isAbsolute(matchedPath)) return matchedPath;
+    if (pathlib.isAbsolute(matchedPath)) return matchedPath;
 
     try {
       let parent: string;
-      let parentParent = path.dirname(this.execInfo.path);
+      let parentParent = pathlib.dirname(this.execInfo.path);
       do {
         parent = parentParent;
-        parentParent = path.dirname(parent);
+        parentParent = pathlib.dirname(parent);
 
-        const filePath = path.join(parent, matchedPath);
+        const filePath = pathlib.join(parent, matchedPath);
         if (c2fs.existsSync(filePath)) return filePath;
       } while (parent != parentParent);
     } catch {}
@@ -460,9 +504,9 @@ export abstract class AbstractRunnableSuite extends Suite {
         let parentParent = this.execInfo.options.cwd;
         do {
           parent = parentParent;
-          parentParent = path.dirname(parent);
+          parentParent = pathlib.dirname(parent);
 
-          const filePath = path.join(parent, matchedPath);
+          const filePath = pathlib.join(parent, matchedPath);
           if (c2fs.existsSync(filePath)) return filePath;
         } while (parent != parentParent);
       } catch {}
@@ -476,9 +520,9 @@ export abstract class AbstractRunnableSuite extends Suite {
         let parentParent = this._shared.workspaceFolder.uri.fsPath;
         do {
           parent = parentParent;
-          parentParent = path.dirname(parent);
+          parentParent = pathlib.dirname(parent);
 
-          const filePath = path.join(parent, matchedPath);
+          const filePath = pathlib.join(parent, matchedPath);
           if (c2fs.existsSync(filePath)) return filePath;
         } while (parent != parentParent);
       } catch {}

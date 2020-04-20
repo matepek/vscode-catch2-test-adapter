@@ -91,7 +91,13 @@ export class Catch2Suite extends AbstractRunnableSuite {
         ++i;
       }
 
-      const [group, oldGroupChildren] = this.createAndAddToSubSuite(testName, filePath, tags, oldChildren);
+      const [group, oldGroupChildren] = this.createOrGetSubSuite(
+        testName,
+        filePath,
+        tags,
+        oldChildren,
+        this.execInfo.testGrouping || {},
+      );
 
       const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testName);
 

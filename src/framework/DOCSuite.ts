@@ -47,7 +47,13 @@ export class DOCSuite extends AbstractRunnableSuite {
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      const [group, oldGroupChildren] = this.createAndAddToSubSuite(testName, filePath, [], oldChildren);
+      const [group, oldGroupChildren] = this.createOrGetSubSuite(
+        testName,
+        filePath,
+        [],
+        oldChildren,
+        this.execInfo.testGrouping || {},
+      );
 
       const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testName);
 

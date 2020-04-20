@@ -15,16 +15,14 @@ import {
 import { RunnableSuiteFactory } from './RunnableSuiteFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
+import { TestGrouping } from './TestGroupingInterface';
 
 export interface TestExecutableInfoFrameworkSpecific {
   helpRegex?: string;
   prependTestRunningArgs?: string[];
   prependTestListingArgs?: string[];
   ignoreTestEnumerationStdErr?: boolean;
-  groupBySource?: string;
-  groupByTags?: boolean | string[];
-  groupByRegex?: string[];
-  groupUngroupablesTo?: string;
+  testGrouping?: TestGrouping;
 }
 
 export class Executable implements vscode.Disposable {

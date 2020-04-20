@@ -298,12 +298,7 @@ export class Config {
 
           if (obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
 
-          if (obj.testGrouping) {
-            if (obj.testGrouping.groupBySource) r.groupBySource = obj.testGrouping.groupBySource;
-            if (obj.testGrouping.groupByTags) r.groupByTags = obj.testGrouping.groupByTags;
-            if (obj.testGrouping.groupByRegex) r.groupByRegex = obj.testGrouping.groupByRegex;
-            if (obj.testGrouping.groupUngroupablesTo) r.groupUngroupablesTo = obj.testGrouping.groupUngroupablesTo;
-          }
+          if (obj.testGrouping) r.testGrouping = obj.testGrouping;
         }
         return r;
       };

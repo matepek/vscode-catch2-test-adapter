@@ -12,6 +12,7 @@ import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
+import { TestGrouping } from '../TestGroupingInterface';
 
 export class GoogleSuite extends AbstractRunnableSuite {
   public children: Suite[] = [];
@@ -24,6 +25,14 @@ export class GoogleSuite extends AbstractRunnableSuite {
     version: Promise<Version | undefined>,
   ) {
     super(shared, label, desciption, execInfo, 'GoogleTest', version);
+  }
+
+  private getTestGrouping(): TestGrouping {
+    if (this.execInfo.testGrouping) {
+      return this.execInfo.testGrouping;
+    } else {
+      return { groupByTags: { tags: [] } };
+    }
   }
 
   private _reloadFromXml(xmlStr: string, oldChildren: Suite[]): void {
@@ -44,8 +53,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
     for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
       const suiteName = xml.testsuites.testsuite[i].$.name;
 
-      const [fixtureGroup, fixtureOldGroupChildren] = this.getOrCreateChildSuite(suiteName, oldChildren);
-
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
         const testCase = xml.testsuites.testsuite[i].testcase[j];
         const testName = testCase.$.name.startsWith('DISABLED_') ? testCase.$.name.substr(9) : testCase.$.name;
@@ -56,12 +63,12 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const file = testCase.$.file ? this._findFilePath(testCase.$.file) : undefined;
         const line = testCase.$.line ? testCase.$.line - 1 : undefined;
 
-        const [group, oldGroupChildren] = this.createAndAddToSubSuite(
+        const [group, oldGroupChildren] = this.createOrGetSubSuite(
           testName,
           file,
-          [],
-          fixtureOldGroupChildren,
-          fixtureGroup,
+          [suiteName],
+          oldChildren,
+          this.getTestGrouping(),
         );
 
         const old = oldGroupChildren.find(t => t.type === 'test' && t.testNameInOutput === testNameInOutput);
@@ -111,8 +118,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
       const suiteName = testGroupMatch[1];
       const typeParam: string | undefined = testGroupMatch[3];
 
-      const [fixtureGroup, fixtureOldGroupChildren] = this.getOrCreateChildSuite(suiteName, oldChildren);
-
       let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 
       while (testMatch) {
@@ -122,12 +127,12 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const valueParam: string | undefined = testMatch[3];
         const testNameInOutput = testGroupName + '.' + testMatch[1];
 
-        const [group, oldGroupChildren] = this.createAndAddToSubSuite(
+        const [group, oldGroupChildren] = this.createOrGetSubSuite(
           testName,
           undefined,
-          [],
-          fixtureOldGroupChildren,
-          fixtureGroup,
+          [suiteName],
+          oldChildren,
+          this.getTestGrouping(),
         );
 
         const old = oldGroupChildren.find(t => t.type === 'test' && t.testNameInOutput === testNameInOutput);
