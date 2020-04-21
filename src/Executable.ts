@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import * as vscode from 'vscode';
 
 import { RootSuite } from './RootSuite';
-import { AbstractRunnableSuite } from './AbstractRunnableSuite';
+import { AbstractRunnable } from './AbstractRunnable';
 import * as c2fs from './FSWrapper';
 import {
   resolveVariables,
@@ -56,7 +56,7 @@ export class Executable implements vscode.Disposable {
 
   private _disposables: vscode.Disposable[] = [];
 
-  private readonly _executables: Map<string /*fsPath*/, AbstractRunnableSuite> = new Map();
+  private readonly _executables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
 
   private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
@@ -120,7 +120,7 @@ export class Executable implements vscode.Disposable {
             return this._createSuiteByUri(file)
               .create(false)
               .then(
-                (suite: AbstractRunnableSuite) => {
+                (suite: AbstractRunnable) => {
                   return suite.reloadTests(this._shared.taskPool).then(
                     () => {
                       if (this._rootSuite.insertChild(suite, false /* called later */)) {
@@ -315,6 +315,7 @@ export class Executable implements vscode.Disposable {
 
     return new RunnableSuiteFactory(
       this._shared,
+      this._rootSuite,
       resolvedName,
       resolvedDescription,
       filePath,
@@ -322,6 +323,7 @@ export class Executable implements vscode.Disposable {
         cwd: resolvedCwd,
         env: Object.assign({}, process.env, resolvedEnv),
       },
+      varToValue,
       this._catch2,
       this._gtest,
       this._doctest,
@@ -345,7 +347,7 @@ export class Executable implements vscode.Disposable {
       this._createSuiteByUri(filePath)
         .create(true)
         .then(
-          (s: AbstractRunnableSuite) => this._recursiveHandleEverything(filePath, s, false, 128),
+          (s: AbstractRunnable) => this._recursiveHandleEverything(filePath, s, false, 128),
           (reason: Error) => this._shared.log.info("couldn't add: " + filePath, 'reson:', reason),
         );
     }
@@ -353,7 +355,7 @@ export class Executable implements vscode.Disposable {
 
   private _recursiveHandleEverything(
     filePath: string,
-    suite: AbstractRunnableSuite,
+    suite: AbstractRunnable,
     exists: boolean,
     delay: number,
   ): Promise<void> {

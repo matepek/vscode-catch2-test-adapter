@@ -19,7 +19,7 @@ import { resolveVariables, generateId, reverse } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { SharedVariables } from './SharedVariables';
 import { Catch2Section, Catch2Test } from './framework/Catch2Test';
-import { AbstractRunnableSuite } from './AbstractRunnableSuite';
+import { AbstractRunnable } from './AbstractRunnable';
 import { Config } from './Config';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
@@ -43,7 +43,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
 
-  private readonly _sendRetireEmitter = new vscode.EventEmitter<AbstractRunnableSuite[]>();
+  private readonly _sendRetireEmitter = new vscode.EventEmitter<AbstractRunnable[]>();
 
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
@@ -143,9 +143,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(this._sendRetireEmitter);
     {
-      const unique = new Set<AbstractRunnableSuite>();
+      const unique = new Set<AbstractRunnable>();
 
-      const retire = (aggregatedArgs: [AbstractRunnableSuite[]][]): void => {
+      const retire = (aggregatedArgs: [AbstractRunnable[]][]): void => {
         const isScheduled = unique.size > 0;
         aggregatedArgs.forEach(args => args[0].forEach(test => unique.add(test)));
 
@@ -439,8 +439,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const suiteLabels = route.map(s => s.label).join(' ← ');
 
-    const testSuite = route.find(v => v instanceof AbstractRunnableSuite);
-    if (testSuite === undefined || !(testSuite instanceof AbstractRunnableSuite))
+    const testSuite = route.find(v => v instanceof AbstractRunnable);
+    if (testSuite === undefined || !(testSuite instanceof AbstractRunnable))
       throw Error('Unexpected error. Should have AbstractTestSuiteInfo parent.');
 
     this._log.info('test', test, tests);

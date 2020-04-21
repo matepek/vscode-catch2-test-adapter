@@ -2,16 +2,16 @@ import * as vscode from 'vscode';
 import { TestInfo } from 'vscode-test-adapter-api';
 import { Executable } from './Executable';
 import { Suite } from './Suite';
-import { AbstractRunnableSuite } from './AbstractRunnableSuite';
+import { AbstractRunnable } from './AbstractRunnable';
 import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
 
 export class RootSuite extends Suite implements vscode.Disposable {
-  public readonly children: AbstractRunnableSuite[] = [];
+  public readonly children: AbstractRunnable[] = [];
   private _executables: Executable[] = [];
 
   public constructor(id: string | undefined, shared: SharedVariables) {
-    super(shared, undefined, 'Catch2/GTest/DOCTest', undefined, id);
+    super(shared, undefined, 'Catch2/GTest/DOCTest', undefined);
   }
 
   public get file(): string | undefined {
@@ -84,16 +84,16 @@ export class RootSuite extends Suite implements vscode.Disposable {
       });
   }
 
-  public hasChild(suite: AbstractRunnableSuite): boolean {
+  public hasChild(suite: AbstractRunnable): boolean {
     return this.children.indexOf(suite) != -1;
   }
 
-  public insertChild(suite: AbstractRunnableSuite, uniquifyLabels: boolean): boolean {
+  public insertChild(suite: AbstractRunnable, uniquifyLabels: boolean): boolean {
     if (this.hasChild(suite)) return false;
 
     {
       // we want to filter the situation when 2 patterns match the same file
-      const other = this.children.find((s: AbstractRunnableSuite) => {
+      const other = this.children.find((s: AbstractRunnable) => {
         return suite.execInfo.path == s.execInfo.path;
       });
       if (other) {
@@ -109,7 +109,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
     return true;
   }
 
-  public removeChild(child: AbstractRunnableSuite): boolean {
+  public removeChild(child: AbstractRunnable): boolean {
     const i = this.children.findIndex(val => val.id == child.id);
     if (i != -1) {
       this.children.splice(i, 1);
@@ -120,7 +120,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
   }
 
   public uniquifySuiteLabels(): void {
-    const uniqueNames = new Map<string /* name */, AbstractRunnableSuite[]>();
+    const uniqueNames = new Map<string /* name */, AbstractRunnable[]>();
 
     for (const suite of this.children) {
       suite.labelPrefix = '';

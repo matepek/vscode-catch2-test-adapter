@@ -4,10 +4,12 @@ import { AbstractTest } from '../AbstractTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
 import { Suite } from '../Suite';
+import { AbstractRunnable } from '../AbstractRunnable';
 
 export class GoogleTest extends AbstractTest {
   public constructor(
     shared: SharedVariables,
+    runnable: AbstractRunnable,
     parent: Suite,
     id: string | undefined,
     testNameAsId: string,
@@ -19,6 +21,7 @@ export class GoogleTest extends AbstractTest {
   ) {
     super(
       shared,
+      runnable,
       parent,
       id,
       testNameAsId,

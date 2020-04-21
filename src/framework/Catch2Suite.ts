@@ -5,30 +5,42 @@ import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
-import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
+import { AbstractRunnable } from '../AbstractRunnable';
+import { RootSuite } from '../RootSuite';
 import { Suite } from '../Suite';
 import { Catch2Test } from './Catch2Test';
 import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
+import { TestGrouping } from '../TestGroupingInterface';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-export class Catch2Suite extends AbstractRunnableSuite {
+export class Catch2Suite extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
+    rootSuite: RootSuite,
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
     private readonly _catch2Version: Version,
   ) {
-    super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(_catch2Version));
+    super(shared, rootSuite, label, desciption, execInfo, 'Catch2', Promise.resolve(_catch2Version));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: (Suite | AbstractTest)[]): void {
+  private getTestGrouping(): TestGrouping {
+    //TODO
+    if (this.execInfo.testGrouping) {
+      return this.execInfo.testGrouping;
+    } else {
+      return { groupByTags: { tags: [] } };
+    }
+  }
+
+  private _reloadFromString(testListOutput: string): void {
     const lines = testListOutput.split(/\r?\n/);
 
     const startRe = /Matching test cases:/;
@@ -56,6 +68,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
         this._shared.log.warn('Probably too long test name', i, lines);
         this.children = [];
         this._addError(
+          this,
           [
             '⚠️ Probably too long test name or the test name starts with space characters!',
             '🛠 - Try to define `CATCH_CONFIG_CONSOLE_WIDTH 300` before `catch2.hpp` is included.',
@@ -91,28 +104,25 @@ export class Catch2Suite extends AbstractRunnableSuite {
         ++i;
       }
 
-      const [group, oldGroupChildren] = this.createOrGetSubSuite(
+      this.createSubtreeAndAddTest(
+        testName,
         testName,
         filePath,
         tags,
-        oldChildren,
-        this.execInfo.testGrouping || {},
-      );
-
-      const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testName);
-
-      group.addTest(
-        new Catch2Test(
-          this._shared,
-          group,
-          this._catch2Version,
-          testName,
-          tags,
-          filePath,
-          line,
-          description,
-          old as Catch2Test | undefined,
-        ),
+        this.getTestGrouping(),
+        (parent: Suite, old: AbstractTest | undefined) =>
+          new Catch2Test(
+            this._shared,
+            this,
+            parent,
+            this._catch2Version,
+            testName,
+            tags,
+            filePath,
+            line,
+            description,
+            old as Catch2Test | undefined,
+          ),
       );
     }
 
@@ -120,9 +130,6 @@ export class Catch2Suite extends AbstractRunnableSuite {
   }
 
   protected async _reloadChildren(): Promise<void> {
-    const oldChildren = this.children;
-    this.children = [];
-
     const cacheFile = this.execInfo.path + '.cache.txt';
 
     if (this._shared.enabledTestListCaching) {
@@ -137,7 +144,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
           if (content === '') {
             this._shared.log.debug('loading from cache failed because file is empty');
           } else {
-            this._reloadFromString(content, oldChildren);
+            this._reloadFromString(content);
 
             return;
           }
@@ -172,7 +179,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
       throw Error('stoud is empty');
     }
 
-    this._reloadFromString(catch2TestListOutput.stdout, oldChildren);
+    this._reloadFromString(catch2TestListOutput.stdout);
 
     if (this._shared.enabledTestListCaching) {
       return promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>

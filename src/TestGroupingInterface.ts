@@ -1,3 +1,5 @@
+//TODO add to json
+//TODO add labels adn descriptions to json
 export interface GroupByExecutable extends TestGrouping {
   sourceIndex?: string;
 

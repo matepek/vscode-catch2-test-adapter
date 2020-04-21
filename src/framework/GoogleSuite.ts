@@ -4,7 +4,7 @@ import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
 import { Suite } from '../Suite';
-import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
+import { AbstractRunnable } from '../AbstractRunnable';
 import { GoogleTest } from './GoogleTest';
 import { Parser } from 'xml2js';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
@@ -13,18 +13,20 @@ import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutab
 import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
+import { RootSuite } from '../RootSuite';
 
-export class GoogleSuite extends AbstractRunnableSuite {
+export class GoogleSuite extends AbstractRunnable {
   public children: Suite[] = [];
 
   public constructor(
     shared: SharedVariables,
+    rootSuite: RootSuite,
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
     version: Promise<Version | undefined>,
   ) {
-    super(shared, label, desciption, execInfo, 'GoogleTest', version);
+    super(shared, rootSuite, label, desciption, execInfo, 'GoogleTest', version);
   }
 
   private getTestGrouping(): TestGrouping {
@@ -35,7 +37,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
     }
   }
 
-  private _reloadFromXml(xmlStr: string, oldChildren: Suite[]): void {
+  private _reloadFromXml(xmlStr: string): void {
     interface XmlObject {
       [prop: string]: any; //eslint-disable-line
     }
@@ -63,34 +65,31 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const file = testCase.$.file ? this._findFilePath(testCase.$.file) : undefined;
         const line = testCase.$.line ? testCase.$.line - 1 : undefined;
 
-        const [group, oldGroupChildren] = this.createOrGetSubSuite(
+        this.createSubtreeAndAddTest(
           testName,
+          testNameInOutput,
           file,
           [suiteName],
-          oldChildren,
           this.getTestGrouping(),
-        );
-
-        const old = oldGroupChildren.find(t => t.type === 'test' && t.testNameInOutput === testNameInOutput);
-
-        group.addTest(
-          new GoogleTest(
-            this._shared,
-            group,
-            old ? old.id : undefined,
-            testNameInOutput,
-            testName,
-            typeParam,
-            valueParam,
-            file,
-            line,
-          ),
+          (parent: Suite, old: GoogleTest | undefined) =>
+            new GoogleTest(
+              this._shared,
+              this,
+              parent,
+              old ? old.id : undefined,
+              testNameInOutput,
+              testName,
+              typeParam,
+              valueParam,
+              file,
+              line,
+            ),
         );
       }
     }
   }
 
-  private _reloadFromStdOut(stdOutStr: string, oldChildren: Suite[]): void {
+  private _reloadFromStdOut(stdOutStr: string): void {
     this.children = [];
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -127,28 +126,25 @@ export class GoogleSuite extends AbstractRunnableSuite {
         const valueParam: string | undefined = testMatch[3];
         const testNameInOutput = testGroupName + '.' + testMatch[1];
 
-        const [group, oldGroupChildren] = this.createOrGetSubSuite(
+        this.createSubtreeAndAddTest(
           testName,
+          testNameInOutput,
           undefined,
           [suiteName],
-          oldChildren,
           this.getTestGrouping(),
-        );
-
-        const old = oldGroupChildren.find(t => t.type === 'test' && t.testNameInOutput === testNameInOutput);
-
-        group.addTest(
-          new GoogleTest(
-            this._shared,
-            group,
-            old ? old.id : undefined,
-            testNameInOutput,
-            testName,
-            typeParam,
-            valueParam,
-            undefined,
-            undefined,
-          ),
+          (parent: Suite, old: GoogleTest | undefined) =>
+            new GoogleTest(
+              this._shared,
+              this,
+              parent,
+              old ? old.id : undefined,
+              testNameInOutput,
+              testName,
+              typeParam,
+              valueParam,
+              undefined,
+              undefined,
+            ),
         );
 
         testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
@@ -159,9 +155,6 @@ export class GoogleSuite extends AbstractRunnableSuite {
   }
 
   protected async _reloadChildren(): Promise<void> {
-    const oldChildren = this.children;
-    this.children = [];
-
     const cacheFile = this.execInfo.path + '.cache.xml';
 
     if (this._shared.enabledTestListCaching) {
@@ -173,7 +166,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
           this._shared.log.info('loading from cache: ', cacheFile);
           const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          this._reloadFromXml(xmlStr, oldChildren);
+          this._reloadFromXml(xmlStr);
           return Promise.resolve();
         }
       } catch (e) {
@@ -200,7 +193,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
           if (hasXmlFile) {
             const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-            this._reloadFromXml(xmlStr, oldChildren);
+            this._reloadFromXml(xmlStr);
 
             if (!this._shared.enabledTestListCaching) {
               fs.unlink(cacheFile, (err: Error | null) => {
@@ -213,7 +206,7 @@ export class GoogleSuite extends AbstractRunnableSuite {
             );
 
             try {
-              this._reloadFromStdOut(googleTestListOutput.stdout, oldChildren);
+              this._reloadFromStdOut(googleTestListOutput.stdout);
             } catch (e) {
               this._shared.log.info('GoogleTest._reloadFromStdOut error', e, googleTestListOutput);
               throw e;

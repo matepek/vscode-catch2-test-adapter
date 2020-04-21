@@ -15,7 +15,7 @@ Pesky bug fixes and tons of improvements
 
 ### Added
 
-Experiment feature: `testGrouping`: Groups the tests inside the executable. ([Example](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping))
+Experiment feature: `testGrouping`: Groups the tests inside the executable. ([Example](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping))
 
 ## [2.8.13] - 2020-04-04
 

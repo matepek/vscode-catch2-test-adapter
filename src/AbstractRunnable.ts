@@ -13,35 +13,38 @@ import { promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import { Version, reverse, PythonIndexerRegexStr, processArrayWithPythonIndexer } from './Util';
 import { TestGrouping } from './TestGroupingInterface';
+import { RootSuite } from './RootSuite';
 
-export abstract class AbstractRunnableSuite extends Suite {
+export abstract class AbstractRunnable extends Suite {
   private static _reportedFrameworks: string[] = [];
 
   private _canceled = false;
   private _runInfos: RunningTestExecutableInfo[] = [];
   private _lastReloadTime: number | undefined = undefined;
+  private _tests: AbstractTest[] = [];
 
   public constructor(
-    shared: SharedVariables,
+    protected readonly _shared: SharedVariables,
+    protected readonly _rootSuite: RootSuite,
     label: string,
     description: string | undefined,
     public readonly execInfo: RunnableSuiteProperties,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<Version | undefined>,
   ) {
-    super(shared, undefined, label, description, undefined);
+    super(_shared, undefined, label, description);
 
     frameworkVersion
       .then(version => {
-        if (AbstractRunnableSuite._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
+        if (AbstractRunnable._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
           const versionStr = version ? version.toString() : 'unknown';
 
-          shared.log.infoMessageWithTags('Framework', {
+          _shared.log.infoMessageWithTags('Framework', {
             framework: this.frameworkName,
             frameworkVersion: `${this.frameworkName}@${versionStr}`,
           });
 
-          AbstractRunnableSuite._reportedFrameworks.push(frameworkName);
+          AbstractRunnable._reportedFrameworks.push(frameworkName);
         }
       })
       .catch(e => this._shared.log.exception(e));
@@ -57,23 +60,35 @@ export abstract class AbstractRunnableSuite extends Suite {
     return super.tooltip + '\n\nPath: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd;
   }
 
-  public createOrGetSubSuite(
-    label: string,
+  private _getOrCreateChildSuite(label: string, group: Suite): Suite {
+    const cond = (v: Suite | AbstractTest): boolean => v.type === 'suite' && v.label === label;
+    const found = group.children.find(cond) as Suite | undefined;
+    if (found) {
+      return found;
+    } else {
+      const newG = group.addSuite(new Suite(this._shared, group, label, undefined));
+      return newG;
+    }
+  }
+
+  public createSubtreeAndAddTest(
+    testName: string,
+    testNameInOutput: string,
     file: string | undefined,
     tags: string[], // in case of google test it is the TestCase
-    oldChildren: (Suite | AbstractTest)[],
     testGrouping: TestGrouping,
-  ): [Suite, (Suite | AbstractTest)[]] {
-    let group: Suite = this as Suite;
-    let oldGroupChildren: (Suite | AbstractTest)[] = oldChildren;
+    createTest: (parent: Suite, old: AbstractTest | undefined) => AbstractTest,
+  ): void {
+    let group = this._rootSuite as Suite;
+
+    const oldTests = this._tests;
+    this._tests = [];
 
     const getOrCreateChildSuite = (label: string): void => {
-      [group, oldGroupChildren] = group.getOrCreateChildSuite(label, oldGroupChildren);
+      group = this._getOrCreateChildSuite(label, group);
     };
 
     let currentGrouping: TestGrouping = testGrouping;
-
-    //TODO add label to package.json
 
     try {
       while (true) {
@@ -156,10 +171,10 @@ export abstract class AbstractRunnableSuite extends Suite {
               let match: RegExpMatchArray | null = null;
 
               let index = 0;
-              while (index < g.regexes.length && match == null) match = label.match(g.regexes[index++]);
+              while (index < g.regexes.length && match == null) match = testName.match(g.regexes[index++]);
 
               if (match) {
-                this._shared.log.info('groupByRegex matched on', label, g.regexes[index - 1]);
+                this._shared.log.info('groupByRegex matched on', testName, g.regexes[index - 1]);
                 const group = match[1] ? match[1] : match[0];
                 getOrCreateChildSuite(g.label ? g.label : group);
               } else if (g.groupUngroupedTo) {
@@ -180,17 +195,25 @@ export abstract class AbstractRunnableSuite extends Suite {
       this._shared.log.exception(e);
     }
 
-    return [group, oldGroupChildren];
+    //TODO remove oldTests
+    oldTests;
+
+    const old = group.children.find(t => t instanceof AbstractTest && t.testNameInOutput === testNameInOutput) as
+      | AbstractTest
+      | undefined;
+
+    group.addTest(createTest(group, old));
   }
 
-  protected _addError(message: string): void {
+  protected _addError(parent: Suite, message: string): void {
     const shared = this._shared;
-    const parent = this as Suite;
+    const runnable = this as AbstractRunnable;
     const test = this.addTest(
       new (class extends AbstractTest {
         public constructor() {
           super(
             shared,
+            runnable,
             parent,
             undefined,
             'dummyErrorTest',
@@ -230,6 +253,7 @@ export abstract class AbstractRunnableSuite extends Suite {
 
   protected _addUnexpectedStdError(stdout: string, stderr: string): void {
     this._addError(
+      this,
       [
         `❗️Unexpected stderr!`,
         `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,

@@ -4,7 +4,7 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
-import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
+import { AbstractRunnable } from '../AbstractRunnable';
 import { AbstractTest } from '../AbstractTest';
 import { Suite } from '../Suite';
 import { DOCTest } from './DOCTest';
@@ -12,23 +12,35 @@ import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { Version } from '../Util';
+import { RootSuite } from '../RootSuite';
+import { TestGrouping } from '../TestGroupingInterface';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-export class DOCSuite extends AbstractRunnableSuite {
+export class DOCSuite extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
+    rootSuite: RootSuite,
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
     docVersion: Version,
   ) {
-    super(shared, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
+    super(shared, rootSuite, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: (Suite | AbstractTest)[]): void {
+  private getTestGrouping(): TestGrouping {
+    // TODO
+    if (this.execInfo.testGrouping) {
+      return this.execInfo.testGrouping;
+    } else {
+      return { groupByTags: { tags: [] } };
+    }
+  }
+
+  private _reloadFromString(testListOutput: string): void {
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
       if (err) {
@@ -47,36 +59,30 @@ export class DOCSuite extends AbstractRunnableSuite {
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      const [group, oldGroupChildren] = this.createOrGetSubSuite(
+      this.createSubtreeAndAddTest(
+        testName,
         testName,
         filePath,
         [],
-        oldChildren,
-        this.execInfo.testGrouping || {},
-      );
-
-      const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testName);
-
-      group.addTest(
-        new DOCTest(
-          this._shared,
-          group,
-          undefined,
-          testName,
-          skipped,
-          filePath,
-          line,
-          suite !== undefined ? [`${suite}`] : [],
-          old as DOCTest,
-        ),
+        this.getTestGrouping(),
+        (parent: Suite, old: AbstractTest | undefined) =>
+          new DOCTest(
+            this._shared,
+            this,
+            parent,
+            undefined,
+            testName,
+            skipped,
+            filePath,
+            line,
+            suite !== undefined ? [`${suite}`] : [],
+            old as DOCTest,
+          ),
       );
     }
   }
 
   protected async _reloadChildren(): Promise<void> {
-    const oldChildren = this.children;
-    this.children = [];
-
     const cacheFile = this.execInfo.path + '.cache.txt';
 
     if (this._shared.enabledTestListCaching) {
@@ -88,7 +94,7 @@ export class DOCSuite extends AbstractRunnableSuite {
           this._shared.log.info('loading from cache: ', cacheFile);
           const content = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          this._reloadFromString(content, oldChildren);
+          this._reloadFromString(content);
           return Promise.resolve();
         }
       } catch (e) {
@@ -121,7 +127,7 @@ export class DOCSuite extends AbstractRunnableSuite {
           return Promise.resolve();
         }
 
-        this._reloadFromString(docTestListOutput.stdout, oldChildren);
+        this._reloadFromString(docTestListOutput.stdout);
 
         if (this._shared.enabledTestListCaching) {
           return promisify(fs.writeFile)(cacheFile, docTestListOutput.stdout).catch(err =>

@@ -17,9 +17,8 @@ export class Suite implements TestSuiteInfo {
     public readonly parent: Suite | undefined,
     private readonly _label: string,
     private readonly _description: string | undefined,
-    id: string | undefined | Suite,
   ) {
-    this.id = id === undefined ? generateId() : typeof id === 'string' ? id : id.id;
+    this.id = generateId();
   }
 
   public get label(): string {
@@ -175,17 +174,9 @@ export class Suite implements TestSuiteInfo {
     return child;
   }
 
-  public getOrCreateChildSuite(label: string, oldGroups: (Suite | AbstractTest)[]): [Suite, (Suite | AbstractTest)[]] {
-    const cond = (v: Suite | AbstractTest): boolean => v.type === 'suite' && v.label === label;
-    const found = this.children.find(cond) as Suite | undefined;
-    if (found) {
-      return [found, oldGroups];
-    } else {
-      const old = oldGroups.find(cond) as Suite | undefined;
-      const newG = new Suite(this._shared, this, label, undefined, old);
-      this._addChild(newG);
-      return [newG, old ? old.children : []];
-    }
+  public addSuite(child: Suite): Suite {
+    this._addChild(child);
+    return child;
   }
 
   public enumerateDescendants(fn: (v: Suite | AbstractTest) => void): void {

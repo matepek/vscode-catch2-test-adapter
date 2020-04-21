@@ -4,6 +4,7 @@ import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { Suite } from './Suite';
+import { AbstractRunnable } from './AbstractRunnable';
 
 export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
@@ -18,6 +19,7 @@ export abstract class AbstractTest implements TestInfo {
 
   protected constructor(
     protected readonly _shared: SharedVariables,
+    public readonly runnable: AbstractRunnable,
     public readonly parent: Suite, // ascending
     id: string | undefined,
     public readonly testName: string,
@@ -81,6 +83,10 @@ export abstract class AbstractTest implements TestInfo {
       yield parent;
       parent = parent.parent;
     } while (parent);
+  }
+
+  public reverseRoute(): Suite[] {
+    return [...this.route()].reverse();
   }
 
   public getStartEvent(): TestEvent {
