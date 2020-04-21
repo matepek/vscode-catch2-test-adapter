@@ -15,7 +15,7 @@ describe(path.basename(__filename), function () {
 
     const readme = fse.readFileSync(path.join(__dirname, '../..', 'README.md')).toString();
     const executables = fse
-      .readFileSync(path.join(__dirname, '../..', 'documents/configuraiton', 'executables.config.md'))
+      .readFileSync(path.join(__dirname, '../..', 'documents/configuration', 'executables.config.md'))
       .toString();
 
     const documents = readme + executables;
