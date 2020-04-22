@@ -159,8 +159,11 @@ export abstract class AbstractRunnable {
           if (g.tags) {
             this._shared.log.info('groupByTags', g.tags);
 
-            if (Array.isArray(g.tags) && g.tags.every(v => typeof v === 'string')) {
-              if (g.tags.length === 0) {
+            if (
+              Array.isArray(g.tags) &&
+              g.tags.every(v => typeof Array.isArray(v) && v.every(vv => typeof vv === 'string'))
+            ) {
+              if (g.tags.length === 0 || g.tags.every(t => t.length == 0)) {
                 if (tags.length > 0) {
                   const label = g.label
                     ? tags.map(t => g.label!.replace('${tag}', t)).join('')
@@ -174,20 +177,7 @@ export abstract class AbstractRunnable {
                   getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
                 }
               } else {
-                const combos = g.tags
-                  .map(tt => {
-                    const m = tt.match(/(\[[^\[\]]+\])/g);
-                    if (m) {
-                      return m.map(t => t.substring(1, t.length - 1)).sort();
-                    } else {
-                      this._shared.log.warn(
-                        'groupByTags.tags array element format should be like: "[tag1][tag2]".',
-                        tt,
-                      );
-                      return [];
-                    }
-                  })
-                  .filter(arr => arr.length > 0);
+                const combos = g.tags.filter(arr => arr.length > 0);
 
                 const foundCombo = combos.find(combo => combo.every(t => tags.indexOf(t) !== -1));
 

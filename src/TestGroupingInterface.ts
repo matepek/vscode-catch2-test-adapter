@@ -11,7 +11,7 @@ export interface GroupBySource extends TestGrouping {
 }
 
 export interface GroupByTags extends TestGrouping {
-  tags?: string[];
+  tags?: string[][];
 
   label?: string;
   description?: string;

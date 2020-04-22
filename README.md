@@ -11,7 +11,13 @@ tests using the [Test Explorer for Visual Studio Code](https://marketplace.visua
 
 ## Whats new?
 
-- Grouping can be customized.
+- Grouping can be customized. ([Details](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping))
+  - by souce file of the test
+  - by regula expression matching the test
+  - by tags
+  - by executables (as it was before or in a different way)
+  - any of the previous ones can be combined in custom depth and any order.
+    `"testGrouping": { "groupByExecutable": { "groupBySource": { "groupByTags": { groupByRegex: { ... } } } } }`
 
 ## Features and Screenshots
 

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.2]
+
+### Changed
+
+-Experimental grouping has changed. More general and flexible.
+
 ## [2.9.1] - 2020-04-19
 
 Pesky bug fixes and tons of improvements

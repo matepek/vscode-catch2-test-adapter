@@ -134,56 +134,6 @@ One should avoid that❗️
 
 **Note** `.*` matches `\n`
 
-## testGrouping
-
-```
-catch2TestExplorer.executables: [
-  {
-    "testGrouping": ...
-  }
-]
-```
-
-| Property              | Description                                                                                                                                                                                                                                                                                                                                                                     |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `groupByExecutable`   | Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)                                                                                                                                                                                                     |
-| `groupBySource`       | It sorts the tests by the related source file group. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)                                                                                                                                           |
-| `groupByTags`         | True to group by every exiting combination of the tags. Or it can be an array of tags: `["[tag1]["tag2"]", "tag2", "tag3"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)                                                                                                              |
-| `groupByRegex`        | Groups tests by the first match group of the first matching regex. Example: `["(?:good|bad) (apple|peach)"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping) |
-| `groupUngroupablesTo` | If a test is not groupable it will be grouped by the given name. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)                                                                                                                                                                         |
-
-Examples:
-
-```
-"catch2TestExplorer.executables": [
-  {
-    "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
-    "catch2": {
-      "testGrouping": {
-        "groupBySource": "[-3:]",
-        "groupByTags": true, // or ["[1][2]", "[2]", "[3]"],
-        "groupByRegex": [ "(apple|peach)" ],
-        "groupUngroupablesTo": "ungrouped"
-      }
-    },
-    "gtest": {
-      "testGrouping": {
-        "groupBySource": "[-3:-1]",
-        "groupByRegex": [ "(?:good|bad) (apple|peach)" ]
-      }
-    },
-    "doctest": {
-      "testGrouping": {
-        "groupBySource": "[-1]",
-        "groupByRegex": ["apple", "peach"]
-      }
-    }
-  }
-]
-```
-
-Note: This example overused it.
-
 ## Examples:
 
 ```json
@@ -222,14 +172,37 @@ Note: This example overused it.
 ]
 ```
 
-### TestGrouping examples
+## testGrouping
 
-It is undocumented. Contact me by opening an issue or reead the code a bit.
+It is undocumented. Contact me by opening an issue or read the code a bit.
 
 - [interface](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/TestGroupingInterface.ts)
 - [code](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/AbstractRunnable.ts#L129)
 
-Example:
+```
+{
+  "catch2TestExplorer.executables": [
+    {
+      "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+      "catch2":  { "testGrouping": { ... } },
+      "gtest":   { "testGrouping": { ... } },
+      "doctest": { "testGrouping": { ... } },
+    }
+   ]
+}
+```
+
+| Property              | Description                                                                                                                                                                                                                                                                                                                                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `groupByExecutable`   | Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)                                                                                                                                                                                                                  |
+| `groupBySource`       | It sorts the tests by the related source file group. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)                                                                                                                                                        |
+| `groupByTags`         | True to group by every exiting combination of the tags. (`{$tag}`) Or it can be an array of tags: `["[tag1]["tag2"]", "tag2", "tag3"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)                                                                                                                |
+| `groupByRegex`        | Groups tests by the first match group of the first matching regex. (`${match}`) Example: `["(?:good|bad) (apple|peach)"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping) |
+| `groupUngroupablesTo` | If a test is not groupable it will be grouped by the given name. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)                                                                                                                                                                                      |
+
+### TestGrouping examples
+
+Note: This example overused it.
 
 ```
 {
@@ -280,8 +253,34 @@ Example:
         }
       },
     }
-   ],
-  "catch2TestExplorer.logpanel": true,
-  "catch2TestExplorer.workerMaxNumber": 4
+   ]
 }
+```
+
+```
+"catch2TestExplorer.executables": [
+  {
+    "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+    "catch2": {
+      "testGrouping": {
+        "groupBySource": "[-3:]",
+        "groupByTags": true, // or [["1","2"],["2"],["3"]],
+        "groupByRegex": [ "(apple|peach)" ],
+        "groupUngroupablesTo": "ungrouped"
+      }
+    },
+    "gtest": {
+      "testGrouping": {
+        "groupBySource": "[-3:-1]",
+        "groupByRegex": [ "(?:good|bad) (apple|peach)" ]
+      }
+    },
+    "doctest": {
+      "testGrouping": {
+        "groupBySource": "[-1]",
+        "groupByRegex": ["apple", "peach"]
+      }
+    }
+  }
+]
 ```
