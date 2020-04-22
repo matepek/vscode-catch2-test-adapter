@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 import { TestInfo } from 'vscode-test-adapter-api';
-import { Executable } from './Executable';
+import { ExecutableConfig } from './ExecutableConfig';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
 import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
 
 export class RootSuite extends Suite implements vscode.Disposable {
-  private _executables: Executable[] = [];
+  private _executables: ExecutableConfig[] = [];
 
   public constructor(id: string | undefined, shared: SharedVariables) {
     super(shared, undefined, 'Catch2/GTest/DOCTest', undefined, undefined);
@@ -29,7 +29,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
     this._executables.forEach(c => c.cancel());
   }
 
-  public load(executables: Executable[]): Promise<void> {
+  public load(executables: ExecutableConfig[]): Promise<void> {
     this._executables.forEach(e => e.dispose());
 
     this._executables = executables;

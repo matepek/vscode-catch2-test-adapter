@@ -4,13 +4,13 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
-import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { AbstractRunnable } from '../AbstractRunnable';
-import { Suite } from '../Suite';
-import { Catch2Test } from './Catch2Test';
-import { SharedVariables } from '../SharedVariables';
-import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { AbstractTest } from '../AbstractTest';
+import { Suite } from '../Suite';
+import { DOCTest } from './DOCTest';
+import { SharedVariables } from '../SharedVariables';
+import { RunningRunnable, ProcessResult } from '../RunningRunnable';
+import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 
@@ -18,14 +18,14 @@ interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-export class Catch2Suite extends AbstractRunnable {
+export class DOCRunnable extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
     rootSuite: Suite,
     execInfo: RunnableSuiteProperties,
-    private readonly _catch2Version: Version,
+    docVersion: Version,
   ) {
-    super(shared, rootSuite, execInfo, 'Catch2', Promise.resolve(_catch2Version));
+    super(shared, rootSuite, execInfo, 'doctest', Promise.resolve(docVersion));
   }
 
   private getTestGrouping(): TestGrouping {
@@ -38,93 +38,45 @@ export class Catch2Suite extends AbstractRunnable {
   }
 
   private _reloadFromString(testListOutput: string): void {
-    const lines = testListOutput.split(/\r?\n/);
-
-    const startRe = /Matching test cases:/;
-    const endRe = /[0-9]+ matching test cases?/;
-
-    let i = 0;
-
-    while (i < lines.length) {
-      const m = lines[i++].match(startRe);
-      if (m !== null) break;
-    }
-
-    if (i >= lines.length) {
-      this._shared.log.error('Wrong test list output format #1', testListOutput);
-      throw Error('Wrong test list output format');
-    }
-
-    while (i < lines.length) {
-      const m = lines[i].match(endRe);
-      if (m !== null) break;
-
-      if (!lines[i].startsWith('  ')) this._shared.log.error('Wrong test list output format', i, lines);
-
-      if (lines[i].startsWith('    ')) {
-        this._shared.log.warn('Probably too long test name', i, lines);
-
-        this._createAndAddError(
-          `⚡️ Too long test name`,
-          [
-            '⚠️ Probably too long test name or the test name starts with space characters!',
-            '🛠 - Try to define `CATCH_CONFIG_CONSOLE_WIDTH 300` before `catch2.hpp` is included.',
-            '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
-          ].join('\n'),
-        );
-
-        return;
+    let res: XmlObject = {};
+    new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
+      if (err) {
+        throw err;
+      } else {
+        res = result;
       }
-      const testName = lines[i++].substr(2);
+    });
 
-      let filePath: string | undefined = undefined;
-      let line: number | undefined = undefined;
-      {
-        const fileLine = lines[i++].substr(4);
-        const match = fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
+    for (let i = 0; i < res.doctest.TestCase.length; ++i) {
+      const testCase = res.doctest.TestCase[i].$;
 
-        if (match && match.length == 5) {
-          const matchedPath = match[1] ? match[1] : match[3];
-          filePath = this._findFilePath(matchedPath);
-          line = Number(match[2] ? match[2] : match[4]) - 1;
-        } else {
-          this._shared.log.error('Could not find catch2 file info', lines);
-        }
-      }
-
-      let description = lines[i++].substr(4);
-      if (description.startsWith('(NO DESCRIPTION)')) description = '';
-
-      const tags: string[] = [];
-      if (i < lines.length && lines[i].startsWith('      [')) {
-        const matches = lines[i].match(/\[[^\[\]]+\]/g);
-        if (matches) matches.forEach(t => tags.push(t.substring(1, t.length - 1)));
-        ++i;
-      }
+      const testName = testCase.name;
+      const filePath: string | undefined = testCase.filename ? this._findFilePath(testCase.filename) : undefined;
+      const line: number | undefined = testCase.line !== undefined ? Number(testCase.line) - 1 : undefined;
+      const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
+      const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
       this._createSubtreeAndAddTest(
         testName,
         testName,
         filePath,
-        tags,
+        [],
         this.getTestGrouping(),
         (parent: Suite, old: AbstractTest | undefined) =>
-          new Catch2Test(
+          new DOCTest(
             this._shared,
             this,
             parent,
-            this._catch2Version,
+            undefined,
             testName,
-            tags,
+            skipped,
             filePath,
             line,
-            description,
-            old as Catch2Test | undefined,
+            suite !== undefined ? [`${suite}`] : [],
+            old as DOCTest,
           ),
       );
     }
-
-    if (i >= lines.length) this._shared.log.error('Wrong test list output format #2', lines);
   }
 
   protected async _reloadChildren(): Promise<void> {
@@ -139,101 +91,78 @@ export class Catch2Suite extends AbstractRunnable {
           this._shared.log.info('loading from cache: ', cacheFile);
           const content = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          if (content === '') {
-            this._shared.log.debug('loading from cache failed because file is empty');
-          } else {
-            this._reloadFromString(content);
-
-            return;
-          }
+          this._reloadFromString(content);
+          return Promise.resolve();
         }
       } catch (e) {
         this._shared.log.warn('coudnt use cache', e);
       }
     }
 
-    const catch2TestListOutput = await c2fs.spawnAsync(
-      this.execInfo.path,
-      this.execInfo.prependTestListingArgs.concat([
-        '[.],*',
-        '--verbosity',
-        'high',
-        '--list-tests',
-        '--use-colour',
-        'no',
-      ]),
-      this.execInfo.options,
-      30000,
-    );
+    return c2fs
+      .spawnAsync(
+        this.execInfo.path,
+        this.execInfo.prependTestListingArgs.concat([
+          '--list-test-cases',
+          '--reporters=xml',
+          '--no-skip=true',
+          '--no-color=true',
+        ]),
+        this.execInfo.options,
+        30000,
+      )
+      .then(docTestListOutput => {
+        if (docTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
+          this._shared.log.warn(
+            'reloadChildren -> docTestListOutput.stderr',
+            docTestListOutput.stdout,
+            docTestListOutput.stderr,
+            docTestListOutput.error,
+            docTestListOutput.status,
+          );
+          this._createAndAddUnexpectedStdError(docTestListOutput.stdout, docTestListOutput.stderr);
+          return Promise.resolve();
+        }
 
-    if (catch2TestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
-      this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
-      this._createAndAddUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
-      return Promise.resolve();
-    }
+        this._reloadFromString(docTestListOutput.stdout);
 
-    if (catch2TestListOutput.stdout.length === 0) {
-      this._shared.log.debug(catch2TestListOutput);
-      throw Error('stoud is empty');
-    }
-
-    this._reloadFromString(catch2TestListOutput.stdout);
-
-    if (this._shared.enabledTestListCaching) {
-      return promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>
-        this._shared.log.warn('couldnt write cache file:', err),
-      );
-    }
+        if (this._shared.enabledTestListCaching) {
+          return promisify(fs.writeFile)(cacheFile, docTestListOutput.stdout).catch(err =>
+            this._shared.log.warn('couldnt write cache file:', err),
+          );
+        }
+        return Promise.resolve();
+      });
   }
 
-  protected _getRunParams(childrenToRun: readonly Catch2Test[]): string[] {
+  protected _getRunParams(childrenToRun: readonly DOCTest[]): string[] {
     const execParams: string[] = [];
 
     const testNames = childrenToRun.map(c => c.getEscapedTestName());
-    execParams.push(testNames.join(','));
+    execParams.push('--test-case=' + testNames.join(','));
+    execParams.push('--no-skip=true');
 
-    execParams.push('--reporter');
-    execParams.push('xml');
-    execParams.push('--durations');
-    execParams.push('yes');
+    execParams.push('--case-sensitive=true');
+    execParams.push('--reporters=xml');
+    execParams.push('--duration=true');
 
-    if (this._shared.isNoThrow) execParams.push('--nothrow');
+    if (this._shared.isNoThrow) execParams.push('--no-throw=true');
 
     if (this._shared.rngSeed !== null) {
-      execParams.push('--order');
-      execParams.push('rand');
-      execParams.push('--rng-seed');
-      execParams.push(this._shared.rngSeed.toString());
+      execParams.push('--order-by=rand');
+      execParams.push('--rand-seed=' + this._shared.rngSeed.toString());
     }
 
     return execParams;
   }
 
+  // eslint-disable-next-line
   public getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[] {
-    const debugParams: string[] = [];
-
-    const testNames = childrenToRun.map(c => (c as Catch2Test).getEscapedTestName());
-    debugParams.push(testNames.join(','));
-
-    debugParams.push('--reporter');
-    debugParams.push('console');
-    debugParams.push('--durations');
-    debugParams.push('yes');
-
-    if (this._shared.isNoThrow) debugParams.push('--nothrow');
-
-    if (this._shared.rngSeed !== null) {
-      debugParams.push('--order');
-      debugParams.push('rand');
-      debugParams.push('--rng-seed');
-      debugParams.push(this._shared.rngSeed.toString());
-    }
-
-    if (breakOnFailure) debugParams.push('--break');
-    return debugParams;
+    const params = this._getRunParams(childrenToRun as readonly DOCTest[]);
+    return params;
   }
 
-  protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
+  protected _handleProcess(runInfo: RunningRunnable): Promise<void> {
     const data = new (class {
       public stdoutBuffer = '';
       public stderrBuffer = '';
@@ -246,7 +175,7 @@ export class Catch2Suite extends AbstractRunnable {
       public processedTestCases: AbstractTest[] = [];
     })();
 
-    const testCaseTagRe = /<TestCase(?:\s+[^\n\r]+)?>/;
+    const testCaseTagRe = /<TestCase(\s+[^\n\r]+)[^\/](\/)?>/;
 
     return new Promise<ProcessResult>(resolve => {
       const chunks: string[] = [];
@@ -256,37 +185,46 @@ export class Catch2Suite extends AbstractRunnable {
         let invariant = 99999;
         do {
           if (!data.inTestCase) {
-            const b = data.stdoutBuffer.indexOf('<TestCase');
-            if (b == -1) return;
+            if (data.beforeFirstTestCase && data.rngSeed === undefined) {
+              const ri = data.stdoutBuffer.match(/<Options\s+[^>\n]*rand_seed="([0-9]+)"/);
+              if (ri != null && ri.length == 2) {
+                data.rngSeed = Number(ri[1]);
+              }
+            }
 
             const m = data.stdoutBuffer.match(testCaseTagRe);
-            if (m == null || m.length != 1) return;
+            if (m == null) return;
 
+            const skipped = m[2] === '/';
             data.inTestCase = true;
-
             let name = '';
-            new xml2js.Parser({ explicitArray: true }).parseString(
-              m[0] + '</TestCase>',
-              (err: Error, result: XmlObject) => {
+
+            if (skipped) {
+              new xml2js.Parser({ explicitArray: true }).parseString(m[0], (err: Error, result: XmlObject) => {
                 if (err) {
                   this._shared.log.exception(err);
                   throw err;
                 } else {
                   name = result.TestCase.$.name;
                 }
-              },
-            );
-
-            if (data.beforeFirstTestCase) {
-              const ri = data.stdoutBuffer.match(/<Randomness\s+seed="([0-9]+)"\s*\/?>/);
-              if (ri != null && ri.length == 2) {
-                data.rngSeed = Number(ri[1]);
-              }
+              });
+            } else {
+              new xml2js.Parser({ explicitArray: true }).parseString(
+                m[0] + '</TestCase>',
+                (err: Error, result: XmlObject) => {
+                  if (err) {
+                    this._shared.log.exception(err);
+                    throw err;
+                  } else {
+                    name = result.TestCase.$.name;
+                  }
+                },
+              );
             }
 
             data.beforeFirstTestCase = false;
 
-            const test = this._findTest(v => v.testNameInOutput == name);
+            const test = this._findTest(v => v.testName == name);
 
             if (test) {
               const route = [...test.route()];
@@ -295,15 +233,41 @@ export class Catch2Suite extends AbstractRunnable {
 
               data.currentChild = test;
               this._shared.log.info('Test', data.currentChild.testName, 'has started.');
-              this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
+
+              if (!skipped) {
+                this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
+                data.stdoutBuffer = data.stdoutBuffer.substr(m.index!);
+              } else {
+                this._shared.log.info('Test ', data.currentChild.testName, 'has skipped.');
+
+                // this always comes so we skip it
+                //const testCaseXml = m[0];
+                //this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
+                // try {
+                //   const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
+                //   data.processedTestCases.push(data.currentChild);
+                //   this._shared.testStatesEmitter.fire(ev);
+                // } catch (e) {
+                //   this._shared.log.error('parsing and processing test', e, data, testCaseXml);
+                //   this._shared.testStatesEmitter.fire({
+                //     type: 'test',
+                //     test: data.currentChild,
+                //     state: 'errored',
+                //     message: '😱 Unexpected error under parsing output !! Error: ' + inspect(e) + '\n',
+                //   });
+                // }
+
+                data.inTestCase = false;
+                data.currentChild = undefined;
+                data.stdoutBuffer = data.stdoutBuffer.substr(m.index! + m[0].length);
+              }
             } else {
               this._shared.log.info('TestCase not found in children', name);
             }
-
-            data.stdoutBuffer = data.stdoutBuffer.substr(b);
           } else {
             const endTestCase = '</TestCase>';
             const b = data.stdoutBuffer.indexOf(endTestCase);
+
             if (b == -1) return;
 
             const testCaseXml = data.stdoutBuffer.substring(0, b + endTestCase.length);
@@ -338,7 +302,7 @@ export class Catch2Suite extends AbstractRunnable {
                 });
               }
             } else {
-              this._shared.log.info('<TestCase> found without TestInfo', this, testCaseXml);
+              this._shared.log.info('<TestCase> found without TestInfo: ', this, '; ', testCaseXml);
               data.unprocessedXmlTestCases.push([testCaseXml, data.stderrBuffer]);
             }
 
@@ -380,7 +344,7 @@ export class Catch2Suite extends AbstractRunnable {
 
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
-            this._shared.log.info('data.currentChild !== undefined', data);
+            this._shared.log.info('data.currentChild !== undefined: ', data);
             let ev: TestEvent;
 
             if (runInfo.isCancelled) {
@@ -447,7 +411,8 @@ export class Catch2Suite extends AbstractRunnable {
                 );
                 if (name === undefined) break;
 
-                const currentChild = this._findTest(v => v.testNameInOutput === name);
+                // xml output trimmes the name of the test
+                const currentChild = this._findTest(v => v.testName === name);
 
                 if (currentChild === undefined) break;
 
@@ -458,6 +423,7 @@ export class Catch2Suite extends AbstractRunnable {
                   this._shared.log.error('parsing and processing test', e, testCaseXml);
                 }
               }
+
               events.length && this._shared.sendTestEventEmitter.fire(events);
             },
             (reason: Error) => {

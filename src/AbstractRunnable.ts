@@ -8,7 +8,7 @@ import { AbstractTest } from './AbstractTest';
 import { Suite } from './Suite';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
-import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { RunningRunnable } from './RunningRunnable';
 import { promisify } from 'util';
 import {
   Version,
@@ -25,7 +25,7 @@ export abstract class AbstractRunnable {
   private static _reportedFrameworks: string[] = [];
 
   private _canceled = false;
-  private _runInfos: RunningTestExecutableInfo[] = [];
+  private _runInfos: RunningRunnable[] = [];
   private _lastReloadTime: number | undefined = undefined;
   private _tests: AbstractTest[] = [];
 
@@ -378,7 +378,7 @@ export abstract class AbstractRunnable {
 
   protected abstract _getRunParams(childrenToRun: readonly AbstractTest[]): string[];
 
-  protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
+  protected abstract _handleProcess(runInfo: RunningRunnable): Promise<void>;
 
   public abstract getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[];
 
@@ -492,7 +492,7 @@ export abstract class AbstractRunnable {
     this._shared.log.info('proc starting', this.execInfo.path);
     this._shared.log.localDebug('proc starting', this.execInfo.path, execParams);
 
-    const runInfo = new RunningTestExecutableInfo(
+    const runInfo = new RunningRunnable(
       cp.spawn(this.execInfo.path, execParams, this.execInfo.options),
       runnableDescendant,
     );

@@ -1,5 +1,5 @@
 import * as c2fs from './FSWrapper';
-import { TestExecutableInfoFrameworkSpecific } from './Executable';
+import { ExecutableConfigFrameworkSpecific } from './ExecutableConfig';
 import { TestGrouping } from './TestGroupingInterface';
 import { ResolveRulePair } from './Util';
 
@@ -10,7 +10,7 @@ export class RunnableSuiteProperties {
     public readonly varToValue: readonly ResolveRulePair[],
     public readonly path: string,
     public readonly options: c2fs.SpawnOptions,
-    private readonly _frameworkSpecific: TestExecutableInfoFrameworkSpecific,
+    private readonly _frameworkSpecific: ExecutableConfigFrameworkSpecific,
   ) {}
 
   public get prependTestRunningArgs(): string[] {

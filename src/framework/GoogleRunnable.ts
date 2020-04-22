@@ -9,12 +9,12 @@ import { GoogleTest } from './GoogleTest';
 import { Parser } from 'xml2js';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { SharedVariables } from '../SharedVariables';
-import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
+import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 
-export class GoogleSuite extends AbstractRunnable {
+export class GoogleRunnable extends AbstractRunnable {
   public children: Suite[] = [];
 
   public constructor(
@@ -245,7 +245,7 @@ export class GoogleSuite extends AbstractRunnable {
     return params;
   }
 
-  protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
+  protected _handleProcess(runInfo: RunningRunnable): Promise<void> {
     const data = new (class {
       public stdoutAndErrBuffer = ''; // no reason to separate
       public currentTestCaseNameFull: string | undefined = undefined;

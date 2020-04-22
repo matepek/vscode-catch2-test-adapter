@@ -2,7 +2,7 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { AbstractTest } from '../AbstractTest';
 import { SharedVariables } from '../SharedVariables';
-import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
+import { RunningRunnable } from '../RunningRunnable';
 import { TestEventBuilder } from '../TestEventBuilder';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
@@ -91,7 +91,7 @@ export class DOCTest extends AbstractTest {
   public parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
-    runInfo: RunningTestExecutableInfo,
+    runInfo: RunningRunnable,
     stderr: string | undefined,
   ): TestEvent {
     if (runInfo.timeout !== null) {

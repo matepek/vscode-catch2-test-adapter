@@ -2,7 +2,7 @@ import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
 
 import { AbstractTest } from '../AbstractTest';
 import { SharedVariables } from '../SharedVariables';
-import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
+import { RunningRunnable } from '../RunningRunnable';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
 
@@ -44,7 +44,7 @@ export class GoogleTest extends AbstractTest {
   public parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
-    runInfo: RunningTestExecutableInfo,
+    runInfo: RunningRunnable,
     stderr: string | undefined, //eslint-disable-line
   ): TestEvent {
     if (runInfo.timeout !== null) {

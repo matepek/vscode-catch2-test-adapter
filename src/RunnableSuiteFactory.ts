@@ -1,11 +1,11 @@
 import * as c2fs from './FSWrapper';
 import { RunnableSuiteProperties } from './RunnableSuiteProperties';
 import { AbstractRunnable } from './AbstractRunnable';
-import { Catch2Suite } from './framework/Catch2Suite';
-import { GoogleSuite } from './framework/GoogleSuite';
-import { DOCSuite } from './framework/DOCSuite';
+import { Catch2Runnable } from './framework/Catch2Runnable';
+import { GoogleRunnable } from './framework/GoogleRunnable';
+import { DOCRunnable } from './framework/DOCRunnable';
 import { SharedVariables } from './SharedVariables';
-import { TestExecutableInfoFrameworkSpecific } from './Executable';
+import { ExecutableConfigFrameworkSpecific } from './ExecutableConfig';
 import { Version, ResolveRulePair } from './Util';
 import { Suite } from './Suite';
 
@@ -23,9 +23,9 @@ export class RunnableSuiteFactory {
     private readonly _execPath: string,
     private readonly _execOptions: c2fs.SpawnOptions,
     private readonly _varToValue: ResolveRulePair[],
-    private readonly _catch2: TestExecutableInfoFrameworkSpecific,
-    private readonly _gtest: TestExecutableInfoFrameworkSpecific,
-    private readonly _doctest: TestExecutableInfoFrameworkSpecific,
+    private readonly _catch2: ExecutableConfigFrameworkSpecific,
+    private readonly _gtest: ExecutableConfigFrameworkSpecific,
+    private readonly _doctest: ExecutableConfigFrameworkSpecific,
   ) {}
 
   public create(checkIsNativeExecutable: boolean): Promise<AbstractRunnable> {
@@ -36,7 +36,7 @@ export class RunnableSuiteFactory {
       .then((framework: TestFrameworkInfo) => {
         switch (framework.type) {
           case 'gtest':
-            return new GoogleSuite(
+            return new GoogleRunnable(
               this._shared,
               this._rootSuite,
               new RunnableSuiteProperties(
@@ -50,7 +50,7 @@ export class RunnableSuiteFactory {
               Promise.resolve(undefined), //Util: GoogleTestVersionFinder
             );
           case 'catch2':
-            return new Catch2Suite(
+            return new Catch2Runnable(
               this._shared,
               this._rootSuite,
               new RunnableSuiteProperties(
@@ -64,7 +64,7 @@ export class RunnableSuiteFactory {
               framework.version!,
             );
           case 'doctest':
-            return new DOCSuite(
+            return new DOCRunnable(
               this._shared,
               this._rootSuite,
               new RunnableSuiteProperties(

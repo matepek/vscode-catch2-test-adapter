@@ -19,7 +19,7 @@ import { Suite } from './Suite';
 import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
 
-export interface TestExecutableInfoFrameworkSpecific {
+export interface ExecutableConfigFrameworkSpecific {
   helpRegex?: string;
   prependTestRunningArgs?: string[];
   prependTestListingArgs?: string[];
@@ -27,8 +27,7 @@ export interface TestExecutableInfoFrameworkSpecific {
   testGrouping?: TestGrouping;
 }
 
-//TODO rename
-export class Executable implements vscode.Disposable {
+export class ExecutableConfig implements vscode.Disposable {
   public constructor(
     private readonly _shared: SharedVariables,
     private readonly _pattern: string,
@@ -40,9 +39,9 @@ export class Executable implements vscode.Disposable {
     private readonly _defaultCwd: string,
     private readonly _defaultEnv: { [prop: string]: string },
     private readonly _variableToValue: ResolveRulePair[],
-    private readonly _catch2: TestExecutableInfoFrameworkSpecific,
-    private readonly _gtest: TestExecutableInfoFrameworkSpecific,
-    private readonly _doctest: TestExecutableInfoFrameworkSpecific,
+    private readonly _catch2: ExecutableConfigFrameworkSpecific,
+    private readonly _gtest: ExecutableConfigFrameworkSpecific,
+    private readonly _doctest: ExecutableConfigFrameworkSpecific,
   ) {
     if ([_catch2, _gtest, _doctest].some(f => Object.keys(f).length > 0)) {
       _shared.log.info('TestExecutableInfoFrameworkSpecific', _catch2, _gtest, _doctest);

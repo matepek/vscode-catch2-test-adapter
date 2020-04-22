@@ -2,7 +2,7 @@ import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
-import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { RunningRunnable } from './RunningRunnable';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
 
@@ -119,7 +119,7 @@ export abstract class AbstractTest implements TestInfo {
   public abstract parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
-    runInfo: RunningTestExecutableInfo,
+    runInfo: RunningRunnable,
     stderr: string | undefined,
   ): TestEvent;
 

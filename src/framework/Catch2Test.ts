@@ -3,7 +3,7 @@ import * as xml2js from 'xml2js';
 import { AbstractTest } from '../AbstractTest';
 import { inspect } from 'util';
 import { SharedVariables } from '../SharedVariables';
-import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
+import { RunningRunnable } from '../RunningRunnable';
 import { TestEventBuilder } from '../TestEventBuilder';
 import * as pathlib from 'path';
 import { Version } from '../Util';
@@ -115,7 +115,7 @@ export class Catch2Test extends AbstractTest {
   public parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
-    runInfo: RunningTestExecutableInfo,
+    runInfo: RunningRunnable,
     stderr: string | undefined,
   ): TestEvent {
     if (runInfo.timeout !== null) {
