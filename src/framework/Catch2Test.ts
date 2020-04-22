@@ -112,12 +112,6 @@ export class Catch2Test extends AbstractTest {
     return this.testName.replace(/,/g, '\\,').replace(/\[/g, '\\[');
   }
 
-  public getDebugParams(breakOnFailure: boolean): string[] {
-    const debugParams: string[] = [this.getEscapedTestName(), '--reporter', 'console'];
-    if (breakOnFailure) debugParams.push('--break');
-    return debugParams;
-  }
-
   public parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,

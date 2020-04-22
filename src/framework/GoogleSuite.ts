@@ -238,6 +238,13 @@ export class GoogleSuite extends AbstractRunnable {
     return execParams;
   }
 
+  public getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[] {
+    const params = this._getRunParams(childrenToRun as readonly GoogleTest[]);
+    params.push('--reporter', 'console');
+    if (breakOnFailure) params.push('--gtest_break_on_failure');
+    return params;
+  }
+
   protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
     const data = new (class {
       public stdoutAndErrBuffer = ''; // no reason to separate

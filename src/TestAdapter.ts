@@ -421,38 +421,43 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._log.info('Debugging');
 
-    if (tests.length !== 1) {
-      this._log.error('unsupported test count', tests);
-      throw Error(
-        'Unsupported input. It seems you would like to debug more test cases at once. This is not supported currently.',
-      );
+    const runnables = tests
+      .map(t => this._rootSuite.findTestById(t))
+      .filter(t => t !== undefined)
+      .reduce((prev, curr) => {
+        const arr = prev.find(x => x[0] === curr!.runnable);
+        if (arr) arr[1].push(curr!);
+        else prev.push([curr!.runnable, [curr!]]);
+        return prev;
+      }, new Array<[AbstractRunnable, AbstractTest[]]>());
+
+    if (runnables.length !== 1) {
+      this._log.error('unsupported executable count', tests);
+      throw Error('Unsupported input. It seems you would like to debug more tests from different executables.');
     }
 
-    const test = this._rootSuite.findTestById(tests[0]);
+    const [runnable, runnableTests] = runnables[0];
 
-    if (test === undefined) {
-      this._log.warn('route === undefined', tests);
-      throw Error('Not existing test id.');
-    }
-
-    const route = [...test.route()];
-
-    const suiteLabels = route.map(s => s.label).join(' ← ');
-
-    const testSuite = route.find(v => v instanceof AbstractRunnable);
-    if (testSuite === undefined || !(testSuite instanceof AbstractRunnable))
-      throw Error('Unexpected error. Should have AbstractTestSuiteInfo parent.');
-
-    this._log.info('test', test, tests);
+    this._log.info('test', runnable, runnableTests);
 
     const config = this._getConfiguration();
 
     const template = config.getDebugConfigurationTemplate();
 
-    const argsArray = test.getDebugParams(config.getDebugBreakOnFailure());
+    const label = runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
 
-    if (test instanceof Catch2Test) {
-      const sections = test.sections;
+    const suiteLabels =
+      runnableTests.length > 1
+        ? ''
+        : [...runnableTests[0].route()]
+            .filter((v, i, a) => i < a.length - 1)
+            .map(s => s.label)
+            .join(' ← ');
+
+    const argsArray = runnable.getDebugParams(runnableTests, config.getDebugBreakOnFailure());
+
+    if (runnableTests.length === 1 && runnableTests[0] instanceof Catch2Test) {
+      const sections = (runnableTests[0] as Catch2Test).sections;
       if (sections && sections.length > 0) {
         interface QuickPickItem extends vscode.QuickPickItem {
           sectionStack: Catch2Section[];
@@ -460,7 +465,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
         const items: QuickPickItem[] = [
           {
-            label: test.label,
+            label: label,
             sectionStack: [],
             description: 'Select the section combo you wish to debug or choose this to debug all of it.',
           },
@@ -505,13 +510,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ...this._variableToValue,
       ['${suitelabel}', suiteLabels], // deprecated
       ['${suiteLabel}', suiteLabels],
-      ['${label}', test.label],
-      ['${exec}', testSuite.execInfo.path],
+      ['${label}', label],
+      ['${exec}', runnable.execInfo.path],
       ['${args}', argsArray], // deprecated
       ['${argsArray}', argsArray],
       ['${argsStr}', '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"'],
-      ['${cwd}', testSuite.execInfo.options.cwd!],
-      ['${envObj}', Object.assign(Object.assign({}, process.env), testSuite.execInfo.options.env!)],
+      ['${cwd}', runnable.execInfo.options.cwd!],
+      ['${envObj}', Object.assign(Object.assign({}, process.env), runnable.execInfo.options.env!)],
     ]);
 
     // we dont know better :(

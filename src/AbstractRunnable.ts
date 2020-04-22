@@ -380,6 +380,8 @@ export abstract class AbstractRunnable {
 
   protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
 
+  public abstract getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[];
+
   public reloadTests(taskPool: TaskPool): Promise<void> {
     return taskPool.scheduleTask(async () => {
       this._shared.log.info('reloadChildren', this.frameworkName, this.frameworkVersion, this.execInfo.path);

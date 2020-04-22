@@ -116,8 +116,6 @@ export abstract class AbstractTest implements TestInfo {
     return { type: 'test', test: this, state: 'skipped' };
   }
 
-  public abstract getDebugParams(breakOnFailure: boolean): string[];
-
   public abstract parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,

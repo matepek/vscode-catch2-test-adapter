@@ -156,6 +156,12 @@ export class DOCSuite extends AbstractRunnable {
     return execParams;
   }
 
+  // eslint-disable-next-line
+  public getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[] {
+    const params = this._getRunParams(childrenToRun as readonly DOCTest[]);
+    return params;
+  }
+
   protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
     const data = new (class {
       public stdoutBuffer = '';

@@ -209,6 +209,30 @@ export class Catch2Suite extends AbstractRunnable {
     return execParams;
   }
 
+  public getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[] {
+    const debugParams: string[] = [];
+
+    const testNames = childrenToRun.map(c => (c as Catch2Test).getEscapedTestName());
+    debugParams.push(testNames.join(','));
+
+    debugParams.push('--reporter');
+    debugParams.push('console');
+    debugParams.push('--durations');
+    debugParams.push('yes');
+
+    if (this._shared.isNoThrow) debugParams.push('--nothrow');
+
+    if (this._shared.rngSeed !== null) {
+      debugParams.push('--order');
+      debugParams.push('rand');
+      debugParams.push('--rng-seed');
+      debugParams.push(this._shared.rngSeed.toString());
+    }
+
+    if (breakOnFailure) debugParams.push('--break');
+    return debugParams;
+  }
+
   protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
     const data = new (class {
       public stdoutBuffer = '';

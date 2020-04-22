@@ -146,8 +146,6 @@ export class Executable implements vscode.Disposable {
 
     await Promise.all(suiteCreationAndLoadingTasks);
 
-    //rootSuite.uniquifySuiteLabels(); // TODO
-
     if (this._dependsOn.length > 0) {
       try {
         // gaze can handle more patterns at once

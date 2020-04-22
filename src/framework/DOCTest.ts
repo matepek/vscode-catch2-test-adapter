@@ -88,12 +88,6 @@ export class DOCTest extends AbstractTest {
     return this.testName.replace(/,/g, '\\,');
   }
 
-  // eslint-disable-next-line
-  public getDebugParams(breakOnFailure: boolean): string[] {
-    const debugParams: string[] = ['--test-case=' + this.getEscapedTestName()];
-    return debugParams;
-  }
-
   public parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
