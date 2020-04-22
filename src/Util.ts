@@ -1,3 +1,5 @@
+import * as pathlib from 'path';
+
 export class Version {
   public constructor(
     public readonly major: number,
@@ -155,6 +157,30 @@ export function processArrayWithPythonIndexer<T>(arr: readonly T[], match: RegEx
     const idx2 = match[3] === undefined ? undefined : Number(match[3]);
     return arr.slice(idx1, idx2);
   }
+}
+
+export function createPythonIndexerForStringVariable(
+  varName: string,
+  value: string,
+  separator: string | RegExp,
+  join: string,
+): [RegExp, (m: RegExpMatchArray) => string] {
+  const varRegex = new RegExp('\\${' + varName + PythonIndexerRegexStr + '?}');
+
+  const array = value.split(separator);
+  const replacer = (m: RegExpMatchArray): string => {
+    return processArrayWithPythonIndexer(array, m).join(join);
+  };
+
+  return [varRegex, replacer];
+}
+
+export function createPythonIndexerForPathVariable(
+  valName: string,
+  pathStr: string,
+): [RegExp, (m: RegExpMatchArray) => string] {
+  const [regex, repl] = createPythonIndexerForStringVariable(valName, pathlib.normalize(pathStr), /\/|\\/, pathlib.sep);
+  return [regex, (m: RegExpMatchArray): string => pathlib.normalize(repl(m))];
 }
 
 let uidCounter = 0;

@@ -250,7 +250,8 @@ export class Config {
       | { [prop: string]: string }
       | ({ [prop: string]: string } | string)[] = this._vsConfig.get('executables');
 
-    const createFromObject = (obj: { [prop: string]: string }): ExecutableConfig => {
+    // eslint-disable-next-line
+    const createFromObject = (obj: { [prop: string]: any }): ExecutableConfig => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 
       const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
@@ -270,6 +271,8 @@ export class Config {
       const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
 
       const dependsOn: string[] = Array.isArray(obj.dependsOn) ? obj.dependsOn.filter(v => typeof v === 'string') : [];
+
+      const testGrouping: object = obj.testGrouping ? obj.testGrouping : undefined;
 
       // eslint-disable-next-line
       const framework = (obj: any): ExecutableConfigFrameworkSpecific => {
@@ -294,6 +297,7 @@ export class Config {
           if (obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
 
           if (obj.testGrouping) r.testGrouping = obj.testGrouping;
+          else if (testGrouping) r.testGrouping = testGrouping;
         }
         return r;
       };

@@ -13,10 +13,10 @@ import { promisify } from 'util';
 import {
   Version,
   reverse,
-  PythonIndexerRegexStr,
-  processArrayWithPythonIndexer,
   resolveVariables,
   resolveOSEnvironmentVariables,
+  ResolveRulePair,
+  createPythonIndexerForPathVariable,
 } from './Util';
 import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
 import { TestEvent } from 'vscode-test-adapter-api';
@@ -82,10 +82,11 @@ export abstract class AbstractRunnable {
 
   private static readonly _variableRe = /\$\{[^ ]*\}/;
 
-  private _resolveText(text: string): string {
-    let resolvedText = '';
+  private _resolveText(text: string, ...additionalVarToValue: readonly ResolveRulePair[]): string {
+    let resolvedText = text;
     try {
-      resolvedText = resolveVariables(text, this.execInfo.varToValue);
+      resolvedText = resolveVariables(resolvedText, this.execInfo.varToValue);
+      resolvedText = resolveVariables(resolvedText, additionalVarToValue);
       resolvedText = resolveOSEnvironmentVariables(resolvedText, false);
 
       if (resolvedText.match(AbstractRunnable._variableRe))
@@ -105,6 +106,15 @@ export abstract class AbstractRunnable {
     createTest: (parent: Suite, old: AbstractTest | undefined) => AbstractTest,
   ): void {
     let group = this._rootSuite as Suite;
+
+    tags.sort();
+    const relPath = file ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file) : '';
+    const absPath = file ? file : '';
+
+    const additionalVars = [
+      createPythonIndexerForPathVariable('sourceRelPath', relPath),
+      createPythonIndexerForPathVariable('sourceAbsPath', absPath),
+    ];
 
     const getOrCreateChildSuite = (
       label: string,
@@ -131,28 +141,18 @@ export abstract class AbstractRunnable {
           currentGrouping = g;
         } else if (currentGrouping.groupBySource) {
           const g = currentGrouping.groupBySource;
-          if (g.sourceIndex) {
-            if (typeof g.sourceIndex === 'string') {
-              const sourceIndicies = g.sourceIndex.match(PythonIndexerRegexStr);
-              if (sourceIndicies) {
-                if (file) {
-                  this._shared.log.info('groupBySource', g.sourceIndex);
-                  const relPath = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file);
-                  const pathArray = relPath.split(/\/|\\/);
-                  const fileStr = pathlib.join(...processArrayWithPythonIndexer(pathArray, sourceIndicies));
-                  getOrCreateChildSuite(g.label ? g.label : fileStr, g.description, undefined);
-                } else if (g.groupUngroupedTo) {
-                  getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
-                }
-              } else {
-                this._shared.log.warn("Couldn't parse", g.sourceIndex);
-              }
-            } else {
-              this._shared.log.warn('sourceIndex has to be string', g.sourceIndex);
-            }
-          } else {
-            this._shared.log.warn('missing "sourceIndex": skipping grouping level');
+
+          if (file) {
+            this._shared.log.info('groupBySource');
+
+            const label = g.label ? this._resolveText(g.label, ...additionalVars) : relPath;
+            const description = g.description ? this._resolveText(g.description, ...additionalVars) : undefined;
+
+            getOrCreateChildSuite(label, description, undefined);
+          } else if (g.groupUngroupedTo) {
+            getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
           }
+
           currentGrouping = g;
         } else if (currentGrouping.groupByTags) {
           const g = currentGrouping.groupByTags;
@@ -162,8 +162,14 @@ export abstract class AbstractRunnable {
             if (Array.isArray(g.tags) && g.tags.every(v => typeof v === 'string')) {
               if (g.tags.length === 0) {
                 if (tags.length > 0) {
-                  const tagsStr = tags.sort().join('');
-                  getOrCreateChildSuite(g.label ? g.label : tagsStr, g.description, undefined);
+                  const label = g.label
+                    ? tags.map(t => g.label!.replace('${tag}', t)).join('')
+                    : tags.map(t => `[${t}]`).join('');
+                  const description = g.description
+                    ? tags.map(t => g.description!.replace('${tag}', t)).join('')
+                    : undefined;
+
+                  getOrCreateChildSuite(label, description, undefined);
                 } else if (g.groupUngroupedTo) {
                   getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
                 }
@@ -186,8 +192,14 @@ export abstract class AbstractRunnable {
                 const foundCombo = combos.find(combo => combo.every(t => tags.indexOf(t) !== -1));
 
                 if (foundCombo) {
-                  const comboStr = foundCombo.map(t => `[${t}]`).join('');
-                  getOrCreateChildSuite(g.label ? g.label : comboStr, g.description, undefined);
+                  const label = g.label
+                    ? foundCombo.map(t => g.label!.replace('${tag}', t)).join('')
+                    : foundCombo.map(t => `[${t}]`).join('');
+                  const description = g.description
+                    ? foundCombo.map(t => g.description!.replace('${tag}', t)).join('')
+                    : undefined;
+
+                  getOrCreateChildSuite(label, description, undefined);
                 } else if (g.groupUngroupedTo) {
                   getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
                 }
@@ -213,7 +225,13 @@ export abstract class AbstractRunnable {
               if (match) {
                 this._shared.log.info('groupByRegex matched on', testName, g.regexes[index - 1]);
                 const group = match[1] ? match[1] : match[0];
-                getOrCreateChildSuite(g.label ? g.label : group, g.description, undefined);
+
+                const matchVar: [string, string] = ['${match}', group];
+
+                const label = g.label ? this._resolveText(g.label, matchVar) : group;
+                const description = g.description ? this._resolveText(g.description, matchVar) : undefined;
+
+                getOrCreateChildSuite(label, description, undefined);
               } else if (g.groupUngroupedTo) {
                 getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
               }

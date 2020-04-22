@@ -4,8 +4,6 @@ export interface GroupByExecutable extends TestGrouping {
 }
 
 export interface GroupBySource extends TestGrouping {
-  sourceIndex?: string;
-
   label?: string;
   description?: string;
 

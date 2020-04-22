@@ -31,7 +31,7 @@ export class GoogleRunnable extends AbstractRunnable {
       return this.execInfo.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
-      grouping.groupByExecutable.groupByTags = { tags: [] };
+      grouping.groupByExecutable.groupByTags = { tags: [], label: '${tag}' };
       return grouping;
     }
   }

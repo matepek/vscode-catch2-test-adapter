@@ -8,8 +8,8 @@ import {
   resolveVariables,
   resolveOSEnvironmentVariables,
   ResolveRulePair,
-  PythonIndexerRegexStr,
-  processArrayWithPythonIndexer,
+  createPythonIndexerForPathVariable,
+  createPythonIndexerForStringVariable,
 } from './Util';
 import { RunnableSuiteFactory } from './RunnableSuiteFactory';
 import { SharedVariables } from './SharedVariables';
@@ -218,27 +218,10 @@ export class ExecutableConfig implements vscode.Disposable {
 
     let varToValue: ResolveRulePair[] = [];
 
-    const pathWithArrayIndexing = (
-      varName: string,
-      pathVal: string,
-      separator: string | RegExp,
-      join: string,
-    ): [RegExp, (m: RegExpMatchArray) => string] => {
-      const indexRegex = new RegExp('\\${' + varName + PythonIndexerRegexStr + '?}');
-
-      const pathArray = pathVal.split(separator);
-      const replacer = (m: RegExpMatchArray): string => {
-        return path.normalize(processArrayWithPythonIndexer(pathArray, m).join(join));
-      };
-
-      return [indexRegex, replacer];
-    };
-
-    const subPath = (valName: string, pathStr: string): [RegExp, (m: RegExpMatchArray) => string] =>
-      pathWithArrayIndexing(valName, pathStr, /\/|\\/, path.sep);
+    const subPath = createPythonIndexerForPathVariable;
 
     const subFilename = (valName: string, filename: string): [RegExp, (m: RegExpMatchArray) => string] =>
-      pathWithArrayIndexing(valName, filename, '.', '.');
+      createPythonIndexerForStringVariable(valName, filename, '.', '.');
 
     try {
       const filename = path.basename(filePath);

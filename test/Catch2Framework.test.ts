@@ -673,10 +673,9 @@ describe(path.basename(__filename), function () {
     assert.equal(adapter.root.children.length, 1);
     assert.equal(adapter.root.children[0].type, 'suite');
 
-    assert.deepStrictEqual(
-      adapter.suite1.label.split(' | '),
-      toResolveAndExpectedResolvedValue.map(v => v[1]),
-    );
+    const actual = adapter.suite1.label.split(' | ');
+    const expected = toResolveAndExpectedResolvedValue.map(v => v[1]);
+    assert.deepStrictEqual(actual, expected);
     assert.equal(adapter.suite1.children.length, 3);
 
     const callCount = spawnWithArgs.callCount;
