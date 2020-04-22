@@ -185,7 +185,7 @@ export class GoogleSuite extends AbstractRunnable {
 
         if (googleTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
           this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
-          this._addUnexpectedStdError(googleTestListOutput.stdout, googleTestListOutput.stderr);
+          this._createAndAddUnexpectedStdError(googleTestListOutput.stdout, googleTestListOutput.stderr);
         } else {
           const hasXmlFile = await promisify(fs.exists)(cacheFile);
 
@@ -215,7 +215,7 @@ export class GoogleSuite extends AbstractRunnable {
       });
   }
 
-  protected _getRunParams(childrenToRun: ReadonlyArray<GoogleTest>): string[] {
+  protected _getRunParams(childrenToRun: readonly GoogleTest[]): string[] {
     const execParams: string[] = ['--gtest_color=no'];
 
     const testNames = childrenToRun.map(c => c.testName);

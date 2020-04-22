@@ -32,7 +32,7 @@
     "doctest",
     "onqtam"
   ],
-  "main": "out/src/main.js",
+  "main": "out/dist/main.js",
   "scripts": {
     "postinstall": "node ./node_modules/vscode/bin/install",
     "reinstall": "rimraf node_modules package-lock.json && npm install",

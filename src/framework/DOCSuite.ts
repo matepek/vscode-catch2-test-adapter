@@ -120,7 +120,7 @@ export class DOCSuite extends AbstractRunnable {
             docTestListOutput.error,
             docTestListOutput.status,
           );
-          this._addUnexpectedStdError(docTestListOutput.stdout, docTestListOutput.stderr);
+          this._createAndAddUnexpectedStdError(docTestListOutput.stdout, docTestListOutput.stderr);
           return Promise.resolve();
         }
 
@@ -135,7 +135,7 @@ export class DOCSuite extends AbstractRunnable {
       });
   }
 
-  protected _getRunParams(childrenToRun: ReadonlyArray<DOCTest>): string[] {
+  protected _getRunParams(childrenToRun: readonly DOCTest[]): string[] {
     const execParams: string[] = [];
 
     const testNames = childrenToRun.map(c => c.getEscapedTestName());

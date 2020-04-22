@@ -44,7 +44,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
 
-  private readonly _sendRetireEmitter = new vscode.EventEmitter<ReadonlyArray<AbstractTest>>();
+  private readonly _sendRetireEmitter = new vscode.EventEmitter<readonly AbstractTest[]>();
 
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
@@ -59,7 +59,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       'catch2TestExplorer',
       this.workspaceFolder,
       'Test Explorer: ' + this.workspaceFolder.name,
-      { showProxy: true, depth: 3 },
     );
 
     const config = this._getConfiguration();
@@ -146,7 +145,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     {
       const unique = new Set<AbstractTest>();
 
-      const retire = (aggregatedArgs: [ReadonlyArray<AbstractTest>][]): void => {
+      const retire = (aggregatedArgs: [readonly AbstractTest[]][]): void => {
         const isScheduled = unique.size > 0;
         aggregatedArgs.forEach(args => args[0].forEach(test => unique.add(test)));
 

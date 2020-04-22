@@ -63,6 +63,9 @@ export abstract class AbstractTest implements TestInfo {
       tooltip.push(`#️⃣GetParam() = ${_valueParam}`);
     }
 
+    //TODO add path to tooltip
+    //this.runnable.execInfo.path;
+
     this.description = description.join('');
     this.tooltip = tooltip.join('\n');
 
@@ -92,13 +95,17 @@ export abstract class AbstractTest implements TestInfo {
   public removeWithLeafAscendants(): void {
     const index = this.parent.children.indexOf(this);
     if (index == -1) {
-      this._shared.log.error('assert: removing an already removed one', this);
+      this._shared.log.info(
+        'Removing an already removed one.',
+        'Probably it was deleted and recompiled but there was no fs-change event and no reload has happened',
+        this,
+      );
       return;
+    } else {
+      this.parent.children.splice(index, 1);
+
+      this.parent.removeIfLeaf();
     }
-
-    this.parent.children.splice(index, 1);
-
-    this.parent.removeIfLeaf();
   }
 
   public getStartEvent(): TestEvent {
@@ -161,7 +168,7 @@ export abstract class AbstractTest implements TestInfo {
     return pred(this) ? this : undefined;
   }
 
-  public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
+  public collectTestToRun(tests: readonly string[], isParentIn: boolean): AbstractTest[] {
     if ((isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1) {
       return [this];
     } else {

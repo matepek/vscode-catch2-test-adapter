@@ -63,14 +63,16 @@ export class Catch2Suite extends AbstractRunnable {
 
       if (lines[i].startsWith('    ')) {
         this._shared.log.warn('Probably too long test name', i, lines);
-        this._rootSuite.addError(
-          this,
+
+        this._createAndAddError(
+          `⚡️ Too long test name`,
           [
             '⚠️ Probably too long test name or the test name starts with space characters!',
             '🛠 - Try to define `CATCH_CONFIG_CONSOLE_WIDTH 300` before `catch2.hpp` is included.',
             '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
           ].join('\n'),
         );
+
         return;
       }
       const testName = lines[i++].substr(2);
@@ -166,7 +168,7 @@ export class Catch2Suite extends AbstractRunnable {
 
     if (catch2TestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
-      this._addUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
+      this._createAndAddUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
       return Promise.resolve();
     }
 
@@ -184,7 +186,7 @@ export class Catch2Suite extends AbstractRunnable {
     }
   }
 
-  protected _getRunParams(childrenToRun: ReadonlyArray<Catch2Test>): string[] {
+  protected _getRunParams(childrenToRun: readonly Catch2Test[]): string[] {
     const execParams: string[] = [];
 
     const testNames = childrenToRun.map(c => c.getEscapedTestName());

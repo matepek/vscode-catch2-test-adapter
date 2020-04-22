@@ -1,9 +1,8 @@
-import { TestSuiteInfo, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
+import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
 
 import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTest } from './AbstractTest';
-import { AbstractRunnable } from './AbstractRunnable';
 
 ///
 
@@ -33,7 +32,10 @@ export class Suite implements TestSuiteInfo {
 
   public get tooltip(): string {
     return (
-      this._label + (this._description ? ' - ' + this._description : '') + (this._tooltip ? '\n\n' + this._tooltip : '')
+      'Name: ' +
+      this._label +
+      (this._description ? '\nDescription: ' + this._description : '') +
+      (this._tooltip ? '\n\n' + this._tooltip : '')
     );
   }
 
@@ -225,7 +227,7 @@ export class Suite implements TestSuiteInfo {
   }
 
   /** If the return value is not empty then we should run the parent */
-  public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
+  public collectTestToRun(tests: readonly string[], isParentIn: boolean): AbstractTest[] {
     const isCurrParentIn = isParentIn || tests.indexOf(this.id) != -1;
 
     return this.children
@@ -239,51 +241,5 @@ export class Suite implements TestSuiteInfo {
       if (countSkipped || !v.skipped) ++count;
     });
     return count;
-  }
-
-  public addError(runnable: AbstractRunnable, message: string): void {
-    const shared = this._shared;
-    const parent = this as Suite;
-    const test = parent.addTest(
-      new (class extends AbstractTest {
-        public constructor() {
-          super(
-            shared,
-            runnable,
-            parent,
-            undefined,
-            'dummyErrorTest',
-            '⚡️ ERROR (run me to see the issue)',
-            undefined,
-            undefined,
-            true,
-            {
-              type: 'test',
-              test: '',
-              state: 'errored',
-              message,
-            },
-            [],
-            'Run this test to see the error message in the output.',
-            undefined,
-            undefined,
-          );
-        }
-
-        public get testNameInOutput(): string {
-          return this.testName;
-        }
-
-        public getDebugParams(): string[] {
-          throw Error('assert');
-        }
-
-        public parseAndProcessTestCase(): TestEvent {
-          throw Error('assert');
-        }
-      })(),
-    );
-
-    this._shared.sendTestEventEmitter.fire([test.staticEvent!]);
   }
 }

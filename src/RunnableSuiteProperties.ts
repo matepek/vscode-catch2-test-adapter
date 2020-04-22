@@ -7,7 +7,7 @@ export class RunnableSuiteProperties {
   public constructor(
     public readonly name: string | undefined,
     public readonly description: string | undefined,
-    public readonly varToValue: ReadonlyArray<ResolveRulePair>,
+    public readonly varToValue: readonly ResolveRulePair[],
     public readonly path: string,
     public readonly options: c2fs.SpawnOptions,
     private readonly _frameworkSpecific: TestExecutableInfoFrameworkSpecific,

@@ -19,6 +19,7 @@ import {
   resolveOSEnvironmentVariables,
 } from './Util';
 import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
+import { TestEvent } from 'vscode-test-adapter-api';
 
 export abstract class AbstractRunnable {
   private static _reportedFrameworks: string[] = [];
@@ -59,7 +60,7 @@ export abstract class AbstractRunnable {
     };
   }
 
-  public get tests(): ReadonlyArray<AbstractTest> {
+  public get tests(): readonly AbstractTest[] {
     return this._tests;
   }
 
@@ -69,7 +70,8 @@ export abstract class AbstractRunnable {
     tooltip: string | undefined,
     group: Suite,
   ): Suite {
-    const cond = (v: Suite | AbstractTest): boolean => v.type === 'suite' && v.label === label;
+    const cond = (v: Suite | AbstractTest): boolean =>
+      v.type === 'suite' && v.label === label && v.description === description;
     const found = group.children.find(cond) as Suite | undefined;
     if (found) {
       return found;
@@ -247,9 +249,71 @@ export abstract class AbstractRunnable {
     this._tests = [];
   }
 
-  protected _addUnexpectedStdError(stdout: string, stderr: string): void {
-    this._rootSuite.addError(
-      this,
+  protected _createError(
+    title: string,
+    message: string,
+  ): (parent: Suite, old: AbstractTest | undefined) => AbstractTest {
+    return (parent: Suite): AbstractTest => {
+      const shared = this._shared;
+      const runnable = this as AbstractRunnable;
+      const test = new (class extends AbstractTest {
+        public constructor() {
+          super(
+            shared,
+            runnable,
+            parent,
+            undefined,
+            title,
+            title,
+            undefined,
+            undefined,
+            true,
+            {
+              type: 'test',
+              test: '',
+              state: 'errored',
+              message,
+            },
+            [],
+            '⚡️ Run me for details ⚡️',
+            undefined,
+            undefined,
+          );
+        }
+
+        public get testNameInOutput(): string {
+          return this.testName;
+        }
+
+        public getDebugParams(): string[] {
+          throw Error('assert');
+        }
+
+        public parseAndProcessTestCase(): TestEvent {
+          throw Error('assert');
+        }
+      })();
+
+      this._shared.sendTestEventEmitter.fire([test.staticEvent!]);
+
+      return test;
+    };
+  }
+
+  protected _createAndAddError(label: string, message: string): void {
+    this._createSubtreeAndAddTest(
+      label,
+      label,
+      undefined,
+      [],
+      { groupByExecutable: this._getGroupByExecutable() },
+      this._createError(label, message),
+    );
+  }
+
+  protected _createAndAddUnexpectedStdError(stdout: string, stderr: string): void {
+    this._createAndAddError(
+      `⚡️ Unexpected ERROR while parsing`,
       [
         `❗️Unexpected stderr!`,
         `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
@@ -275,7 +339,7 @@ export abstract class AbstractRunnable {
     return this._lastReloadTime !== undefined && lastModiTime !== undefined && this._lastReloadTime !== lastModiTime;
   }
 
-  private _splitTestSetForMultirun(tests: ReadonlyArray<AbstractTest>): ReadonlyArray<AbstractTest>[] {
+  private _splitTestSetForMultirun(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
     // const maxGroupNumber = 10;
     // const maxBucket = 100;
     // const minMilisecForGroup = 2000;
@@ -312,7 +376,7 @@ export abstract class AbstractRunnable {
 
   protected abstract _reloadChildren(): Promise<void>;
 
-  protected abstract _getRunParams(childrenToRun: ReadonlyArray<AbstractTest>): string[];
+  protected abstract _getRunParams(childrenToRun: readonly AbstractTest[]): string[];
 
   protected abstract _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void>;
 
@@ -347,7 +411,7 @@ export abstract class AbstractRunnable {
     this._canceled = true;
   }
 
-  public run(childrenToRun: ReadonlyArray<AbstractTest>, taskPool: TaskPool): Promise<void> {
+  public run(childrenToRun: readonly AbstractTest[], taskPool: TaskPool): Promise<void> {
     this._canceled = false;
 
     if (childrenToRun.length === 0) {
@@ -373,7 +437,7 @@ export abstract class AbstractRunnable {
       .then();
   }
 
-  private _runInner(childrenToRun: ReadonlyArray<AbstractTest>, taskPool: TaskPool): Promise<void> {
+  private _runInner(childrenToRun: readonly AbstractTest[], taskPool: TaskPool): Promise<void> {
     const runIfNotCancelled = (): Promise<void> => {
       if (this._canceled) {
         this._shared.log.info('test was canceled:', this);
@@ -396,7 +460,7 @@ export abstract class AbstractRunnable {
     });
   }
 
-  private _runProcess(childrenToRun: ReadonlyArray<AbstractTest>): Promise<void> {
+  private _runProcess(childrenToRun: readonly AbstractTest[]): Promise<void> {
     const descendantsWithStaticEvent: AbstractTest[] = [];
     const runnableDescendant: AbstractTest[] = [];
 

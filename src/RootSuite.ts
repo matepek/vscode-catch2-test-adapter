@@ -7,7 +7,6 @@ import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
 
 export class RootSuite extends Suite implements vscode.Disposable {
-  public readonly children: (Suite | AbstractTest)[] = [];
   private _executables: Executable[] = [];
 
   public constructor(id: string | undefined, shared: SharedVariables) {

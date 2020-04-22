@@ -139,11 +139,14 @@ describe(path.basename(__filename), function () {
         2 + //suite2 start,fin
         2 * 2 + // suite2 tests
         2 + //suite3 start,fin
-          35 * 2, // suite3 tests
+        35 * 2 + // suite3 tests
+          6 * 2, // because old catch2 is buggy and we send staticEvent for 6 tests with parent
         inspect(
-          adapter.testStatesEvents.map(v => {
-            if (v.type === 'suite' && typeof v.suite != 'string') return `[${v.type} ${v.state}: "${v.suite.label}" ]`;
-            if (v.type === 'test' && typeof v.test != 'string') return `[${v.type} ${v.state}: "${v.test.label}" ]`;
+          adapter.testStatesEvents.map((v, i) => {
+            if (v.type === 'suite' && typeof v.suite != 'string')
+              return `${i}: [${v.type} ${v.state}: "${v.suite.label}" ]`;
+            if (v.type === 'test' && typeof v.test != 'string')
+              return `${i}:    [${v.type} ${v.state}: "${v.test.label}" ]`;
             else return `[${v.type}]`;
           }),
         ),

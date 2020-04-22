@@ -266,7 +266,7 @@ describe(path.basename(__filename), function () {
     assert.equal(suite1.children.length, 1, inspect([testListErrOutput, adapter.testLoadsEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
-    assert.strictEqual(suite1.children[0].label, '⚡️ ERROR (run me to see the issue)');
+    assert.strictEqual(suite1.children[0].label, '⚡️ Unexpected ERROR while parsing');
 
     await waitFor(this, () => {
       return adapter!.testStatesEvents.length == 6;
@@ -685,104 +685,157 @@ describe(path.basename(__filename), function () {
     assert.strictEqual(exception, undefined);
   });
 
-  specify('duplicated suite names from different pattern', async function () {
-    this.slow(500);
-    await settings.updateConfig('executables', [
-      { name: 'dup', pattern: example1.suite1.execPath },
-      { name: 'dup', pattern: example1.suite2.execPath },
-    ]);
+  context('from different pattern', function () {
+    specify('duplicated suite names', async function () {
+      this.slow(500);
+      await settings.updateConfig('executables', [
+        { name: 'dup', pattern: example1.suite1.execPath },
+        { name: 'dup', pattern: example1.suite2.execPath },
+      ]);
 
-    adapter = new TestAdapter();
+      adapter = new TestAdapter();
 
-    await adapter.load();
+      await adapter.load();
 
-    assert.strictEqual(adapter.root.children.length, 2);
-    assert.strictEqual(adapter.suite1.label, '1) dup');
-    assert.strictEqual(adapter.suite2.label, '2) dup');
+      assert.strictEqual(adapter.root.children.length, 1);
+      assert.strictEqual(adapter.suite1.label, 'dup');
 
-    await adapter.load();
+      await adapter.load();
 
-    assert.strictEqual(adapter.root.children.length, 2);
-    assert.strictEqual(adapter.suite1.label, '1) dup');
-    assert.strictEqual(adapter.suite2.label, '2) dup');
+      assert.strictEqual(adapter.root.children.length, 1);
+      assert.strictEqual(adapter.suite1.label, 'dup');
+    });
+
+    specify('duplicated suite names with different desciption', async function () {
+      this.slow(500);
+      await settings.updateConfig('executables', [
+        { name: 'dup', description: 'a', pattern: example1.suite1.execPath },
+        { name: 'dup', description: 'b', pattern: example1.suite2.execPath },
+      ]);
+
+      adapter = new TestAdapter();
+
+      await adapter.load();
+
+      assert.strictEqual(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.suite1.label, 'dup');
+      assert.strictEqual(adapter.suite1.description, 'a');
+      assert.strictEqual(adapter.suite2.label, 'dup');
+      assert.strictEqual(adapter.suite2.description, 'b');
+
+      await adapter.load();
+
+      assert.strictEqual(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.suite1.label, 'dup');
+      assert.strictEqual(adapter.suite1.description, 'a');
+      assert.strictEqual(adapter.suite2.label, 'dup');
+      assert.strictEqual(adapter.suite2.description, 'b');
+    });
+
+    specify('duplicated executable', async function () {
+      this.slow(500);
+      await settings.updateConfig('executables', [
+        { name: 'name1 ${relPath}', pattern: 'dummy1' },
+        { name: 'name2', pattern: 'dummy2' },
+      ]);
+
+      imitation.vsFindFilesStub
+        .withArgs(imitation.createVscodeRelativePatternMatcher('dummy1'))
+        .resolves([vscode.Uri.file(example1.suite1.execPath), vscode.Uri.file(example1.suite1.execPath)]);
+
+      imitation.vsFindFilesStub
+        .withArgs(imitation.createVscodeRelativePatternMatcher('dummy2'))
+        .resolves([vscode.Uri.file(example1.suite1.execPath)]);
+
+      adapter = new TestAdapter();
+
+      await adapter.load();
+
+      assert.strictEqual(adapter.root.children.length, 2); //TODO make  eq 1 one day
+      assert.strictEqual(adapter.suite1.label, 'name1 execPath1.exe');
+      assert.strictEqual(adapter.suite2.label, 'name2');
+
+      await adapter.load();
+
+      assert.strictEqual(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.suite1.label, 'name1 execPath1.exe');
+      assert.strictEqual(adapter.suite2.label, 'name2');
+    });
   });
 
-  specify('duplicated suite names from same pattern', async function () {
-    this.slow(500);
-    await settings.updateConfig('executables', { name: 'dup', pattern: 'dummy' });
+  context('from same pattern', function () {
+    specify('duplicated suite names', async function () {
+      this.slow(500);
+      await settings.updateConfig('executables', { name: 'dup', pattern: 'dummy' });
 
-    imitation.vsFindFilesStub
-      .withArgs(imitation.createVscodeRelativePatternMatcher('dummy'))
-      .resolves([vscode.Uri.file(example1.suite1.execPath), vscode.Uri.file(example1.suite2.execPath)]);
+      imitation.vsFindFilesStub
+        .withArgs(imitation.createVscodeRelativePatternMatcher('dummy'))
+        .resolves([vscode.Uri.file(example1.suite1.execPath), vscode.Uri.file(example1.suite2.execPath)]);
 
-    adapter = new TestAdapter();
+      adapter = new TestAdapter();
 
-    await adapter.load();
+      await adapter.load();
 
-    assert.strictEqual(adapter.root.children.length, 2);
-    assert.strictEqual(adapter.suite1.label, '1) dup');
-    assert.strictEqual(adapter.suite2.label, '2) dup');
+      assert.strictEqual(adapter.root.children.length, 1);
+      assert.strictEqual(adapter.suite1.label, 'dup');
 
-    await adapter.load();
+      await adapter.load();
 
-    assert.strictEqual(adapter.root.children.length, 2);
-    assert.strictEqual(adapter.suite1.label, '1) dup');
-    assert.strictEqual(adapter.suite2.label, '2) dup');
+      assert.strictEqual(adapter.root.children.length, 1);
+      assert.strictEqual(adapter.suite1.label, 'dup');
+    });
+
+    specify('duplicated suite names but different description', async function () {
+      this.slow(500);
+      await settings.updateConfig('executables', { name: 'dup', description: '${absPath}', pattern: 'dummy' });
+
+      imitation.vsFindFilesStub
+        .withArgs(imitation.createVscodeRelativePatternMatcher('dummy'))
+        .resolves([vscode.Uri.file(example1.suite1.execPath), vscode.Uri.file(example1.suite2.execPath)]);
+
+      adapter = new TestAdapter();
+
+      await adapter.load();
+
+      assert.strictEqual(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.suite1.label, 'dup');
+      assert.strictEqual(adapter.suite1.description, example1.suite1.execPath);
+      assert.strictEqual(adapter.suite2.label, 'dup');
+      assert.strictEqual(adapter.suite2.description, example1.suite2.execPath);
+
+      await adapter.load();
+
+      assert.strictEqual(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.suite1.label, 'dup');
+      assert.strictEqual(adapter.suite1.description, example1.suite1.execPath);
+      assert.strictEqual(adapter.suite2.label, 'dup');
+      assert.strictEqual(adapter.suite2.description, example1.suite2.execPath);
+    });
   });
 
-  specify('duplicated suite names from different and same pattern', async function () {
-    this.slow(500);
-    await settings.updateConfig('executables', [
-      { name: 'dup', pattern: 'dummy' },
-      { name: 'dup', pattern: example1.suite3.execPath },
-    ]);
+  context('from different and same pattern', function () {
+    specify('duplicated suite names', async function () {
+      this.slow(500);
+      await settings.updateConfig('executables', [
+        { name: 'dup', pattern: 'dummy' },
+        { name: 'dup', pattern: example1.suite3.execPath },
+      ]);
 
-    imitation.vsFindFilesStub
-      .withArgs(imitation.createVscodeRelativePatternMatcher('dummy'))
-      .resolves([vscode.Uri.file(example1.suite1.execPath), vscode.Uri.file(example1.suite2.execPath)]);
+      imitation.vsFindFilesStub
+        .withArgs(imitation.createVscodeRelativePatternMatcher('dummy'))
+        .resolves([vscode.Uri.file(example1.suite1.execPath), vscode.Uri.file(example1.suite2.execPath)]);
 
-    adapter = new TestAdapter();
+      adapter = new TestAdapter();
 
-    await adapter.load();
+      await adapter.load();
 
-    assert.strictEqual(adapter.root.children.length, 3);
-    assert.strictEqual(adapter.suite1.label, '1) dup');
-    assert.strictEqual(adapter.suite2.label, '2) dup');
-    assert.strictEqual(adapter.suite3.label, '3) dup');
+      assert.strictEqual(adapter.root.children.length, 1);
+      assert.strictEqual(adapter.suite1.label, 'dup');
 
-    await adapter.load();
+      await adapter.load();
 
-    assert.strictEqual(adapter.root.children.length, 3);
-    assert.strictEqual(adapter.suite1.label, '1) dup');
-    assert.strictEqual(adapter.suite2.label, '2) dup');
-    assert.strictEqual(adapter.suite3.label, '3) dup');
-  });
-
-  specify('duplicated executable from different and same pattern', async function () {
-    this.slow(500);
-    await settings.updateConfig('executables', [
-      { name: 'name1 ${relPath}', pattern: 'dummy1' },
-      { name: 'name2', pattern: 'dummy2' },
-    ]);
-
-    imitation.vsFindFilesStub
-      .withArgs(imitation.createVscodeRelativePatternMatcher('dummy1'))
-      .resolves([vscode.Uri.file(example1.suite1.execPath), vscode.Uri.file(example1.suite1.execPath)]);
-
-    imitation.vsFindFilesStub
-      .withArgs(imitation.createVscodeRelativePatternMatcher('dummy2'))
-      .resolves([vscode.Uri.file(example1.suite1.execPath)]);
-
-    adapter = new TestAdapter();
-
-    await adapter.load();
-
-    assert.strictEqual(adapter.root.children.length, 1);
-    assert.strictEqual(adapter.suite1.label, 'name1 execPath1.exe');
-
-    await adapter.load();
-
-    assert.strictEqual(adapter.root.children.length, 1);
-    assert.strictEqual(adapter.suite1.label, 'name1 execPath1.exe');
+      assert.strictEqual(adapter.root.children.length, 1);
+      assert.strictEqual(adapter.suite1.label, 'dup');
+    });
   });
 });

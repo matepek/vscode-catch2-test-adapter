@@ -943,21 +943,10 @@ describe(path.basename(__filename), function () {
       cp.close();
 
       await waitFor(this, () => {
-        return adapter.testStatesEvents.length >= 4;
+        return adapter.testStatesEvents.length >= 2;
       });
 
-      assert.deepStrictEqual(adapter.testStatesEvents, [
-        { type: 'started', tests: [s1t1.id] },
-        { type: 'suite', state: 'running', suite: suite1 },
-        {
-          type: 'suite',
-          state: 'completed',
-          suite: suite1,
-          description: undefined,
-          tooltip: undefined,
-        },
-        { type: 'finished' },
-      ]);
+      assert.deepStrictEqual(adapter.testStatesEvents, [{ type: 'started', tests: [s1t1.id] }, { type: 'finished' }]);
     });
 
     it('should timeout inside a test case', async function () {

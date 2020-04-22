@@ -6,19 +6,19 @@ import { inspect } from 'util';
 ///
 
 export class LoggerWrapper extends util.Log {
-  public constructor(
-    configSection: string,
-    workspaceFolder: WorkspaceFolder | undefined,
-    outputChannelName: string,
-    inspectOptions?: util.InspectOptions,
-  ) {
-    super(configSection, workspaceFolder, outputChannelName, inspectOptions, false);
+  public constructor(configSection: string, workspaceFolder: WorkspaceFolder | undefined, outputChannelName: string) {
+    super(configSection, workspaceFolder, outputChannelName, { depth: 2 }, false);
+  }
+
+  //eslint-disable-next-line
+  private _inspect(v: any): string {
+    return inspect(v, undefined, 1);
   }
 
   //eslint-disable-next-line
   public debug(...msg: any[]): void {
     try {
-      Sentry.addBreadcrumb({ message: JSON.stringify(msg), data: msg, level: Sentry.Severity.Debug });
+      Sentry.addBreadcrumb({ message: this._inspect(msg), data: msg, level: Sentry.Severity.Debug });
     } catch (e) {
       super.error(e);
     }
@@ -46,7 +46,7 @@ export class LoggerWrapper extends util.Log {
   //eslint-disable-next-line
   public info(...msg: any[]): void {
     try {
-      Sentry.addBreadcrumb({ message: inspect(msg), data: msg, level: Sentry.Severity.Info });
+      Sentry.addBreadcrumb({ message: this._inspect(msg), data: msg, level: Sentry.Severity.Info });
     } catch (e) {
       super.error(e);
     }
@@ -57,7 +57,7 @@ export class LoggerWrapper extends util.Log {
   public warn(m: string, ...msg: any[]): void {
     try {
       if (msg.length > 0)
-        Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), data: msg, level: Sentry.Severity.Warning });
+        Sentry.addBreadcrumb({ message: m + ': ' + this._inspect(msg), data: msg, level: Sentry.Severity.Warning });
       Sentry.captureMessage(m, Sentry.Severity.Warning);
     } catch (e) {
       super.error(e);
@@ -69,7 +69,7 @@ export class LoggerWrapper extends util.Log {
   public error(m: string, ...msg: any[]): void {
     try {
       if (msg.length > 0)
-        Sentry.addBreadcrumb({ message: m + ': ' + JSON.stringify(msg), level: Sentry.Severity.Error });
+        Sentry.addBreadcrumb({ message: m + ': ' + this._inspect(msg), level: Sentry.Severity.Error });
       Sentry.captureMessage(m, Sentry.Severity.Error);
     } catch (e) {
       super.error(e);
@@ -82,7 +82,7 @@ export class LoggerWrapper extends util.Log {
     try {
       if (msg.length > 0)
         Sentry.addBreadcrumb({
-          message: e.message + ': ' + JSON.stringify(msg),
+          message: e.message + ': ' + this._inspect(msg),
           data: msg,
           level: Sentry.Severity.Error,
         });

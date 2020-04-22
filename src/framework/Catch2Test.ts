@@ -72,7 +72,7 @@ export class Catch2Test extends AbstractTest {
               'Avoid test names with:',
               ...badChars.map(b => ` - ${b}`),
             ].join('\n'),
-            description: '⚡️ See output for details ⚡️',
+            description: '⚡️ Run me for details ⚡️',
           }
         : undefined;
 
