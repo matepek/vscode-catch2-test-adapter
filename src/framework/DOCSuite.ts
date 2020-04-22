@@ -22,20 +22,18 @@ export class DOCSuite extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
     rootSuite: Suite,
-    label: string,
-    desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
     docVersion: Version,
   ) {
-    super(shared, rootSuite, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
+    super(shared, rootSuite, execInfo, 'doctest', Promise.resolve(docVersion));
   }
 
   private getTestGrouping(): TestGrouping {
-    // TODO
     if (this.execInfo.testGrouping) {
       return this.execInfo.testGrouping;
     } else {
-      return { groupByTags: { tags: [] } };
+      const grouping = { groupByExecutable: this._getGroupByExecutable() };
+      return grouping;
     }
   }
 
@@ -58,7 +56,7 @@ export class DOCSuite extends AbstractRunnable {
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      this.createSubtreeAndAddTest(
+      this._createSubtreeAndAddTest(
         testName,
         testName,
         filePath,
@@ -220,7 +218,7 @@ export class DOCSuite extends AbstractRunnable {
 
             data.beforeFirstTestCase = false;
 
-            const test = this.findTest(v => v.testName == name);
+            const test = this._findTest(v => v.testName == name);
 
             if (test) {
               const route = [...test.route()];
@@ -408,7 +406,7 @@ export class DOCSuite extends AbstractRunnable {
                 if (name === undefined) break;
 
                 // xml output trimmes the name of the test
-                const currentChild = this.findTest(v => v.testName === name);
+                const currentChild = this._findTest(v => v.testName === name);
 
                 if (currentChild === undefined) break;
 

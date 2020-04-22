@@ -10,11 +10,17 @@ import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
 import { promisify } from 'util';
-import { TestEvent } from 'vscode-test-adapter-api';
-import { Version, reverse, PythonIndexerRegexStr, processArrayWithPythonIndexer } from './Util';
-import { TestGrouping } from './TestGroupingInterface';
+import {
+  Version,
+  reverse,
+  PythonIndexerRegexStr,
+  processArrayWithPythonIndexer,
+  resolveVariables,
+  resolveOSEnvironmentVariables,
+} from './Util';
+import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
 
-export abstract class AbstractRunnable extends Suite {
+export abstract class AbstractRunnable {
   private static _reportedFrameworks: string[] = [];
 
   private _canceled = false;
@@ -25,14 +31,10 @@ export abstract class AbstractRunnable extends Suite {
   public constructor(
     protected readonly _shared: SharedVariables,
     protected readonly _rootSuite: Suite,
-    label: string,
-    description: string | undefined,
     public readonly execInfo: RunnableSuiteProperties,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<Version | undefined>,
   ) {
-    super(_shared, undefined, label, description);
-
     frameworkVersion
       .then(version => {
         if (AbstractRunnable._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
@@ -49,32 +51,51 @@ export abstract class AbstractRunnable extends Suite {
       .catch(e => this._shared.log.exception(e));
   }
 
-  public labelPrefix = '';
-
-  public get label(): string {
-    return this.labelPrefix + super.label;
-  }
-
-  public get tooltip(): string {
-    return super.tooltip + '\n\nPath: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd;
+  protected _getGroupByExecutable(): GroupByExecutable {
+    return {
+      label: this.execInfo.name,
+      description: this.execInfo.description,
+      tooltip: 'Path: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd,
+    };
   }
 
   public get tests(): ReadonlyArray<AbstractTest> {
     return this._tests;
   }
 
-  private _getOrCreateChildSuite(label: string, description: string | undefined, group: Suite): Suite {
+  private _getOrCreateChildSuite(
+    label: string,
+    description: string | undefined,
+    tooltip: string | undefined,
+    group: Suite,
+  ): Suite {
     const cond = (v: Suite | AbstractTest): boolean => v.type === 'suite' && v.label === label;
     const found = group.children.find(cond) as Suite | undefined;
     if (found) {
       return found;
     } else {
-      const newG = group.addSuite(new Suite(this._shared, group, label, description));
+      const newG = group.addSuite(new Suite(this._shared, group, label, description, tooltip));
       return newG;
     }
   }
 
-  public createSubtreeAndAddTest(
+  private static readonly _variableRe = /\$\{[^ ]*\}/;
+
+  private _resolveText(text: string): string {
+    let resolvedText = '';
+    try {
+      resolvedText = resolveVariables(text, this.execInfo.varToValue);
+      resolvedText = resolveOSEnvironmentVariables(resolvedText, false);
+
+      if (resolvedText.match(AbstractRunnable._variableRe))
+        this._shared.log.warn('Possibly unresolved variable', resolvedText, text, this);
+    } catch (e) {
+      this._shared.log.error('resolveText', text, e, this);
+    }
+    return resolvedText;
+  }
+
+  protected _createSubtreeAndAddTest(
     testName: string,
     testNameInOutput: string,
     file: string | undefined,
@@ -84,15 +105,30 @@ export abstract class AbstractRunnable extends Suite {
   ): void {
     let group = this._rootSuite as Suite;
 
-    const getOrCreateChildSuite = (label: string, description: string | undefined): void => {
-      group = this._getOrCreateChildSuite(label, description, group);
+    const getOrCreateChildSuite = (
+      label: string,
+      description: string | undefined,
+      tooltip: string | undefined,
+    ): void => {
+      group = this._getOrCreateChildSuite(label, description, tooltip, group);
     };
 
     let currentGrouping: TestGrouping = testGrouping;
 
     try {
       while (true) {
-        if (currentGrouping.groupBySource) {
+        if (currentGrouping.groupByExecutable) {
+          this._shared.log.info('groupByExecutable');
+          const g = currentGrouping.groupByExecutable;
+
+          const label = this._resolveText(g.label ? g.label : '${filename}');
+          const description = this._resolveText(g.description !== undefined ? g.description : '${relDirpath}/');
+          const tooltip = g.tooltip ? this._resolveText(g.tooltip) : undefined;
+
+          getOrCreateChildSuite(label, description, tooltip);
+
+          currentGrouping = g;
+        } else if (currentGrouping.groupBySource) {
           const g = currentGrouping.groupBySource;
           if (g.sourceIndex) {
             if (typeof g.sourceIndex === 'string') {
@@ -103,9 +139,9 @@ export abstract class AbstractRunnable extends Suite {
                   const relPath = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file);
                   const pathArray = relPath.split(/\/|\\/);
                   const fileStr = pathlib.join(...processArrayWithPythonIndexer(pathArray, sourceIndicies));
-                  getOrCreateChildSuite(g.label ? g.label : fileStr, g.descrption);
+                  getOrCreateChildSuite(g.label ? g.label : fileStr, g.description, undefined);
                 } else if (g.groupUngroupedTo) {
-                  getOrCreateChildSuite(g.groupUngroupedTo, undefined);
+                  getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
                 }
               } else {
                 this._shared.log.warn("Couldn't parse", g.sourceIndex);
@@ -120,15 +156,15 @@ export abstract class AbstractRunnable extends Suite {
         } else if (currentGrouping.groupByTags) {
           const g = currentGrouping.groupByTags;
           if (g.tags) {
-            this._shared.log.info('groupBySource', g.tags);
+            this._shared.log.info('groupByTags', g.tags);
 
             if (Array.isArray(g.tags) && g.tags.every(v => typeof v === 'string')) {
               if (g.tags.length === 0) {
                 if (tags.length > 0) {
                   const tagsStr = tags.sort().join('');
-                  getOrCreateChildSuite(g.label ? g.label : tagsStr, g.descrption);
+                  getOrCreateChildSuite(g.label ? g.label : tagsStr, g.description, undefined);
                 } else if (g.groupUngroupedTo) {
-                  getOrCreateChildSuite(g.groupUngroupedTo, undefined);
+                  getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
                 }
               } else {
                 const combos = g.tags
@@ -150,9 +186,9 @@ export abstract class AbstractRunnable extends Suite {
 
                 if (foundCombo) {
                   const comboStr = foundCombo.map(t => `[${t}]`).join('');
-                  getOrCreateChildSuite(g.label ? g.label : comboStr, g.descrption);
+                  getOrCreateChildSuite(g.label ? g.label : comboStr, g.description, undefined);
                 } else if (g.groupUngroupedTo) {
-                  getOrCreateChildSuite(g.groupUngroupedTo, undefined);
+                  getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
                 }
               }
             } else {
@@ -176,9 +212,9 @@ export abstract class AbstractRunnable extends Suite {
               if (match) {
                 this._shared.log.info('groupByRegex matched on', testName, g.regexes[index - 1]);
                 const group = match[1] ? match[1] : match[0];
-                getOrCreateChildSuite(g.label ? g.label : group, g.descrption);
+                getOrCreateChildSuite(g.label ? g.label : group, g.description, undefined);
               } else if (g.groupUngroupedTo) {
-                getOrCreateChildSuite(g.groupUngroupedTo, undefined);
+                getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
               }
             } else {
               this._shared.log.warn('groupByTags.tags should be a non-empty array of strings.', g.regexes);
@@ -199,61 +235,20 @@ export abstract class AbstractRunnable extends Suite {
       | AbstractTest
       | undefined;
 
-    group.addTest(createTest(group, old));
+    const test = createTest(group, old);
+
+    this._tests.push(test);
+
+    group.addTest(test);
   }
 
   public removeTests(): void {
     this._tests.forEach(t => t.removeWithLeafAscendants());
-  }
-
-  protected _addError(parent: Suite, message: string): void {
-    const shared = this._shared;
-    const runnable = this as AbstractRunnable;
-    const test = this.addTest(
-      new (class extends AbstractTest {
-        public constructor() {
-          super(
-            shared,
-            runnable,
-            parent,
-            undefined,
-            'dummyErrorTest',
-            '⚡️ ERROR (run me to see the issue)',
-            undefined,
-            undefined,
-            true,
-            {
-              type: 'test',
-              test: '',
-              state: 'errored',
-              message,
-            },
-            [],
-            'Run this test to see the error message in the output.',
-            undefined,
-            undefined,
-          );
-        }
-
-        public get testNameInOutput(): string {
-          return this.testName;
-        }
-
-        public getDebugParams(): string[] {
-          throw Error('assert');
-        }
-
-        public parseAndProcessTestCase(): TestEvent {
-          throw Error('assert');
-        }
-      })(),
-    );
-
-    this._shared.sendTestEventEmitter.fire([test.staticEvent!]);
+    this._tests = [];
   }
 
   protected _addUnexpectedStdError(stdout: string, stderr: string): void {
-    this._addError(
+    this._rootSuite.addError(
       this,
       [
         `❗️Unexpected stderr!`,
@@ -280,7 +275,7 @@ export abstract class AbstractRunnable extends Suite {
     return this._lastReloadTime !== undefined && lastModiTime !== undefined && this._lastReloadTime !== lastModiTime;
   }
 
-  private _splitTestSetForMultirun(tests: AbstractTest[]): AbstractTest[][] {
+  private _splitTestSetForMultirun(tests: ReadonlyArray<AbstractTest>): ReadonlyArray<AbstractTest>[] {
     // const maxGroupNumber = 10;
     // const maxBucket = 100;
     // const minMilisecForGroup = 2000;
@@ -323,38 +318,37 @@ export abstract class AbstractRunnable extends Suite {
 
   public reloadTests(taskPool: TaskPool): Promise<void> {
     return taskPool.scheduleTask(async () => {
-      this._shared.log.info(
-        'reloadChildren',
-        this.label,
-        this.frameworkName,
-        this.frameworkVersion,
-        this.execInfo.path,
-      );
+      this._shared.log.info('reloadChildren', this.frameworkName, this.frameworkVersion, this.execInfo.path);
 
       const lastModiTime = await this._getModiTime();
 
       if (this._lastReloadTime === undefined || lastModiTime === undefined || this._lastReloadTime !== lastModiTime) {
         this._lastReloadTime = lastModiTime;
         const oldTests = this._tests;
+        this._tests = [];
         return this._reloadChildren().finally(() => oldTests.forEach(t => t.removeWithLeafAscendants()));
       } else {
-        this._shared.log.debug('reloadTests was skipped due to mtime', this.label, this.id);
+        this._shared.log.debug('reloadTests was skipped due to mtime', this.execInfo.path);
       }
     });
   }
 
   public cancel(): void {
-    this._shared.log.info('canceled:', this.id, this.label, this._runInfos);
+    this._shared.log.info('canceled:', this.execInfo.path);
 
-    this._runInfos.forEach(r => r.cancel());
+    this._runInfos.forEach(r => {
+      try {
+        r.cancel();
+      } catch (e) {
+        this._shared.log.exception(e);
+      }
+    });
 
     this._canceled = true;
   }
 
-  public run(tests: ReadonlyArray<string>, taskPool: TaskPool): Promise<void> {
+  public run(childrenToRun: ReadonlyArray<AbstractTest>, taskPool: TaskPool): Promise<void> {
     this._canceled = false;
-
-    const childrenToRun = this.collectTestToRun(tests, false);
 
     if (childrenToRun.length === 0) {
       return Promise.resolve();
@@ -411,31 +405,26 @@ export abstract class AbstractRunnable extends Suite {
       else runnableDescendant.push(t);
     });
 
-    this.sendRunningEventIfNeeded();
-
     if (descendantsWithStaticEvent.length > 0) {
-      descendantsWithStaticEvent
-        .map(t => this.findTest(s => s === t))
-        .forEach(test => {
-          if (test) {
-            const route = [...test.route()];
-            reverse(route)((s: Suite): void => s.sendRunningEventIfNeeded());
-            this._shared.testStatesEmitter.fire(test!.getStartEvent());
-            this._shared.testStatesEmitter.fire(test!.staticEvent);
-            route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
-          }
-        });
+      descendantsWithStaticEvent.forEach(test => {
+        if (test) {
+          const route = [...test.route()];
+          reverse(route)((s: Suite): void => s.sendRunningEventIfNeeded());
+          this._shared.testStatesEmitter.fire(test!.getStartEvent());
+          this._shared.testStatesEmitter.fire(test!.staticEvent);
+          route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
+        }
+      });
+    }
 
-      if (runnableDescendant.length === 0) {
-        this.sendCompletedEventIfNeeded();
-        return Promise.resolve();
-      }
+    if (runnableDescendant.length === 0) {
+      return Promise.resolve();
     }
 
     const execParams = this.execInfo.prependTestRunningArgs.concat(this._getRunParams(runnableDescendant));
 
-    this._shared.log.info('proc starting', this.label);
-    this._shared.log.localDebug('proc starting', this.label, execParams);
+    this._shared.log.info('proc starting', this.execInfo.path);
+    this._shared.log.localDebug('proc starting', this.execInfo.path, execParams);
 
     const runInfo = new RunningTestExecutableInfo(
       cp.spawn(this.execInfo.path, execParams, this.execInfo.options),
@@ -444,8 +433,8 @@ export abstract class AbstractRunnable extends Suite {
 
     this._runInfos.push(runInfo);
 
-    this._shared.log.info('proc started:', this.label);
-    this._shared.log.localDebug('proc started:', this.label, this.execInfo, execParams);
+    this._shared.log.info('proc started:', this.execInfo.path);
+    this._shared.log.localDebug('proc started:', this.execInfo.path, this.execInfo, execParams);
 
     runInfo.process.on('error', (err: Error) => {
       this._shared.log.error('process error event:', err, this);
@@ -459,7 +448,7 @@ export abstract class AbstractRunnable extends Suite {
       });
 
       runInfo.process.once('close', (...args) => {
-        this._shared.log.localDebug('proc close:', this.label, args);
+        this._shared.log.localDebug('proc close:', this.execInfo.path, args);
         trigger('closed');
       });
 
@@ -498,8 +487,6 @@ export abstract class AbstractRunnable extends Suite {
       .then(() => {
         this._shared.log.info('proc finished:', this.execInfo.path);
 
-        this.sendCompletedEventIfNeeded();
-
         const index = this._runInfos.indexOf(runInfo);
         if (index === -1) {
           this._shared.log.error("assertion: shouldn't be here", this._runInfos, runInfo);
@@ -507,6 +494,10 @@ export abstract class AbstractRunnable extends Suite {
           this._runInfos.splice(index, 1);
         }
       });
+  }
+
+  protected _findTest(pred: (t: AbstractTest) => boolean): AbstractTest | undefined {
+    return this._tests.find(pred);
   }
 
   protected _findFilePath(matchedPath: string): string {
@@ -554,5 +545,26 @@ export abstract class AbstractRunnable extends Suite {
       } catch {}
 
     return matchedPath;
+  }
+
+  public sendMinimalEventsIfNeeded(completed: Suite[], running: Suite[]): void {
+    if (completed.length === 0) {
+      reverse(running)(v => v.sendRunningEventIfNeeded());
+    } else if (running.length === 0) {
+      completed.forEach(v => v.sendCompletedEventIfNeeded());
+    } else if (completed[0] === running[0]) {
+      if (completed.length !== running.length) this._shared.log.error('completed.length !== running.length');
+    } else {
+      let completedIndex = -1;
+      let runningIndex = -1;
+
+      do {
+        ++completedIndex;
+        runningIndex = running.indexOf(completed[completedIndex]);
+      } while (completedIndex < completed.length && runningIndex === -1);
+
+      for (let i = 0; i < completedIndex; ++i) completed[i].sendCompletedEventIfNeeded();
+      for (let i = runningIndex - 1; i >= 0; --i) running[i].sendRunningEventIfNeeded();
+    }
   }
 }

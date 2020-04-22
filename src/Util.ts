@@ -60,7 +60,7 @@ export type ResolveRulePair =
   | [RegExp, undefined | null | boolean | number | string | (() => any) | ((m: RegExpMatchArray) => any)];
 
 // eslint-disable-next-line
-export function resolveVariables<T>(value: T, varValue: ResolveRulePair[]): T {
+export function resolveVariables<T>(value: T, varValue: ReadonlyArray<ResolveRulePair>): T {
   // eslint-disable-next-line
   return _mapAllStrings(value, (s: string): any => {
     for (let i = 0; i < varValue.length; ++i) {

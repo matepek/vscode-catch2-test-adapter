@@ -27,12 +27,13 @@ export interface TestExecutableInfoFrameworkSpecific {
   testGrouping?: TestGrouping;
 }
 
+//TODO rename
 export class Executable implements vscode.Disposable {
   public constructor(
     private readonly _shared: SharedVariables,
     private readonly _pattern: string,
-    name: string | undefined,
-    description: string | undefined,
+    private readonly _name: string | undefined,
+    private readonly _description: string | undefined,
     private readonly _cwd: string | undefined,
     private readonly _env: { [prop: string]: string } | undefined,
     private readonly _dependsOn: string[],
@@ -43,17 +44,11 @@ export class Executable implements vscode.Disposable {
     private readonly _gtest: TestExecutableInfoFrameworkSpecific,
     private readonly _doctest: TestExecutableInfoFrameworkSpecific,
   ) {
-    this._name = name !== undefined ? name : '${filename}';
-    this._description = description !== undefined ? description : '${relDirpath}/';
-
     if ([_catch2, _gtest, _doctest].some(f => Object.keys(f).length > 0)) {
       _shared.log.info('TestExecutableInfoFrameworkSpecific', _catch2, _gtest, _doctest);
       _shared.log.infoMessageWithTags('TestExecutableInfoFrameworkSpecific', {});
     }
   }
-
-  private readonly _name: string;
-  private readonly _description: string;
 
   private _disposables: vscode.Disposable[] = [];
 
@@ -63,6 +58,10 @@ export class Executable implements vscode.Disposable {
 
   public dispose(): void {
     this._disposables.forEach(d => d.dispose());
+  }
+
+  public cancel(): void {
+    for (const r of this._runnables.values()) r.cancel();
   }
 
   public async load(rootSuite: RootSuite): Promise<void> {
@@ -147,7 +146,7 @@ export class Executable implements vscode.Disposable {
 
     await Promise.all(suiteCreationAndLoadingTasks);
 
-    rootSuite.uniquifySuiteLabels(); // TODO
+    //rootSuite.uniquifySuiteLabels(); // TODO
 
     if (this._dependsOn.length > 0) {
       try {
@@ -265,31 +264,6 @@ export class Executable implements vscode.Disposable {
 
     const variableRe = /\$\{[^ ]*\}/;
 
-    let resolvedName = relPath;
-    try {
-      resolvedName = resolveVariables(this._name, varToValue);
-      resolvedName = resolveOSEnvironmentVariables(resolvedName, false);
-
-      if (resolvedName.match(variableRe)) this._shared.log.warn('Possibly unresolved variable', resolvedName);
-
-      varToValue.push(['${name}', resolvedName]);
-    } catch (e) {
-      this._shared.log.error('resolvedLabel', e);
-    }
-
-    let resolvedDescription = '';
-    try {
-      resolvedDescription = resolveVariables(this._description, varToValue);
-      resolvedDescription = resolveOSEnvironmentVariables(resolvedDescription, false);
-
-      if (resolvedDescription.match(variableRe))
-        this._shared.log.warn('Possibly unresolved variable', resolvedDescription);
-
-      varToValue.push(['${description}', resolvedDescription]);
-    } catch (e) {
-      this._shared.log.error('resolvedDescription', e);
-    }
-
     let resolvedCwd = '.';
     try {
       if (this._cwd) resolvedCwd = resolveVariables(this._cwd, varToValue);
@@ -320,9 +294,9 @@ export class Executable implements vscode.Disposable {
 
     return new RunnableSuiteFactory(
       this._shared,
+      this._name,
+      this._description,
       rootSuite,
-      resolvedName,
-      resolvedDescription,
       filePath,
       {
         cwd: resolvedCwd,
@@ -390,7 +364,7 @@ export class Executable implements vscode.Disposable {
           return runnable
             .reloadTests(this._shared.taskPool)
             .then(() => {
-              this._runnables.set(filePath, runnable); // it might be set already but we dont care
+              this._runnables.set(filePath, runnable); // it might be set already but we don't care
               this._lastEventArrivedAt.delete(filePath);
               this._shared.retire.fire(runnable.tests);
             })

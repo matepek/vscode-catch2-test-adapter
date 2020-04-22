@@ -22,20 +22,18 @@ export class Catch2Suite extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
     rootSuite: Suite,
-    label: string,
-    desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
     private readonly _catch2Version: Version,
   ) {
-    super(shared, rootSuite, label, desciption, execInfo, 'Catch2', Promise.resolve(_catch2Version));
+    super(shared, rootSuite, execInfo, 'Catch2', Promise.resolve(_catch2Version));
   }
 
   private getTestGrouping(): TestGrouping {
-    //TODO
     if (this.execInfo.testGrouping) {
       return this.execInfo.testGrouping;
     } else {
-      return { groupByTags: { tags: [] } };
+      const grouping = { groupByExecutable: this._getGroupByExecutable() };
+      return grouping;
     }
   }
 
@@ -65,8 +63,7 @@ export class Catch2Suite extends AbstractRunnable {
 
       if (lines[i].startsWith('    ')) {
         this._shared.log.warn('Probably too long test name', i, lines);
-        this.children = [];
-        this._addError(
+        this._rootSuite.addError(
           this,
           [
             '⚠️ Probably too long test name or the test name starts with space characters!',
@@ -103,7 +100,7 @@ export class Catch2Suite extends AbstractRunnable {
         ++i;
       }
 
-      this.createSubtreeAndAddTest(
+      this._createSubtreeAndAddTest(
         testName,
         testName,
         filePath,
@@ -263,7 +260,7 @@ export class Catch2Suite extends AbstractRunnable {
 
             data.beforeFirstTestCase = false;
 
-            const test = this.findTest(v => v.testNameInOutput == name);
+            const test = this._findTest(v => v.testNameInOutput == name);
 
             if (test) {
               const route = [...test.route()];
@@ -424,7 +421,7 @@ export class Catch2Suite extends AbstractRunnable {
                 );
                 if (name === undefined) break;
 
-                const currentChild = this.findTest(v => v.testNameInOutput === name);
+                const currentChild = this._findTest(v => v.testNameInOutput === name);
 
                 if (currentChild === undefined) break;
 

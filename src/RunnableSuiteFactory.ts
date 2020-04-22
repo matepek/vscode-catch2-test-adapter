@@ -17,9 +17,9 @@ interface TestFrameworkInfo {
 export class RunnableSuiteFactory {
   public constructor(
     private readonly _shared: SharedVariables,
+    private readonly _execName: string | undefined,
+    private readonly _execDescription: string | undefined,
     private readonly _rootSuite: Suite,
-    private readonly _label: string,
-    private readonly _description: string | undefined,
     private readonly _execPath: string,
     private readonly _execOptions: c2fs.SpawnOptions,
     private readonly _varToValue: ResolveRulePair[],
@@ -39,27 +39,42 @@ export class RunnableSuiteFactory {
             return new GoogleSuite(
               this._shared,
               this._rootSuite,
-              this._label,
-              this._description,
-              new RunnableSuiteProperties(this._varToValue, this._execPath, this._execOptions, this._gtest),
+              new RunnableSuiteProperties(
+                this._execName,
+                this._execDescription,
+                this._varToValue,
+                this._execPath,
+                this._execOptions,
+                this._gtest,
+              ),
               Promise.resolve(undefined), //Util: GoogleTestVersionFinder
             );
           case 'catch2':
             return new Catch2Suite(
               this._shared,
               this._rootSuite,
-              this._label,
-              this._description,
-              new RunnableSuiteProperties(this._varToValue, this._execPath, this._execOptions, this._catch2),
+              new RunnableSuiteProperties(
+                this._execName,
+                this._execDescription,
+                this._varToValue,
+                this._execPath,
+                this._execOptions,
+                this._catch2,
+              ),
               framework.version!,
             );
           case 'doctest':
             return new DOCSuite(
               this._shared,
               this._rootSuite,
-              this._label,
-              this._description,
-              new RunnableSuiteProperties(this._varToValue, this._execPath, this._execOptions, this._doctest),
+              new RunnableSuiteProperties(
+                this._execName,
+                this._execDescription,
+                this._varToValue,
+                this._execPath,
+                this._execOptions,
+                this._doctest,
+              ),
               framework.version!,
             );
         }

@@ -7,11 +7,11 @@ import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
 
 export class RootSuite extends Suite implements vscode.Disposable {
-  public readonly children: AbstractRunnable[] = [];
+  public readonly children: (Suite | AbstractTest)[] = [];
   private _executables: Executable[] = [];
 
   public constructor(id: string | undefined, shared: SharedVariables) {
-    super(shared, undefined, 'Catch2/GTest/DOCTest', undefined);
+    super(shared, undefined, 'Catch2/GTest/DOCTest', undefined, undefined);
   }
 
   public get file(): string | undefined {
@@ -27,7 +27,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
   }
 
   public cancel(): void {
-    this.children.forEach(c => c.cancel());
+    this._executables.forEach(c => c.cancel());
   }
 
   public load(executables: Executable[]): Promise<void> {
@@ -40,6 +40,14 @@ export class RootSuite extends Suite implements vscode.Disposable {
     );
   }
 
+  public sendRunningEventIfNeeded(): void {
+    // do nothing, special handling
+  }
+
+  public sendCompletedEventIfNeeded(): void {
+    // do nothing, special handling
+  }
+
   public sendStartEventIfNeeded(tests: string[]): void {
     if (this._runningCounter++ === 0) {
       this._shared.log.localDebug('RootSuite start event fired', this.label);
@@ -47,7 +55,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
     }
   }
 
-  public sendFinishedventIfNeeded(): void {
+  public sendFinishedEventIfNeeded(): void {
     if (this._runningCounter < 1) {
       this._shared.log.error('Root Suite running counter is too low');
       this._runningCounter = 0;
@@ -62,14 +70,23 @@ export class RootSuite extends Suite implements vscode.Disposable {
   public run(tests: string[]): Promise<void> {
     this.sendStartEventIfNeeded(tests);
 
-    const childrenToRun = tests.indexOf(this.id) !== -1 ? [...tests, ...this.children.map(s => s.id)] : tests;
+    const isParentIn = tests.indexOf(this.id) !== -1;
+
+    const childrenToRun = this.collectTestToRun(tests, isParentIn);
+
+    const runnables = childrenToRun.reduce((prev, curr) => {
+      const arr = prev.get(curr.runnable);
+      if (arr) arr.push(curr);
+      else prev.set(curr.runnable, [curr]);
+      return prev;
+    }, new Map<AbstractRunnable, AbstractTest[]>());
 
     const ps: Promise<void>[] = [];
-    for (let i = 0; i < this.children.length; i++) {
-      const child = this.children[i];
+
+    for (const [runnable, runnableTests] of runnables) {
       ps.push(
-        child.run(childrenToRun, this._shared.taskPool).catch(err => {
-          this._shared.log.error('RootTestSuite.run.for.child', child.label, child.execInfo.path, err);
+        runnable.run(runnableTests, this._shared.taskPool).catch(err => {
+          this._shared.log.error('RootTestSuite.run.for.child', runnable.execInfo.path, err);
         }),
       );
     }
@@ -80,66 +97,8 @@ export class RootSuite extends Suite implements vscode.Disposable {
         this._shared.log.error('everything should be handled', e);
       })
       .then(() => {
-        this.sendFinishedventIfNeeded();
+        this.sendFinishedEventIfNeeded();
       });
-  }
-
-  public hasChild(suite: AbstractRunnable): boolean {
-    return this.children.indexOf(suite) != -1;
-  }
-
-  public insertChild(suite: AbstractRunnable, uniquifyLabels: boolean): boolean {
-    if (this.hasChild(suite)) return false;
-
-    {
-      // we want to filter the situation when 2 patterns match the same file
-      const other = this.children.find((s: AbstractRunnable) => {
-        return suite.execInfo.path == s.execInfo.path;
-      });
-      if (other) {
-        this._shared.log.warn('execPath duplication: suite is skipped:', suite.execInfo.path, suite.label, other.label);
-        return false;
-      }
-    }
-
-    super._addChild(suite);
-
-    uniquifyLabels && this.uniquifySuiteLabels();
-
-    return true;
-  }
-
-  public removeChild(child: AbstractRunnable): boolean {
-    const i = this.children.findIndex(val => val.id == child.id);
-    if (i != -1) {
-      this.children.splice(i, 1);
-      this.uniquifySuiteLabels();
-      return true;
-    }
-    return false;
-  }
-
-  public uniquifySuiteLabels(): void {
-    const uniqueNames = new Map<string /* name */, AbstractRunnable[]>();
-
-    for (const suite of this.children) {
-      suite.labelPrefix = '';
-      const suites = uniqueNames.get(suite.label);
-      if (suites) {
-        suites.push(suite);
-      } else {
-        uniqueNames.set(suite.label, [suite]);
-      }
-    }
-
-    for (const suites of uniqueNames.values()) {
-      if (suites.length > 1) {
-        let i = 1;
-        for (const suite of suites) {
-          suite.labelPrefix = String(i++) + ') ';
-        }
-      }
-    }
   }
 
   public findTestById(idOrInfo: string | TestInfo): AbstractTest | undefined {

@@ -1,8 +1,9 @@
-import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
+import { TestSuiteInfo, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
 
-import { generateId, milisecToStr, reverse } from './Util';
+import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTest } from './AbstractTest';
+import { AbstractRunnable } from './AbstractRunnable';
 
 ///
 
@@ -17,6 +18,7 @@ export class Suite implements TestSuiteInfo {
     public readonly parent: Suite | undefined,
     private readonly _label: string,
     private readonly _description: string | undefined,
+    private readonly _tooltip: string | undefined,
   ) {
     this.id = generateId();
   }
@@ -30,7 +32,9 @@ export class Suite implements TestSuiteInfo {
   }
 
   public get tooltip(): string {
-    return 'Name: ' + this._label + (this._description ? '\nDescription: ' + this._description : '');
+    return (
+      this._label + (this._description ? ' - ' + this._description : '') + (this._tooltip ? '\n\n' + this._tooltip : '')
+    );
   }
 
   public get file(): string | undefined {
@@ -151,33 +155,13 @@ export class Suite implements TestSuiteInfo {
     }
   }
 
-  public sendMinimalEventsIfNeeded(completed: Suite[], running: Suite[]): void {
-    if (completed.length === 0) {
-      reverse(running)(v => v.sendRunningEventIfNeeded());
-    } else if (running.length === 0) {
-      completed.forEach(v => v.sendCompletedEventIfNeeded());
-    } else if (completed[0] === running[0]) {
-      if (completed.length !== running.length) this._shared.log.error('completed.length !== running.length');
-    } else {
-      let completedIndex = -1;
-      let runningIndex = -1;
-
-      do {
-        ++completedIndex;
-        runningIndex = running.indexOf(completed[completedIndex]);
-      } while (completedIndex < completed.length && runningIndex === -1);
-
-      for (let i = 0; i < completedIndex; ++i) completed[i].sendCompletedEventIfNeeded();
-      for (let i = runningIndex - 1; i >= 0; --i) running[i].sendRunningEventIfNeeded();
-    }
-  }
-
   protected _addChild(child: Suite | AbstractTest): void {
     if (this.children.indexOf(child) != -1) {
       this._shared.log.error('should not try to add the child twice', this, child);
       return;
     }
 
+    // this will result in recalculation
     this._file = null;
     this._line = null;
 
@@ -255,5 +239,51 @@ export class Suite implements TestSuiteInfo {
       if (countSkipped || !v.skipped) ++count;
     });
     return count;
+  }
+
+  public addError(runnable: AbstractRunnable, message: string): void {
+    const shared = this._shared;
+    const parent = this as Suite;
+    const test = parent.addTest(
+      new (class extends AbstractTest {
+        public constructor() {
+          super(
+            shared,
+            runnable,
+            parent,
+            undefined,
+            'dummyErrorTest',
+            '⚡️ ERROR (run me to see the issue)',
+            undefined,
+            undefined,
+            true,
+            {
+              type: 'test',
+              test: '',
+              state: 'errored',
+              message,
+            },
+            [],
+            'Run this test to see the error message in the output.',
+            undefined,
+            undefined,
+          );
+        }
+
+        public get testNameInOutput(): string {
+          return this.testName;
+        }
+
+        public getDebugParams(): string[] {
+          throw Error('assert');
+        }
+
+        public parseAndProcessTestCase(): TestEvent {
+          throw Error('assert');
+        }
+      })(),
+    );
+
+    this._shared.sendTestEventEmitter.fire([test.staticEvent!]);
   }
 }

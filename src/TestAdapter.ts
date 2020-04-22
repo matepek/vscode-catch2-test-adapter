@@ -215,7 +215,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
               }
             }
 
-            this._rootSuite.sendFinishedventIfNeeded();
+            this._rootSuite.sendFinishedEventIfNeeded();
           }
         });
       }),

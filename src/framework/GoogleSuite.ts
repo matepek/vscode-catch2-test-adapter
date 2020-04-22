@@ -20,19 +20,19 @@ export class GoogleSuite extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
     rootSuite: Suite,
-    label: string,
-    desciption: string | undefined,
     execInfo: RunnableSuiteProperties,
     version: Promise<Version | undefined>,
   ) {
-    super(shared, rootSuite, label, desciption, execInfo, 'GoogleTest', version);
+    super(shared, rootSuite, execInfo, 'GoogleTest', version);
   }
 
   private getTestGrouping(): TestGrouping {
     if (this.execInfo.testGrouping) {
       return this.execInfo.testGrouping;
     } else {
-      return { groupByTags: { tags: [] } };
+      const grouping = { groupByExecutable: this._getGroupByExecutable() };
+      grouping.groupByExecutable.groupByTags = { tags: [] };
+      return grouping;
     }
   }
 
@@ -64,7 +64,7 @@ export class GoogleSuite extends AbstractRunnable {
         const file = testCase.$.file ? this._findFilePath(testCase.$.file) : undefined;
         const line = testCase.$.line ? testCase.$.line - 1 : undefined;
 
-        this.createSubtreeAndAddTest(
+        this._createSubtreeAndAddTest(
           testName,
           testNameInOutput,
           file,
@@ -125,7 +125,7 @@ export class GoogleSuite extends AbstractRunnable {
         const valueParam: string | undefined = testMatch[3];
         const testNameInOutput = testGroupName + '.' + testMatch[1];
 
-        this.createSubtreeAndAddTest(
+        this._createSubtreeAndAddTest(
           testName,
           testNameInOutput,
           undefined,
@@ -264,7 +264,7 @@ export class GoogleSuite extends AbstractRunnable {
 
             data.currentTestCaseNameFull = m[1];
 
-            const test = this.findTest(v => v.testName == data.currentTestCaseNameFull);
+            const test = this._findTest(v => v.testName == data.currentTestCaseNameFull);
 
             if (test) {
               const route = [...test.route()];
@@ -414,7 +414,7 @@ export class GoogleSuite extends AbstractRunnable {
 
                 const testNameInOutput = m[1];
 
-                const currentChild = this.findTest(v => v.testNameInOutput == testNameInOutput);
+                const currentChild = this._findTest(v => v.testNameInOutput == testNameInOutput);
 
                 if (currentChild === undefined) break;
                 try {
