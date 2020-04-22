@@ -56,7 +56,6 @@ export abstract class AbstractRunnable {
     return {
       label: this.execInfo.name,
       description: this.execInfo.description,
-      tooltip: 'Path: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd,
     };
   }
 
@@ -125,7 +124,7 @@ export abstract class AbstractRunnable {
 
           const label = this._resolveText(g.label ? g.label : '${filename}');
           const description = this._resolveText(g.description !== undefined ? g.description : '${relDirpath}/');
-          const tooltip = g.tooltip ? this._resolveText(g.tooltip) : undefined;
+          const tooltip = 'Path: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd;
 
           getOrCreateChildSuite(label, description, tooltip);
 
