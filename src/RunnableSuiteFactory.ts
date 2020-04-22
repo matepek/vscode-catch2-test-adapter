@@ -1,12 +1,13 @@
 import * as c2fs from './FSWrapper';
 import { RunnableSuiteProperties } from './RunnableSuiteProperties';
-import { AbstractRunnableSuite } from './AbstractRunnableSuite';
-import { Catch2Suite } from './framework/Catch2Suite';
-import { GoogleSuite } from './framework/GoogleSuite';
-import { DOCSuite } from './framework/DOCSuite';
+import { AbstractRunnable } from './AbstractRunnable';
+import { Catch2Runnable } from './framework/Catch2Runnable';
+import { GoogleRunnable } from './framework/GoogleRunnable';
+import { DOCRunnable } from './framework/DOCRunnable';
 import { SharedVariables } from './SharedVariables';
-import { TestExecutableInfoFrameworkSpecific } from './Executable';
-import { Version } from './Util';
+import { ExecutableConfigFrameworkSpecific } from './ExecutableConfig';
+import { Version, ResolveRulePair } from './Util';
+import { Suite } from './Suite';
 
 interface TestFrameworkInfo {
   type: 'catch2' | 'gtest' | 'doctest';
@@ -16,16 +17,18 @@ interface TestFrameworkInfo {
 export class RunnableSuiteFactory {
   public constructor(
     private readonly _shared: SharedVariables,
-    private readonly _label: string,
-    private readonly _description: string | undefined,
+    private readonly _execName: string | undefined,
+    private readonly _execDescription: string | undefined,
+    private readonly _rootSuite: Suite,
     private readonly _execPath: string,
     private readonly _execOptions: c2fs.SpawnOptions,
-    private readonly _catch2: TestExecutableInfoFrameworkSpecific,
-    private readonly _gtest: TestExecutableInfoFrameworkSpecific,
-    private readonly _doctest: TestExecutableInfoFrameworkSpecific,
+    private readonly _varToValue: ResolveRulePair[],
+    private readonly _catch2: ExecutableConfigFrameworkSpecific,
+    private readonly _gtest: ExecutableConfigFrameworkSpecific,
+    private readonly _doctest: ExecutableConfigFrameworkSpecific,
   ) {}
 
-  public create(checkIsNativeExecutable: boolean): Promise<AbstractRunnableSuite> {
+  public create(checkIsNativeExecutable: boolean): Promise<AbstractRunnable> {
     return this._shared.taskPool
       .scheduleTask(() => {
         return this._determineTestTypeOfExecutable(checkIsNativeExecutable);
@@ -33,27 +36,45 @@ export class RunnableSuiteFactory {
       .then((framework: TestFrameworkInfo) => {
         switch (framework.type) {
           case 'gtest':
-            return new GoogleSuite(
+            return new GoogleRunnable(
               this._shared,
-              this._label,
-              this._description,
-              new RunnableSuiteProperties(this._execPath, this._execOptions, this._gtest),
+              this._rootSuite,
+              new RunnableSuiteProperties(
+                this._execName,
+                this._execDescription,
+                this._varToValue,
+                this._execPath,
+                this._execOptions,
+                this._gtest,
+              ),
               Promise.resolve(undefined), //Util: GoogleTestVersionFinder
             );
           case 'catch2':
-            return new Catch2Suite(
+            return new Catch2Runnable(
               this._shared,
-              this._label,
-              this._description,
-              new RunnableSuiteProperties(this._execPath, this._execOptions, this._catch2),
+              this._rootSuite,
+              new RunnableSuiteProperties(
+                this._execName,
+                this._execDescription,
+                this._varToValue,
+                this._execPath,
+                this._execOptions,
+                this._catch2,
+              ),
               framework.version!,
             );
           case 'doctest':
-            return new DOCSuite(
+            return new DOCRunnable(
               this._shared,
-              this._label,
-              this._description,
-              new RunnableSuiteProperties(this._execPath, this._execOptions, this._doctest),
+              this._rootSuite,
+              new RunnableSuiteProperties(
+                this._execName,
+                this._execDescription,
+                this._varToValue,
+                this._execPath,
+                this._execOptions,
+                this._doctest,
+              ),
               framework.version!,
             );
         }

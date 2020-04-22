@@ -1,3 +1,5 @@
+import * as pathlib from 'path';
+
 export class Version {
   public constructor(
     public readonly major: number,
@@ -60,7 +62,7 @@ export type ResolveRulePair =
   | [RegExp, undefined | null | boolean | number | string | (() => any) | ((m: RegExpMatchArray) => any)];
 
 // eslint-disable-next-line
-export function resolveVariables<T>(value: T, varValue: ResolveRulePair[]): T {
+export function resolveVariables<T>(value: T, varValue: readonly ResolveRulePair[]): T {
   // eslint-disable-next-line
   return _mapAllStrings(value, (s: string): any => {
     for (let i = 0; i < varValue.length; ++i) {
@@ -145,7 +147,7 @@ export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolea
 
 export const PythonIndexerRegexStr = '(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])';
 
-export function processArrayWithPythonIndexer<T>(arr: ReadonlyArray<T>, match: RegExpMatchArray): T[] {
+export function processArrayWithPythonIndexer<T>(arr: readonly T[], match: RegExpMatchArray): T[] {
   if (match[1]) {
     const idx = Number(match[1]);
     if (idx < 0) return [arr[arr.length + idx]];
@@ -155,6 +157,30 @@ export function processArrayWithPythonIndexer<T>(arr: ReadonlyArray<T>, match: R
     const idx2 = match[3] === undefined ? undefined : Number(match[3]);
     return arr.slice(idx1, idx2);
   }
+}
+
+export function createPythonIndexerForStringVariable(
+  varName: string,
+  value: string,
+  separator: string | RegExp,
+  join: string,
+): [RegExp, (m: RegExpMatchArray) => string] {
+  const varRegex = new RegExp('\\${' + varName + PythonIndexerRegexStr + '?}');
+
+  const array = value.split(separator);
+  const replacer = (m: RegExpMatchArray): string => {
+    return processArrayWithPythonIndexer(array, m).join(join);
+  };
+
+  return [varRegex, replacer];
+}
+
+export function createPythonIndexerForPathVariable(
+  valName: string,
+  pathStr: string,
+): [RegExp, (m: RegExpMatchArray) => string] {
+  const [regex, repl] = createPythonIndexerForStringVariable(valName, pathlib.normalize(pathStr), /\/|\\/, pathlib.sep);
+  return [regex, (m: RegExpMatchArray): string => pathlib.normalize(repl(m))];
 }
 
 let uidCounter = 0;
@@ -297,13 +323,13 @@ export class GoogleTestVersionFinder {
   }
 }
 
-export function reverse<T>(array: ReadonlyArray<T>): (func: (t: T) => void) => void {
+export function reverse<T>(array: readonly T[]): (func: (t: T) => void) => void {
   return (func: (t: T) => void): void => {
     for (let i = array.length - 1; i >= 0; --i) func(array[i]);
   };
 }
 
-export function unique<T>(array: ReadonlyArray<T>): ReadonlyArray<T> {
+export function unique<T>(array: readonly T[]): readonly T[] {
   return array.filter((v, i, a) => a.indexOf(v) === i);
 }
 

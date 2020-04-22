@@ -943,21 +943,10 @@ describe(path.basename(__filename), function () {
       cp.close();
 
       await waitFor(this, () => {
-        return adapter.testStatesEvents.length >= 4;
+        return adapter.testStatesEvents.length >= 2;
       });
 
-      assert.deepStrictEqual(adapter.testStatesEvents, [
-        { type: 'started', tests: [s1t1.id] },
-        { type: 'suite', state: 'running', suite: suite1 },
-        {
-          type: 'suite',
-          state: 'completed',
-          suite: suite1,
-          description: undefined,
-          tooltip: undefined,
-        },
-        { type: 'finished' },
-      ]);
+      assert.deepStrictEqual(adapter.testStatesEvents, [{ type: 'started', tests: [s1t1.id] }, { type: 'finished' }]);
     });
 
     it('should timeout inside a test case', async function () {
@@ -1436,18 +1425,7 @@ describe(path.basename(__filename), function () {
       await adapter.run([s1t1.id]);
 
       suite1.children.shift();
-      const expected = [
-        { type: 'started', tests: [s1t1.id] },
-        { type: 'suite', state: 'running', suite: suite1 },
-        {
-          type: 'suite',
-          state: 'completed',
-          suite: suite1,
-          description: undefined,
-          tooltip: undefined,
-        },
-        { type: 'finished' },
-      ];
+      const expected = [{ type: 'started', tests: [s1t1.id] }, { type: 'finished' }];
       adapter.testStatesEventsAssertDeepEqual(expected);
 
       await waitFor(
@@ -1629,7 +1607,7 @@ describe(path.basename(__filename), function () {
           env: {
             C2LOCALTESTENV: 'c2localtestenv',
             C2OVERRIDETESTENV: 'c2overridetestenv-l',
-            C2LOCALCWDANDNAME: '${cwd}-${name}',
+            C2LOCALCWD: '${cwd}',
             C2ENVVARS1: 'X${os_env:PATH}X',
             C2ENVVARS2: 'X${os_env:pAtH}X',
             C2ENVVARS3: 'X${os_env_strict:NOT_EXISTING}X',
@@ -1639,7 +1617,7 @@ describe(path.basename(__filename), function () {
       await settings.updateConfig('defaultEnv', {
         C2GLOBALTESTENV: 'c2globaltestenv',
         C2OVERRIDETESTENV: 'c2overridetestenv-g',
-        C2CWDANDNAME: '${cwd}-${name}',
+        C2CWD: '${cwd}',
         C2WORKSPACENAME: '${workspaceName}',
       });
 
@@ -1675,8 +1653,8 @@ describe(path.basename(__filename), function () {
             assert.equal(ops.env!.C2GLOBALTESTENV, 'c2globaltestenv');
             assert.equal(ops.env!.C2LOCALTESTENV, 'c2localtestenv');
             assert.equal(ops.env!.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-            assert.equal(ops.env!.C2CWDANDNAME, ops.cwd + '-' + 'execPath1');
-            assert.equal(ops.env!.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath1');
+            assert.equal(ops.env!.C2CWD, ops.cwd);
+            assert.equal(ops.env!.C2LOCALCWD, ops.cwd);
             assert.equal(ops.env!.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
             assert.equal(ops.env!.C2ENVVARS1, 'X' + process.env['PATH'] + 'X');
 
@@ -1710,8 +1688,8 @@ describe(path.basename(__filename), function () {
             assert.equal(ops.env!.C2GLOBALTESTENV, 'c2globaltestenv');
             assert.equal(ops.env!.C2LOCALTESTENV, 'c2localtestenv');
             assert.equal(ops.env!.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-            assert.equal(ops.env!.C2CWDANDNAME, ops.cwd + '-' + 'execPath2');
-            assert.equal(ops.env!.C2LOCALCWDANDNAME, ops.cwd + '-' + 'execPath2');
+            assert.equal(ops.env!.C2CWD, ops.cwd);
+            assert.equal(ops.env!.C2LOCALCWD, ops.cwd);
             assert.equal(ops.env!.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
 
             return new ChildProcessStub(example1.suite2.outputs[2][1]);
@@ -1849,7 +1827,7 @@ describe(path.basename(__filename), function () {
 
       const debugConfig = startDebuggingStub.firstCall.args[1] as vscode.DebugConfiguration;
 
-      const expectedArgs = ['s1t1', '--reporter', 'console', '--break'];
+      const expectedArgs = ['s1t1', '--reporter', 'console', '--durations', 'yes', '--break'];
 
       assert.deepStrictEqual(debugConfig.args, expectedArgs);
       assert.deepStrictEqual(debugConfig.argsArray, expectedArgs);

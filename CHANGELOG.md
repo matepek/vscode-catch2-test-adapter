@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.2]
+
+### Changed
+
+- Experimental grouping has changed. More general and flexible.
+
+### Fixed
+
+- An issue when too much test caused `ENAMETOOLONG`.
+
 ## [2.9.1] - 2020-04-19
 
 Pesky bug fixes and tons of improvements
@@ -15,7 +25,7 @@ Pesky bug fixes and tons of improvements
 
 ### Added
 
-Experiment feature: `testGrouping`: Groups the tests inside the executable. ([Example](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md#testgrouping))
+Experiment feature: `testGrouping`: Groups the tests inside the executable. ([Example](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping))
 
 ## [2.8.13] - 2020-04-04
 

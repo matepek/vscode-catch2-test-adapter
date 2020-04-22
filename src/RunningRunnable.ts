@@ -69,11 +69,8 @@ export class ProcessResult {
   }
 }
 
-export class RunningTestExecutableInfo {
-  public constructor(
-    public readonly process: ChildProcess,
-    public readonly childrenToRun: ReadonlyArray<AbstractTest>,
-  ) {
+export class RunningRunnable {
+  public constructor(public readonly process: ChildProcess, public readonly childrenToRun: readonly AbstractTest[]) {
     process.once('close', () => {
       this._closed = true;
     });

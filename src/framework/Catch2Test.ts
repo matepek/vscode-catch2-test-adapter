@@ -3,11 +3,12 @@ import * as xml2js from 'xml2js';
 import { AbstractTest } from '../AbstractTest';
 import { inspect } from 'util';
 import { SharedVariables } from '../SharedVariables';
-import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
+import { RunningRunnable } from '../RunningRunnable';
 import { TestEventBuilder } from '../TestEventBuilder';
 import * as pathlib from 'path';
 import { Version } from '../Util';
 import { Suite } from '../Suite';
+import { AbstractRunnable } from '../AbstractRunnable';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -38,6 +39,7 @@ const EscapeCharParserFix = new Version(2, 11, 4);
 export class Catch2Test extends AbstractTest {
   public constructor(
     shared: SharedVariables,
+    runnable: AbstractRunnable,
     parent: Suite,
     frameworkVersion: Version,
     testNameAsId: string,
@@ -70,12 +72,13 @@ export class Catch2Test extends AbstractTest {
               'Avoid test names with:',
               ...badChars.map(b => ` - ${b}`),
             ].join('\n'),
-            description: '⚡️ See output for details ⚡️',
+            description: '⚡️ Run me for details ⚡️',
           }
         : undefined;
 
     super(
       shared,
+      runnable,
       parent,
       old ? old.id : undefined,
       testNameAsId,
@@ -109,16 +112,10 @@ export class Catch2Test extends AbstractTest {
     return this.testName.replace(/,/g, '\\,').replace(/\[/g, '\\[');
   }
 
-  public getDebugParams(breakOnFailure: boolean): string[] {
-    const debugParams: string[] = [this.getEscapedTestName(), '--reporter', 'console'];
-    if (breakOnFailure) debugParams.push('--break');
-    return debugParams;
-  }
-
   public parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
-    runInfo: RunningTestExecutableInfo,
+    runInfo: RunningRunnable,
     stderr: string | undefined,
   ): TestEvent {
     if (runInfo.timeout !== null) {

@@ -4,31 +4,40 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
-import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
+import { AbstractRunnable } from '../AbstractRunnable';
 import { AbstractTest } from '../AbstractTest';
 import { Suite } from '../Suite';
 import { DOCTest } from './DOCTest';
 import { SharedVariables } from '../SharedVariables';
-import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
+import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { Version } from '../Util';
+import { TestGrouping } from '../TestGroupingInterface';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-export class DOCSuite extends AbstractRunnableSuite {
+export class DOCRunnable extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
-    label: string,
-    desciption: string | undefined,
+    rootSuite: Suite,
     execInfo: RunnableSuiteProperties,
     docVersion: Version,
   ) {
-    super(shared, label, desciption, execInfo, 'doctest', Promise.resolve(docVersion));
+    super(shared, rootSuite, execInfo, 'doctest', Promise.resolve(docVersion));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: (Suite | AbstractTest)[]): void {
+  private getTestGrouping(): TestGrouping {
+    if (this.execInfo.testGrouping) {
+      return this.execInfo.testGrouping;
+    } else {
+      const grouping = { groupByExecutable: this._getGroupByExecutable() };
+      return grouping;
+    }
+  }
+
+  private _reloadFromString(testListOutput: string): void {
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
       if (err) {
@@ -47,30 +56,30 @@ export class DOCSuite extends AbstractRunnableSuite {
       const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      const [group, oldGroupChildren] = this.createAndAddToSubSuite(testName, filePath, [], oldChildren);
-
-      const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testName);
-
-      group.addTest(
-        new DOCTest(
-          this._shared,
-          group,
-          undefined,
-          testName,
-          skipped,
-          filePath,
-          line,
-          suite !== undefined ? [`${suite}`] : [],
-          old as DOCTest,
-        ),
+      this._createSubtreeAndAddTest(
+        testName,
+        testName,
+        filePath,
+        [],
+        this.getTestGrouping(),
+        (parent: Suite, old: AbstractTest | undefined) =>
+          new DOCTest(
+            this._shared,
+            this,
+            parent,
+            undefined,
+            testName,
+            skipped,
+            filePath,
+            line,
+            suite !== undefined ? [`${suite}`] : [],
+            old as DOCTest,
+          ),
       );
     }
   }
 
   protected async _reloadChildren(): Promise<void> {
-    const oldChildren = this.children;
-    this.children = [];
-
     const cacheFile = this.execInfo.path + '.cache.txt';
 
     if (this._shared.enabledTestListCaching) {
@@ -82,7 +91,7 @@ export class DOCSuite extends AbstractRunnableSuite {
           this._shared.log.info('loading from cache: ', cacheFile);
           const content = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          this._reloadFromString(content, oldChildren);
+          this._reloadFromString(content);
           return Promise.resolve();
         }
       } catch (e) {
@@ -111,11 +120,11 @@ export class DOCSuite extends AbstractRunnableSuite {
             docTestListOutput.error,
             docTestListOutput.status,
           );
-          this._addUnexpectedStdError(docTestListOutput.stdout, docTestListOutput.stderr);
+          this._createAndAddUnexpectedStdError(docTestListOutput.stdout, docTestListOutput.stderr);
           return Promise.resolve();
         }
 
-        this._reloadFromString(docTestListOutput.stdout, oldChildren);
+        this._reloadFromString(docTestListOutput.stdout);
 
         if (this._shared.enabledTestListCaching) {
           return promisify(fs.writeFile)(cacheFile, docTestListOutput.stdout).catch(err =>
@@ -126,7 +135,7 @@ export class DOCSuite extends AbstractRunnableSuite {
       });
   }
 
-  protected _getRunParams(childrenToRun: ReadonlyArray<DOCTest>): string[] {
+  protected _getRunParams(childrenToRun: readonly DOCTest[]): string[] {
     const execParams: string[] = [];
 
     const testNames = childrenToRun.map(c => c.getEscapedTestName());
@@ -147,7 +156,13 @@ export class DOCSuite extends AbstractRunnableSuite {
     return execParams;
   }
 
-  protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
+  // eslint-disable-next-line
+  public getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[] {
+    const params = this._getRunParams(childrenToRun as readonly DOCTest[]);
+    return params;
+  }
+
+  protected _handleProcess(runInfo: RunningRunnable): Promise<void> {
     const data = new (class {
       public stdoutBuffer = '';
       public stderrBuffer = '';
@@ -209,7 +224,7 @@ export class DOCSuite extends AbstractRunnableSuite {
 
             data.beforeFirstTestCase = false;
 
-            const test = this.findTest(v => v.testName == name);
+            const test = this._findTest(v => v.testName == name);
 
             if (test) {
               const route = [...test.route()];
@@ -397,7 +412,7 @@ export class DOCSuite extends AbstractRunnableSuite {
                 if (name === undefined) break;
 
                 // xml output trimmes the name of the test
-                const currentChild = this.findTest(v => v.testName === name);
+                const currentChild = this._findTest(v => v.testName === name);
 
                 if (currentChild === undefined) break;
 

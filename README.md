@@ -11,7 +11,13 @@ tests using the [Test Explorer for Visual Studio Code](https://marketplace.visua
 
 ## Whats new?
 
-- Grouping can be customized.
+- Grouping can be customized. ([Details](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping))
+  - by souce file of the test
+  - by regula expression matching the test
+  - by tags
+  - by executables (as it was before or in a different way)
+  - any of the previous ones can be combined in custom depth and any order.
+    `"testGrouping": { "groupByExecutable": { "groupBySource": { "groupByTags": { groupByRegex: { ... } } } } }`
 
 ## Features and Screenshots
 
@@ -31,8 +37,8 @@ tests using the [Test Explorer for Visual Studio Code](https://marketplace.visua
 ## [Configuration](https://github.com/matepek/vscode-catch2-test-adapter/tree/master/documents/configuration)
 
 [settings.json]: https://code.visualstudio.com/docs/getstarted/settings
-[executables]: https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/executables.config.md
-[debugconfigtemplate]: https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuraiton/debugConfigTemplate.config.md
+[executables]: https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md
+[debugconfigtemplate]: https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/debugConfigTemplate.config.md
 
 The extension is \*_pre-configured_ and it should find executables inside the working directory which match the following [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options):
 Not good enough for you?!: Edit your `.vscode/`[settings.json] file according to the [executables]!

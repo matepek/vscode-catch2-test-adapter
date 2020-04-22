@@ -2,12 +2,14 @@ import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
 
 import { AbstractTest } from '../AbstractTest';
 import { SharedVariables } from '../SharedVariables';
-import { RunningTestExecutableInfo } from '../RunningTestExecutableInfo';
+import { RunningRunnable } from '../RunningRunnable';
 import { Suite } from '../Suite';
+import { AbstractRunnable } from '../AbstractRunnable';
 
 export class GoogleTest extends AbstractTest {
   public constructor(
     shared: SharedVariables,
+    runnable: AbstractRunnable,
     parent: Suite,
     id: string | undefined,
     testNameAsId: string,
@@ -19,6 +21,7 @@ export class GoogleTest extends AbstractTest {
   ) {
     super(
       shared,
+      runnable,
       parent,
       id,
       testNameAsId,
@@ -38,17 +41,10 @@ export class GoogleTest extends AbstractTest {
     return this.testName;
   }
 
-  public getDebugParams(breakOnFailure: boolean): string[] {
-    const debugParams: string[] = ['--gtest_color=no', '--gtest_filter=' + this.testName];
-    if (breakOnFailure) debugParams.push('--gtest_break_on_failure');
-    debugParams.push('--gtest_also_run_disabled_tests');
-    return debugParams;
-  }
-
   public parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
-    runInfo: RunningTestExecutableInfo,
+    runInfo: RunningRunnable,
     stderr: string | undefined, //eslint-disable-line
   ): TestEvent {
     if (runInfo.timeout !== null) {

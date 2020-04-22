@@ -2,8 +2,9 @@ import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
-import { RunningTestExecutableInfo } from './RunningTestExecutableInfo';
+import { RunningRunnable } from './RunningRunnable';
 import { Suite } from './Suite';
+import { AbstractRunnable } from './AbstractRunnable';
 
 export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
@@ -18,6 +19,7 @@ export abstract class AbstractTest implements TestInfo {
 
   protected constructor(
     protected readonly _shared: SharedVariables,
+    public readonly runnable: AbstractRunnable,
     public readonly parent: Suite, // ascending
     id: string | undefined,
     public readonly testName: string,
@@ -61,6 +63,9 @@ export abstract class AbstractTest implements TestInfo {
       tooltip.push(`#️⃣GetParam() = ${_valueParam}`);
     }
 
+    //TODO add path to tooltip
+    //this.runnable.execInfo.path;
+
     this.description = description.join('');
     this.tooltip = tooltip.join('\n');
 
@@ -83,6 +88,26 @@ export abstract class AbstractTest implements TestInfo {
     } while (parent);
   }
 
+  public reverseRoute(): Suite[] {
+    return [...this.route()].reverse();
+  }
+
+  public removeWithLeafAscendants(): void {
+    const index = this.parent.children.indexOf(this);
+    if (index == -1) {
+      this._shared.log.info(
+        'Removing an already removed one.',
+        'Probably it was deleted and recompiled but there was no fs-change event and no reload has happened',
+        this,
+      );
+      return;
+    } else {
+      this.parent.children.splice(index, 1);
+
+      this.parent.removeIfLeaf();
+    }
+  }
+
   public getStartEvent(): TestEvent {
     return { type: 'test', test: this, state: 'running' };
   }
@@ -91,12 +116,10 @@ export abstract class AbstractTest implements TestInfo {
     return { type: 'test', test: this, state: 'skipped' };
   }
 
-  public abstract getDebugParams(breakOnFailure: boolean): string[];
-
   public abstract parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
-    runInfo: RunningTestExecutableInfo,
+    runInfo: RunningRunnable,
     stderr: string | undefined,
   ): TestEvent;
 
@@ -143,7 +166,7 @@ export abstract class AbstractTest implements TestInfo {
     return pred(this) ? this : undefined;
   }
 
-  public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
+  public collectTestToRun(tests: readonly string[], isParentIn: boolean): AbstractTest[] {
     if ((isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1) {
       return [this];
     } else {

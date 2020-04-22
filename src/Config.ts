@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { LoggerWrapper } from './LoggerWrapper';
-import { Executable, TestExecutableInfoFrameworkSpecific } from './Executable';
-import { RootSuite } from './RootSuite';
+import { ExecutableConfig, ExecutableConfigFrameworkSpecific } from './ExecutableConfig';
 import { SharedVariables } from './SharedVariables';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
@@ -237,15 +236,11 @@ export class Config {
     );
   }
 
-  public getExecutables(
-    shared: SharedVariables,
-    rootSuite: RootSuite,
-    variableToValue: [string, string][],
-  ): Executable[] {
+  public getExecutables(shared: SharedVariables, variableToValue: [string, string][]): ExecutableConfig[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultEnv = this.getDefaultEnvironmentVariables() || {};
 
-    const executables: Executable[] = [];
+    const executables: ExecutableConfig[] = [];
 
     const configExecs:
       | undefined
@@ -255,7 +250,8 @@ export class Config {
       | { [prop: string]: string }
       | ({ [prop: string]: string } | string)[] = this._vsConfig.get('executables');
 
-    const createFromObject = (obj: { [prop: string]: string }): Executable => {
+    // eslint-disable-next-line
+    const createFromObject = (obj: { [prop: string]: any }): ExecutableConfig => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 
       const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
@@ -276,9 +272,11 @@ export class Config {
 
       const dependsOn: string[] = Array.isArray(obj.dependsOn) ? obj.dependsOn.filter(v => typeof v === 'string') : [];
 
+      const testGrouping: object = obj.testGrouping ? obj.testGrouping : undefined;
+
       // eslint-disable-next-line
-      const framework = (obj: any): TestExecutableInfoFrameworkSpecific => {
-        const r: TestExecutableInfoFrameworkSpecific = {};
+      const framework = (obj: any): ExecutableConfigFrameworkSpecific => {
+        const r: ExecutableConfigFrameworkSpecific = {};
         if (typeof obj === 'object') {
           if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
 
@@ -298,19 +296,14 @@ export class Config {
 
           if (obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
 
-          if (obj.testGrouping) {
-            if (obj.testGrouping.groupBySource) r.groupBySource = obj.testGrouping.groupBySource;
-            if (obj.testGrouping.groupByTags) r.groupByTags = obj.testGrouping.groupByTags;
-            if (obj.testGrouping.groupByRegex) r.groupByRegex = obj.testGrouping.groupByRegex;
-            if (obj.testGrouping.groupUngroupablesTo) r.groupUngroupablesTo = obj.testGrouping.groupUngroupablesTo;
-          }
+          if (obj.testGrouping) r.testGrouping = obj.testGrouping;
+          else if (testGrouping) r.testGrouping = testGrouping;
         }
         return r;
       };
 
-      return new Executable(
+      return new ExecutableConfig(
         shared,
-        rootSuite,
         pattern,
         name,
         description,
@@ -329,9 +322,8 @@ export class Config {
     if (typeof configExecs === 'string') {
       if (configExecs.length == 0) return [];
       executables.push(
-        new Executable(
+        new ExecutableConfig(
           shared,
-          rootSuite,
           configExecs,
           undefined,
           undefined,
@@ -353,9 +345,8 @@ export class Config {
           const configExecsName = String(configExec);
           if (configExecsName.length > 0) {
             executables.push(
-              new Executable(
+              new ExecutableConfig(
                 shared,
-                rootSuite,
                 configExecsName,
                 undefined,
                 undefined,

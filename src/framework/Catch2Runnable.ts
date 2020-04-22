@@ -5,30 +5,39 @@ import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
-import { AbstractRunnableSuite } from '../AbstractRunnableSuite';
+import { AbstractRunnable } from '../AbstractRunnable';
 import { Suite } from '../Suite';
 import { Catch2Test } from './Catch2Test';
 import { SharedVariables } from '../SharedVariables';
-import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
+import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
+import { TestGrouping } from '../TestGroupingInterface';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
 }
 
-export class Catch2Suite extends AbstractRunnableSuite {
+export class Catch2Runnable extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
-    label: string,
-    desciption: string | undefined,
+    rootSuite: Suite,
     execInfo: RunnableSuiteProperties,
     private readonly _catch2Version: Version,
   ) {
-    super(shared, label, desciption, execInfo, 'Catch2', Promise.resolve(_catch2Version));
+    super(shared, rootSuite, execInfo, 'Catch2', Promise.resolve(_catch2Version));
   }
 
-  private _reloadFromString(testListOutput: string, oldChildren: (Suite | AbstractTest)[]): void {
+  private getTestGrouping(): TestGrouping {
+    if (this.execInfo.testGrouping) {
+      return this.execInfo.testGrouping;
+    } else {
+      const grouping = { groupByExecutable: this._getGroupByExecutable() };
+      return grouping;
+    }
+  }
+
+  private _reloadFromString(testListOutput: string): void {
     const lines = testListOutput.split(/\r?\n/);
 
     const startRe = /Matching test cases:/;
@@ -54,14 +63,16 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
       if (lines[i].startsWith('    ')) {
         this._shared.log.warn('Probably too long test name', i, lines);
-        this.children = [];
-        this._addError(
+
+        this._createAndAddError(
+          `⚡️ Too long test name`,
           [
             '⚠️ Probably too long test name or the test name starts with space characters!',
             '🛠 - Try to define `CATCH_CONFIG_CONSOLE_WIDTH 300` before `catch2.hpp` is included.',
             '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
           ].join('\n'),
         );
+
         return;
       }
       const testName = lines[i++].substr(2);
@@ -91,22 +102,25 @@ export class Catch2Suite extends AbstractRunnableSuite {
         ++i;
       }
 
-      const [group, oldGroupChildren] = this.createAndAddToSubSuite(testName, filePath, tags, oldChildren);
-
-      const old = oldGroupChildren.find(t => t.type === 'test' && t.testName === testName);
-
-      group.addTest(
-        new Catch2Test(
-          this._shared,
-          group,
-          this._catch2Version,
-          testName,
-          tags,
-          filePath,
-          line,
-          description,
-          old as Catch2Test | undefined,
-        ),
+      this._createSubtreeAndAddTest(
+        testName,
+        testName,
+        filePath,
+        tags,
+        this.getTestGrouping(),
+        (parent: Suite, old: AbstractTest | undefined) =>
+          new Catch2Test(
+            this._shared,
+            this,
+            parent,
+            this._catch2Version,
+            testName,
+            tags,
+            filePath,
+            line,
+            description,
+            old as Catch2Test | undefined,
+          ),
       );
     }
 
@@ -114,9 +128,6 @@ export class Catch2Suite extends AbstractRunnableSuite {
   }
 
   protected async _reloadChildren(): Promise<void> {
-    const oldChildren = this.children;
-    this.children = [];
-
     const cacheFile = this.execInfo.path + '.cache.txt';
 
     if (this._shared.enabledTestListCaching) {
@@ -131,7 +142,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
           if (content === '') {
             this._shared.log.debug('loading from cache failed because file is empty');
           } else {
-            this._reloadFromString(content, oldChildren);
+            this._reloadFromString(content);
 
             return;
           }
@@ -157,7 +168,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
     if (catch2TestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
-      this._addUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
+      this._createAndAddUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
       return Promise.resolve();
     }
 
@@ -166,7 +177,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
       throw Error('stoud is empty');
     }
 
-    this._reloadFromString(catch2TestListOutput.stdout, oldChildren);
+    this._reloadFromString(catch2TestListOutput.stdout);
 
     if (this._shared.enabledTestListCaching) {
       return promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>
@@ -175,7 +186,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
     }
   }
 
-  protected _getRunParams(childrenToRun: ReadonlyArray<Catch2Test>): string[] {
+  protected _getRunParams(childrenToRun: readonly Catch2Test[]): string[] {
     const execParams: string[] = [];
 
     const testNames = childrenToRun.map(c => c.getEscapedTestName());
@@ -198,7 +209,31 @@ export class Catch2Suite extends AbstractRunnableSuite {
     return execParams;
   }
 
-  protected _handleProcess(runInfo: RunningTestExecutableInfo): Promise<void> {
+  public getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[] {
+    const debugParams: string[] = [];
+
+    const testNames = childrenToRun.map(c => (c as Catch2Test).getEscapedTestName());
+    debugParams.push(testNames.join(','));
+
+    debugParams.push('--reporter');
+    debugParams.push('console');
+    debugParams.push('--durations');
+    debugParams.push('yes');
+
+    if (this._shared.isNoThrow) debugParams.push('--nothrow');
+
+    if (this._shared.rngSeed !== null) {
+      debugParams.push('--order');
+      debugParams.push('rand');
+      debugParams.push('--rng-seed');
+      debugParams.push(this._shared.rngSeed.toString());
+    }
+
+    if (breakOnFailure) debugParams.push('--break');
+    return debugParams;
+  }
+
+  protected _handleProcess(runInfo: RunningRunnable): Promise<void> {
     const data = new (class {
       public stdoutBuffer = '';
       public stderrBuffer = '';
@@ -251,7 +286,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
 
             data.beforeFirstTestCase = false;
 
-            const test = this.findTest(v => v.testNameInOutput == name);
+            const test = this._findTest(v => v.testNameInOutput == name);
 
             if (test) {
               const route = [...test.route()];
@@ -412,7 +447,7 @@ export class Catch2Suite extends AbstractRunnableSuite {
                 );
                 if (name === undefined) break;
 
-                const currentChild = this.findTest(v => v.testNameInOutput === name);
+                const currentChild = this._findTest(v => v.testNameInOutput === name);
 
                 if (currentChild === undefined) break;
 

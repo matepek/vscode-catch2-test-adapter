@@ -1,6 +1,6 @@
 import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
 
-import { generateId, milisecToStr, reverse } from './Util';
+import { generateId, milisecToStr } from './Util';
 import { SharedVariables } from './SharedVariables';
 import { AbstractTest } from './AbstractTest';
 
@@ -17,9 +17,9 @@ export class Suite implements TestSuiteInfo {
     public readonly parent: Suite | undefined,
     private readonly _label: string,
     private readonly _description: string | undefined,
-    id: string | undefined | Suite,
+    private readonly _tooltip: string | undefined,
   ) {
-    this.id = id === undefined ? generateId() : typeof id === 'string' ? id : id.id;
+    this.id = generateId();
   }
 
   public get label(): string {
@@ -31,7 +31,12 @@ export class Suite implements TestSuiteInfo {
   }
 
   public get tooltip(): string {
-    return 'Name: ' + this._label + (this._description ? '\nDescription: ' + this._description : '');
+    return (
+      'Name: ' +
+      this._label +
+      (this._description ? '\nDescription: ' + this._description : '') +
+      (this._tooltip ? '\n\n' + this._tooltip : '')
+    );
   }
 
   public get file(): string | undefined {
@@ -73,6 +78,21 @@ export class Suite implements TestSuiteInfo {
           (prev, curr) => (curr.line === undefined ? prev : prev === 0 ? curr.line : Math.min(prev, curr.line)),
           0,
         );
+    }
+  }
+
+  public removeIfLeaf(): void {
+    if (this.children.length == 0 && this.parent !== undefined) {
+      const index = this.parent.children.indexOf(this);
+
+      if (index == -1) {
+        this._shared.log.error("assert: couldn't found in parent", this);
+        return;
+      }
+
+      this.parent.children.splice(index, 1);
+
+      this.parent.removeIfLeaf();
     }
   }
 
@@ -137,33 +157,13 @@ export class Suite implements TestSuiteInfo {
     }
   }
 
-  public sendMinimalEventsIfNeeded(completed: Suite[], running: Suite[]): void {
-    if (completed.length === 0) {
-      reverse(running)(v => v.sendRunningEventIfNeeded());
-    } else if (running.length === 0) {
-      completed.forEach(v => v.sendCompletedEventIfNeeded());
-    } else if (completed[0] === running[0]) {
-      if (completed.length !== running.length) this._shared.log.error('completed.length !== running.length');
-    } else {
-      let completedIndex = -1;
-      let runningIndex = -1;
-
-      do {
-        ++completedIndex;
-        runningIndex = running.indexOf(completed[completedIndex]);
-      } while (completedIndex < completed.length && runningIndex === -1);
-
-      for (let i = 0; i < completedIndex; ++i) completed[i].sendCompletedEventIfNeeded();
-      for (let i = runningIndex - 1; i >= 0; --i) running[i].sendRunningEventIfNeeded();
-    }
-  }
-
   protected _addChild(child: Suite | AbstractTest): void {
     if (this.children.indexOf(child) != -1) {
       this._shared.log.error('should not try to add the child twice', this, child);
       return;
     }
 
+    // this will result in recalculation
     this._file = null;
     this._line = null;
 
@@ -175,17 +175,9 @@ export class Suite implements TestSuiteInfo {
     return child;
   }
 
-  public getOrCreateChildSuite(label: string, oldGroups: (Suite | AbstractTest)[]): [Suite, (Suite | AbstractTest)[]] {
-    const cond = (v: Suite | AbstractTest): boolean => v.type === 'suite' && v.label === label;
-    const found = this.children.find(cond) as Suite | undefined;
-    if (found) {
-      return [found, oldGroups];
-    } else {
-      const old = oldGroups.find(cond) as Suite | undefined;
-      const newG = new Suite(this._shared, this, label, undefined, old);
-      this._addChild(newG);
-      return [newG, old ? old.children : []];
-    }
+  public addSuite(child: Suite): Suite {
+    this._addChild(child);
+    return child;
   }
 
   public enumerateDescendants(fn: (v: Suite | AbstractTest) => void): void {
@@ -235,7 +227,7 @@ export class Suite implements TestSuiteInfo {
   }
 
   /** If the return value is not empty then we should run the parent */
-  public collectTestToRun(tests: ReadonlyArray<string>, isParentIn: boolean): AbstractTest[] {
+  public collectTestToRun(tests: readonly string[], isParentIn: boolean): AbstractTest[] {
     const isCurrParentIn = isParentIn || tests.indexOf(this.id) != -1;
 
     return this.children

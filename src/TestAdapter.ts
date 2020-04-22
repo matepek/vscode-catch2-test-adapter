@@ -19,10 +19,11 @@ import { resolveVariables, generateId, reverse } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { SharedVariables } from './SharedVariables';
 import { Catch2Section, Catch2Test } from './framework/Catch2Test';
-import { AbstractRunnableSuite } from './AbstractRunnableSuite';
+import { AbstractRunnable } from './AbstractRunnable';
 import { Config } from './Config';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
+import { AbstractTest } from './AbstractTest';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: LoggerWrapper;
@@ -43,7 +44,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
 
-  private readonly _sendRetireEmitter = new vscode.EventEmitter<AbstractRunnableSuite[]>();
+  private readonly _sendRetireEmitter = new vscode.EventEmitter<readonly AbstractTest[]>();
 
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
@@ -58,7 +59,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       'catch2TestExplorer',
       this.workspaceFolder,
       'Test Explorer: ' + this.workspaceFolder.name,
-      { showProxy: true, depth: 3 },
     );
 
     const config = this._getConfiguration();
@@ -143,9 +143,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(this._sendRetireEmitter);
     {
-      const unique = new Set<AbstractRunnableSuite>();
+      const unique = new Set<AbstractTest>();
 
-      const retire = (aggregatedArgs: [AbstractRunnableSuite[]][]): void => {
+      const retire = (aggregatedArgs: [readonly AbstractTest[]][]): void => {
         const isScheduled = unique.size > 0;
         aggregatedArgs.forEach(args => args[0].forEach(test => unique.add(test)));
 
@@ -214,7 +214,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
               }
             }
 
-            this._rootSuite.sendFinishedventIfNeeded();
+            this._rootSuite.sendFinishedEventIfNeeded();
           }
         });
       }),
@@ -370,7 +370,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       return Promise.resolve()
         .then(() => {
-          return config.getExecutables(this._shared, this._rootSuite, this._variableToValue);
+          return config.getExecutables(this._shared, this._variableToValue);
         })
         .then(exec => {
           return this._rootSuite.load(exec);
@@ -421,38 +421,43 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._log.info('Debugging');
 
-    if (tests.length !== 1) {
-      this._log.error('unsupported test count', tests);
-      throw Error(
-        'Unsupported input. It seems you would like to debug more test cases at once. This is not supported currently.',
-      );
+    const runnables = tests
+      .map(t => this._rootSuite.findTestById(t))
+      .filter(t => t !== undefined)
+      .reduce((prev, curr) => {
+        const arr = prev.find(x => x[0] === curr!.runnable);
+        if (arr) arr[1].push(curr!);
+        else prev.push([curr!.runnable, [curr!]]);
+        return prev;
+      }, new Array<[AbstractRunnable, AbstractTest[]]>());
+
+    if (runnables.length !== 1) {
+      this._log.error('unsupported executable count', tests);
+      throw Error('Unsupported input. It seems you would like to debug more tests from different executables.');
     }
 
-    const test = this._rootSuite.findTestById(tests[0]);
+    const [runnable, runnableTests] = runnables[0];
 
-    if (test === undefined) {
-      this._log.warn('route === undefined', tests);
-      throw Error('Not existing test id.');
-    }
-
-    const route = [...test.route()];
-
-    const suiteLabels = route.map(s => s.label).join(' ← ');
-
-    const testSuite = route.find(v => v instanceof AbstractRunnableSuite);
-    if (testSuite === undefined || !(testSuite instanceof AbstractRunnableSuite))
-      throw Error('Unexpected error. Should have AbstractTestSuiteInfo parent.');
-
-    this._log.info('test', test, tests);
+    this._log.info('test', runnable, runnableTests);
 
     const config = this._getConfiguration();
 
     const template = config.getDebugConfigurationTemplate();
 
-    const argsArray = test.getDebugParams(config.getDebugBreakOnFailure());
+    const label = runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
 
-    if (test instanceof Catch2Test) {
-      const sections = test.sections;
+    const suiteLabels =
+      runnableTests.length > 1
+        ? ''
+        : [...runnableTests[0].route()]
+            .filter((v, i, a) => i < a.length - 1)
+            .map(s => s.label)
+            .join(' ← ');
+
+    const argsArray = runnable.getDebugParams(runnableTests, config.getDebugBreakOnFailure());
+
+    if (runnableTests.length === 1 && runnableTests[0] instanceof Catch2Test) {
+      const sections = (runnableTests[0] as Catch2Test).sections;
       if (sections && sections.length > 0) {
         interface QuickPickItem extends vscode.QuickPickItem {
           sectionStack: Catch2Section[];
@@ -460,7 +465,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
         const items: QuickPickItem[] = [
           {
-            label: test.label,
+            label: label,
             sectionStack: [],
             description: 'Select the section combo you wish to debug or choose this to debug all of it.',
           },
@@ -505,13 +510,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ...this._variableToValue,
       ['${suitelabel}', suiteLabels], // deprecated
       ['${suiteLabel}', suiteLabels],
-      ['${label}', test.label],
-      ['${exec}', testSuite.execInfo.path],
+      ['${label}', label],
+      ['${exec}', runnable.execInfo.path],
       ['${args}', argsArray], // deprecated
       ['${argsArray}', argsArray],
       ['${argsStr}', '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"'],
-      ['${cwd}', testSuite.execInfo.options.cwd!],
-      ['${envObj}', Object.assign(Object.assign({}, process.env), testSuite.execInfo.options.env!)],
+      ['${cwd}', runnable.execInfo.options.cwd!],
+      ['${envObj}', Object.assign(Object.assign({}, process.env), runnable.execInfo.options.env!)],
     ]);
 
     // we dont know better :(
