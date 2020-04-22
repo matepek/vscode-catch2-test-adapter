@@ -381,6 +381,24 @@ export abstract class AbstractRunnable {
     return [tests];
   }
 
+  private _splitTestsToSmallEnoughSubsets(tests: readonly AbstractTest[]): AbstractTest[][] {
+    let lastSet: AbstractTest[] = [];
+    const subsets: AbstractTest[][] = [lastSet];
+    let charCount = 0;
+    const limit = 30000;
+
+    for (const test of tests) {
+      if (charCount + test.testName.length >= limit) {
+        lastSet = [];
+        subsets.push(lastSet);
+      }
+      lastSet.push(test);
+      charCount += test.testName.length;
+    }
+
+    return subsets;
+  }
+
   protected abstract _reloadChildren(): Promise<void>;
 
   protected abstract _getRunParams(childrenToRun: readonly AbstractTest[]): string[];
@@ -430,8 +448,9 @@ export abstract class AbstractRunnable {
     const buckets = this._splitTestSetForMultirun(childrenToRun);
 
     return Promise.all(
-      buckets.map(b => {
-        return this._runInner(b, taskPool);
+      buckets.map(async (bucket: readonly AbstractTest[]) => {
+        const smallerTestSet = this._splitTestsToSmallEnoughSubsets(bucket);
+        for (const testSet of smallerTestSet) await this._runInner(testSet, taskPool);
       }),
     )
       .finally(() => {

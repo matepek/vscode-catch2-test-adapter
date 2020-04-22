@@ -11,7 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--Experimental grouping has changed. More general and flexible.
+- Experimental grouping has changed. More general and flexible.
+
+### Fixed
+
+- An issue when too much test caused `ENAMETOOLONG`.
 
 ## [2.9.1] - 2020-04-19
 
