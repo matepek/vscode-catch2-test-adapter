@@ -89,6 +89,18 @@ export abstract class AbstractTest implements TestInfo {
     return [...this.route()].reverse();
   }
 
+  public removeWithLeafAscendants(): void {
+    const index = this.parent.children.indexOf(this);
+    if (index == -1) {
+      this._shared.log.error('assert: removing an already removed one', this);
+      return;
+    }
+
+    this.parent.children.splice(index, 1);
+
+    this.parent.removeIfLeaf();
+  }
+
   public getStartEvent(): TestEvent {
     return { type: 'test', test: this, state: 'running' };
   }

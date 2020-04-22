@@ -2,7 +2,6 @@ import * as path from 'path';
 import { promisify } from 'util';
 import * as vscode from 'vscode';
 
-import { RootSuite } from './RootSuite';
 import { AbstractRunnable } from './AbstractRunnable';
 import * as c2fs from './FSWrapper';
 import {
@@ -16,6 +15,9 @@ import { RunnableSuiteFactory } from './RunnableSuiteFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
 import { TestGrouping } from './TestGroupingInterface';
+import { Suite } from './Suite';
+import { RootSuite } from './RootSuite';
+import { AbstractTest } from './AbstractTest';
 
 export interface TestExecutableInfoFrameworkSpecific {
   helpRegex?: string;
@@ -28,7 +30,6 @@ export interface TestExecutableInfoFrameworkSpecific {
 export class Executable implements vscode.Disposable {
   public constructor(
     private readonly _shared: SharedVariables,
-    private readonly _rootSuite: RootSuite,
     private readonly _pattern: string,
     name: string | undefined,
     description: string | undefined,
@@ -56,7 +57,7 @@ export class Executable implements vscode.Disposable {
 
   private _disposables: vscode.Disposable[] = [];
 
-  private readonly _executables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
+  private readonly _runnables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
 
   private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
@@ -64,7 +65,7 @@ export class Executable implements vscode.Disposable {
     this._disposables.forEach(d => d.dispose());
   }
 
-  public async load(): Promise<void> {
+  public async load(rootSuite: RootSuite): Promise<void> {
     const pattern = this._patternProcessor(this._pattern);
 
     this._shared.log.info('pattern', this._pattern, this._shared.workspaceFolder.uri.fsPath, pattern);
@@ -95,7 +96,7 @@ export class Executable implements vscode.Disposable {
 
       execWatcher.onAll(fsPath => {
         this._shared.log.info('watcher event:', fsPath);
-        this._handleEverything(fsPath);
+        this._handleEverything(fsPath, rootSuite);
       });
 
       this._disposables.push(execWatcher);
@@ -114,18 +115,18 @@ export class Executable implements vscode.Disposable {
 
       if (this._shouldIgnorePath(file)) continue;
 
+      if (this._isDuplicate(file)) continue;
+
       suiteCreationAndLoadingTasks.push(
         c2fs.isNativeExecutableAsync(file).then(
           () => {
-            return this._createSuiteByUri(file)
+            return this._createSuiteByUri(file, rootSuite)
               .create(false)
               .then(
                 (suite: AbstractRunnable) => {
                   return suite.reloadTests(this._shared.taskPool).then(
                     () => {
-                      if (this._rootSuite.insertChild(suite, false /* called later */)) {
-                        this._executables.set(file, suite);
-                      }
+                      this._runnables.set(file, suite);
                     },
                     (reason: Error) => {
                       this._shared.log.warn("Couldn't load executable:", reason, suite);
@@ -146,7 +147,7 @@ export class Executable implements vscode.Disposable {
 
     await Promise.all(suiteCreationAndLoadingTasks);
 
-    this._rootSuite.uniquifySuiteLabels();
+    rootSuite.uniquifySuiteLabels(); // TODO
 
     if (this._dependsOn.length > 0) {
       try {
@@ -163,7 +164,9 @@ export class Executable implements vscode.Disposable {
 
             w.onAll((fsPath: string): void => {
               this._shared.log.info('dependsOn watcher event:', fsPath);
-              this._shared.retire.fire([...this._executables.values()]);
+              const tests: AbstractTest[] = [];
+              for (const runnable of this._runnables) tests.push(...runnable[1].tests);
+              this._shared.retire.fire(tests);
             });
           } else {
             absPatterns.push(p.absPattern);
@@ -178,7 +181,9 @@ export class Executable implements vscode.Disposable {
 
           w.onAll((fsPath: string): void => {
             this._shared.log.info('dependsOn watcher event:', fsPath);
-            this._shared.retire.fire([...this._executables.values()]);
+            const tests: AbstractTest[] = [];
+            for (const runnable of this._runnables) tests.push(...runnable[1].tests);
+            this._shared.retire.fire(tests);
           });
         }
       } catch (e) {
@@ -212,7 +217,7 @@ export class Executable implements vscode.Disposable {
     };
   }
 
-  private _createSuiteByUri(filePath: string): RunnableSuiteFactory {
+  private _createSuiteByUri(filePath: string, rootSuite: Suite): RunnableSuiteFactory {
     const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
     let varToValue: ResolveRulePair[] = [];
@@ -315,7 +320,7 @@ export class Executable implements vscode.Disposable {
 
     return new RunnableSuiteFactory(
       this._shared,
-      this._rootSuite,
+      rootSuite,
       resolvedName,
       resolvedDescription,
       filePath,
@@ -330,35 +335,35 @@ export class Executable implements vscode.Disposable {
     );
   }
 
-  private _handleEverything(filePath: string): void {
+  private _handleEverything(filePath: string, rootSuite: RootSuite): void {
     const isRunning = this._lastEventArrivedAt.get(filePath) !== undefined;
     if (isRunning) return;
 
     this._lastEventArrivedAt.set(filePath, Date.now());
 
-    const suite = this._executables.get(filePath);
+    const runnable = this._runnables.get(filePath);
 
-    if (suite !== undefined) {
-      this._recursiveHandleEverything(filePath, suite, false, 128);
+    if (runnable !== undefined) {
+      this._recursiveHandleEverything(runnable, false, 128);
     } else {
       if (this._shouldIgnorePath(filePath)) return;
 
       this._shared.log.info('possibly new suite: ' + filePath);
-      this._createSuiteByUri(filePath)
+      this._createSuiteByUri(filePath, rootSuite)
         .create(true)
         .then(
-          (s: AbstractRunnable) => this._recursiveHandleEverything(filePath, s, false, 128),
+          (s: AbstractRunnable) => this._recursiveHandleEverything(s, false, 128),
           (reason: Error) => this._shared.log.info("couldn't add: " + filePath, 'reson:', reason),
         );
     }
   }
 
   private _recursiveHandleEverything(
-    filePath: string,
-    suite: AbstractRunnable,
-    exists: boolean,
+    runnable: AbstractRunnable,
+    isFileExistsAndExecutable: boolean,
     delay: number,
   ): Promise<void> {
+    const filePath = runnable.execInfo.path;
     const lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
     if (lastEventArrivedAt === undefined) {
       this._shared.log.error('assert');
@@ -367,28 +372,27 @@ export class Executable implements vscode.Disposable {
     } else if (Date.now() - lastEventArrivedAt > this._shared.execWatchTimeout) {
       this._shared.log.info('refresh timeout:', filePath);
       this._lastEventArrivedAt.delete(filePath);
-      if (this._rootSuite.hasChild(suite)) {
+      const foundRunnable = this._runnables.get(filePath);
+      if (foundRunnable) {
         return new Promise<void>(resolve => {
           this._shared.loadWithTaskEmitter.fire(() => {
-            this._executables.delete(filePath);
-            this._rootSuite.removeChild(suite);
+            foundRunnable.removeTests();
+            this._runnables.delete(filePath);
             resolve();
           });
         });
       } else {
         return Promise.resolve();
       }
-    } else if (exists) {
+    } else if (isFileExistsAndExecutable) {
       return new Promise<void>((resolve, reject) => {
         this._shared.loadWithTaskEmitter.fire(() => {
-          return suite
+          return runnable
             .reloadTests(this._shared.taskPool)
             .then(() => {
-              if (this._rootSuite.insertChild(suite, true)) {
-                this._executables.set(filePath, suite);
-              }
+              this._runnables.set(filePath, runnable); // it might be set already but we dont care
               this._lastEventArrivedAt.delete(filePath);
-              this._shared.retire.fire([suite]);
+              this._shared.retire.fire(runnable.tests);
             })
             .then(resolve, reject);
         });
@@ -396,10 +400,10 @@ export class Executable implements vscode.Disposable {
         if (reason.code === undefined) {
           this._shared.log.localDebug('reason', reason);
           this._shared.log.localDebug('filePath', filePath);
-          this._shared.log.localDebug('suite', suite);
+          this._shared.log.localDebug('suite', runnable);
           this._shared.log.warn('problem under reloading', reason);
         }
-        return this._recursiveHandleEverything(filePath, suite, false, Math.min(delay * 2, 2000));
+        return this._recursiveHandleEverything(runnable, false, Math.min(delay * 2, 2000));
       });
     } else {
       return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
@@ -409,7 +413,7 @@ export class Executable implements vscode.Disposable {
             () => true,
             () => false,
           )
-          .then(isExec => this._recursiveHandleEverything(filePath, suite, isExec, Math.min(delay * 2, 2000)));
+          .then(isExec => this._recursiveHandleEverything(runnable, isExec, Math.min(delay * 2, 2000)));
       });
     }
   }
@@ -422,5 +426,9 @@ export class Executable implements vscode.Disposable {
     } else {
       return false;
     }
+  }
+
+  private _isDuplicate(filePath: string): boolean {
+    return this._runnables.has(filePath);
   }
 }

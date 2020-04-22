@@ -6,7 +6,6 @@ import * as xml2js from 'xml2js';
 import * as c2fs from '../FSWrapper';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { AbstractRunnable } from '../AbstractRunnable';
-import { RootSuite } from '../RootSuite';
 import { Suite } from '../Suite';
 import { Catch2Test } from './Catch2Test';
 import { SharedVariables } from '../SharedVariables';
@@ -22,7 +21,7 @@ interface XmlObject {
 export class Catch2Suite extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
-    rootSuite: RootSuite,
+    rootSuite: Suite,
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,

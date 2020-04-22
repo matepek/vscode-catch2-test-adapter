@@ -7,7 +7,7 @@ import { DOCSuite } from './framework/DOCSuite';
 import { SharedVariables } from './SharedVariables';
 import { TestExecutableInfoFrameworkSpecific } from './Executable';
 import { Version, ResolveRulePair } from './Util';
-import { RootSuite } from './RootSuite';
+import { Suite } from './Suite';
 
 interface TestFrameworkInfo {
   type: 'catch2' | 'gtest' | 'doctest';
@@ -17,7 +17,7 @@ interface TestFrameworkInfo {
 export class RunnableSuiteFactory {
   public constructor(
     private readonly _shared: SharedVariables,
-    private readonly _rootSuite: RootSuite,
+    private readonly _rootSuite: Suite,
     private readonly _label: string,
     private readonly _description: string | undefined,
     private readonly _execPath: string,

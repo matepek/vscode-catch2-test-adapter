@@ -23,6 +23,7 @@ import { AbstractRunnable } from './AbstractRunnable';
 import { Config } from './Config';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
+import { AbstractTest } from './AbstractTest';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: LoggerWrapper;
@@ -43,7 +44,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
 
-  private readonly _sendRetireEmitter = new vscode.EventEmitter<AbstractRunnable[]>();
+  private readonly _sendRetireEmitter = new vscode.EventEmitter<ReadonlyArray<AbstractTest>>();
 
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
@@ -143,9 +144,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(this._sendRetireEmitter);
     {
-      const unique = new Set<AbstractRunnable>();
+      const unique = new Set<AbstractTest>();
 
-      const retire = (aggregatedArgs: [AbstractRunnable[]][]): void => {
+      const retire = (aggregatedArgs: [ReadonlyArray<AbstractTest>][]): void => {
         const isScheduled = unique.size > 0;
         aggregatedArgs.forEach(args => args[0].forEach(test => unique.add(test)));
 
@@ -370,7 +371,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       return Promise.resolve()
         .then(() => {
-          return config.getExecutables(this._shared, this._rootSuite, this._variableToValue);
+          return config.getExecutables(this._shared, this._variableToValue);
         })
         .then(exec => {
           return this._rootSuite.load(exec);

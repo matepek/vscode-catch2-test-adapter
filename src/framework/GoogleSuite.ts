@@ -13,14 +13,13 @@ import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutab
 import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
-import { RootSuite } from '../RootSuite';
 
 export class GoogleSuite extends AbstractRunnable {
   public children: Suite[] = [];
 
   public constructor(
     shared: SharedVariables,
-    rootSuite: RootSuite,
+    rootSuite: Suite,
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,

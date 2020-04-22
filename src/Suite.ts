@@ -75,6 +75,21 @@ export class Suite implements TestSuiteInfo {
     }
   }
 
+  public removeIfLeaf(): void {
+    if (this.children.length == 0 && this.parent !== undefined) {
+      const index = this.parent.children.indexOf(this);
+
+      if (index == -1) {
+        this._shared.log.error("assert: couldn't found in parent", this);
+        return;
+      }
+
+      this.parent.children.splice(index, 1);
+
+      this.parent.removeIfLeaf();
+    }
+  }
+
   private _getRunningEvent(): TestSuiteEvent {
     return { type: 'suite', suite: this, state: 'running' };
   }

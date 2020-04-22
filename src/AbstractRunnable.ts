@@ -13,7 +13,6 @@ import { promisify } from 'util';
 import { TestEvent } from 'vscode-test-adapter-api';
 import { Version, reverse, PythonIndexerRegexStr, processArrayWithPythonIndexer } from './Util';
 import { TestGrouping } from './TestGroupingInterface';
-import { RootSuite } from './RootSuite';
 
 export abstract class AbstractRunnable extends Suite {
   private static _reportedFrameworks: string[] = [];
@@ -25,7 +24,7 @@ export abstract class AbstractRunnable extends Suite {
 
   public constructor(
     protected readonly _shared: SharedVariables,
-    protected readonly _rootSuite: RootSuite,
+    protected readonly _rootSuite: Suite,
     label: string,
     description: string | undefined,
     public readonly execInfo: RunnableSuiteProperties,
@@ -60,13 +59,17 @@ export abstract class AbstractRunnable extends Suite {
     return super.tooltip + '\n\nPath: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd;
   }
 
-  private _getOrCreateChildSuite(label: string, group: Suite): Suite {
+  public get tests(): ReadonlyArray<AbstractTest> {
+    return this._tests;
+  }
+
+  private _getOrCreateChildSuite(label: string, description: string | undefined, group: Suite): Suite {
     const cond = (v: Suite | AbstractTest): boolean => v.type === 'suite' && v.label === label;
     const found = group.children.find(cond) as Suite | undefined;
     if (found) {
       return found;
     } else {
-      const newG = group.addSuite(new Suite(this._shared, group, label, undefined));
+      const newG = group.addSuite(new Suite(this._shared, group, label, description));
       return newG;
     }
   }
@@ -81,11 +84,8 @@ export abstract class AbstractRunnable extends Suite {
   ): void {
     let group = this._rootSuite as Suite;
 
-    const oldTests = this._tests;
-    this._tests = [];
-
-    const getOrCreateChildSuite = (label: string): void => {
-      group = this._getOrCreateChildSuite(label, group);
+    const getOrCreateChildSuite = (label: string, description: string | undefined): void => {
+      group = this._getOrCreateChildSuite(label, description, group);
     };
 
     let currentGrouping: TestGrouping = testGrouping;
@@ -103,9 +103,9 @@ export abstract class AbstractRunnable extends Suite {
                   const relPath = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file);
                   const pathArray = relPath.split(/\/|\\/);
                   const fileStr = pathlib.join(...processArrayWithPythonIndexer(pathArray, sourceIndicies));
-                  getOrCreateChildSuite(g.label ? g.label : fileStr);
+                  getOrCreateChildSuite(g.label ? g.label : fileStr, g.descrption);
                 } else if (g.groupUngroupedTo) {
-                  getOrCreateChildSuite(g.groupUngroupedTo);
+                  getOrCreateChildSuite(g.groupUngroupedTo, undefined);
                 }
               } else {
                 this._shared.log.warn("Couldn't parse", g.sourceIndex);
@@ -126,9 +126,9 @@ export abstract class AbstractRunnable extends Suite {
               if (g.tags.length === 0) {
                 if (tags.length > 0) {
                   const tagsStr = tags.sort().join('');
-                  getOrCreateChildSuite(g.label ? g.label : tagsStr);
+                  getOrCreateChildSuite(g.label ? g.label : tagsStr, g.descrption);
                 } else if (g.groupUngroupedTo) {
-                  getOrCreateChildSuite(g.groupUngroupedTo);
+                  getOrCreateChildSuite(g.groupUngroupedTo, undefined);
                 }
               } else {
                 const combos = g.tags
@@ -150,9 +150,9 @@ export abstract class AbstractRunnable extends Suite {
 
                 if (foundCombo) {
                   const comboStr = foundCombo.map(t => `[${t}]`).join('');
-                  getOrCreateChildSuite(g.label ? g.label : comboStr);
+                  getOrCreateChildSuite(g.label ? g.label : comboStr, g.descrption);
                 } else if (g.groupUngroupedTo) {
-                  getOrCreateChildSuite(g.groupUngroupedTo);
+                  getOrCreateChildSuite(g.groupUngroupedTo, undefined);
                 }
               }
             } else {
@@ -176,9 +176,9 @@ export abstract class AbstractRunnable extends Suite {
               if (match) {
                 this._shared.log.info('groupByRegex matched on', testName, g.regexes[index - 1]);
                 const group = match[1] ? match[1] : match[0];
-                getOrCreateChildSuite(g.label ? g.label : group);
+                getOrCreateChildSuite(g.label ? g.label : group, g.descrption);
               } else if (g.groupUngroupedTo) {
-                getOrCreateChildSuite(g.groupUngroupedTo);
+                getOrCreateChildSuite(g.groupUngroupedTo, undefined);
               }
             } else {
               this._shared.log.warn('groupByTags.tags should be a non-empty array of strings.', g.regexes);
@@ -195,14 +195,15 @@ export abstract class AbstractRunnable extends Suite {
       this._shared.log.exception(e);
     }
 
-    //TODO remove oldTests
-    oldTests;
-
     const old = group.children.find(t => t instanceof AbstractTest && t.testNameInOutput === testNameInOutput) as
       | AbstractTest
       | undefined;
 
     group.addTest(createTest(group, old));
+  }
+
+  public removeTests(): void {
+    this._tests.forEach(t => t.removeWithLeafAscendants());
   }
 
   protected _addError(parent: Suite, message: string): void {
@@ -334,7 +335,8 @@ export abstract class AbstractRunnable extends Suite {
 
       if (this._lastReloadTime === undefined || lastModiTime === undefined || this._lastReloadTime !== lastModiTime) {
         this._lastReloadTime = lastModiTime;
-        return this._reloadChildren();
+        const oldTests = this._tests;
+        return this._reloadChildren().finally(() => oldTests.forEach(t => t.removeWithLeafAscendants()));
       } else {
         this._shared.log.debug('reloadTests was skipped due to mtime', this.label, this.id);
       }

@@ -12,7 +12,6 @@ import { SharedVariables } from '../SharedVariables';
 import { RunningTestExecutableInfo, ProcessResult } from '../RunningTestExecutableInfo';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { Version } from '../Util';
-import { RootSuite } from '../RootSuite';
 import { TestGrouping } from '../TestGroupingInterface';
 
 interface XmlObject {
@@ -22,7 +21,7 @@ interface XmlObject {
 export class DOCSuite extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
-    rootSuite: RootSuite,
+    rootSuite: Suite,
     label: string,
     desciption: string | undefined,
     execInfo: RunnableSuiteProperties,

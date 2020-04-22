@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { LoggerWrapper } from './LoggerWrapper';
 import { Executable, TestExecutableInfoFrameworkSpecific } from './Executable';
-import { RootSuite } from './RootSuite';
 import { SharedVariables } from './SharedVariables';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
@@ -237,11 +236,7 @@ export class Config {
     );
   }
 
-  public getExecutables(
-    shared: SharedVariables,
-    rootSuite: RootSuite,
-    variableToValue: [string, string][],
-  ): Executable[] {
+  public getExecutables(shared: SharedVariables, variableToValue: [string, string][]): Executable[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultEnv = this.getDefaultEnvironmentVariables() || {};
 
@@ -305,7 +300,6 @@ export class Config {
 
       return new Executable(
         shared,
-        rootSuite,
         pattern,
         name,
         description,
@@ -326,7 +320,6 @@ export class Config {
       executables.push(
         new Executable(
           shared,
-          rootSuite,
           configExecs,
           undefined,
           undefined,
@@ -350,7 +343,6 @@ export class Config {
             executables.push(
               new Executable(
                 shared,
-                rootSuite,
                 configExecsName,
                 undefined,
                 undefined,
