@@ -337,7 +337,7 @@
                                       }
                                     }
                                   },
-                                  "tagFromat": {
+                                  "tagFormat": {
                                     "type": "string",
                                     "pattern": "\\$\\{tag\\}"
                                   },
@@ -497,7 +497,7 @@
                                       }
                                     }
                                   },
-                                  "tagFromat": {
+                                  "tagFormat": {
                                     "type": "string",
                                     "pattern": "\\$\\{tag\\}"
                                   },
@@ -657,7 +657,7 @@
                                       }
                                     }
                                   },
-                                  "tagFromat": {
+                                  "tagFormat": {
                                     "type": "string",
                                     "pattern": "\\$\\{tag\\}"
                                   },
