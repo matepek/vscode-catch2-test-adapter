@@ -60,7 +60,7 @@ export class Catch2Test extends AbstractTest {
     ];
     const forceIgnoreEvent: TestEvent | undefined =
       frameworkVersion.smaller(EscapeCharParserFix) && badChars.some(b => testNameAsId.indexOf(b) != -1)
-        ? {
+        ? ({
             type: 'test',
             test: '',
             state: 'errored',
@@ -73,7 +73,13 @@ export class Catch2Test extends AbstractTest {
               ...badChars.map(b => ` - ${b}`),
             ].join('\n'),
             description: '⚡️ Run me for details ⚡️',
-          }
+            decorations: [
+              {
+                line: line,
+                message: 'Invalid character in test name. Check the output.',
+              },
+            ],
+          } as TestEvent)
         : undefined;
 
     super(
