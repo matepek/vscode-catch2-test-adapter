@@ -5,7 +5,6 @@ import { SharedVariables } from './SharedVariables';
 import { RunningRunnable } from './RunningRunnable';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
-import { Semaphore } from './Semaphore';
 
 export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
@@ -33,7 +32,6 @@ export abstract class AbstractTest implements TestInfo {
     _testDescription: string | undefined,
     _typeParam: string | undefined, // gtest specific
     _valueParam: string | undefined, // gtest specific
-    public readonly semaphores: Semaphore[] = [],
   ) {
     if (line && line < 0) throw Error('line smaller than zero');
 
