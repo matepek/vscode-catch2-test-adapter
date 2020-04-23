@@ -234,7 +234,7 @@
                         }
                       },
                       "parallelizationLimit": {
-                        "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance.",
+                        "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `catch2TestExplorer.workerMaxNumber` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
                         "scope": "resource",
                         "type": "integer",
                         "default": 1,
