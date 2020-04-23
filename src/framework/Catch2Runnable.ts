@@ -29,8 +29,8 @@ export class Catch2Runnable extends AbstractRunnable {
   }
 
   private getTestGrouping(): TestGrouping {
-    if (this.execInfo.testGrouping) {
-      return this.execInfo.testGrouping;
+    if (this.properties.testGrouping) {
+      return this.properties.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
       return grouping;
@@ -128,12 +128,12 @@ export class Catch2Runnable extends AbstractRunnable {
   }
 
   protected async _reloadChildren(): Promise<void> {
-    const cacheFile = this.execInfo.path + '.cache.txt';
+    const cacheFile = this.properties.path + '.cache.txt';
 
     if (this._shared.enabledTestListCaching) {
       try {
         const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.execInfo.path);
+        const execStat = await promisify(fs.stat)(this.properties.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this._shared.log.info('loading from cache: ', cacheFile);
@@ -153,8 +153,8 @@ export class Catch2Runnable extends AbstractRunnable {
     }
 
     const catch2TestListOutput = await c2fs.spawnAsync(
-      this.execInfo.path,
-      this.execInfo.prependTestListingArgs.concat([
+      this.properties.path,
+      this.properties.prependTestListingArgs.concat([
         '[.],*',
         '--verbosity',
         'high',
@@ -162,11 +162,11 @@ export class Catch2Runnable extends AbstractRunnable {
         '--use-colour',
         'no',
       ]),
-      this.execInfo.options,
+      this.properties.options,
       30000,
     );
 
-    if (catch2TestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
+    if (catch2TestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
       this._createAndAddUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
       return Promise.resolve();

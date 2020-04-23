@@ -511,12 +511,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ['${suitelabel}', suiteLabels], // deprecated
       ['${suiteLabel}', suiteLabels],
       ['${label}', label],
-      ['${exec}', runnable.execInfo.path],
+      ['${exec}', runnable.properties.path],
       ['${args}', argsArray], // deprecated
       ['${argsArray}', argsArray],
       ['${argsStr}', '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"'],
-      ['${cwd}', runnable.execInfo.options.cwd!],
-      ['${envObj}', Object.assign(Object.assign({}, process.env), runnable.execInfo.options.env!)],
+      ['${cwd}', runnable.properties.options.cwd!],
+      ['${envObj}', Object.assign(Object.assign({}, process.env), runnable.properties.options.env!)],
     ]);
 
     // we dont know better :(

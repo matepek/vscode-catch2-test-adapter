@@ -233,6 +233,13 @@
                           "minLength": 1
                         }
                       },
+                      "parallelizationLimit": {
+                        "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance.",
+                        "scope": "resource",
+                        "type": "integer",
+                        "default": 1,
+                        "minimum": 1
+                      },
                       "catch2": {
                         "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#framework-specific-settings)",
                         "type": "object",
