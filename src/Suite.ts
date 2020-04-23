@@ -34,7 +34,7 @@ export class Suite implements TestSuiteInfo {
     return (
       `Name: ${this._label}` +
       (this._description ? `\nDescription: ${this._description}` : '') +
-      (this._tooltip ? `\n\n ${this._tooltip}` : '')
+      (this._tooltip ? `\n\n${this._tooltip}` : '')
     );
   }
 
