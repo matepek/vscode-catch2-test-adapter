@@ -576,7 +576,9 @@ describe(path.basename(__filename), function () {
           suite: adapter.get(0),
           description: `.${pathlib.sep} (3ms)`,
           tooltip:
-            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - passed: 1\n  - failed: 13\n⏱Duration: 3ms',
+            'Name: gtest1.exe\nDescription: .' +
+            pathlib.sep +
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - passed: 1\n  - failed: 13\n⏱Duration: 3ms',
         },
         { type: 'finished' },
       ];
@@ -616,7 +618,9 @@ describe(path.basename(__filename), function () {
           suite: adapter.get(0),
           description: `.${pathlib.sep} (0ms)`,
           tooltip:
-            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - passed: 1\n⏱Duration: 0ms',
+            'Name: gtest1.exe\nDescription: .' +
+            pathlib.sep +
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - passed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -671,7 +675,9 @@ describe(path.basename(__filename), function () {
           suite: adapter.get(0),
           description: `.${pathlib.sep} (0ms)`,
           tooltip:
-            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - failed: 1\n⏱Duration: 0ms',
+            'Name: gtest1.exe\nDescription: .' +
+            pathlib.sep +
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];

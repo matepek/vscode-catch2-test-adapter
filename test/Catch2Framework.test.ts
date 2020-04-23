@@ -211,7 +211,9 @@ describe(path.basename(__filename), function () {
         suite: adapter.suite1,
         description: `.${pathlib.sep} (0ms)`,
         tooltip:
-          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 1\n  - failed: 1\n⏱Duration: 0ms',
+          'Name: execPath1.exe\nDescription: .' +
+          pathlib.sep +
+          '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 1\n  - failed: 1\n⏱Duration: 0ms',
       },
       { type: 'finished' },
       { type: 'started', tests: [s1t1.id] },
@@ -232,7 +234,9 @@ describe(path.basename(__filename), function () {
         suite: adapter.suite1,
         description: `.${pathlib.sep} (0ms)`,
         tooltip:
-          'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
+          'Name: execPath1.exe\nDescription: .' +
+          pathlib.sep +
+          '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
       },
       { type: 'finished' },
     ]);
