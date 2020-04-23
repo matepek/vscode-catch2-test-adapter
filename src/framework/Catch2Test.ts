@@ -115,7 +115,7 @@ export class Catch2Test extends AbstractTest {
 
   public getEscapedTestName(): string {
     /* ',' and '[' has special meaning */
-    return this.testName.replace(/,/g, '\\,').replace(/\[/g, '\\[');
+    return this.testName.replace('\\', '\\\\').replace(/,/g, '\\,').replace(/\[/g, '\\[');
   }
 
   public parseAndProcessTestCase(
