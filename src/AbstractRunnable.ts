@@ -107,48 +107,70 @@ export abstract class AbstractRunnable {
   ): void {
     let group = this._rootSuite as Suite;
 
-    tags.sort();
     const relPath = file ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file) : '';
     const absPath = file ? file : '';
+    tags.sort();
 
-    const additionalVars = [
+    const vars: ResolveRulePair[] = [
       createPythonIndexerForPathVariable('sourceRelPath', relPath),
       createPythonIndexerForPathVariable('sourceAbsPath', absPath),
     ];
+
+    const tagVar = '${tag}';
+    const tagsVar = '${tags}';
+
+    const updateVarsWithTags = (tg: TestGrouping, overrideTags?: string[]): void => {
+      if (tg.tagFormat !== undefined && tg.tagFormat.indexOf(tagVar) === -1)
+        this._shared.log.warn('tagFormat should contain "${tag}" substring', tg.tagFormat);
+
+      const tagFormat = tg.tagFormat !== undefined && tg.tagFormat.indexOf(tagVar) !== -1 ? tg.tagFormat : '[${tag}]';
+      const formattedTags = (overrideTags ? overrideTags : tags).map(t => tagFormat.replace(tagVar, t)).join('');
+      const found = vars.find(v => v[0] === tagsVar);
+
+      if (found) {
+        found[1] = formattedTags;
+      } else {
+        vars.push([tagsVar, formattedTags]);
+      }
+    };
 
     const getOrCreateChildSuite = (
       label: string,
       description: string | undefined,
       tooltip: string | undefined,
     ): void => {
-      group = this._getOrCreateChildSuite(label, description, tooltip, group);
+      const resolvedLabel = this._resolveText(label, ...vars);
+      const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : undefined;
+      const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : undefined;
+
+      group = this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, group);
     };
 
     let currentGrouping: TestGrouping = testGrouping;
 
     try {
       while (true) {
+        this._shared.log.info('groupBy', currentGrouping);
+
         if (currentGrouping.groupByExecutable) {
-          this._shared.log.info('groupByExecutable');
           const g = currentGrouping.groupByExecutable;
+          updateVarsWithTags(g);
 
-          const label = this._resolveText(g.label ? g.label : '${filename}');
-          const description = this._resolveText(g.description !== undefined ? g.description : '${relDirpath}/');
-          const tooltip = 'Path: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd;
-
-          getOrCreateChildSuite(label, description, tooltip);
+          getOrCreateChildSuite(
+            g.label !== undefined ? g.label : '${filename}',
+            g.description !== undefined ? g.description : '${relDirpath}' + pathlib.sep,
+            `Path: ${this.execInfo.path}\nCwd: ${this.execInfo.options.cwd}`,
+          );
 
           currentGrouping = g;
         } else if (currentGrouping.groupBySource) {
           const g = currentGrouping.groupBySource;
+          updateVarsWithTags(g);
 
           if (file) {
             this._shared.log.info('groupBySource');
 
-            const label = g.label ? this._resolveText(g.label, ...additionalVars) : relPath;
-            const description = g.description ? this._resolveText(g.description, ...additionalVars) : undefined;
-
-            getOrCreateChildSuite(label, description, undefined);
+            getOrCreateChildSuite(g.label ? g.label : relPath, g.description, undefined);
           } else if (g.groupUngroupedTo) {
             getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
           }
@@ -156,56 +178,40 @@ export abstract class AbstractRunnable {
           currentGrouping = g;
         } else if (currentGrouping.groupByTags) {
           const g = currentGrouping.groupByTags;
-          if (g.tags) {
-            this._shared.log.info('groupByTags', g.tags);
+          updateVarsWithTags(g);
 
-            if (
-              Array.isArray(g.tags) &&
-              g.tags.every(v => typeof Array.isArray(v) && v.every(vv => typeof vv === 'string'))
-            ) {
-              if (g.tags.length === 0 || g.tags.every(t => t.length == 0)) {
-                if (tags.length > 0) {
-                  const label = g.label
-                    ? tags.map(t => g.label!.replace('${tag}', t)).join('')
-                    : tags.map(t => `[${t}]`).join('');
-                  const description = g.description
-                    ? tags.map(t => g.description!.replace('${tag}', t)).join('')
-                    : undefined;
-
-                  getOrCreateChildSuite(label, description, undefined);
-                } else if (g.groupUngroupedTo) {
-                  getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
-                }
-              } else {
-                const combos = g.tags.filter(arr => arr.length > 0);
-
-                const foundCombo = combos.find(combo => combo.every(t => tags.indexOf(t) !== -1));
-
-                if (foundCombo) {
-                  const label = g.label
-                    ? foundCombo.map(t => g.label!.replace('${tag}', t)).join('')
-                    : foundCombo.map(t => `[${t}]`).join('');
-                  const description = g.description
-                    ? foundCombo.map(t => g.description!.replace('${tag}', t)).join('')
-                    : undefined;
-
-                  getOrCreateChildSuite(label, description, undefined);
-                } else if (g.groupUngroupedTo) {
-                  getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
-                }
+          if (
+            g.tags === undefined ||
+            (Array.isArray(g.tags) &&
+              g.tags.every(v => typeof Array.isArray(v) && v.every(vv => typeof vv === 'string')))
+          ) {
+            if (g.tags === undefined || g.tags.length === 0 || g.tags.every(t => t.length == 0)) {
+              if (tags.length > 0) {
+                getOrCreateChildSuite(g.label ? g.label : tagsVar, g.description, undefined);
+              } else if (g.groupUngroupedTo) {
+                getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
               }
             } else {
-              this._shared.log.warn('groupByTags.tags should be an array of strings. Empty array is OK.', g.tags);
+              const combos = g.tags.filter(arr => arr.length > 0);
+              const foundCombo = combos.find(combo => combo.every(t => tags.indexOf(t) !== -1));
+
+              if (foundCombo) {
+                updateVarsWithTags(g, foundCombo);
+                getOrCreateChildSuite(g.label ? g.label : tagsVar, g.description, undefined);
+              } else if (g.groupUngroupedTo) {
+                getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
+              }
             }
           } else {
-            this._shared.log.warn('missing "tags": skipping grouping level');
+            this._shared.log.warn('groupByTags.tags should be an array of strings. Empty array is OK.', g.tags);
           }
+
           currentGrouping = g;
         } else if (currentGrouping.groupByRegex) {
           const g = currentGrouping.groupByRegex;
-          if (g.regexes) {
-            this._shared.log.info('groupByRegex', g.regexes);
+          updateVarsWithTags(g);
 
+          if (g.regexes) {
             if (Array.isArray(g.regexes) && g.regexes.length > 0 && g.regexes.every(v => typeof v === 'string')) {
               let match: RegExpMatchArray | null = null;
 
@@ -216,10 +222,11 @@ export abstract class AbstractRunnable {
                 this._shared.log.info('groupByRegex matched on', testName, g.regexes[index - 1]);
                 const group = match[1] ? match[1] : match[0];
 
-                const matchVar: [string, string] = ['${match}', group];
+                const matchVar: ResolveRulePair[] = [['${match}', group]];
 
-                const label = g.label ? this._resolveText(g.label, matchVar) : group;
-                const description = g.description ? this._resolveText(g.description, matchVar) : undefined;
+                const label = g.label ? this._resolveText(g.label, ...matchVar) : group;
+                const description =
+                  g.description !== undefined ? this._resolveText(g.description, ...matchVar) : undefined;
 
                 getOrCreateChildSuite(label, description, undefined);
               } else if (g.groupUngroupedTo) {

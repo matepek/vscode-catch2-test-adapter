@@ -32,10 +32,9 @@ export class Suite implements TestSuiteInfo {
 
   public get tooltip(): string {
     return (
-      'Name: ' +
-      this._label +
-      (this._description ? '\nDescription: ' + this._description : '') +
-      (this._tooltip ? '\n\n' + this._tooltip : '')
+      `Name: ${this._label}` +
+      (this._description ? `\nDescription: ${this._description}` : '') +
+      (this._tooltip ? `\n\n${this._tooltip}` : '')
     );
   }
 

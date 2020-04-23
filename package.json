@@ -330,9 +330,16 @@
                                     "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
                                     "type": "array",
                                     "items": {
-                                      "type": "string",
-                                      "pattern": "^(\\[[^\\n\\r]\\])+$"
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "minLength": 1
+                                      }
                                     }
+                                  },
+                                  "tagFormat": {
+                                    "type": "string",
+                                    "pattern": "\\$\\{tag\\}"
                                   },
                                   "groupUngroupedTo": {
                                     "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
@@ -348,10 +355,7 @@
                                   "groupByRegex": {
                                     "type": "object"
                                   }
-                                },
-                                "required": [
-                                  "tags"
-                                ]
+                                }
                               },
                               "groupByRegex": {
                                 "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
@@ -486,9 +490,16 @@
                                     "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
                                     "type": "array",
                                     "items": {
-                                      "type": "string",
-                                      "pattern": "^(\\[[^\\n\\r]\\])+$"
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "minLength": 1
+                                      }
                                     }
+                                  },
+                                  "tagFormat": {
+                                    "type": "string",
+                                    "pattern": "\\$\\{tag\\}"
                                   },
                                   "groupUngroupedTo": {
                                     "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
@@ -504,10 +515,7 @@
                                   "groupByRegex": {
                                     "type": "object"
                                   }
-                                },
-                                "required": [
-                                  "tags"
-                                ]
+                                }
                               },
                               "groupByRegex": {
                                 "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
@@ -642,9 +650,16 @@
                                     "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
                                     "type": "array",
                                     "items": {
-                                      "type": "string",
-                                      "pattern": "^(\\[[^\\n\\r]\\])+$"
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "minLength": 1
+                                      }
                                     }
+                                  },
+                                  "tagFormat": {
+                                    "type": "string",
+                                    "pattern": "\\$\\{tag\\}"
                                   },
                                   "groupUngroupedTo": {
                                     "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
@@ -660,10 +675,7 @@
                                   "groupByRegex": {
                                     "type": "object"
                                   }
-                                },
-                                "required": [
-                                  "tags"
-                                ]
+                                }
                               },
                               "groupByRegex": {
                                 "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",

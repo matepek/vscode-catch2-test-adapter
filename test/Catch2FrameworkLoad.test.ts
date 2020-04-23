@@ -129,6 +129,7 @@ describe(path.basename(__filename), function () {
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
+
         {
           type: 'test',
           state: 'passed',
