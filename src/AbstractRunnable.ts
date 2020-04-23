@@ -132,9 +132,11 @@ export abstract class AbstractRunnable {
           this._shared.log.info('groupByExecutable');
           const g = currentGrouping.groupByExecutable;
 
-          const label = this._resolveText(g.label ? g.label : '${filename}');
-          const description = this._resolveText(g.description !== undefined ? g.description : '${relDirpath}/');
-          const tooltip = 'Path: ' + this.execInfo.path + '\nCwd: ' + this.execInfo.options.cwd;
+          const label = this._resolveText(g.label !== undefined ? g.label : '${filename}');
+          const description = this._resolveText(
+            g.description !== undefined ? g.description : '${relDirpath}' + pathlib.sep,
+          );
+          const tooltip = `Path: ${this.execInfo.path}\nCwd: ${this.execInfo.options.cwd}`;
 
           getOrCreateChildSuite(label, description, tooltip);
 
@@ -145,10 +147,10 @@ export abstract class AbstractRunnable {
           if (file) {
             this._shared.log.info('groupBySource');
 
-            const label = g.label ? this._resolveText(g.label, ...additionalVars) : relPath;
-            const description = g.description ? this._resolveText(g.description, ...additionalVars) : undefined;
+            const label = g.label !== undefined ? this._resolveText(g.label, ...additionalVars) : relPath;
+            const desc = g.description !== undefined ? this._resolveText(g.description, ...additionalVars) : undefined;
 
-            getOrCreateChildSuite(label, description, undefined);
+            getOrCreateChildSuite(label, desc, undefined);
           } else if (g.groupUngroupedTo) {
             getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
           }
