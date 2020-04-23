@@ -2,6 +2,7 @@ import * as fse from 'fs-extra';
 import * as assert from 'assert';
 import * as path from 'path';
 import * as sinon from 'sinon';
+import * as pathlib from 'path';
 import { EOL } from 'os';
 import { example1 } from './example1';
 import { TestAdapter, Imitation, settings, ChildProcessStub, expectedLoggedErrorLine } from './Common';
@@ -573,9 +574,11 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0),
-          description: './ (3ms)',
+          description: `.${pathlib.sep} (3ms)`,
           tooltip:
-            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - passed: 1\n  - failed: 13\n⏱Duration: 3ms',
+            'Name: gtest1.exe\nDescription: .' +
+            pathlib.sep +
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - passed: 1\n  - failed: 13\n⏱Duration: 3ms',
         },
         { type: 'finished' },
       ];
@@ -613,9 +616,11 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0),
-          description: './ (0ms)',
+          description: `.${pathlib.sep} (0ms)`,
           tooltip:
-            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - passed: 1\n⏱Duration: 0ms',
+            'Name: gtest1.exe\nDescription: .' +
+            pathlib.sep +
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - passed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -668,9 +673,11 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: adapter.get(0),
-          description: './ (0ms)',
+          description: `.${pathlib.sep} (0ms)`,
           tooltip:
-            'Name: gtest1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - failed: 1\n⏱Duration: 0ms',
+            'Name: gtest1.exe\nDescription: .' +
+            pathlib.sep +
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 14\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];

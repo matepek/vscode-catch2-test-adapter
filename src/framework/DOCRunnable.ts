@@ -29,8 +29,8 @@ export class DOCRunnable extends AbstractRunnable {
   }
 
   private getTestGrouping(): TestGrouping {
-    if (this.execInfo.testGrouping) {
-      return this.execInfo.testGrouping;
+    if (this.properties.testGrouping) {
+      return this.properties.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
       return grouping;
@@ -80,12 +80,12 @@ export class DOCRunnable extends AbstractRunnable {
   }
 
   protected async _reloadChildren(): Promise<void> {
-    const cacheFile = this.execInfo.path + '.cache.txt';
+    const cacheFile = this.properties.path + '.cache.txt';
 
     if (this._shared.enabledTestListCaching) {
       try {
         const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.execInfo.path);
+        const execStat = await promisify(fs.stat)(this.properties.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this._shared.log.info('loading from cache: ', cacheFile);
@@ -101,18 +101,18 @@ export class DOCRunnable extends AbstractRunnable {
 
     return c2fs
       .spawnAsync(
-        this.execInfo.path,
-        this.execInfo.prependTestListingArgs.concat([
+        this.properties.path,
+        this.properties.prependTestListingArgs.concat([
           '--list-test-cases',
           '--reporters=xml',
           '--no-skip=true',
           '--no-color=true',
         ]),
-        this.execInfo.options,
+        this.properties.options,
         30000,
       )
       .then(docTestListOutput => {
-        if (docTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
+        if (docTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
           this._shared.log.warn(
             'reloadChildren -> docTestListOutput.stderr',
             docTestListOutput.stdout,

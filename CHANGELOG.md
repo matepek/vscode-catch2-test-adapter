@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.9.3]
 
+### Added
+
+- Exeprimental _multirun_ feature. Run the same executable multiple times. See config: [parallelizationLimit](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md).
+
 ### Changed
 
 - Experimental grouping has changed. More general and flexible. (again)

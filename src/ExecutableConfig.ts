@@ -36,6 +36,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _cwd: string | undefined,
     private readonly _env: { [prop: string]: string } | undefined,
     private readonly _dependsOn: string[],
+    private readonly _parallelizationLimit: number,
     private readonly _defaultCwd: string,
     private readonly _defaultEnv: { [prop: string]: string },
     private readonly _variableToValue: ResolveRulePair[],
@@ -286,6 +287,7 @@ export class ExecutableConfig implements vscode.Disposable {
       this._catch2,
       this._gtest,
       this._doctest,
+      this._parallelizationLimit,
     );
   }
 
@@ -317,7 +319,7 @@ export class ExecutableConfig implements vscode.Disposable {
     isFileExistsAndExecutable: boolean,
     delay: number,
   ): Promise<void> {
-    const filePath = runnable.execInfo.path;
+    const filePath = runnable.properties.path;
     const lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
     if (lastEventArrivedAt === undefined) {
       this._shared.log.error('assert');

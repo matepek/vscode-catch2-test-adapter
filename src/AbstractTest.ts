@@ -88,8 +88,11 @@ export abstract class AbstractTest implements TestInfo {
     } while (parent);
   }
 
+  private _reverseRoute: Suite[] | undefined = undefined;
+
   public reverseRoute(): Suite[] {
-    return [...this.route()].reverse();
+    if (this._reverseRoute === undefined) this._reverseRoute = [...this.route()].reverse();
+    return this._reverseRoute;
   }
 
   public removeWithLeafAscendants(): void {

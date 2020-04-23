@@ -86,7 +86,8 @@ export class GoogleTest extends AbstractTest {
       lines.shift();
       lines.pop();
 
-      const reportRe = /^(?:(.+):([0-9]+):) (Failure.*|EXPECT_CALL\(.+)$/;
+      const reportRe1 = /^(?:(.+):([0-9]+):) (Failure.*|EXPECT_CALL\(.+)$/;
+      const reportRe2 = /^(?:(.+)\(([0-9]+)\):) (error: )(.+)$/;
 
       const addDecoration = (d: TestDecoration): void => {
         const found = ev.decorations!.find(v => v.line === d.line);
@@ -102,7 +103,7 @@ export class GoogleTest extends AbstractTest {
       let gMockWarningCount = 0;
 
       for (let i = 0; i < lines.length; ) {
-        const match = lines[i].match(reportRe);
+        const match = lines[i].match(reportRe1);
         if (match !== null) {
           i += 1;
           const filePath = match[1];
@@ -224,15 +225,114 @@ export class GoogleTest extends AbstractTest {
               addDecoration({ file: filePath, line: lineNumber, message: '⬅️ ' + expectCallMsg });
             }
           } else {
-            throw Error('unexpected case');
+            this._shared.log.error('unexpected case', i, lines);
+            i += 1;
           }
         } else {
-          if (lines[i].startsWith('GMOCK WARNING:')) {
+          // i found that this case can come here: https://www.twitch.tv/videos/599383789?t=01h58m36s
+          const match = lines[i].match(reportRe2);
+          if (match !== null) {
+            i += 1;
+            const filePath = match[1];
+            const lineNumber = Number(match[2]) - 1; /*It looks vscode works like this.*/
+            const firstLineVar = match[4];
+
+            if (i < lines.length && firstLineVar.startsWith('Expected: ') && lines[i].startsWith('  Actual: ')) {
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + firstLineVar + ';  ' + lines[i],
+                hover: [firstLineVar, lines[i]].join('\n'),
+              });
+              i += 1;
+            } else if (firstLineVar.startsWith('Expected: ')) {
+              addDecoration({ file: filePath, line: lineNumber, message: '⬅️ ' + firstLineVar, hover: firstLineVar });
+              i += 0;
+            } else if (
+              i + 1 < lines.length &&
+              firstLineVar.startsWith('Value of: ') &&
+              lines[i + 0].startsWith('  Actual: ') &&
+              lines[i + 1].startsWith('Expected: ')
+            ) {
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + lines[i + 0].trim() + ';  ' + lines[i + 1].trim() + ';',
+                hover: [firstLineVar, lines[i + 0], lines[i + 1]].join('\n'),
+              });
+              i += 2;
+            } else if (
+              i + 1 < lines.length &&
+              firstLineVar.startsWith('Actual function call') &&
+              lines[i + 0].startsWith('         Expected:') &&
+              lines[i + 1].startsWith('           Actual:')
+            ) {
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + lines[i + 0].trim() + ';  ' + lines[i + 1].trim() + ';',
+                hover: [firstLineVar, lines[i + 0], lines[i + 1]].join('\n'),
+              });
+              i += 2;
+            } else if (
+              i + 3 < lines.length &&
+              firstLineVar.startsWith('Mock function call') &&
+              lines[i + 0].startsWith('    Function call:') &&
+              lines[i + 1].startsWith('          Returns:') &&
+              lines[i + 2].startsWith('         Expected:') &&
+              lines[i + 3].startsWith('           Actual:')
+            ) {
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + lines[i + 2].trim() + ';  ' + lines[i + 3].trim() + ';',
+                hover: [firstLineVar, ...lines.slice(i, i + 4)].join('\n'),
+              });
+              i += 4;
+            } else if (
+              i + 2 < lines.length &&
+              firstLineVar.startsWith('Mock function call') &&
+              lines[i + 0].startsWith('    Function call:') &&
+              lines[i + 1].startsWith('         Expected:') &&
+              lines[i + 2].startsWith('           Actual:')
+            ) {
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + lines[i + 1].trim() + ';  ' + lines[i + 2].trim() + ';',
+                hover: [firstLineVar, ...lines.slice(i, i + 3)].join('\n'),
+              });
+              i += 3;
+            } else if (firstLineVar.startsWith('Expected equality of these values:')) {
+              let j = i;
+              while (j < lines.length && lines[j].startsWith('  ')) j++;
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ Expected: equality',
+                hover: lines.slice(i, j).join('\n'),
+              });
+              i = j;
+            } else if (firstLineVar.startsWith('The difference between')) {
+              let j = i;
+              while (j < lines.length && lines[j].indexOf(' evaluates to ') != -1) j++;
+              addDecoration({
+                file: filePath,
+                line: lineNumber,
+                message: '⬅️ ' + firstLineVar.trim(),
+                hover: lines.slice(i, j).join('\n'),
+              });
+              i = j;
+            } else {
+              addDecoration({ file: filePath, line: lineNumber, message: '⬅️ ' + firstLineVar, hover: '' });
+            }
+          } else if (lines[i].startsWith('GMOCK WARNING:')) {
             gMockWarningCount += 1;
             if (ev.state === 'passed' && this._shared.googleTestTreatGMockWarningAs === 'failure') ev.state = 'failed';
+            i += 1;
+          } else {
+            i += 1;
           }
-
-          i += 1;
         }
       }
 

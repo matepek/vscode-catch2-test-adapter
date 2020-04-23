@@ -32,7 +32,7 @@ export abstract class AbstractRunnable {
   public constructor(
     protected readonly _shared: SharedVariables,
     protected readonly _rootSuite: Suite,
-    public readonly execInfo: RunnableSuiteProperties,
+    public readonly properties: RunnableSuiteProperties,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<Version | undefined>,
   ) {
@@ -54,8 +54,8 @@ export abstract class AbstractRunnable {
 
   protected _getGroupByExecutable(): GroupByExecutable {
     return {
-      label: this.execInfo.name,
-      description: this.execInfo.description,
+      label: this.properties.name,
+      description: this.properties.description,
     };
   }
 
@@ -85,7 +85,7 @@ export abstract class AbstractRunnable {
   private _resolveText(text: string, ...additionalVarToValue: readonly ResolveRulePair[]): string {
     let resolvedText = text;
     try {
-      resolvedText = resolveVariables(resolvedText, this.execInfo.varToValue);
+      resolvedText = resolveVariables(resolvedText, this.properties.varToValue);
       resolvedText = resolveVariables(resolvedText, additionalVarToValue);
       resolvedText = resolveOSEnvironmentVariables(resolvedText, false);
 
@@ -159,7 +159,7 @@ export abstract class AbstractRunnable {
           getOrCreateChildSuite(
             g.label !== undefined ? g.label : '${filename}',
             g.description !== undefined ? g.description : '${relDirpath}' + pathlib.sep,
-            `Path: ${this.execInfo.path}\nCwd: ${this.execInfo.options.cwd}`,
+            `Path: ${this.properties.path}\nCwd: ${this.properties.options.cwd}`,
           );
 
           currentGrouping = g;
@@ -341,7 +341,7 @@ export abstract class AbstractRunnable {
   }
 
   private _getModiTime(): Promise<number | undefined> {
-    return promisify(fs.stat)(this.execInfo.path).then(
+    return promisify(fs.stat)(this.properties.path).then(
       stat => stat.mtimeMs,
       () => undefined,
     );
@@ -354,38 +354,24 @@ export abstract class AbstractRunnable {
   }
 
   private _splitTestSetForMultirun(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
-    // const maxGroupNumber = 10;
-    // const maxBucket = 100;
-    // const minMilisecForGroup = 2000;
-    // const maxMilisecForGroup = 10000;
+    const parallelizationLimit = this.properties.parallelizationPool.maxTaskCount;
 
-    // const hasRuntime: AbstractTest[] = [];
-    // const noHasRuntime: AbstractTest[] = [];
+    // user intention?
+    const testPerTask = Math.max(1, Math.round(this.tests.length / parallelizationLimit));
 
-    // let durationSum = 0;
-    // let durationCount = 0;
+    const targetTaskCount = Math.min(tests.length, Math.max(1, Math.round(tests.length / testPerTask)));
 
-    // for (const t of tests) {
-    //   if (t.lastRunMilisec !== undefined) {
-    //     durationCount++;
-    //     durationSum += t.lastRunMilisec;
-    //   }
-    // }
+    const buckets: AbstractTest[][] = [];
 
-    // const noDurationCount = tests.length - durationCount;
-    // const avgDuration = durationSum / durationCount;
-    // const extrapolatedDuration = avgDuration * noDurationCount + durationSum;
-    // const bucketTreshold = extrapolatedDuration / maxGroupNumber;
+    for (let i = 0; i < targetTaskCount; ++i) {
+      buckets.push([]);
+    }
 
-    // let bucketNumber = extrapolatedDuration/maxMilisecForGroup;
+    for (let i = 0; i < tests.length; ++i) {
+      buckets[i % buckets.length].push(tests[i]);
+    }
 
-    //const buckets: AbstractTest[][] = [];
-
-    //tests.forEach(t => buckets.push([t]));
-
-    //return buckets;
-
-    return [tests];
+    return buckets;
   }
 
   private _splitTestsToSmallEnoughSubsets(tests: readonly AbstractTest[]): AbstractTest[][] {
@@ -416,7 +402,7 @@ export abstract class AbstractRunnable {
 
   public reloadTests(taskPool: TaskPool): Promise<void> {
     return taskPool.scheduleTask(async () => {
-      this._shared.log.info('reloadChildren', this.frameworkName, this.frameworkVersion, this.execInfo.path);
+      this._shared.log.info('reloadChildren', this.frameworkName, this.frameworkVersion, this.properties.path);
 
       const lastModiTime = await this._getModiTime();
 
@@ -426,13 +412,13 @@ export abstract class AbstractRunnable {
         this._tests = [];
         return this._reloadChildren().finally(() => oldTests.forEach(t => t.removeWithLeafAscendants()));
       } else {
-        this._shared.log.debug('reloadTests was skipped due to mtime', this.execInfo.path);
+        this._shared.log.debug('reloadTests was skipped due to mtime', this.properties.path);
       }
     });
   }
 
   public cancel(): void {
-    this._shared.log.info('canceled:', this.execInfo.path);
+    this._shared.log.info('canceled:', this.properties.path);
 
     this._runInfos.forEach(r => {
       try {
@@ -452,7 +438,10 @@ export abstract class AbstractRunnable {
       return Promise.resolve();
     }
 
-    const buckets = this._splitTestSetForMultirun(childrenToRun);
+    const buckets =
+      this.properties.parallelizationPool.maxTaskCount > 1
+        ? this._splitTestSetForMultirun(childrenToRun)
+        : [childrenToRun];
 
     return Promise.all(
       buckets.map(async (bucket: readonly AbstractTest[]) => {
@@ -473,25 +462,27 @@ export abstract class AbstractRunnable {
   }
 
   private _runInner(childrenToRun: readonly AbstractTest[], taskPool: TaskPool): Promise<void> {
-    const runIfNotCancelled = (): Promise<void> => {
-      if (this._canceled) {
-        this._shared.log.info('test was canceled:', this);
-        return Promise.resolve();
-      }
-      return this._runProcess(childrenToRun);
-    };
+    return this.properties.parallelizationPool.scheduleTask(() => {
+      const runIfNotCancelled = (): Promise<void> => {
+        if (this._canceled) {
+          this._shared.log.info('test was canceled:', this);
+          return Promise.resolve();
+        }
+        return this._runProcess(childrenToRun);
+      };
 
-    return taskPool.scheduleTask(runIfNotCancelled).catch((err: Error) => {
-      // eslint-disable-next-line
-      if ((err as any).code === 'EBUSY' || (err as any).code === 'ETXTBSY') {
-        this._shared.log.info('executable is busy, rescheduled: 2sec', err);
+      return taskPool.scheduleTask(runIfNotCancelled).catch((err: Error) => {
+        // eslint-disable-next-line
+        if ((err as any).code === 'EBUSY' || (err as any).code === 'ETXTBSY') {
+          this._shared.log.info('executable is busy, rescheduled: 2sec', err);
 
-        return promisify(setTimeout)(2000).then(() => {
-          taskPool.scheduleTask(runIfNotCancelled);
-        });
-      } else {
-        throw err;
-      }
+          return promisify(setTimeout)(2000).then(() => {
+            taskPool.scheduleTask(runIfNotCancelled);
+          });
+        } else {
+          throw err;
+        }
+      });
     });
   }
 
@@ -520,20 +511,20 @@ export abstract class AbstractRunnable {
       return Promise.resolve();
     }
 
-    const execParams = this.execInfo.prependTestRunningArgs.concat(this._getRunParams(runnableDescendant));
+    const execParams = this.properties.prependTestRunningArgs.concat(this._getRunParams(runnableDescendant));
 
-    this._shared.log.info('proc starting', this.execInfo.path);
-    this._shared.log.localDebug('proc starting', this.execInfo.path, execParams);
+    this._shared.log.info('proc starting', this.properties.path);
+    this._shared.log.localDebug('proc starting', this.properties.path, execParams);
 
     const runInfo = new RunningRunnable(
-      cp.spawn(this.execInfo.path, execParams, this.execInfo.options),
+      cp.spawn(this.properties.path, execParams, this.properties.options),
       runnableDescendant,
     );
 
     this._runInfos.push(runInfo);
 
-    this._shared.log.info('proc started:', this.execInfo.path);
-    this._shared.log.localDebug('proc started:', this.execInfo.path, this.execInfo, execParams);
+    this._shared.log.info('proc started:', this.properties.path);
+    this._shared.log.localDebug('proc started:', this.properties.path, this.properties, execParams);
 
     runInfo.process.on('error', (err: Error) => {
       this._shared.log.error('process error event:', err, this);
@@ -547,7 +538,7 @@ export abstract class AbstractRunnable {
       });
 
       runInfo.process.once('close', (...args) => {
-        this._shared.log.localDebug('proc close:', this.execInfo.path, args);
+        this._shared.log.localDebug('proc close:', this.properties.path, args);
         trigger('closed');
       });
 
@@ -584,7 +575,7 @@ export abstract class AbstractRunnable {
         this._shared.log.exception(reason);
       })
       .then(() => {
-        this._shared.log.info('proc finished:', this.execInfo.path);
+        this._shared.log.info('proc finished:', this.properties.path);
 
         const index = this._runInfos.indexOf(runInfo);
         if (index === -1) {
@@ -604,7 +595,7 @@ export abstract class AbstractRunnable {
 
     try {
       let parent: string;
-      let parentParent = pathlib.dirname(this.execInfo.path);
+      let parentParent = pathlib.dirname(this.properties.path);
       do {
         parent = parentParent;
         parentParent = pathlib.dirname(parent);
@@ -614,10 +605,10 @@ export abstract class AbstractRunnable {
       } while (parent != parentParent);
     } catch {}
 
-    if (this.execInfo.options.cwd && !this.execInfo.path.startsWith(this.execInfo.options.cwd))
+    if (this.properties.options.cwd && !this.properties.path.startsWith(this.properties.options.cwd))
       try {
         let parent: string;
-        let parentParent = this.execInfo.options.cwd;
+        let parentParent = this.properties.options.cwd;
         do {
           parent = parentParent;
           parentParent = pathlib.dirname(parent);
@@ -628,8 +619,8 @@ export abstract class AbstractRunnable {
       } catch {}
 
     if (
-      !this.execInfo.path.startsWith(this._shared.workspaceFolder.uri.fsPath) &&
-      (!this.execInfo.options.cwd || !this.execInfo.options.cwd.startsWith(this._shared.workspaceFolder.uri.fsPath))
+      !this.properties.path.startsWith(this._shared.workspaceFolder.uri.fsPath) &&
+      (!this.properties.options.cwd || !this.properties.options.cwd.startsWith(this._shared.workspaceFolder.uri.fsPath))
     )
       try {
         let parent: string;

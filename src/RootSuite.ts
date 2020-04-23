@@ -85,7 +85,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
     for (const [runnable, runnableTests] of runnables) {
       ps.push(
         runnable.run(runnableTests, this._shared.taskPool).catch(err => {
-          this._shared.log.error('RootTestSuite.run.for.child', runnable.execInfo.path, err);
+          this._shared.log.error('RootTestSuite.run.for.child', runnable.properties.path, err);
         }),
       );
     }

@@ -272,6 +272,8 @@ export class Config {
 
       const dependsOn: string[] = Array.isArray(obj.dependsOn) ? obj.dependsOn.filter(v => typeof v === 'string') : [];
 
+      const parallelizationLimit: number = typeof obj.parallelizationLimit === 'number' ? obj.parallelizationLimit : 1;
+
       const testGrouping: object = obj.testGrouping ? obj.testGrouping : undefined;
 
       // eslint-disable-next-line
@@ -310,6 +312,7 @@ export class Config {
         cwd,
         env,
         dependsOn,
+        parallelizationLimit,
         defaultCwd,
         defaultEnv,
         variableToValue,
@@ -330,6 +333,7 @@ export class Config {
           undefined,
           undefined,
           [],
+          1,
           defaultCwd,
           defaultEnv,
           variableToValue,
@@ -353,6 +357,7 @@ export class Config {
                 undefined,
                 undefined,
                 [],
+                1,
                 defaultCwd,
                 defaultEnv,
                 variableToValue,

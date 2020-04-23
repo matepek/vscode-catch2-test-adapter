@@ -27,8 +27,8 @@ export class GoogleRunnable extends AbstractRunnable {
   }
 
   private getTestGrouping(): TestGrouping {
-    if (this.execInfo.testGrouping) {
-      return this.execInfo.testGrouping;
+    if (this.properties.testGrouping) {
+      return this.properties.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
       grouping.groupByExecutable.groupByTags = { tags: [], tagFormat: '${tag}' };
@@ -154,12 +154,12 @@ export class GoogleRunnable extends AbstractRunnable {
   }
 
   protected async _reloadChildren(): Promise<void> {
-    const cacheFile = this.execInfo.path + '.cache.xml';
+    const cacheFile = this.properties.path + '.cache.xml';
 
     if (this._shared.enabledTestListCaching) {
       try {
         const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.execInfo.path);
+        const execStat = await promisify(fs.stat)(this.properties.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this._shared.log.info('loading from cache: ', cacheFile);
@@ -175,15 +175,15 @@ export class GoogleRunnable extends AbstractRunnable {
 
     return c2fs
       .spawnAsync(
-        this.execInfo.path,
-        this.execInfo.prependTestListingArgs.concat(['--gtest_list_tests', '--gtest_output=xml:' + cacheFile]),
-        this.execInfo.options,
+        this.properties.path,
+        this.properties.prependTestListingArgs.concat(['--gtest_list_tests', '--gtest_output=xml:' + cacheFile]),
+        this.properties.options,
         30000,
       )
       .then(async googleTestListOutput => {
         this.children = [];
 
-        if (googleTestListOutput.stderr && !this.execInfo.ignoreTestEnumerationStdErr) {
+        if (googleTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
           this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
           this._createAndAddUnexpectedStdError(googleTestListOutput.stdout, googleTestListOutput.stderr);
         } else {

@@ -26,6 +26,7 @@ export class RunnableSuiteFactory {
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,
     private readonly _doctest: ExecutableConfigFrameworkSpecific,
+    private readonly _parallelizationLimit: number,
   ) {}
 
   public create(checkIsNativeExecutable: boolean): Promise<AbstractRunnable> {
@@ -46,6 +47,7 @@ export class RunnableSuiteFactory {
                 this._execPath,
                 this._execOptions,
                 this._gtest,
+                this._parallelizationLimit,
               ),
               Promise.resolve(undefined), //Util: GoogleTestVersionFinder
             );
@@ -60,6 +62,7 @@ export class RunnableSuiteFactory {
                 this._execPath,
                 this._execOptions,
                 this._catch2,
+                this._parallelizationLimit,
               ),
               framework.version!,
             );
@@ -74,6 +77,7 @@ export class RunnableSuiteFactory {
                 this._execPath,
                 this._execOptions,
                 this._doctest,
+                this._parallelizationLimit,
               ),
               framework.version!,
             );
