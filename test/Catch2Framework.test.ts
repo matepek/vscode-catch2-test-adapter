@@ -6,6 +6,7 @@ import { inspect } from 'util';
 import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
+import * as pathlib from 'path';
 import {
   TestAdapter,
   Imitation,
@@ -208,7 +209,7 @@ describe(path.basename(__filename), function () {
         type: 'suite',
         state: 'completed',
         suite: adapter.suite1,
-        description: './ (0ms)',
+        description: `.${pathlib.sep} (0ms)`,
         tooltip:
           'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 1\n  - failed: 1\n⏱Duration: 0ms',
       },
@@ -229,7 +230,7 @@ describe(path.basename(__filename), function () {
         type: 'suite',
         state: 'completed',
         suite: adapter.suite1,
-        description: './ (0ms)',
+        description: `.${pathlib.sep} (0ms)`,
         tooltip:
           'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
       },
