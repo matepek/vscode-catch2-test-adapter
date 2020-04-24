@@ -158,7 +158,7 @@ export abstract class AbstractRunnable {
 
           getOrCreateChildSuite(
             g.label !== undefined ? g.label : '${filename}',
-            g.description !== undefined ? g.description : '${relDirpath}' + pathlib.sep,
+            g.description !== undefined ? g.description : '${relDirpath}${osPathSep}',
             `Path: ${this.properties.path}\nCwd: ${this.properties.options.cwd}`,
           );
 

@@ -239,9 +239,9 @@ export class GoogleRunnable extends AbstractRunnable {
   }
 
   public getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[] {
-    const params = this._getRunParams(childrenToRun as readonly GoogleTest[]);
-    if (breakOnFailure) params.push('--gtest_break_on_failure');
-    return params;
+    const debugParams = this._getRunParams(childrenToRun as readonly GoogleTest[]);
+    if (breakOnFailure) debugParams.push('--gtest_break_on_failure');
+    return debugParams;
   }
 
   protected _handleProcess(runInfo: RunningRunnable): Promise<void> {

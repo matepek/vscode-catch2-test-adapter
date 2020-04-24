@@ -1,4 +1,5 @@
 import { inspect } from 'util';
+import { sep as osPathSeparator } from 'path';
 import * as vscode from 'vscode';
 import {
   TestEvent,
@@ -34,9 +35,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _retireEmitter = new vscode.EventEmitter<RetireEvent>();
 
   private readonly _variableToValue: [string, string][] = [
+    ['${workspaceName}', this.workspaceFolder.name], // beware changing this line or the order
     ['${workspaceDirectory}', this.workspaceFolder.uri.fsPath],
     ['${workspaceFolder}', this.workspaceFolder.uri.fsPath],
-    ['${workspaceName}', this.workspaceFolder.name],
+    ['${osPathSep}', osPathSeparator],
   ];
 
   // because we always want to return with the current rootSuite suite
@@ -134,7 +136,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(
       vscode.workspace.onDidChangeWorkspaceFolders(() => {
-        this._variableToValue[2][1] = this.workspaceFolder.name;
+        this._variableToValue[0][1] = this.workspaceFolder.name;
       }),
     );
 
