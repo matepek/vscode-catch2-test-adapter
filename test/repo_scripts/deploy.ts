@@ -112,6 +112,8 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
       'Content-Type': 'application/json',
     });
 
+    assert.ok(typeof response === 'object', JSON.stringify(response));
+
     let build;
     for (const b of response.builds) {
       if (b.commitId === process.env['TRAVIS_COMMIT']) {
@@ -137,6 +139,8 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
         Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'],
         'Content-Type': 'application/json',
       });
+
+      assert.ok(typeof response === 'object', JSON.stringify(response));
 
       status = response.build.status;
 

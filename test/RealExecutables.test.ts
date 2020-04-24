@@ -309,7 +309,7 @@ describe(path.basename(__filename), function () {
     };
 
     it('should work with long argv.length=10', testWithLength(10));
-    it('should work with long argv.length=100000', testWithLength(10000));
+    it('should work with long argv.length=100000', testWithLength(31000));
   });
 
   context('parallel spawn', function () {
@@ -354,6 +354,6 @@ describe(path.basename(__filename), function () {
     };
 
     it('should work with 10', testWith(10, 5));
-    it('should work with 100', testWith(50, 5));
+    it('should work with 20', testWith(20, 5));
   });
 });
