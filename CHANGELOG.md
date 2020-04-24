@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.5]
+
+### Fixed
+
+- GoogleTest parsing. Nobody told me that on windows GoogleTest has a different format
+
 ## [2.9.4] - 2020-04-24
 
 ### Fixed

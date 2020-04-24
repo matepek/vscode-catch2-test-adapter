@@ -68,15 +68,7 @@ export class Suite implements TestSuiteInfo {
       if (children.some(v => children[0].file !== v.file)) return;
 
       this._file = children[0].file;
-
-      if (this._file === undefined) return;
-
-      this._line = children
-        .filter(v => v.line !== undefined)
-        .reduce(
-          (prev, curr) => (curr.line === undefined ? prev : prev === 0 ? curr.line : Math.min(prev, curr.line)),
-          0,
-        );
+      this._line = this._file ? 0 : undefined;
     }
   }
 
