@@ -35,14 +35,6 @@ beforeEach(function () {
 afterEach(async function () {
   this.timeout(2000);
 
-  // function(){
-  //   // append the aggregated log file
-  //   const r = fse.createReadStream(currentLogfilePath);
-  //   const w = fse.createWriteStream(aggregatedLogFilePath, { flags: 'a' });
-  //   r.pipe(w);
-  //   await new Promise<void>(resolve => w.on('close', resolve));
-  // }();
-
   assert.notStrictEqual(this.currentTest, undefined);
   const currentTest = this.currentTest!;
   const title = currentTest.titlePath().join(' -> ');

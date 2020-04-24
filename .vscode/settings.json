@@ -111,5 +111,8 @@
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
-  }
+  },
+  "mochaExplorer.files": "/out/test/**/*.test.js",
+  "mochaExplorer.require": "source-map-support/register",
+  "mochaExplorer.logpanel": true
 }

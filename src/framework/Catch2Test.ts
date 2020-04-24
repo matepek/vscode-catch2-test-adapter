@@ -91,7 +91,7 @@ export class Catch2Test extends AbstractTest {
       testNameAsId,
       file,
       line,
-      tags.some((v: string) => v.startsWith('.') || v == 'hide') || testNameAsId.startsWith('./'),
+      tags.some((v: string) => v.startsWith('.') || v == 'hide' || v == '!hide') || testNameAsId.startsWith('./'),
       forceIgnoreEvent,
       tags,
       description,

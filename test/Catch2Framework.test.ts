@@ -581,7 +581,7 @@ describe(path.basename(__filename), function () {
   });
 
   specify('wrong executables format', async function () {
-    expectedLoggedErrorLine('Error: Error: pattern property is required.');
+    expectedLoggedErrorLine('[Error: pattern property is required.');
 
     this.slow(5000);
     await settings.updateConfig('executables', { name: '' });

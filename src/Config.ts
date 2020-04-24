@@ -262,7 +262,7 @@ export class Config {
         else if (typeof obj.path == 'string') pattern = obj.path;
         else {
           this._log.debug('pattern property is required', obj);
-          throw Error('Error: pattern property is required.');
+          throw Error('pattern property is required.');
         }
       }
 

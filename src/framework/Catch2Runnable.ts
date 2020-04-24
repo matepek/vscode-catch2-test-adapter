@@ -102,11 +102,13 @@ export class Catch2Runnable extends AbstractRunnable {
         ++i;
       }
 
+      const tagsWithoutHide = tags.filter((v: string) => !v.startsWith('.') && v != 'hide' && v != '!hide');
+
       this._createSubtreeAndAddTest(
         testName,
         testName,
         filePath,
-        tags,
+        tagsWithoutHide,
         this.getTestGrouping(),
         (parent: Suite, old: AbstractTest | undefined) =>
           new Catch2Test(
