@@ -5,8 +5,7 @@ import * as assert from 'assert';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as request from 'request';
-import * as requestP from 'request-promise';
+import * as bent from 'bent';
 import { promisify } from 'util';
 import * as vsce from 'vsce';
 
@@ -39,6 +38,9 @@ async function spawn(command: string, ...args: string[]): Promise<void> {
     });
   });
 }
+
+// eslint-disable-next-line
+type JsonResp = { [key: string]: any };
 
 ///
 
@@ -103,14 +105,15 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
 
     console.log('Checking Appveyor job with commit:', process.env['TRAVIS_COMMIT']);
 
-    const response = await requestP.get({
-      url: 'https://ci.appveyor.com/api/projects/' + githubRepoFullId + '/history?recordsNumber=50',
-      headers: { Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'], 'Content-Type': 'application/json' },
+    const appveyor = bent('https://ci.appveyor.com', 'json', 'GET');
+
+    const response: JsonResp = await appveyor(`/api/projects/${githubRepoFullId}/history?recordsNumber=50`, undefined, {
+      Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'],
+      'Content-Type': 'application/json',
     });
 
-    const responseJson = JSON.parse(response.toString());
     let build;
-    for (const b of responseJson.builds) {
+    for (const b of response.builds) {
       if (b.commitId === process.env['TRAVIS_COMMIT']) {
         build = b;
         break;
@@ -130,16 +133,15 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
 
       await promisify(setTimeout)(20000);
 
-      const response = await requestP.get({
-        url: 'https://ci.appveyor.com/api/projects/' + githubRepoFullId + '/build/' + version,
-        headers: { Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'], 'Content-Type': 'application/json' },
+      const response: JsonResp = appveyor(`/api/projects/${githubRepoFullId}/build/${version}`, undefined, {
+        Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'],
+        'Content-Type': 'application/json',
       });
-      const responseJson = JSON.parse(response.toString());
 
-      status = responseJson.build.status;
+      status = response.build.status;
 
       if (status === 'running') {
-        const filteredJobs = responseJson.build.jobs.filter(
+        const filteredJobs = response.build.jobs.filter(
           (j: { status: string }) => !queuedOrRunning(j.status) && j.status !== 'success',
         );
         if (filteredJobs.length > 0) {
@@ -258,47 +260,41 @@ async function createGithubRelease(info: Info, packagePath: string): Promise<voi
     assert.ok(process.env['GITHUB_API_KEY'] != undefined);
     const key = process.env['GITHUB_API_KEY']!;
 
-    const response = await requestP.get({
-      url: 'https://api.github.com/repos/' + githubRepoFullId + '/releases/latest',
-      headers: { 'User-Agent': githubOwnerId + '-deploy.js' },
-      auth: { user: githubOwnerId, pass: key },
+    const githubGet = bent(`https://${githubOwnerId}:${key}@api.github.com`, 'json', 'GET');
+    const githubPost = bent(`https://${githubOwnerId}:${key}@api.github.com`, 'json', 'POST');
+
+    const response: JsonResp = await githubGet(`/repos/${githubRepoFullId}/releases/latest`, undefined, {
+      'User-Agent': `${githubOwnerId}-deploy.js`,
     });
 
-    const responseJson = JSON.parse(response.toString());
-    assert.notStrictEqual(responseJson.tag_name, info.vver);
+    assert.notStrictEqual(response.tag_name, info.vver);
 
-    const createReleaseResponse = await requestP.post({
-      url: 'https://api.github.com/repos/' + githubRepoFullId + '/releases',
-      headers: { 'User-Agent': githubOwnerId + '-deploy.js' },
-      json: {
+    const createReleaseResponse: JsonResp = await githubPost(
+      `/repos/${githubRepoFullId}/releases`,
+      {
         tag_name: info.vver, // eslint-disable-line
         name: info.full,
         body: 'See [CHANGELOG.md](CHANGELOG.md) for details.',
       },
-      auth: { user: githubOwnerId, pass: key },
-    });
+      { 'User-Agent': `${githubOwnerId}-deploy.js` },
+    );
 
-    await new Promise((resolve, reject) => {
-      assert.ok(packagePath);
-      const stats = fs.statSync(packagePath);
-      const uploadAssetRequest = request.post({
-        url: createReleaseResponse.upload_url.replace(
-          '{?name,label}',
-          '?name=' + vscodeExtensionId + '-' + info.version + '.vsix',
-        ),
-        headers: {
-          'User-Agent': githubOwnerId + '-deploy.js',
-          'Content-Type': 'application/zip',
-          'Content-Length': stats.size,
-        },
-        auth: { user: githubOwnerId, pass: key },
-      });
+    const stats = fs.statSync(packagePath);
+    assert.ok(stats.isFile());
 
-      fs.createReadStream(packagePath).pipe(uploadAssetRequest);
+    const stream = fs.createReadStream(packagePath);
 
-      uploadAssetRequest.on('complete', (/*resp*/) => resolve());
-      uploadAssetRequest.on('error', e => reject(e));
-    });
+    await bent('json', 'POST')(
+      createReleaseResponse.upload_url
+        .replace('://', `://${githubOwnerId}:${key}@`)
+        .replace('{?name,label}', `?name=${vscodeExtensionId}-${info.version}.vsix`),
+      stream,
+      {
+        'User-Agent': githubOwnerId + '-deploy.js',
+        'Content-Type': 'application/zip',
+        'Content-Length': stats.size,
+      },
+    );
   } catch (e) {
     return Promise.reject(e);
   }
