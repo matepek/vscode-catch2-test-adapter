@@ -113,6 +113,7 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
     });
 
     assert.ok(typeof response === 'object', JSON.stringify(response));
+    assert.ok(typeof response.builds === 'object' && response.builds.length > 0, JSON.stringify(response));
 
     let build;
     for (const b of response.builds) {
@@ -127,6 +128,8 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
     const version = build.version;
     let status = build.status;
 
+    console.log(version);
+
     const queuedOrRunning = (status: string): boolean => status === 'running' || status === 'queued';
 
     const start = Date.now();
@@ -135,16 +138,20 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
 
       await promisify(setTimeout)(20000);
 
-      const response: JsonResp = appveyor(`/api/projects/${githubRepoFullId}/build/${version}`, undefined, {
+      const response: JsonResp = await appveyor(`/api/projects/${githubRepoFullId}/build/${version}`, undefined, {
         Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'],
         'Content-Type': 'application/json',
       });
 
       assert.ok(typeof response === 'object', JSON.stringify(response));
+      assert.ok(typeof response.build === 'object', JSON.stringify(response));
+      assert.ok(typeof response.build.status === 'string', JSON.stringify(response));
 
       status = response.build.status;
 
-      if (status === 'running') {
+      if (status === 'success') {
+        return Promise.resolve();
+      } else if (status === 'running') {
         const filteredJobs = response.build.jobs.filter(
           (j: { status: string }) => !queuedOrRunning(j.status) && j.status !== 'success',
         );
@@ -154,9 +161,7 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
       }
     }
 
-    if (status === 'success') {
-      return Promise.resolve();
-    } else if (Date.now() - start > timeout) {
+    if (Date.now() - start > timeout) {
       throw new Error('Appveyor timeout has been reached: ' + timeout);
     } else {
       throw new Error('Appveyor status: ' + status);
