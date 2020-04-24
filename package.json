@@ -81,6 +81,7 @@
     "mocha-eslint": "^6.0.0",
     "prettier": "2.0.2",
     "raw-loader": "^4.0.1",
+    "request": "2.88.2",
     "request-promise": "4.2.5",
     "sinon": "^9.0.2",
     "source-map-support": "^0.5.18",
