@@ -1,11 +1,15 @@
 import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { AbstractTest } from '../AbstractTest';
-import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable } from '../RunningRunnable';
 import { TestEventBuilder } from '../TestEventBuilder';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
+import { LoggerWrapper } from '../LoggerWrapper';
+
+interface SharedWithDOCTest {
+  log: LoggerWrapper;
+}
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -37,7 +41,7 @@ export class DOCSection implements Frame {
 
 export class DOCTest extends AbstractTest {
   public constructor(
-    shared: SharedVariables,
+    shared: SharedWithDOCTest,
     runnable: AbstractRunnable,
     parent: Suite,
     id: string | undefined,

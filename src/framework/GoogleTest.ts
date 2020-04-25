@@ -1,14 +1,18 @@
 import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
 
 import { AbstractTest } from '../AbstractTest';
-import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable } from '../RunningRunnable';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
+import { LoggerWrapper } from '../LoggerWrapper';
+
+interface SharedWithGoogleTest {
+  log: LoggerWrapper;
+}
 
 export class GoogleTest extends AbstractTest {
   public constructor(
-    shared: SharedVariables,
+    shared: SharedWithGoogleTest,
     runnable: AbstractRunnable,
     parent: Suite,
     id: string | undefined,

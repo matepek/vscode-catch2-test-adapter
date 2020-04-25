@@ -2,13 +2,17 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { AbstractTest } from '../AbstractTest';
 import { inspect } from 'util';
-import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable } from '../RunningRunnable';
 import { TestEventBuilder } from '../TestEventBuilder';
 import * as pathlib from 'path';
 import { Version } from '../Util';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
+import { LoggerWrapper } from '../LoggerWrapper';
+
+interface SharedWithCatch2Test {
+  log: LoggerWrapper;
+}
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -38,7 +42,7 @@ const EscapeCharParserFix = new Version(2, 11, 4);
 
 export class Catch2Test extends AbstractTest {
   public constructor(
-    shared: SharedVariables,
+    shared: SharedWithCatch2Test,
     runnable: AbstractRunnable,
     parent: Suite,
     frameworkVersion: Version,
