@@ -271,7 +271,7 @@ async function createGithubRelease(info: Info, packagePath: string): Promise<voi
     const keyBase64 = new Buffer(`${githubOwnerId}:${key}`).toString('base64');
     const headerBase = {
       'User-Agent': `${githubOwnerId}-deploy.js`,
-      'Proxy-Authorization': `Basic ${keyBase64}`,
+      Authorization: `Basic ${keyBase64}`,
     };
 
     const githubGet = bent(`https://api.github.com`, 'json', 'GET');
