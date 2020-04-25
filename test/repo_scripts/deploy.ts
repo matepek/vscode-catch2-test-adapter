@@ -149,9 +149,7 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
 
       status = response.build.status;
 
-      if (status === 'success') {
-        return Promise.resolve();
-      } else if (status === 'running') {
+      if (status === 'running') {
         const filteredJobs = response.build.jobs.filter(
           (j: { status: string }) => !queuedOrRunning(j.status) && j.status !== 'success',
         );
@@ -161,7 +159,9 @@ async function waitForAppveyorTestsToBeFinished(): Promise<void> {
       }
     }
 
-    if (Date.now() - start > timeout) {
+    if (status === 'success') {
+      return Promise.resolve();
+    } else if (Date.now() - start > timeout) {
       throw new Error('Appveyor timeout has been reached: ' + timeout);
     } else {
       throw new Error('Appveyor status: ' + status);
