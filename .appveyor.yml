@@ -10,7 +10,7 @@ environment:
 
   matrix:
     - VSCODE_VERSION: "latest"
-    - VSCODE_VERSION: "1.31.0"
+    #- VSCODE_VERSION: "1.31.0" appveyor is too slow and we have similar tests using travis
 
 install:
   - ps: Install-Product node $env:nodejs_version
@@ -25,6 +25,3 @@ build: off
 
 test_script:
   - npm test
-
-#on_failure:
-#  - type .\out\tmp\workspaceFolder\FailedTestLogs\log_*.txt
