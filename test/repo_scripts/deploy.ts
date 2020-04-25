@@ -268,13 +268,16 @@ async function createGithubRelease(info: Info, packagePath: string): Promise<voi
     console.log('Publishing to github releases');
     assert.ok(process.env['GITHUB_API_KEY'] != undefined);
     const key = process.env['GITHUB_API_KEY']!;
-
-    const githubGet = bent(`https://${githubOwnerId}:${key}@api.github.com`, 'json', 'GET');
-    const githubPost = bent(`https://${githubOwnerId}:${key}@api.github.com`, 'json', 'POST');
-
-    const response: JsonResp = await githubGet(`/repos/${githubRepoFullId}/releases/latest`, undefined, {
+    const keyBase64 = new Buffer(`${githubOwnerId}:${key}`).toString('base64');
+    const headerBase = {
       'User-Agent': `${githubOwnerId}-deploy.js`,
-    });
+      'Proxy-Authorization': `Basic ${keyBase64}`,
+    };
+
+    const githubGet = bent(`https://api.github.com`, 'json', 'GET');
+    const githubPost = bent(`https://api.github.com`, 'json', 'POST');
+
+    const response: JsonResp = await githubGet(`/repos/${githubRepoFullId}/releases/latest`, undefined, headerBase);
 
     assert.notStrictEqual(response.tag_name, info.vver);
 
@@ -285,7 +288,7 @@ async function createGithubRelease(info: Info, packagePath: string): Promise<voi
         name: info.full,
         body: 'See [CHANGELOG.md](CHANGELOG.md) for details.',
       },
-      { 'User-Agent': `${githubOwnerId}-deploy.js` },
+      headerBase,
     );
 
     const stats = fs.statSync(packagePath);
@@ -298,11 +301,13 @@ async function createGithubRelease(info: Info, packagePath: string): Promise<voi
         .replace('://', `://${githubOwnerId}:${key}@`)
         .replace('{?name,label}', `?name=${vscodeExtensionId}-${info.version}.vsix`),
       stream,
-      {
-        'User-Agent': githubOwnerId + '-deploy.js',
-        'Content-Type': 'application/zip',
-        'Content-Length': stats.size,
-      },
+      Object.assign(
+        {
+          'Content-Type': 'application/zip',
+          'Content-Length': stats.size,
+        },
+        headerBase,
+      ),
     );
   } catch (e) {
     return Promise.reject(e);
