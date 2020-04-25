@@ -1,10 +1,13 @@
 import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import { generateId, milisecToStr } from './Util';
-import { SharedVariables } from './SharedVariables';
-import { RunningRunnable } from './RunningRunnable';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
+import { LoggerWrapper } from './LoggerWrapper';
+
+interface SharedWithAbstractTest {
+  log: LoggerWrapper;
+}
 
 export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
@@ -18,7 +21,7 @@ export abstract class AbstractTest implements TestInfo {
   public lastRunMilisec: number | undefined = undefined;
 
   protected constructor(
-    protected readonly _shared: SharedVariables,
+    protected readonly _shared: SharedWithAbstractTest,
     public readonly runnable: AbstractRunnable,
     public readonly parent: Suite, // ascending
     id: string | undefined,
@@ -62,9 +65,6 @@ export abstract class AbstractTest implements TestInfo {
       description.push(`#️⃣Value: ${_valueParam}`);
       tooltip.push(`#️⃣GetParam() = ${_valueParam}`);
     }
-
-    //TODO add path to tooltip
-    //this.runnable.execInfo.path;
 
     this.description = description.join('');
     this.tooltip = tooltip.join('\n');
@@ -122,7 +122,7 @@ export abstract class AbstractTest implements TestInfo {
   public abstract parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
-    runInfo: RunningRunnable,
+    timeout: number | null,
     stderr: string | undefined,
   ): TestEvent;
 

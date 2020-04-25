@@ -11,6 +11,7 @@ tests using the [Test Explorer for Visual Studio Code](https://marketplace.visua
 
 ## Whats new?
 
+- GoogleTest output parsing is working on windows too.
 - One executable can be run parallel with distinct set of subtests.
 - Grouping can be customized. ([Details](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping))
   - by souce file of the test

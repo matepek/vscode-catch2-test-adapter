@@ -76,26 +76,26 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     );
 
     // TODO feedback
-    if (false) {
-      'https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter&ssr=false#review-details';
-    }
+    // if (false) {
+    //   'https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter&ssr=false#review-details';
+    // }
 
     if (!this._isDebug) config.askSentryConsent();
 
     try {
-      const extensionInfo = ((): {
+      let extensionInfo: {
         version: string;
         publisher: string;
         name: string;
-      } => {
-        try {
-          const pjson = readJSONSync(join(__dirname, '../../package.json'));
-          return { version: pjson.version, publisher: pjson.publisher, name: pjson.name };
-        } catch (e) {
-          this._log.exception(e, __dirname);
-          return { version: '<unknown version>', publisher: '<unknown publisher>', name: '<unknown name>' };
-        }
-      })();
+      };
+
+      try {
+        const pjson = readJSONSync(join(__dirname, '../../package.json'));
+        extensionInfo = { version: pjson.version, publisher: pjson.publisher, name: pjson.name };
+      } catch (e) {
+        this._log.exception(e, __dirname);
+        extensionInfo = { version: '<unknown version>', publisher: '<unknown publisher>', name: '<unknown name>' };
+      }
 
       const enabled = !this._isDebug && config.isSentryEnabled();
 
