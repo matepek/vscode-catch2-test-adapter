@@ -274,14 +274,20 @@ async function createGithubRelease(info: Info, packagePath: string): Promise<voi
       Authorization: `Basic ${keyBase64}`,
     };
 
-    const githubGet = bent(`https://api.github.com`, 'json', 'GET');
-    const githubPost = bent(`https://api.github.com`, 'json', 'POST');
-
-    const response: JsonResp = await githubGet(`/repos/${githubRepoFullId}/releases/latest`, undefined, headerBase);
+    const response: JsonResp = await bent(`https://api.github.com`, 'json', 'GET')(
+      `/repos/${githubRepoFullId}/releases/latest`,
+      undefined,
+      headerBase,
+    );
 
     assert.notStrictEqual(response.tag_name, info.vver);
 
-    const createReleaseResponse: JsonResp = await githubPost(
+    const createReleaseResponse: JsonResp = await bent(
+      `https://api.github.com`,
+      'json',
+      'POST',
+      201,
+    )(
       `/repos/${githubRepoFullId}/releases`,
       {
         tag_name: info.vver, // eslint-disable-line
@@ -292,11 +298,13 @@ async function createGithubRelease(info: Info, packagePath: string): Promise<voi
     );
 
     const stats = fs.statSync(packagePath);
-    assert.ok(stats.isFile());
+    assert.ok(stats.isFile(), packagePath);
+
+    console.log('Uploading artifact to github releases');
 
     const stream = fs.createReadStream(packagePath);
 
-    await bent('json', 'POST')(
+    await bent('json', 'POST', 201)(
       createReleaseResponse.upload_url.replace('{?name,label}', `?name=${vscodeExtensionId}-${info.version}.vsix`),
       stream,
       Object.assign(
