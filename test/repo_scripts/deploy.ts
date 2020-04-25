@@ -266,9 +266,9 @@ function publishPackage(packagePath: string): Promise<void> {
 async function createGithubRelease(info: Info, packagePath: string): Promise<void> {
   try {
     console.log('Publishing to github releases');
-    assert.ok(process.env['GITHUB_API_KEY'] != undefined);
-    const key = process.env['GITHUB_API_KEY']!;
-    const keyBase64 = new Buffer(`${githubOwnerId}:${key}`).toString('base64');
+    assert.ok(typeof process.env['GITHUB_API_KEY'] === 'string');
+    const apiKey = process.env['GITHUB_API_KEY']!;
+    const keyBase64 = Buffer.from(`${githubOwnerId}:${apiKey}`, 'utf-8').toString('base64');
     const headerBase = {
       'User-Agent': `${githubOwnerId}-deploy.js`,
       Authorization: `Basic ${keyBase64}`,
@@ -297,9 +297,7 @@ async function createGithubRelease(info: Info, packagePath: string): Promise<voi
     const stream = fs.createReadStream(packagePath);
 
     await bent('json', 'POST')(
-      createReleaseResponse.upload_url
-        .replace('://', `://${githubOwnerId}:${key}@`)
-        .replace('{?name,label}', `?name=${vscodeExtensionId}-${info.version}.vsix`),
+      createReleaseResponse.upload_url.replace('{?name,label}', `?name=${vscodeExtensionId}-${info.version}.vsix`),
       stream,
       Object.assign(
         {
