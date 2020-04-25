@@ -299,7 +299,7 @@ export class GoogleRunnable extends AbstractRunnable {
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test ', data.currentChild.testName, 'has finished.');
               try {
-                const ev = data.currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo, undefined);
+                const ev = data.currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo.timeout, undefined);
 
                 this._shared.testStatesEmitter.fire(ev);
 
@@ -424,7 +424,7 @@ export class GoogleRunnable extends AbstractRunnable {
 
                 if (currentChild === undefined) break;
                 try {
-                  const ev = currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo, undefined);
+                  const ev = currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo.timeout, undefined);
                   events.push(ev);
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCase);

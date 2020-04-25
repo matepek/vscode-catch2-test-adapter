@@ -219,11 +219,15 @@ export class Imitation {
 
 ///
 
+export type TestRunEvent = TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent;
+
+///
+
 export class TestAdapter extends my.TestAdapter {
   public readonly testLoadsEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
   private readonly testLoadsEventsConnection: vscode.Disposable;
 
-  private readonly _testStatesEvents: (TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent)[] = [];
+  private readonly _testStatesEvents: TestRunEvent[] = [];
   private readonly testStatesEventsConnection: vscode.Disposable;
 
   public constructor() {
@@ -233,11 +237,9 @@ export class TestAdapter extends my.TestAdapter {
       this.testLoadsEvents.push(e);
     });
 
-    this.testStatesEventsConnection = this.testStates(
-      (e: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent) => {
-        this._testStatesEvents.push(e);
-      },
-    );
+    this.testStatesEventsConnection = this.testStates((e: TestRunEvent) => {
+      this._testStatesEvents.push(e);
+    });
   }
 
   public dispose(): void {
@@ -294,7 +296,7 @@ export class TestAdapter extends my.TestAdapter {
     return this.get(3) as TestSuiteInfo;
   }
 
-  public get testStatesEvents(): (TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent)[] {
+  public get testStatesEvents(): TestRunEvent[] {
     // eslint-disable-next-line
     return this._testStatesEvents.map((v: any) => {
       if (v.tooltip) v.tooltip = (v.tooltip as string).replace(/(Path|Cwd): .*/g, '$1: <masked>');
@@ -315,12 +317,8 @@ export class TestAdapter extends my.TestAdapter {
     }
   }
 
-  public getTestStatesEventIndex(
-    searchFor: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent,
-  ): number {
-    const i = this.testStatesEvents.findIndex(
-      (v: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent) => deepStrictEqual(searchFor, v),
-    );
+  public getTestStatesEventIndex(searchFor: TestRunEvent): number {
+    const i = this.testStatesEvents.findIndex((v: TestRunEvent) => deepStrictEqual(searchFor, v));
     assert.ok(
       0 <= i,
       'getTestStatesEventIndex failed to find: ' +
@@ -331,10 +329,7 @@ export class TestAdapter extends my.TestAdapter {
     return i;
   }
 
-  public testStateEventIndexLess(
-    less: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent,
-    thanThis: TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent,
-  ): void {
+  public testStateEventIndexLess(less: TestRunEvent, thanThis: TestRunEvent): void {
     const l = this.getTestStatesEventIndex(less);
     const r = this.getTestStatesEventIndex(thanThis);
     assert.ok(l < r, 'testStateEventIndexLess: ' + inspect({ less: [l, less], thanThis: [r, thanThis] }));

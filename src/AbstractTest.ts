@@ -1,7 +1,6 @@
 import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import { generateId, milisecToStr } from './Util';
-import { RunningRunnable } from './RunningRunnable';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
 import { LoggerWrapper } from './LoggerWrapper';
@@ -67,9 +66,6 @@ export abstract class AbstractTest implements TestInfo {
       tooltip.push(`#️⃣GetParam() = ${_valueParam}`);
     }
 
-    //TODO add path to tooltip
-    //this.runnable.execInfo.path;
-
     this.description = description.join('');
     this.tooltip = tooltip.join('\n');
 
@@ -126,7 +122,7 @@ export abstract class AbstractTest implements TestInfo {
   public abstract parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
-    runInfo: RunningRunnable,
+    timeout: number | null,
     stderr: string | undefined,
   ): TestEvent;
 

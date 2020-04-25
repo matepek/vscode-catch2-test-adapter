@@ -1,7 +1,6 @@
 import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
 
 import { AbstractTest } from '../AbstractTest';
-import { RunningRunnable } from '../RunningRunnable';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
 import { LoggerWrapper } from '../LoggerWrapper';
@@ -48,11 +47,11 @@ export class GoogleTest extends AbstractTest {
   public parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
-    runInfo: RunningRunnable,
+    timeout: number | null,
     stderr: string | undefined, //eslint-disable-line
   ): TestEvent {
-    if (runInfo.timeout !== null) {
-      const ev = this.getTimeoutEvent(runInfo.timeout);
+    if (timeout !== null) {
+      const ev = this.getTimeoutEvent(timeout);
       this.lastRunEvent = ev;
       return ev;
     }
@@ -102,7 +101,7 @@ export class GoogleTest extends AbstractTest {
       };
 
       // windows has a different output. this hopefiully match both
-      const reportRe = /^(.+)[:\(]([0-9]+)[:\)] ((Failure|EXPECT_CALL|error: )(.*))$/;
+      const reportRe = /^(.+)[:\(]([0-9]+)\)?: ((Failure|EXPECT_CALL|error: )(.*))$/;
 
       const gMockWarningCount = 0;
 
@@ -222,6 +221,7 @@ export class GoogleTest extends AbstractTest {
               });
               i = j;
             } else {
+              if (firstMsgLine.length === 0) this._shared.log.warn('unprocessed gtest failure', firstMsgLine);
               addDecoration({ file: filePath, line: lineNumber, message: '⬅️ ' + firstMsgLine, hover: '' });
             }
           } else if (match[4].startsWith('EXPECT_CALL')) {

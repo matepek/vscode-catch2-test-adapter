@@ -316,7 +316,7 @@ export class Catch2Runnable extends AbstractRunnable {
                 const ev = data.currentChild.parseAndProcessTestCase(
                   testCaseXml,
                   data.rngSeed,
-                  runInfo,
+                  runInfo.timeout,
                   data.stderrBuffer,
                 );
 
@@ -454,7 +454,7 @@ export class Catch2Runnable extends AbstractRunnable {
                 if (currentChild === undefined) break;
 
                 try {
-                  const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo, stderr);
+                  const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo.timeout, stderr);
                   events.push(ev);
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCaseXml);

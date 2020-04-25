@@ -2,7 +2,6 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 import { AbstractTest } from '../AbstractTest';
 import { inspect } from 'util';
-import { RunningRunnable } from '../RunningRunnable';
 import { TestEventBuilder } from '../TestEventBuilder';
 import * as pathlib from 'path';
 import { Version } from '../Util';
@@ -125,11 +124,11 @@ export class Catch2Test extends AbstractTest {
   public parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
-    runInfo: RunningRunnable,
+    timeout: number | null,
     stderr: string | undefined,
   ): TestEvent {
-    if (runInfo.timeout !== null) {
-      const ev = this.getTimeoutEvent(runInfo.timeout);
+    if (timeout !== null) {
+      const ev = this.getTimeoutEvent(timeout);
       this.lastRunEvent = ev;
       return ev;
     }
