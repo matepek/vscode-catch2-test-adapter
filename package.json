@@ -939,13 +939,7 @@
           "markdownDescription": "Errors/Exceptions will be logged and sent automatically for further analysis.",
           "scope": "resource",
           "type": "string",
-          "default": "question",
-          "enum": [
-            "question",
-            "enable",
-            "disable",
-            "disable_1"
-          ]
+          "default": "question"
         },
         "catch2TestExplorer.userId": {
           "markdownDescription": "A locally generated identifier which is used to group the errors/events.",

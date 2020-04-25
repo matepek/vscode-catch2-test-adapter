@@ -137,14 +137,12 @@ export class Config {
   }
 
   public askSentryConsent(): void {
-    return;
-
-    const logSentry = this._vsConfig.get<'enable' | 'disable' | 'disable_1' | 'disable_2' | 'question'>(
+    const logSentry = this._vsConfig.get<'question' | 'enable' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3'>(
       'logSentry',
       'question',
     );
 
-    if (logSentry === 'question' || logSentry === 'disable' || logSentry === 'disable_1') {
+    if (logSentry === 'question' || logSentry === 'disable' || logSentry === 'disable_1' || logSentry === 'disable_2') {
       const options = [
         'Sure! I love this extension and happy to help.',
         'Yes, but exclude the current workspace.',
@@ -166,9 +164,9 @@ export class Config {
             this._vsConfig.update('logSentry', 'enable', vscode.ConfigurationTarget.Global);
           } else if (value === options[1]) {
             this._vsConfig.update('logSentry', 'enable', vscode.ConfigurationTarget.Global);
-            this._vsConfig.update('logSentry', 'disable_2', vscode.ConfigurationTarget.WorkspaceFolder);
+            this._vsConfig.update('logSentry', 'disable_3', vscode.ConfigurationTarget.WorkspaceFolder);
           } else if (value === options[2]) {
-            this._vsConfig.update('logSentry', 'disable_2', vscode.ConfigurationTarget.Global);
+            this._vsConfig.update('logSentry', 'disable_3', vscode.ConfigurationTarget.Global);
           }
         });
     }
