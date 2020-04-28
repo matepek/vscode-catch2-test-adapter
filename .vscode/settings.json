@@ -114,5 +114,13 @@
   },
   "mochaExplorer.files": "/out/test/**/*.test.js",
   "mochaExplorer.require": "source-map-support/register",
-  "mochaExplorer.logpanel": true
+  "mochaExplorer.logpanel": true,
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "/syntaxes/gtest.tmLanguage.json"
+      ],
+      "url": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json"
+    }
+  ]
 }

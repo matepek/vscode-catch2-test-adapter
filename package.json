@@ -108,6 +108,23 @@
     "onCommand:test-explorer.cancel"
   ],
   "contributes": {
+    "languages": [
+      {
+        "id": "gtest",
+        "firstLine": "\\[ RUN      \\]",
+        "mimetypes": [
+          "text/x-code-output",
+          "x-code-output"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "gtest",
+        "scopeName": "source.gtest",
+        "path": "./syntaxes/gtest.tmLanguage.json"
+      }
+    ],
     "configuration": {
       "type": "object",
       "title": "Configuration for the 'Catch2 and Google Test Explorer' extension",

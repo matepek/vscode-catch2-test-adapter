@@ -1,0 +1,26 @@
+{
+    "id": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "$comment": "https://macromates.com/manual/en/language_grammars",
+    "scopeName": "source.gtest",
+    "patterns": [
+        {
+            "include": "#expression"
+        }
+    ],
+    "repository": {
+        "expression": {
+            "patterns": [
+                {
+                    "include": "#letter"
+                },
+                {
+                    "include": "#paren-expression"
+                }
+            ]
+        },
+        "letter": {
+            "match": "Failure",
+            "name": "keyword.failure"
+        }
+    }
+}
