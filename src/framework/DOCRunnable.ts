@@ -295,9 +295,12 @@ export class DOCRunnable extends AbstractRunnable {
                     '😱 Unexpected error under parsing output !! Error: ' + inspect(e),
                     'Consider opening an issue: https://github.com/matepek/vscode-catch2-test-adapter/issues/new/choose',
                     '',
-                    'stdout >>>' + data.stdoutBuffer + '<<<',
-                    '',
-                    'stderr >>>' + data.stderrBuffer + '<<<',
+                    '⬇ std::cout:',
+                    data.stdoutBuffer,
+                    '⬆ std::cout',
+                    '⬇ std::err:',
+                    data.stderrBuffer,
+                    '⬆ std::err',
                   ].join('\n'),
                 });
               }
@@ -361,8 +364,15 @@ export class DOCRunnable extends AbstractRunnable {
                 ev.message += '\n' + result.error.message;
               }
 
-              ev.message += `\n\nstdout >>>${data.stdoutBuffer}<<<`;
-              ev.message += `\n\nstderr >>>${data.stderrBuffer}<<<`;
+              ev.message += [
+                '',
+                '⬇ std::cout:',
+                data.stdoutBuffer,
+                '⬆ std::cout',
+                '⬇ std::err:',
+                data.stderrBuffer,
+                '⬆ std::err',
+              ].join('\n');
             }
 
             data.currentChild.lastRunEvent = ev;

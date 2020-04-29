@@ -9,11 +9,48 @@
     },
     {
       "comment": "catch2 and doctest is matching on this and it is fine, they have similar output",
-      "begin": "⏱Duration: .*",
+      "begin": "⏱Duration: ([\\d\\.]*)",
+      "captures": {
+        "1": {
+          "name": "constant.numeric"
+        }
+      },
       "patterns": [{ "include": "#catch2" }]
     }
   ],
   "repository": {
+    "values": {
+      "patterns": [
+        {
+          "match": "\\b\\d+(\\.\\d+)?(e\\+\\d+)?\\b",
+          "name": "constant.numeric"
+        },
+        {
+          "match": "\\b(?i:(0?x)?[0-9a-f][0-9a-f]+)\\b",
+          "name": "constant.numeric"
+        },
+        {
+          "match": "\\b([0-9]+|true|false|null|nullptr)\\b",
+          "name": "constant.language"
+        },
+        {
+          "match": "\\S+@\\S+\\.\\S+",
+          "name": "markup.bold"
+        },
+        {
+          "match": "\\b(?i:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))\\b",
+          "name": "support.class"
+        },
+        {
+          "match": "\"(.*?)\"",
+          "name": "string.quoted"
+        },
+        {
+          "match": "'(.*?)'",
+          "name": "string.quoted"
+        }
+      ]
+    },
     "gtest": {
       "patterns": [
         {
@@ -21,7 +58,55 @@
           "name": "comment",
           "captures": {
             "4": {
-              "name": "keyword"
+              "name": "keyword.control"
+            }
+          }
+        },
+        {
+          "match": "Value of: (.+)",
+          "name": "keyword",
+          "captures": {
+            "1": {
+              "name": "string"
+            }
+          }
+        },
+        {
+          "match": "The difference between (.+) and (.+) is (.+), which (exceeds) (.+), where",
+          "captures": {
+            "1": {
+              "name": "constant.numeric"
+            },
+            "2": {
+              "name": "constant.numeric"
+            },
+            "3": {
+              "name": "constant.numeric"
+            },
+            "4": {
+              "name": "invalid.illegal"
+            },
+            "5": {
+              "name": "constant.numeric"
+            }
+          }
+        },
+        {
+          "match": "(.+) evaluates to (.+)(,|, and|\\.)",
+          "captures": {
+            "1": {
+              "name": "constant.numeric"
+            },
+            "2": {
+              "name": "constant.numeric"
+            }
+          }
+        },
+        {
+          "match": "\\s+Which is: (.+)",
+          "captures": {
+            "1": {
+              "name": "constant.numeric"
             }
           }
         },
@@ -30,10 +115,10 @@
           "name": "keyword",
           "captures": {
             "1": {
-              "name": "string"
+              "name": "constant.numeric"
             },
             "2": {
-              "name": "invalid"
+              "name": "invalid.illegal"
             }
           }
         },
@@ -42,7 +127,7 @@
           "name": "keyword",
           "captures": {
             "1": {
-              "name": "string"
+              "name": "constant.numeric"
             }
           }
         },
@@ -51,10 +136,36 @@
           "name": "keyword",
           "captures": {
             "1": {
-              "name": "invalid"
+              "name": "invalid.illegal"
             }
           }
-        }
+        },
+        {
+          "match": "Expected arg #.+: (.+)",
+          "name": "keyword",
+          "captures": {
+            "1": {
+              "name": "constant.numeric"
+            }
+          }
+        },
+        {
+          "match": "\\[  (FAILED)  \\]",
+          "captures": {
+            "1": {
+              "name": "invalid.illegal"
+            }
+          }
+        },
+        {
+          "match": "\\[       (OK) \\]",
+          "captures": {
+            "1": {
+              "name": "markup.bold"
+            }
+          }
+        },
+        { "include": "#values" }
       ]
     },
     "catch2": {
@@ -64,11 +175,20 @@
           "name": "comment"
         },
         {
+          "match": "Exception were thrown: (.+)",
+          "name": "keyword.control",
+          "captures": {
+            "1": {
+              "name": "invalid.illegal"
+            }
+          }
+        },
+        {
           "match": "Original: (.+)",
           "name": "keyword",
           "captures": {
             "1": {
-              "name": "string"
+              "name": "constant.numeric"
             }
           }
         },
@@ -77,10 +197,16 @@
           "name": "keyword",
           "captures": {
             "1": {
-              "name": "invalid"
+              "name": "invalid.illegal"
             }
           }
-        }
+        },
+        {
+          "begin": "⬇ (.+):",
+          "end": "⬆ \\1",
+          "contentName": "string.quoted"
+        },
+        { "include": "#values" }
       ]
     }
   }

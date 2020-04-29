@@ -203,7 +203,8 @@ describe(path.basename(__filename), function () {
         ],
         description: '(0ms)',
         tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-        message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+        message:
+          '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
       },
       {
         type: 'suite',

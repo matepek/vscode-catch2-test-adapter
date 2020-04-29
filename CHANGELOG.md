@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.9]
+
+Output coloring improvements.
+
+Hint: Are you working on an executable or a TestCase?
+
+> Just right click on it and `Enable autorun`.
+> Next time you recompile your executable it will run it automatically.
+
 ## [2.9.8] - 2020-04-29
 
 Sentry was broken

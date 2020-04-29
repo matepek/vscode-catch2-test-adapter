@@ -189,7 +189,8 @@ describe(path.basename(__filename), function () {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+          message:
+            '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -240,7 +241,8 @@ describe(path.basename(__filename), function () {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+          message:
+            '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -257,7 +259,7 @@ describe(path.basename(__filename), function () {
       adapter.testStatesEventsAssertDeepEqual(expected);
 
       await adapter.run([root.id]);
-      assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
+      adapter.testStatesEventsAssertDeepEqual([...expected, ...expected]);
     });
 
     it('cancels without any problem', async function () {
@@ -468,7 +470,8 @@ describe(path.basename(__filename), function () {
         ],
         description: '(0ms)',
         tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-        message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+        message:
+          '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
       };
       adapter.testStateEventIndexLess(s1t2running, s1t2finished);
       adapter.testStateEventIndexLess(s1t2finished, s1finished);
@@ -505,7 +508,8 @@ describe(path.basename(__filename), function () {
         ],
         description: '(0ms)',
         tooltip: 'Name: s2t3\nDescription: tag1\n⏱Duration: 0ms',
-        message: '⏱Duration: 0.000178 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+        message:
+          '⏱Duration: 0.000178 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite2.cpp:21):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
       };
       adapter.testStateEventIndexLess(s2t3running, s2t3finished);
       adapter.testStateEventIndexLess(s2t3finished, s2finished);
@@ -514,7 +518,7 @@ describe(path.basename(__filename), function () {
       adapter.testStateEventIndexLess(s1finished, finished);
       adapter.testStateEventIndexLess(s2finished, finished);
 
-      assert.equal(adapter.testStatesEvents.length, 14, inspect(adapter.testStatesEvents));
+      assert.equal(adapter.testStatesEvents.length, 14);
     });
 
     it('should run with not existing test id', async function () {
@@ -617,7 +621,8 @@ describe(path.basename(__filename), function () {
             },
           ],
           description: '(1ms)',
-          message: '⏱Duration: 0.000596 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+          message:
+            '⏱Duration: 0.000596 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite2.cpp:21):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
           tooltip: 'Name: s2t3\nDescription: tag1\n⏱Duration: 1ms',
         },
         {
@@ -665,7 +670,8 @@ describe(path.basename(__filename), function () {
             },
           ],
           description: '(1ms)',
-          message: '⏱Duration: 0.000596 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+          message:
+            '⏱Duration: 0.000596 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite2.cpp:21):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
           tooltip: 'Name: s2t3\nDescription: tag1\n⏱Duration: 1ms',
         },
         {
@@ -717,7 +723,8 @@ describe(path.basename(__filename), function () {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+          message:
+            '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -769,7 +776,8 @@ describe(path.basename(__filename), function () {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+          message:
+            '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -833,7 +841,7 @@ describe(path.basename(__filename), function () {
           test: s1t1,
           decorations: [],
           message:
-            '😱 Unexpected error !!\n\nstdout >>><TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7"><<<\n\nstderr >>><<<',
+            '😱 Unexpected error !!\n⬇ std::cout:\n<TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7">\n⬆ std::cout\n⬇ std::err:\n\n⬆ std::err',
         },
         {
           type: 'suite',
@@ -905,7 +913,7 @@ describe(path.basename(__filename), function () {
           test: s1t1,
           decorations: [],
           message:
-            '😱 Unexpected error !!\nSignal received: SIGTERM\n\nstdout >>><TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7"><<<\n\nstderr >>><<<',
+            '😱 Unexpected error !!\nSignal received: SIGTERM\n⬇ std::cout:\n<TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7">\n⬆ std::cout\n⬇ std::err:\n\n⬆ std::err',
         },
         {
           type: 'suite',
@@ -1365,7 +1373,8 @@ describe(path.basename(__filename), function () {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+          message:
+            '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -1420,7 +1429,8 @@ describe(path.basename(__filename), function () {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+          message:
+            '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
         },
         {
           type: 'suite',
@@ -1575,7 +1585,8 @@ describe(path.basename(__filename), function () {
           ],
           description: '(0ms)',
           tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message: '⏱Duration: 0.000204 second(s).\n  ❕Original:  std::false_type::value\n  ❗️Expanded:  false',
+          message:
+            '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
         },
         {
           type: 'suite',

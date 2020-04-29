@@ -121,9 +121,10 @@ export class DOCTest extends AbstractTest {
     const testEvent = testEventBuilder.build();
 
     if (stderr) {
-      testEventBuilder.appendMessage('stderr arrived during running this test >>>', null);
+      testEventBuilder.appendMessage('stderr arrived during running this test', null);
+      testEventBuilder.appendMessage('⬇ std::err:', null);
       testEventBuilder.appendMessage(stderr, 1);
-      testEventBuilder.appendMessage('<<<', null);
+      testEventBuilder.appendMessage('⬆ std::err', null);
     }
 
     this.lastRunEvent = testEvent;
@@ -197,7 +198,11 @@ export class DOCTest extends AbstractTest {
       });
     }
 
-    testEventBuilder.appendMessage(xml._, 0);
+    if (xml._) {
+      testEventBuilder.appendMessage('⬇ std::cout:', 1);
+      testEventBuilder.appendMessage(xml._.trim(), 2);
+      testEventBuilder.appendMessage('⬆ std::cout', 1);
+    }
 
     try {
       if (xml.Message) {
@@ -237,21 +242,23 @@ export class DOCTest extends AbstractTest {
       if (xml.Expression) {
         for (let j = 0; j < xml.Expression.length; ++j) {
           const expr = xml.Expression[j];
-
-          testEventBuilder.appendMessage('❕Original:  ' + expr.Original.map((x: string) => x.trim()).join('\n'), 1);
-
           const file = expr.$.filename;
-          const line = Number(expr.$.line) - 1;
+          const line = Number(expr.$.line);
+          const location = `(at ${file}:${line})`;
+
+          testEventBuilder.appendMessage(`Expression failed ${location}:`, 1);
+
+          testEventBuilder.appendMessage('❕Original:  ' + expr.Original.map((x: string) => x.trim()).join('\n'), 2);
 
           try {
             for (let j = 0; expr.Expanded && j < expr.Expanded.length; ++j) {
               testEventBuilder.appendMessage(
                 '❗️Expanded:  ' + expr.Expanded.map((x: string) => x.trim()).join('\n'),
-                1,
+                2,
               );
               testEventBuilder.appendDecorator(
                 file,
-                line,
+                line - 1,
                 '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join(' | '),
               );
             }
@@ -263,7 +270,7 @@ export class DOCTest extends AbstractTest {
             for (let j = 0; expr.Exception && j < expr.Exception.length; ++j) {
               testEventBuilder.appendMessage(
                 '  ❗️Exception:  ' + expr.Exception.map((x: string) => x.trim()).join('\n'),
-                1,
+                2,
               );
               testEventBuilder.appendDecorator(
                 file,
@@ -279,7 +286,7 @@ export class DOCTest extends AbstractTest {
             for (let j = 0; expr.ExpectedException && j < expr.ExpectedException.length; ++j) {
               testEventBuilder.appendMessage(
                 '❗️ExpectedException:  ' + expr.ExpectedException.map((x: string) => x.trim()).join('\n'),
-                1,
+                2,
               );
               testEventBuilder.appendDecorator(
                 file,
@@ -295,7 +302,7 @@ export class DOCTest extends AbstractTest {
             for (let j = 0; expr.ExpectedExceptionString && j < expr.ExpectedExceptionString.length; ++j) {
               testEventBuilder.appendMessage(
                 '❗️ExpectedExceptionString  ' + expr.ExpectedExceptionString[j]._.trim(),
-                1,
+                2,
               );
               testEventBuilder.appendDecorator(
                 file,
@@ -347,10 +354,9 @@ export class DOCTest extends AbstractTest {
 
         const name = this._isSecnario ? subcase.$.name.trimLeft() : subcase.$.name;
 
-        const msg =
-          '   '.repeat(stack.length) + '⮑ ' + (isLeaf ? (currSection.failed ? ' ❌ ' : ' ✅ ') : '') + `${name}`;
+        const msg = '   '.repeat(stack.length) + '⮑ ' + (isLeaf ? (currSection.failed ? '❌' : '✅') : '') + `${name}`;
 
-        testEventBuilder.appendMessage(msg + ` (at ${subcase.$.filename}:${subcase.$.line})`, null);
+        testEventBuilder.appendMessage(msg, null);
 
         const currStack = stack.concat(currSection);
 
