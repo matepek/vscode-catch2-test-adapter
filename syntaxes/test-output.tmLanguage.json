@@ -1,0 +1,87 @@
+{
+  "id": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "$comment": "https://macromates.com/manual/en/language_grammars  https://www.apeth.com/nonblog/stories/textmatebundle.html",
+  "scopeName": "source.test-output",
+  "patterns": [
+    {
+      "begin": "\\[ RUN ",
+      "patterns": [{ "include": "#gtest" }]
+    },
+    {
+      "comment": "catch2 and doctest is matching on this and it is fine, they have similar output",
+      "begin": "⏱Duration: .*",
+      "patterns": [{ "include": "#catch2" }]
+    }
+  ],
+  "repository": {
+    "gtest": {
+      "patterns": [
+        {
+          "match": "((.+)[:\\(]([0-9]+)\\)?|unknown file): (Failure|EXPECT_CALL|error)",
+          "name": "comment",
+          "captures": {
+            "4": {
+              "name": "keyword"
+            }
+          }
+        },
+        {
+          "match": "Expected: (\\(.+\\)), actual: (.+)",
+          "name": "keyword",
+          "captures": {
+            "1": {
+              "name": "string"
+            },
+            "2": {
+              "name": "invalid"
+            }
+          }
+        },
+        {
+          "match": "Expected: (.+)",
+          "name": "keyword",
+          "captures": {
+            "1": {
+              "name": "string"
+            }
+          }
+        },
+        {
+          "match": "Actual: (.+)",
+          "name": "keyword",
+          "captures": {
+            "1": {
+              "name": "invalid"
+            }
+          }
+        }
+      ]
+    },
+    "catch2": {
+      "patterns": [
+        {
+          "match": "\\(at .+\\)",
+          "name": "comment"
+        },
+        {
+          "match": "Original: (.+)",
+          "name": "keyword",
+          "captures": {
+            "1": {
+              "name": "string"
+            }
+          }
+        },
+        {
+          "match": "Expanded: (.+)",
+          "name": "keyword",
+          "captures": {
+            "1": {
+              "name": "invalid"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

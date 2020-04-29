@@ -117,10 +117,8 @@
   "mochaExplorer.logpanel": true,
   "json.schemas": [
     {
-      "fileMatch": [
-        "/syntaxes/gtest.tmLanguage.json"
-      ],
-      "url": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json"
+      "fileMatch": ["/syntaxes/test-output.tmLanguage.json"],
+      "url": "/src/tmLanguage.schema.json"
     }
   ]
 }

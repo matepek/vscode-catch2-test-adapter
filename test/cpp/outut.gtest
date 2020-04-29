@@ -1,0 +1,47 @@
+[ RUN      ] TestCas1.test2
+/Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/gtest1.cpp:19: Failure
+Value of: 1 == 2
+  Actual: false
+Expected: true
+/Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/gtest1.cpp:39: Failure
+Value of: 1 != 1
+  Actual: false
+Expected: true
+/Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/gtest1.cpp:40: Failure
+Value of: 1 == 1
+  Actual: true
+Expected: false
+/Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/gtest1.cpp:41: Failure
+Expected equality of these values:
+  1
+  2
+/Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/gtest1.cpp:42: Failure
+Expected: (1) != (1), actual: 1 vs 1
+/Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/gtest1.cpp:43: Failure
+Expected: (1) < (1), actual: 1 vs 1
+/Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/gtest1.cpp:44: Failure
+Expected: (1) > (1), actual: 1 vs 1
+/Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/gtest1.cpp:45: Failure
+The difference between 1.0f and 1.5f is 0.5, which exceeds 0.25f, where
+1.0f evaluates to 1,
+1.5f evaluates to 1.5, and
+0.25f evaluates to 0.25.
+/Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/gtest1.cpp:103: Failure
+Actual function call count doesn't match EXPECT_CALL(foo, GetSize())...
+         Expected: to be called once
+           Actual: never called - unsatisfied and active
+unknown file: Failure
+
+Unexpected mock function call - returning directly.
+    Function call: Describe(3)
+Google Mock tried the following 1 expectation, but it didn't match:
+
+/Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/gtest1.cpp:111: EXPECT_CALL(foo, Describe(4))...
+  Expected arg #0: is equal to 4
+           Actual: 3
+         Expected: to be called once
+           Actual: never called - unsatisfied and active
+/Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/gtest1.cpp:111: Failure
+Actual function call count doesn't match EXPECT_CALL(foo, Describe(4))...
+         Expected: to be called once
+           Actual: never called - unsatisfied and active

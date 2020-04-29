@@ -403,15 +403,9 @@ export class Catch2Test extends AbstractTest {
           currSection.failed = true;
         }
 
-        const isSameFile =
-          stack.length === 0
-            ? currSection.filename === this.file
-            : currSection.filename === stack[stack.length - 1].filename;
-
-        const location =
-          currSection.filename && !isSameFile
-            ? `at ${currSection.filename}:${currSection.line}`
-            : `at line ${currSection.line}`;
+        const location = currSection.filename
+          ? `at ${currSection.filename}:${currSection.line}`
+          : `at line ${currSection.line}`;
 
         const msg = `⮑ ${isLeaf ? (currSection.failed ? ' ❌ ' : ' ✅ ') : ''}"${currSection.name}" (${location})`;
 

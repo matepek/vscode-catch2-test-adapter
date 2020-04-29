@@ -110,8 +110,7 @@
   "contributes": {
     "languages": [
       {
-        "id": "gtest",
-        "firstLine": "\\[ RUN      \\]",
+        "id": "test-output",
         "mimetypes": [
           "text/x-code-output",
           "x-code-output"
@@ -120,9 +119,9 @@
     ],
     "grammars": [
       {
-        "language": "gtest",
-        "scopeName": "source.gtest",
-        "path": "./syntaxes/gtest.tmLanguage.json"
+        "language": "test-output",
+        "scopeName": "source.test-output",
+        "path": "./syntaxes/test-output.tmLanguage.json"
       }
     ],
     "configuration": {
