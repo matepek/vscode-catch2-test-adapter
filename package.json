@@ -65,13 +65,13 @@
     "@types/fs-extra": "^8.1.0",
     "@types/glob": "^7.1.1",
     "@types/mocha": "^7.0.2",
-    "@types/node": "^13.13.2",
+    "@types/node": "^13.13.4",
     "@types/request-promise": "4.1.46",
     "@types/sinon": "^9.0.0",
     "@types/vscode": "1.14.0",
     "@types/xml2js": "^0.4.5",
-    "@typescript-eslint/eslint-plugin": "^2.29.0",
-    "@typescript-eslint/parser": "^2.29.0",
+    "@typescript-eslint/eslint-plugin": "^2.30.0",
+    "@typescript-eslint/parser": "^2.30.0",
     "bent": "^7.3.0",
     "deep-equal": "^2.0.3",
     "eslint": "^6.8.0",
@@ -79,7 +79,7 @@
     "eslint-plugin-prettier": "3.1.2",
     "fs-extra": "^9.0.0",
     "glob": "^7.1.6",
-    "mocha": "^7.1.1",
+    "mocha": "^7.1.2",
     "mocha-eslint": "^6.0.0",
     "prettier": "2.0.2",
     "raw-loader": "^4.0.1",
@@ -108,6 +108,22 @@
     "onCommand:test-explorer.cancel"
   ],
   "contributes": {
+    "languages": [
+      {
+        "id": "test-output",
+        "mimetypes": [
+          "text/x-code-output",
+          "x-code-output"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "test-output",
+        "scopeName": "source.test-output",
+        "path": "./syntaxes/test-output.tmLanguage.json"
+      }
+    ],
     "configuration": {
       "type": "object",
       "title": "Configuration for the 'Catch2 and Google Test Explorer' extension",

@@ -1,5 +1,4 @@
 import { TestEvent, TestDecoration } from 'vscode-test-adapter-api';
-
 import { AbstractTest } from '../AbstractTest';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
@@ -44,6 +43,8 @@ export class GoogleTest extends AbstractTest {
     return this.testName;
   }
 
+  public static readonly failureRe = /^((.+)[:\(]([0-9]+)\)?): ((Failure|EXPECT_CALL|error: )(.*))$/;
+
   public parseAndProcessTestCase(
     output: string,
     rngSeed: number | undefined,
@@ -73,7 +74,12 @@ export class GoogleTest extends AbstractTest {
 
       this.lastRunEvent = ev;
 
-      ev.message += output;
+      if (output.indexOf('): error: ') != -1) {
+        // windows like output:
+        ev.message += output.replace(/\):error: /g, '):error: \n');
+      } else {
+        ev.message += output;
+      }
 
       if (ev.state === 'skipped') {
         // asserts or anything what is happened until here is not relevant anymore
@@ -100,20 +106,17 @@ export class GoogleTest extends AbstractTest {
         }
       };
 
-      // windows has a different output. this hopefiully match both
-      const reportRe = /^(.+)[:\(]([0-9]+)\)?: ((Failure|EXPECT_CALL|error: )(.*))$/;
-
       const gMockWarningCount = 0;
 
       for (let i = 0; i < lines.length; ) {
-        const match = lines[i].match(reportRe);
+        const match = lines[i].match(GoogleTest.failureRe);
         if (match !== null) {
           i += 1;
-          const filePath = match[1];
-          const lineNumber = Number(match[2]) - 1; /*It looks vscode works like this.*/
+          const filePath = match[2];
+          const lineNumber = Number(match[3]) - 1; /*It looks vscode works like this.*/
 
-          if (match[4].startsWith('Failure') || match[4].startsWith('error')) {
-            const firstMsgLine = match[5].length > 0 ? match[5] : lines[i++];
+          if (match[5].startsWith('Failure') || match[5].startsWith('error')) {
+            const firstMsgLine = match[6].length > 0 ? match[6] : lines[i++];
 
             if (
               i + 0 < lines.length &&
@@ -224,8 +227,8 @@ export class GoogleTest extends AbstractTest {
               if (firstMsgLine.length === 0) this._shared.log.warn('unprocessed gtest failure', firstMsgLine);
               addDecoration({ file: filePath, line: lineNumber, message: '⬅️ ' + firstMsgLine, hover: '' });
             }
-          } else if (match[4].startsWith('EXPECT_CALL')) {
-            const expectCallMsg = match[3];
+          } else if (match[5].startsWith('EXPECT_CALL')) {
+            const expectCallMsg = match[4];
 
             if (
               i + 1 < lines.length &&

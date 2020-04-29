@@ -114,5 +114,11 @@
   },
   "mochaExplorer.files": "/out/test/**/*.test.js",
   "mochaExplorer.require": "source-map-support/register",
-  "mochaExplorer.logpanel": true
+  "mochaExplorer.logpanel": true,
+  "json.schemas": [
+    {
+      "fileMatch": ["/syntaxes/test-output.tmLanguage.json"],
+      "url": "/src/tmLanguage.schema.json"
+    }
+  ]
 }

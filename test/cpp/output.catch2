@@ -1,0 +1,19 @@
+⏱Duration: 0.000597 second(s).
+⮑ "1" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:20)
+   ⮑ "2" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:21)
+      ⮑ "3" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:22)
+         ⮑  ❌ "4" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:23)
+  ❕Original:  std::false_type::value
+  ❗️Expanded:  false
+⮑ "1" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:20)
+   ⮑ "2" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:21)
+      ⮑  ✅ "3" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:22)
+⮑ "1" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:20)
+   ⮑ "2-2" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:26)
+      ⮑ "3" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:27)
+         ⮑  ❌ "4" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:28)
+  ❕Original:  std::false_type::value
+  ❗️Expanded:  false
+⮑ "1" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:20)
+   ⮑ "2-2" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:26)
+      ⮑  ✅ "3" (at /Users/mapek/repo/vscode-catch2-test-adapter/test/cpp/suite3.cpp:27)

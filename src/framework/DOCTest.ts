@@ -350,7 +350,7 @@ export class DOCTest extends AbstractTest {
         const msg =
           '   '.repeat(stack.length) + '⮑ ' + (isLeaf ? (currSection.failed ? ' ❌ ' : ' ✅ ') : '') + `${name}`;
 
-        testEventBuilder.appendMessage(msg + ` (line:${subcase.$.line})`, null);
+        testEventBuilder.appendMessage(msg + ` (at ${subcase.$.filename}:${subcase.$.line})`, null);
 
         const currStack = stack.concat(currSection);
 
