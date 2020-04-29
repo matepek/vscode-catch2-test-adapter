@@ -5,6 +5,8 @@ import { SharedVariables } from './SharedVariables';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
 
+type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
+
 export class Config {
   private _vsConfig: vscode.WorkspaceConfiguration;
 
@@ -133,14 +135,12 @@ export class Config {
   }
 
   public isSentryEnabled(): boolean {
-    return this._vsConfig.get<string>('logSentry') === 'enabled';
+    const val = this._vsConfig.get<SentryValue>('logSentry');
+    return val === 'enable' || val === 'enabled';
   }
 
   public askSentryConsent(): void {
-    const logSentry = this._vsConfig.get<'question' | 'enable' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3'>(
-      'logSentry',
-      'question',
-    );
+    const logSentry = this._vsConfig.get<SentryValue>('logSentry', 'question');
 
     if (logSentry === 'question' || logSentry === 'disable' || logSentry === 'disable_1' || logSentry === 'disable_2') {
       const options = [
