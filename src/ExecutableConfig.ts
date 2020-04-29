@@ -10,6 +10,7 @@ import {
   ResolveRulePair,
   createPythonIndexerForPathVariable,
   createPythonIndexerForStringVariable,
+  getAbsolutePath,
 } from './Util';
 import { RunnableSuiteFactory } from './RunnableSuiteFactory';
 import { SharedVariables } from './SharedVariables';
@@ -18,6 +19,7 @@ import { TestGrouping } from './TestGroupingInterface';
 import { Suite } from './Suite';
 import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
+import { GoogleTest } from './framework/GoogleTest';
 
 export interface ExecutableConfigFrameworkSpecific {
   helpRegex?: string;
@@ -48,6 +50,64 @@ export class ExecutableConfig implements vscode.Disposable {
       _shared.log.info('TestExecutableInfoFrameworkSpecific', _catch2, _gtest, _doctest);
       _shared.log.infoMessageWithTags('TestExecutableInfoFrameworkSpecific', {});
     }
+
+    this._disposables.push(
+      vscode.languages.registerDocumentLinkProvider(
+        { language: 'test-output' },
+        {
+          provideDocumentLinks: (
+            document: vscode.TextDocument,
+            token: vscode.CancellationToken, // eslint-disable-line
+          ): vscode.ProviderResult<vscode.DocumentLink[]> => {
+            const text = document.getText();
+            if (text.startsWith('[ RUN      ]')) {
+              const dirs = new Set([...this._runnables.keys()].map(k => path.dirname(k)));
+              const result: vscode.DocumentLink[] = [];
+              const lines = text.split(/\r?\n/);
+              for (let i = 0; i < lines.length; ++i) {
+                const m = lines[i].match(GoogleTest.failureRe);
+                if (m) {
+                  const file = getAbsolutePath(m[2], dirs);
+                  if (file) {
+                    const line = Number(m[3]);
+                    result.push(
+                      new vscode.DocumentLink(
+                        new vscode.Range(i, 0, i, m[1].length),
+                        vscode.Uri.file(file).with({ fragment: `${line}` }),
+                      ),
+                    );
+                  }
+                }
+              }
+              return result;
+            } else if (text.startsWith('⏱Duration:')) {
+              const dirs = new Set([...this._runnables.keys()].map(k => path.dirname(k)));
+              const result: vscode.DocumentLink[] = [];
+              const lines = text.split(/\r?\n/);
+              for (let i = 0; i < lines.length; ++i) {
+                const m = lines[i].match(/\(at ((.+):([0-9]+))\)/);
+                if (m) {
+                  const file = getAbsolutePath(m[2], dirs);
+                  if (file) {
+                    const line = Number(m[3]);
+                    const index = m.index ? m.index + 4 : 0;
+                    result.push(
+                      new vscode.DocumentLink(
+                        new vscode.Range(i, index, i, index + m[1].length),
+                        vscode.Uri.file(file).with({ fragment: `${line}` }),
+                      ),
+                    );
+                  }
+                }
+              }
+              return result;
+            } else {
+              return null;
+            }
+          },
+        },
+      ),
+    );
   }
 
   private _disposables: vscode.Disposable[] = [];

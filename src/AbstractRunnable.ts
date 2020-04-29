@@ -2,7 +2,6 @@ import * as cp from 'child_process';
 import * as pathlib from 'path';
 import * as fs from 'fs';
 
-import * as c2fs from './FSWrapper';
 import { RunnableSuiteProperties } from './RunnableSuiteProperties';
 import { AbstractTest } from './AbstractTest';
 import { Suite } from './Suite';
@@ -17,6 +16,7 @@ import {
   resolveOSEnvironmentVariables,
   ResolveRulePair,
   createPythonIndexerForPathVariable,
+  getAbsolutePath,
 } from './Util';
 import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
 import { TestEvent } from 'vscode-test-adapter-api';
@@ -593,48 +593,20 @@ export abstract class AbstractRunnable {
   protected _findFilePath(matchedPath: string): string {
     if (pathlib.isAbsolute(matchedPath)) return matchedPath;
 
-    try {
-      let parent: string;
-      let parentParent = pathlib.dirname(this.properties.path);
-      do {
-        parent = parentParent;
-        parentParent = pathlib.dirname(parent);
-
-        const filePath = pathlib.join(parent, matchedPath);
-        if (c2fs.existsSync(filePath)) return filePath;
-      } while (parent != parentParent);
-    } catch {}
+    const directoriesToCheck: string[] = [pathlib.dirname(this.properties.path)];
 
     if (this.properties.options.cwd && !this.properties.path.startsWith(this.properties.options.cwd))
-      try {
-        let parent: string;
-        let parentParent = this.properties.options.cwd;
-        do {
-          parent = parentParent;
-          parentParent = pathlib.dirname(parent);
-
-          const filePath = pathlib.join(parent, matchedPath);
-          if (c2fs.existsSync(filePath)) return filePath;
-        } while (parent != parentParent);
-      } catch {}
+      directoriesToCheck.push(this.properties.options.cwd);
 
     if (
       !this.properties.path.startsWith(this._shared.workspaceFolder.uri.fsPath) &&
       (!this.properties.options.cwd || !this.properties.options.cwd.startsWith(this._shared.workspaceFolder.uri.fsPath))
     )
-      try {
-        let parent: string;
-        let parentParent = this._shared.workspaceFolder.uri.fsPath;
-        do {
-          parent = parentParent;
-          parentParent = pathlib.dirname(parent);
+      directoriesToCheck.push(this._shared.workspaceFolder.uri.fsPath);
 
-          const filePath = pathlib.join(parent, matchedPath);
-          if (c2fs.existsSync(filePath)) return filePath;
-        } while (parent != parentParent);
-      } catch {}
+    const found = getAbsolutePath(matchedPath, directoriesToCheck);
 
-    return matchedPath;
+    return found || matchedPath;
   }
 
   public sendMinimalEventsIfNeeded(completed: Suite[], running: Suite[]): void {

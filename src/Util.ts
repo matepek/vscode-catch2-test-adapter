@@ -1,4 +1,5 @@
 import * as pathlib from 'path';
+import * as c2fs from './FSWrapper';
 
 export class Version {
   public constructor(
@@ -374,4 +375,25 @@ export class AdvancedII<T> implements IterableIterator<T> {
       },
     );
   }
+}
+
+export function getAbsolutePath(filePath: string, directories: Iterable<string>): string | undefined {
+  if (pathlib.isAbsolute(filePath)) return filePath;
+
+  for (const dir of directories) {
+    try {
+      let current: string = dir;
+      let parent: string = pathlib.dirname(current);
+      do {
+        const f = pathlib.join(current, filePath);
+
+        if (c2fs.existsSync(f)) return f;
+
+        current = parent;
+        parent = pathlib.dirname(current);
+      } while (current != parent);
+    } catch {}
+  }
+
+  return undefined;
 }
