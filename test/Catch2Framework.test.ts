@@ -393,7 +393,7 @@ describe(path.basename(__filename), function () {
     assert.strictEqual(suite1.children[0].label, 'first');
   });
 
-  specify.skip('custom4 test', async function () {
+  specify('too long filename', async function () {
     this.slow(500);
     await settings.updateConfig('executables', example1.suite1.execPath);
 
@@ -401,11 +401,28 @@ describe(path.basename(__filename), function () {
 
     const testListOutput = [
       'Matching test cases:',
-      '  first',
-      '    /Users//home/master-kenobi/test.cpp:4',
+      '  nnnnnnnnnnnnnnnnnnnnn1',
+      '    ../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/',
+      '    fffffffffffffffffffffffffffffffffffffffff.cpp:11',
       '    (NO DESCRIPTION)',
-      '      [tag1]',
-      '1 matching test case',
+      '  nnnnnnnnnnnnnnnnnnnnn2',
+      '    ../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/fffffffffffffffffff.cpp:14',
+      '    (NO DESCRIPTION)',
+      '  nnnnnnnnnnnnnnnnnnnnn3',
+      '    ../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff.cpp:',
+      '    19',
+      '    (NO DESCRIPTION)',
+      '  nnnnnnnnnnnnnnnnnnnnn4',
+      '    ../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff.',
+      '    cpp:14',
+      '    (NO DESCRIPTION)',
+      '  nnnnnnnnnnnnnnnnnnnnn5',
+      '    ../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff/',
+      '    ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff.',
+      '    cpp:14',
+      '    (NO DESCRIPTION)',
+      '5 matching test cases',
+      '',
       '',
     ];
 
@@ -421,28 +438,8 @@ describe(path.basename(__filename), function () {
     assert.equal(adapter.root.children.length, 1);
 
     const suite1 = adapter.suite1;
-    assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
-
     assert.strictEqual(suite1.label, 'execPath1.exe');
-    assert.strictEqual(suite1.children[0].label, 'first');
-
-    imitation.spawnStub.withArgs(sinon.match.any, sinon.match.any, sinon.match.any).callsFake(function () {
-      return new ChildProcessStub([
-        `<TestCase name="${suite1.children[0].label}" tags="[tag1]" filename="/home/master-kenobi/test.cpp" line="4">`,
-        '      <OverallResult success="true" durationInSeconds="0.724167">',
-        '        <StdOut>',
-        '[INFO] Some info #1',
-        '[INFO] Some info #2',
-        '[INFO] Some info #3',
-        '        </StdOut>',
-        '      </OverallResult>',
-        '    </TestCase>',
-      ]);
-    });
-
-    await adapter.run([suite1.id]);
-
-    assert.strictEqual(adapter.testStatesEvents.length, 6);
+    assert.equal(suite1.children.length, 5, inspect([testListOutput, adapter.testLoadsEvents]));
   });
 
   specify('load executables=<full path of execPath1>', async function () {

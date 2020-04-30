@@ -94,14 +94,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         extensionInfo = { version: pjson.version, publisher: pjson.publisher, name: pjson.name };
       } catch (e) {
         this._log.exception(e, __dirname);
-        extensionInfo = { version: '<unknown version>', publisher: '<unknown publisher>', name: '<unknown name>' };
+        extensionInfo = { version: '<unknown-version>', publisher: '<unknown-publisher>', name: '<unknown-name>' };
       }
 
       const enabled = !this._isDebug && config.isSentryEnabled();
 
       this._log.info('sentry.io is', enabled);
 
-      const release = extensionInfo.publisher + '/' + extensionInfo.name + '@' + extensionInfo.version;
+      const release = extensionInfo.publisher + '-' + extensionInfo.name + '@' + extensionInfo.version;
 
       Sentry.init({
         dsn: 'https://0cfbeca1e97e4478a5d7e9c77925d92f@sentry.io/1554599',

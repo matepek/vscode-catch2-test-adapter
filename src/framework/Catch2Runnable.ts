@@ -81,14 +81,39 @@ export class Catch2Runnable extends AbstractRunnable {
       let line: number | undefined = undefined;
       {
         const fileLine = lines[i++].substr(4);
-        const match = fileLine.match(/(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/);
+        const fileLineRe = /(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/;
+        const match = fileLine.match(fileLineRe);
 
         if (match && match.length == 5) {
           const matchedPath = match[1] ? match[1] : match[3];
           filePath = this._findFilePath(matchedPath);
           line = Number(match[2] ? match[2] : match[4]) - 1;
         } else {
-          this._shared.log.error('Could not find catch2 file info', lines);
+          if (i < lines.length) {
+            const match = (fileLine + lines[i].substr(4)).match(fileLineRe);
+            if (match && match.length == 5) {
+              const matchedPath = match[1] ? match[1] : match[3];
+              filePath = this._findFilePath(matchedPath);
+              line = Number(match[2] ? match[2] : match[4]) - 1;
+              i += 1;
+            } else {
+              if (i + 1 < lines.length) {
+                const match = (fileLine + lines[i].substr(4) + lines[i + 1].substr(4)).match(fileLineRe);
+                if (match && match.length == 5) {
+                  const matchedPath = match[1] ? match[1] : match[3];
+                  filePath = this._findFilePath(matchedPath);
+                  line = Number(match[2] ? match[2] : match[4]) - 1;
+                  i += 2;
+                } else {
+                  this._shared.log.error('Could not find catch2 file info3', lines);
+                }
+              } else {
+                this._shared.log.error('Could not find catch2 file inf2', lines);
+              }
+            }
+          } else {
+            this._shared.log.error('Could not find catch2 file info', lines);
+          }
         }
       }
 
