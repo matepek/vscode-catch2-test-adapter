@@ -296,7 +296,7 @@ export class Catch2Runnable extends AbstractRunnable {
               m[0] + '</TestCase>',
               (err: Error, result: XmlObject) => {
                 if (err) {
-                  this._shared.log.exception(err);
+                  this._shared.log.exceptionS(err);
                   throw err;
                 } else {
                   name = result.TestCase.$.name;
@@ -401,7 +401,7 @@ export class Catch2Runnable extends AbstractRunnable {
     })
       .catch((reason: Error) => {
         // eslint-disable-next-line
-        if ((reason as any).code === undefined) this._shared.log.exception(reason);
+        if ((reason as any).code === undefined) this._shared.log.exceptionS(reason);
 
         return new ProcessResult(reason);
       })
@@ -476,7 +476,7 @@ export class Catch2Runnable extends AbstractRunnable {
                   m[0] + '</TestCase>',
                   (err: Error, result: XmlObject) => {
                     if (err) {
-                      this._shared.log.exception(err);
+                      this._shared.log.exceptionS(err);
                     } else {
                       name = result.TestCase.$.name;
                     }

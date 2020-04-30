@@ -48,7 +48,7 @@ export class ExecutableConfig implements vscode.Disposable {
   ) {
     if ([_catch2, _gtest, _doctest].some(f => Object.keys(f).length > 0)) {
       _shared.log.info('TestExecutableInfoFrameworkSpecific', _catch2, _gtest, _doctest);
-      _shared.log.infoMessageWithTags('TestExecutableInfoFrameworkSpecific', {});
+      _shared.log.infoSMessageWithTags('TestExecutableInfoFrameworkSpecific', {});
     }
 
     this._disposables.push(
@@ -163,14 +163,14 @@ export class ExecutableConfig implements vscode.Disposable {
       execWatcher && execWatcher.dispose();
       filePaths.push(this._pattern);
 
-      this._shared.log.exception(e, "Coudn't watch pattern");
+      this._shared.log.exceptionS(e, "Coudn't watch pattern");
     }
 
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];
 
     for (let i = 0; i < filePaths.length; i++) {
       const file = filePaths[i];
-      this._shared.log.info('Checking file for tests:', file);
+      this._shared.log.debug('Checking file for tests:', file);
 
       if (this._shouldIgnorePath(file)) continue;
 
@@ -193,12 +193,12 @@ export class ExecutableConfig implements vscode.Disposable {
                   );
                 },
                 (reason: Error) => {
-                  this._shared.log.localDebug('Not a test executable:', file, 'reason:', reason);
+                  this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
                 },
               );
           },
           (reason: Error) => {
-            this._shared.log.localDebug('Not an executable:', file, reason);
+            this._shared.log.debug('Not an executable:', file, reason);
           },
         ),
       );
@@ -300,7 +300,7 @@ export class ExecutableConfig implements vscode.Disposable {
         ['${baseFilename}', baseFilename],
       ];
     } catch (e) {
-      this._shared.log.exception(e);
+      this._shared.log.exceptionS(e);
     }
 
     const variableRe = /\$\{[^ ]*\}/;
@@ -414,9 +414,9 @@ export class ExecutableConfig implements vscode.Disposable {
         });
       }).catch((reason: Error & { code: undefined | number }) => {
         if (reason.code === undefined) {
-          this._shared.log.localDebug('reason', reason);
-          this._shared.log.localDebug('filePath', filePath);
-          this._shared.log.localDebug('suite', runnable);
+          this._shared.log.debug('reason', reason);
+          this._shared.log.debug('filePath', filePath);
+          this._shared.log.debug('suite', runnable);
           this._shared.log.warn('problem under reloading', reason);
         }
         return this._recursiveHandleEverything(runnable, false, Math.min(delay * 2, 2000));

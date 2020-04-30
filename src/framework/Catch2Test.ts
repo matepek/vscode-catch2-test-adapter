@@ -269,7 +269,7 @@ export class Catch2Test extends AbstractTest {
         testEventBuilder.appendMessage('⬆ Info', 1);
       }
     } catch (e) {
-      this._shared.log.exception(e);
+      this._shared.log.exceptionS(e);
     }
 
     try {
@@ -285,7 +285,7 @@ export class Catch2Test extends AbstractTest {
         testEventBuilder.appendMessage('⬆ Warning', 1);
       }
     } catch (e) {
-      this._shared.log.exception(e);
+      this._shared.log.exceptionS(e);
     }
 
     try {
@@ -306,7 +306,7 @@ export class Catch2Test extends AbstractTest {
         testEventBuilder.appendMessage('⬆ Failure', 1);
       }
     } catch (e) {
-      this._shared.log.exception(e);
+      this._shared.log.exceptionS(e);
     }
 
     try {
@@ -316,7 +316,7 @@ export class Catch2Test extends AbstractTest {
         }
       }
     } catch (e) {
-      this._shared.log.exception(e);
+      this._shared.log.exceptionS(e);
     }
 
     try {
@@ -345,7 +345,7 @@ export class Catch2Test extends AbstractTest {
         }
       }
     } catch (e) {
-      this._shared.log.exception(e);
+      this._shared.log.exceptionS(e);
     }
 
     try {
@@ -357,12 +357,12 @@ export class Catch2Test extends AbstractTest {
         testEventBuilder.appendMessageWithDecorator(
           xml.Exception[j].$.filename,
           Number(xml.Exception[j].$.line) - 1,
-          `Exception were thrown: "${msg}"`,
+          `Exception was thrown: ${msg}`,
           1,
         );
       }
     } catch (e) {
-      this._shared.log.exception(e);
+      this._shared.log.exceptionS(e);
     }
 
     try {
@@ -379,7 +379,7 @@ export class Catch2Test extends AbstractTest {
         testEventBuilder.appendMessage('⬆ FatalErrorCondition', 1);
       }
     } catch (error) {
-      this._shared.log.exception(error);
+      this._shared.log.exceptionS(error);
       testEventBuilder.appendMessage('Unknown fatal error: ' + inspect(error), 1);
     }
   }
@@ -432,7 +432,7 @@ export class Catch2Test extends AbstractTest {
         this._processXmlTagSections(section, main, currStack, testEventBuilder, currSection);
       } catch (error) {
         testEventBuilder.appendMessage('Fatal error processing section', 0);
-        this._shared.log.exception(error);
+        this._shared.log.exceptionS(error);
       }
     }
   }

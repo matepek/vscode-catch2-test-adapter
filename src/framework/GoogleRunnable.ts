@@ -355,7 +355,7 @@ export class GoogleRunnable extends AbstractRunnable {
     })
       .catch((reason: Error) => {
         // eslint-disable-next-line
-        if ((reason as any).code === undefined) this._shared.log.exception(reason);
+        if ((reason as any).code === undefined) this._shared.log.exceptionS(reason);
 
         return new ProcessResult(reason);
       })

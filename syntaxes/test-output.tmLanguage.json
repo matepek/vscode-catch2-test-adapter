@@ -175,7 +175,7 @@
           "name": "comment"
         },
         {
-          "match": "Exception were thrown: (.+)",
+          "match": "Exception was thrown: (.+)",
           "name": "keyword.control",
           "captures": {
             "1": {

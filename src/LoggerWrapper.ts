@@ -16,7 +16,7 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public debug(...msg: any[]): void {
+  public debugS(...msg: any[]): void {
     try {
       Sentry.addBreadcrumb({ message: this._inspect(msg), data: msg, level: Sentry.Severity.Debug });
     } catch (e) {
@@ -26,12 +26,7 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public localDebug(...msg: any[]): void {
-    return super.debug(...msg);
-  }
-
-  //eslint-disable-next-line
-  public infoMessageWithTags(m: string, tags: { [key: string]: string }): void {
+  public infoSMessageWithTags(m: string, tags: { [key: string]: string }): void {
     try {
       Sentry.withScope(function (scope) {
         scope.setTags(tags);
@@ -44,7 +39,17 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public info(...msg: any[]): void {
+  public setContext(name: string, context: { [key: string]: any } | null): void {
+    try {
+      super.info('context:' + name, context);
+      Sentry.setContext(name, context);
+    } catch (e) {
+      this.exceptionS(e);
+    }
+  }
+
+  //eslint-disable-next-line
+  public infoS(...msg: any[]): void {
     try {
       Sentry.addBreadcrumb({ message: this._inspect(msg), data: msg, level: Sentry.Severity.Info });
     } catch (e) {
@@ -54,7 +59,7 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public warn(m: string, ...msg: any[]): void {
+  public warnS(m: string, ...msg: any[]): void {
     try {
       if (msg.length > 0)
         Sentry.addBreadcrumb({ message: m + ': ' + this._inspect(msg), data: msg, level: Sentry.Severity.Warning });
@@ -66,7 +71,7 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public error(m: string, ...msg: any[]): void {
+  public errorS(m: string, ...msg: any[]): void {
     try {
       if (msg.length > 0)
         Sentry.addBreadcrumb({ message: m + ': ' + this._inspect(msg), level: Sentry.Severity.Error });
@@ -78,7 +83,7 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public exception(e: Error, ...msg: any[]): void {
+  public exceptionS(e: Error, ...msg: any[]): void {
     try {
       if (msg.length > 0)
         Sentry.addBreadcrumb({

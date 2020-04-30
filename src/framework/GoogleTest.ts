@@ -262,7 +262,7 @@ export class GoogleTest extends AbstractTest {
 
       return ev;
     } catch (e) {
-      this._shared.log.exception(e, output);
+      this._shared.log.exceptionS(e, output);
 
       const ev = this.getFailedEventBase();
       ev.message = 'Unexpected error: ' + e.toString();

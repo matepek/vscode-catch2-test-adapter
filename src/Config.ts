@@ -18,8 +18,7 @@ export class Config {
     const templateFromConfig = this._vsConfig.get<object | null | 'extensionOnly'>('debugConfigTemplate', null);
 
     if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
-      this._log.info('using user defined debug config');
-      return Object.assign(
+      const debugConfig = Object.assign(
         {
           name: '${label} (${suiteLabel})',
           request: 'launch',
@@ -27,6 +26,9 @@ export class Config {
         },
         templateFromConfig,
       );
+      this._log.infoS('using user defined debug config');
+      this._log.debug('debugConfig', debugConfig);
+      return debugConfig;
     }
 
     if (templateFromConfig === null) {
@@ -43,11 +45,8 @@ export class Config {
               wpLaunchConfigs[i].type.startsWith('lldb') ||
               wpLaunchConfigs[i].type.startsWith('gdb'))
           ) {
-            this._log.info(
-              "using debug config from launch.json. If it doesn't wokr for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
-            );
             // putting as much known properties as much we can and hoping for the best 🤞
-            return Object.assign({}, wpLaunchConfigs[i], {
+            const debugConfig = Object.assign({}, wpLaunchConfigs[i], {
               name: '${label} (${suiteLabel})',
               program: '${exec}',
               target: '${exec}',
@@ -56,6 +55,12 @@ export class Config {
               cwd: '${cwd}',
               env: '${envObj}',
             });
+            this._log.infoS('using debug cofing from launch.json');
+            this._log.debug(
+              "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+              debugConfig,
+            );
+            return debugConfig;
           }
         }
       }
@@ -68,7 +73,7 @@ export class Config {
     };
 
     if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
-      this._log.info('using debug extension: vadimcn.vscode-lldb');
+      this._log.infoSMessageWithTags('using debug extension', { extension: 'vadimcn.vscode-lldb' });
       Object.assign(template, {
         type: 'cppdbg',
         MIMode: 'lldb',
@@ -78,7 +83,7 @@ export class Config {
         env: '${envObj}',
       });
     } else if (vscode.extensions.getExtension('webfreak.debug')) {
-      this._log.info('using debug extension: webfreak.debug');
+      this._log.infoSMessageWithTags('using debug extension', { extension: 'webfreak.debug' });
       Object.assign(template, {
         type: 'gdb',
         target: '${exec}',
@@ -95,7 +100,7 @@ export class Config {
         template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
       }
     } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
-      this._log.info('using debug extension: ms-vscode.cpptools');
+      this._log.infoSMessageWithTags('using debug extension', { extension: 'ms-vscode.cpptools' });
       // documentation says debug"environment" = [{...}] but that doesn't work
       Object.assign(template, {
         type: 'cppvsdbg',
@@ -108,6 +113,7 @@ export class Config {
         env: '${envObj}',
       });
     } else {
+      this._log.info('no debug config');
       throw Error(
         "For debugging 'catch2TestExplorer.debugConfigTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
       );
@@ -196,7 +202,10 @@ export class Config {
   public getWorkerMaxNumber(): number {
     const res = Math.max(1, this._vsConfig.get<number>('workerMaxNumber', 1));
     if (typeof res != 'number') return 1;
-    else return res;
+    else {
+      if (res > 1) this._log.infoS('workerMaxNumber', 1);
+      return res;
+    }
   }
 
   public getDefaultExecWatchTimeout(): number {
@@ -248,6 +257,8 @@ export class Config {
       | { [prop: string]: string }
       | ({ [prop: string]: string } | string)[] = this._vsConfig.get('executables');
 
+    this._log.setContext('executables', { executables: configExecs });
+
     // eslint-disable-next-line
     const createFromObject = (obj: { [prop: string]: any }): ExecutableConfig => {
       const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
@@ -259,7 +270,7 @@ export class Config {
         if (typeof obj.pattern == 'string') pattern = obj.pattern;
         else if (typeof obj.path == 'string') pattern = obj.path;
         else {
-          this._log.debug('pattern property is required', obj);
+          this._log.error('pattern property is required', obj);
           throw Error('pattern property is required.');
         }
       }

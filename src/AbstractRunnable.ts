@@ -41,7 +41,7 @@ export abstract class AbstractRunnable {
         if (AbstractRunnable._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
           const versionStr = version ? version.toString() : 'unknown';
 
-          _shared.log.infoMessageWithTags('Framework', {
+          _shared.log.infoSMessageWithTags('Framework', {
             framework: this.frameworkName,
             frameworkVersion: `${this.frameworkName}@${versionStr}`,
           });
@@ -49,7 +49,7 @@ export abstract class AbstractRunnable {
           AbstractRunnable._reportedFrameworks.push(frameworkName);
         }
       })
-      .catch(e => this._shared.log.exception(e));
+      .catch(e => this._shared.log.exceptionS(e));
   }
 
   protected _getGroupByExecutable(): GroupByExecutable {
@@ -244,7 +244,7 @@ export abstract class AbstractRunnable {
         }
       }
     } catch (e) {
-      this._shared.log.exception(e);
+      this._shared.log.exceptionS(e);
     }
 
     const old = group.children.find(t => t instanceof AbstractTest && t.testNameInOutput === testNameInOutput) as
@@ -424,7 +424,7 @@ export abstract class AbstractRunnable {
       try {
         r.cancel();
       } catch (e) {
-        this._shared.log.exception(e);
+        this._shared.log.exceptionS(e);
       }
     });
 
@@ -455,7 +455,7 @@ export abstract class AbstractRunnable {
           (isOutDated: boolean) => {
             if (isOutDated) this._shared.loadWithTaskEmitter.fire(() => this.reloadTests(this._shared.taskPool));
           },
-          err => this._shared.log.exception(err),
+          err => this._shared.log.exceptionS(err),
         );
       })
       .then();
@@ -513,8 +513,7 @@ export abstract class AbstractRunnable {
 
     const execParams = this.properties.prependTestRunningArgs.concat(this._getRunParams(runnableDescendant));
 
-    this._shared.log.info('proc starting', this.properties.path);
-    this._shared.log.localDebug('proc starting', this.properties.path, execParams);
+    this._shared.log.info('proc starting', this.properties.path, execParams);
 
     const runInfo = new RunningRunnable(
       cp.spawn(this.properties.path, execParams, this.properties.options),
@@ -523,8 +522,7 @@ export abstract class AbstractRunnable {
 
     this._runInfos.push(runInfo);
 
-    this._shared.log.info('proc started:', this.properties.path);
-    this._shared.log.localDebug('proc started:', this.properties.path, this.properties, execParams);
+    this._shared.log.info('proc started:', this.properties.path, this.properties, execParams);
 
     runInfo.process.on('error', (err: Error) => {
       this._shared.log.error('process error event:', err, this);
@@ -538,7 +536,7 @@ export abstract class AbstractRunnable {
       });
 
       runInfo.process.once('close', (...args) => {
-        this._shared.log.localDebug('proc close:', this.properties.path, args);
+        this._shared.log.info('proc close:', this.properties.path, args);
         trigger('closed');
       });
 
@@ -572,7 +570,7 @@ export abstract class AbstractRunnable {
 
     return this._handleProcess(runInfo)
       .catch((reason: Error) => {
-        this._shared.log.exception(reason);
+        this._shared.log.exceptionS(reason);
       })
       .then(() => {
         this._shared.log.info('proc finished:', this.properties.path);

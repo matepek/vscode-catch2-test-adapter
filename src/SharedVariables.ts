@@ -35,6 +35,7 @@ export class SharedVariables implements vscode.Disposable {
 
   public dispose(): void {
     this._execRunningTimeoutChangeEmitter.dispose();
+    this.log.dispose();
   }
 
   public get execRunningTimeout(): number | null {

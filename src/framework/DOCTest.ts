@@ -221,7 +221,7 @@ export class DOCTest extends AbstractTest {
         }
       }
     } catch (e) {
-      this._shared.log.exception(e);
+      this._shared.log.exceptionS(e);
     }
 
     try {
@@ -235,7 +235,7 @@ export class DOCTest extends AbstractTest {
         }
       }
     } catch (e) {
-      this._shared.log.exception(e);
+      this._shared.log.exceptionS(e);
     }
 
     try {
@@ -263,7 +263,7 @@ export class DOCTest extends AbstractTest {
               );
             }
           } catch (e) {
-            this._shared.log.exception(e);
+            this._shared.log.exceptionS(e);
           }
 
           try {
@@ -279,7 +279,7 @@ export class DOCTest extends AbstractTest {
               );
             }
           } catch (e) {
-            this._shared.log.exception(e);
+            this._shared.log.exceptionS(e);
           }
 
           try {
@@ -295,7 +295,7 @@ export class DOCTest extends AbstractTest {
               );
             }
           } catch (e) {
-            this._shared.log.exception(e);
+            this._shared.log.exceptionS(e);
           }
 
           try {
@@ -311,12 +311,12 @@ export class DOCTest extends AbstractTest {
               );
             }
           } catch (e) {
-            this._shared.log.exception(e);
+            this._shared.log.exceptionS(e);
           }
         }
       }
     } catch (e) {
-      this._shared.log.exception(e);
+      this._shared.log.exceptionS(e);
     }
   }
 
@@ -354,7 +354,8 @@ export class DOCTest extends AbstractTest {
 
         const name = this._isSecnario ? subcase.$.name.trimLeft() : subcase.$.name;
 
-        const msg = '   '.repeat(stack.length) + '⮑ ' + (isLeaf ? (currSection.failed ? '❌' : '✅') : '') + `${name}`;
+        const msg =
+          '   '.repeat(stack.length) + '⮑ ' + (isLeaf ? (currSection.failed ? '❌' : '✅') : '') + `"${name}"`;
 
         testEventBuilder.appendMessage(msg, null);
 
@@ -365,7 +366,7 @@ export class DOCTest extends AbstractTest {
         this._processXmlTagSubcase(subcase, title, currStack, testEventBuilder, currSection);
       } catch (error) {
         testEventBuilder.appendMessage('Fatal error processing subcase', 1);
-        this._shared.log.exception(error);
+        this._shared.log.exceptionS(error);
       }
     }
   }

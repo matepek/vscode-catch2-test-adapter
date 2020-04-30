@@ -315,7 +315,7 @@ export class GoogleTestVersionFinder {
           }
         })
         .catch(e => {
-          shared.log.exception(e);
+          shared.log.exceptionS(e);
           return undefined;
         });
     }

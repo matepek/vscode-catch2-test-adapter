@@ -65,15 +65,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const config = this._getConfiguration();
 
-    this._log.info(
-      'info:',
-      this.workspaceFolder,
-      process.platform,
-      process.version,
-      process.versions,
-      vscode.version,
-      config,
-    );
+    this._log.infoS('info:', this.workspaceFolder, process.platform, process.version, process.versions, vscode.version);
 
     // TODO feedback
     // if (false) {
@@ -93,7 +85,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         const pjson = readJSONSync(join(__dirname, '../../package.json'));
         extensionInfo = { version: pjson.version, publisher: pjson.publisher, name: pjson.name };
       } catch (e) {
-        this._log.exception(e, __dirname);
+        this._log.exceptionS(e, __dirname);
         extensionInfo = { version: '<unknown-version>', publisher: '<unknown-publisher>', name: '<unknown-name>' };
       }
 
@@ -121,17 +113,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         const opt = Intl.DateTimeFormat().resolvedOptions();
         Sentry.setTags({ timeZone: opt.timeZone, locale: opt.locale });
       } catch (e) {
-        this._log.exception(e);
+        this._log.exceptionS(e);
       }
 
       Sentry.setUser({ id: config.getOrCreateUserId() });
       //Sentry.setTag('workspaceFolder', hashString(this.workspaceFolder.uri.fsPath));
 
-      Sentry.setContext('config', config);
-
       //'Framework' message includes this old message too: Sentry.captureMessage('Extension was activated', Sentry.Severity.Log);
     } catch (e) {
-      this._log.exception(e);
+      this._log.exceptionS(e);
     }
 
     this._disposables.push(
@@ -178,7 +168,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
                 });
               },
               (reason: Error) => {
-                this._log.exception(reason);
+                this._log.exceptionS(reason);
                 debugger;
                 this._testsEmitter.fire({
                   type: 'finished',
@@ -260,7 +250,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         try {
           Sentry.setContext('config', config);
         } catch (e) {
-          this._log.exception(e);
+          this._log.exceptionS(e);
         }
 
         if (configChange.affectsConfiguration('catch2TestExplorer.defaultRngSeed', this.workspaceFolder.uri)) {
@@ -335,12 +325,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     } catch (e) {
       this._log.error('dispose', e, this._rootSuite);
     }
-
-    try {
-      this._log.dispose();
-    } catch (e) {
-      this._log.error('dispose', e, this._log);
-    }
   }
 
   public get testStates(): vscode.Event<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent> {
@@ -387,7 +371,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             });
           },
           (e: Error) => {
-            this._log.exception(e);
+            this._log.exceptionS(e);
 
             this._testsEmitter.fire({
               type: 'finished',
@@ -411,7 +395,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
 
     return this._mainTaskQueue.then(() => {
-      return this._rootSuite.run(tests).catch((reason: Error) => this._log.exception(reason));
+      return this._rootSuite.run(tests).catch((reason: Error) => this._log.exceptionS(reason));
     });
   }
 
@@ -421,7 +405,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       throw Error('The adapter is busy. Try it again a bit later.');
     }
 
-    this._log.info('Debugging');
+    this._log.infoS('Debugging');
 
     const runnables = tests
       .map(t => this._rootSuite.findTestById(t))

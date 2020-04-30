@@ -202,7 +202,7 @@ export class DOCRunnable extends AbstractRunnable {
             if (skipped) {
               new xml2js.Parser({ explicitArray: true }).parseString(m[0], (err: Error, result: XmlObject) => {
                 if (err) {
-                  this._shared.log.exception(err);
+                  this._shared.log.exceptionS(err);
                   throw err;
                 } else {
                   name = result.TestCase.$.name;
@@ -213,7 +213,7 @@ export class DOCRunnable extends AbstractRunnable {
                 m[0] + '</TestCase>',
                 (err: Error, result: XmlObject) => {
                   if (err) {
-                    this._shared.log.exception(err);
+                    this._shared.log.exceptionS(err);
                     throw err;
                   } else {
                     name = result.TestCase.$.name;
@@ -338,7 +338,7 @@ export class DOCRunnable extends AbstractRunnable {
     })
       .catch((reason: Error) => {
         // eslint-disable-next-line
-        if ((reason as any).code === undefined) this._shared.log.exception(reason);
+        if ((reason as any).code === undefined) this._shared.log.exceptionS(reason);
 
         return new ProcessResult(reason);
       })
@@ -413,7 +413,7 @@ export class DOCRunnable extends AbstractRunnable {
                   m[0] + '</TestCase>',
                   (err: Error, result: XmlObject) => {
                     if (err) {
-                      this._shared.log.exception(err);
+                      this._shared.log.exceptionS(err);
                     } else {
                       name = result.TestCase.$.name;
                     }

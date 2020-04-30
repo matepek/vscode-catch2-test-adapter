@@ -104,6 +104,7 @@ const nativeExecutableExtensionFilter = new Set([
   '.md',
   '.mm',
   '.o',
+  '.obj',
   '.pc',
   '.php',
   '.pyc',
