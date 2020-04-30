@@ -232,8 +232,6 @@
                                 "${workspaceDirectory}",
                                 "${workspaceFolder}",
                                 "${workspaceName}",
-                                "${name}",
-                                "${description}",
                                 "${cwd}",
                                 "${os_env:PATH}"
                               ]
@@ -803,8 +801,6 @@
                   "${workspaceDirectory}",
                   "${workspaceFolder}",
                   "${workspaceName}",
-                  "${name}",
-                  "${description}",
                   "${cwd}"
                 ]
               },

@@ -89,7 +89,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
   - Paths on different drive in the same `dependsOn` array maybe won't work.
   - (If you find another corner case, feel free to open an issue. It could be handy once in the future.)
 
-## Variables which can be used in `name`, `description`, `cwd` and `env` of `executables`:
+## Variables which can be used in `cwd` and `env` of `executables`:
 
 [array index]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
 
@@ -105,8 +105,6 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 | `${workspaceDirectory}`      | (You can only guess once.)                                                                                                                                                                   |
 | `${workspaceFolder}`         | Alias of `${workspaceDirectory}`                                                                                                                                                             |
 | `${workspaceName}`           | Workspace name can be custom in case of [`workspace file`](https://code.visualstudio.com/docs/editor/multi-root-workspaces#_workspace-file-schema).                                          |
-| `${name}`                    | The resolved `executables`'s name. Can be used only in `cwd` and `env`.                                                                                                                      |
-| `${description}`             | The resolved `executables`'s description. Can be used only in `cwd` and `env`.                                                                                                               |
 | `${cwd}`                     | The resolved `executables`'s cwd. Can be used only in `env`. Supports [array index]ing.                                                                                                      |
 | `${os_env:<varname>}`        | Resolves it to the given(`<varname>`) environment variable if exists empty string otherwise. Can be used everywhere. On Windows it is case insensitive: `${os_env:pAtH}` == `${os_env:PATH}` |
 | `${os_env_strict:<varname>}` | Resolves it to the given(`<varname>`) environment variable if exists won't set the variable othewise. Can be used ONLY in `env`.                                                             |
