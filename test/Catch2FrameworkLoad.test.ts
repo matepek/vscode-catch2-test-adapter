@@ -841,7 +841,7 @@ describe(path.basename(__filename), function () {
           test: s1t1,
           decorations: [],
           message:
-            '😱 Unexpected error !!\n⬇ std::cout:\n<TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7">\n⬆ std::cout\n⬇ std::err:\n\n⬆ std::err',
+            '😱 Unexpected error !!\n⬇ std::cout:\n<TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7">\n⬆ std::cout\n⬇ std::cerr:\n\n⬆ std::cerr',
         },
         {
           type: 'suite',
@@ -913,7 +913,7 @@ describe(path.basename(__filename), function () {
           test: s1t1,
           decorations: [],
           message:
-            '😱 Unexpected error !!\nSignal received: SIGTERM\n⬇ std::cout:\n<TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7">\n⬆ std::cout\n⬇ std::err:\n\n⬆ std::err',
+            '😱 Unexpected error !!\nSignal received: SIGTERM\n⬇ std::cout:\n<TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7">\n⬆ std::cout\n⬇ std::cerr:\n\n⬆ std::cerr',
         },
         {
           type: 'suite',

@@ -122,9 +122,9 @@ export class DOCTest extends AbstractTest {
 
     if (stderr) {
       testEventBuilder.appendMessage('stderr arrived during running this test', null);
-      testEventBuilder.appendMessage('⬇ std::err:', null);
+      testEventBuilder.appendMessage('⬇ std::cerr:', null);
       testEventBuilder.appendMessage(stderr, 1);
-      testEventBuilder.appendMessage('⬆ std::err', null);
+      testEventBuilder.appendMessage('⬆ std::cerr', null);
     }
 
     this.lastRunEvent = testEvent;

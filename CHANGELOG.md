@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.12]
+
+More colorization
+
 ## [2.9.11] - 2020-04-30
 
 ## [2.9.10] - 2020-04-30

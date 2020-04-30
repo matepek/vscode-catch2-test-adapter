@@ -22,11 +22,11 @@
   cout msg
   
 ⬆ std::cout
-⬇ std::err:
+⬇ std::cerr:
   
   cerr msg
   
-⬆ std::err
+⬆ std::cerr
 ⬇ std::edrr:
   
   cerr msg

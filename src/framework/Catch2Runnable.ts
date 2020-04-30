@@ -361,9 +361,9 @@ export class Catch2Runnable extends AbstractRunnable {
                     '⬇ std::cout:',
                     data.stdoutBuffer,
                     '⬆ std::cout',
-                    '⬇ std::err:',
+                    '⬇ std::cerr:',
                     data.stderrBuffer,
-                    '⬆ std::err',
+                    '⬆ std::cerr',
                   ].join('\n'),
                 });
               }
@@ -432,9 +432,9 @@ export class Catch2Runnable extends AbstractRunnable {
                 '⬇ std::cout:',
                 data.stdoutBuffer,
                 '⬆ std::cout',
-                '⬇ std::err:',
+                '⬇ std::cerr:',
                 data.stderrBuffer,
-                '⬆ std::err',
+                '⬆ std::cerr',
               ].join('\n');
             }
 

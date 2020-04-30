@@ -150,9 +150,9 @@ export class Catch2Test extends AbstractTest {
 
     if (stderr) {
       testEventBuilder.appendMessage('stderr arrived during running this test', null);
-      testEventBuilder.appendMessage('⬇ std::err:', null);
+      testEventBuilder.appendMessage('⬇ std::cerr:', null);
       testEventBuilder.appendMessage(stderr, 1);
-      testEventBuilder.appendMessage('⬆ std::err', null);
+      testEventBuilder.appendMessage('⬆ std::cerr', null);
     }
 
     const testEvent = testEventBuilder.build();
@@ -190,10 +190,10 @@ export class Catch2Test extends AbstractTest {
     }
 
     if (testCase.OverallResult[0].StdErr) {
-      testEventBuilder.appendMessage('⬇ std::err:', 1);
+      testEventBuilder.appendMessage('⬇ std::cerr:', 1);
       for (let i = 0; i < testCase.OverallResult[0].StdErr.length; i++)
         testEventBuilder.appendMessage(testCase.OverallResult[0].StdErr[i].trim(), 2);
-      testEventBuilder.appendMessage('⬆ std::err', 1);
+      testEventBuilder.appendMessage('⬆ std::cerr', 1);
     }
 
     if (testCase.OverallResult[0].$.success === 'true') {
