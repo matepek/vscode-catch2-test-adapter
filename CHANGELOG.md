@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.9.12]
 
-More colorization
+Fine-tuning colorization
 
 ## [2.9.11] - 2020-04-30
 
