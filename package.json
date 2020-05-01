@@ -138,6 +138,7 @@
         "copper.test.executables": {
           "markdownDescription": "Array of executables with a lot of options. `null` means disabled. (If this is set then `copper.test.executable` is ignored.) ([Details](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)).",
           "scope": "resource",
+          "default": [],
           "type": [
             "array",
             "null"
@@ -784,7 +785,7 @@
             }
           ]
         },
-        "copper.test.runtimeTimeout": {
+        "copper.test.runtimeLimit": {
           "markdownDescription": "[seconds] Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
           "scope": "resource",
           "type": "integer",
@@ -798,21 +799,21 @@
           "default": 1,
           "minimum": 1
         },
-        "copper.discovery.watchTimeout": {
+        "copper.discovery.misssingFileWaitingTimeLimit": {
           "markdownDescription": "[seconds] Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.",
           "scope": "resource",
           "type": "integer",
           "default": 10,
           "minimum": 1
         },
-        "copper.discovery.retireTestAfter": {
+        "copper.discovery.retireDebounceLimit": {
           "markdownDescription": "[milisec] Retire events will be held back for the given duration. (Reload is required)",
           "scope": "resource",
           "type": "integer",
           "default": 1000,
           "minimum": 200
         },
-        "copper.discovery.listingTimeout": {
+        "copper.discovery.runtimeLimit": {
           "markdownDescription": "[seconds] The timeout of the test-executable used to identify it (Calls the exec with `--help`).",
           "scope": "resource",
           "type": "integer",
@@ -916,8 +917,8 @@
           "type": "string"
         },
         "copper.gtest.treatGmockWarningAs": {
-          "deprecationMessage": "Will stop working unless you open an issue and tell me that how much you love it.",
           "markdownDescription": "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/cook_book.md#the-nice-the-strict-and-the-naggy-nicestrictnaggy))",
+          "deprecationMessage": "Will stop working unless you open an issue and tell me that how much you love it.",
           "scope": "resource",
           "type": "string",
           "default": "nothing",
@@ -931,8 +932,8 @@
           ]
         },
         "copper.gtest.gmockVerbose": {
-          "deprecationMessage": "Will stop working unless you open an issue and tell me that how much you love it.",
           "markdownDescription": "Sets [--gmock_verbose=...](https://github.com/google/googletest/blob/master/googlemock/docs/cheat_sheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
+          "deprecationMessage": "Will stop working unless you open an issue and tell me that how much you love it.",
           "scope": "resource",
           "type": "string",
           "default": "default",
@@ -950,8 +951,8 @@
           ]
         },
         "catch2TestExplorer.executables": {
-          "deprecationMessage": "Use `copper.executable` or `copper.test.executables` instead of this.",
           "markdownDescription": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting.",
+          "deprecationMessage": "Use `copper.executable` or `copper.test.executables` instead of this.",
           "scope": "resource",
           "default": [
             {
@@ -1584,8 +1585,8 @@
           ]
         },
         "catch2TestExplorer.defaultCwd": {
-          "deprecationMessage": "Use `copper.test.workingDirectory` instead of this.",
           "markdownDescription": "The working directory where the test is run (relative to the workspace folder or absolute path), if it isn't provided in \"executables\". (It resolves variables.)",
+          "deprecationMessage": "Use `copper.test.workingDirectory` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": "${absDirpath}",
@@ -1606,8 +1607,8 @@
           ]
         },
         "catch2TestExplorer.defaultEnv": {
-          "deprecationMessage": "Set the variables in `copper.test.executables` instead of this.",
           "markdownDescription": "Environment variables to be set when running the tests. (It resolves variables.)",
+          "deprecationMessage": "Set the variables in `copper.test.executables` instead of this.",
           "type": "object",
           "additionalProperties": {
             "anyOf": [
@@ -1637,8 +1638,8 @@
           "scope": "resource"
         },
         "catch2TestExplorer.defaultRngSeed": {
-          "deprecationMessage": "Use `copper.test.randomGeneratorSeed` instead of this.",
           "markdownDescription": "Shuffles the tests with the given random. Catch2: [--rng-seed (<integer> or 'time')](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed); Google Test: [--gtest_random_seed=<integer>](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#shuffling-the-tests);",
+          "deprecationMessage": "Use `copper.test.randomGeneratorSeed` instead of this.",
           "scope": "resource",
           "default": null,
           "oneOf": [
@@ -1658,32 +1659,32 @@
           ]
         },
         "catch2TestExplorer.defaultWatchTimeoutSec": {
-          "deprecationMessage": "Use `copper.test.watchTimeoutInSeconds` instead of this.",
           "markdownDescription": "Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.",
+          "deprecationMessage": "Use `copper.test.watchTimeoutInSeconds` instead of this.",
           "scope": "resource",
           "type": "integer",
           "default": 10,
           "minimum": 1
         },
         "catch2TestExplorer.retireDebounceTimeMilisec": {
-          "deprecationMessage": "Use `copper.discovery.retireTestAfter` instead of this.",
           "markdownDescription": "Retire events will be held back for the given duration. (Reload is required)",
+          "deprecationMessage": "Use `copper.discovery.retireDebounceLimit` instead of this.",
           "scope": "resource",
           "type": "integer",
           "default": 1000,
           "minimum": 200
         },
         "catch2TestExplorer.defaultRunningTimeoutSec": {
-          "deprecationMessage": "Use `copper.test.runtimeTimeout` instead of this.",
           "markdownDescription": "Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
+          "deprecationMessage": "Use `copper.test.runtimeLimit` instead of this.",
           "scope": "resource",
           "type": "integer",
           "default": 600,
           "minimum": -1
         },
         "catch2TestExplorer.defaultExecParsingTimeoutSec": {
-          "deprecationMessage": "Use `copper.discovery.listingTimeout` instead of this.",
           "markdownDescription": "The timeout duration (in seconds) of the test-executable identifier (Calls the exec with `--help`).",
+          "deprecationMessage": "Use `copper.discovery.runtimeLimit` instead of this.",
           "scope": "resource",
           "type": "integer",
           "default": 5,
@@ -1691,16 +1692,16 @@
           "maximum": 900
         },
         "catch2TestExplorer.workerMaxNumber": {
-          "deprecationMessage": "Use `copper.test.parallelExecutionLimit` instead of this.",
           "markdownDescription": "The variable maximize the number of the parallel test execution. It applies instantly.",
+          "deprecationMessage": "Use `copper.test.parallelExecutionLimit` instead of this.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
           "minimum": 1
         },
         "catch2TestExplorer.debugConfigTemplate": {
-          "deprecationMessage": "Use `copper.debug.configTemplate` instead of this.",
           "markdownDescription": "Set the necessary debug configurations and the debug button will work.",
+          "deprecationMessage": "Use `copper.debug.configTemplate` instead of this.",
           "scope": "resource",
           "default": null,
           "oneOf": [
@@ -1754,57 +1755,57 @@
           ]
         },
         "catch2TestExplorer.debugBreakOnFailure": {
-          "deprecationMessage": "Use `copper.debug.breakOnFailure` instead of this.",
           "markdownDescription": "Debugger breaks on failure while debugging the test. Catch2: [--break](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#breaking-into-the-debugger); Google Test: [--gtest_break_on_failure](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#turning-assertion-failures-into-break-points);",
+          "deprecationMessage": "Use `copper.debug.breakOnFailure` instead of this.",
           "scope": "resource",
           "type": "boolean",
           "default": true
         },
         "catch2TestExplorer.defaultNoThrow": {
-          "deprecationMessage": "Use `copper.debug.noThrow` instead of this.",
           "markdownDescription": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: [--nothrow](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#eliding-assertions-expected-to-throw);",
+          "deprecationMessage": "Use `copper.debug.noThrow` instead of this.",
           "scope": "resource",
           "type": "boolean",
           "default": false
         },
         "catch2TestExplorer.logpanel": {
-          "deprecationMessage": "Use `copper.log.logpanel` instead of this.",
           "markdownDescription": "Creates a new output channel and write the log messages there. For debugging. Enabling it could slow down your vscode.",
+          "deprecationMessage": "Use `copper.log.logpanel` instead of this.",
           "scope": "resource",
           "type": "boolean",
           "default": false
         },
         "catch2TestExplorer.logfile": {
-          "deprecationMessage": "Use `copper.log.logfile` instead of this.",
           "markdownDescription": "Writes the log message into the given file. Empty means disabled.",
+          "deprecationMessage": "Use `copper.log.logfile` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": ""
         },
         "catch2TestExplorer.logSentry": {
-          "deprecationMessage": "Use `copper.log.logSentry` instead of this.",
           "markdownDescription": "Errors/Exceptions will be logged and sent automatically for further analysis.",
+          "deprecationMessage": "Use `copper.log.logSentry` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": "question"
         },
         "catch2TestExplorer.userId": {
-          "deprecationMessage": "Use `copper.log.userId` instead of this.",
           "markdownDescription": "A locally generated identifier which is used to group the errors/events.",
+          "deprecationMessage": "Use `copper.log.userId` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": ""
         },
         "catch2TestExplorer.enableTestListCaching": {
-          "deprecationMessage": "Use `copper.discovery.testListCaching` instead of this.",
           "markdownDescription": "(Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.) (Click [here](http://bit.ly/2HFcAC6), if you think it is a useful feature!)",
+          "deprecationMessage": "Use `copper.discovery.testListCaching` instead of this.",
           "scope": "resource",
           "type": "boolean",
           "default": false
         },
         "catch2TestExplorer.googletest.treatGmockWarningAs": {
-          "deprecationMessage": "Use `copper.gtest.treatGmockWarningAs` instead of this.",
           "markdownDescription": "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/cook_book.md#the-nice-the-strict-and-the-naggy-nicestrictnaggy))",
+          "deprecationMessage": "Use `copper.gtest.treatGmockWarningAs` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": "nothing",
@@ -1818,8 +1819,8 @@
           ]
         },
         "catch2TestExplorer.googletest.gmockVerbose": {
-          "deprecationMessage": "Use `copper.gtest.gmockVerbose` instead of this.",
           "markdownDescription": "Sets [--gmock_verbose=...](https://github.com/google/googletest/blob/master/googlemock/docs/cheat_sheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
+          "deprecationMessage": "Use `copper.gtest.gmockVerbose` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": "default",

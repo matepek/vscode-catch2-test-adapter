@@ -69,10 +69,6 @@ export class DOCTest extends AbstractTest {
     );
     this._sections = old ? old.sections : undefined;
     this._isSecnario = testNameAsId.startsWith('  Scenario:');
-    if (old) {
-      this.lastRunEvent = old.lastRunEvent;
-      this.lastRunMilisec = old.lastRunMilisec;
-    }
   }
 
   public get testNameInOutput(): string {
@@ -118,8 +114,6 @@ export class DOCTest extends AbstractTest {
 
     this._processXmlTagTestCaseInner(res.TestCase, testEventBuilder);
 
-    const testEvent = testEventBuilder.build();
-
     if (stderr) {
       testEventBuilder.appendMessage('stderr arrived during running this test', null);
       testEventBuilder.appendMessage('⬇ std::cerr:', null);
@@ -127,16 +121,14 @@ export class DOCTest extends AbstractTest {
       testEventBuilder.appendMessage('⬆ std::cerr', null);
     }
 
-    this.lastRunEvent = testEvent;
+    const testEvent = testEventBuilder.build();
 
     return testEvent;
   }
 
   private _processXmlTagTestCaseInner(testCase: XmlObject, testEventBuilder: TestEventBuilder): void {
-    if (testCase.OverallResultsAsserts[0].$.duration) {
-      this.lastRunMilisec = Number(testCase.OverallResultsAsserts[0].$.duration) * 1000;
-      testEventBuilder.setDurationMilisec(this.lastRunMilisec);
-    }
+    if (testCase.OverallResultsAsserts[0].$.duration)
+      testEventBuilder.setDurationMilisec(Number(testCase.OverallResultsAsserts[0].$.duration) * 1000);
 
     testEventBuilder.appendMessage(testCase._, 0);
 
@@ -216,7 +208,7 @@ export class DOCTest extends AbstractTest {
           testEventBuilder.appendDecorator(
             msg.$.filename,
             Number(msg.$.line) - 1,
-            '⬅ ' + msg.Text.map((x: string) => x.trim()).join(' | '),
+            msg.Text.map((x: string) => x.trim()).join(' | '),
           );
         }
       }
@@ -256,11 +248,7 @@ export class DOCTest extends AbstractTest {
                 '❗️Expanded:  ' + expr.Expanded.map((x: string) => x.trim()).join('\n'),
                 2,
               );
-              testEventBuilder.appendDecorator(
-                file,
-                line - 1,
-                '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join(' | '),
-              );
+              testEventBuilder.appendDecorator(file, line - 1, expr.Expanded.map((x: string) => x.trim()).join(' | '));
             }
           } catch (e) {
             this._shared.log.exceptionS(e);
@@ -272,11 +260,7 @@ export class DOCTest extends AbstractTest {
                 '  ❗️Exception:  ' + expr.Exception.map((x: string) => x.trim()).join('\n'),
                 2,
               );
-              testEventBuilder.appendDecorator(
-                file,
-                line,
-                '⬅ ' + expr.Exception.map((x: string) => x.trim()).join(' | '),
-              );
+              testEventBuilder.appendDecorator(file, line, expr.Exception.map((x: string) => x.trim()).join(' | '));
             }
           } catch (e) {
             this._shared.log.exceptionS(e);
@@ -291,7 +275,7 @@ export class DOCTest extends AbstractTest {
               testEventBuilder.appendDecorator(
                 file,
                 line,
-                '⬅ ' + expr.ExpectedException.map((x: string) => x.trim()).join(' | '),
+                expr.ExpectedException.map((x: string) => x.trim()).join(' | '),
               );
             }
           } catch (e) {
@@ -307,7 +291,7 @@ export class DOCTest extends AbstractTest {
               testEventBuilder.appendDecorator(
                 file,
                 line,
-                '⬅ ' + expr.ExpectedExceptionString.map((x: string) => x.trim()).join(' | '),
+                expr.ExpectedExceptionString.map((x: string) => x.trim()).join(' | '),
               );
             }
           } catch (e) {

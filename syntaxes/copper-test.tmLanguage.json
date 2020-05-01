@@ -225,7 +225,7 @@
           }
         },
         {
-          "match": "\\[  (FAILED)  \\]([^\\(]*)(?:\\((.+)\\))?",
+          "match": "\\[  (FAILED)  \\]([^\\(]*)(\\s.+\\s)?(?:\\((.+)\\))?",
           "captures": {
             "1": {
               "name": "markup.bold.copper-test"
@@ -233,7 +233,7 @@
             "2": {
               "name": "entity.name.copper-test"
             },
-            "3": {
+            "4": {
               "patterns": [
                 {
                   "include": "#other"

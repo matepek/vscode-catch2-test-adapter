@@ -59,11 +59,14 @@ export class GoogleTest extends AbstractTest {
     }
 
     try {
-      const eventBuilder = new TestEventBuilder(this);
-
       const lines = output.split(/\r?\n/);
 
       if (lines.length < 2) throw new Error('unexpected');
+
+      const eventBuilder = new TestEventBuilder(this);
+
+      const runDuration = lines[lines.length - 1].match(/\(([0-9]+) ms\)$/);
+      eventBuilder.setDurationMilisec(runDuration ? Number(runDuration[1]) : undefined);
 
       const isSkipped = lines[lines.length - 1].indexOf('[  SKIPPED ]') != -1;
       if (lines[lines.length - 1].indexOf('[       OK ]') != -1) eventBuilder.passed();
@@ -72,18 +75,6 @@ export class GoogleTest extends AbstractTest {
       else {
         this._shared.log.error('unexpected token:', lines[lines.length - 1]);
         eventBuilder.errored();
-      }
-
-      if (output.indexOf('): error: ') != -1) {
-        // windows like output:
-        eventBuilder.appendMessage(output.replace(/\):error: /g, '):error: \n'), null);
-      } else {
-        eventBuilder.appendMessage(output, null);
-      }
-
-      {
-        const runDuration = lines[lines.length - 1].match(/\(([0-9]+) ms\)$/);
-        if (runDuration) this.lastRunMilisec = Number(runDuration[1]);
       }
 
       // asserts or anything what is happened until here is not relevant anymore
@@ -224,9 +215,7 @@ export class GoogleTest extends AbstractTest {
         }
       }
 
-      const event = eventBuilder.build();
-
-      this.lastRunEvent = event;
+      const event = eventBuilder.build(output.replace(/\): error: /g, '): error: \n'));
 
       return event;
     } catch (e) {

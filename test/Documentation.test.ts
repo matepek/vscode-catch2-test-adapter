@@ -28,9 +28,7 @@ describe(path.basename(__filename), function () {
       throw new Error("couldn't find: " + name);
     };
     {
-      const executableSchemaProp = properties['catch2TestExplorer.executables']['oneOf'][0]['items']['oneOf'][0][
-        'properties'
-      ] as any; //eslint-disable-line
+      const executableSchemaProp = properties['copper.test.executables']['items']['properties'] as any; //eslint-disable-line
       const keys = Object.keys(executableSchemaProp);
       keys.forEach(key => {
         assert.strictEqual(findDescriptionInReadmeTable(key), executableSchemaProp[key]['markdownDescription'], key);
@@ -64,11 +62,11 @@ describe(path.basename(__filename), function () {
       const keys = Object.keys(properties);
 
       keys.forEach(key => {
-        if (key === 'catch2TestExplorer.logfile' || key === 'catch2TestExplorer.userId') {
+        if (key === 'copper.log.logfile' || key === 'copper.log.userId' || key.startsWith('catch2TestExplorer')) {
           // skip: not documented
         } else {
-          assert.ok(key.startsWith('catch2TestExplorer.'));
-          const trimmedKey = key.substring('catch2TestExplorer.'.length);
+          assert.ok(key.startsWith('copper.'));
+          const trimmedKey = key.substring('copper.'.length);
           const descriptionInReadme = findDescriptionInReadmeTable(trimmedKey);
           assert.strictEqual(descriptionInReadme, properties[key]['markdownDescription'], key);
           assert.strictEqual(descriptionInReadme, properties[key]['markdownDescription'], key);

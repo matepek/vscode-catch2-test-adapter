@@ -13,11 +13,12 @@ type MigratableConfig =
   | 'test.executables'
   | 'test.workingDirectory'
   | 'test.randomGeneratorSeed'
-  | 'discovery.watchTimeout'
-  | 'discovery.retireTestAfter'
-  | 'test.runtimeTimeout'
-  | 'discovery.listingTimeout'
+  | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
+  | 'discovery.misssingFileWaitingTimeLimit'
+  | 'discovery.retireDebounceLimit'
+  | 'discovery.runtimeLimit'
+  | 'discovery.testListCaching'
   | 'debug.configTemplate'
   | 'debug.breakOnFailure'
   | 'debug.noThrow'
@@ -25,7 +26,6 @@ type MigratableConfig =
   | 'log.logfile'
   | 'log.logSentry'
   | 'log.userId'
-  | 'discovery.testListCaching'
   | 'gtest.treatGmockWarningAs'
   | 'gtest.gmockVerbose';
 
@@ -55,10 +55,10 @@ const MigrationV1V2NamePairs: { [key in MigratableConfig]: OldConfig } = {
   'test.executables': 'executables',
   'test.workingDirectory': 'defaultCwd',
   'test.randomGeneratorSeed': 'defaultRngSeed',
-  'discovery.watchTimeout': 'defaultWatchTimeoutSec',
-  'discovery.retireTestAfter': 'retireDebounceTimeMilisec',
-  'test.runtimeTimeout': 'defaultRunningTimeoutSec',
-  'discovery.listingTimeout': 'defaultExecParsingTimeoutSec',
+  'discovery.misssingFileWaitingTimeLimit': 'defaultWatchTimeoutSec',
+  'discovery.retireDebounceLimit': 'retireDebounceTimeMilisec',
+  'test.runtimeLimit': 'defaultRunningTimeoutSec',
+  'discovery.runtimeLimit': 'defaultExecParsingTimeoutSec',
   'test.parallelExecutionLimit': 'workerMaxNumber',
   'debug.configTemplate': 'debugConfigTemplate',
   'debug.breakOnFailure': 'debugBreakOnFailure',
@@ -243,7 +243,7 @@ export class Configurations {
     } else {
       this._log.info('no debug config');
       throw Error(
-        "For debugging 'catch2TestExplorer.debugConfigTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+        "For debugging 'copper.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
       );
     }
     return template;
@@ -336,22 +336,22 @@ export class Configurations {
   }
 
   public getExecWatchTimeout(): number {
-    const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.watchTimeout', 10) * 1000;
+    const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.misssingFileWaitingTimeLimit', 10) * 1000;
     return res;
   }
 
   public getRetireDebounceTime(): number {
-    const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.retireTestAfter', 1000);
+    const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.retireDebounceLimit', 1000);
     return res;
   }
 
   public getExecRunningTimeout(): null | number {
-    const r = this._getNewOrOldOrDefAndMigrate<null | number>('test.runtimeTimeout', null);
+    const r = this._getNewOrOldOrDefAndMigrate<null | number>('test.runtimeLimit', null);
     return r !== null && r > 0 ? r * 1000 : null;
   }
 
   public getExecParsingTimeout(): number {
-    const r = this._getNewOrOldOrDefAndMigrate<number>('discovery.listingTimeout', 5);
+    const r = this._getNewOrOldOrDefAndMigrate<number>('discovery.runtimeLimit', 5);
     return r * 1000;
   }
 
@@ -371,15 +371,7 @@ export class Configurations {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultEnv = this.getDefaultEnvironmentVariables() || {};
 
-    const executables: ExecutableConfig[] = [];
-
-    type ExecOldType =
-      | undefined
-      | null
-      | string
-      | string[]
-      | { [prop: string]: string }
-      | ({ [prop: string]: string } | string)[];
+    type ExecOldType = null | string | string[] | { [prop: string]: string } | ({ [prop: string]: string } | string)[];
 
     let configExecs: ExecOldType | undefined = this._getNewOrOldAndMigrate<ExecOldType>('test.executables');
 
@@ -388,12 +380,14 @@ export class Configurations {
       return [];
     }
 
-    if (configExecs === undefined) {
+    if (Array.isArray(configExecs) && configExecs.length === 0) {
       configExecs = this._new.get<ExecOldType>(
         'test.executable',
         '{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*',
       );
     }
+
+    const executables: ExecutableConfig[] = [];
 
     this._log.setContext('executables', { executables: configExecs });
 

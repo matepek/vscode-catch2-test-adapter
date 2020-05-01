@@ -23,6 +23,7 @@ import {
 } from 'vscode-test-adapter-api';
 
 import * as my from '../src/TestAdapter';
+import { Config } from '../src/Configurations';
 
 ///
 
@@ -38,11 +39,15 @@ export const settings = new (class {
   public readonly dotVscodePath = path.join(this.workspaceFolderUri.fsPath, '.vscode');
 
   public getConfig(): vscode.WorkspaceConfiguration {
+    return vscode.workspace.getConfiguration('copper', this.workspaceFolderUri);
+  }
+
+  private _getOldConfig(): vscode.WorkspaceConfiguration {
     return vscode.workspace.getConfiguration('catch2TestExplorer', this.workspaceFolderUri);
   }
 
   // eslint-disable-next-line
-  public updateConfig(key: string, value: any): Promise<void> {
+  public updateConfig(key: Config, value: any): Promise<void> {
     return new Promise(r => this.getConfig().update(key, value).then(r));
   }
 
@@ -51,13 +56,17 @@ export const settings = new (class {
     const properties: { [prop: string]: string }[] = packageJson['contributes']['configuration']['properties'];
     let t: Thenable<void> = Promise.resolve();
     Object.keys(properties).forEach(key => {
-      assert.ok(key.startsWith('catch2TestExplorer.'));
-      const k = key.substr('catch2TestExplorer.'.length);
-      if (k !== 'logfile')
-        // don't want to override this
-        t = t.then(() => {
-          return this.getConfig().update(k, undefined);
-        });
+      assert.ok(key.startsWith('copper.') || key.startsWith('catch2TestExplorer.'));
+
+      if (key.startsWith('copper.')) {
+        const k = key.substr('copper.'.length);
+        if (k !== 'log.logfile')
+          // don't want to override this
+          t = t.then(() => this.getConfig().update(k, undefined));
+      } else if (key.startsWith('catch2TestExplorer.')) {
+        const k = key.substr('catch2TestExplorer.'.length);
+        t = t.then(() => this._getOldConfig().update(k, undefined));
+      }
     });
     return new Promise(r => t.then(r));
   }
@@ -317,14 +326,53 @@ export class TestAdapter extends my.TestAdapter {
     }
   }
 
+  //eslint-disable-next-line
+  public testStatesEventsSimplifiedAssertEqual(expected: any[]): void {
+    if (this._testStatesEvents.length != expected.length)
+      console.log(
+        `this._testStatesEvents.length(${this._testStatesEvents.length}) != expected.length(${expected.length})`,
+      );
+
+    const testStatesEvents = this._testStatesEvents;
+
+    for (let i = 0; i < expected.length && i < testStatesEvents.length; ++i) {
+      assert.strictEqual(testStatesEvents[i].type, expected[i].type, `index: ${i}`);
+      if (testStatesEvents[i].type == 'test') {
+        const actual = testStatesEvents[i] as TestEvent;
+        const expect = expected[i] as TestEvent;
+        assert.strictEqual(actual.test, expect.test, `index: ${i}`);
+        assert.strictEqual(actual.state, expect.state, `index: ${i}`);
+      } else if (testStatesEvents[i].type == 'suite') {
+        const actual = testStatesEvents[i] as TestSuiteEvent;
+        const expect = expected[i] as TestSuiteEvent;
+        assert.strictEqual(actual.suite, expect.suite, `index: ${i}`);
+        assert.strictEqual(actual.state, expect.state, `index: ${i}`);
+      }
+    }
+  }
+
   public getTestStatesEventIndex(searchFor: TestRunEvent): number {
-    const i = this.testStatesEvents.findIndex((v: TestRunEvent) => deepStrictEqual(searchFor, v));
+    const i = this.testStatesEvents.findIndex((v: TestRunEvent) => {
+      if (v.type !== searchFor.type) return false;
+      if (v.type === 'suite' && searchFor.type === 'suite') {
+        if (v.suite !== searchFor.suite) return false;
+        if (v.state !== searchFor.state) return false;
+      }
+      if (v.type === 'test' && searchFor.type === 'test') {
+        if (v.test !== searchFor.test) return false;
+        if (v.state !== searchFor.state) return false;
+      }
+      if (v.type === 'started' && searchFor.type === 'started') {
+        if (!deepStrictEqual(v.tests, searchFor.tests)) return false;
+      }
+      return true;
+    });
     assert.ok(
       0 <= i,
-      'getTestStatesEventIndex failed to find: ' +
-        inspect(searchFor, false, 1) +
+      `getTestStatesEventIndex failed to find: ` +
+        inspect(searchFor, false, 0) +
         '\nin:\n' +
-        inspect(this.testStatesEvents, false, 2),
+        inspect(this.testStatesEvents, false, 1),
     );
     return i;
   }

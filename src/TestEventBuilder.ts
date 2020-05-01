@@ -8,7 +8,6 @@ export type TestEventState = 'running' | 'passed' | 'failed' | 'skipped' | 'erro
 export class TestEventBuilder {
   public constructor(public test: AbstractTest) {}
 
-  private _durationMilisec: number | undefined = undefined;
   private _message: string[] = [];
   private _decorations: api.TestDecoration[] = [];
   private _description: string[] = [];
@@ -35,8 +34,8 @@ export class TestEventBuilder {
     this._description.push(str);
   }
 
-  public setDurationMilisec(duration: number): void {
-    this._durationMilisec = duration;
+  public setDurationMilisec(duration: number | undefined): void {
+    this.test.lastRunMilisec = duration;
   }
 
   public appendTooltip(str: string): void {
@@ -107,16 +106,16 @@ export class TestEventBuilder {
     this.appendDecorator(file, line, str);
   }
 
-  public build(): api.TestEvent {
-    const duration = this._durationMilisec ? milisecToStr(this._durationMilisec) : undefined;
+  public build(overwriteMessage?: string): api.TestEvent {
+    const duration = this.test.lastRunMilisec !== undefined ? milisecToStr(this.test.lastRunMilisec) : undefined;
 
     const description: string[] = [];
     const message: string[] = [];
     const tooltip: string[] = [];
 
-    if (duration && this._durationMilisec) {
+    if (duration !== undefined && this.test.lastRunMilisec !== undefined) {
       description.push(`(${duration})`);
-      message.push(`⏱Duration: ${Math.round(this._durationMilisec * 1000) / 1000000} second(s).`);
+      message.push(`⏱Duration: ${Math.round(this.test.lastRunMilisec * 1000) / 1000000} second(s).`);
     }
 
     description.push(...this._description);
@@ -132,14 +131,18 @@ export class TestEventBuilder {
 
     this.test._updateDescriptionAndTooltip(descriptionStr, tooltipStr);
 
-    return {
+    const ev: api.TestEvent = {
       type: 'test',
       test: this.test,
       state: this._state,
-      message: message.length ? message.join('\n') : undefined,
+      message: overwriteMessage ? overwriteMessage : message.length ? message.join('\n') : undefined,
       decorations: this._decorations.length ? this._decorations : [],
       description: this.test.description,
       tooltip: this.test.tooltip,
     };
+
+    this.test.lastRunEvent = ev;
+
+    return ev;
   }
 }

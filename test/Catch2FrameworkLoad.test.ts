@@ -53,7 +53,7 @@ describe(path.basename(__filename), function () {
     watchers = example1.initImitation(imitation);
 
     await settings.resetConfig(); // reset config can cause problem with fse.removeSync(dotVscodePath);
-    await settings.updateConfig('workerMaxNumber', 3);
+    await settings.updateConfig('test.parallelExecutionLimit', 3);
   });
 
   afterEach(async function () {
@@ -92,12 +92,12 @@ describe(path.basename(__filename), function () {
 
   context('executables="execPath1.exe"', function () {
     beforeEach(function () {
-      return settings.updateConfig('executables', 'execPath1.exe');
+      return settings.updateConfig('test.executable', 'execPath1.exe');
     });
 
     async function loadAdapterAndAssert(): Promise<void> {
       await loadAdapter();
-      assert.deepStrictEqual(settings.getConfig().get<string>('executables'), 'execPath1.exe');
+      assert.deepStrictEqual(settings.getConfig().get<string>('test.executable'), 'execPath1.exe');
       assert.equal(root.children.length, 1);
 
       suite1 = adapter.suite1;
@@ -124,7 +124,7 @@ describe(path.basename(__filename), function () {
 
     it('should run s1t1 with success', async function () {
       await loadAdapterAndAssert();
-      assert.deepStrictEqual(settings.getConfig().get<string>('executables'), 'execPath1.exe');
+      assert.deepStrictEqual(settings.getConfig().get<string>('test.executable'), 'execPath1.exe');
       await adapter.run([s1t1.id]);
       const expected = [
         { type: 'started', tests: [s1t1.id] },
@@ -144,15 +144,15 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (0ms)`,
+          description: `.${pathlib.sep} (>0ms)`,
           tooltip:
             'Name: execPath1.exe\nDescription: .' +
             pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: >0ms',
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([s1t1.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -204,7 +204,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([suite1.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -256,10 +256,10 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([root.id]);
-      adapter.testStatesEventsAssertDeepEqual([...expected, ...expected]);
+      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
     });
 
     it('cancels without any problem', async function () {
@@ -290,24 +290,24 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (0ms)`,
+          description: `.${pathlib.sep} (>0ms)`,
           tooltip:
             'Name: execPath1.exe\nDescription: .' +
             pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: >0ms',
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       adapter.cancel();
       assert.deepStrictEqual(adapter.testLoadsEvents, []);
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
     });
 
     context('with config: defaultRngSeed=2', function () {
       beforeEach(function () {
-        return settings.updateConfig('defaultRngSeed', 2);
+        return settings.updateConfig('test.randomGeneratorSeed', 2);
       });
 
       it('should run s1t1 with success', async function () {
@@ -330,15 +330,15 @@ describe(path.basename(__filename), function () {
             type: 'suite',
             state: 'completed',
             suite: suite1,
-            description: `.${pathlib.sep} (0ms)`,
+            description: `.${pathlib.sep} (>0ms)`,
             tooltip:
               'Name: execPath1.exe\nDescription: .' +
               pathlib.sep +
-              '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
+              '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: >0ms',
           },
           { type: 'finished' },
         ];
-        adapter.testStatesEventsAssertDeepEqual(expected);
+        adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
         await adapter.run([s1t1.id]);
         assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -388,7 +388,7 @@ describe(path.basename(__filename), function () {
     }
 
     beforeEach(function () {
-      return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe']);
+      return settings.updateConfig('test.executables', ['execPath1.exe', 'execPath2.exe']);
     });
 
     it('test variables are fine, suite1 and suite1 are loaded', async function () {
@@ -553,15 +553,15 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (0ms)`,
+          description: `.${pathlib.sep} (>0ms)`,
           tooltip:
             'Name: execPath1.exe\nDescription: .' +
             pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: >0ms',
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([s1t1.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -587,15 +587,15 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: `.${pathlib.sep} (1ms)`,
+          description: `.${pathlib.sep} (>1ms)`,
           tooltip:
             'Name: execPath2.exe\nDescription: .' +
             pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n⏱Duration: 1ms',
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n⏱Duration: >1ms',
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([s2t2.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -629,15 +629,15 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: `.${pathlib.sep} (1ms)`,
+          description: `.${pathlib.sep} (>1ms)`,
           tooltip:
             'Name: execPath2.exe\nDescription: .' +
             pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n⏱Duration: 1ms',
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n⏱Duration: >1ms',
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([s2t3.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -678,15 +678,15 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: `.${pathlib.sep} (1ms)`,
+          description: `.${pathlib.sep} (>1ms)`,
           tooltip:
             'Name: execPath2.exe\nDescription: .' +
             pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n⏱Duration: 1ms',
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n⏱Duration: >1ms',
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([s2t3.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
@@ -738,14 +738,14 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([suite1.id]);
       assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
     });
 
     it('should run with [suite1.id,s2t2.id]', async function () {
-      await settings.updateConfig('workerMaxNumber', 1);
+      await settings.updateConfig('test.parallelExecutionLimit', 1);
       await loadAdapterAndAssert();
       await adapter.run([suite1.id, s2t2.id]);
       const expected = [
@@ -804,15 +804,15 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: `.${pathlib.sep} (1ms)`,
+          description: `.${pathlib.sep} (>1ms)`,
           tooltip:
             'Name: execPath2.exe\nDescription: .' +
             pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n⏱Duration: 1ms',
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n⏱Duration: >1ms',
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
     });
 
     it('should run with wrong xml with exit code', async function () {
@@ -847,19 +847,19 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: undefined,
-          tooltip: undefined,
+          description: `.${pathlib.sep}`,
+          tooltip: 'Name: execPath1.exe\nDescription: ./\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1',
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       // this tests the sinon stubs too
       await adapter.run([s1t1.id]);
 
       s1t1 = adapter.get(0, 0) as TestInfo;
 
-      assert.deepStrictEqual(adapter.testStatesEvents, [
+      adapter.testStatesEventsSimplifiedAssertEqual([
         ...expected,
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
@@ -877,11 +877,11 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (0ms)`,
+          description: `.${pathlib.sep} (>0ms)`,
           tooltip:
             'Name: execPath1.exe\nDescription: .' +
             pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: >0ms',
         },
         { type: 'finished' },
       ]);
@@ -924,14 +924,14 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       // this tests the sinon stubs too
       await adapter.run([s1t1.id]);
 
       s1t1 = adapter.get(0, 0) as TestInfo;
 
-      assert.deepStrictEqual(adapter.testStatesEvents, [
+      adapter.testStatesEventsSimplifiedAssertEqual([
         ...expected,
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
@@ -949,11 +949,11 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (0ms)`,
+          description: `.${pathlib.sep} (>0ms)`,
           tooltip:
             'Name: execPath1.exe\nDescription: .' +
             pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: 0ms',
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: >0ms',
         },
         { type: 'finished' },
       ]);
@@ -961,7 +961,7 @@ describe(path.basename(__filename), function () {
 
     it('should timeout not inside a test case', async function () {
       this.slow(7000);
-      await settings.updateConfig('defaultRunningTimeoutSec', 3);
+      await settings.updateConfig('test.runtimeLimit', 3);
       await loadAdapterAndAssert();
       const withArgs = imitation.spawnStub.withArgs(
         example1.suite1.execPath,
@@ -993,7 +993,7 @@ describe(path.basename(__filename), function () {
 
     it('should timeout inside a test case', async function () {
       this.slow(7000);
-      await settings.updateConfig('defaultRunningTimeoutSec', 3);
+      await settings.updateConfig('test.runtimeLimit', 3);
       await loadAdapterAndAssert();
       const withArgs = imitation.spawnStub.withArgs(
         example1.suite1.execPath,
@@ -1027,7 +1027,7 @@ describe(path.basename(__filename), function () {
         return adapter.testStatesEvents.length >= 6;
       });
 
-      assert.deepStrictEqual(adapter.testStatesEvents, [
+      adapter.testStatesEventsSimplifiedAssertEqual([
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
@@ -1035,15 +1035,11 @@ describe(path.basename(__filename), function () {
           type: 'test',
           state: 'errored',
           test: s1t1,
-          decorations: [],
-          message: '⌛️ Timed out: "catch2TestExplorer.defaultRunningTimeoutSec": 3 second(s).',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: undefined,
-          tooltip: undefined,
         },
         { type: 'finished' },
       ]);
@@ -1108,11 +1104,11 @@ describe(path.basename(__filename), function () {
         type: 'suite',
         state: 'completed',
         suite: suite2,
-        description: `.${pathlib.sep} (1ms)`,
+        description: `.${pathlib.sep} (>1ms)`,
         tooltip:
           'Name: execPath2.exe\nDescription: .' +
           pathlib.sep +
-          '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n⏱Duration: 1ms',
+          '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n⏱Duration: >1ms',
       };
       adapter.testStateEventIndexLess(running, s1running);
       adapter.testStateEventIndexLess(s2running, s2finished);
@@ -1320,7 +1316,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await waitFor(this, function () {
         return suite1.children.length == 2 && adapter.testStatesEvents.length >= 4 + 8;
@@ -1436,15 +1432,15 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (0ms)`,
+          description: `.${pathlib.sep} (>0ms)`,
           tooltip:
             'Name: execPath1.exe\nDescription: .' +
             pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n⏱Duration: 0ms',
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n⏱Duration: >0ms',
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await waitFor(
         this,
@@ -1480,7 +1476,7 @@ describe(path.basename(__filename), function () {
 
       suite1.children.shift();
       const expected = [{ type: 'started', tests: [s1t1.id] }, { type: 'finished' }];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await waitFor(
         this,
@@ -1592,11 +1588,11 @@ describe(path.basename(__filename), function () {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (0ms)`,
+          description: `.${pathlib.sep} (>0ms)`,
           tooltip:
             'Name: execPath1.exe\nDescription: .' +
             pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n⏱Duration: 0ms',
+            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - failed: 1\n⏱Duration: >0ms',
         },
         { type: 'finished' },
         { type: 'started', tests: [s1t1.id] },
@@ -1623,7 +1619,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsAssertDeepEqual(expected);
+      adapter.testStatesEventsSimplifiedAssertEqual(expected);
     });
 
     it('data arrives in pieces', async function () {
@@ -1658,27 +1654,21 @@ describe(path.basename(__filename), function () {
 
   context('executables=[{<regex>}] and env={...}', function () {
     beforeEach(async function () {
-      await settings.updateConfig('executables', [
+      await settings.updateConfig('test.executables', [
         {
           name: '${baseFilename}',
           path: 'execPath{1,2}',
           cwd: '${workspaceFolder}/cwd/${baseFilename}',
           env: {
             C2LOCALTESTENV: 'c2localtestenv',
-            C2OVERRIDETESTENV: 'c2overridetestenv-l',
             C2LOCALCWD: '${cwd}',
             C2ENVVARS1: 'X${os_env:PATH}X',
             C2ENVVARS2: 'X${os_env:pAtH}X',
             C2ENVVARS3: 'X${os_env_strict:NOT_EXISTING}X',
+            C2WORKSPACENAME: '${workspaceName}',
           },
         },
       ]);
-      await settings.updateConfig('defaultEnv', {
-        C2GLOBALTESTENV: 'c2globaltestenv',
-        C2OVERRIDETESTENV: 'c2overridetestenv-g',
-        C2CWD: '${cwd}',
-        C2WORKSPACENAME: '${workspaceName}',
-      });
 
       imitation.vsfsWatchStub
         .withArgs(
@@ -1709,10 +1699,7 @@ describe(path.basename(__filename), function () {
         withArgs.onCall(withArgs.callCount).callsFake((p: string, args: readonly string[], ops: SpawnOptions) => {
           try {
             assert.equal(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath1'));
-            assert.equal(ops.env!.C2GLOBALTESTENV, 'c2globaltestenv');
             assert.equal(ops.env!.C2LOCALTESTENV, 'c2localtestenv');
-            assert.equal(ops.env!.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-            assert.equal(ops.env!.C2CWD, ops.cwd);
             assert.equal(ops.env!.C2LOCALCWD, ops.cwd);
             assert.equal(ops.env!.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
             assert.equal(ops.env!.C2ENVVARS1, 'X' + process.env['PATH'] + 'X');
@@ -1744,10 +1731,7 @@ describe(path.basename(__filename), function () {
         withArgs.onCall(withArgs.callCount).callsFake((p: string, args: readonly string[], ops: SpawnOptions) => {
           try {
             assert.equal(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath2'));
-            assert.equal(ops.env!.C2GLOBALTESTENV, 'c2globaltestenv');
             assert.equal(ops.env!.C2LOCALTESTENV, 'c2localtestenv');
-            assert.equal(ops.env!.C2OVERRIDETESTENV, 'c2overridetestenv-l');
-            assert.equal(ops.env!.C2CWD, ops.cwd);
             assert.equal(ops.env!.C2LOCALCWD, ops.cwd);
             assert.equal(ops.env!.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
 
@@ -1768,7 +1752,7 @@ describe(path.basename(__filename), function () {
   // TODO: not so bad test but need time to calibrate
   context.skip('executables=["execPath1.exe", "execPath2.exe", "execPath3.exe"]', async function () {
     beforeEach(function () {
-      return settings.updateConfig('executables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);
+      return settings.updateConfig('test.executables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);
     });
 
     it('run suite3 one-by-one', async function () {
@@ -1857,10 +1841,10 @@ describe(path.basename(__filename), function () {
 
     it('should be debugged', async function () {
       expectedLoggedErrorLine(
-        '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
+        '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "copper.debug.configTemplate".',
       );
 
-      await settings.updateConfig('executables', [
+      await settings.updateConfig('test.executables', [
         {
           name: 'X${baseFilename}',
           pattern: 'execPath1.exe',
@@ -1869,7 +1853,7 @@ describe(path.basename(__filename), function () {
         },
       ]);
 
-      await settings.updateConfig('debugConfigTemplate', {
+      await settings.updateConfig('debug.configTemplate', {
         label: '${label}',
         suiteLabel: '${suiteLabel}',
         exec: '${exec}',

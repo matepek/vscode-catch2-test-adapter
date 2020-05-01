@@ -56,8 +56,8 @@ describe(path.basename(__filename), function () {
 
   specify('resolving relative defaultCwd', async function () {
     this.slow(1000);
-    await settings.updateConfig('executables', example1.suite1.execPath);
-    await settings.updateConfig('defaultCwd', 'defaultCwdStr');
+    await settings.updateConfig('test.executable', example1.suite1.execPath);
+    await settings.updateConfig('test.workingDirectory', 'defaultCwdStr');
     adapter = new TestAdapter();
 
     let exception: Error | undefined = undefined;
@@ -84,10 +84,10 @@ describe(path.basename(__filename), function () {
 
   specify('resolving absolute defaultCwd', async function () {
     this.slow(500);
-    await settings.updateConfig('executables', example1.suite1.execPath);
+    await settings.updateConfig('test.executable', example1.suite1.execPath);
 
-    if (isWin) await settings.updateConfig('defaultCwd', 'C:\\defaultCwdStr');
-    else await settings.updateConfig('defaultCwd', '/defaultCwdStr');
+    if (isWin) await settings.updateConfig('test.workingDirectory', 'C:\\defaultCwdStr');
+    else await settings.updateConfig('test.workingDirectory', '/defaultCwdStr');
 
     adapter = new TestAdapter();
 
@@ -116,41 +116,11 @@ describe(path.basename(__filename), function () {
     assert.strictEqual(exception, undefined, cwd);
   });
 
-  specify('using defaultEnv', async function () {
-    this.slow(500);
-    await settings.updateConfig('executables', example1.suite1.execPath);
-    await settings.updateConfig('defaultEnv', { ENVTEST: 'envtest' });
-
-    adapter = new TestAdapter();
-
-    let exception: Error | undefined = undefined;
-    const spawnWithArgs = imitation.spawnStub.withArgs(
-      example1.suite1.execPath,
-      example1.suite1.outputs[1][0],
-      sinon.match.any,
-    );
-    spawnWithArgs.callsFake(function (p: string, args: readonly string[], ops: SpawnOptions): ChildProcess {
-      try {
-        assert.ok(ops.env!.hasOwnProperty('ENVTEST'));
-        assert.equal(ops.env!.ENVTEST, 'envtest');
-        return new ChildProcessStub(example1.suite1.outputs[1][1]);
-      } catch (e) {
-        exception = e;
-        throw e;
-      }
-    });
-
-    const callCount = spawnWithArgs.callCount;
-    await adapter.load();
-    assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
-    assert.strictEqual(exception, undefined);
-  });
-
   // multirun disables this feature
   specify.skip('arriving <TestCase> for missing TestInfo', async function () {
     this.slow(4000);
     this.timeout(15000);
-    await settings.updateConfig('executables', example1.suite1.execPath);
+    await settings.updateConfig('test.executable', example1.suite1.execPath);
 
     adapter = new TestAdapter();
 
@@ -245,7 +215,7 @@ describe(path.basename(__filename), function () {
 
   specify('test list error: duplicated test name', async function () {
     this.slow(500);
-    await settings.updateConfig('executables', example1.suite1.execPath);
+    await settings.updateConfig('test.executable', example1.suite1.execPath);
 
     adapter = new TestAdapter();
 
@@ -288,7 +258,7 @@ describe(path.basename(__filename), function () {
 
   specify('custom1 test case list', async function () {
     this.slow(500);
-    await settings.updateConfig('executables', example1.suite1.execPath);
+    await settings.updateConfig('test.executable', example1.suite1.execPath);
 
     adapter = new TestAdapter();
 
@@ -326,7 +296,7 @@ describe(path.basename(__filename), function () {
 
   specify('custom2 test case list', async function () {
     this.slow(500);
-    await settings.updateConfig('executables', example1.suite1.execPath);
+    await settings.updateConfig('test.executable', example1.suite1.execPath);
 
     adapter = new TestAdapter();
 
@@ -359,7 +329,7 @@ describe(path.basename(__filename), function () {
 
   specify('custom3 test case list: extra lines before and after', async function () {
     this.slow(500);
-    await settings.updateConfig('executables', example1.suite1.execPath);
+    await settings.updateConfig('test.executable', example1.suite1.execPath);
 
     adapter = new TestAdapter();
 
@@ -395,7 +365,7 @@ describe(path.basename(__filename), function () {
 
   specify('too long filename', async function () {
     this.slow(500);
-    await settings.updateConfig('executables', example1.suite1.execPath);
+    await settings.updateConfig('test.executable', example1.suite1.execPath);
 
     adapter = new TestAdapter();
 
@@ -444,7 +414,7 @@ describe(path.basename(__filename), function () {
 
   specify('load executables=<full path of execPath1>', async function () {
     this.slow(500);
-    await settings.updateConfig('executables', example1.suite1.execPath);
+    await settings.updateConfig('test.executable', example1.suite1.execPath);
     adapter = new TestAdapter();
 
     await adapter.load();
@@ -453,7 +423,7 @@ describe(path.basename(__filename), function () {
 
   specify('load executables=["execPath1.exe", "./execPath2.exe"] with error', async function () {
     this.slow(500);
-    await settings.updateConfig('executables', ['execPath1.exe', './execPath2.exe']);
+    await settings.updateConfig('test.executables', ['execPath1.exe', './execPath2.exe']);
     adapter = new TestAdapter();
 
     const withArgs = imitation.spawnStub.withArgs(
@@ -469,7 +439,7 @@ describe(path.basename(__filename), function () {
 
   specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete; sleep 3; create', async function () {
     const watchTimeout = 6;
-    await settings.updateConfig('defaultWatchTimeoutSec', watchTimeout);
+    await settings.updateConfig('discovery.misssingFileWaitingTimeLimit', watchTimeout);
     this.timeout(watchTimeout * 1000 + 2500 /* because of 'delay' */);
     this.slow(watchTimeout * 1000 + 2500 /* because of 'delay' */);
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
@@ -492,7 +462,7 @@ describe(path.basename(__filename), function () {
       .withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
       .resolves([vscode.Uri.file(execPath2CopyPath)]);
 
-    await settings.updateConfig('executables', ['execPath1.exe', 'execPath2Copy.exe']);
+    await settings.updateConfig('test.executables', ['execPath1.exe', 'execPath2Copy.exe']);
     adapter = new TestAdapter();
 
     await adapter.load();
@@ -530,7 +500,7 @@ describe(path.basename(__filename), function () {
 
   specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete second', async function () {
     const watchTimeout = 5;
-    await settings.updateConfig('defaultWatchTimeoutSec', watchTimeout);
+    await settings.updateConfig('discovery.misssingFileWaitingTimeLimit', watchTimeout);
     this.timeout(watchTimeout * 1000 + 7500 /* because of 'delay' */);
     this.slow(watchTimeout * 1000 + 5500 /* because of 'delay' */);
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
@@ -553,7 +523,7 @@ describe(path.basename(__filename), function () {
       .withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
       .resolves([vscode.Uri.file(execPath2CopyPath)]);
 
-    await settings.updateConfig('executables', ['execPath1.exe', 'execPath2Copy.exe']);
+    await settings.updateConfig('test.executables', ['execPath1.exe', 'execPath2Copy.exe']);
     adapter = new TestAdapter();
 
     await adapter.load();
@@ -582,7 +552,7 @@ describe(path.basename(__filename), function () {
     expectedLoggedErrorLine('[Error: pattern property is required.');
 
     this.slow(5000);
-    await settings.updateConfig('executables', { name: '' });
+    await settings.updateConfig('test.executables', { name: '' });
 
     adapter = new TestAdapter();
 
@@ -628,7 +598,7 @@ describe(path.basename(__filename), function () {
     const envsStr = toResolveAndExpectedResolvedValue.map(v => v[0]).join(' | ');
     const expectStr = toResolveAndExpectedResolvedValue.map(v => v[1]).join(' | ');
 
-    await settings.updateConfig('executables', {
+    await settings.updateConfig('test.executables', {
       name: envsStr,
       pattern: execRelPath,
       cwd: envsStr,
@@ -690,7 +660,7 @@ describe(path.basename(__filename), function () {
   context('from different pattern', function () {
     specify('duplicated suite names', async function () {
       this.slow(500);
-      await settings.updateConfig('executables', [
+      await settings.updateConfig('test.executables', [
         { name: 'dup', pattern: example1.suite1.execPath },
         { name: 'dup', pattern: example1.suite2.execPath },
       ]);
@@ -710,7 +680,7 @@ describe(path.basename(__filename), function () {
 
     specify('duplicated suite names with different desciption', async function () {
       this.slow(500);
-      await settings.updateConfig('executables', [
+      await settings.updateConfig('test.executables', [
         { name: 'dup', description: 'a', pattern: example1.suite1.execPath },
         { name: 'dup', description: 'b', pattern: example1.suite2.execPath },
       ]);
@@ -736,7 +706,7 @@ describe(path.basename(__filename), function () {
 
     specify('duplicated executable', async function () {
       this.slow(500);
-      await settings.updateConfig('executables', [
+      await settings.updateConfig('test.executables', [
         { name: 'name1 ${relPath}', pattern: 'dummy1' },
         { name: 'name2', pattern: 'dummy2' },
       ]);
@@ -768,7 +738,7 @@ describe(path.basename(__filename), function () {
   context('from same pattern', function () {
     specify('duplicated suite names', async function () {
       this.slow(500);
-      await settings.updateConfig('executables', { name: 'dup', pattern: 'dummy' });
+      await settings.updateConfig('test.executables', { name: 'dup', pattern: 'dummy' });
 
       imitation.vsFindFilesStub
         .withArgs(imitation.createVscodeRelativePatternMatcher('dummy'))
@@ -789,7 +759,7 @@ describe(path.basename(__filename), function () {
 
     specify('duplicated suite names but different description', async function () {
       this.slow(500);
-      await settings.updateConfig('executables', { name: 'dup', description: '${absPath}', pattern: 'dummy' });
+      await settings.updateConfig('test.executables', { name: 'dup', description: '${absPath}', pattern: 'dummy' });
 
       imitation.vsFindFilesStub
         .withArgs(imitation.createVscodeRelativePatternMatcher('dummy'))
@@ -818,7 +788,7 @@ describe(path.basename(__filename), function () {
   context('from different and same pattern', function () {
     specify('duplicated suite names', async function () {
       this.slow(500);
-      await settings.updateConfig('executables', [
+      await settings.updateConfig('test.executables', [
         { name: 'dup', pattern: 'dummy' },
         { name: 'dup', pattern: example1.suite3.execPath },
       ]);

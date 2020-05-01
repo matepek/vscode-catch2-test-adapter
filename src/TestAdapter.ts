@@ -248,16 +248,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             this._shared.rngSeed = config.getRandomGeneratorSeed();
             this._retireEmitter.fire({});
           }
-          if (affectsAny('discovery.watchTimeout')) {
+          if (affectsAny('discovery.misssingFileWaitingTimeLimit')) {
             this._shared.execWatchTimeout = config.getExecWatchTimeout();
           }
-          if (affectsAny('discovery.retireTestAfter')) {
+          if (affectsAny('discovery.retireDebounceLimit')) {
             this._shared.retireDebounceTime = config.getRetireDebounceTime();
           }
-          if (affectsAny('test.runtimeTimeout')) {
+          if (affectsAny('test.runtimeLimit')) {
             this._shared.setExecRunningTimeout(config.getExecRunningTimeout());
           }
-          if (affectsAny('discovery.listingTimeout')) {
+          if (affectsAny('discovery.runtimeLimit')) {
             this._shared.setExecRunningTimeout(config.getExecParsingTimeout());
           }
           if (affectsAny('debug.noThrow')) {
@@ -521,8 +521,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           terminateConn && terminateConn.dispose();
           return Promise.reject(
             new Error(
-              'Failed starting the debug session. ' +
-                'Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
+              'Failed starting the debug session. ' + 'Maybe something wrong with "copper.debug.configTemplate".',
             ),
           );
         }
