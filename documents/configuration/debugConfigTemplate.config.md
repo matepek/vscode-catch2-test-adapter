@@ -3,17 +3,17 @@
 # Debugger Configuration Template
 
 ```
-catch2TestExplorer.debugConfigTemplate
+copper.debug.configTemplate
 ```
 
 Set the necessary debug configurations and the debug button will work.
 
-If `catch2TestExplorer.debugConfigTemplate` value is `null` (default),
+If `copper.debug.configTemplate` value is `null` (default),
 
 > it searches for configurations in the workspacefolder's `.vscode/launch.json`.
 > It will choose the first one which's `"request"` property is `"launch"`
 > and has `type` property with string value starting with `cpp`, `lldb` or `gdb`.
-> (If you don't want this but also don't want to specify you own debugConfigTemplate
+> (If you don't want this but also don't want to specify you own debug.configTemplate
 > use `"extensionOnly"` as value.)
 
 In case it hasn't found one it will look after:
@@ -27,7 +27,7 @@ In case it hasn't found one it will look after:
 
 **Remark**: This feature to work automatically (value: `null`) has a lot of requirements which are not listed here.
 If it works it is good for you.
-If it isn't.. I suggest to create your own `"catch2TestExplorer.debugConfigTemplate"` template.
+If it isn't.. I suggest to create your own `"copper.debug.configTemplate"` template.
 If you read the _Related documents_ and still have a question feel free to open an issue.
 Value `"extensionOnly"` will cause to skip the search of local launch configurations.
 
@@ -36,7 +36,7 @@ Value `"extensionOnly"` will cause to skip the search of local launch configurat
 For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) add something like this to settings.json:
 
 ```json
-"catch2TestExplorer.debugConfigTemplate": {
+"copper.debug.configTemplate": {
   "type": "cppdbg",
   "MIMode": "lldb",
   "program": "${exec}",

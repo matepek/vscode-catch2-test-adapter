@@ -1,7 +1,7 @@
 # Executables
 
 ```
-catch2TestExplorer.executables
+copper.executables
 ```
 
 [[Jump to README.md](../../README)]
@@ -10,7 +10,7 @@ The location of your test executables (relative to the workspace folder or absol
 
 he extension is \*_pre-configured_ and it should find executables inside the working directory which match the following [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options):
 
-`"catch2TestExplorer.executables": [ "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*" ]`
+`"copper.test.executables": [ "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*" ]`
 
 This basically means executables inside the `build` and `out` directories (recursive `/**/`) which contain the `test` word in their name (including extensions).
 
@@ -21,7 +21,7 @@ See vscode's [documentation](https://code.visualstudio.com/docs/editor/codebasic
 The first example (`.vscode/settings.json` or hit _Ctr/Cmd + ,_):
 
 ```json
-"catch2TestExplorer.executables": [
+"copper.test.executables": [
   {
     "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
     "cwd": "${absDirpath}",
@@ -50,7 +50,7 @@ If it is an object it can contains the following properties:
 | `cwd`                  | The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)                                                                                                       |
 | `env`                  | Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)                          |
 | `dependsOn`            | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md) |
-| `parallelizationLimit` | (Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `catch2TestExplorer.workerMaxNumber` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)                                                                                                           |
+| `parallelizationLimit` | (Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `copper.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)                                                                                                           |
 | `catch2`               | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#framework-specific-settings)                                                                                                                                                                                                          |
 | `gtest`                | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#framework-specific-settings)                                                                                                                                                                                                          |
 | `doctest`              | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#framework-specific-settings)                                                                                                                                                                                                          |
@@ -61,7 +61,7 @@ Also it can contain variables related to the process's environment variables (Ex
 
 Test executables and `pattern`s are being watched.
 In case of one recompiles it will try to preserve the test states.
-If compilation reaches timeout it will drop the suite (`catch2TestExplorer.defaultWatchTimeoutSec`).
+If compilation reaches timeout it will drop the suite (`copperdiscovery.defaultWatchTimeoutSec`).
 
 **Note** that there is a mechanism which will filter out every possible executable which:
 
@@ -136,15 +136,11 @@ One should avoid that❗️
 ## Examples:
 
 ```json
-"catch2TestExplorer.executables": "dir/test.exe"
+"copper.test.executables": ["dir/test1.exe", "dir/test2.exe"]
 ```
 
 ```json
-"catch2TestExplorer.executables": ["dir/test1.exe", "dir/test2.exe"]
-```
-
-```json
-"catch2TestExplorer.executables": {
+"copper.test.executables": {
   "name": "${filename}",
   "description": "${relDirpath}/",
   "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
@@ -157,7 +153,7 @@ One should avoid that❗️
 ```
 
 ```json
-"catch2TestExplorer.executables": [
+"copper.test.executables": [
   {
     "name": "Test1 suite",
     "pattern": "dir/test.exe"
@@ -180,7 +176,7 @@ It is undocumented. Contact me by opening an issue or read the code a bit.
 
 ```
 {
-  "catch2TestExplorer.executables": [
+  "copper.test.executables": [
     {
       "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
       "catch2":  { "testGrouping": { ... } },
@@ -205,7 +201,7 @@ Note: This example overused it.
 
 ```
 {
-  "catch2TestExplorer.executables": [
+  "copper.test.executables": [
     {
       "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
       "catch2": {
@@ -257,7 +253,7 @@ Note: This example overused it.
 ```
 
 ```
-"catch2TestExplorer.executables": [
+"copper.test.executables": [
   {
     "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
     "catch2": {

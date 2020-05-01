@@ -248,7 +248,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             this._shared.rngSeed = config.getRandomGeneratorSeed();
             this._retireEmitter.fire({});
           }
-          if (affectsAny('discovery.misssingFileWaitingTimeLimit')) {
+          if (affectsAny('discovery.missingFileWaitingTimeLimit')) {
             this._shared.execWatchTimeout = config.getExecWatchTimeout();
           }
           if (affectsAny('discovery.retireDebounceLimit')) {

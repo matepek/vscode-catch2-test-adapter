@@ -39,7 +39,7 @@ describe(path.basename(__filename), function () {
   });
 
   it('defaultWatchTimeoutSec', function () {
-    return settings.updateConfig('discovery.misssingFileWaitingTimeLimit', 9876).then(function () {
+    return settings.updateConfig('discovery.missingFileWaitingTimeLimit', 9876).then(function () {
       assert.equal((adapter as any) /* eslint-disable-line */._shared.execWatchTimeout, 9876000);
     });
   });

@@ -15,7 +15,7 @@ type MigratableConfig =
   | 'test.randomGeneratorSeed'
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
-  | 'discovery.misssingFileWaitingTimeLimit'
+  | 'discovery.missingFileWaitingTimeLimit'
   | 'discovery.retireDebounceLimit'
   | 'discovery.runtimeLimit'
   | 'discovery.testListCaching'
@@ -55,7 +55,7 @@ const MigrationV1V2NamePairs: { [key in MigratableConfig]: OldConfig } = {
   'test.executables': 'executables',
   'test.workingDirectory': 'defaultCwd',
   'test.randomGeneratorSeed': 'defaultRngSeed',
-  'discovery.misssingFileWaitingTimeLimit': 'defaultWatchTimeoutSec',
+  'discovery.missingFileWaitingTimeLimit': 'defaultWatchTimeoutSec',
   'discovery.retireDebounceLimit': 'retireDebounceTimeMilisec',
   'test.runtimeLimit': 'defaultRunningTimeoutSec',
   'discovery.runtimeLimit': 'defaultExecParsingTimeoutSec',
@@ -287,7 +287,7 @@ export class Configurations {
             'improve the stability and the development. 🤩 For this, I want to log and send errors ' +
             'to [sentry.io](https://sentry.io/welcome), but I would NEVER do it without your consent. ' +
             'Please be understandable and allow it. 🙏' +
-            ' (`catch2TestExplorer.logSentry: "enable"/"disable"`)',
+            ' (`copper.log.logSentry: "enable"/"disable"`)',
           ...options,
         )
         .then((value: string | undefined) => {
@@ -336,7 +336,7 @@ export class Configurations {
   }
 
   public getExecWatchTimeout(): number {
-    const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.misssingFileWaitingTimeLimit', 10) * 1000;
+    const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.missingFileWaitingTimeLimit', 10) * 1000;
     return res;
   }
 

@@ -252,7 +252,7 @@
                 }
               },
               "parallelizationLimit": {
-                "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `catch2TestExplorer.workerMaxNumber` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `copper.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
                 "scope": "resource",
                 "type": "integer",
                 "default": 1,
@@ -799,7 +799,7 @@
           "default": 1,
           "minimum": 1
         },
-        "copper.discovery.misssingFileWaitingTimeLimit": {
+        "copper.discovery.missingFileWaitingTimeLimit": {
           "markdownDescription": "[seconds] Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.",
           "scope": "resource",
           "type": "integer",

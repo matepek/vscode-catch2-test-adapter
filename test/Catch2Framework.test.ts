@@ -439,7 +439,7 @@ describe(path.basename(__filename), function () {
 
   specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete; sleep 3; create', async function () {
     const watchTimeout = 6;
-    await settings.updateConfig('discovery.misssingFileWaitingTimeLimit', watchTimeout);
+    await settings.updateConfig('discovery.missingFileWaitingTimeLimit', watchTimeout);
     this.timeout(watchTimeout * 1000 + 2500 /* because of 'delay' */);
     this.slow(watchTimeout * 1000 + 2500 /* because of 'delay' */);
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
@@ -500,7 +500,7 @@ describe(path.basename(__filename), function () {
 
   specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete second', async function () {
     const watchTimeout = 5;
-    await settings.updateConfig('discovery.misssingFileWaitingTimeLimit', watchTimeout);
+    await settings.updateConfig('discovery.missingFileWaitingTimeLimit', watchTimeout);
     this.timeout(watchTimeout * 1000 + 7500 /* because of 'delay' */);
     this.slow(watchTimeout * 1000 + 5500 /* because of 'delay' */);
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');

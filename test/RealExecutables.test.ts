@@ -199,7 +199,7 @@ describe(path.basename(__filename), function () {
       assert.strictEqual(adapter.root.children.length, 3);
       assert.strictEqual(retireCounter, 0);
 
-      await settings.updateConfig('discovery.misssingFileWaitingTimeLimit', 1);
+      await settings.updateConfig('discovery.missingFileWaitingTimeLimit', 1);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
         return fse.unlink(inWSTmp('sub/suite2X.exe'));
