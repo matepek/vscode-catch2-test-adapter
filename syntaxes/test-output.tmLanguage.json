@@ -136,8 +136,10 @@
       "patterns": [
         {
           "match": "((.+)[:\\(]([0-9]+)\\)?|unknown file): (Failure|EXPECT_CALL|error)",
-          "name": "comment",
           "captures": {
+            "1": {
+              "name": "comment"
+            },
             "4": {
               "name": "markup.italic.copper"
             }

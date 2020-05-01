@@ -21,7 +21,7 @@ Catch2 long filename recognition improvement.
 
 Output coloring improvements.
 
-Hint: Are you working on an executable or a TestCase?
+Hint: Are you working on an executable or a TestCase or just on 1 test?
 
 > Just right click on it and `Enable autorun`.
 > Next time you recompile your executable it will run it automatically.
