@@ -1,13 +1,13 @@
 {
   "id": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "$comment": "https://macromates.com/manual/en/language_grammars  https://www.apeth.com/nonblog/stories/textmatebundle.html",
-  "scopeName": "source.test-output",
+  "scopeName": "source.copper-test",
   "patterns": [
     {
       "begin": "\\[ RUN      \\](.*)",
       "captures": {
         "1": {
-          "name": "entity.name.copper"
+          "name": "entity.name.copper-test"
         }
       },
       "patterns": [
@@ -86,6 +86,11 @@
           "name": "constant.numeric"
         },
         {
+          "comment": "Version number",
+          "match": "\\b(v|version(\\.|-|\\/)?|@)?[0-9]+\\.[0-9]+(\\.[0-9]+)+(-[^\\s]+)?\\b",
+          "name": "constant.numeric"
+        },
+        {
           "comment": "Numeric (decimal)",
           "match": "\\b\\d+(\\.\\d+)?(e\\+\\d+)?\\b",
           "name": "constant.numeric"
@@ -141,7 +146,7 @@
               "name": "comment"
             },
             "4": {
-              "name": "markup.italic.copper"
+              "name": "markup.italic.copper-test"
             }
           }
         },
@@ -149,7 +154,7 @@
           "match": "Value of: (.+)",
           "captures": {
             "1": {
-              "name": "markup.other.copper"
+              "name": "markup.other.copper-test"
             }
           }
         },
@@ -157,19 +162,19 @@
           "match": "The difference between (.+) and (.+) is (.+), which (exceeds) (.+), where",
           "captures": {
             "1": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             },
             "2": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             },
             "3": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             },
             "4": {
-              "name": "markup.bold.copper"
+              "name": "markup.bold.copper-test"
             },
             "5": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             }
           }
         },
@@ -177,10 +182,10 @@
           "match": "(.+) evaluates to (.+)(,|, and|\\.)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             },
             "2": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             }
           }
         },
@@ -188,7 +193,7 @@
           "match": "\\s+Which is: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             }
           }
         },
@@ -196,10 +201,10 @@
           "match": "Expected: (.+), actual: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             },
             "2": {
-              "name": "markup.bold.copper"
+              "name": "markup.bold.copper-test"
             }
           }
         },
@@ -207,7 +212,7 @@
           "match": "Expected: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             }
           }
         },
@@ -215,7 +220,7 @@
           "match": "Actual: (.+)",
           "captures": {
             "1": {
-              "name": "markup.bold.copper"
+              "name": "markup.bold.copper-test"
             }
           }
         },
@@ -223,10 +228,10 @@
           "match": "\\[  (FAILED)  \\]([^\\(]*)(?:\\((.+)\\))?",
           "captures": {
             "1": {
-              "name": "markup.bold.copper"
+              "name": "markup.bold.copper-test"
             },
             "2": {
-              "name": "entity.name.copper"
+              "name": "entity.name.copper-test"
             },
             "3": {
               "patterns": [
@@ -241,10 +246,10 @@
           "match": "\\[       (OK) \\]([^\\(]*)(?:\\((.+)\\))?",
           "captures": {
             "1": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             },
             "2": {
-              "name": "entity.name.copper"
+              "name": "entity.name.copper-test"
             },
             "3": {
               "patterns": [
@@ -267,13 +272,13 @@
         },
         {
           "match": "^Unexpected mock function call",
-          "name": "markup.bold.copper"
+          "name": "markup.bold.copper-test"
         },
         {
           "match": "Expected arg #.+: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             }
           }
         }
@@ -283,13 +288,13 @@
       "patterns": [
         {
           "match": "\\(at .+\\)",
-          "name": "comment.copper"
+          "name": "comment.copper-test"
         },
         {
           "match": "\"(.+)\"",
           "captures": {
             "1": {
-              "name": "entity.name.copper"
+              "name": "entity.name.copper-test"
             }
           }
         },
@@ -297,7 +302,7 @@
           "match": "Exception was thrown: (.+)",
           "captures": {
             "1": {
-              "name": "markup.bold.copper"
+              "name": "markup.bold.copper-test"
             }
           }
         },
@@ -305,7 +310,7 @@
           "match": "Original: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper"
+              "name": "markup.heading.copper-test"
             }
           }
         },
@@ -313,14 +318,14 @@
           "match": "Expanded: (.+)",
           "captures": {
             "1": {
-              "name": "markup.bold.copper"
+              "name": "markup.bold.copper-test"
             }
           }
         },
         {
           "begin": "⬇ (.+):",
           "end": "⬆ \\1",
-          "contentName": "string.copper",
+          "contentName": "string.copper-test",
           "patterns": [
             {
               "include": "#gmock"

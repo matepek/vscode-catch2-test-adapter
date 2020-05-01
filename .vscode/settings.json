@@ -117,7 +117,7 @@
   "mochaExplorer.logpanel": true,
   "json.schemas": [
     {
-      "fileMatch": ["/syntaxes/test-output.tmLanguage.json"],
+      "fileMatch": ["/syntaxes/copper-test.tmLanguage.json"],
       "url": "/src/tmLanguage.schema.json"
     }
   ]

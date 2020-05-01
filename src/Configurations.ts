@@ -7,15 +7,131 @@ import { performance } from 'perf_hooks';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
 
-export class Config {
-  private _vsConfig: vscode.WorkspaceConfiguration;
+type MigratableConfig =
+  | 'test.executables'
+  | 'test.workingDirectory'
+  | 'test.randomGeneratorSeed'
+  | 'discovery.watchTimeout'
+  | 'discovery.retireTestAfter'
+  | 'test.runtimeTimeout'
+  | 'discovery.listingTimeout'
+  | 'test.parallelExecutionLimit'
+  | 'debug.configTemplate'
+  | 'debug.breakOnFailure'
+  | 'debug.noThrow'
+  | 'log.logpanel'
+  | 'log.logfile'
+  | 'log.logSentry'
+  | 'log.userId'
+  | 'discovery.testListCaching'
+  | 'gtest.treatGmockWarningAs'
+  | 'gtest.gmockVerbose';
+
+export type Config = 'test.executable' | MigratableConfig;
+
+type OldConfig =
+  | 'executables'
+  | 'defaultCwd'
+  | 'defaultRngSeed'
+  | 'defaultWatchTimeoutSec'
+  | 'retireDebounceTimeMilisec'
+  | 'defaultRunningTimeoutSec'
+  | 'defaultExecParsingTimeoutSec'
+  | 'workerMaxNumber'
+  | 'debugConfigTemplate'
+  | 'debugBreakOnFailure'
+  | 'defaultNoThrow'
+  | 'logpanel'
+  | 'logfile'
+  | 'logSentry'
+  | 'userId'
+  | 'enableTestListCaching'
+  | 'googletest.treatGmockWarningAs'
+  | 'googletest.gmockVerbose';
+
+const MigrationV1V2NamePairs: { [key in MigratableConfig]: OldConfig } = {
+  'test.executables': 'executables',
+  'test.workingDirectory': 'defaultCwd',
+  'test.randomGeneratorSeed': 'defaultRngSeed',
+  'discovery.watchTimeout': 'defaultWatchTimeoutSec',
+  'discovery.retireTestAfter': 'retireDebounceTimeMilisec',
+  'test.runtimeTimeout': 'defaultRunningTimeoutSec',
+  'discovery.listingTimeout': 'defaultExecParsingTimeoutSec',
+  'test.parallelExecutionLimit': 'workerMaxNumber',
+  'debug.configTemplate': 'debugConfigTemplate',
+  'debug.breakOnFailure': 'debugBreakOnFailure',
+  'debug.noThrow': 'defaultNoThrow',
+  'log.logpanel': 'logpanel',
+  'log.logfile': 'logfile',
+  'log.logSentry': 'logSentry',
+  'log.userId': 'userId',
+  'discovery.testListCaching': 'enableTestListCaching',
+  'gtest.treatGmockWarningAs': 'googletest.treatGmockWarningAs',
+  'gtest.gmockVerbose': 'googletest.gmockVerbose',
+};
+
+interface ConfigurationChangeEvent extends vscode.ConfigurationChangeEvent {
+  affectsConfiguration(section: Config, resource?: vscode.Uri): boolean;
+}
+
+export class Configurations {
+  private _old: vscode.WorkspaceConfiguration;
+  private _new: vscode.WorkspaceConfiguration;
 
   public constructor(public _log: LoggerWrapper, private _workspaceFolderUri: vscode.Uri) {
-    this._vsConfig = vscode.workspace.getConfiguration('catch2TestExplorer', _workspaceFolderUri);
+    this._old = vscode.workspace.getConfiguration('catch2TestExplorer', _workspaceFolderUri);
+    this._new = vscode.workspace.getConfiguration('copper', _workspaceFolderUri);
+  }
+
+  // eslint-disable-next-line
+  private _isDefinedConfig(config: any): boolean {
+    return (
+      config !== undefined &&
+      (config.globalValue !== undefined ||
+        config.workspaceValue !== undefined ||
+        config.workspaceFolderValue !== undefined)
+    );
+  }
+
+  private _getNewOrOldAndMigrate<T>(newName: MigratableConfig): T | undefined {
+    const oldName = MigrationV1V2NamePairs[newName];
+    const oldVals = this._old.inspect<T>(oldName);
+
+    if (oldVals !== undefined && this._isDefinedConfig(oldVals)) {
+      // NOTE: update is async operation
+      // This is not the nicest solution but should work and simple.
+
+      this._new.update(newName, oldVals.globalValue, vscode.ConfigurationTarget.Global);
+      this._new.update(newName, oldVals.workspaceValue, vscode.ConfigurationTarget.Workspace);
+      this._new.update(newName, oldVals.workspaceFolderValue, vscode.ConfigurationTarget.WorkspaceFolder);
+
+      const oldVal = this._old.get<T>(oldName);
+
+      this._old.update(oldName, undefined, vscode.ConfigurationTarget.Global);
+      this._old.update(oldName, undefined, vscode.ConfigurationTarget.Workspace);
+      this._old.update(oldName, undefined, vscode.ConfigurationTarget.WorkspaceFolder);
+
+      return oldVal;
+    } else {
+      return this._new.get<T>(newName);
+    }
+  }
+
+  private _getNewOrOldOrDefAndMigrate<T>(newName: MigratableConfig, defaultValue: T): T {
+    const val = this._getNewOrOldAndMigrate<T>(newName);
+    if (val !== undefined) return val;
+    else return defaultValue;
+  }
+
+  public static onDidChange(callbacks: (changeEvent: ConfigurationChangeEvent) => void): vscode.Disposable {
+    return vscode.workspace.onDidChangeConfiguration(changeEvent => callbacks(changeEvent));
   }
 
   public getDebugConfigurationTemplate(): vscode.DebugConfiguration {
-    const templateFromConfig = this._vsConfig.get<object | null | 'extensionOnly'>('debugConfigTemplate', null);
+    const templateFromConfig = this._getNewOrOldOrDefAndMigrate<object | null | 'extensionOnly'>(
+      'debug.configTemplate',
+      null,
+    );
 
     if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
       const debugConfig = Object.assign(
@@ -122,31 +238,30 @@ export class Config {
   }
 
   public getOrCreateUserId(): string {
-    const userId = this._vsConfig.get<string>('userId');
+    let userId = this._getNewOrOldAndMigrate<string>('log.userId');
 
     if (userId) {
       return userId;
+    } else {
+      let newUserId = (process.env['USER'] || process.env['USERNAME'] || 'user') + process.env['USERDOMAIN'];
+      newUserId += performance.now().toString();
+      newUserId += process.pid.toString();
+      newUserId += Date.now().toString();
+      userId = hashString(newUserId);
+      this._new.update('log.userId', userId, vscode.ConfigurationTarget.Global);
+      return userId;
     }
-
-    let newUserId = (process.env['USER'] || process.env['USERNAME'] || 'user') + process.env['USERDOMAIN'];
-    newUserId += performance.now().toString();
-    newUserId += process.pid.toString();
-    newUserId += Date.now().toString();
-
-    newUserId = hashString(newUserId);
-
-    this._vsConfig.update('userId', newUserId, vscode.ConfigurationTarget.Global);
-
-    return newUserId;
   }
 
   public isSentryEnabled(): boolean {
-    const val = this._vsConfig.get<SentryValue>('logSentry');
+    const val = this._getNewOrOldAndMigrate('log.logSentry');
     return val === 'enable' || val === 'enabled';
   }
 
   public askSentryConsent(): void {
-    const logSentry = this._vsConfig.get<SentryValue>('logSentry', 'question');
+    const logSentryConfig: Config = 'log.logSentry';
+
+    const logSentry = this._getNewOrOldOrDefAndMigrate<SentryValue>(logSentryConfig, 'question');
 
     if (logSentry === 'question' || logSentry === 'disable' || logSentry === 'disable_1' || logSentry === 'disable_2') {
       const options = [
@@ -167,40 +282,40 @@ export class Config {
           this._log.info('Sentry consent', value);
 
           if (value === options[0]) {
-            this._vsConfig.update('logSentry', 'enable', vscode.ConfigurationTarget.Global);
+            this._new.update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global);
           } else if (value === options[1]) {
-            this._vsConfig.update('logSentry', 'enable', vscode.ConfigurationTarget.Global);
-            this._vsConfig.update('logSentry', 'disable_3', vscode.ConfigurationTarget.WorkspaceFolder);
+            this._new.update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global);
+            this._new.update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.WorkspaceFolder);
           } else if (value === options[2]) {
-            this._vsConfig.update('logSentry', 'disable_3', vscode.ConfigurationTarget.Global);
+            this._new.update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.Global);
           }
         });
     }
   }
 
   public getDebugBreakOnFailure(): boolean {
-    return this._vsConfig.get<boolean>('debugBreakOnFailure', true);
+    return this._getNewOrOldOrDefAndMigrate<boolean>('debug.breakOnFailure', true);
   }
 
   public getDefaultNoThrow(): boolean {
-    return this._vsConfig.get<boolean>('defaultNoThrow', false);
+    return this._getNewOrOldOrDefAndMigrate<boolean>('debug.noThrow', false);
   }
 
   public getDefaultCwd(): string {
     const dirname = this._workspaceFolderUri.fsPath;
-    return this._vsConfig.get<string>('defaultCwd', dirname);
+    return this._getNewOrOldOrDefAndMigrate<string>('test.workingDirectory', dirname);
   }
 
   public getDefaultEnvironmentVariables(): { [prop: string]: string } {
-    return this._vsConfig.get('defaultEnv', {});
+    return this._old.get('defaultEnv', {});
   }
 
   public getDefaultRngSeed(): string | number | null {
-    return this._vsConfig.get<null | string | number>('defaultRngSeed', null);
+    return this._getNewOrOldOrDefAndMigrate<null | string | number>('test.randomGeneratorSeed', null);
   }
 
   public getWorkerMaxNumber(): number {
-    const res = Math.max(1, this._vsConfig.get<number>('workerMaxNumber', 1));
+    const res = Math.max(1, this._getNewOrOldOrDefAndMigrate<number>('test.parallelExecutionLimit', 1));
     if (typeof res != 'number') return 1;
     else {
       if (res > 1) this._log.infoS('workerMaxNumber', 1);
@@ -209,38 +324,35 @@ export class Config {
   }
 
   public getDefaultExecWatchTimeout(): number {
-    const res = this._vsConfig.get<number>('defaultWatchTimeoutSec', 10) * 1000;
+    const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.watchTimeout', 10) * 1000;
     return res;
   }
 
   public getRetireDebounceTime(): number {
-    const res = this._vsConfig.get<number>('retireDebounceTimeMilisec', 1000);
+    const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.retireTestAfter', 1000);
     return res;
   }
 
   public getDefaultExecRunningTimeout(): null | number {
-    const r = this._vsConfig.get<null | number>('defaultRunningTimeoutSec', null);
+    const r = this._getNewOrOldOrDefAndMigrate<null | number>('test.runtimeTimeout', null);
     return r !== null && r > 0 ? r * 1000 : null;
   }
 
   public getDefaultExecParsingTimeout(): number {
-    const r = this._vsConfig.get<number>('defaultExecParsingTimeoutSec', 5);
+    const r = this._getNewOrOldOrDefAndMigrate<number>('discovery.listingTimeout', 5);
     return r * 1000;
   }
 
   public getEnableTestListCaching(): boolean {
-    return this._vsConfig.get<boolean>('enableTestListCaching', false);
+    return this._getNewOrOldOrDefAndMigrate<boolean>('discovery.testListCaching', false);
   }
 
   public getGoogleTestTreatGMockWarningAs(): 'nothing' | 'failure' {
-    return this._vsConfig.get<'nothing' | 'failure'>('googletest.treatGmockWarningAs', 'nothing');
+    return this._getNewOrOldOrDefAndMigrate<'nothing' | 'failure'>('gtest.treatGmockWarningAs', 'nothing');
   }
 
   public getGoogleTestGMockVerbose(): 'default' | 'info' | 'warning' | 'error' {
-    return this._vsConfig.get<'default' | 'info' | 'warning' | 'error'>(
-      'catch2TestExplorer.googletest.gmockVerbose',
-      'default',
-    );
+    return this._getNewOrOldOrDefAndMigrate<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
   public getExecutables(shared: SharedVariables, variableToValue: [string, string][]): ExecutableConfig[] {
@@ -249,13 +361,27 @@ export class Config {
 
     const executables: ExecutableConfig[] = [];
 
-    const configExecs:
+    type ExecOldType =
       | undefined
       | null
       | string
       | string[]
       | { [prop: string]: string }
-      | ({ [prop: string]: string } | string)[] = this._vsConfig.get('executables');
+      | ({ [prop: string]: string } | string)[];
+
+    let configExecs: ExecOldType | undefined = this._getNewOrOldAndMigrate<ExecOldType>('test.executables');
+
+    if (configExecs === null) {
+      //disabled
+      return [];
+    }
+
+    if (configExecs === undefined) {
+      configExecs = this._new.get<ExecOldType>(
+        'test.executable',
+        '{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*',
+      );
+    }
 
     this._log.setContext('executables', { executables: configExecs });
 
