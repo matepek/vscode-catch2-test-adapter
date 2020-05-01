@@ -70,18 +70,18 @@ export class GoogleRunnable extends AbstractRunnable {
           file,
           [suiteName],
           this.getTestGrouping(),
-          (parent: Suite, old: GoogleTest | undefined) =>
+          (parent: Suite, old: AbstractTest | undefined) =>
             new GoogleTest(
               this._shared,
               this,
               parent,
-              old ? old.id : undefined,
               testNameInOutput,
               testName,
               typeParam,
               valueParam,
               file,
               line,
+              old,
             ),
         );
       }
@@ -131,18 +131,18 @@ export class GoogleRunnable extends AbstractRunnable {
           undefined,
           [suiteName],
           this.getTestGrouping(),
-          (parent: Suite, old: GoogleTest | undefined) =>
+          (parent: Suite, old: AbstractTest | undefined) =>
             new GoogleTest(
               this._shared,
               this,
               parent,
-              old ? old.id : undefined,
               testNameInOutput,
               testName,
               typeParam,
               valueParam,
               undefined,
               undefined,
+              old,
             ),
         );
 
@@ -420,7 +420,7 @@ export class GoogleRunnable extends AbstractRunnable {
 
                 const testNameInOutput = m[1];
 
-                const currentChild = this._findTest(v => v.testNameInOutput == testNameInOutput);
+                const currentChild = this._findTest(v => v.compare(testNameInOutput));
 
                 if (currentChild === undefined) break;
                 try {

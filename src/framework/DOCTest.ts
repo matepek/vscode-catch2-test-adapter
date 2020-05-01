@@ -55,7 +55,7 @@ export class DOCTest extends AbstractTest {
       shared,
       runnable,
       parent,
-      id != undefined ? id : old ? old.id : undefined,
+      old,
       testNameAsId,
       testNameAsId.startsWith('  Scenario:') ? '⒮' + testNameAsId.substr(11) : testNameAsId,
       file,
@@ -172,7 +172,7 @@ export class DOCTest extends AbstractTest {
 
       const branchMsg = (failedBranch ? '✘' + failedBranch + '|' : '') + '✔︎' + succBranch;
 
-      testEventBuilder.appendDescription(` [${branchMsg}]`);
+      testEventBuilder.appendDescription(`ᛦ${branchMsg}ᛦ`);
       testEventBuilder.appendTooltip(`ᛦ ${branchMsg} branches`);
     }
   }

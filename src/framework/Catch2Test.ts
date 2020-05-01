@@ -89,7 +89,7 @@ export class Catch2Test extends AbstractTest {
       shared,
       runnable,
       parent,
-      old ? old.id : undefined,
+      old,
       testNameAsId,
       testNameAsId,
       file,
@@ -220,7 +220,7 @@ export class Catch2Test extends AbstractTest {
 
       const branchMsg = (failedBranch ? '✘' + failedBranch + '|' : '') + '✔︎' + succBranch;
 
-      testEventBuilder.appendDescription(` [${branchMsg}]`);
+      testEventBuilder.appendDescription(`ᛦ${branchMsg}ᛦ`);
       testEventBuilder.appendTooltip(`ᛦ ${branchMsg} branches`);
     }
   }

@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
-import { generateId, milisecToStr } from './Util';
+import { generateId, milisecToStr, concat } from './Util';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
 import { LoggerWrapper } from './LoggerWrapper';
@@ -12,19 +12,22 @@ interface SharedWithAbstractTest {
 export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
   public readonly id: string;
-  public readonly description: string;
-  public readonly tooltip: string;
   public readonly file: string | undefined;
   public readonly line: number | undefined;
 
-  public lastRunEvent: TestEvent | undefined = undefined;
-  public lastRunMilisec: number | undefined = undefined;
+  private readonly _descriptionBase: string;
+  private readonly _tooltipBase: string;
+  private _additionalDesciption: string;
+  private _additionalTooltip: string;
+
+  public lastRunEvent: TestEvent | undefined;
+  public lastRunMilisec: number | undefined;
 
   protected constructor(
     protected readonly _shared: SharedWithAbstractTest,
     public readonly runnable: AbstractRunnable,
     public readonly parent: Suite, // ascending
-    id: string | undefined,
+    old: AbstractTest | undefined,
     public readonly testName: string,
     public readonly label: string,
     file: string | undefined,
@@ -32,13 +35,13 @@ export abstract class AbstractTest implements TestInfo {
     public readonly skipped: boolean,
     public readonly staticEvent: TestEvent | undefined,
     private readonly _pureTags: string[], // without brackets
-    _testDescription: string | undefined,
-    _typeParam: string | undefined, // gtest specific
-    _valueParam: string | undefined, // gtest specific
+    testDescription: string | undefined,
+    typeParam: string | undefined, // gtest specific
+    valueParam: string | undefined, // gtest specific
   ) {
     if (line && line < 0) throw Error('line smaller than zero');
 
-    this.id = id ? id : generateId();
+    this.id = old ? old.id : generateId();
     this.file = file ? path.normalize(file) : undefined;
     this.line = file ? line : undefined;
 
@@ -52,29 +55,57 @@ export abstract class AbstractTest implements TestInfo {
       tooltip.push(`Tags: ${tagsStr}`);
     }
 
-    if (_testDescription) {
-      tooltip.push(`Description: ${_testDescription}`);
+    if (testDescription) {
+      tooltip.push(`Description: ${testDescription}`);
     }
 
-    if (_typeParam) {
-      description.push(`#️⃣Type: ${_typeParam}`);
-      tooltip.push(`#️⃣TypeParam() = ${_typeParam}`);
+    if (typeParam) {
+      description.push(`#️⃣Type: ${typeParam}`);
+      tooltip.push(`#️⃣TypeParam() = ${typeParam}`);
     }
 
-    if (_valueParam) {
-      description.push(`#️⃣Value: ${_valueParam}`);
-      tooltip.push(`#️⃣GetParam() = ${_valueParam}`);
+    if (valueParam) {
+      description.push(`#️⃣Value: ${valueParam}`);
+      tooltip.push(`#️⃣GetParam() = ${valueParam}`);
     }
 
-    this.description = description.join('');
-    this.tooltip = tooltip.join('\n');
+    this._descriptionBase = description.join('');
+    this._tooltipBase = tooltip.join('\n');
 
     if (staticEvent) {
       staticEvent.test = this;
     }
+
+    if (old) {
+      this.lastRunEvent = old.lastRunEvent;
+      this.lastRunMilisec = old.lastRunMilisec;
+      this._additionalDesciption = old._additionalDesciption;
+      this._additionalTooltip = old._additionalTooltip;
+    } else {
+      this._additionalDesciption = '';
+      this._additionalTooltip = '';
+    }
   }
 
-  public abstract get testNameInOutput(): string;
+  public compare(testNameInOutput: string): boolean {
+    return this.testNameInOutput === testNameInOutput;
+  }
+
+  // should be used only from TestEventBuilder
+  public _updateDescriptionAndTooltip(description: string, tooltip: string): void {
+    this._additionalDesciption = description;
+    this._additionalTooltip = tooltip;
+  }
+
+  public get description(): string {
+    return concat(this._descriptionBase, this._additionalDesciption, ' ');
+  }
+
+  public get tooltip(): string {
+    return concat(this._tooltipBase, this._additionalTooltip, '\n');
+  }
+
+  protected abstract get testNameInOutput(): string;
 
   public get tags(): string[] {
     return this._pureTags.filter(v => v != '.' && v != 'hide');
@@ -157,8 +188,8 @@ export abstract class AbstractTest implements TestInfo {
 
     const durationStr = milisecToStr(durationInMilisec);
 
-    ev.description = this.description + (this.description ? ' ' : '') + '(' + durationStr + ')';
-    ev.tooltip = this.tooltip + (this.tooltip ? '\n' : '') + '⏱Duration: ' + durationStr;
+    ev.description = this._descriptionBase + (this._descriptionBase ? ' ' : '') + '(' + durationStr + ')';
+    ev.tooltip = this._tooltipBase + (this._tooltipBase ? '\n' : '') + '⏱Duration: ' + durationStr;
   }
 
   public enumerateTestInfos(fn: (v: AbstractTest) => void): void {

@@ -7,6 +7,8 @@ import { performance } from 'perf_hooks';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
 
+const ConfigSection = 'copper';
+
 type MigratableConfig =
   | 'test.executables'
   | 'test.workingDirectory'
@@ -70,9 +72,14 @@ const MigrationV1V2NamePairs: { [key in MigratableConfig]: OldConfig } = {
   'gtest.gmockVerbose': 'googletest.gmockVerbose',
 };
 
-interface ConfigurationChangeEvent extends vscode.ConfigurationChangeEvent {
-  affectsConfiguration(section: Config, resource?: vscode.Uri): boolean;
+class ConfigurationChangeEvent {
+  public constructor(private readonly event: vscode.ConfigurationChangeEvent) {}
+  affectsConfiguration(section: Config, resource?: vscode.Uri): boolean {
+    return this.event.affectsConfiguration(`${ConfigSection}.${section}`, resource);
+  }
 }
+
+///
 
 export class Configurations {
   private _old: vscode.WorkspaceConfiguration;
@@ -80,7 +87,10 @@ export class Configurations {
 
   public constructor(public _log: LoggerWrapper, private _workspaceFolderUri: vscode.Uri) {
     this._old = vscode.workspace.getConfiguration('catch2TestExplorer', _workspaceFolderUri);
-    this._new = vscode.workspace.getConfiguration('copper', _workspaceFolderUri);
+    this._new = vscode.workspace.getConfiguration(ConfigSection, _workspaceFolderUri);
+
+    this._getNewOrOldAndMigrate('log.logpanel'); // force migrate
+    this._getNewOrOldAndMigrate('log.logfile'); // force migrate
   }
 
   // eslint-disable-next-line
@@ -124,7 +134,9 @@ export class Configurations {
   }
 
   public static onDidChange(callbacks: (changeEvent: ConfigurationChangeEvent) => void): vscode.Disposable {
-    return vscode.workspace.onDidChangeConfiguration(changeEvent => callbacks(changeEvent));
+    return vscode.workspace.onDidChangeConfiguration(changeEvent =>
+      callbacks(new ConfigurationChangeEvent(changeEvent)),
+    );
   }
 
   public getDebugConfigurationTemplate(): vscode.DebugConfiguration {
@@ -310,11 +322,11 @@ export class Configurations {
     return this._old.get('defaultEnv', {});
   }
 
-  public getDefaultRngSeed(): string | number | null {
+  public getRandomGeneratorSeed(): string | number | null {
     return this._getNewOrOldOrDefAndMigrate<null | string | number>('test.randomGeneratorSeed', null);
   }
 
-  public getWorkerMaxNumber(): number {
+  public getParallelExecutionLimit(): number {
     const res = Math.max(1, this._getNewOrOldOrDefAndMigrate<number>('test.parallelExecutionLimit', 1));
     if (typeof res != 'number') return 1;
     else {
@@ -323,7 +335,7 @@ export class Configurations {
     }
   }
 
-  public getDefaultExecWatchTimeout(): number {
+  public getExecWatchTimeout(): number {
     const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.watchTimeout', 10) * 1000;
     return res;
   }
@@ -333,12 +345,12 @@ export class Configurations {
     return res;
   }
 
-  public getDefaultExecRunningTimeout(): null | number {
+  public getExecRunningTimeout(): null | number {
     const r = this._getNewOrOldOrDefAndMigrate<null | number>('test.runtimeTimeout', null);
     return r !== null && r > 0 ? r * 1000 : null;
   }
 
-  public getDefaultExecParsingTimeout(): number {
+  public getExecParsingTimeout(): number {
     const r = this._getNewOrOldOrDefAndMigrate<number>('discovery.listingTimeout', 5);
     return r * 1000;
   }

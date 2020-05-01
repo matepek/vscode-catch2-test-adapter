@@ -1,16 +1,17 @@
 import * as path from 'path';
-import { TestEvent, TestInfo, TestDecoration } from 'vscode-test-adapter-api';
-import { reindentStr, reindentLines, milisecToStr } from './Util';
+import * as api from 'vscode-test-adapter-api';
+import { reindentStr, reindentLines, milisecToStr, concatU } from './Util';
+import { AbstractTest } from './AbstractTest';
 
 export type TestEventState = 'running' | 'passed' | 'failed' | 'skipped' | 'errored';
 
 export class TestEventBuilder {
-  public constructor(public test: TestInfo) {}
+  public constructor(public test: AbstractTest) {}
 
   private _durationMilisec: number | undefined = undefined;
   private _message: string[] = [];
-  private _decorations: TestDecoration[] = [];
-  private _description = '';
+  private _decorations: api.TestDecoration[] = [];
+  private _description: string[] = [];
   private _tooltip: string[] = [];
   private _state: TestEventState | undefined = undefined;
 
@@ -26,8 +27,12 @@ export class TestEventBuilder {
     this._state = 'errored';
   }
 
+  public skipped(): void {
+    this._state = 'skipped';
+  }
+
   public appendDescription(str: string): void {
-    this._description += str;
+    this._description.push(str);
   }
 
   public setDurationMilisec(duration: number): void {
@@ -50,22 +55,46 @@ export class TestEventBuilder {
     file: string | undefined,
     line: number,
     msg: string | string[] | undefined,
-    hover?: string,
+    hover?: string | string[],
   ): void {
-    const reindented = typeof msg === 'string' ? reindentStr(0, msg) : Array.isArray(msg) ? reindentLines(0, msg) : [];
     const normalizedFile = file ? path.normalize(file) : undefined;
-    this._decorations.push({
-      file: normalizedFile,
-      line,
-      message:
-        '⬅ ' + reindented.length
-          ? reindented
-              .map((x: string) => x.trim())
-              .join('; ')
-              .substr(0, 200)
-          : 'failed',
-      hover: hover ? reindentStr(0, hover).join('\n') : reindented.length ? reindented.join('\n') : undefined,
-    });
+    let decoration = this._decorations.find(d => d.file === normalizedFile && d.line === line);
+
+    const reindentedMsg =
+      typeof msg === 'string' ? reindentStr(0, msg) : Array.isArray(msg) ? reindentLines(0, msg) : [];
+
+    const reindentedHov =
+      typeof hover === 'string' ? reindentStr(0, hover) : Array.isArray(hover) ? reindentLines(0, hover) : [];
+
+    const hoverStr = reindentedHov.length
+      ? reindentedHov.join('\n')
+      : reindentedMsg.length
+      ? reindentedMsg.join('\n')
+      : undefined;
+
+    if (decoration === undefined) {
+      decoration = {
+        file: normalizedFile,
+        line,
+        message:
+          '⬅ ' +
+          (reindentedMsg.length
+            ? reindentedMsg
+                .map((x: string) => x.trim())
+                .join('; ')
+                .substr(0, 200)
+            : 'failed'),
+        hover: hoverStr,
+      };
+      this._decorations.push(decoration);
+    } else {
+      decoration.message = '⬅ multiple failures';
+      decoration.hover = concatU(
+        decoration.hover,
+        hoverStr,
+        '\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n',
+      );
+    }
   }
 
   public appendMessageWithDecorator(
@@ -78,31 +107,30 @@ export class TestEventBuilder {
     this.appendDecorator(file, line, str);
   }
 
-  public build(): TestEvent {
+  public build(): api.TestEvent {
     const duration = this._durationMilisec ? milisecToStr(this._durationMilisec) : undefined;
 
     const description: string[] = [];
     const message: string[] = [];
     const tooltip: string[] = [];
 
-    if (this.test.description) description.push(this.test.description);
-
     if (duration && this._durationMilisec) {
-      message.push(`⏱Duration: ${Math.round(this._durationMilisec * 1000) / 1000000} second(s).`);
       description.push(`(${duration})`);
+      message.push(`⏱Duration: ${Math.round(this._durationMilisec * 1000) / 1000000} second(s).`);
     }
 
-    message.push(...this._message);
-
-    if (this._description) description.push(this._description);
-
-    if (this.test.tooltip) tooltip.push(this.test.tooltip);
-
+    description.push(...this._description);
     tooltip.push(...this._tooltip);
+    message.push(...this._message);
 
     if (duration) tooltip.push(`⏱Duration: ${duration}`);
 
     if (this._state === undefined) throw Error('TestEventBuilder state was not set');
+
+    const descriptionStr = description.join(' ');
+    const tooltipStr = tooltip.join('\n');
+
+    this.test._updateDescriptionAndTooltip(descriptionStr, tooltipStr);
 
     return {
       type: 'test',
@@ -110,8 +138,8 @@ export class TestEventBuilder {
       state: this._state,
       message: message.length ? message.join('\n') : undefined,
       decorations: this._decorations.length ? this._decorations : [],
-      description: description.length ? description.join(' ') : undefined,
-      tooltip: tooltip.length ? tooltip.join('\n') : undefined,
+      description: this.test.description,
+      tooltip: this.test.tooltip,
     };
   }
 }

@@ -313,7 +313,7 @@ export class Catch2Runnable extends AbstractRunnable {
 
             data.beforeFirstTestCase = false;
 
-            const test = this._findTest(v => v.testNameInOutput == name);
+            const test = this._findTest(v => v.compare(name));
 
             if (test) {
               const route = [...test.route()];
@@ -484,7 +484,7 @@ export class Catch2Runnable extends AbstractRunnable {
                 );
                 if (name === undefined) break;
 
-                const currentChild = this._findTest(v => v.testNameInOutput === name);
+                const currentChild = this._findTest(v => v.compare(name!));
 
                 if (currentChild === undefined) break;
 

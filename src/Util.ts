@@ -1,6 +1,16 @@
 import * as pathlib from 'path';
 import * as c2fs from './FSWrapper';
 
+export function concatU(left: string | undefined, right: string | undefined, sep = ''): string | undefined {
+  if (!right) return left;
+  else if (!left) return right;
+  else return left + sep + right;
+}
+
+export function concat(left: string, right: string, sep = ''): string {
+  return concatU(left, right, sep)!;
+}
+
 export class Version {
   public constructor(
     public readonly major: number,

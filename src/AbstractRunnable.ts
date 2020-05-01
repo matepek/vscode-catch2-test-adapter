@@ -63,19 +63,13 @@ export abstract class AbstractRunnable {
     return this._tests;
   }
 
-  private _getOrCreateChildSuite(
-    label: string,
-    description: string | undefined,
-    tooltip: string | undefined,
-    group: Suite,
-  ): Suite {
-    const cond = (v: Suite | AbstractTest): boolean =>
-      v.type === 'suite' && v.label === label && v.description === description;
+  private _getOrCreateChildSuite(label: string, description: string, tooltip: string, group: Suite): Suite {
+    const cond = (v: Suite | AbstractTest): boolean => v.type === 'suite' && v.compare(label, description);
     const found = group.children.find(cond) as Suite | undefined;
     if (found) {
       return found;
     } else {
-      const newG = group.addSuite(new Suite(this._shared, group, label, description, tooltip));
+      const newG = group.addSuite(new Suite(this._shared, group, label, description, tooltip, undefined));
       return newG;
     }
   }
@@ -140,8 +134,8 @@ export abstract class AbstractRunnable {
       tooltip: string | undefined,
     ): void => {
       const resolvedLabel = this._resolveText(label, ...vars);
-      const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : undefined;
-      const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : undefined;
+      const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : '';
+      const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : '';
 
       group = this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, group);
     };
@@ -247,7 +241,7 @@ export abstract class AbstractRunnable {
       this._shared.log.exceptionS(e);
     }
 
-    const old = group.children.find(t => t instanceof AbstractTest && t.testNameInOutput === testNameInOutput) as
+    const old = group.children.find(t => t instanceof AbstractTest && t.compare(testNameInOutput)) as
       | AbstractTest
       | undefined;
 

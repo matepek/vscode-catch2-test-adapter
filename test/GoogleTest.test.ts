@@ -16,13 +16,13 @@ describe(path.basename(__filename), function () {
     },
     (null as unknown) as AbstractRunnable,
     (null as unknown) as Suite,
-    'id',
     'TestCase.TestName',
     'TestName',
     undefined,
     undefined,
     'gtest.cpp',
     11,
+    undefined,
   );
 
   it('parses EXPECT_CALL', function () {

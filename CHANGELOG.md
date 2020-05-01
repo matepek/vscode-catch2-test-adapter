@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0]
+
+It's a big day! the extension was renamed to `Copper Test Explorer`.
+All the configs has moved and renamed. ⚠
+(Sorry for that I don't do it every week, though there is an automatic migration.)
+Lots of small tweaks was added. (Please be patioent and report issues. ^^)
+
 ## [2.9.12] - 2020-05-01
 
 Fine-tuning colorization

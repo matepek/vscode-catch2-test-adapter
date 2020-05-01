@@ -215,13 +215,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._loadWithTaskEmitter,
       this._sendTestEventEmitter,
       this._sendRetireEmitter,
-      configuration.getDefaultRngSeed(),
-      configuration.getDefaultExecWatchTimeout(),
+      configuration.getRandomGeneratorSeed(),
+      configuration.getExecWatchTimeout(),
       configuration.getRetireDebounceTime(),
-      configuration.getDefaultExecRunningTimeout(),
-      configuration.getDefaultExecParsingTimeout(),
+      configuration.getExecRunningTimeout(),
+      configuration.getExecParsingTimeout(),
       configuration.getDefaultNoThrow(),
-      configuration.getWorkerMaxNumber(),
+      configuration.getParallelExecutionLimit(),
       configuration.getEnableTestListCaching(),
       configuration.getGoogleTestTreatGMockWarningAs(),
       configuration.getGoogleTestGMockVerbose(),
@@ -229,49 +229,54 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(
       Configurations.onDidChange(changeEvent => {
-        const config = this._getConfiguration();
-
         try {
-          Sentry.setContext('config', config);
+          const config = this._getConfiguration();
+
+          try {
+            Sentry.setContext('config', config);
+          } catch (e) {
+            this._log.exceptionS(e);
+          }
+
+          const affectsAny = (...config: Config[]): boolean =>
+            config.some(c => changeEvent.affectsConfiguration(c, this.workspaceFolder.uri));
+
+          if (affectsAny('test.workingDirectory', 'test.executables', 'test.executable')) {
+            this.load();
+          }
+          if (affectsAny('test.randomGeneratorSeed')) {
+            this._shared.rngSeed = config.getRandomGeneratorSeed();
+            this._retireEmitter.fire({});
+          }
+          if (affectsAny('discovery.watchTimeout')) {
+            this._shared.execWatchTimeout = config.getExecWatchTimeout();
+          }
+          if (affectsAny('discovery.retireTestAfter')) {
+            this._shared.retireDebounceTime = config.getRetireDebounceTime();
+          }
+          if (affectsAny('test.runtimeTimeout')) {
+            this._shared.setExecRunningTimeout(config.getExecRunningTimeout());
+          }
+          if (affectsAny('discovery.listingTimeout')) {
+            this._shared.setExecRunningTimeout(config.getExecParsingTimeout());
+          }
+          if (affectsAny('debug.noThrow')) {
+            this._shared.isNoThrow = config.getDefaultNoThrow();
+          }
+          if (affectsAny('test.parallelExecutionLimit')) {
+            this._shared.taskPool.maxTaskCount = config.getParallelExecutionLimit();
+          }
+          if (affectsAny('discovery.testListCaching')) {
+            this._shared.enabledTestListCaching = config.getEnableTestListCaching();
+          }
+          if (affectsAny('gtest.treatGmockWarningAs')) {
+            this._shared.googleTestTreatGMockWarningAs = config.getGoogleTestTreatGMockWarningAs();
+          }
+          if (affectsAny('gtest.gmockVerbose')) {
+            this._shared.googleTestGMockVerbose = config.getGoogleTestGMockVerbose();
+          }
         } catch (e) {
-          this._log.exceptionS(e);
-        }
-
-        const affectsAny = (...config: Config[]): boolean =>
-          config.some(c => changeEvent.affectsConfiguration(c, this.workspaceFolder.uri));
-
-        if (affectsAny('test.workingDirectory', 'test.executables', 'test.executable')) this.load();
-
-        if (affectsAny('test.randomGeneratorSeed')) {
-          this._shared.rngSeed = config.getDefaultRngSeed();
-          this._retireEmitter.fire({});
-        }
-        if (affectsAny('discovery.watchTimeout')) {
-          this._shared.execWatchTimeout = config.getDefaultExecWatchTimeout();
-        }
-        if (affectsAny('discovery.retireTestAfter')) {
-          this._shared.retireDebounceTime = config.getRetireDebounceTime();
-        }
-        if (affectsAny('test.runtimeTimeout')) {
-          this._shared.setExecRunningTimeout(config.getDefaultExecRunningTimeout());
-        }
-        if (affectsAny('discovery.listingTimeout')) {
-          this._shared.setExecRunningTimeout(config.getDefaultExecParsingTimeout());
-        }
-        if (affectsAny('debug.noThrow')) {
-          this._shared.isNoThrow = config.getDefaultNoThrow();
-        }
-        if (affectsAny('test.parallelExecutionLimit')) {
-          this._shared.taskPool.maxTaskCount = config.getWorkerMaxNumber();
-        }
-        if (affectsAny('discovery.testListCaching')) {
-          this._shared.enabledTestListCaching = config.getEnableTestListCaching();
-        }
-        if (affectsAny('gtest.treatGmockWarningAs')) {
-          this._shared.googleTestTreatGMockWarningAs = config.getGoogleTestTreatGMockWarningAs();
-        }
-        if (affectsAny('gtest.gmockVerbose')) {
-          this._shared.googleTestGMockVerbose = config.getGoogleTestGMockVerbose();
+          this._shared.log.exceptionS(e);
         }
       }),
     );
