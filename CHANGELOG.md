@@ -14,6 +14,10 @@ All the configs has moved and renamed. ⚠
 (Sorry for that I don't do it every week, though there is an automatic migration.)
 Lots of small tweaks was added. (Please be patioent and report issues. ^^)
 
+### Removed
+
+- ❌ `defaultEnv` is removed. From now evironment variables can be set only in the [test.executables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md).
+
 ## [2.9.12] - 2020-05-01
 
 Fine-tuning colorization
@@ -67,7 +71,7 @@ Sentry was broken
 
 ### Added
 
-- Exeprimental _multirun_ feature. Run the same executable multiple times. See config: [parallelizationLimit](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md).
+- Exeprimental _multirun_ feature. Run the same executable multiple times. See config: [parallelizationLimit](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md).
 
 ### Changed
 
@@ -91,7 +95,7 @@ Pesky bug fixes and tons of improvements
 
 ### Added
 
-Experiment feature: `testGrouping`: Groups the tests inside the executable. ([Example](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping))
+Experiment feature: `testGrouping`: Groups the tests inside the executable. ([Example](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md#testgrouping))
 
 ## [2.8.13] - 2020-04-04
 

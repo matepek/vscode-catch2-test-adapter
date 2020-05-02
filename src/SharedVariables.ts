@@ -19,7 +19,7 @@ export class SharedVariables implements vscode.Disposable {
     public readonly loadWithTaskEmitter: vscode.EventEmitter<() => void | PromiseLike<void>>,
     public readonly sendTestEventEmitter: vscode.EventEmitter<TestEvent[]>,
     public readonly retire: vscode.EventEmitter<readonly AbstractTest[]>,
-    public rngSeed: string | number | null,
+    public rngSeed: 'time' | number | null,
     public execWatchTimeout: number,
     public retireDebounceTime: number,
     private _execRunningTimeout: null | number,

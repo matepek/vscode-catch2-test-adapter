@@ -15,7 +15,7 @@ describe(path.basename(__filename), function () {
 
     const readme = fse.readFileSync(path.join(__dirname, '../..', 'README.md')).toString();
     const executables = fse
-      .readFileSync(path.join(__dirname, '../..', 'documents/configuration', 'executables.config.md'))
+      .readFileSync(path.join(__dirname, '../..', 'documents/configuration', 'test.executables.md'))
       .toString();
 
     const documents = readme + executables;
@@ -62,7 +62,12 @@ describe(path.basename(__filename), function () {
       const keys = Object.keys(properties);
 
       keys.forEach(key => {
-        if (key === 'copper.log.logfile' || key === 'copper.log.userId' || key.startsWith('catch2TestExplorer')) {
+        if (
+          key === 'copper.log.logSentry' ||
+          key === 'copper.log.logfile' ||
+          key === 'copper.log.userId' ||
+          key.startsWith('catch2TestExplorer')
+        ) {
           // skip: not documented
         } else {
           assert.ok(key.startsWith('copper.'));

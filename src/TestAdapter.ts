@@ -16,7 +16,7 @@ import * as Sentry from '@sentry/node';
 
 import { LoggerWrapper } from './LoggerWrapper';
 import { RootSuite } from './RootSuite';
-import { resolveVariables, generateId, reverse } from './Util';
+import { resolveVariables, generateId, reverse, ResolveRulePair } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { SharedVariables } from './SharedVariables';
 import { Catch2Section, Catch2Test } from './framework/Catch2Test';
@@ -34,11 +34,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   >();
   private readonly _retireEmitter = new vscode.EventEmitter<RetireEvent>();
 
-  private readonly _variableToValue: [string, string][] = [
+  private readonly _variableToValue: ResolveRulePair[] = [
     ['${workspaceName}', this.workspaceFolder.name], // beware changing this line or the order
     ['${workspaceDirectory}', this.workspaceFolder.uri.fsPath],
     ['${workspaceFolder}', this.workspaceFolder.uri.fsPath],
     ['${osPathSep}', osPathSeparator],
+    ['${osEnvSep}', process.platform === 'win32' ? ';' : ':'],
+    [
+      /\$\{if\(isWin\)\}(.*)\$\{else\}(.*)\$\{endif\}/,
+      (m: RegExpMatchArray): string => (process.platform === 'win32' ? m[1] : m[2]),
+    ],
   ];
 
   // because we always want to return with the current rootSuite suite
@@ -248,7 +253,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             this._shared.rngSeed = config.getRandomGeneratorSeed();
             this._retireEmitter.fire({});
           }
-          if (affectsAny('discovery.missingFileWaitingTimeLimit')) {
+          if (affectsAny('discovery.gracePeriodForMissing')) {
             this._shared.execWatchTimeout = config.getExecWatchTimeout();
           }
           if (affectsAny('discovery.retireDebounceLimit')) {

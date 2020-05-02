@@ -155,7 +155,7 @@ describe(path.basename(__filename), function () {
       adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([s1t1.id]);
-      assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
+      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
     });
 
     it('should run suite1', async function () {

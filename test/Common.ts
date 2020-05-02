@@ -60,8 +60,8 @@ export const settings = new (class {
 
       if (key.startsWith('copper.')) {
         const k = key.substr('copper.'.length);
-        if (k !== 'log.logfile')
-          // don't want to override this
+        // don't want to override these
+        if (k !== 'log.logfile' && k !== 'log.logSentry' && k !== 'log.userId')
           t = t.then(() => this.getConfig().update(k, undefined));
       } else if (key.startsWith('catch2TestExplorer.')) {
         const k = key.substr('catch2TestExplorer.'.length);

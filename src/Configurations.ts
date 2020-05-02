@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { LoggerWrapper } from './LoggerWrapper';
 import { ExecutableConfig, ExecutableConfigFrameworkSpecific } from './ExecutableConfig';
 import { SharedVariables } from './SharedVariables';
-import { hashString } from './Util';
+import { hashString, ResolveRulePair } from './Util';
 import { performance } from 'perf_hooks';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
@@ -15,7 +15,7 @@ type MigratableConfig =
   | 'test.randomGeneratorSeed'
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
-  | 'discovery.missingFileWaitingTimeLimit'
+  | 'discovery.gracePeriodForMissing'
   | 'discovery.retireDebounceLimit'
   | 'discovery.runtimeLimit'
   | 'discovery.testListCaching'
@@ -55,11 +55,12 @@ const MigrationV1V2NamePairs: { [key in MigratableConfig]: OldConfig } = {
   'test.executables': 'executables',
   'test.workingDirectory': 'defaultCwd',
   'test.randomGeneratorSeed': 'defaultRngSeed',
-  'discovery.missingFileWaitingTimeLimit': 'defaultWatchTimeoutSec',
-  'discovery.retireDebounceLimit': 'retireDebounceTimeMilisec',
   'test.runtimeLimit': 'defaultRunningTimeoutSec',
-  'discovery.runtimeLimit': 'defaultExecParsingTimeoutSec',
   'test.parallelExecutionLimit': 'workerMaxNumber',
+  'discovery.gracePeriodForMissing': 'defaultWatchTimeoutSec',
+  'discovery.retireDebounceLimit': 'retireDebounceTimeMilisec',
+  'discovery.runtimeLimit': 'defaultExecParsingTimeoutSec',
+  'discovery.testListCaching': 'enableTestListCaching',
   'debug.configTemplate': 'debugConfigTemplate',
   'debug.breakOnFailure': 'debugBreakOnFailure',
   'debug.noThrow': 'defaultNoThrow',
@@ -67,7 +68,6 @@ const MigrationV1V2NamePairs: { [key in MigratableConfig]: OldConfig } = {
   'log.logfile': 'logfile',
   'log.logSentry': 'logSentry',
   'log.userId': 'userId',
-  'discovery.testListCaching': 'enableTestListCaching',
   'gtest.treatGmockWarningAs': 'googletest.treatGmockWarningAs',
   'gtest.gmockVerbose': 'googletest.gmockVerbose',
 };
@@ -111,15 +111,27 @@ export class Configurations {
       // NOTE: update is async operation
       // This is not the nicest solution but should work and simple.
 
-      this._new.update(newName, oldVals.globalValue, vscode.ConfigurationTarget.Global);
-      this._new.update(newName, oldVals.workspaceValue, vscode.ConfigurationTarget.Workspace);
-      this._new.update(newName, oldVals.workspaceFolderValue, vscode.ConfigurationTarget.WorkspaceFolder);
+      this._new
+        .update(newName, oldVals.globalValue, vscode.ConfigurationTarget.Global)
+        .then(undefined, e => this._log.exceptionS(e));
+      this._new
+        .update(newName, oldVals.workspaceValue, vscode.ConfigurationTarget.Workspace)
+        .then(undefined, e => this._log.exceptionS(e));
+      this._new
+        .update(newName, oldVals.workspaceFolderValue, vscode.ConfigurationTarget.WorkspaceFolder)
+        .then(undefined, e => this._log.exceptionS(e));
 
       const oldVal = this._old.get<T>(oldName);
 
-      this._old.update(oldName, undefined, vscode.ConfigurationTarget.Global);
-      this._old.update(oldName, undefined, vscode.ConfigurationTarget.Workspace);
-      this._old.update(oldName, undefined, vscode.ConfigurationTarget.WorkspaceFolder);
+      this._old
+        .update(oldName, undefined, vscode.ConfigurationTarget.Global)
+        .then(undefined, e => this._log.exceptionS(e));
+      this._old
+        .update(oldName, undefined, vscode.ConfigurationTarget.Workspace)
+        .then(undefined, e => this._log.exceptionS(e));
+      this._old
+        .update(oldName, undefined, vscode.ConfigurationTarget.WorkspaceFolder)
+        .then(undefined, e => this._log.exceptionS(e));
 
       return oldVal;
     } else {
@@ -276,11 +288,7 @@ export class Configurations {
     const logSentry = this._getNewOrOldOrDefAndMigrate<SentryValue>(logSentryConfig, 'question');
 
     if (logSentry === 'question' || logSentry === 'disable' || logSentry === 'disable_1' || logSentry === 'disable_2') {
-      const options = [
-        'Sure! I love this extension and happy to help.',
-        'Yes, but exclude the current workspace.',
-        'Over my dead body',
-      ];
+      const options = ['Sure! I love this extension and happy to help.', 'Over my dead body (No)'];
       vscode.window
         .showInformationMessage(
           'Hey there! The extension now has [sentry.io](https://sentry.io/welcome) integration to ' +
@@ -294,12 +302,13 @@ export class Configurations {
           this._log.info('Sentry consent', value);
 
           if (value === options[0]) {
-            this._new.update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global);
+            this._new
+              .update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global)
+              .then(undefined, e => this._log.exceptionS(e));
           } else if (value === options[1]) {
-            this._new.update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global);
-            this._new.update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.WorkspaceFolder);
-          } else if (value === options[2]) {
-            this._new.update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.Global);
+            this._new
+              .update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.Global)
+              .then(undefined, e => this._log.exceptionS(e));
           }
         });
     }
@@ -322,8 +331,13 @@ export class Configurations {
     return this._old.get('defaultEnv', {});
   }
 
-  public getRandomGeneratorSeed(): string | number | null {
-    return this._getNewOrOldOrDefAndMigrate<null | string | number>('test.randomGeneratorSeed', null);
+  public getRandomGeneratorSeed(): 'time' | number | null {
+    const val = this._getNewOrOldOrDefAndMigrate<string>('test.randomGeneratorSeed', 'time');
+    if (val === 'time') return val;
+    if (val === '') return null;
+    const num = Number(val);
+    if (!Number.isNaN(num)) return num;
+    else return null;
   }
 
   public getParallelExecutionLimit(): number {
@@ -336,7 +350,7 @@ export class Configurations {
   }
 
   public getExecWatchTimeout(): number {
-    const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.missingFileWaitingTimeLimit', 10) * 1000;
+    const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.gracePeriodForMissing', 10) * 1000;
     return res;
   }
 
@@ -367,7 +381,7 @@ export class Configurations {
     return this._getNewOrOldOrDefAndMigrate<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  public getExecutables(shared: SharedVariables, variableToValue: [string, string][]): ExecutableConfig[] {
+  public getExecutables(shared: SharedVariables, variableToValue: ResolveRulePair[]): ExecutableConfig[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultEnv = this.getDefaultEnvironmentVariables() || {};
 
