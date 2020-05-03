@@ -474,7 +474,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }
     }
 
-    const debugConfig = resolveVariables(template, [
+    const varToResolve: ResolveRulePair<string | object>[] = [
       ...this._variableToValue,
       ['${suitelabel}', suiteLabels], // deprecated
       ['${suiteLabel}', suiteLabels],
@@ -485,7 +485,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ['${argsStr}', '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"'],
       ['${cwd}', runnable.properties.options.cwd!],
       ['${envObj}', Object.assign(Object.assign({}, process.env), runnable.properties.options.env!)],
-    ]);
+    ];
+
+    const debugConfig = resolveVariables(template, varToResolve);
 
     // we dont know better :(
     // https://github.com/Microsoft/vscode/issues/70125
