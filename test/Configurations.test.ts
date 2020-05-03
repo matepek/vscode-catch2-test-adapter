@@ -26,32 +26,32 @@ describe(path.basename(__filename), function () {
       return settings.resetConfig();
     });
 
-    it('defaultCwd', function () {
+    it('test.workingDirectory', function () {
       this.slow(600);
       return adapter.doAndWaitForReloadEvent(this, () => {
         return settings.updateConfig('test.workingDirectory', 'apple/peach');
       });
     });
 
-    it('defaultRngSeed', function () {
+    it('test.randomGeneratorSeed', function () {
       return settings.updateConfig('test.randomGeneratorSeed', 987).then(function () {
         assert.equal((adapter as any) /* eslint-disable-line */._shared.rngSeed, 987);
       });
     });
 
-    it('defaultWatchTimeoutSec', function () {
+    it('discovery.gracePeriodForMissing', function () {
       return settings.updateConfig('discovery.gracePeriodForMissing', 9876).then(function () {
         assert.equal((adapter as any) /* eslint-disable-line */._shared.execWatchTimeout, 9876000);
       });
     });
 
-    it('defaultRunningTimeoutSec', function () {
+    it('test.runtimeLimit', function () {
       return settings.updateConfig('test.runtimeLimit', 8765).then(function () {
         assert.equal((adapter as any) /* eslint-disable-line */._shared.execRunningTimeout, 8765000);
       });
     });
 
-    it('defaultNoThrow', function () {
+    it('debug.noThrow', function () {
       return settings.updateConfig('debug.noThrow', true).then(function () {
         assert.equal((adapter as any) /* eslint-disable-line */._shared.isNoThrow, true);
       });

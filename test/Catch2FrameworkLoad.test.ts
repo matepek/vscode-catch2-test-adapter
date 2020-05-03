@@ -24,6 +24,7 @@ import {
   FileSystemWatcherStub,
   isWin,
   expectedLoggedErrorLine,
+  TestRunEvent,
 } from './Common';
 
 ///
@@ -125,7 +126,7 @@ describe(path.basename(__filename), function () {
       await loadAdapterAndAssert();
       assert.deepStrictEqual(settings.getConfig().get<string>('test.executables'), 'execPath1.exe');
       await adapter.run([s1t1.id]);
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
@@ -160,7 +161,7 @@ describe(path.basename(__filename), function () {
     it('should run suite1', async function () {
       await loadAdapterAndAssert();
       await adapter.run([suite1.id]);
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [suite1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
@@ -212,7 +213,7 @@ describe(path.basename(__filename), function () {
     it('should run all', async function () {
       await loadAdapterAndAssert();
       await adapter.run([root.id]);
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [root.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
@@ -272,7 +273,7 @@ describe(path.basename(__filename), function () {
       assert.deepStrictEqual(adapter.testStatesEvents, []);
 
       await adapter.run([s1t1.id]);
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
@@ -312,7 +313,7 @@ describe(path.basename(__filename), function () {
       it('should run s1t1 with success', async function () {
         await loadAdapterAndAssert();
         await adapter.run([s1t1.id]);
-        const expected = [
+        const expected: TestRunEvent[] = [
           { type: 'started', tests: [s1t1.id] },
           { type: 'suite', state: 'running', suite: suite1 },
           { type: 'test', state: 'running', test: s1t1 },
@@ -535,7 +536,7 @@ describe(path.basename(__filename), function () {
     it('should run s1t1', async function () {
       await loadAdapterAndAssert();
       await adapter.run([s1t1.id]);
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
@@ -569,7 +570,7 @@ describe(path.basename(__filename), function () {
     it('should run skipped s2t2', async function () {
       await loadAdapterAndAssert();
       await adapter.run([s2t2.id]);
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [s2t2.id] },
         { type: 'suite', state: 'running', suite: suite2 },
         { type: 'test', state: 'running', test: s2t2 },
@@ -603,7 +604,7 @@ describe(path.basename(__filename), function () {
     it('should run failing test s2t3', async function () {
       await loadAdapterAndAssert();
       await adapter.run([s2t3.id]);
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [s2t3.id] },
         { type: 'suite', state: 'running', suite: suite2 },
         { type: 'test', state: 'running', test: s2t3 },
@@ -652,7 +653,7 @@ describe(path.basename(__filename), function () {
       withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(example1.suite2.t3.outputs[0][1]));
 
       await adapter.run([s2t3.id]);
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [s2t3.id] },
         { type: 'suite', state: 'running', suite: suite2 },
         { type: 'test', state: 'running', test: s2t3 },
@@ -694,7 +695,7 @@ describe(path.basename(__filename), function () {
     it('should run suite1', async function () {
       await loadAdapterAndAssert();
       await adapter.run([suite1.id]);
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [suite1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
@@ -747,7 +748,7 @@ describe(path.basename(__filename), function () {
       await settings.updateConfig('test.parallelExecutionLimit', 1);
       await loadAdapterAndAssert();
       await adapter.run([suite1.id, s2t2.id]);
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [suite1.id, s2t2.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
@@ -830,7 +831,7 @@ describe(path.basename(__filename), function () {
 
       await adapter.run([s1t1.id]);
 
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
@@ -856,7 +857,7 @@ describe(path.basename(__filename), function () {
       // this tests the sinon stubs too
       await adapter.run([s1t1.id]);
 
-      s1t1 = adapter.get(0, 0) as TestInfo;
+      s1t1 = adapter.getTest(0, 0);
 
       adapter.testStatesEventsSimplifiedAssertEqual([
         ...expected,
@@ -902,7 +903,7 @@ describe(path.basename(__filename), function () {
 
       await adapter.run([s1t1.id]);
 
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
@@ -928,7 +929,7 @@ describe(path.basename(__filename), function () {
       // this tests the sinon stubs too
       await adapter.run([s1t1.id]);
 
-      s1t1 = adapter.get(0, 0) as TestInfo;
+      s1t1 = adapter.getTest(0, 0);
 
       adapter.testStatesEventsSimplifiedAssertEqual([
         ...expected,
@@ -1303,7 +1304,7 @@ describe(path.basename(__filename), function () {
       const testLoadEventCount = adapter.testLoadsEvents.length;
       await adapter.run([suite1.id]);
 
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [suite1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         {
@@ -1406,7 +1407,7 @@ describe(path.basename(__filename), function () {
       await adapter.run([suite1.id]);
 
       suite1.children.shift();
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [suite1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t2 },
@@ -1474,7 +1475,7 @@ describe(path.basename(__filename), function () {
       await adapter.run([s1t1.id]);
 
       suite1.children.shift();
-      const expected = [{ type: 'started', tests: [s1t1.id] }, { type: 'finished' }];
+      const expected: TestRunEvent[] = [{ type: 'started', tests: [s1t1.id] }, { type: 'finished' }];
       adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await waitFor(
@@ -1562,7 +1563,7 @@ describe(path.basename(__filename), function () {
       assert.strictEqual(suite1.children[0].label, 's1-t1');
       s1t1 = suite1.children[0] as TestInfo;
 
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [suite1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t2 },

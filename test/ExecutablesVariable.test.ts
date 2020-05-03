@@ -337,9 +337,9 @@ describe(path.basename(__filename), function () {
     await settings.updateConfig('test.advancedExecutables', executables);
 
     for (const scenario of example1.suite2.outputs) {
-      imitation.spawnStub.withArgs(execAbsPath, scenario[0], sinon.match.any).callsFake(function () {
-        return new ChildProcessStub(scenario[1]);
-      });
+      imitation.spawnStub
+        .withArgs(execAbsPath, scenario[0], sinon.match.any)
+        .callsFake(() => new ChildProcessStub(scenario[1]));
     }
 
     const spawnWithArgs = imitation.spawnStub.withArgs(execAbsPath, example1.suite2.t1.outputs[0][0], sinon.match.any);

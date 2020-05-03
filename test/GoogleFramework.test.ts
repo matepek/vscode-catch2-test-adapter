@@ -4,7 +4,7 @@ import * as pathlib from 'path';
 import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, settings, ChildProcessStub, expectedLoggedErrorLine } from './Common';
+import { TestAdapter, Imitation, settings, ChildProcessStub, expectedLoggedErrorLine, TestRunEvent } from './Common';
 
 ///
 
@@ -45,16 +45,8 @@ describe(pathlib.basename(__filename), function () {
     adapter = new TestAdapter();
 
     imitation.spawnStub
-      .withArgs(
-        example1.gtest1.execPath,
-        sinon.match((args: string[]) => {
-          return args[0] === '--gtest_list_tests';
-        }),
-        sinon.match.any,
-      )
-      .callsFake(function () {
-        return new ChildProcessStub(example1.gtest1.gtest_list_tests_output);
-      });
+      .withArgs(example1.gtest1.execPath, sinon.match.some(sinon.match('--gtest_list_tests')), sinon.match.any)
+      .callsFake(() => new ChildProcessStub(example1.gtest1.gtest_list_tests_output));
 
     imitation.fsReadFileSyncStub.withArgs(sinon.match(/.*tmp_gtest_output_.+\.xml\.tmp/), 'utf8').returns('not an xml');
 
@@ -72,13 +64,7 @@ describe(pathlib.basename(__filename), function () {
       await settings.updateConfig('test.executables', example1.gtest1.execPath);
 
       imitation.spawnStub
-        .withArgs(
-          example1.gtest1.execPath,
-          sinon.match((args: string[]) => {
-            return args[0] === '--gtest_list_tests';
-          }),
-          sinon.match.any,
-        )
+        .withArgs(example1.gtest1.execPath, sinon.match.some(sinon.match('--gtest_list_tests')), sinon.match.any)
         .callsFake(function () {
           return new ChildProcessStub(example1.gtest1.gtest_list_tests_output);
         });
@@ -103,145 +89,145 @@ describe(pathlib.basename(__filename), function () {
     specify('run all', async function () {
       this.slow(500);
 
-      const expected = [
+      const expected: TestRunEvent[] = [
         { type: 'started', tests: [adapter.root.id] },
-        { type: 'suite', state: 'running', suite: adapter.get(0) },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 0) },
-        { type: 'test', state: 'running', test: adapter.get(0, 0, 0) },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0) },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0, 0) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 0, 0) },
         {
           type: 'test',
           state: 'passed',
-          test: adapter.get(0, 0, 0),
+          test: adapter.getTest(0, 0, 0),
           description: '(0ms)',
           tooltip: 'Name: TestCas1.test1\n⏱Duration: 0ms',
           decorations: [],
           message: ['[ RUN      ] TestCas1.test1', '[       OK ] TestCas1.test1 (0 ms)'].join(EOL),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 0, 1) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 0, 1) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 0, 1),
+          test: adapter.getTest(0, 0, 1),
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0, 0),
+          suite: adapter.getGroup(0, 0),
         },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 1) },
-        { type: 'test', state: 'running', test: adapter.get(0, 1, 0) },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0, 1) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 1, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 1, 0),
+          test: adapter.getTest(0, 1, 0),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 1, 1) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 1, 1) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 1, 1),
+          test: adapter.getTest(0, 1, 1),
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0, 1),
+          suite: adapter.getGroup(0, 1),
         },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 2) },
-        { type: 'test', state: 'running', test: adapter.get(0, 2, 0) },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0, 2) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 2, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 2, 0),
+          test: adapter.getTest(0, 2, 0),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 2, 1) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 2, 1) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 2, 1),
+          test: adapter.getTest(0, 2, 1),
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0, 2),
+          suite: adapter.getGroup(0, 2),
         },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 3) },
-        { type: 'test', state: 'running', test: adapter.get(0, 3, 0) },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0, 3) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 3, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 3, 0),
+          test: adapter.getTest(0, 3, 0),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 3, 1) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 3, 1) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 3, 1),
+          test: adapter.getTest(0, 3, 1),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 3, 2) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 3, 2) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 3, 2),
+          test: adapter.getTest(0, 3, 2),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 3, 3) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 3, 3) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 3, 3),
+          test: adapter.getTest(0, 3, 3),
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0, 3),
+          suite: adapter.getGroup(0, 3),
         },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 4) },
-        { type: 'test', state: 'running', test: adapter.get(0, 4, 0) },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0, 4) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 4, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 4, 0),
+          test: adapter.getTest(0, 4, 0),
         },
-        { type: 'test', state: 'running', test: adapter.get(0, 4, 1) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 4, 1) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 4, 1),
+          test: adapter.getTest(0, 4, 1),
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0, 4),
+          suite: adapter.getGroup(0, 4),
         },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 5) },
-        { type: 'test', state: 'running', test: adapter.get(0, 5, 0) },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0, 5) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 5, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 5, 0),
+          test: adapter.getTest(0, 5, 0),
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0, 5),
+          suite: adapter.getGroup(0, 5),
         },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 6) },
-        { type: 'test', state: 'running', test: adapter.get(0, 6, 0) },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0, 6) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 6, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 6, 0),
+          test: adapter.getTest(0, 6, 0),
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0, 6),
+          suite: adapter.getGroup(0, 6),
           description: '(0ms)',
           tooltip: 'Name: TestThreeParams/1\n\nTests: 1\n  - failed: 1\n⏱Duration: 0ms',
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0),
+          suite: adapter.getGroup(0),
         },
         { type: 'finished' },
       ];
@@ -254,30 +240,30 @@ describe(pathlib.basename(__filename), function () {
     specify('run first', async function () {
       this.slow(500);
 
-      const expected = [
-        { type: 'started', tests: [adapter.get(0, 0, 0).id] },
-        { type: 'suite', state: 'running', suite: adapter.get(0) },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 0) },
-        { type: 'test', state: 'running', test: adapter.get(0, 0, 0) },
+      const expected: TestRunEvent[] = [
+        { type: 'started', tests: [adapter.getTest(0, 0, 0).id] },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0) },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0, 0) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 0, 0) },
         {
           type: 'test',
           state: 'passed',
-          test: adapter.get(0, 0, 0),
+          test: adapter.getTest(0, 0, 0),
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0, 0),
+          suite: adapter.getGroup(0, 0),
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0),
+          suite: adapter.getGroup(0),
         },
         { type: 'finished' },
       ];
 
-      await adapter.run([adapter.get(0, 0, 0).id]);
+      await adapter.run([adapter.getTest(0, 0, 0).id]);
 
       adapter.testStatesEventsSimplifiedAssertEqual(expected);
     });
@@ -285,30 +271,30 @@ describe(pathlib.basename(__filename), function () {
     specify('run param', async function () {
       this.slow(500);
 
-      const expected = [
-        { type: 'started', tests: [adapter.get(0, 3, 0).id] },
-        { type: 'suite', state: 'running', suite: adapter.get(0) },
-        { type: 'suite', state: 'running', suite: adapter.get(0, 3) },
-        { type: 'test', state: 'running', test: adapter.get(0, 3, 0) },
+      const expected: TestRunEvent[] = [
+        { type: 'started', tests: [adapter.getTest(0, 3, 0).id] },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0) },
+        { type: 'suite', state: 'running', suite: adapter.getGroup(0, 3) },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 3, 0) },
         {
           type: 'test',
           state: 'failed',
-          test: adapter.get(0, 3, 0),
+          test: adapter.getTest(0, 3, 0),
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0, 3),
+          suite: adapter.getGroup(0, 3),
         },
         {
           type: 'suite',
           state: 'completed',
-          suite: adapter.get(0),
+          suite: adapter.getGroup(0),
         },
         { type: 'finished' },
       ];
 
-      await adapter.run([adapter.get(0, 3, 0).id]);
+      await adapter.run([adapter.getTest(0, 3, 0).id]);
 
       adapter.testStatesEventsSimplifiedAssertEqual(expected);
     });

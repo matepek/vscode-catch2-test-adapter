@@ -2343,9 +2343,9 @@ For more detailed usage please see the project docs
 
     for (const suite of this.outputs) {
       for (const scenario of suite[1]) {
-        imitation.spawnStub.withArgs(suite[0], scenario[0], sinon.match.any).callsFake(function () {
-          return new ChildProcessStub(scenario[1]);
-        });
+        imitation.spawnStub
+          .withArgs(suite[0], scenario[0], sinon.match.any)
+          .callsFake(() => new ChildProcessStub(scenario[1]));
       }
 
       imitation.fsAccessStub

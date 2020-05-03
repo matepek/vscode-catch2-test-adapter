@@ -109,8 +109,13 @@ export class Configurations {
     this._getNewOrOldAndMigrate('log.logfile'); // force migrate
   }
 
-  // eslint-disable-next-line
-  private _isDefinedConfig(config: any): boolean {
+  private _isDefinedConfig<T>(config: {
+    key: string;
+    defaultValue?: T;
+    globalValue?: T;
+    workspaceValue?: T;
+    workspaceFolderValue?: T;
+  }): boolean {
     return (
       config !== undefined &&
       (config.globalValue !== undefined ||

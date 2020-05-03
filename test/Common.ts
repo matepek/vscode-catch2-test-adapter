@@ -133,18 +133,18 @@ export class FileSystemWatcherStub implements vscode.FileSystemWatcher {
 export class Imitation {
   public readonly sinonSandbox = sinon.createSandbox();
 
-  public readonly spawnStub = this.sinonSandbox.stub(cp, 'spawn').named('spawnStub'); // eslint-disable-line
+  public readonly spawnStub = this.sinonSandbox.stub(cp, 'spawn').named('spawnStub');
 
   public readonly vsfsWatchStub = this.sinonSandbox
     .stub(vscode.workspace, 'createFileSystemWatcher')
-    .named('vscode.createFileSystemWatcher'); // eslint-disable-line
+    .named('vscode.createFileSystemWatcher');
 
   public readonly fsAccessStub = (this.sinonSandbox.stub(fs, 'access').named('access') as unknown) as sinon.SinonStub<
     [fs.PathLike, string, (err: NodeJS.ErrnoException | null) => void],
     void
-  >; // eslint-disable-line
+  >;
 
-  public readonly fsReadFileSyncStub = this.sinonSandbox.stub(fs, 'readFileSync').named('fsReadFileSync') as any; // eslint-disable-line
+  public readonly fsReadFileSyncStub = this.sinonSandbox.stub(fs, 'readFileSync').named('fsReadFileSync');
 
   public readonly vsFindFilesStub = this.sinonSandbox.stub(vscode.workspace, 'findFiles').named('vsFindFilesStub');
 
@@ -166,8 +166,8 @@ export class Imitation {
   }
 
   public createVscodeRelativePatternMatcher(p: string): sinon.SinonMatcher {
+    const required = new vscode.RelativePattern(settings.workspaceFolder, p);
     return sinon.match((actual: vscode.RelativePattern) => {
-      const required = new vscode.RelativePattern(settings.workspaceFolder, p);
       return required.base == actual.base && required.pattern == actual.pattern;
     });
   }
@@ -282,27 +282,44 @@ export class TestAdapter extends my.TestAdapter {
     return (this as any) /* eslint-disable-line */._rootSuite;
   }
 
-  public get(...index: number[]): TestSuiteInfo | TestInfo {
-    let res: TestSuiteInfo | TestInfo = this.root;
+  public getGroup(...index: number[]): TestSuiteInfo {
+    let group: TestSuiteInfo = this.root;
     for (let i = 0; i < index.length; i++) {
-      assert.strictEqual(res.type, 'suite');
-      assert.ok((res as TestSuiteInfo).children.length > index[i], index[i].toString());
-      res = (res as TestSuiteInfo).children[index[i]];
+      assert.ok(group.children.length > index[i], index[i].toString());
+      const next = group.children[index[i]];
+      if (next.type === 'suite') group = next;
+      else throw Error(`wrong type for ${index}[${i}]`);
     }
-    return res;
+    return group;
+  }
+
+  public getTest(...index: number[]): TestInfo {
+    let group: TestSuiteInfo = this.root;
+    for (let i = 0; i < index.length; i++) {
+      assert.ok(group.children.length > index[i], index[i].toString());
+      const next = group.children[index[i]];
+      if (i + 1 === index.length) {
+        if (next.type === 'test') return next;
+        else throw Error(`wrong type for ${index}[${i}]`);
+      } else {
+        if (next.type === 'suite') group = next;
+        else throw Error(`wrong type for ${index}[${i}]`);
+      }
+    }
+    throw Error(`coudn't find test ${index}`);
   }
 
   public get suite1(): TestSuiteInfo {
-    return this.get(0) as TestSuiteInfo;
+    return this.getGroup(0);
   }
   public get suite2(): TestSuiteInfo {
-    return this.get(1) as TestSuiteInfo;
+    return this.getGroup(1);
   }
   public get suite3(): TestSuiteInfo {
-    return this.get(2) as TestSuiteInfo;
+    return this.getGroup(2);
   }
   public get suite4(): TestSuiteInfo {
-    return this.get(3) as TestSuiteInfo;
+    return this.getGroup(3);
   }
 
   public get testStatesEvents(): TestRunEvent[] {
@@ -313,7 +330,7 @@ export class TestAdapter extends my.TestAdapter {
     });
   }
 
-  public testStatesEventsAssertDeepEqual(expected: object[]): void {
+  public testStatesEventsAssertDeepEqual(expected: TestRunEvent[]): void {
     if (this._testStatesEvents.length != expected.length)
       console.log(
         `this._testStatesEvents.length(${this._testStatesEvents.length}) != expected.length(${expected.length})`,
@@ -326,8 +343,7 @@ export class TestAdapter extends my.TestAdapter {
     }
   }
 
-  //eslint-disable-next-line
-  public testStatesEventsSimplifiedAssertEqual(expected: any[]): void {
+  public testStatesEventsSimplifiedAssertEqual(expected: TestRunEvent[]): void {
     if (this._testStatesEvents.length != expected.length)
       console.log(
         `this._testStatesEvents.length(${this._testStatesEvents.length}) != expected.length(${expected.length})`,
