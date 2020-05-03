@@ -42,7 +42,7 @@ describe(path.basename(__filename), function () {
 
   specify('test list error: duplicated test name', async function () {
     this.slow(500);
-    await settings.updateConfig('test.executable', example1.suite1.execPath);
+    await settings.updateConfig('test.executables', example1.suite1.execPath);
 
     adapter = new TestAdapter();
 
@@ -85,7 +85,7 @@ describe(path.basename(__filename), function () {
 
   specify('custom1 test case list', async function () {
     this.slow(500);
-    await settings.updateConfig('test.executable', example1.suite1.execPath);
+    await settings.updateConfig('test.executables', example1.suite1.execPath);
 
     adapter = new TestAdapter();
 
@@ -123,7 +123,7 @@ describe(path.basename(__filename), function () {
 
   specify('custom2 test case list', async function () {
     this.slow(500);
-    await settings.updateConfig('test.executable', example1.suite1.execPath);
+    await settings.updateConfig('test.executables', example1.suite1.execPath);
 
     adapter = new TestAdapter();
 
@@ -156,7 +156,7 @@ describe(path.basename(__filename), function () {
 
   specify('custom3 test case list: extra lines before and after', async function () {
     this.slow(500);
-    await settings.updateConfig('test.executable', example1.suite1.execPath);
+    await settings.updateConfig('test.executables', example1.suite1.execPath);
 
     adapter = new TestAdapter();
 
@@ -192,7 +192,7 @@ describe(path.basename(__filename), function () {
 
   specify('too long filename', async function () {
     this.slow(500);
-    await settings.updateConfig('test.executable', example1.suite1.execPath);
+    await settings.updateConfig('test.executables', example1.suite1.execPath);
 
     adapter = new TestAdapter();
 

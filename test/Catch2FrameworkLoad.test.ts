@@ -92,12 +92,12 @@ describe(path.basename(__filename), function () {
 
   context('executables="execPath1.exe"', function () {
     beforeEach(function () {
-      return settings.updateConfig('test.executable', 'execPath1.exe');
+      return settings.updateConfig('test.executables', 'execPath1.exe');
     });
 
     async function loadAdapterAndAssert(): Promise<void> {
       await loadAdapter();
-      assert.deepStrictEqual(settings.getConfig().get<string>('test.executable'), 'execPath1.exe');
+      assert.deepStrictEqual(settings.getConfig().get<string>('test.executables'), 'execPath1.exe');
       assert.equal(root.children.length, 1);
 
       suite1 = adapter.suite1;
@@ -124,7 +124,7 @@ describe(path.basename(__filename), function () {
 
     it('should run s1t1 with success', async function () {
       await loadAdapterAndAssert();
-      assert.deepStrictEqual(settings.getConfig().get<string>('test.executable'), 'execPath1.exe');
+      assert.deepStrictEqual(settings.getConfig().get<string>('test.executables'), 'execPath1.exe');
       await adapter.run([s1t1.id]);
       const expected = [
         { type: 'started', tests: [s1t1.id] },
@@ -388,7 +388,7 @@ describe(path.basename(__filename), function () {
     }
 
     beforeEach(function () {
-      return settings.updateConfig('test.executables', ['execPath1.exe', 'execPath2.exe']);
+      return settings.updateConfig('test.advancedExecutables', ['execPath1.exe', 'execPath2.exe']);
     });
 
     it('test variables are fine, suite1 and suite1 are loaded', async function () {
@@ -1654,7 +1654,7 @@ describe(path.basename(__filename), function () {
 
   context('executables=[{<regex>}] and env={...}', function () {
     beforeEach(async function () {
-      await settings.updateConfig('test.executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         {
           name: '${baseFilename}',
           pattern: 'execPath{1,2}',
@@ -1752,7 +1752,7 @@ describe(path.basename(__filename), function () {
   // TODO: not so bad test but need time to calibrate
   context.skip('executables=["execPath1.exe", "execPath2.exe", "execPath3.exe"]', async function () {
     beforeEach(function () {
-      return settings.updateConfig('test.executables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);
+      return settings.updateConfig('test.advancedExecutables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);
     });
 
     it('run suite3 one-by-one', async function () {
@@ -1844,7 +1844,7 @@ describe(path.basename(__filename), function () {
         '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "copper.debug.configTemplate".',
       );
 
-      await settings.updateConfig('test.executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         {
           name: 'X${baseFilename}',
           pattern: 'execPath1.exe',

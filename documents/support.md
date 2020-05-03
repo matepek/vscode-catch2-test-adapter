@@ -51,7 +51,7 @@ For solving issues use: check [support](#Support).
 > > You can try this:
 > >
 > > ```
-> > "copper.test.executables": [
+> > "copper.test.advancedExecutables": [
 > >   {
 > >     "pattern": "build/**/test*.exe",
 > >     "cwd": "${relDirpath[1:]}/resources"

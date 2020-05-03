@@ -102,7 +102,7 @@ describe(path.basename(__filename), function () {
 
       this.timeout(8000);
       this.slow(2000);
-      await settings.updateConfig('test.executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         {
           name: '${baseFilename}',
           pattern: 'tmp/*suite[0-9].exe',
@@ -157,7 +157,7 @@ describe(path.basename(__filename), function () {
       this.timeout(8000);
       this.slow(4000);
 
-      await settings.updateConfig('test.executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         {
           name: '${baseFilename}',
           pattern: 'tmp/suite[0-9].exe',
@@ -222,7 +222,7 @@ describe(path.basename(__filename), function () {
 
       this.timeout(8000);
       this.slow(2000);
-      await settings.updateConfig('test.executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         {
           name: '${baseFilename}',
           pattern: 'tmp/gtest[0-9].exe',
@@ -252,7 +252,7 @@ describe(path.basename(__filename), function () {
 
       this.timeout(8000);
       this.slow(2000);
-      await settings.updateConfig('test.executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         {
           name: '${baseFilename}',
           pattern: 'tmp/doctest[0-9].exe',

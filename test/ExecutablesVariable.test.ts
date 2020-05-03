@@ -58,7 +58,7 @@ describe(path.basename(__filename), function () {
     });
 
     specify('../a/first', async function () {
-      await settings.updateConfig('test.executable', '../a/first');
+      await settings.updateConfig('test.executables', '../a/first');
       const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('first'));
       const count = withArgs.callCount;
       await adapter.load();
@@ -67,7 +67,7 @@ describe(path.basename(__filename), function () {
 
     specify('../<workspaceFolder>/second', async function () {
       await settings.updateConfig(
-        'test.executable',
+        'test.executables',
         '../' + path.basename(settings.workspaceFolderUri.fsPath) + '/second',
       );
       const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('second'));
@@ -77,7 +77,7 @@ describe(path.basename(__filename), function () {
     });
 
     specify('./third', async function () {
-      await settings.updateConfig('test.executable', './third');
+      await settings.updateConfig('test.executables', './third');
       const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('third'));
       const count = withArgs.callCount;
       await adapter.load();
@@ -85,7 +85,7 @@ describe(path.basename(__filename), function () {
     });
 
     specify('./a/b/../../fourth', async function () {
-      await settings.updateConfig('test.executable', './a/b/../../fourth');
+      await settings.updateConfig('test.executables', './a/b/../../fourth');
       const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('fourth'));
       const count = withArgs.callCount;
       await adapter.load();
@@ -93,7 +93,7 @@ describe(path.basename(__filename), function () {
     });
 
     specify('cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*', async function () {
-      await settings.updateConfig('test.executable', 'cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*');
+      await settings.updateConfig('test.executables', 'cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*');
       const withArgs = imitation.vsFindFilesStub.withArgs(
         imitation.createVscodeRelativePatternMatcher('cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*'),
       );
@@ -105,7 +105,7 @@ describe(path.basename(__filename), function () {
 
   specify('resolving relative defaultCwd', async function () {
     this.slow(1000);
-    await settings.updateConfig('test.executable', example1.suite1.execPath);
+    await settings.updateConfig('test.executables', example1.suite1.execPath);
     await settings.updateConfig('test.workingDirectory', 'defaultCwdStr');
 
     adapter = new TestAdapter();
@@ -131,7 +131,7 @@ describe(path.basename(__filename), function () {
 
   specify('resolving absolute defaultCwd', async function () {
     this.slow(500);
-    await settings.updateConfig('test.executable', example1.suite1.execPath);
+    await settings.updateConfig('test.executables', example1.suite1.execPath);
 
     if (isWin) await settings.updateConfig('test.workingDirectory', 'C:\\defaultCwdStr');
     else await settings.updateConfig('test.workingDirectory', '/defaultCwdStr');
@@ -162,7 +162,7 @@ describe(path.basename(__filename), function () {
 
   specify('load executables=<full path of execPath1>', async function () {
     this.slow(500);
-    await settings.updateConfig('test.executable', example1.suite1.execPath);
+    await settings.updateConfig('test.executables', example1.suite1.execPath);
     adapter = new TestAdapter();
 
     await adapter.load();
@@ -171,7 +171,7 @@ describe(path.basename(__filename), function () {
 
   specify('load executables=["execPath1.exe", "./execPath2.exe"] with error', async function () {
     this.slow(500);
-    await settings.updateConfig('test.executables', ['execPath1.exe', './execPath2.exe']);
+    await settings.updateConfig('test.advancedExecutables', ['execPath1.exe', './execPath2.exe']);
     adapter = new TestAdapter();
 
     const withArgs = imitation.spawnStub.withArgs(
@@ -210,7 +210,7 @@ describe(path.basename(__filename), function () {
       .withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
       .resolves([vscode.Uri.file(execPath2CopyPath)]);
 
-    await settings.updateConfig('test.executables', ['execPath1.exe', 'execPath2Copy.exe']);
+    await settings.updateConfig('test.advancedExecutables', ['execPath1.exe', 'execPath2Copy.exe']);
     adapter = new TestAdapter();
 
     await adapter.load();
@@ -271,7 +271,7 @@ describe(path.basename(__filename), function () {
       .withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
       .resolves([vscode.Uri.file(execPath2CopyPath)]);
 
-    await settings.updateConfig('test.executables', ['execPath1.exe', 'execPath2Copy.exe']);
+    await settings.updateConfig('test.advancedExecutables', ['execPath1.exe', 'execPath2Copy.exe']);
     adapter = new TestAdapter();
 
     await adapter.load();
@@ -300,7 +300,7 @@ describe(path.basename(__filename), function () {
     expectedLoggedErrorLine('[Error: pattern property is required.');
 
     this.slow(5000);
-    await settings.updateConfig('test.executables', [{ name: '' }]);
+    await settings.updateConfig('test.advancedExecutables', [{ name: '' }]);
 
     adapter = new TestAdapter();
 
@@ -354,7 +354,7 @@ describe(path.basename(__filename), function () {
         env: { C2TESTVARS: envsStr },
       },
     ];
-    await settings.updateConfig('test.executables', executables);
+    await settings.updateConfig('test.advancedExecutables', executables);
 
     for (const scenario of example1.suite2.outputs) {
       imitation.spawnStub.withArgs(execAbsPath, scenario[0], sinon.match.any).callsFake(function () {
@@ -411,7 +411,7 @@ describe(path.basename(__filename), function () {
   context('from different pattern', function () {
     specify('duplicated suite names', async function () {
       this.slow(500);
-      await settings.updateConfig('test.executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         { name: 'dup', pattern: example1.suite1.execPath },
         { name: 'dup', pattern: example1.suite2.execPath },
       ]);
@@ -431,7 +431,7 @@ describe(path.basename(__filename), function () {
 
     specify('duplicated suite names with different desciption', async function () {
       this.slow(500);
-      await settings.updateConfig('test.executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         { name: 'dup', description: 'a', pattern: example1.suite1.execPath },
         { name: 'dup', description: 'b', pattern: example1.suite2.execPath },
       ]);
@@ -457,7 +457,7 @@ describe(path.basename(__filename), function () {
 
     specify('duplicated executable', async function () {
       this.slow(500);
-      await settings.updateConfig('test.executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         { name: 'name1 ${relPath}', pattern: 'dummy1' },
         { name: 'name2', pattern: 'dummy2' },
       ]);
@@ -489,7 +489,7 @@ describe(path.basename(__filename), function () {
   context('from same pattern', function () {
     specify('duplicated suite names', async function () {
       this.slow(500);
-      await settings.updateConfig('test.executables', [{ name: 'dup', pattern: 'dummy' }]);
+      await settings.updateConfig('test.advancedExecutables', [{ name: 'dup', pattern: 'dummy' }]);
 
       imitation.vsFindFilesStub
         .withArgs(imitation.createVscodeRelativePatternMatcher('dummy'))
@@ -510,7 +510,9 @@ describe(path.basename(__filename), function () {
 
     specify('duplicated suite names but different description', async function () {
       this.slow(500);
-      await settings.updateConfig('test.executables', [{ name: 'dup', description: '${absPath}', pattern: 'dummy' }]);
+      await settings.updateConfig('test.advancedExecutables', [
+        { name: 'dup', description: '${absPath}', pattern: 'dummy' },
+      ]);
 
       imitation.vsFindFilesStub
         .withArgs(imitation.createVscodeRelativePatternMatcher('dummy'))
@@ -539,7 +541,7 @@ describe(path.basename(__filename), function () {
   context('from different and same pattern', function () {
     specify('duplicated suite names', async function () {
       this.slow(500);
-      await settings.updateConfig('test.executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         { name: 'dup', pattern: 'dummy' },
         { name: 'dup', pattern: example1.suite3.execPath },
       ]);

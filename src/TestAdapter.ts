@@ -246,7 +246,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           const affectsAny = (...config: Config[]): boolean =>
             config.some(c => changeEvent.affectsConfiguration(c, this.workspaceFolder.uri));
 
-          if (affectsAny('test.workingDirectory', 'test.executables', 'test.executable')) {
+          if (affectsAny('test.workingDirectory', 'test.advancedExecutables', 'test.executables')) {
             this.load();
           }
           if (affectsAny('test.randomGeneratorSeed')) {

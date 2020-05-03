@@ -11,7 +11,7 @@ type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' |
 const ConfigSection = 'copper';
 
 type MigratableConfig =
-  | 'test.executables'
+  | 'test.advancedExecutables'
   | 'test.workingDirectory'
   | 'test.randomGeneratorSeed'
   | 'test.runtimeLimit'
@@ -30,7 +30,7 @@ type MigratableConfig =
   | 'gtest.treatGmockWarningAs'
   | 'gtest.gmockVerbose';
 
-export type Config = 'test.executable' | MigratableConfig;
+export type Config = 'test.executables' | MigratableConfig;
 
 type OldConfig =
   | 'executables'
@@ -53,7 +53,7 @@ type OldConfig =
   | 'googletest.gmockVerbose';
 
 const MigrationV1V2NamePairs: { [key in MigratableConfig]: OldConfig } = {
-  'test.executables': 'executables',
+  'test.advancedExecutables': 'executables',
   'test.workingDirectory': 'defaultCwd',
   'test.randomGeneratorSeed': 'defaultRngSeed',
   'test.runtimeLimit': 'defaultRunningTimeoutSec',
@@ -405,8 +405,8 @@ export class Configurations {
         if (oldVal === undefined) return;
 
         const update = async (simpleVal: string | undefined, val: ExecutableObj[] | undefined): Promise<void> => {
-          const newNameSimple: Config = 'test.executable';
-          const newName: Config = 'test.executables';
+          const newNameSimple: Config = 'test.executables';
+          const newName: Config = 'test.advancedExecutables';
           await this._new.update(newNameSimple, simpleVal, target).then(undefined, e => this._log.exceptionS(e));
           await this._new.update(newName, val, target).then(undefined, e => this._log.exceptionS(e));
           this._old.update(MigrationV1V2NamePairs[newName], undefined, target);
@@ -431,10 +431,16 @@ export class Configurations {
           }
           if (newVals.length === 0) {
             await update('', undefined);
-          } else if (newVals.length === 1 && Object.keys(newVals).length === 1 && newVals[0].pattern !== undefined) {
+          } else if (newVals.length === 1 && Object.keys(newVals[0]).length === 1 && newVals[0].pattern !== undefined) {
             await update(newVals[0].pattern, undefined);
           } else {
             await update(undefined, newVals);
+          }
+        } else if (typeof oldVal === 'object') {
+          if (Object.keys(oldVal).length === 1 && oldVal.pattern !== undefined) {
+            await update(oldVal.pattern, undefined);
+          } else {
+            await update(undefined, [oldVal as ExecutableObj]);
           }
         } else {
           this._log.errorS('unhandled config case', oldVal, target);
@@ -466,12 +472,12 @@ export class Configurations {
       );
     };
 
-    const configExecs = this._new.get<ExecutableObj[]>('test.executables');
+    const configExecs = this._new.get<ExecutableObj[]>('test.advancedExecutables');
 
     if (configExecs === undefined || (Array.isArray(configExecs) && configExecs.length === 0)) {
-      this._log.info('`test.executables` is not defined. trying to use `test.executable`');
+      this._log.info('`test.advancedExecutables` is not defined. trying to use `test.executables`');
 
-      const simpleConfig: string | undefined = this._new.get<string>('test.executable');
+      const simpleConfig: string | undefined = this._new.get<string>('test.executables');
 
       if (simpleConfig === undefined) {
         return [createExecutableConfigFromPattern('{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*')];
@@ -483,9 +489,9 @@ export class Configurations {
           return [createExecutableConfigFromPattern(simpleConfig)];
         }
       } else {
-        this._log.warn('test.executable should be an string or undefined', simpleConfig);
+        this._log.warn('test.executables should be an string or undefined', simpleConfig);
         throw Error(
-          "`test.executable` couldn't be recognised. It should be a string. For fine-tuning use `test.executables`.",
+          "`test.executables` couldn't be recognised. It should be a string. For fine-tuning use `test.advancedExecutables`.",
         );
       }
     } else if (Array.isArray(configExecs)) {
@@ -575,8 +581,8 @@ export class Configurations {
 
       return executables;
     } else {
-      this._log.warn('test.executables should be an array or undefined', configExecs);
-      throw Error("`test.executables` couldn't be recognised");
+      this._log.warn('test.advancedExecutables should be an array or undefined', configExecs);
+      throw Error("`test.advancedExecutables` couldn't be recognised");
     }
   }
 }

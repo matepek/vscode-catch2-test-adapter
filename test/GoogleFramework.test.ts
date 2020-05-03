@@ -40,7 +40,7 @@ describe(pathlib.basename(__filename), function () {
     expectedLoggedErrorLine('[ERROR] Error: Google Test version not found');
 
     this.slow(500);
-    await settings.updateConfig('test.executable', example1.gtest1.execPath);
+    await settings.updateConfig('test.executables', example1.gtest1.execPath);
 
     adapter = new TestAdapter();
 
@@ -69,7 +69,7 @@ describe(pathlib.basename(__filename), function () {
     let adapter: TestAdapter;
 
     beforeEach(async function () {
-      await settings.updateConfig('test.executable', example1.gtest1.execPath);
+      await settings.updateConfig('test.executables', example1.gtest1.execPath);
 
       imitation.spawnStub
         .withArgs(
@@ -316,7 +316,7 @@ describe(pathlib.basename(__filename), function () {
 
   specify.skip('custom1 test case list', async function () {
     this.slow(500);
-    await settings.updateConfig('test.executable', example1.gtest1.execPath);
+    await settings.updateConfig('test.executables', example1.gtest1.execPath);
 
     adapter = new TestAdapter();
 

@@ -1,7 +1,7 @@
-# Executables
+# Advanced Executables
 
 ```
-copper.executables
+copper.test.advancedExecutables
 ```
 
 [[Jump to README.md](../../README)]
@@ -10,7 +10,7 @@ The location of your test executables (relative to the workspace folder or absol
 
 he extension is \*_pre-configured_ and it should find executables inside the working directory which match the following [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options):
 
-`"copper.test.executables": [ "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*" ]`
+`"copper.test.advancedExecutables": [ "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*" ]`
 
 This basically means executables inside the `build` and `out` directories (recursive `/**/`) which contain the `test` word in their name (including extensions).
 
@@ -21,7 +21,7 @@ See vscode's [documentation](https://code.visualstudio.com/docs/editor/codebasic
 The first example (`.vscode/settings.json` or hit _Ctr/Cmd + ,_):
 
 ```json
-"copper.test.executables": [
+"copper.test.advancedExecutables": [
   {
     "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
     "cwd": "${absDirpath}",
@@ -42,18 +42,18 @@ This variable can be
 
 If it is an object it can contains the following properties:
 
-| Property               | Description                                                                                                                                                                                                                                                                                                                                                                                           |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                 | The name of the test suite (file). Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)                                                                                                                                                                                               |
-| `pattern`              | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)                                                                  |
-| `description`          | A less prominent text after the `name`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)                                                                                                                                                                                          |
-| `cwd`                  | The current working directory for the test executable. If it isn't provided and `test.workingDirectory` does then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)                                                                                             |
-| `env`                  | Environment variables for the test executable. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)                                                                                              |
-| `dependsOn`            | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md) |
-| `parallelizationLimit` | (Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `copper.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)                                                                                                           |
-| `catch2`               | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md#framework-specific-settings)                                                                                                                                                                                                          |
-| `gtest`                | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md#framework-specific-settings)                                                                                                                                                                                                          |
-| `doctest`              | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md#framework-specific-settings)                                                                                                                                                                                                          |
+| Property               | Description                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | The name of the test suite (file). Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                                                                                                                               |
+| `pattern`              | A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\`; ✅`/`; (required) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                  |
+| `description`          | A less prominent text after the `name`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                                                                                                                          |
+| `cwd`                  | The current working directory for the test executable. If it isn't provided and `test.workingDirectory` does then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                             |
+| `env`                  | Environment variables for the test executable. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                              |
+| `dependsOn`            | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) |
+| `parallelizationLimit` | (Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `copper.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                                           |
+| `catch2`               | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
+| `gtest`                | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
+| `doctest`              | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
 
 The `pattern` (or the `executables` used as string or an array of strings)
 can contain [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
@@ -123,13 +123,13 @@ One can fine-tune framework related behaviour.
 
 [testgrouping]: #testgrouping
 
-| Property                      | Description                                                                                                                                                                                                                                                                                             |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `helpRegex`                   | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)             |
-| `prependTestRunningArgs`      | Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)                           |
-| `prependTestListingArgs`      | Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)                           |
-| `ignoreTestEnumerationStdErr` | If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md) |
-| [testGrouping]                | Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md#testgrouping)                                                                                                                            |
+| Property                      | Description                                                                                                                                                                                                                                                                                                     |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `helpRegex`                   | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)             |
+| `prependTestRunningArgs`      | Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                           |
+| `prependTestListingArgs`      | Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                           |
+| `ignoreTestEnumerationStdErr` | If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) |
+| [testGrouping]                | Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                            |
 
 If the regex is too general it will mach all the executables❗️
 One should avoid that❗️
@@ -139,11 +139,11 @@ One should avoid that❗️
 ## Examples:
 
 ```json
-"copper.test.executables": ["dir/test1.exe", "dir/test2.exe"]
+"copper.test.advancedExecutables": ["dir/test1.exe", "dir/test2.exe"]
 ```
 
 ```json
-"copper.test.executables": {
+"copper.test.advancedExecutables": {
   "name": "${filename}",
   "description": "${relDirpath}/",
   "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
@@ -156,7 +156,7 @@ One should avoid that❗️
 ```
 
 ```json
-"copper.test.executables": [
+"copper.test.advancedExecutables": [
   {
     "name": "Test1 suite",
     "pattern": "dir/test.exe"
@@ -179,7 +179,7 @@ It is undocumented. Contact me by opening an issue or read the code a bit.
 
 ```
 {
-  "copper.test.executables": [
+  "copper.test.advancedExecutables": [
     {
       "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
       "catch2":  { "testGrouping": { ... } },
@@ -190,13 +190,13 @@ It is undocumented. Contact me by opening an issue or read the code a bit.
 }
 ```
 
-| Property              | Description                                                                                                                                                                                                                                                                                                                                                                                |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `groupByExecutable`   | Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md#testgrouping)                                                                                                                                                                                                                  |
-| `groupBySource`       | It sorts the tests by the related source file group. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md#testgrouping)                                                                                                                                                        |
-| `groupByTags`         | True to group by every exiting combination of the tags. (`{$tag}`) Or it can be an array of tags: `["[tag1]["tag2"]", "tag2", "tag3"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md#testgrouping)                                                                                                                |
-| `groupByRegex`        | Groups tests by the first match group of the first matching regex. (`${match}`) Example: `["(?:good|bad) (apple|peach)"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md#testgrouping) |
-| `groupUngroupablesTo` | If a test is not groupable it will be grouped by the given name. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md#testgrouping)                                                                                                                                                                                      |
+| Property              | Description                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `groupByExecutable`   | Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                                                                                                                  |
+| `groupBySource`       | It sorts the tests by the related source file group. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                                                        |
+| `groupByTags`         | True to group by every exiting combination of the tags. (`{$tag}`) Or it can be an array of tags: `["[tag1]["tag2"]", "tag2", "tag3"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                |
+| `groupByRegex`        | Groups tests by the first match group of the first matching regex. (`${match}`) Example: `["(?:good|bad) (apple|peach)"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping) |
+| `groupUngroupablesTo` | If a test is not groupable it will be grouped by the given name. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                                                                                      |
 
 ### TestGrouping examples
 
@@ -204,7 +204,7 @@ Note: This example overused it.
 
 ```
 {
-  "copper.test.executables": [
+  "copper.test.advancedExecutables": [
     {
       "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
       "catch2": {
@@ -256,7 +256,7 @@ Note: This example overused it.
 ```
 
 ```
-"copper.test.executables": [
+"copper.test.advancedExecutables": [
   {
     "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
     "catch2": {
