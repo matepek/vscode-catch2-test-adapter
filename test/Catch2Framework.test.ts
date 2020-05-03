@@ -65,7 +65,7 @@ describe(path.basename(__filename), function () {
 
     assert.equal(adapter.root.children.length, 1);
 
-    const suite1 = adapter.suite1;
+    const suite1 = adapter.group1;
     assert.equal(suite1.children.length, 1, inspect([testListErrOutput, adapter.testLoadsEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
@@ -113,7 +113,7 @@ describe(path.basename(__filename), function () {
 
     assert.equal(adapter.root.children.length, 1);
 
-    const suite1 = adapter.suite1;
+    const suite1 = adapter.group1;
     assert.equal(suite1.children.length, 2, inspect([testListOutput, adapter.testLoadsEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
@@ -147,7 +147,7 @@ describe(path.basename(__filename), function () {
 
     assert.equal(adapter.root.children.length, 1);
 
-    const suite1 = adapter.suite1;
+    const suite1 = adapter.group1;
     assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
@@ -183,7 +183,7 @@ describe(path.basename(__filename), function () {
 
     assert.equal(adapter.root.children.length, 1);
 
-    const suite1 = adapter.suite1;
+    const suite1 = adapter.group1;
     assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
@@ -234,7 +234,7 @@ describe(path.basename(__filename), function () {
 
     assert.equal(adapter.root.children.length, 1);
 
-    const suite1 = adapter.suite1;
+    const suite1 = adapter.group1;
     assert.strictEqual(suite1.label, 'execPath1.exe');
     assert.equal(suite1.children.length, 5, inspect([testListOutput, adapter.testLoadsEvents]));
   });

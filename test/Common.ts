@@ -309,23 +309,23 @@ export class TestAdapter extends my.TestAdapter {
     throw Error(`coudn't find test ${index}`);
   }
 
-  public get suite1(): TestSuiteInfo {
+  public get group1(): TestSuiteInfo {
     return this.getGroup(0);
   }
-  public get suite2(): TestSuiteInfo {
+  public get group2(): TestSuiteInfo {
     return this.getGroup(1);
   }
-  public get suite3(): TestSuiteInfo {
+  public get group3(): TestSuiteInfo {
     return this.getGroup(2);
   }
-  public get suite4(): TestSuiteInfo {
+  public get group4(): TestSuiteInfo {
     return this.getGroup(3);
   }
 
   public get testStatesEvents(): TestRunEvent[] {
-    // eslint-disable-next-line
-    return this._testStatesEvents.map((v: any) => {
-      if (v.tooltip) v.tooltip = (v.tooltip as string).replace(/(Path|Cwd): .*/g, '$1: <masked>');
+    return this._testStatesEvents.map((v: TestRunEvent) => {
+      if (v.type === 'test' && v.tooltip)
+        return Object.assign(v, { tooltip: v.tooltip.replace(/(Path|Cwd): .*/g, '$1: <masked>') });
       return v;
     });
   }

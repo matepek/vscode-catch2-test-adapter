@@ -54,7 +54,7 @@ describe(pathlib.basename(__filename), function () {
 
     assert.equal(adapter.testLoadsEvents.length, 2);
     assert.equal(adapter.root.children.length, 1);
-    assert.equal(adapter.suite1.children.length, 7);
+    assert.equal(adapter.group1.children.length, 7);
   });
 
   describe('load gtest1', function () {
@@ -79,7 +79,7 @@ describe(pathlib.basename(__filename), function () {
 
       assert.equal(adapter.testLoadsEvents.length, 2);
       assert.equal(adapter.root.children.length, 1);
-      assert.equal(adapter.suite1.children.length, 7);
+      assert.equal(adapter.group1.children.length, 7);
     });
 
     afterEach(function () {
@@ -319,7 +319,7 @@ describe(pathlib.basename(__filename), function () {
 
     assert.equal(adapter.root.children.length, 1);
 
-    const suite1 = adapter.suite1;
+    const suite1 = adapter.group1;
     assert.equal(suite1.children.length, 1);
 
     assert.strictEqual(suite1.label, 'execPath1.exe');

@@ -69,7 +69,8 @@ function _mapAllStrings<T>(value: T, mapperFunc: (s: string) => any): T {
 export type ResolveRulePair<R = string> = [string | RegExp, R | (() => R) | ((m: RegExpMatchArray) => R)];
 
 export function resolveVariables<T, R = string>(value: T, varValue: readonly ResolveRulePair<R>[]): T {
-  return _mapAllStrings(value, (s: string): string | R => {
+  // eslint-disable-next-line
+  return _mapAllStrings(value, (s: string): any => {
     for (let i = 0; i < varValue.length; ++i) {
       const [resolve, rule] = varValue[i];
       if (typeof rule === 'string') {
