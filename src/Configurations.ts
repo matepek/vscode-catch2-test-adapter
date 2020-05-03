@@ -447,9 +447,10 @@ export class Configurations {
         }
       };
 
-      await migrate(oldVals.globalValue, vscode.ConfigurationTarget.Global);
-      await migrate(oldVals.workspaceValue, vscode.ConfigurationTarget.Workspace);
-      await migrate(oldVals.workspaceFolderValue, vscode.ConfigurationTarget.WorkspaceFolder);
+      // we dont have to wait for the result another change will be triggered
+      migrate(oldVals.globalValue, vscode.ConfigurationTarget.Global);
+      migrate(oldVals.workspaceValue, vscode.ConfigurationTarget.Workspace);
+      migrate(oldVals.workspaceFolderValue, vscode.ConfigurationTarget.WorkspaceFolder);
     }
 
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
@@ -472,32 +473,48 @@ export class Configurations {
       );
     };
 
-    const configExecs = this._new.get<ExecutableObj[]>('test.advancedExecutables');
+    const [advanced, simple] = ((): [ExecutableObj[] | undefined, string | undefined] => {
+      const advanced = this._new.inspect<ExecutableObj[]>('test.advancedExecutables');
+      const simple = this._new.inspect<string>('test.executables');
 
-    if (configExecs === undefined || (Array.isArray(configExecs) && configExecs.length === 0)) {
+      if (advanced === undefined || simple === undefined) {
+        this._log.errorS('advanced === undefined || simple === undefined', advanced, simple);
+        throw Error('Assertion. Please file an issue.');
+      }
+
+      if (advanced.workspaceFolderValue !== undefined || simple.workspaceFolderValue !== undefined)
+        return [advanced.workspaceFolderValue, simple.workspaceFolderValue];
+      if (advanced.workspaceValue !== undefined || simple.workspaceValue !== undefined)
+        return [advanced.workspaceValue, simple.workspaceValue];
+      if (advanced.globalValue !== undefined || simple.globalValue !== undefined)
+        return [advanced.globalValue, simple.globalValue];
+      if (advanced.defaultValue !== undefined || simple.defaultValue !== undefined)
+        return [advanced.defaultValue, simple.defaultValue];
+      else return [undefined, undefined];
+    })();
+
+    if (advanced === undefined || (Array.isArray(advanced) && advanced.length === 0)) {
       this._log.info('`test.advancedExecutables` is not defined. trying to use `test.executables`');
 
-      const simpleConfig: string | undefined = this._new.get<string>('test.executables');
-
-      if (simpleConfig === undefined) {
+      if (simple === undefined) {
         return [createExecutableConfigFromPattern('{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*')];
-      } else if (typeof simpleConfig === 'string') {
-        if (simpleConfig.length === 0) {
+      } else if (typeof simple === 'string') {
+        if (simple.length === 0) {
           // disabled
           return [];
         } else {
-          return [createExecutableConfigFromPattern(simpleConfig)];
+          return [createExecutableConfigFromPattern(simple)];
         }
       } else {
-        this._log.warn('test.executables should be an string or undefined', simpleConfig);
+        this._log.warn('test.executables should be an string or undefined', simple);
         throw Error(
           "`test.executables` couldn't be recognised. It should be a string. For fine-tuning use `test.advancedExecutables`.",
         );
       }
-    } else if (Array.isArray(configExecs)) {
+    } else if (Array.isArray(advanced)) {
       const executables: ExecutableConfig[] = [];
 
-      this._log.setContext('executables', { executables: configExecs });
+      this._log.setContext('executables', { executables: advanced });
 
       const createExecutableConfigFromObj = (obj: ExecutableObj): ExecutableConfig => {
         const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
@@ -571,7 +588,7 @@ export class Configurations {
         );
       };
 
-      for (const conf of configExecs) {
+      for (const conf of advanced) {
         if (typeof conf === 'string') {
           executables.push(createExecutableConfigFromPattern(conf));
         } else {
@@ -581,7 +598,7 @@ export class Configurations {
 
       return executables;
     } else {
-      this._log.warn('test.advancedExecutables should be an array or undefined', configExecs);
+      this._log.warn('test.advancedExecutables should be an array or undefined', advanced);
       throw Error("`test.advancedExecutables` couldn't be recognised");
     }
   }
