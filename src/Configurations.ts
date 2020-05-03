@@ -548,23 +548,20 @@ export class Configurations {
 
         const testGrouping = obj.testGrouping ? obj.testGrouping : undefined;
 
-        // eslint-disable-next-line
-        const framework = (obj: any): ExecutableConfigFrameworkSpecific => {
+        const framework = (obj?: ExecutableConfigFrameworkSpecific): ExecutableConfigFrameworkSpecific => {
           const r: ExecutableConfigFrameworkSpecific = {};
           if (typeof obj === 'object') {
             if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
 
             if (
               Array.isArray(obj.prependTestRunningArgs) &&
-              // eslint-disable-next-line
-              (obj.prependTestRunningArgs as any[]).every(x => typeof x === 'string')
+              obj.prependTestRunningArgs.every(x => typeof x === 'string')
             )
               r.prependTestRunningArgs = obj.prependTestRunningArgs;
 
             if (
               Array.isArray(obj.prependTestListingArgs) &&
-              // eslint-disable-next-line
-              (obj.prependTestListingArgs as any[]).every(x => typeof x === 'string')
+              obj.prependTestListingArgs.every(x => typeof x === 'string')
             )
               r.prependTestListingArgs = obj.prependTestListingArgs;
 

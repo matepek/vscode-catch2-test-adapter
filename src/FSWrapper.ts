@@ -28,8 +28,7 @@ export function spawnAsync(
     };
 
     const command = cp.spawn(cmd, args || [], options || {});
-    // eslint-disable-next-line
-    (ret as any).process = command; // for debugging
+    Object.assign(ret, { process: command }); // for debugging
 
     ret.pid = command.pid;
 
