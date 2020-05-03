@@ -29,7 +29,7 @@ describe(path.basename(__filename), function () {
     };
     {
       const executableSchemaProp = properties['copper.test.executables']['items']['properties'] as any; //eslint-disable-line
-      const keys = Object.keys(executableSchemaProp);
+      const keys = Object.keys(executableSchemaProp).filter(k => k !== 'comment');
       keys.forEach(key => {
         assert.strictEqual(findDescriptionInReadmeTable(key), executableSchemaProp[key]['markdownDescription'], key);
       });

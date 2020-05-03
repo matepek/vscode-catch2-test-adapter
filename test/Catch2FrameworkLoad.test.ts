@@ -1657,7 +1657,7 @@ describe(path.basename(__filename), function () {
       await settings.updateConfig('test.executables', [
         {
           name: '${baseFilename}',
-          path: 'execPath{1,2}',
+          pattern: 'execPath{1,2}',
           cwd: '${workspaceFolder}/cwd/${baseFilename}',
           env: {
             C2LOCALTESTENV: 'c2localtestenv',

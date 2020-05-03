@@ -133,24 +133,24 @@
       "$comment": "Enums will cause that the vscode will offer auto-completion.",
       "properties": {
         "copper.test.executable": {
-          "markdownDescription": "The location of your test executable (relative to the workspace folder or absolute path). For more option set [copper.test.executables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md) instead of this. NOTE: if `copper.test.executables` is set then this is ignored.",
+          "markdownDescription": "The location of your test executable (relative to the workspace folder or absolute path). Empty string means disabled. For more option set [copper.test.executables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md) instead of this. NOTE: if `copper.test.executables` is set then this is ignored.",
           "scope": "resource",
           "type": "string",
           "default": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*"
         },
         "copper.test.executables": {
-          "markdownDescription": "Array of executables with a lot of options. `null` means disabled. (If this is set then `copper.test.executable` is ignored.) ([Details](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)).",
+          "markdownDescription": "Array of executables with a lot of options. (If this is set then `copper.test.executable` is ignored.) ([Details](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)).",
           "scope": "resource",
-          "default": [],
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": "array",
           "items": {
             "markdownDescription": "An object which describes an executable-set with settings. ([Details](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md))",
             "type": "object",
             "additionalProperties": false,
             "properties": {
+              "comment": {
+                "markdownDescription": "One can wite comments here about the config just like using $comment",
+                "type": "string"
+              },
               "pattern": {
                 "markdownDescription": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md)",
                 "anyOf": [
@@ -159,7 +159,8 @@
                     "enum": [
                       "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
                       "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*.exe"
-                    ]
+                    ],
+                    "minLength": 1
                   },
                   {
                     "type": "string",

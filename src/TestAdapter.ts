@@ -62,7 +62,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _isDebug: boolean = !!process.env['C2_DEBUG'];
 
   public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
-    this._log = new LoggerWrapper('copper.log', this.workspaceFolder, 'Test Explorer: ' + this.workspaceFolder.name);
+    this._log = new LoggerWrapper('copper.log', this.workspaceFolder, `Copper Test in ${this.workspaceFolder.name}`);
 
     const configuration = this._getConfiguration();
 
@@ -340,13 +340,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       this._testsEmitter.fire({ type: 'started' });
 
-      return Promise.resolve()
-        .then(() => {
-          return configuration.getExecutables(this._shared, this._variableToValue);
-        })
-        .then(exec => {
-          return this._rootSuite.load(exec);
-        })
+      return configuration
+        .getExecutables(this._shared, this._variableToValue)
+        .then(exec => this._rootSuite.load(exec))
         .then(
           () => {
             this._log.info('load finished', this._rootSuite.children.length);
@@ -362,7 +358,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             this._testsEmitter.fire({
               type: 'finished',
               suite: undefined,
-              errorMessage: inspect(e),
+              errorMessage: e instanceof Error ? `${e.name}\n${e.message}` : inspect(e),
             });
           },
         );

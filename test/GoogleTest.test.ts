@@ -75,8 +75,11 @@ describe(path.basename(__filename), function () {
       ],
     };
 
+    assert.strictEqual(gtest.description, ev.description);
+    assert.strictEqual(gtest.tooltip, ev.tooltip);
+    assert.strictEqual(gtest.lastRunMilisec, 66);
     assert.deepStrictEqual(ev, expected);
-    assert.ok(true);
+    assert.deepStrictEqual(gtest.lastRunEvent, expected);
   });
 
   it('parses Failure/error on unix', function () {
@@ -152,8 +155,11 @@ describe(path.basename(__filename), function () {
       ],
     };
 
+    assert.strictEqual(gtest.description, ev.description);
+    assert.strictEqual(gtest.tooltip, ev.tooltip);
+    assert.strictEqual(gtest.lastRunMilisec, 66);
     assert.deepStrictEqual(ev, expected);
-    assert.ok(true);
+    assert.deepStrictEqual(gtest.lastRunEvent, expected);
   });
 
   it('parses Failure/error on windows', function () {
@@ -223,7 +229,10 @@ describe(path.basename(__filename), function () {
       ],
     };
 
+    assert.strictEqual(gtest.description, ev.description);
+    assert.strictEqual(gtest.tooltip, ev.tooltip);
+    assert.strictEqual(gtest.lastRunMilisec, 66);
     assert.deepStrictEqual(ev, expected);
-    assert.ok(true);
+    assert.deepStrictEqual(gtest.lastRunEvent, expected);
   });
 });

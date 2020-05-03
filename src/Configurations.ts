@@ -4,6 +4,7 @@ import { ExecutableConfig, ExecutableConfigFrameworkSpecific } from './Executabl
 import { SharedVariables } from './SharedVariables';
 import { hashString, ResolveRulePair } from './Util';
 import { performance } from 'perf_hooks';
+import { TestGrouping } from './TestGroupingInterface';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
 
@@ -78,6 +79,21 @@ class ConfigurationChangeEvent {
     return this.event.affectsConfiguration(`${ConfigSection}.${section}`, resource);
   }
 }
+
+type ExecutableObj = {
+  comment?: string;
+  pattern?: string;
+  name?: string;
+  description?: string;
+  cwd?: string;
+  env?: { [key: string]: string };
+  dependsOn?: string[];
+  parallelizationLimit?: number;
+  catch2?: ExecutableConfigFrameworkSpecific;
+  gtest?: ExecutableConfigFrameworkSpecific;
+  doctest?: ExecutableConfigFrameworkSpecific;
+  testGrouping?: TestGrouping; //undocumented
+};
 
 ///
 
@@ -292,10 +308,9 @@ export class Configurations {
       vscode.window
         .showInformationMessage(
           'Hey there! The extension now has [sentry.io](https://sentry.io/welcome) integration to ' +
-            'improve the stability and the development. 🤩 For this, I want to log and send errors ' +
+            'improve the stability and the development. 🤩 For this, I want to send logs and errors ' +
             'to [sentry.io](https://sentry.io/welcome), but I would NEVER do it without your consent. ' +
-            'Please be understandable and allow it. 🙏' +
-            ' (`copper.log.logSentry: "enable"/"disable"`)',
+            'Please be understandable and allow it. 🙏',
           ...options,
         )
         .then((value: string | undefined) => {
@@ -381,172 +396,194 @@ export class Configurations {
     return this._getNewOrOldOrDefAndMigrate<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  public getExecutables(shared: SharedVariables, variableToValue: ResolveRulePair[]): ExecutableConfig[] {
+  public async getExecutables(
+    shared: SharedVariables,
+    variableToValue: ResolveRulePair[],
+  ): Promise<ExecutableConfig[]> {
+    type ExecOldType = null | string | string[] | ExecutableObj | (ExecutableObj | string)[];
+
+    const oldVals = this._old.inspect<ExecOldType>('executables');
+
+    if (oldVals !== undefined && this._isDefinedConfig(oldVals)) {
+      const migrate = async (oldVal: ExecOldType | undefined, target: vscode.ConfigurationTarget): Promise<void> => {
+        if (oldVal === undefined) return;
+
+        const update = async (simpleVal: string | undefined, val: ExecutableObj[] | undefined): Promise<void> => {
+          const newNameSimple: Config = 'test.executable';
+          const newName: Config = 'test.executables';
+          await this._new.update(newNameSimple, simpleVal, target).then(undefined, e => this._log.exceptionS(e));
+          await this._new.update(newName, val, target).then(undefined, e => this._log.exceptionS(e));
+          this._old.update(MigrationV1V2NamePairs[newName], undefined, target);
+        };
+
+        // null means disabled in case of old
+        // in case of new ('', undefined|[] means disabled)
+        if (oldVal === null) {
+          await update('', undefined);
+        } else if (typeof oldVal === 'string') {
+          await update(oldVal, undefined);
+        } else if (Array.isArray(oldVal)) {
+          const newVals: ExecutableObj[] = [];
+          for (const v of oldVal) {
+            if (typeof v === 'string') {
+              newVals.push({ pattern: v });
+            } else if (typeof v === 'object') {
+              newVals.push(v);
+            } else {
+              this._log.errorS('unhandled config case', v, oldVal, target);
+            }
+          }
+          if (newVals.length === 0) {
+            await update('', undefined);
+          } else if (newVals.length === 1 && Object.keys(newVals).length === 1 && newVals[0].pattern !== undefined) {
+            await update(newVals[0].pattern, undefined);
+          } else {
+            await update(undefined, newVals);
+          }
+        } else {
+          this._log.errorS('unhandled config case', oldVal, target);
+        }
+      };
+
+      await migrate(oldVals.globalValue, vscode.ConfigurationTarget.Global);
+      await migrate(oldVals.workspaceValue, vscode.ConfigurationTarget.Workspace);
+      await migrate(oldVals.workspaceFolderValue, vscode.ConfigurationTarget.WorkspaceFolder);
+    }
+
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultEnv = this.getDefaultEnvironmentVariables() || {};
 
-    type ExecOldType = null | string | string[] | { [prop: string]: string } | ({ [prop: string]: string } | string)[];
-
-    let configExecs: ExecOldType | undefined = this._getNewOrOldAndMigrate<ExecOldType>('test.executables');
-
-    if (configExecs === null) {
-      //disabled
-      return [];
-    }
-
-    if (Array.isArray(configExecs) && configExecs.length === 0) {
-      configExecs = this._new.get<ExecOldType>(
-        'test.executable',
-        '{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*',
-      );
-    }
-
-    const executables: ExecutableConfig[] = [];
-
-    this._log.setContext('executables', { executables: configExecs });
-
-    // eslint-disable-next-line
-    const createFromObject = (obj: { [prop: string]: any }): ExecutableConfig => {
-      const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
-
-      const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
-
-      let pattern = '';
-      {
-        if (typeof obj.pattern == 'string') pattern = obj.pattern;
-        else if (typeof obj.path == 'string') pattern = obj.path;
-        else {
-          this._log.debug('pattern property is required', obj);
-          throw Error('pattern property is required.');
-        }
-      }
-
-      const cwd: string | undefined = typeof obj.cwd === 'string' ? obj.cwd : undefined;
-
-      const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
-
-      const dependsOn: string[] = Array.isArray(obj.dependsOn) ? obj.dependsOn.filter(v => typeof v === 'string') : [];
-
-      const parallelizationLimit: number = typeof obj.parallelizationLimit === 'number' ? obj.parallelizationLimit : 1;
-
-      const testGrouping: object = obj.testGrouping ? obj.testGrouping : undefined;
-
-      // eslint-disable-next-line
-      const framework = (obj: any): ExecutableConfigFrameworkSpecific => {
-        const r: ExecutableConfigFrameworkSpecific = {};
-        if (typeof obj === 'object') {
-          if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
-
-          if (
-            Array.isArray(obj.prependTestRunningArgs) &&
-            // eslint-disable-next-line
-            (obj.prependTestRunningArgs as any[]).every(x => typeof x === 'string')
-          )
-            r.prependTestRunningArgs = obj.prependTestRunningArgs;
-
-          if (
-            Array.isArray(obj.prependTestListingArgs) &&
-            // eslint-disable-next-line
-            (obj.prependTestListingArgs as any[]).every(x => typeof x === 'string')
-          )
-            r.prependTestListingArgs = obj.prependTestListingArgs;
-
-          if (obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
-
-          if (obj.testGrouping) r.testGrouping = obj.testGrouping;
-          else if (testGrouping) r.testGrouping = testGrouping;
-        }
-        return r;
-      };
-
+    const createExecutableConfigFromPattern = (pattern: string): ExecutableConfig => {
       return new ExecutableConfig(
         shared,
         pattern,
-        name,
-        description,
-        cwd,
-        env,
-        dependsOn,
-        parallelizationLimit,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        [],
+        1,
         defaultCwd,
         defaultEnv,
         variableToValue,
-        framework(obj['catch2']),
-        framework(obj['gtest']),
-        framework(obj['doctest']),
+        {},
+        {},
+        {},
       );
     };
 
-    if (typeof configExecs === 'string') {
-      if (configExecs.length == 0) return [];
-      executables.push(
-        new ExecutableConfig(
+    const configExecs = this._new.get<ExecutableObj[]>('test.executables');
+
+    if (configExecs === undefined || (Array.isArray(configExecs) && configExecs.length === 0)) {
+      this._log.info('`test.executables` is not defined. trying to use `test.executable`');
+
+      const simpleConfig: string | undefined = this._new.get<string>('test.executable');
+
+      if (simpleConfig === undefined) {
+        return [createExecutableConfigFromPattern('{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*')];
+      } else if (typeof simpleConfig === 'string') {
+        if (simpleConfig.length === 0) {
+          // disabled
+          return [];
+        } else {
+          return [createExecutableConfigFromPattern(simpleConfig)];
+        }
+      } else {
+        this._log.warn('test.executable should be an string or undefined', simpleConfig);
+        throw Error(
+          "`test.executable` couldn't be recognised. It should be a string. For fine-tuning use `test.executables`.",
+        );
+      }
+    } else if (Array.isArray(configExecs)) {
+      const executables: ExecutableConfig[] = [];
+
+      this._log.setContext('executables', { executables: configExecs });
+
+      const createExecutableConfigFromObj = (obj: ExecutableObj): ExecutableConfig => {
+        const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
+
+        const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
+
+        let pattern = '';
+        {
+          if (typeof obj.pattern == 'string') pattern = obj.pattern;
+          else {
+            this._log.debug('pattern property is required', obj);
+            throw Error('pattern property is required.');
+          }
+        }
+
+        const cwd: string | undefined = typeof obj.cwd === 'string' ? obj.cwd : undefined;
+
+        const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
+
+        const dependsOn: string[] = Array.isArray(obj.dependsOn)
+          ? obj.dependsOn.filter(v => typeof v === 'string')
+          : [];
+
+        const parallelizationLimit: number =
+          typeof obj.parallelizationLimit === 'number' ? obj.parallelizationLimit : 1;
+
+        const testGrouping = obj.testGrouping ? obj.testGrouping : undefined;
+
+        // eslint-disable-next-line
+        const framework = (obj: any): ExecutableConfigFrameworkSpecific => {
+          const r: ExecutableConfigFrameworkSpecific = {};
+          if (typeof obj === 'object') {
+            if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
+
+            if (
+              Array.isArray(obj.prependTestRunningArgs) &&
+              // eslint-disable-next-line
+              (obj.prependTestRunningArgs as any[]).every(x => typeof x === 'string')
+            )
+              r.prependTestRunningArgs = obj.prependTestRunningArgs;
+
+            if (
+              Array.isArray(obj.prependTestListingArgs) &&
+              // eslint-disable-next-line
+              (obj.prependTestListingArgs as any[]).every(x => typeof x === 'string')
+            )
+              r.prependTestListingArgs = obj.prependTestListingArgs;
+
+            if (obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
+
+            if (obj.testGrouping) r.testGrouping = obj.testGrouping;
+            else if (testGrouping) r.testGrouping = testGrouping;
+          }
+          return r;
+        };
+
+        return new ExecutableConfig(
           shared,
-          configExecs,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          [],
-          1,
+          pattern,
+          name,
+          description,
+          cwd,
+          env,
+          dependsOn,
+          parallelizationLimit,
           defaultCwd,
           defaultEnv,
           variableToValue,
-          {},
-          {},
-          {},
-        ),
-      );
-    } else if (Array.isArray(configExecs)) {
-      for (let i = 0; i < configExecs.length; ++i) {
-        const configExec = configExecs[i];
-        if (typeof configExec === 'string') {
-          const configExecsName = String(configExec);
-          if (configExecsName.length > 0) {
-            executables.push(
-              new ExecutableConfig(
-                shared,
-                configExecsName,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                [],
-                1,
-                defaultCwd,
-                defaultEnv,
-                variableToValue,
-                {},
-                {},
-                {},
-              ),
-            );
-          }
-        } else if (typeof configExec === 'object') {
-          try {
-            executables.push(createFromObject(configExec));
-          } catch (e) {
-            this._log.warn(e, configExec);
-            throw e;
-          }
+          framework(obj['catch2']),
+          framework(obj['gtest']),
+          framework(obj['doctest']),
+        );
+      };
+
+      for (const conf of configExecs) {
+        if (typeof conf === 'string') {
+          executables.push(createExecutableConfigFromPattern(conf));
         } else {
-          this._log.error('_getExecutables', configExec, i);
+          executables.push(createExecutableConfigFromObj(conf));
         }
       }
-    } else if (configExecs === null || configExecs === undefined) {
-      return [];
-    } else if (typeof configExecs === 'object') {
-      try {
-        executables.push(createFromObject(configExecs));
-      } catch (e) {
-        this._log.warn(e, configExecs);
-        throw e;
-      }
-    } else {
-      this._log.error("executables couldn't be recognised:", executables);
-      throw new Error('Config error: wrong type: executables');
-    }
 
-    return executables;
+      return executables;
+    } else {
+      this._log.warn('test.executables should be an array or undefined', configExecs);
+      throw Error("`test.executables` couldn't be recognised");
+    }
   }
 }

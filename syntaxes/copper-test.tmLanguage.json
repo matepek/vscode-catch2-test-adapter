@@ -38,105 +38,6 @@
     }
   ],
   "repository": {
-    "other": {
-      "patterns": [
-        {
-          "comment": "Quoted strings with \"",
-          "match": "\"(.*?)\"",
-          "name": "string.quoted"
-        },
-        {
-          "comment": "Quoted strings with '",
-          "match": "'(.*?)'",
-          "name": "string.quoted"
-        },
-        {
-          "comment": "GUID",
-          "match": "\\b(?i:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))\\b",
-          "name": "support.class"
-        },
-        {
-          "comment": "email",
-          "match": "\\S+@\\S+\\.\\S+",
-          "name": "markup.bold"
-        },
-        {
-          "comment": "Exception (with custom naming and namespacing)",
-          "match": "\\b(?i:((\\.)*[a-z]|[0-9])*(Exception|Error|Failure|Fail))\\b",
-          "name": "invalid"
-        },
-        {
-          "comment": "Date MM/DD/(YY)YY",
-          "match": "\\b(((0|1)?[0-9][1-2]?)|(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sept(ember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?))[/|\\-|\\.| ]([0-2]?[0-9]|[3][0-1])[/|\\-|\\.| ]((19|20)?[0-9]{2})\\b",
-          "name": "constant.numeric"
-        },
-        {
-          "comment": "Date (YY)YY/DD/MM",
-          "match": "\\b((19|20)?[0-9]{2}[/|\\-|\\.| ](((0|1)?[0-9][1-2]?)|(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sept(ember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?))[/|\\-|\\.| ]([0-2]?[0-9]|[3][0-1]))\\b",
-          "name": "constant.numeric"
-        },
-        {
-          "comment": "Date DD/MM/(YY)YY",
-          "match": "\\b([0-2]?[0-9]|[3][0-1])[/|\\-|\\.| ](((0|1)?[0-9][1-2]?)|(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sept(ember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?))[/|\\-|\\.| ]((19|20)?[0-9]{2})\\b",
-          "name": "constant.numeric"
-        },
-        {
-          "comment": "Time HH:MM(:SS)? AM? timezone?",
-          "match": "\\b([0|1]?[0-9]|2[0-3])\\:[0-5][0-9](\\:[0-5][0-9])?( ?(?i:(a|p)m?))?( ?[+-]?[0-9]*)?\\b",
-          "name": "constant.numeric"
-        },
-        {
-          "comment": "Version number",
-          "match": "\\b(v|version(\\.|-|\\/)?|@)?[0-9]+\\.[0-9]+(\\.[0-9]+)+(-[^\\s]+)?\\b",
-          "name": "constant.numeric"
-        },
-        {
-          "comment": "Numeric (decimal)",
-          "match": "\\b\\d+(\\.\\d+)?(e\\+\\d+)?\\b",
-          "name": "constant.numeric"
-        },
-        {
-          "comment": "Numeric (hex)",
-          "match": "\\b(?i:(0?x)?[0-9a-f][0-9a-f]+)\\b",
-          "name": "constant.numeric"
-        },
-        {
-          "comment": "Namespace",
-          "match": "\\b(?i:(([a-z]|[0-9]|[_|-])*(\\.([a-z]|[0-9]|[_|-])*)+))\\b",
-          "name": "support.key"
-        },
-        {
-          "match": "\\b(?i:(Down|Error|Failure|Fail|Fatal|false))(\\:|\\b)",
-          "name": "invalid.illegal"
-        },
-        {
-          "match": "\\b(?i:(hint|info|information|true|log))(\\:|\\b)",
-          "name": "keyword"
-        },
-        {
-          "match": "\\b(?i:(warning|warn|test|debug|null|nullptr|undefined|NaN))(\\:|\\b)",
-          "name": "invalid.deprecated"
-        },
-        {
-          "match": "\\b(?i:(local))(\\:|\\b)",
-          "name": "support.function"
-        },
-        {
-          "match": "\\b(?i:(server|running|remote))(\\:|\\b)",
-          "name": "comment.line"
-        },
-        {
-          "comment": "Generic URI/URL",
-          "match": "\\b(?i:([a-z]|[0-9])+\\:((\\/\\/)|((\\/\\/)?(\\S)))+)",
-          "name": "storage"
-        },
-        {
-          "comment": "output from (npm install) log",
-          "match": "(-)+>|├(─)+|└(─)+",
-          "name": "comment.line"
-        }
-      ]
-    },
     "gtest": {
       "patterns": [
         {
@@ -268,9 +169,6 @@
     "gmock": {
       "patterns": [
         {
-          "include": "#gtest"
-        },
-        {
           "match": "^Unexpected mock function call",
           "name": "markup.bold.copper-test"
         },
@@ -281,6 +179,9 @@
               "name": "markup.heading.copper-test"
             }
           }
+        },
+        {
+          "include": "#gtest"
         }
       ]
     },
@@ -337,6 +238,105 @@
         },
         {
           "include": "#other"
+        }
+      ]
+    },
+    "other": {
+      "patterns": [
+        {
+          "comment": "Quoted strings with \"",
+          "match": "\"(.*?)\"",
+          "name": "string.quoted"
+        },
+        {
+          "comment": "Quoted strings with '",
+          "match": "'(.*?)'",
+          "name": "string.quoted"
+        },
+        {
+          "comment": "GUID",
+          "match": "\\b(?i:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))\\b",
+          "name": "support.class"
+        },
+        {
+          "comment": "email",
+          "match": "\\S+@\\S+\\.\\S+",
+          "name": "markup.bold"
+        },
+        {
+          "comment": "Exception (with custom naming and namespacing)",
+          "match": "\\b(?i:((\\.)*[a-z]|[0-9])*(Exception|Error|Failure|Fail))\\b",
+          "name": "invalid"
+        },
+        {
+          "comment": "Date MM/DD/(YY)YY",
+          "match": "\\b(((0|1)?[0-9][1-2]?)|(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sept(ember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?))[/|\\-|\\.| ]([0-2]?[0-9]|[3][0-1])[/|\\-|\\.| ]((19|20)?[0-9]{2})\\b",
+          "name": "constant.numeric"
+        },
+        {
+          "comment": "Date (YY)YY/DD/MM",
+          "match": "\\b((19|20)?[0-9]{2}[/|\\-|\\.| ](((0|1)?[0-9][1-2]?)|(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sept(ember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?))[/|\\-|\\.| ]([0-2]?[0-9]|[3][0-1]))\\b",
+          "name": "constant.numeric"
+        },
+        {
+          "comment": "Date DD/MM/(YY)YY",
+          "match": "\\b([0-2]?[0-9]|[3][0-1])[/|\\-|\\.| ](((0|1)?[0-9][1-2]?)|(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sept(ember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?))[/|\\-|\\.| ]((19|20)?[0-9]{2})\\b",
+          "name": "constant.numeric"
+        },
+        {
+          "comment": "Time HH:MM(:SS)? AM? timezone?",
+          "match": "\\b([0|1]?[0-9]|2[0-3])\\:[0-5][0-9](\\:[0-5][0-9])?( ?(?i:(a|p)m?))?( ?[+-]?[0-9]*)?\\b",
+          "name": "constant.numeric"
+        },
+        {
+          "comment": "Version number",
+          "match": "\\b(v|version(\\.|-|\\/)?|@)?[0-9]+\\.[0-9]+(\\.[0-9]+)+(-[^\\s]+)?\\b",
+          "name": "constant.numeric"
+        },
+        {
+          "comment": "Numeric (decimal)",
+          "match": "\\b\\d+(\\.\\d+)?(e\\+\\d+)?\\b",
+          "name": "constant.numeric"
+        },
+        {
+          "comment": "Numeric (hex)",
+          "match": "\\b(?i:(0?x)?[0-9a-f][0-9a-f]+)\\b",
+          "name": "constant.numeric"
+        },
+        {
+          "comment": "Namespace",
+          "match": "\\b(?i:(([a-z]|[0-9]|[_|-])*(\\.([a-z]|[0-9]|[_|-])*)+))\\b",
+          "name": "support.key"
+        },
+        {
+          "match": "\\b(?i:(Down|Error|Failure|Fail|Fatal|false))(\\:|\\b)",
+          "name": "invalid.illegal"
+        },
+        {
+          "match": "\\b(?i:(hint|info|information|true|log))(\\:|\\b)",
+          "name": "keyword"
+        },
+        {
+          "match": "\\b(?i:(warning|warn|test|debug|null|nullptr|undefined|NaN))(\\:|\\b)",
+          "name": "invalid.deprecated"
+        },
+        {
+          "match": "\\b(?i:(local))(\\:|\\b)",
+          "name": "support.function"
+        },
+        {
+          "match": "\\b(?i:(server|running|remote))(\\:|\\b)",
+          "name": "comment.line"
+        },
+        {
+          "comment": "Generic URI/URL",
+          "match": "\\b(?i:([a-z]|[0-9])+\\:((\\/\\/)|((\\/\\/)?(\\S)))+)",
+          "name": "storage"
+        },
+        {
+          "comment": "output from (npm install) log",
+          "match": "(-)+>|├(─)+|└(─)+",
+          "name": "comment.line"
         }
       ]
     }

@@ -40,7 +40,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _dependsOn: string[],
     private readonly _parallelizationLimit: number,
     private readonly _defaultCwd: string,
-    private readonly _defaultEnv: { [prop: string]: string },
+    private readonly _defaultEnv: { [prop: string]: string }, //TODO
     private readonly _variableToValue: ResolveRulePair[],
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,

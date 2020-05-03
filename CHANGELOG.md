@@ -16,7 +16,8 @@ Lots of small tweaks was added. (Please be patioent and report issues. ^^)
 
 ### Removed
 
-- ❌ `defaultEnv` is removed. From now evironment variables can be set only in the [test.executables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md).
+- ❌ `defaultEnv` is removed. From now evironment variables can be set
+  only in the [test.executables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.executables.md).
 
 ## [2.9.12] - 2020-05-01
 
