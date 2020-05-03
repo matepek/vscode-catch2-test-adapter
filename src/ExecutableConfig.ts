@@ -260,15 +260,15 @@ export class ExecutableConfig implements vscode.Disposable {
     const normPattern = pattern.replace(/\\/g, '/');
     const isAbsolute = pathlib.isAbsolute(normPattern);
     const absPattern = isAbsolute
-      ? pathlib.normalize(pattern)
-      : pathlib.join(this._shared.workspaceFolder.uri.fsPath, normPattern);
-    const relativeToWsPosix = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, absPattern);
+      ? vscode.Uri.file(pathlib.normalize(pattern)).fsPath
+      : vscode.Uri.file(pathlib.join(this._shared.workspaceFolder.uri.fsPath, normPattern)).fsPath;
+    const relativeToWs = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, absPattern);
 
     return {
       isAbsolute,
       absPattern,
-      isPartOfWs: !relativeToWsPosix.startsWith('..'),
-      relativeToWsPosix,
+      isPartOfWs: !relativeToWs.startsWith('..'),
+      relativeToWsPosix: relativeToWs.replace(/\\/g, '/'),
     };
   }
 

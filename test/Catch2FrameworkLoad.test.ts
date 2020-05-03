@@ -25,7 +25,6 @@ import {
   isWin,
   expectedLoggedErrorLine,
 } from './Common';
-import { SpawnOptions } from '../src/FSWrapper';
 
 ///
 
@@ -1690,61 +1689,50 @@ describe(path.basename(__filename), function () {
     it('should get execution options', async function () {
       await loadAdapter();
       {
-        let exception: Error | undefined = undefined;
         const withArgs = imitation.spawnStub.withArgs(
           example1.suite1.execPath,
           example1.suite1.outputs[2][0],
           sinon.match.any,
         );
-        withArgs.onCall(withArgs.callCount).callsFake((p: string, args: readonly string[], ops: SpawnOptions) => {
-          try {
-            assert.equal(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath1'));
-            assert.equal(ops.env!.C2LOCALTESTENV, 'c2localtestenv');
-            assert.equal(ops.env!.C2LOCALCWD, ops.cwd);
-            assert.equal(ops.env!.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
-            assert.equal(ops.env!.C2ENVVARS1, 'X' + process.env['PATH'] + 'X');
+        withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(example1.suite1.outputs[2][1]));
 
-            if (isWin) assert.equal(ops.env!.C2ENVVARS2, 'X' + process.env['PATH'] + 'X');
-            else assert.equal(ops.env!.C2ENVVARS2, 'XX');
-
-            assert.strictEqual(ops.env!.C2ENVVARS3, undefined);
-
-            return new ChildProcessStub(example1.suite1.outputs[2][1]);
-          } catch (e) {
-            exception = e;
-            throw e;
-          }
-        });
-
-        const cc = withArgs.callCount;
         await adapter.run([root.id]);
-        assert.equal(withArgs.callCount, cc + 1);
-        assert.strictEqual(exception, undefined);
+
+        assert.ok(withArgs.calledOnce, withArgs.args.toString());
+        const cwd = path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath1');
+        assert.equal(withArgs.firstCall.args[2].cwd, cwd);
+        assert.equal(withArgs.firstCall.args[2].env!.C2LOCALCWD, cwd);
+        assert.equal(withArgs.firstCall.args[2].env!.C2LOCALTESTENV, 'c2localtestenv');
+        assert.equal(
+          withArgs.firstCall.args[2].env!.C2WORKSPACENAME,
+          path.basename(settings.workspaceFolderUri.fsPath),
+        );
+        assert.equal(withArgs.firstCall.args[2].env!.C2ENVVARS1, 'X' + process.env['PATH'] + 'X');
+
+        if (isWin) assert.equal(withArgs.firstCall.args[2].env!.C2ENVVARS2, 'X' + process.env['PATH'] + 'X');
+        else assert.equal(withArgs.firstCall.args[2].env!.C2ENVVARS2, 'XX');
+
+        assert.strictEqual(withArgs.firstCall.args[2].env!.C2ENVVARS3, undefined);
       }
       {
-        let exception: Error | undefined = undefined;
         const withArgs = imitation.spawnStub.withArgs(
           example1.suite2.execPath,
           example1.suite2.outputs[2][0],
           sinon.match.any,
         );
-        withArgs.onCall(withArgs.callCount).callsFake((p: string, args: readonly string[], ops: SpawnOptions) => {
-          try {
-            assert.equal(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath2'));
-            assert.equal(ops.env!.C2LOCALTESTENV, 'c2localtestenv');
-            assert.equal(ops.env!.C2LOCALCWD, ops.cwd);
-            assert.equal(ops.env!.C2WORKSPACENAME, path.basename(settings.workspaceFolderUri.fsPath));
+        withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(example1.suite2.outputs[2][1]));
 
-            return new ChildProcessStub(example1.suite2.outputs[2][1]);
-          } catch (e) {
-            exception = e;
-            throw e;
-          }
-        });
-        const cc = withArgs.callCount;
         await adapter.run([root.id]);
-        assert.equal(withArgs.callCount, cc + 1);
-        assert.strictEqual(exception, undefined);
+
+        assert.ok(withArgs.calledTwice, withArgs.args.toString());
+        const cwd = path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath2');
+        assert.strictEqual(withArgs.secondCall.args[2]['cwd'], cwd);
+        assert.strictEqual(withArgs.secondCall.args[2].env!.C2LOCALCWD, cwd);
+        assert.strictEqual(withArgs.secondCall.args[2].env!.C2LOCALTESTENV, 'c2localtestenv');
+        assert.strictEqual(
+          withArgs.secondCall.args[2].env!.C2WORKSPACENAME,
+          path.basename(settings.workspaceFolderUri.fsPath),
+        );
       }
     });
   });

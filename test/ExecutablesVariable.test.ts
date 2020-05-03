@@ -10,10 +10,10 @@ import {
   FileSystemWatcherStub,
   expectedLoggedErrorLine,
   isWin,
+  waitFor,
 } from './Common';
 import { example1 } from './example1';
 import { inspect } from 'util';
-import { SpawnOptions } from '../src/FSWrapper';
 
 ///
 
@@ -60,9 +60,8 @@ describe(path.basename(__filename), function () {
     specify('../a/first', async function () {
       await settings.updateConfig('test.executables', '../a/first');
       const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('first'));
-      const count = withArgs.callCount;
       await adapter.load();
-      assert.strictEqual(withArgs.callCount, count);
+      assert.ok(!withArgs.called);
     });
 
     specify('../<workspaceFolder>/second', async function () {
@@ -71,25 +70,22 @@ describe(path.basename(__filename), function () {
         '../' + path.basename(settings.workspaceFolderUri.fsPath) + '/second',
       );
       const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('second'));
-      const count = withArgs.callCount;
       await adapter.load();
-      assert.ok(withArgs.callCount > count);
+      assert.ok(withArgs.called);
     });
 
     specify('./third', async function () {
       await settings.updateConfig('test.executables', './third');
       const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('third'));
-      const count = withArgs.callCount;
       await adapter.load();
-      assert.ok(withArgs.callCount > count);
+      assert.ok(withArgs.called);
     });
 
     specify('./a/b/../../fourth', async function () {
       await settings.updateConfig('test.executables', './a/b/../../fourth');
       const withArgs = imitation.vsFindFilesStub.withArgs(imitation.createVscodeRelativePatternMatcher('fourth'));
-      const count = withArgs.callCount;
       await adapter.load();
-      assert.ok(withArgs.callCount > count);
+      assert.ok(withArgs.called);
     });
 
     specify('cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*', async function () {
@@ -97,9 +93,8 @@ describe(path.basename(__filename), function () {
       const withArgs = imitation.vsFindFilesStub.withArgs(
         imitation.createVscodeRelativePatternMatcher('cpp/{build,Build,BUILD,out,Out,OUT}/**/*suite[0-9]*'),
       );
-      const count = withArgs.callCount;
       await adapter.load();
-      assert.ok(withArgs.callCount > count);
+      assert.ok(withArgs.called);
     });
   });
 
@@ -110,23 +105,17 @@ describe(path.basename(__filename), function () {
 
     adapter = new TestAdapter();
 
-    let exception: Error | undefined = undefined;
     const spawnWithArgs = imitation.spawnStub
       .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0], sinon.match.any)
-      .callsFake(function (p: string, args: readonly string[], ops: SpawnOptions): ChildProcessStub {
-        try {
-          assert.strictEqual(ops.cwd, path.join(settings.workspaceFolderUri.fsPath, 'defaultCwdStr'));
-          return new ChildProcessStub(example1.suite1.outputs[1][1]);
-        } catch (e) {
-          exception = e;
-          throw e;
-        }
-      });
+      .returns(new ChildProcessStub(example1.suite1.outputs[1][1]));
 
-    const prevCallCount = spawnWithArgs.callCount;
     await adapter.load();
-    assert.strictEqual(spawnWithArgs.callCount - prevCallCount, 1);
-    assert.strictEqual(exception, undefined);
+
+    assert.ok(spawnWithArgs.calledOnce, spawnWithArgs.args.toString());
+    assert.strictEqual(
+      spawnWithArgs.firstCall.args[2].cwd,
+      path.join(settings.workspaceFolderUri.fsPath, 'defaultCwdStr'),
+    );
   });
 
   specify('resolving absolute defaultCwd', async function () {
@@ -138,26 +127,15 @@ describe(path.basename(__filename), function () {
 
     adapter = new TestAdapter();
 
-    let exception: Error | undefined = undefined;
-    let cwd = '';
     const spawnWithArgs = imitation.spawnStub
       .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0], sinon.match.any)
-      .callsFake(function (p: string, args: readonly string[], ops: SpawnOptions): ChildProcessStub {
-        try {
-          cwd = ops.cwd!;
-          if (isWin) assert.strictEqual(ops.cwd, 'C:\\defaultCwdStr');
-          else assert.strictEqual(ops.cwd, '/defaultCwdStr');
-          return new ChildProcessStub(example1.suite1.outputs[1][1]);
-        } catch (e) {
-          exception = e;
-          throw e;
-        }
-      });
+      .returns(new ChildProcessStub(example1.suite1.outputs[1][1]));
 
-    const prevCallCount = spawnWithArgs.callCount;
     await adapter.load();
-    assert.strictEqual(spawnWithArgs.callCount - prevCallCount, 1);
-    assert.strictEqual(exception, undefined, cwd);
+
+    assert.ok(spawnWithArgs.calledOnce, spawnWithArgs.args.toString());
+    if (isWin) assert.strictEqual(spawnWithArgs.firstCall.args[2].cwd, 'C:\\defaultCwdStr');
+    else assert.strictEqual(spawnWithArgs.firstCall.args[2].cwd, '/defaultCwdStr');
   });
 
   specify('load executables=<full path of execPath1>', async function () {
@@ -185,7 +163,7 @@ describe(path.basename(__filename), function () {
     assert.strictEqual(adapter.root.children.length, 1);
   });
 
-  specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete; sleep 3; create', async function () {
+  specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete; sleep 1; re-create', async function () {
     const watchTimeout = 6;
     await settings.updateConfig('discovery.gracePeriodForMissing', watchTimeout);
     this.timeout(watchTimeout * 1000 + 2500 /* because of 'delay' */);
@@ -193,9 +171,9 @@ describe(path.basename(__filename), function () {
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
     for (const scenario of example1.suite2.outputs) {
-      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function () {
-        return new ChildProcessStub(scenario[1]);
-      });
+      imitation.spawnStub
+        .withArgs(execPath2CopyPath, scenario[0], sinon.match.any)
+        .callsFake(() => new ChildProcessStub(scenario[1]));
     }
 
     imitation.fsAccessStub
@@ -220,43 +198,45 @@ describe(path.basename(__filename), function () {
     assert.ok(watchers.has(execPath2CopyPath));
     const watcher = watchers.get(execPath2CopyPath)!;
 
-    let start = 0;
+    const start = Date.now();
+
+    imitation.fsAccessStub
+      .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
+      .callsFake(imitation.handleAccessFileNotExists);
+    watcher.sendDelete();
+
+    await waitFor(this, () => Date.now() - start > 1000);
+
+    assert.equal(adapter!.testLoadsEvents.length, 2);
+
+    imitation.fsAccessStub
+      .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
+      .callsFake(imitation.handleAccessFileExists);
+
     await adapter.doAndWaitForReloadEvent(this, () => {
-      imitation.fsAccessStub
-        .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
-        .callsFake(imitation.handleAccessFileNotExists);
-      start = Date.now();
-      watcher.sendDelete();
-      setTimeout(() => {
-        assert.equal(adapter!.testLoadsEvents.length, 2);
-      }, 1500);
-      setTimeout(() => {
-        imitation.fsAccessStub
-          .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
-          .callsFake(imitation.handleAccessFileExists);
-        watcher.sendCreate();
-      }, 3000);
+      watcher.sendCreate();
     });
+
     const elapsed = Date.now() - start;
 
     assert.equal(adapter.testLoadsEvents.length, 4);
 
     assert.equal(adapter.root.children.length, 2);
-    assert.ok(3000 < elapsed, inspect(elapsed));
+    assert.ok(900 < elapsed, inspect(elapsed));
     assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
   });
 
   specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete second', async function () {
-    const watchTimeout = 5;
+    const watchTimeout = 2;
     await settings.updateConfig('discovery.gracePeriodForMissing', watchTimeout);
     this.timeout(watchTimeout * 1000 + 7500 /* because of 'delay' */);
     this.slow(watchTimeout * 1000 + 5500 /* because of 'delay' */);
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
     for (const scenario of example1.suite2.outputs) {
-      imitation.spawnStub.withArgs(execPath2CopyPath, scenario[0], sinon.match.any).callsFake(function () {
-        return new ChildProcessStub(scenario[1]);
-      });
+      imitation.spawnStub
+        .withArgs(execPath2CopyPath, scenario[0], sinon.match.any)
+        .callsFake(() => new ChildProcessStub(scenario[1]));
     }
 
     imitation.fsAccessStub
@@ -314,7 +294,7 @@ describe(path.basename(__filename), function () {
 
     const wsPath = settings.workspaceFolderUri.fsPath;
     const execRelPath = 'a/b/c/d/1.2.3.exe';
-    const execAbsPath = path.normalize(path.join(wsPath, execRelPath));
+    const execAbsPath = path.join(wsPath, execRelPath);
 
     const toResolveAndExpectedResolvedValue: [string, string][] = [
       ['${absPath}', execAbsPath],
@@ -362,21 +342,9 @@ describe(path.basename(__filename), function () {
       });
     }
 
-    let exception: Error | undefined = undefined;
-
     const spawnWithArgs = imitation.spawnStub.withArgs(execAbsPath, example1.suite2.t1.outputs[0][0], sinon.match.any);
 
-    spawnWithArgs.callsFake(function (p: string, args: readonly string[], ops: SpawnOptions): ChildProcessStub {
-      try {
-        assert.equal(ops.cwd, expectStr);
-        assert.ok(ops.env && ops.env.C2TESTVARS);
-        assert.equal(ops.env!.C2TESTVARS!, expectStr);
-        return new ChildProcessStub(example1.suite2.t1.outputs[0][1]);
-      } catch (e) {
-        exception = e;
-        throw e;
-      }
-    });
+    spawnWithArgs.returns(new ChildProcessStub(example1.suite2.t1.outputs[0][1]));
 
     imitation.fsAccessStub
       .withArgs(execAbsPath, sinon.match.any, sinon.match.any)
@@ -402,10 +370,12 @@ describe(path.basename(__filename), function () {
     assert.deepStrictEqual(actual, expected);
     assert.equal(adapter.suite1.children.length, 3);
 
-    const callCount = spawnWithArgs.callCount;
     await adapter.run([adapter.suite1.children[0].id]);
-    assert.strictEqual(spawnWithArgs.callCount, callCount + 1);
-    assert.strictEqual(exception, undefined);
+
+    assert.ok(spawnWithArgs.calledOnce, spawnWithArgs.args.toString());
+    assert.equal(spawnWithArgs.firstCall.args[2].cwd, expectStr);
+    assert.ok(spawnWithArgs.firstCall.args[2].env && spawnWithArgs.firstCall.args[2].env.C2TESTVARS);
+    assert.equal(spawnWithArgs.firstCall.args[2].env!.C2TESTVARS!, expectStr);
   });
 
   context('from different pattern', function () {

@@ -353,7 +353,8 @@ describe(path.basename(__filename), function () {
       };
     };
 
-    it('should work with 10', testWith(10, 5));
-    it('should work with 20', testWith(20, 5));
+    // not interesting tests, it was just good to see that it is actually working
+    it.skip('should work with 10', testWith(10, 5));
+    it.skip('should work with 20', testWith(20, 5));
   });
 });
