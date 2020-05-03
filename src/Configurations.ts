@@ -342,10 +342,6 @@ export class Configurations {
     return this._getNewOrOldOrDefAndMigrate<string>('test.workingDirectory', dirname);
   }
 
-  public getDefaultEnvironmentVariables(): { [prop: string]: string } {
-    return this._old.get('defaultEnv', {});
-  }
-
   public getRandomGeneratorSeed(): 'time' | number | null {
     const val = this._getNewOrOldOrDefAndMigrate<string>('test.randomGeneratorSeed', 'time');
     if (val === 'time') return val;
@@ -451,7 +447,6 @@ export class Configurations {
     }
 
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
-    const defaultEnv = this.getDefaultEnvironmentVariables() || {};
 
     const createExecutableConfigFromPattern = (pattern: string): ExecutableConfig => {
       return new ExecutableConfig(
@@ -464,7 +459,6 @@ export class Configurations {
         [],
         1,
         defaultCwd,
-        defaultEnv,
         variableToValue,
         {},
         {},
@@ -564,7 +558,6 @@ export class Configurations {
           dependsOn,
           parallelizationLimit,
           defaultCwd,
-          defaultEnv,
           variableToValue,
           framework(obj['catch2']),
           framework(obj['gtest']),

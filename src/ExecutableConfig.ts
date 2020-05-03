@@ -40,7 +40,6 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _dependsOn: string[],
     private readonly _parallelizationLimit: number,
     private readonly _defaultCwd: string,
-    private readonly _defaultEnv: { [prop: string]: string }, //TODO
     private readonly _variableToValue: ResolveRulePair[],
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,
@@ -323,8 +322,6 @@ export class ExecutableConfig implements vscode.Disposable {
 
     let resolvedEnv: { [prop: string]: string } = {};
     try {
-      Object.assign(resolvedEnv, this._defaultEnv);
-
       if (this._env) Object.assign(resolvedEnv, this._env);
 
       resolvedEnv = resolveVariables(resolvedEnv, varToValue);

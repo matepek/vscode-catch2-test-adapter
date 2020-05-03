@@ -68,7 +68,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._log.infoS('info:', this.workspaceFolder, process.platform, process.version, process.versions, vscode.version);
 
-    // TODO feedback
+    // TODO:future feedback
     // if (false) {
     //   'https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter&ssr=false#review-details';
     // }
