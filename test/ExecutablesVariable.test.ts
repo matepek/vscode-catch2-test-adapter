@@ -314,7 +314,7 @@ describe(path.basename(__filename), function () {
 
     const wsPath = settings.workspaceFolderUri.fsPath;
     const execRelPath = 'a/b/c/d/1.2.3.exe';
-    const execAbsPath = path.join(wsPath, execRelPath);
+    const execAbsPath = path.normalize(path.join(wsPath, execRelPath));
 
     const toResolveAndExpectedResolvedValue: [string, string][] = [
       ['${absPath}', execAbsPath],
