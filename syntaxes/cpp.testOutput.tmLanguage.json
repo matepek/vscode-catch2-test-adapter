@@ -1,13 +1,13 @@
 {
   "id": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "$comment": "https://macromates.com/manual/en/language_grammars  https://www.apeth.com/nonblog/stories/textmatebundle.html",
-  "scopeName": "source.testMate.cpp",
+  "scopeName": "text.testMate.cpp.testOutput",
   "patterns": [
     {
       "begin": "\\[ RUN      \\](.*)",
       "captures": {
         "1": {
-          "name": "entity.name.testMate.cpp.gtest"
+          "name": "entity.name.testMate.cpp.testOutput.gtest"
         }
       },
       "patterns": [
@@ -24,7 +24,7 @@
       "begin": "⏱Duration: ([\\d\\.]*)",
       "captures": {
         "1": {
-          "name": "constant.numeric.testMate.cpp.catch2"
+          "name": "constant.numeric.testMate.cpp.testOutput.catch2"
         }
       },
       "patterns": [
@@ -44,10 +44,10 @@
           "match": "((.+)[:\\(]([0-9]+)\\)?|unknown file): (Failure|EXPECT_CALL|error)",
           "captures": {
             "1": {
-              "name": "comment.testMate.cpp.gtest"
+              "name": "comment.testMate.cpp.testOutput.gtest"
             },
             "4": {
-              "name": "markup.italic.testMate.cpp.gtest"
+              "name": "markup.italic.testMate.cpp.testOutput.gtest"
             }
           }
         },
@@ -55,7 +55,7 @@
           "match": "Value of: (.+)",
           "captures": {
             "1": {
-              "name": "markup.other.testMate.cpp.gtest"
+              "name": "markup.other.testMate.cpp.testOutput.gtest"
             }
           }
         },
@@ -63,19 +63,19 @@
           "match": "The difference between (.+) and (.+) is (.+), which (exceeds) (.+), where",
           "captures": {
             "1": {
-              "name": "markup.heading.testMate.cpp.gtest"
+              "name": "markup.heading.testMate.cpp.testOutput.gtest"
             },
             "2": {
-              "name": "markup.heading.testMate.cpp.gtest"
+              "name": "markup.heading.testMate.cpp.testOutput.gtest"
             },
             "3": {
-              "name": "markup.heading.testMate.cpp.gtest"
+              "name": "markup.heading.testMate.cpp.testOutput.gtest"
             },
             "4": {
-              "name": "markup.bold.testMate.cpp.gtest"
+              "name": "markup.bold.testMate.cpp.testOutput.gtest"
             },
             "5": {
-              "name": "markup.heading.testMate.cpp.gtest"
+              "name": "markup.heading.testMate.cpp.testOutput.gtest"
             }
           }
         },
@@ -83,10 +83,10 @@
           "match": "(.+) evaluates to (.+)(,|, and|\\.)",
           "captures": {
             "1": {
-              "name": "markup.heading.testMate.cpp.gtest"
+              "name": "markup.heading.testMate.cpp.testOutput.gtest"
             },
             "2": {
-              "name": "markup.heading.testMate.cpp.gtest"
+              "name": "markup.heading.testMate.cpp.testOutput.gtest"
             }
           }
         },
@@ -94,7 +94,7 @@
           "match": "\\s+Which is: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.testMate.cpp.gtest"
+              "name": "markup.heading.testMate.cpp.testOutput.gtest"
             }
           }
         },
@@ -102,10 +102,10 @@
           "match": "Expected: (.+), actual: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.testMate.cpp.gtest"
+              "name": "markup.heading.testMate.cpp.testOutput.gtest"
             },
             "2": {
-              "name": "markup.bold.testMate.cpp.gtest"
+              "name": "markup.bold.testMate.cpp.testOutput.gtest"
             }
           }
         },
@@ -113,7 +113,7 @@
           "match": "Expected: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.testMate.cpp.gtest"
+              "name": "markup.heading.testMate.cpp.testOutput.gtest"
             }
           }
         },
@@ -121,7 +121,7 @@
           "match": "Actual: (.+)",
           "captures": {
             "1": {
-              "name": "markup.bold.testMate.cpp.gtest"
+              "name": "markup.bold.testMate.cpp.testOutput.gtest"
             }
           }
         },
@@ -129,10 +129,10 @@
           "match": "\\[  (FAILED)  \\]([^\\(,]*)(\\s.+\\s)?(?:\\((.+)\\))?",
           "captures": {
             "1": {
-              "name": "markup.bold.testMate.cpp.gtest"
+              "name": "markup.bold.testMate.cpp.testOutput.gtest"
             },
             "2": {
-              "name": "entity.name.testMate.cpp.gtest"
+              "name": "entity.name.testMate.cpp.testOutput.gtest"
             },
             "4": {
               "patterns": [
@@ -147,10 +147,10 @@
           "match": "\\[       (OK) \\]([^\\(,]*)(?:\\((.+)\\))?",
           "captures": {
             "1": {
-              "name": "markup.heading.testMate.cpp.gtest"
+              "name": "markup.heading.testMate.cpp.testOutput.gtest"
             },
             "2": {
-              "name": "entity.name.testMate.cpp.gtest"
+              "name": "entity.name.testMate.cpp.testOutput.gtest"
             },
             "3": {
               "patterns": [
@@ -170,13 +170,13 @@
       "patterns": [
         {
           "match": "^Unexpected mock function call",
-          "name": "markup.bold.testMate.cpp.gtest"
+          "name": "markup.bold.testMate.cpp.testOutput.gtest"
         },
         {
           "match": "Expected arg #.+: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.testMate.cpp.gtest"
+              "name": "markup.heading.testMate.cpp.testOutput.gtest"
             }
           }
         },
@@ -189,13 +189,13 @@
       "patterns": [
         {
           "match": "\\(at .+\\)",
-          "name": "comment.testMate.cpp.catch2"
+          "name": "comment.testMate.cpp.testOutput.catch2"
         },
         {
           "match": "\"(.+)\"",
           "captures": {
             "1": {
-              "name": "entity.name.testMate.cpp.catch2"
+              "name": "entity.name.testMate.cpp.testOutput.catch2"
             }
           }
         },
@@ -203,7 +203,7 @@
           "match": "Exception was thrown: (.+)",
           "captures": {
             "1": {
-              "name": "markup.bold.testMate.cpp.catch2"
+              "name": "markup.bold.testMate.cpp.testOutput.catch2"
             }
           }
         },
@@ -211,7 +211,7 @@
           "match": "Original: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.testMate.cpp.catch2"
+              "name": "markup.heading.testMate.cpp.testOutput.catch2"
             }
           }
         },
@@ -219,14 +219,14 @@
           "match": "Expanded: (.+)",
           "captures": {
             "1": {
-              "name": "markup.bold.testMate.cpp.catch2"
+              "name": "markup.bold.testMate.cpp.testOutput.catch2"
             }
           }
         },
         {
           "begin": "⬇ (.+):",
           "end": "⬆ \\1",
-          "contentName": "string.testMate.cpp.catch2",
+          "contentName": "string.testMate.cpp.testOutput.catch2",
           "patterns": [
             {
               "include": "#gmock"

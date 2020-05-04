@@ -113,7 +113,7 @@
   "contributes": {
     "languages": [
       {
-        "id": "testMate.cpp",
+        "id": "testMate.cpp.testOutput",
         "mimetypes": [
           "text/x-code-output",
           "x-code-output"
@@ -122,9 +122,9 @@
     ],
     "grammars": [
       {
-        "language": "testMate.cpp",
-        "scopeName": "source.testMate.cpp",
-        "path": "./syntaxes/testMate.cpp.tmLanguage.json"
+        "language": "testMate.cpp.testOutput",
+        "scopeName": "text.testMate.cpp.testOutput",
+        "path": "./syntaxes/cpp.testOutput.tmLanguage.json"
       }
     ],
     "configuration": {

@@ -52,7 +52,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
     this._disposables.push(
       vscode.languages.registerDocumentLinkProvider(
-        { language: 'testMate.cpp' },
+        { language: 'testMate.cpp.testOutput' },
         {
           provideDocumentLinks: (
             document: vscode.TextDocument,
