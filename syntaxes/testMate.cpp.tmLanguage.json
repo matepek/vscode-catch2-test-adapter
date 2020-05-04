@@ -126,7 +126,7 @@
           }
         },
         {
-          "match": "\\[  (FAILED)  \\]([^\\(]*)(\\s.+\\s)?(?:\\((.+)\\))?",
+          "match": "\\[  (FAILED)  \\]([^\\(,]*)(\\s.+\\s)?(?:\\((.+)\\))?",
           "captures": {
             "1": {
               "name": "markup.bold.testMate.cpp.gtest"
@@ -144,7 +144,7 @@
           }
         },
         {
-          "match": "\\[       (OK) \\]([^\\(]*)(?:\\((.+)\\))?",
+          "match": "\\[       (OK) \\]([^\\(,]*)(?:\\((.+)\\))?",
           "captures": {
             "1": {
               "name": "markup.heading.testMate.cpp.gtest"

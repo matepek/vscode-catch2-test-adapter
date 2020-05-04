@@ -749,7 +749,7 @@
           }
         },
         "testMate.cpp.test.workingDirectory": {
-          "markdownDescription": "Sets working directory of the test executable (relative to the workspace folder or absolute path). Note: `testMate.cpp.executables` overwrites it locally.",
+          "markdownDescription": "Sets working directory of the test executable (relative to the workspace folder or absolute path). Note: `testMate.cpp.executables` overwrites it locally. ([Variables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#variables))",
           "scope": "resource",
           "type": "string",
           "default": "${absDirpath}",

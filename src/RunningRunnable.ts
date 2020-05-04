@@ -2,6 +2,8 @@ import * as os from 'os';
 import { ChildProcess } from 'child_process';
 
 import { AbstractTest } from './AbstractTest';
+import { LoggerWrapper } from './LoggerWrapper';
+import { promisify } from 'util';
 
 export class ProcessResult {
   public constructor(public readonly error?: Error) {}
@@ -69,6 +71,8 @@ export class ProcessResult {
   }
 }
 
+///
+
 export class RunningRunnable {
   public constructor(public readonly process: ChildProcess, public readonly childrenToRun: readonly AbstractTest[]) {
     process.once('close', () => {
@@ -98,6 +102,32 @@ export class RunningRunnable {
         }
       }, 5000);
     }
+  }
+
+  public setPriorityAsync(log: LoggerWrapper): void {
+    let retryOnFailure = 5;
+
+    const setPriorityInner = (): Promise<void> => {
+      try {
+        if (this.terminated) {
+          return Promise.resolve();
+        } else if (process.connected && process.pid) {
+          os.setPriority(process.pid, 16);
+          log.debug('setPriority done', process.pid);
+
+          return Promise.resolve();
+        } else {
+          return promisify(setTimeout)(500).then(setPriorityInner);
+        }
+      } catch (e) {
+        log.warnS('setPriority failed', e, retryOnFailure);
+        if (retryOnFailure-- > 0) return promisify(setTimeout)(500).then(setPriorityInner);
+        else return Promise.resolve();
+      }
+    };
+
+    // if it finishes quickly don't bother to do anything
+    promisify(setTimeout)(2000).then(setPriorityInner);
   }
 
   public readonly startTime: number = Date.now();

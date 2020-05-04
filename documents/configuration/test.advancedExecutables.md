@@ -89,7 +89,9 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
   - Paths on different drive in the same `dependsOn` array maybe won't work.
   - (If you find another corner case, feel free to open an issue. It could be handy once in the future.)
 
-## Variables which can be used in `cwd` and `env` of `executables`:
+## Variables
+
+which can be used in `cwd` and `env` of `executables`:
 
 [array index]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
 

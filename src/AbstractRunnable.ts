@@ -516,7 +516,9 @@ export abstract class AbstractRunnable {
 
     this._runInfos.push(runInfo);
 
-    this._shared.log.info('proc started:', this.properties.path, this.properties, execParams);
+    this._shared.log.info('proc started:', runInfo.process.pid, this.properties.path, this.properties, execParams);
+
+    runInfo.setPriorityAsync(this._shared.log);
 
     runInfo.process.on('error', (err: Error) => {
       this._shared.log.error('process error event:', err, this);
