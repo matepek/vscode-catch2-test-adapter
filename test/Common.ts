@@ -23,6 +23,7 @@ import {
 } from 'vscode-test-adapter-api';
 
 import * as my from '../src/TestAdapter';
+import { Config } from '../src/Configurations';
 
 ///
 
@@ -38,11 +39,15 @@ export const settings = new (class {
   public readonly dotVscodePath = path.join(this.workspaceFolderUri.fsPath, '.vscode');
 
   public getConfig(): vscode.WorkspaceConfiguration {
+    return vscode.workspace.getConfiguration('testMate.cpp', this.workspaceFolderUri);
+  }
+
+  private _getOldConfig(): vscode.WorkspaceConfiguration {
     return vscode.workspace.getConfiguration('catch2TestExplorer', this.workspaceFolderUri);
   }
 
   // eslint-disable-next-line
-  public updateConfig(key: string, value: any): Promise<void> {
+  public updateConfig(key: Config, value: any): Promise<void> {
     return new Promise(r => this.getConfig().update(key, value).then(r));
   }
 
@@ -51,13 +56,17 @@ export const settings = new (class {
     const properties: { [prop: string]: string }[] = packageJson['contributes']['configuration']['properties'];
     let t: Thenable<void> = Promise.resolve();
     Object.keys(properties).forEach(key => {
-      assert.ok(key.startsWith('catch2TestExplorer.'));
-      const k = key.substr('catch2TestExplorer.'.length);
-      if (k !== 'logfile')
-        // don't want to override this
-        t = t.then(() => {
-          return this.getConfig().update(k, undefined);
-        });
+      assert.ok(key.startsWith('testMate.cpp.') || key.startsWith('catch2TestExplorer.'));
+
+      if (key.startsWith('testMate.cpp.')) {
+        const k = key.substr('testMate.cpp.'.length);
+        // don't want to override these
+        if (k !== 'log.logfile' && k !== 'log.logSentry' && k !== 'log.userId')
+          t = t.then(() => this.getConfig().update(k, undefined));
+      } else if (key.startsWith('catch2TestExplorer.')) {
+        const k = key.substr('catch2TestExplorer.'.length);
+        t = t.then(() => this._getOldConfig().update(k, undefined));
+      }
     });
     return new Promise(r => t.then(r));
   }
@@ -76,6 +85,11 @@ export async function waitFor(context: Mocha.Context, condition: Function, timeo
   while (!(c = await condition()) && (Date.now() - start < timeout || !context.enableTimeouts()))
     await promisify(setTimeout)(32);
   if (!c) throw Error('in test: ' + (context.test ? context.test.title : '?') + '. Condition: ' + condition.toString());
+}
+
+export async function waitForMilisec(context: Mocha.Context, milisec: number): Promise<void> {
+  const start = Date.now();
+  return waitFor(context, () => Date.now() - start > milisec);
 }
 
 ///
@@ -124,18 +138,18 @@ export class FileSystemWatcherStub implements vscode.FileSystemWatcher {
 export class Imitation {
   public readonly sinonSandbox = sinon.createSandbox();
 
-  public readonly spawnStub = this.sinonSandbox.stub(cp, 'spawn').named('spawnStub'); // eslint-disable-line
+  public readonly spawnStub = this.sinonSandbox.stub(cp, 'spawn').named('spawnStub');
 
   public readonly vsfsWatchStub = this.sinonSandbox
     .stub(vscode.workspace, 'createFileSystemWatcher')
-    .named('vscode.createFileSystemWatcher'); // eslint-disable-line
+    .named('vscode.createFileSystemWatcher');
 
   public readonly fsAccessStub = (this.sinonSandbox.stub(fs, 'access').named('access') as unknown) as sinon.SinonStub<
     [fs.PathLike, string, (err: NodeJS.ErrnoException | null) => void],
     void
-  >; // eslint-disable-line
+  >;
 
-  public readonly fsReadFileSyncStub = this.sinonSandbox.stub(fs, 'readFileSync').named('fsReadFileSync') as any; // eslint-disable-line
+  public readonly fsReadFileSyncStub = this.sinonSandbox.stub(fs, 'readFileSync').named('fsReadFileSync');
 
   public readonly vsFindFilesStub = this.sinonSandbox.stub(vscode.workspace, 'findFiles').named('vsFindFilesStub');
 
@@ -157,8 +171,8 @@ export class Imitation {
   }
 
   public createVscodeRelativePatternMatcher(p: string): sinon.SinonMatcher {
+    const required = new vscode.RelativePattern(settings.workspaceFolder, p);
     return sinon.match((actual: vscode.RelativePattern) => {
-      const required = new vscode.RelativePattern(settings.workspaceFolder, p);
       return required.base == actual.base && required.pattern == actual.pattern;
     });
   }
@@ -273,38 +287,55 @@ export class TestAdapter extends my.TestAdapter {
     return (this as any) /* eslint-disable-line */._rootSuite;
   }
 
-  public get(...index: number[]): TestSuiteInfo | TestInfo {
-    let res: TestSuiteInfo | TestInfo = this.root;
+  public getGroup(...index: number[]): TestSuiteInfo {
+    let group: TestSuiteInfo = this.root;
     for (let i = 0; i < index.length; i++) {
-      assert.strictEqual(res.type, 'suite');
-      assert.ok((res as TestSuiteInfo).children.length > index[i], index[i].toString());
-      res = (res as TestSuiteInfo).children[index[i]];
+      assert.ok(group.children.length > index[i], index[i].toString());
+      const next = group.children[index[i]];
+      if (next.type === 'suite') group = next;
+      else throw Error(`wrong type for ${index}[${i}]`);
     }
-    return res;
+    return group;
   }
 
-  public get suite1(): TestSuiteInfo {
-    return this.get(0) as TestSuiteInfo;
+  public getTest(...index: number[]): TestInfo {
+    let group: TestSuiteInfo = this.root;
+    for (let i = 0; i < index.length; i++) {
+      assert.ok(group.children.length > index[i], index[i].toString());
+      const next = group.children[index[i]];
+      if (i + 1 === index.length) {
+        if (next.type === 'test') return next;
+        else throw Error(`wrong type for ${index}[${i}]`);
+      } else {
+        if (next.type === 'suite') group = next;
+        else throw Error(`wrong type for ${index}[${i}]`);
+      }
+    }
+    throw Error(`coudn't find test ${index}`);
   }
-  public get suite2(): TestSuiteInfo {
-    return this.get(1) as TestSuiteInfo;
+
+  public get group1(): TestSuiteInfo {
+    return this.getGroup(0);
   }
-  public get suite3(): TestSuiteInfo {
-    return this.get(2) as TestSuiteInfo;
+  public get group2(): TestSuiteInfo {
+    return this.getGroup(1);
   }
-  public get suite4(): TestSuiteInfo {
-    return this.get(3) as TestSuiteInfo;
+  public get group3(): TestSuiteInfo {
+    return this.getGroup(2);
+  }
+  public get group4(): TestSuiteInfo {
+    return this.getGroup(3);
   }
 
   public get testStatesEvents(): TestRunEvent[] {
-    // eslint-disable-next-line
-    return this._testStatesEvents.map((v: any) => {
-      if (v.tooltip) v.tooltip = (v.tooltip as string).replace(/(Path|Cwd): .*/g, '$1: <masked>');
+    return this._testStatesEvents.map((v: TestRunEvent) => {
+      if ((v.type === 'test' || v.type === 'suite') && v.tooltip)
+        return Object.assign(v, { tooltip: v.tooltip.replace(/(Path|Cwd): .*/g, '$1: <masked>') });
       return v;
     });
   }
 
-  public testStatesEventsAssertDeepEqual(expected: object[]): void {
+  public testStatesEventsAssertDeepEqual(expected: TestRunEvent[]): void {
     if (this._testStatesEvents.length != expected.length)
       console.log(
         `this._testStatesEvents.length(${this._testStatesEvents.length}) != expected.length(${expected.length})`,
@@ -317,14 +348,54 @@ export class TestAdapter extends my.TestAdapter {
     }
   }
 
+  public testStatesEventsSimplifiedAssertEqual(expectedArr: TestRunEvent[]): void {
+    if (this._testStatesEvents.length != expectedArr.length)
+      console.log(
+        `this._testStatesEvents.length(${this._testStatesEvents.length}) != expected.length(${expectedArr.length})`,
+      );
+
+    const testStatesEvents = this._testStatesEvents;
+
+    for (let i = 0; i < expectedArr.length && i < testStatesEvents.length; ++i) {
+      const actual = testStatesEvents[i];
+      const expected = expectedArr[i];
+
+      if (actual.type == 'test' && expected.type == 'test') {
+        assert.strictEqual(actual.test, expected.test, `index: ${i}`);
+        assert.strictEqual(actual.state, expected.state, `index: ${i}`);
+      } else if (actual.type == 'suite' && expected.type == 'suite') {
+        assert.strictEqual(actual.suite, expected.suite, `index: ${i}`);
+        assert.strictEqual(actual.state, expected.state, `index: ${i}`);
+      } else {
+        assert.deepStrictEqual(actual, expected, `index: ${i}`);
+      }
+    }
+
+    assert.strictEqual(this._testStatesEvents.length, expectedArr.length);
+  }
+
   public getTestStatesEventIndex(searchFor: TestRunEvent): number {
-    const i = this.testStatesEvents.findIndex((v: TestRunEvent) => deepStrictEqual(searchFor, v));
+    const i = this.testStatesEvents.findIndex((v: TestRunEvent) => {
+      if (v.type !== searchFor.type) return false;
+      if (v.type === 'suite' && searchFor.type === 'suite') {
+        if (v.suite !== searchFor.suite) return false;
+        if (v.state !== searchFor.state) return false;
+      }
+      if (v.type === 'test' && searchFor.type === 'test') {
+        if (v.test !== searchFor.test) return false;
+        if (v.state !== searchFor.state) return false;
+      }
+      if (v.type === 'started' && searchFor.type === 'started') {
+        if (!deepStrictEqual(v.tests, searchFor.tests)) return false;
+      }
+      return true;
+    });
     assert.ok(
       0 <= i,
-      'getTestStatesEventIndex failed to find: ' +
-        inspect(searchFor, false, 1) +
+      `getTestStatesEventIndex failed to find: ` +
+        inspect(searchFor, false, 0) +
         '\nin:\n' +
-        inspect(this.testStatesEvents, false, 2),
+        inspect(this.testStatesEvents, false, 1),
     );
     return i;
   }

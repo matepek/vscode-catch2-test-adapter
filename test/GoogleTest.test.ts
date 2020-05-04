@@ -16,13 +16,13 @@ describe(path.basename(__filename), function () {
     },
     (null as unknown) as AbstractRunnable,
     (null as unknown) as Suite,
-    'id',
     'TestCase.TestName',
     'TestName',
     undefined,
     undefined,
     'gtest.cpp',
     11,
+    undefined,
   );
 
   it('parses EXPECT_CALL', function () {
@@ -59,7 +59,7 @@ describe(path.basename(__filename), function () {
         {
           file: 'gtest.cpp',
           line: 77,
-          message: '⬅️ Expected arg #0: is equal to 4;  Actual: 3;',
+          message: '⬅ multiple failures',
           hover: [
             'EXPECT_CALL(foo, Describe(4))...',
             '  Expected arg #0: is equal to 4',
@@ -75,8 +75,11 @@ describe(path.basename(__filename), function () {
       ],
     };
 
+    assert.strictEqual(gtest.description, ev.description);
+    assert.strictEqual(gtest.tooltip, ev.tooltip);
+    assert.strictEqual(gtest.lastRunMilisec, 66);
     assert.deepStrictEqual(ev, expected);
-    assert.ok(true);
+    assert.deepStrictEqual(gtest.lastRunEvent, expected);
   });
 
   it('parses Failure/error on unix', function () {
@@ -116,44 +119,47 @@ describe(path.basename(__filename), function () {
         {
           file: 'gtest.cpp',
           line: 23,
-          message: '⬅️ Actual: false;  Expected: true;',
+          message: '⬅ Actual: false; Expected: true',
           hover: 'Value of: 1 != 1\n  Actual: false\nExpected: true',
         },
         {
           file: 'gtest.cpp',
           line: 24,
-          message: '⬅️ Actual: true;  Expected: false;',
+          message: '⬅ Actual: true; Expected: false',
           hover: 'Value of: 1 == 1\n  Actual: true\nExpected: false',
         },
         {
           file: 'gtest.cpp',
           line: 25,
-          message: '⬅️ Expected: equality',
+          message: '⬅ Expected: equality',
           hover: 'Expected equality of these values:\n  1\n  2',
         },
         {
           file: 'gtest.cpp',
           line: 26,
-          message: '⬅️ Expected: (1) != (1), actual: 1 vs 1',
+          message: '⬅ Expected: (1) != (1), actual: 1 vs 1',
           hover: 'Expected: (1) != (1), actual: 1 vs 1',
         },
         {
           file: 'gtest.cpp',
           line: 27,
-          message: '⬅️ Expected: (1) < (1), actual: 1 vs 1',
+          message: '⬅ Expected: (1) < (1), actual: 1 vs 1',
           hover: 'Expected: (1) < (1), actual: 1 vs 1',
         },
         {
           file: 'gtest.cpp',
           line: 28,
-          message: '⬅️ Expected: (1) > (1), actual: 1 vs 1',
+          message: '⬅ Expected: (1) > (1), actual: 1 vs 1',
           hover: 'Expected: (1) > (1), actual: 1 vs 1',
         },
       ],
     };
 
+    assert.strictEqual(gtest.description, ev.description);
+    assert.strictEqual(gtest.tooltip, ev.tooltip);
+    assert.strictEqual(gtest.lastRunMilisec, 66);
     assert.deepStrictEqual(ev, expected);
-    assert.ok(true);
+    assert.deepStrictEqual(gtest.lastRunEvent, expected);
   });
 
   it('parses Failure/error on windows', function () {
@@ -179,7 +185,7 @@ describe(path.basename(__filename), function () {
     const expected: TestRunEvent = {
       type: 'test',
       test: gtest,
-      message: output,
+      message: output.replace(/\): error: /g, '): error: \n'),
       state: 'failed',
       description: '(66ms)',
       tooltip: 'Name: TestCase.TestName\n⏱Duration: 66ms',
@@ -187,43 +193,46 @@ describe(path.basename(__filename), function () {
         {
           file: 'gtest.cpp',
           line: 23,
-          message: '⬅️ Actual: false;  Expected: true;',
+          message: '⬅ Actual: false; Expected: true',
           hover: 'Value of: 1 != 1\n  Actual: false\nExpected: true',
         },
         {
           file: 'gtest.cpp',
           line: 24,
-          message: '⬅️ Actual: true;  Expected: false;',
+          message: '⬅ Actual: true; Expected: false',
           hover: 'Value of: 1 == 1\n  Actual: true\nExpected: false',
         },
         {
           file: 'gtest.cpp',
           line: 25,
-          message: '⬅️ Expected: equality',
+          message: '⬅ Expected: equality',
           hover: 'Expected equality of these values:\n  1\n  2',
         },
         {
           file: 'gtest.cpp',
           line: 26,
-          message: '⬅️ Expected: (1) != (1), actual: 1 vs 1',
+          message: '⬅ Expected: (1) != (1), actual: 1 vs 1',
           hover: 'Expected: (1) != (1), actual: 1 vs 1',
         },
         {
           file: 'gtest.cpp',
           line: 27,
-          message: '⬅️ Expected: (1) < (1), actual: 1 vs 1',
+          message: '⬅ Expected: (1) < (1), actual: 1 vs 1',
           hover: 'Expected: (1) < (1), actual: 1 vs 1',
         },
         {
           file: 'gtest.cpp',
           line: 28,
-          message: '⬅️ Expected: (1) > (1), actual: 1 vs 1',
+          message: '⬅ Expected: (1) > (1), actual: 1 vs 1',
           hover: 'Expected: (1) > (1), actual: 1 vs 1',
         },
       ],
     };
 
+    assert.strictEqual(gtest.description, ev.description);
+    assert.strictEqual(gtest.tooltip, ev.tooltip);
+    assert.strictEqual(gtest.lastRunMilisec, 66);
     assert.deepStrictEqual(ev, expected);
-    assert.ok(true);
+    assert.deepStrictEqual(gtest.lastRunEvent, expected);
   });
 });

@@ -42,7 +42,8 @@
         "C2_DEBUG": "true"
       },
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
-      "preLaunchTask": ["changePackageFromDistToSrc", "npm: watch"]
+      "preLaunchTask": "preDebug",
+      "postDebugTask": "postDebug"
     }
   ]
 }

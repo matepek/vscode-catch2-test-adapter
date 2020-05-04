@@ -16,25 +16,35 @@ export class Suite implements TestSuiteInfo {
     protected readonly _shared: SharedVariables,
     public readonly parent: Suite | undefined,
     private readonly _label: string,
-    private readonly _description: string | undefined,
-    private readonly _tooltip: string | undefined,
+    private readonly _descriptionBase: string,
+    private readonly _tooltipBase: string,
+    id: string | undefined,
   ) {
-    this.id = generateId();
+    this.id = id ? id : generateId();
+  }
+
+  public compare(label: string, description: string): boolean {
+    return this._label === label && this._descriptionBase === description;
   }
 
   public get label(): string {
     return this._label;
   }
 
+  private _additionalDesciption = '';
+  private _additionalTooltip = '';
+
   public get description(): string | undefined {
-    return this._description;
+    const val = this._descriptionBase + this._additionalDesciption;
+    return val ? val : undefined;
   }
 
   public get tooltip(): string {
     return (
       `Name: ${this._label}` +
-      (this._description ? `\nDescription: ${this._description}` : '') +
-      (this._tooltip ? `\n\n${this._tooltip}` : '')
+      (this._descriptionBase ? `\nDescription: ${this._descriptionBase}` : '') +
+      (this._tooltipBase ? `\n\n${this._tooltipBase}` : '') +
+      this._additionalTooltip
     );
   }
 
@@ -98,42 +108,54 @@ export class Suite implements TestSuiteInfo {
     }
   }
 
-  private _getCompletedEvent(): TestSuiteEvent {
+  private _updateDescriptionAndTooltip(): void {
+    this._additionalDesciption = '';
+    this._additionalTooltip = '';
+
     let testCount = 0;
+    let notSkippedTestCount = 0;
+    let testWithRunTimeCount = 0;
     let durationSum: number | undefined = undefined;
     const stateStat: { [prop: string]: number } = {};
 
     this.enumerateTestInfos((test: AbstractTest) => {
       testCount++;
-      if (test.lastRunMilisec !== undefined) durationSum = (durationSum ? durationSum : 0) + test.lastRunMilisec;
+      if (!test.skipped) notSkippedTestCount++;
+      if (test.lastRunMilisec !== undefined) {
+        testWithRunTimeCount++;
+        durationSum = (durationSum ? durationSum : 0) + test.lastRunMilisec;
+      }
       if (test.lastRunEvent) {
         if (test.lastRunEvent.state in stateStat) stateStat[test.lastRunEvent.state]++;
         else stateStat[test.lastRunEvent.state] = 1;
       }
     });
 
-    let description: string | undefined = undefined;
-    let tooltip: string | undefined = undefined;
+    this._additionalTooltip =
+      (this.tooltip ? '\n\n' : '') +
+      'Tests: ' +
+      testCount +
+      '\n' +
+      Object.keys(stateStat)
+        .map(state => '  - ' + state + ': ' + stateStat[state])
+        .join('\n');
 
     if (durationSum !== undefined) {
       const durationStr = milisecToStr(durationSum);
 
-      description = (this.description ? this.description + ' ' : '') + '(' + durationStr + ')';
+      const prefix =
+        testWithRunTimeCount < notSkippedTestCount ? (testWithRunTimeCount < notSkippedTestCount / 2 ? '>>' : '>') : '';
 
-      tooltip =
-        this.tooltip +
-        '\n\n' +
-        'Tests: ' +
-        testCount +
-        '\n' +
-        Object.keys(stateStat)
-          .map(state => '  - ' + state + ': ' + stateStat[state])
-          .join('\n') +
-        '\n⏱Duration: ' +
-        durationStr;
+      this._additionalDesciption = (this.description ? ' ' : '') + '(' + prefix + durationStr + ')';
+
+      this._additionalTooltip += '\n⏱Duration: ' + prefix + durationStr;
     }
+  }
 
-    return { type: 'suite', suite: this, state: 'completed', description, tooltip };
+  private _getCompletedEvent(): TestSuiteEvent {
+    this._updateDescriptionAndTooltip();
+
+    return { type: 'suite', suite: this, state: 'completed', description: this.description, tooltip: this.tooltip };
   }
 
   public sendCompletedEventIfNeeded(): void {
@@ -191,14 +213,14 @@ export class Suite implements TestSuiteInfo {
     });
   }
 
-  public findTest(pred: (v: AbstractTest) => boolean): AbstractTest | undefined {
+  public findTest(pred: (v: AbstractTest) => boolean): Readonly<AbstractTest> | undefined {
     return Suite.findTestInArray(this.children, pred);
   }
 
   public static findTestInArray(
     array: (Suite | AbstractTest)[],
     pred: (v: AbstractTest) => boolean,
-  ): AbstractTest | undefined {
+  ): Readonly<AbstractTest> | undefined {
     for (let i = 0; i < array.length; ++i) {
       const found = array[i].findTest(pred);
       if (found !== undefined) return found;

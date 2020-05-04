@@ -117,7 +117,7 @@
   "mochaExplorer.logpanel": true,
   "json.schemas": [
     {
-      "fileMatch": ["/syntaxes/test-output.tmLanguage.json"],
+      "fileMatch": ["/syntaxes/cpp.testOutput.tmLanguage.json"],
       "url": "/src/tmLanguage.schema.json"
     }
   ]

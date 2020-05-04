@@ -16,12 +16,12 @@ import * as Sentry from '@sentry/node';
 
 import { LoggerWrapper } from './LoggerWrapper';
 import { RootSuite } from './RootSuite';
-import { resolveVariables, generateId, reverse } from './Util';
+import { resolveVariables, generateId, reverse, ResolveRulePair } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { SharedVariables } from './SharedVariables';
 import { Catch2Section, Catch2Test } from './framework/Catch2Test';
 import { AbstractRunnable } from './AbstractRunnable';
-import { Config } from './Config';
+import { Configurations, Config } from './Configurations';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 import { AbstractTest } from './AbstractTest';
@@ -34,11 +34,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   >();
   private readonly _retireEmitter = new vscode.EventEmitter<RetireEvent>();
 
-  private readonly _variableToValue: [string, string][] = [
+  private readonly _variableToValue: ResolveRulePair[] = [
     ['${workspaceName}', this.workspaceFolder.name], // beware changing this line or the order
     ['${workspaceDirectory}', this.workspaceFolder.uri.fsPath],
     ['${workspaceFolder}', this.workspaceFolder.uri.fsPath],
     ['${osPathSep}', osPathSeparator],
+    ['${osEnvSep}', process.platform === 'win32' ? ';' : ':'],
+    [
+      /\$\{if\(isWin\)\}(.*)\$\{else\}(.*)\$\{endif\}/,
+      (m: RegExpMatchArray): string => (process.platform === 'win32' ? m[1] : m[2]),
+    ],
   ];
 
   // because we always want to return with the current rootSuite suite
@@ -58,21 +63,21 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
     this._log = new LoggerWrapper(
-      'catch2TestExplorer',
+      'testMate.cpp.log',
       this.workspaceFolder,
-      'Test Explorer: ' + this.workspaceFolder.name,
+      `C++ TestMate: ${this.workspaceFolder.name}`,
     );
 
-    const config = this._getConfiguration();
+    const configuration = this._getConfiguration();
 
     this._log.infoS('info:', this.workspaceFolder, process.platform, process.version, process.versions, vscode.version);
 
-    // TODO feedback
+    // TODO:future feedback
     // if (false) {
     //   'https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter&ssr=false#review-details';
     // }
 
-    if (!this._isDebug) config.askSentryConsent();
+    if (!this._isDebug) configuration.askSentryConsent();
 
     try {
       let extensionInfo: {
@@ -89,7 +94,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         extensionInfo = { version: '<unknown-version>', publisher: '<unknown-publisher>', name: '<unknown-name>' };
       }
 
-      const enabled = !this._isDebug && config.isSentryEnabled();
+      const enabled = !this._isDebug && configuration.isSentryEnabled();
 
       this._log.info('sentry.io is', enabled);
 
@@ -116,7 +121,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         this._log.exceptionS(e);
       }
 
-      Sentry.setUser({ id: config.getOrCreateUserId() });
+      Sentry.setUser({ id: configuration.getOrCreateUserId() });
       //Sentry.setTag('workspaceFolder', hashString(this.workspaceFolder.uri.fsPath));
 
       //'Framework' message includes this old message too: Sentry.captureMessage('Extension was activated', Sentry.Severity.Log);
@@ -150,7 +155,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           });
       };
 
-      this._disposables.push(this._sendRetireEmitter.event(debounce(retire, config.getRetireDebounceTime())));
+      this._disposables.push(this._sendRetireEmitter.event(debounce(retire, configuration.getRetireDebounceTime())));
     }
 
     this._disposables.push(this._loadWithTaskEmitter);
@@ -212,18 +217,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
-    this._disposables.push(
-      vscode.workspace.onDidChangeConfiguration(configChange => {
-        if (
-          configChange.affectsConfiguration('catch2TestExplorer.defaultEnv', this.workspaceFolder.uri) ||
-          configChange.affectsConfiguration('catch2TestExplorer.defaultCwd', this.workspaceFolder.uri) ||
-          configChange.affectsConfiguration('catch2TestExplorer.executables', this.workspaceFolder.uri)
-        ) {
-          this.load();
-        }
-      }),
-    );
-
     this._shared = new SharedVariables(
       this._log,
       this.workspaceFolder,
@@ -231,72 +224,76 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._loadWithTaskEmitter,
       this._sendTestEventEmitter,
       this._sendRetireEmitter,
-      config.getDefaultRngSeed(),
-      config.getDefaultExecWatchTimeout(),
-      config.getRetireDebounceTime(),
-      config.getDefaultExecRunningTimeout(),
-      config.getDefaultExecParsingTimeout(),
-      config.getDefaultNoThrow(),
-      config.getWorkerMaxNumber(),
-      config.getEnableTestListCaching(),
-      config.getGoogleTestTreatGMockWarningAs(),
-      config.getGoogleTestGMockVerbose(),
+      configuration.getRandomGeneratorSeed(),
+      configuration.getExecWatchTimeout(),
+      configuration.getRetireDebounceTime(),
+      configuration.getExecRunningTimeout(),
+      configuration.getExecParsingTimeout(),
+      configuration.getDefaultNoThrow(),
+      configuration.getParallelExecutionLimit(),
+      configuration.getEnableTestListCaching(),
+      configuration.getGoogleTestTreatGMockWarningAs(),
+      configuration.getGoogleTestGMockVerbose(),
     );
 
     this._disposables.push(
-      vscode.workspace.onDidChangeConfiguration(configChange => {
-        const config = this._getConfiguration();
-
+      Configurations.onDidChange(changeEvent => {
         try {
-          Sentry.setContext('config', config);
+          const config = this._getConfiguration();
+
+          try {
+            Sentry.setContext('config', config);
+          } catch (e) {
+            this._log.exceptionS(e);
+          }
+
+          const affectsAny = (...config: Config[]): boolean =>
+            config.some(c => changeEvent.affectsConfiguration(c, this.workspaceFolder.uri));
+
+          if (
+            affectsAny(
+              'test.workingDirectory',
+              'test.advancedExecutables',
+              'test.executables',
+              'test.parallelExecutionOfExecutableLimit',
+            )
+          ) {
+            this.load();
+          }
+          if (affectsAny('test.randomGeneratorSeed')) {
+            this._shared.rngSeed = config.getRandomGeneratorSeed();
+            this._retireEmitter.fire({});
+          }
+          if (affectsAny('discovery.gracePeriodForMissing')) {
+            this._shared.execWatchTimeout = config.getExecWatchTimeout();
+          }
+          if (affectsAny('discovery.retireDebounceLimit')) {
+            this._shared.retireDebounceTime = config.getRetireDebounceTime();
+          }
+          if (affectsAny('test.runtimeLimit')) {
+            this._shared.setExecRunningTimeout(config.getExecRunningTimeout());
+          }
+          if (affectsAny('discovery.runtimeLimit')) {
+            this._shared.setExecRunningTimeout(config.getExecParsingTimeout());
+          }
+          if (affectsAny('debug.noThrow')) {
+            this._shared.isNoThrow = config.getDefaultNoThrow();
+          }
+          if (affectsAny('test.parallelExecutionLimit')) {
+            this._shared.taskPool.maxTaskCount = config.getParallelExecutionLimit();
+          }
+          if (affectsAny('discovery.testListCaching')) {
+            this._shared.enabledTestListCaching = config.getEnableTestListCaching();
+          }
+          if (affectsAny('gtest.treatGmockWarningAs')) {
+            this._shared.googleTestTreatGMockWarningAs = config.getGoogleTestTreatGMockWarningAs();
+          }
+          if (affectsAny('gtest.gmockVerbose')) {
+            this._shared.googleTestGMockVerbose = config.getGoogleTestGMockVerbose();
+          }
         } catch (e) {
-          this._log.exceptionS(e);
+          this._shared.log.exceptionS(e);
         }
-
-        if (configChange.affectsConfiguration('catch2TestExplorer.defaultRngSeed', this.workspaceFolder.uri)) {
-          this._shared.rngSeed = config.getDefaultRngSeed();
-          this._retireEmitter.fire({});
-        }
-        if (configChange.affectsConfiguration('catch2TestExplorer.defaultWatchTimeoutSec', this.workspaceFolder.uri)) {
-          this._shared.execWatchTimeout = config.getDefaultExecWatchTimeout();
-        }
-        if (
-          configChange.affectsConfiguration('catch2TestExplorer.retireDebounceTimeMilisec', this.workspaceFolder.uri)
-        ) {
-          this._shared.retireDebounceTime = config.getRetireDebounceTime();
-        }
-        if (
-          configChange.affectsConfiguration('catch2TestExplorer.defaultRunningTimeoutSec', this.workspaceFolder.uri)
-        ) {
-          this._shared.setExecRunningTimeout(config.getDefaultExecRunningTimeout());
-        }
-        if (
-          configChange.affectsConfiguration('catch2TestExplorer.defaultExecParsingTimeoutSec', this.workspaceFolder.uri)
-        ) {
-          this._shared.setExecRunningTimeout(config.getDefaultExecParsingTimeout());
-        }
-        if (configChange.affectsConfiguration('catch2TestExplorer.defaultNoThrow', this.workspaceFolder.uri)) {
-          this._shared.isNoThrow = config.getDefaultNoThrow();
-        }
-        if (configChange.affectsConfiguration('catch2TestExplorer.workerMaxNumber', this.workspaceFolder.uri)) {
-          this._shared.taskPool.maxTaskCount = config.getWorkerMaxNumber();
-        }
-        if (configChange.affectsConfiguration('catch2TestExplorer.enableTestListCaching', this.workspaceFolder.uri)) {
-          this._shared.enabledTestListCaching = config.getEnableTestListCaching();
-        }
-        if (
-          configChange.affectsConfiguration(
-            'catch2TestExplorer.googletest.treatGmockWarningAs',
-            this.workspaceFolder.uri,
-          )
-        ) {
-          this._shared.googleTestTreatGMockWarningAs = config.getGoogleTestTreatGMockWarningAs();
-        }
-        if (configChange.affectsConfiguration('catch2TestExplorer.googletest.gmockVerbose', this.workspaceFolder.uri)) {
-          this._shared.googleTestGMockVerbose = config.getGoogleTestGMockVerbose();
-        }
-
-        Sentry.setContext('config', config);
       }),
     );
 
@@ -343,7 +340,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._log.info('load called');
     this._mainTaskQueue.size > 0 && this.cancel();
 
-    const config = this._getConfiguration();
+    const configuration = this._getConfiguration();
 
     this._rootSuite.dispose();
 
@@ -354,13 +351,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       this._testsEmitter.fire({ type: 'started' });
 
-      return Promise.resolve()
-        .then(() => {
-          return config.getExecutables(this._shared, this._variableToValue);
-        })
-        .then(exec => {
-          return this._rootSuite.load(exec);
-        })
+      return configuration
+        .getExecutables(this._shared, this._variableToValue)
+        .then(exec => this._rootSuite.load(exec))
         .then(
           () => {
             this._log.info('load finished', this._rootSuite.children.length);
@@ -376,7 +369,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             this._testsEmitter.fire({
               type: 'finished',
               suite: undefined,
-              errorMessage: inspect(e),
+              errorMessage: e instanceof Error ? `${e.name}\n${e.message}` : inspect(e),
             });
           },
         );
@@ -415,7 +408,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         if (arr) arr[1].push(curr!);
         else prev.push([curr!.runnable, [curr!]]);
         return prev;
-      }, new Array<[AbstractRunnable, AbstractTest[]]>());
+      }, new Array<[AbstractRunnable, Readonly<AbstractTest>[]]>());
 
     if (runnables.length !== 1) {
       this._log.error('unsupported executable count', tests);
@@ -426,9 +419,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._log.info('test', runnable, runnableTests);
 
-    const config = this._getConfiguration();
+    const configuration = this._getConfiguration();
 
-    const template = config.getDebugConfigurationTemplate();
+    const template = configuration.getDebugConfigurationTemplate();
 
     const label = runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
 
@@ -440,7 +433,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             .map(s => s.label)
             .join(' ← ');
 
-    const argsArray = runnable.getDebugParams(runnableTests, config.getDebugBreakOnFailure());
+    const argsArray = runnable.getDebugParams(runnableTests, configuration.getDebugBreakOnFailure());
 
     if (runnableTests.length === 1 && runnableTests[0] instanceof Catch2Test) {
       const sections = (runnableTests[0] as Catch2Test).sections;
@@ -492,7 +485,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }
     }
 
-    const debugConfig = resolveVariables(template, [
+    const varToResolve: ResolveRulePair<string | object>[] = [
       ...this._variableToValue,
       ['${suitelabel}', suiteLabels], // deprecated
       ['${suiteLabel}', suiteLabels],
@@ -503,7 +496,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ['${argsStr}', '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"'],
       ['${cwd}', runnable.properties.options.cwd!],
       ['${envObj}', Object.assign(Object.assign({}, process.env), runnable.properties.options.env!)],
-    ]);
+    ];
+
+    const debugConfig = resolveVariables(template, varToResolve);
 
     // we dont know better :(
     // https://github.com/Microsoft/vscode/issues/70125
@@ -540,8 +535,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           terminateConn && terminateConn.dispose();
           return Promise.reject(
             new Error(
-              'Failed starting the debug session. ' +
-                'Maybe something wrong with "catch2TestExplorer.debugConfigTemplate".',
+              'Failed starting the debug session. ' + 'Maybe something wrong with "testMate.cpp.debug.configTemplate".',
             ),
           );
         }
@@ -552,7 +546,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
   }
 
-  private _getConfiguration(): Config {
-    return new Config(this._log, this.workspaceFolder.uri);
+  private _getConfiguration(): Configurations {
+    return new Configurations(this._log, this.workspaceFolder.uri);
   }
 }

@@ -10,7 +10,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
   private _executables: ExecutableConfig[] = [];
 
   public constructor(id: string | undefined, shared: SharedVariables) {
-    super(shared, undefined, 'Catch2/GTest/DOCTest', undefined, undefined);
+    super(shared, undefined, 'C++ TestMate', '', '', id);
   }
 
   public get file(): string | undefined {
@@ -100,7 +100,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
       });
   }
 
-  public findTestById(idOrInfo: string | TestInfo): AbstractTest | undefined {
+  public findTestById(idOrInfo: string | TestInfo): Readonly<AbstractTest> | undefined {
     if (typeof idOrInfo === 'string') return this.findTest(x => x.id === idOrInfo);
     else return this.findTest(x => x === idOrInfo);
   }

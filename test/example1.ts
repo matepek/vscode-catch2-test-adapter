@@ -2040,7 +2040,7 @@ For more detailed usage please see the project docs
 
   public assertWithoutChildren(root: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
     assert.strictEqual(root.type, 'suite');
-    assert.strictEqual(root.label, 'Catch2/GTest/DOCTest');
+    assert.strictEqual(root.label, 'C++ TestMate');
     assert.strictEqual(root.file, undefined);
     assert.strictEqual(root.line, undefined);
     if (uniqeIdContainer != undefined) {
@@ -2343,9 +2343,9 @@ For more detailed usage please see the project docs
 
     for (const suite of this.outputs) {
       for (const scenario of suite[1]) {
-        imitation.spawnStub.withArgs(suite[0], scenario[0], sinon.match.any).callsFake(function () {
-          return new ChildProcessStub(scenario[1]);
-        });
+        imitation.spawnStub
+          .withArgs(suite[0], scenario[0], sinon.match.any)
+          .callsFake(() => new ChildProcessStub(scenario[1]));
       }
 
       imitation.fsAccessStub

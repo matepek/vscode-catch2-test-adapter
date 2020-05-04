@@ -29,7 +29,7 @@ beforeEach(function () {
   const title = this.currentTest ? this.currentTest.titlePath().join(': ') : '<unknown>';
   w.write('\n' + '#'.repeat(title.length + 6) + '\n## ' + title + ' ##\n' + '#'.repeat(title.length + 6) + '\n');
 
-  return settings.updateConfig('logfile', currentLogfilePath);
+  return settings.updateConfig('log.logfile', currentLogfilePath);
 });
 
 afterEach(async function () {

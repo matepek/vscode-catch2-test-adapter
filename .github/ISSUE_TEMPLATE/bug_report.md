@@ -51,7 +51,7 @@ about: Create a report to help us improve
   https://github.com/matepek/vscode-catch2-test-adapter#getting-logs
 
   Attach log:
-  - Set: `catch2TestExplorer.logfile`
+  - Set: `testMate.cpp.log.logfile`
   - Reproduce the bug.
   - Close VSCode
 

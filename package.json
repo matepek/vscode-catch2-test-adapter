@@ -1,11 +1,11 @@
 {
   "name": "vscode-catch2-test-adapter",
-  "displayName": "Catch2, Google Test and DOCtest Explorer",
-  "description": "Run Catch2, GoogleTest and DOCtest tests from VSCode",
+  "displayName": "C++ TestMate",
+  "description": "Run GoogleTest, Catch2 and DOCtest tests from VSCode (old name: 'Catch2, Google Test and DOCtest Explorer')",
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "2.9.12",
+  "version": "3.0.0",
   "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -19,16 +19,19 @@
     "Other"
   ],
   "keywords": [
+    "testmate",
     "c++",
     "test",
     "testing",
     "unit test",
     "catch2",
     "catchorg",
-    "google",
+    "gtest",
     "googletest",
     "google test",
-    "gtest",
+    "gmock",
+    "googlemock",
+    "google mock",
     "doctest",
     "onqtam"
   ],
@@ -68,7 +71,7 @@
     "@types/node": "^13.13.4",
     "@types/request-promise": "4.1.46",
     "@types/sinon": "^9.0.0",
-    "@types/vscode": "1.14.0",
+    "@types/vscode": "1.38.0",
     "@types/xml2js": "^0.4.5",
     "@typescript-eslint/eslint-plugin": "^2.30.0",
     "@typescript-eslint/parser": "^2.30.0",
@@ -76,16 +79,16 @@
     "deep-equal": "^2.0.3",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-prettier": "3.1.2",
+    "eslint-plugin-prettier": "3.1.3",
     "fs-extra": "^9.0.0",
     "glob": "^7.1.6",
     "mocha": "^7.1.2",
     "mocha-eslint": "^6.0.0",
-    "prettier": "2.0.2",
+    "prettier": "2.0.5",
     "raw-loader": "^4.0.1",
     "sinon": "^9.0.2",
     "source-map-support": "^0.5.19",
-    "ts-loader": "^7.0.1",
+    "ts-loader": "^7.0.2",
     "typescript": "^3.8.3",
     "vsce": "^1.75.0",
     "vscode-test": "^1.3.0",
@@ -110,7 +113,7 @@
   "contributes": {
     "languages": [
       {
-        "id": "test-output",
+        "id": "testMate.cpp.testOutput",
         "mimetypes": [
           "text/x-code-output",
           "x-code-output"
@@ -119,18 +122,835 @@
     ],
     "grammars": [
       {
-        "language": "test-output",
-        "scopeName": "source.test-output",
-        "path": "./syntaxes/test-output.tmLanguage.json"
+        "language": "testMate.cpp.testOutput",
+        "scopeName": "text.testMate.cpp.testOutput",
+        "path": "./syntaxes/cpp.testOutput.tmLanguage.json"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "Configuration for the 'Catch2 and Google Test Explorer' extension",
+      "title": "C++ TestMate",
       "$comment": "Enums will cause that the vscode will offer auto-completion.",
       "properties": {
+        "testMate.cpp.test.executables": {
+          "markdownDescription": "The location of your test executable (relative to the workspace folder or absolute path). Empty string means disabled. For more option set [testMate.cpp.test.advancedExecutables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) instead of this. NOTE: if `testMate.cpp.test.advancedExecutables` is set then this is ignored.",
+          "scope": "resource",
+          "type": "string",
+          "default": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*"
+        },
+        "testMate.cpp.test.advancedExecutables": {
+          "markdownDescription": "Array of executables with a lot of options. (If this is set then `testMate.cpp.test.executables` is ignored.) ([Details](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)).",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "markdownDescription": "An object which describes an executable-set with settings. ([Details](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md))",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "comment": {
+                "markdownDescription": "One can wite comments here about the config just like using $comment",
+                "type": "string"
+              },
+              "pattern": {
+                "markdownDescription": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+                      "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*.exe"
+                    ],
+                    "minLength": 1
+                  },
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                ]
+              },
+              "name": {
+                "markdownDescription": "The name of the test suite (file). Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "${filename}",
+                      "${relPath}",
+                      "${absPath}"
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                ]
+              },
+              "description": {
+                "markdownDescription": "A less prominent text after the `name`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "${relDirpath}/",
+                      "${absDirpath}/"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "cwd": {
+                "markdownDescription": "The current working directory for the test executable. If it isn't provided and `test.workingDirectory` does then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "${absDirpath}",
+                      "${relDirpath}",
+                      "${workspaceDirectory}",
+                      "${workspaceFolder}"
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                ]
+              },
+              "env": {
+                "type": "object",
+                "markdownDescription": "Environment variables for the test executable. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "${absPath}",
+                        "${relPath}",
+                        "${absDirpath}",
+                        "${relDirpath}",
+                        "${filename}",
+                        "${baseFilename}",
+                        "${extFilename}",
+                        "${workspaceDirectory}",
+                        "${workspaceFolder}",
+                        "${workspaceName}",
+                        "${cwd}",
+                        "${os_env:PATH}"
+                      ]
+                    },
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  ]
+                }
+              },
+              "dependsOn": {
+                "markdownDescription": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "parallelizationLimit": {
+                "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `testMate.cpp.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "scope": "resource",
+                "type": "integer",
+                "default": 1,
+                "minimum": 1
+              },
+              "catch2": {
+                "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "helpRegex": {
+                    "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "prependTestRunningArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "prependTestListingArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "ignoreTestEnumerationStdErr": {
+                    "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "boolean"
+                  },
+                  "testGrouping": {
+                    "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                    "additionalProperties": false,
+                    "properties": {
+                      "groupByExecutable": {
+                        "markdownDescription": "Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "description": {
+                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "groupBySource": {
+                        "markdownDescription": "Groups the tests by the source file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "markdownDescription": "Label of the group. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "description": {
+                            "markdownDescription": "Less prominent text next to label. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "sourceIndex"
+                        ]
+                      },
+                      "groupByTags": {
+                        "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "tags": {
+                            "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            }
+                          },
+                          "tagFormat": {
+                            "type": "string",
+                            "pattern": "\\$\\{tag\\}"
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "groupByRegex": {
+                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "regexes": {
+                            "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "regexes"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "gtest": {
+                "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "helpRegex": {
+                    "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "prependTestRunningArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "prependTestListingArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "ignoreTestEnumerationStdErr": {
+                    "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "boolean"
+                  },
+                  "testGrouping": {
+                    "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                    "additionalProperties": false,
+                    "properties": {
+                      "groupByExecutable": {
+                        "markdownDescription": "Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "description": {
+                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "groupBySource": {
+                        "markdownDescription": "Groups the tests by the source file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "markdownDescription": "Label of the group. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "description": {
+                            "markdownDescription": "Less prominent text next to label. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "sourceIndex"
+                        ]
+                      },
+                      "groupByTags": {
+                        "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "tags": {
+                            "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            }
+                          },
+                          "tagFormat": {
+                            "type": "string",
+                            "pattern": "\\$\\{tag\\}"
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "groupByRegex": {
+                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "regexes": {
+                            "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "regexes"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "doctest": {
+                "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "helpRegex": {
+                    "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "prependTestRunningArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "prependTestListingArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "ignoreTestEnumerationStdErr": {
+                    "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "boolean"
+                  },
+                  "testGrouping": {
+                    "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                    "additionalProperties": false,
+                    "properties": {
+                      "groupByExecutable": {
+                        "markdownDescription": "Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "description": {
+                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "groupBySource": {
+                        "markdownDescription": "Groups the tests by the source file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "markdownDescription": "Label of the group. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "description": {
+                            "markdownDescription": "Less prominent text next to label. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "sourceIndex"
+                        ]
+                      },
+                      "groupByTags": {
+                        "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "tags": {
+                            "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            }
+                          },
+                          "tagFormat": {
+                            "type": "string",
+                            "pattern": "\\$\\{tag\\}"
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "groupByRegex": {
+                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "regexes": {
+                            "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "regexes"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "required": [
+              "pattern"
+            ]
+          }
+        },
+        "testMate.cpp.test.workingDirectory": {
+          "markdownDescription": "Sets working directory of the test executable (relative to the workspace folder or absolute path). Note: `testMate.cpp.executables` overwrites it locally. ([Variables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#variables))",
+          "scope": "resource",
+          "type": "string",
+          "default": "${absDirpath}",
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "${absDirpath}",
+                "${relDirpath}",
+                "${workspaceDirectory}",
+                "${workspaceFolder}"
+              ]
+            },
+            {
+              "type": "string",
+              "minLength": 1
+            }
+          ]
+        },
+        "testMate.cpp.test.randomGeneratorSeed": {
+          "markdownDescription": "Shuffles the tests with the given random. Catch2: [--rng-seed (<integer> or 'time')](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed); Google Test: [--gtest_random_seed=<integer>](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#shuffling-the-tests);",
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "pattern": "^(|time|[0-9]+)$"
+        },
+        "testMate.cpp.test.runtimeLimit": {
+          "markdownDescription": "[seconds] Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
+          "scope": "resource",
+          "type": "integer",
+          "default": 600,
+          "minimum": -1
+        },
+        "testMate.cpp.test.parallelExecutionLimit": {
+          "markdownDescription": "The variable maximize the number of the parallel test execution. (It applies instantly.) Note: If your executables depends on the **same resource** than this **could cause a problem**.",
+          "scope": "resource",
+          "type": "integer",
+          "default": 1,
+          "minimum": 1
+        },
+        "testMate.cpp.test.parallelExecutionOfExecutableLimit": {
+          "markdownDescription": "The variable maximize the number of the parallel execution of a executable file. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. The `testMate.cpp.test.parallelExecutionLimit` is a global limit and this is a local one. Note: If your **test cases** depends on the same resource than this **could cause a problem**.",
+          "scope": "resource",
+          "type": "integer",
+          "default": 1,
+          "minimum": 1
+        },
+        "testMate.cpp.discovery.gracePeriodForMissing": {
+          "markdownDescription": "[seconds] Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.",
+          "scope": "resource",
+          "type": "integer",
+          "default": 10,
+          "minimum": 1
+        },
+        "testMate.cpp.discovery.retireDebounceLimit": {
+          "markdownDescription": "[milisec] Retire events will be held back for the given duration. (Reload is required)",
+          "scope": "resource",
+          "type": "integer",
+          "default": 1000,
+          "minimum": 200
+        },
+        "testMate.cpp.discovery.runtimeLimit": {
+          "markdownDescription": "[seconds] The timeout of the test-executable used to identify it (Calls the exec with `--help`).",
+          "scope": "resource",
+          "type": "integer",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 900
+        },
+        "testMate.cpp.discovery.testListCaching": {
+          "markdownDescription": "(Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.)",
+          "scope": "resource",
+          "type": "boolean",
+          "default": false
+        },
+        "testMate.cpp.debug.configTemplate": {
+          "markdownDescription": "Set the necessary debug configurations and the debug button will work.",
+          "scope": "resource",
+          "default": null,
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "${label}",
+                      "${suiteLabel}",
+                      "${exec}",
+                      "${argsArray}",
+                      "${argsStr}",
+                      "${cwd}",
+                      "${envObj}"
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "array"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "extensionOnly"
+              ]
+            }
+          ]
+        },
+        "testMate.cpp.debug.breakOnFailure": {
+          "markdownDescription": "Debugger breaks on failure while debugging the test. Catch2: [--break](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#breaking-into-the-debugger); Google Test: [--gtest_break_on_failure](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#turning-assertion-failures-into-break-points);",
+          "scope": "resource",
+          "type": "boolean",
+          "default": true
+        },
+        "testMate.cpp.debug.noThrow": {
+          "markdownDescription": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: [--nothrow](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#eliding-assertions-expected-to-throw);",
+          "scope": "resource",
+          "type": "boolean",
+          "default": false
+        },
+        "testMate.cpp.log.logpanel": {
+          "markdownDescription": "Creates a new output channel and write the log messages there. For debugging. Enabling it could slow down your vscode.",
+          "scope": "resource",
+          "type": "boolean",
+          "default": false
+        },
+        "testMate.cpp.log.logfile": {
+          "markdownDescription": "Writes the log message into the given file. Empty means disabled.",
+          "scope": "resource",
+          "type": "string",
+          "default": ""
+        },
+        "testMate.cpp.log.logSentry": {
+          "markdownDescription": "Errors/Exceptions will be logged and sent automatically for further analysis.",
+          "scope": "machine",
+          "type": "string",
+          "default": "question"
+        },
+        "testMate.cpp.log.userId": {
+          "markdownDescription": "A locally generated identifier which is used to group the errors/events. Not used for anything evil. Anonymity is preserved.",
+          "scope": "machine",
+          "type": "string"
+        },
+        "testMate.cpp.gtest.treatGmockWarningAs": {
+          "markdownDescription": "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/cook_book.md#the-nice-the-strict-and-the-naggy-nicestrictnaggy))",
+          "deprecationMessage": "Will stop working unless you open an issue and tell me that how much you love it.",
+          "scope": "resource",
+          "type": "string",
+          "default": "nothing",
+          "enum": [
+            "nothing",
+            "failure"
+          ],
+          "enumDescriptions": [
+            "",
+            "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`."
+          ]
+        },
+        "testMate.cpp.gtest.gmockVerbose": {
+          "markdownDescription": "Sets [--gmock_verbose=...](https://github.com/google/googletest/blob/master/googlemock/docs/cheat_sheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
+          "deprecationMessage": "Will stop working unless you open an issue and tell me that how much you love it.",
+          "scope": "resource",
+          "type": "string",
+          "default": "default",
+          "enum": [
+            "default",
+            "info",
+            "warning",
+            "error"
+          ],
+          "enumDescriptions": [
+            "--gmock_verbose=... parameter won't be added",
+            "Google Mock will print all informational messages, warnings, and errors (most verbose). At this setting, Google Mock will also log any calls to the ON_CALL/EXPECT_CALL macros.",
+            "Google Mock will print both warnings and errors (less verbose). This is the default.",
+            "Google Mock will print errors only (least verbose)."
+          ]
+        },
         "catch2TestExplorer.executables": {
           "markdownDescription": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting.",
+          "deprecationMessage": "Use `testMate.cpp.executable` or `testMate.cpp.test.advancedExecutables` instead of this.",
           "scope": "resource",
           "default": [
             {
@@ -149,7 +969,7 @@
                     "additionalProperties": false,
                     "properties": {
                       "pattern": {
-                        "markdownDescription": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                        "markdownDescription": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: 🚫`\\`; ✅`/`; (required) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                         "anyOf": [
                           {
                             "type": "string",
@@ -165,7 +985,7 @@
                         ]
                       },
                       "name": {
-                        "markdownDescription": "The name of the test suite (file). Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                        "markdownDescription": "The name of the test suite (file). Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                         "anyOf": [
                           {
                             "type": "string",
@@ -182,7 +1002,7 @@
                         ]
                       },
                       "description": {
-                        "markdownDescription": "A less prominent text after the `name`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                        "markdownDescription": "A less prominent text after the `name`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                         "anyOf": [
                           {
                             "type": "string",
@@ -197,7 +1017,7 @@
                         ]
                       },
                       "cwd": {
-                        "markdownDescription": "The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                        "markdownDescription": "The current working directory for the test executable. If it isn't provided and `defaultCwd` does, then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                         "anyOf": [
                           {
                             "type": "string",
@@ -216,7 +1036,7 @@
                       },
                       "env": {
                         "type": "object",
-                        "markdownDescription": "Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                        "markdownDescription": "Environment variables for the test executable. If it isn't provided and `defaultEnv` does, then that will be used. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                         "additionalProperties": {
                           "anyOf": [
                             {
@@ -244,7 +1064,7 @@
                         }
                       },
                       "dependsOn": {
-                        "markdownDescription": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                        "markdownDescription": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                         "type": "array",
                         "items": {
                           "type": "string",
@@ -252,55 +1072,55 @@
                         }
                       },
                       "parallelizationLimit": {
-                        "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `catch2TestExplorer.workerMaxNumber` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                        "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `catch2TestExplorer.workerMaxNumber` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                         "scope": "resource",
                         "type": "integer",
                         "default": 1,
                         "minimum": 1
                       },
                       "catch2": {
-                        "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#framework-specific-settings)",
+                        "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
                           "helpRegex": {
-                            "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "string",
                             "minLength": 1
                           },
                           "prependTestRunningArgs": {
-                            "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "prependTestListingArgs": {
-                            "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {
-                            "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "boolean"
                           },
                           "testGrouping": {
-                            "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                            "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "additionalProperties": false,
                             "properties": {
                               "groupByExecutable": {
-                                "markdownDescription": "Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "label": {
-                                    "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "description": {
-                                    "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "groupBySource": {
@@ -315,20 +1135,20 @@
                                 }
                               },
                               "groupBySource": {
-                                "markdownDescription": "Groups the tests by the source file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Groups the tests by the source file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "label": {
-                                    "markdownDescription": "Label of the group. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Label of the group. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "description": {
-                                    "markdownDescription": "Less prominent text next to label. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Less prominent text next to label. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "groupUngroupedTo": {
-                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string",
                                     "minLength": 1
                                   },
@@ -347,12 +1167,12 @@
                                 ]
                               },
                               "groupByTags": {
-                                "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "tags": {
-                                    "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "array",
                                     "items": {
                                       "type": "array",
@@ -367,7 +1187,7 @@
                                     "pattern": "\\$\\{tag\\}"
                                   },
                                   "groupUngroupedTo": {
-                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string",
                                     "minLength": 1
                                   },
@@ -383,12 +1203,12 @@
                                 }
                               },
                               "groupByRegex": {
-                                "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "regexes": {
-                                    "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "array",
                                     "items": {
                                       "type": "string",
@@ -396,7 +1216,7 @@
                                     }
                                   },
                                   "groupUngroupedTo": {
-                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string",
                                     "minLength": 1
                                   },
@@ -419,48 +1239,48 @@
                         }
                       },
                       "gtest": {
-                        "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#framework-specific-settings)",
+                        "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
                           "helpRegex": {
-                            "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "string",
                             "minLength": 1
                           },
                           "prependTestRunningArgs": {
-                            "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "prependTestListingArgs": {
-                            "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {
-                            "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "boolean"
                           },
                           "testGrouping": {
-                            "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                            "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "additionalProperties": false,
                             "properties": {
                               "groupByExecutable": {
-                                "markdownDescription": "Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "label": {
-                                    "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "description": {
-                                    "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "groupBySource": {
@@ -475,20 +1295,20 @@
                                 }
                               },
                               "groupBySource": {
-                                "markdownDescription": "Groups the tests by the source file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Groups the tests by the source file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "label": {
-                                    "markdownDescription": "Label of the group. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Label of the group. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "description": {
-                                    "markdownDescription": "Less prominent text next to label. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Less prominent text next to label. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "groupUngroupedTo": {
-                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string",
                                     "minLength": 1
                                   },
@@ -507,12 +1327,12 @@
                                 ]
                               },
                               "groupByTags": {
-                                "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "tags": {
-                                    "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "array",
                                     "items": {
                                       "type": "array",
@@ -527,7 +1347,7 @@
                                     "pattern": "\\$\\{tag\\}"
                                   },
                                   "groupUngroupedTo": {
-                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string",
                                     "minLength": 1
                                   },
@@ -543,12 +1363,12 @@
                                 }
                               },
                               "groupByRegex": {
-                                "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "regexes": {
-                                    "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "array",
                                     "items": {
                                       "type": "string",
@@ -556,7 +1376,7 @@
                                     }
                                   },
                                   "groupUngroupedTo": {
-                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string",
                                     "minLength": 1
                                   },
@@ -579,48 +1399,48 @@
                         }
                       },
                       "doctest": {
-                        "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#framework-specific-settings)",
+                        "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
                           "helpRegex": {
-                            "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "string",
                             "minLength": 1
                           },
                           "prependTestRunningArgs": {
-                            "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "prependTestListingArgs": {
-                            "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "array",
                             "items": {
                               "type": "string"
                             }
                           },
                           "ignoreTestEnumerationStdErr": {
-                            "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md)",
+                            "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                             "type": "boolean"
                           },
                           "testGrouping": {
-                            "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                            "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "additionalProperties": false,
                             "properties": {
                               "groupByExecutable": {
-                                "markdownDescription": "Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "label": {
-                                    "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "description": {
-                                    "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "groupBySource": {
@@ -635,20 +1455,20 @@
                                 }
                               },
                               "groupBySource": {
-                                "markdownDescription": "Groups the tests by the source file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Groups the tests by the source file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "label": {
-                                    "markdownDescription": "Label of the group. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Label of the group. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "description": {
-                                    "markdownDescription": "Less prominent text next to label. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Less prominent text next to label. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string"
                                   },
                                   "groupUngroupedTo": {
-                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string",
                                     "minLength": 1
                                   },
@@ -667,12 +1487,12 @@
                                 ]
                               },
                               "groupByTags": {
-                                "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "tags": {
-                                    "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "array",
                                     "items": {
                                       "type": "array",
@@ -687,7 +1507,7 @@
                                     "pattern": "\\$\\{tag\\}"
                                   },
                                   "groupUngroupedTo": {
-                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string",
                                     "minLength": 1
                                   },
@@ -703,12 +1523,12 @@
                                 }
                               },
                               "groupByRegex": {
-                                "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                 "type": "object",
                                 "additionalProperties": false,
                                 "properties": {
                                   "regexes": {
-                                    "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "array",
                                     "items": {
                                       "type": "string",
@@ -716,7 +1536,7 @@
                                     }
                                   },
                                   "groupUngroupedTo": {
-                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping)",
+                                    "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                                     "type": "string",
                                     "minLength": 1
                                   },
@@ -764,6 +1584,7 @@
         },
         "catch2TestExplorer.defaultCwd": {
           "markdownDescription": "The working directory where the test is run (relative to the workspace folder or absolute path), if it isn't provided in \"executables\". (It resolves variables.)",
+          "deprecationMessage": "Use `testMate.cpp.test.workingDirectory` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": "${absDirpath}",
@@ -785,6 +1606,7 @@
         },
         "catch2TestExplorer.defaultEnv": {
           "markdownDescription": "Environment variables to be set when running the tests. (It resolves variables.)",
+          "deprecationMessage": "Set the variables in `testMate.cpp.test.advancedExecutables` instead of this.",
           "type": "object",
           "additionalProperties": {
             "anyOf": [
@@ -815,6 +1637,7 @@
         },
         "catch2TestExplorer.defaultRngSeed": {
           "markdownDescription": "Shuffles the tests with the given random. Catch2: [--rng-seed (<integer> or 'time')](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed); Google Test: [--gtest_random_seed=<integer>](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#shuffling-the-tests);",
+          "deprecationMessage": "Use `testMate.cpp.test.randomGeneratorSeed` instead of this.",
           "scope": "resource",
           "default": null,
           "oneOf": [
@@ -835,6 +1658,7 @@
         },
         "catch2TestExplorer.defaultWatchTimeoutSec": {
           "markdownDescription": "Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.",
+          "deprecationMessage": "Use `testMate.cpp.test.watchTimeoutInSeconds` instead of this.",
           "scope": "resource",
           "type": "integer",
           "default": 10,
@@ -842,6 +1666,7 @@
         },
         "catch2TestExplorer.retireDebounceTimeMilisec": {
           "markdownDescription": "Retire events will be held back for the given duration. (Reload is required)",
+          "deprecationMessage": "Use `testMate.cpp.discovery.retireDebounceLimit` instead of this.",
           "scope": "resource",
           "type": "integer",
           "default": 1000,
@@ -849,6 +1674,7 @@
         },
         "catch2TestExplorer.defaultRunningTimeoutSec": {
           "markdownDescription": "Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
+          "deprecationMessage": "Use `testMate.cpp.test.runtimeLimit` instead of this.",
           "scope": "resource",
           "type": "integer",
           "default": 600,
@@ -856,6 +1682,7 @@
         },
         "catch2TestExplorer.defaultExecParsingTimeoutSec": {
           "markdownDescription": "The timeout duration (in seconds) of the test-executable identifier (Calls the exec with `--help`).",
+          "deprecationMessage": "Use `testMate.cpp.discovery.runtimeLimit` instead of this.",
           "scope": "resource",
           "type": "integer",
           "default": 5,
@@ -864,6 +1691,7 @@
         },
         "catch2TestExplorer.workerMaxNumber": {
           "markdownDescription": "The variable maximize the number of the parallel test execution. It applies instantly.",
+          "deprecationMessage": "Use `testMate.cpp.test.parallelExecutionLimit` instead of this.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
@@ -871,6 +1699,7 @@
         },
         "catch2TestExplorer.debugConfigTemplate": {
           "markdownDescription": "Set the necessary debug configurations and the debug button will work.",
+          "deprecationMessage": "Use `testMate.cpp.debug.configTemplate` instead of this.",
           "scope": "resource",
           "default": null,
           "oneOf": [
@@ -925,48 +1754,56 @@
         },
         "catch2TestExplorer.debugBreakOnFailure": {
           "markdownDescription": "Debugger breaks on failure while debugging the test. Catch2: [--break](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#breaking-into-the-debugger); Google Test: [--gtest_break_on_failure](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#turning-assertion-failures-into-break-points);",
+          "deprecationMessage": "Use `testMate.cpp.debug.breakOnFailure` instead of this.",
           "scope": "resource",
           "type": "boolean",
           "default": true
         },
         "catch2TestExplorer.defaultNoThrow": {
           "markdownDescription": "Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: [--nothrow](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#eliding-assertions-expected-to-throw);",
+          "deprecationMessage": "Use `testMate.cpp.debug.noThrow` instead of this.",
           "scope": "resource",
           "type": "boolean",
           "default": false
         },
         "catch2TestExplorer.logpanel": {
           "markdownDescription": "Creates a new output channel and write the log messages there. For debugging. Enabling it could slow down your vscode.",
+          "deprecationMessage": "Use `testMate.cpp.log.logpanel` instead of this.",
           "scope": "resource",
           "type": "boolean",
           "default": false
         },
         "catch2TestExplorer.logfile": {
           "markdownDescription": "Writes the log message into the given file. Empty means disabled.",
+          "deprecationMessage": "Use `testMate.cpp.log.logfile` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": ""
         },
         "catch2TestExplorer.logSentry": {
           "markdownDescription": "Errors/Exceptions will be logged and sent automatically for further analysis.",
+          "deprecationMessage": "Use `testMate.cpp.log.logSentry` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": "question"
         },
         "catch2TestExplorer.userId": {
           "markdownDescription": "A locally generated identifier which is used to group the errors/events.",
+          "deprecationMessage": "Use `testMate.cpp.log.userId` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": ""
         },
         "catch2TestExplorer.enableTestListCaching": {
-          "markdownDescription": "(Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.) (Click [here](http://bit.ly/2HFcAC6), if you think it is a useful feature!)",
+          "markdownDescription": "(Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.)",
+          "deprecationMessage": "Use `testMate.cpp.discovery.testListCaching` instead of this.",
           "scope": "resource",
           "type": "boolean",
           "default": false
         },
         "catch2TestExplorer.googletest.treatGmockWarningAs": {
           "markdownDescription": "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`. (You may should consider using [testing::StrictMock<T>](https://github.com/google/googletest/blob/master/googlemock/docs/cook_book.md#the-nice-the-strict-and-the-naggy-nicestrictnaggy))",
+          "deprecationMessage": "Use `testMate.cpp.gtest.treatGmockWarningAs` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": "nothing",
@@ -981,6 +1818,7 @@
         },
         "catch2TestExplorer.googletest.gmockVerbose": {
           "markdownDescription": "Sets [--gmock_verbose=...](https://github.com/google/googletest/blob/master/googlemock/docs/cheat_sheet.md#flags). (Note: executable has to be linked to gmock `gmock_main` not `gtest_main`)",
+          "deprecationMessage": "Use `testMate.cpp.gtest.gmockVerbose` instead of this.",
           "scope": "resource",
           "type": "string",
           "default": "default",

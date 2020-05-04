@@ -2,10 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+
+## [3.0.0]
+
+It's a big day! the extension was finally renamed to `C++ TestMate`.
+(Finally, I mean I've been planning this since a long time ago in a galaxy far, far away....)
+Lots of small tweaks was added. (Please be patient and report issuess. ^^)
+
+May the 4th be with you 🖖
+(Yes, I know.. ^^)
+
+### Changed
+
+- All the configs has moved and renamed. ⚠
+  (Merge logic is implemented to make the transition easier.)
+
+### Removed
+
+- ❌ `defaultEnv` is removed. From now evironment variables can be set
+  only in the [test.advancedExecutables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md).
 
 ## [2.9.12] - 2020-05-01
 
@@ -21,7 +39,7 @@ Catch2 long filename recognition improvement.
 
 Output coloring improvements.
 
-Hint: Are you working on an executable or a TestCase?
+Hint: Are you working on an executable or a TestCase or just on 1 test?
 
 > Just right click on it and `Enable autorun`.
 > Next time you recompile your executable it will run it automatically.
@@ -60,7 +78,7 @@ Sentry was broken
 
 ### Added
 
-- Exeprimental _multirun_ feature. Run the same executable multiple times. See config: [parallelizationLimit](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md).
+- Exeprimental _multirun_ feature. Run the same executable multiple times. See config: [parallelizationLimit](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md).
 
 ### Changed
 
@@ -84,7 +102,7 @@ Pesky bug fixes and tons of improvements
 
 ### Added
 
-Experiment feature: `testGrouping`: Groups the tests inside the executable. ([Example](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/executables.config.md#testgrouping))
+Experiment feature: `testGrouping`: Groups the tests inside the executable. ([Example](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping))
 
 ## [2.8.13] - 2020-04-04
 

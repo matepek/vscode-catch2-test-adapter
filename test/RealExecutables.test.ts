@@ -102,7 +102,7 @@ describe(path.basename(__filename), function () {
 
       this.timeout(8000);
       this.slow(2000);
-      await settings.updateConfig('executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         {
           name: '${baseFilename}',
           pattern: 'tmp/*suite[0-9].exe',
@@ -157,7 +157,7 @@ describe(path.basename(__filename), function () {
       this.timeout(8000);
       this.slow(4000);
 
-      await settings.updateConfig('executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         {
           name: '${baseFilename}',
           pattern: 'tmp/suite[0-9].exe',
@@ -199,7 +199,7 @@ describe(path.basename(__filename), function () {
       assert.strictEqual(adapter.root.children.length, 3);
       assert.strictEqual(retireCounter, 0);
 
-      await settings.updateConfig('defaultWatchTimeoutSec', 1);
+      await settings.updateConfig('discovery.gracePeriodForMissing', 1);
 
       await adapter.doAndWaitForReloadEvent(this, () => {
         return fse.unlink(inWSTmp('sub/suite2X.exe'));
@@ -222,7 +222,7 @@ describe(path.basename(__filename), function () {
 
       this.timeout(8000);
       this.slow(2000);
-      await settings.updateConfig('executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         {
           name: '${baseFilename}',
           pattern: 'tmp/gtest[0-9].exe',
@@ -252,7 +252,7 @@ describe(path.basename(__filename), function () {
 
       this.timeout(8000);
       this.slow(2000);
-      await settings.updateConfig('executables', [
+      await settings.updateConfig('test.advancedExecutables', [
         {
           name: '${baseFilename}',
           pattern: 'tmp/doctest[0-9].exe',
@@ -353,7 +353,8 @@ describe(path.basename(__filename), function () {
       };
     };
 
-    it('should work with 10', testWith(10, 5));
-    it('should work with 20', testWith(20, 5));
+    // not interesting tests, it was just good to see that it is actually working
+    it.skip('should work with 10', testWith(10, 5));
+    it.skip('should work with 20', testWith(20, 5));
   });
 });

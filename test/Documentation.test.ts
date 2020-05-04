@@ -15,7 +15,7 @@ describe(path.basename(__filename), function () {
 
     const readme = fse.readFileSync(path.join(__dirname, '../..', 'README.md')).toString();
     const executables = fse
-      .readFileSync(path.join(__dirname, '../..', 'documents/configuration', 'executables.config.md'))
+      .readFileSync(path.join(__dirname, '../..', 'documents/configuration', 'test.advancedExecutables.md'))
       .toString();
 
     const documents = readme + executables;
@@ -28,10 +28,8 @@ describe(path.basename(__filename), function () {
       throw new Error("couldn't find: " + name);
     };
     {
-      const executableSchemaProp = properties['catch2TestExplorer.executables']['oneOf'][0]['items']['oneOf'][0][
-        'properties'
-      ] as any; //eslint-disable-line
-      const keys = Object.keys(executableSchemaProp);
+      const executableSchemaProp = properties['testMate.cpp.test.advancedExecutables']['items']['properties'] as any; //eslint-disable-line
+      const keys = Object.keys(executableSchemaProp).filter(k => k !== 'comment');
       keys.forEach(key => {
         assert.strictEqual(findDescriptionInReadmeTable(key), executableSchemaProp[key]['markdownDescription'], key);
       });
@@ -64,11 +62,16 @@ describe(path.basename(__filename), function () {
       const keys = Object.keys(properties);
 
       keys.forEach(key => {
-        if (key === 'catch2TestExplorer.logfile' || key === 'catch2TestExplorer.userId') {
+        if (
+          key === 'testMate.cpp.log.logSentry' ||
+          key === 'testMate.cpp.log.logfile' ||
+          key === 'testMate.cpp.log.userId' ||
+          key.startsWith('catch2TestExplorer')
+        ) {
           // skip: not documented
         } else {
-          assert.ok(key.startsWith('catch2TestExplorer.'));
-          const trimmedKey = key.substring('catch2TestExplorer.'.length);
+          assert.ok(key.startsWith('testMate.cpp.'));
+          const trimmedKey = key.substring('testMate.cpp.'.length);
           const descriptionInReadme = findDescriptionInReadmeTable(trimmedKey);
           assert.strictEqual(descriptionInReadme, properties[key]['markdownDescription'], key);
           assert.strictEqual(descriptionInReadme, properties[key]['markdownDescription'], key);

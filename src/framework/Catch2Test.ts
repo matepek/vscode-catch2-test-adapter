@@ -89,7 +89,7 @@ export class Catch2Test extends AbstractTest {
       shared,
       runnable,
       parent,
-      old ? old.id : undefined,
+      old,
       testNameAsId,
       testNameAsId,
       file,
@@ -157,16 +157,12 @@ export class Catch2Test extends AbstractTest {
 
     const testEvent = testEventBuilder.build();
 
-    this.lastRunEvent = testEvent;
-
     return testEvent;
   }
 
   private _processXmlTagTestCaseInner(testCase: XmlObject, testEventBuilder: TestEventBuilder): void {
-    if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds')) {
-      this.lastRunMilisec = Number(testCase.OverallResult[0].$.durationInSeconds) * 1000;
-      testEventBuilder.setDurationMilisec(this.lastRunMilisec);
-    }
+    if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds'))
+      testEventBuilder.setDurationMilisec(Number(testCase.OverallResult[0].$.durationInSeconds) * 1000);
 
     if (testCase._) {
       testEventBuilder.appendMessage('⬇ std::cout:', 1);
@@ -220,7 +216,7 @@ export class Catch2Test extends AbstractTest {
 
       const branchMsg = (failedBranch ? '✘' + failedBranch + '|' : '') + '✔︎' + succBranch;
 
-      testEventBuilder.appendDescription(` [${branchMsg}]`);
+      testEventBuilder.appendDescription(`ᛦ${branchMsg}ᛦ`);
       testEventBuilder.appendTooltip(`ᛦ ${branchMsg} branches`);
     }
   }
@@ -339,7 +335,7 @@ export class Catch2Test extends AbstractTest {
           testEventBuilder.appendDecorator(
             file,
             line - 1,
-            '⬅ ' + expr.Expanded.map((x: string) => x.trim()).join(' | '),
+            expr.Expanded.map((x: string) => x.trim()).join(' | '),
             message,
           );
         }

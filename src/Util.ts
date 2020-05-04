@@ -1,6 +1,16 @@
 import * as pathlib from 'path';
 import * as c2fs from './FSWrapper';
 
+export function concatU(left: string | undefined, right: string | undefined, sep = ''): string | undefined {
+  if (!right) return left;
+  else if (!left) return right;
+  else return left + sep + right;
+}
+
+export function concat(left: string, right: string, sep = ''): string {
+  return concatU(left, right, sep)!;
+}
+
 export class Version {
   public constructor(
     public readonly major: number,
@@ -56,28 +66,23 @@ function _mapAllStrings<T>(value: T, mapperFunc: (s: string) => any): T {
   }
 }
 
-export type ResolveRulePair =
-  // eslint-disable-next-line
-  | [string, any]
-  // eslint-disable-next-line
-  | [RegExp, undefined | null | boolean | number | string | (() => any) | ((m: RegExpMatchArray) => any)];
+export type ResolveRulePair<R = string> = [string | RegExp, R | (() => R) | ((m: RegExpMatchArray) => R)];
 
-// eslint-disable-next-line
-export function resolveVariables<T>(value: T, varValue: readonly ResolveRulePair[]): T {
+export function resolveVariables<T, R = string>(value: T, varValue: readonly ResolveRulePair<R>[]): T {
   // eslint-disable-next-line
   return _mapAllStrings(value, (s: string): any => {
     for (let i = 0; i < varValue.length; ++i) {
-      if (typeof varValue[i][1] === 'string') {
-        s = s.replace(varValue[i][0], varValue[i][1]);
-      } else if (varValue[i][0] instanceof RegExp && typeof varValue[i][1] === 'function') {
-        if ((varValue[i][1] as Function).length > 1)
-          throw Error('resolveVariables regex func should expect 1 argument');
+      const [resolve, rule] = varValue[i];
+      if (typeof rule === 'string') {
+        s = s.replace(resolve, rule);
+      } else if (resolve instanceof RegExp && typeof rule === 'function') {
+        if ((rule as Function).length > 1) throw Error('resolveVariables regex func should expect 1 argument');
 
-        let m = s.match(varValue[i][0]);
+        let m = s.match(resolve);
 
         if (m) {
           if (m.index === 0 && m[0].length === s.length) {
-            return varValue[i][1](m); // return type can be anything
+            return (rule as Function)(m); // return type can be anything
           }
 
           let remainingStr = s;
@@ -85,20 +90,20 @@ export function resolveVariables<T>(value: T, varValue: readonly ResolveRulePair
           while (m && m.index !== undefined) {
             newStr.push(remainingStr.substr(0, m.index));
 
-            const repl = varValue[i][1](m);
+            const repl = (rule as Function)(m);
             if (typeof repl !== 'string') throw Error('resolveVariables regex func return type should be string');
             newStr.push(repl);
 
             remainingStr = remainingStr.substr(m.index + m[0].length);
-            m = remainingStr.match(varValue[i][0]);
+            m = remainingStr.match(resolve);
           }
           s = newStr.join('') + remainingStr;
         }
-      } else if (s === varValue[i][0]) {
-        if (typeof varValue[i][1] === 'function') {
-          return varValue[i][1]();
+      } else if (s === resolve) {
+        if (typeof rule === 'function') {
+          return (rule as Function)();
         } else {
-          return varValue[i][1];
+          return rule;
         }
       }
     }

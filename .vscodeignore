@@ -9,7 +9,7 @@ node_modules
 
 !package.json
 !resources/icon.png
-!syntaxes/test-output.tmLanguage.json
+!syntaxes/cpp.testOutput.tmLanguage.json
 !README.md
 !LICENSE
 !CHANGELOG.md

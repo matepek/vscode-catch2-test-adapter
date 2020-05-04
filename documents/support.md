@@ -4,9 +4,9 @@ For support open an issue with detailed description and please attach logs.
 
 ## Getting logs
 
-Set `catch2TestExplorer.logpanel: true` and check the VSCode oputput window. Change the window to "Test Explorer: ...". The log should be there.
+Set `testMate.cpp.log.logpanel: true` and check the VSCode oputput window. Change the window to "Test Explorer: ...". The log should be there.
 
-Or one can set the `catch2TestExplorer.logfile: "<full path>"`. In this case a logfile will be created to the given path. Close VSCode to flush the log before you attach to an issue.
+Or one can set the `testMate.cpp.log.logfile: "<full path>"`. In this case a logfile will be created to the given path. Close VSCode to flush the log before you attach to an issue.
 
 **Don't forget** to disable after it by un-setting. Unnecessary logging can have a performance impact on VSCode.
 
@@ -51,7 +51,7 @@ For solving issues use: check [support](#Support).
 > > You can try this:
 > >
 > > ```
-> > "catch2TestExplorer.executables": [
+> > "testMate.cpp.test.advancedExecutables": [
 > >   {
 > >     "pattern": "build/**/test*.exe",
 > >     "cwd": "${relDirpath[1:]}/resources"
@@ -60,3 +60,8 @@ For solving issues use: check [support](#Support).
 > > ```
 > >
 > > This will remove the `build/` from the beggining of the relative path of the executable.
+
+> My tests are fine from command line but running fails using this extension.
+>
+> > What are the values of `testMate.cpp.test.parallelExecutionLimit`, `testMate.cpp.test.parallelExecutionOfExecutableLimit` or `testMate.cpp.test.advancedExecutables`'s `parallelizationLimit`?
+> > These values can make a mess if your excutable/executables depending on the same resource(s).

@@ -105,5 +105,5 @@ add_test_wrapper(Test1)
 
 # and add_test_wrapper(Test2), add_test_wrapper(Test3), etc...
 
-# ALSO, dont forget to replace `catch2TestExplorer.executables` pattern to a stricter one like "{build,Build,BUILD,out,Out,OUT}/**/*.test-wrapper*"
+# ALSO, dont forget to replace `testMate.cpp.test.advancedExecutables` pattern to a stricter one like "{build,Build,BUILD,out,Out,OUT}/**/*.test-wrapper*"
 #  because we don't want to match the executables just the wrappers.

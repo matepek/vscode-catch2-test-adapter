@@ -8,7 +8,7 @@ describe(path.basename(__filename), function () {
     const func1 = (): string => 'resolvedFunc1';
 
     // eslint-disable-next-line
-    const varsToResolve: utils.ResolveRulePair[] = [
+    const varsToResolve: utils.ResolveRulePair<null | undefined | string | number | object>[] = [
       ['null1', null],
       ['undefined1', undefined],
       ['string1', 'resolvedString1'],

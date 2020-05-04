@@ -1,4 +1,4 @@
-import * as path from 'path';
+import * as pathlib from 'path';
 import { promisify } from 'util';
 import * as vscode from 'vscode';
 
@@ -40,7 +40,6 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _dependsOn: string[],
     private readonly _parallelizationLimit: number,
     private readonly _defaultCwd: string,
-    private readonly _defaultEnv: { [prop: string]: string },
     private readonly _variableToValue: ResolveRulePair[],
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,
@@ -53,7 +52,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
     this._disposables.push(
       vscode.languages.registerDocumentLinkProvider(
-        { language: 'test-output' },
+        { language: 'testMate.cpp.testOutput' },
         {
           provideDocumentLinks: (
             document: vscode.TextDocument,
@@ -61,7 +60,7 @@ export class ExecutableConfig implements vscode.Disposable {
           ): vscode.ProviderResult<vscode.DocumentLink[]> => {
             const text = document.getText();
             if (text.startsWith('[ RUN      ]')) {
-              const dirs = new Set([...this._runnables.keys()].map(k => path.dirname(k)));
+              const dirs = new Set([...this._runnables.keys()].map(k => pathlib.dirname(k)));
               const result: vscode.DocumentLink[] = [];
               const lines = text.split(/\r?\n/);
               for (let i = 0; i < lines.length; ++i) {
@@ -81,7 +80,7 @@ export class ExecutableConfig implements vscode.Disposable {
               }
               return result;
             } else if (text.startsWith('⏱Duration:')) {
-              const dirs = new Set([...this._runnables.keys()].map(k => path.dirname(k)));
+              const dirs = new Set([...this._runnables.keys()].map(k => pathlib.dirname(k)));
               const result: vscode.DocumentLink[] = [];
               const lines = text.split(/\r?\n/);
               for (let i = 0; i < lines.length; ++i) {
@@ -254,28 +253,27 @@ export class ExecutableConfig implements vscode.Disposable {
   ): {
     isAbsolute: boolean;
     absPattern: string;
-    relativeToWs: string;
     isPartOfWs: boolean;
     relativeToWsPosix: string;
   } {
     pattern = resolveOSEnvironmentVariables(pattern, false);
-    const isAbsolute = path.isAbsolute(pattern);
+    const normPattern = pattern.replace(/\\/g, '/');
+    const isAbsolute = pathlib.isAbsolute(normPattern);
     const absPattern = isAbsolute
-      ? vscode.Uri.file(path.normalize(pattern)).fsPath
-      : vscode.Uri.file(path.join(this._shared.workspaceFolder.uri.fsPath, pattern)).fsPath;
-    const relativeToWs = path.relative(this._shared.workspaceFolder.uri.fsPath, absPattern);
+      ? vscode.Uri.file(pathlib.normalize(pattern)).fsPath
+      : vscode.Uri.file(pathlib.join(this._shared.workspaceFolder.uri.fsPath, normPattern)).fsPath;
+    const relativeToWs = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, absPattern);
 
     return {
       isAbsolute,
       absPattern,
-      relativeToWs,
       isPartOfWs: !relativeToWs.startsWith('..'),
-      relativeToWsPosix: relativeToWs.split('\\').join('/'),
+      relativeToWsPosix: relativeToWs.replace(/\\/g, '/'),
     };
   }
 
   private _createSuiteByUri(filePath: string, rootSuite: Suite): RunnableSuiteFactory {
-    const relPath = path.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
+    const relPath = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
     let varToValue: ResolveRulePair[] = [];
 
@@ -285,16 +283,16 @@ export class ExecutableConfig implements vscode.Disposable {
       createPythonIndexerForStringVariable(valName, filename, '.', '.');
 
     try {
-      const filename = path.basename(filePath);
-      const extFilename = path.extname(filename);
-      const baseFilename = path.basename(filename, extFilename);
+      const filename = pathlib.basename(filePath);
+      const extFilename = pathlib.extname(filename);
+      const baseFilename = pathlib.basename(filename, extFilename);
 
       varToValue = [
         ...this._variableToValue,
         subPath('absPath', filePath),
         subPath('relPath', relPath),
-        subPath('absDirpath', path.dirname(filePath)),
-        subPath('relDirpath', path.dirname(relPath)),
+        subPath('absDirpath', pathlib.dirname(filePath)),
+        subPath('relDirpath', pathlib.dirname(relPath)),
         subFilename('filename', filename),
         ['${extFilename}', extFilename],
         ['${baseFilename}', baseFilename],
@@ -314,7 +312,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
       if (resolvedCwd.match(variableRe)) this._shared.log.warn('Possibly unresolved variable', resolvedCwd);
 
-      resolvedCwd = path.resolve(this._shared.workspaceFolder.uri.fsPath, resolvedCwd);
+      resolvedCwd = pathlib.resolve(this._shared.workspaceFolder.uri.fsPath, resolvedCwd);
 
       varToValue.push(subPath('cwd', resolvedCwd));
     } catch (e) {
@@ -323,8 +321,6 @@ export class ExecutableConfig implements vscode.Disposable {
 
     let resolvedEnv: { [prop: string]: string } = {};
     try {
-      Object.assign(resolvedEnv, this._defaultEnv);
-
       if (this._env) Object.assign(resolvedEnv, this._env);
 
       resolvedEnv = resolveVariables(resolvedEnv, varToValue);

@@ -63,19 +63,13 @@ export abstract class AbstractRunnable {
     return this._tests;
   }
 
-  private _getOrCreateChildSuite(
-    label: string,
-    description: string | undefined,
-    tooltip: string | undefined,
-    group: Suite,
-  ): Suite {
-    const cond = (v: Suite | AbstractTest): boolean =>
-      v.type === 'suite' && v.label === label && v.description === description;
+  private _getOrCreateChildSuite(label: string, description: string, tooltip: string, group: Suite): Suite {
+    const cond = (v: Suite | AbstractTest): boolean => v.type === 'suite' && v.compare(label, description);
     const found = group.children.find(cond) as Suite | undefined;
     if (found) {
       return found;
     } else {
-      const newG = group.addSuite(new Suite(this._shared, group, label, description, tooltip));
+      const newG = group.addSuite(new Suite(this._shared, group, label, description, tooltip, undefined));
       return newG;
     }
   }
@@ -140,8 +134,8 @@ export abstract class AbstractRunnable {
       tooltip: string | undefined,
     ): void => {
       const resolvedLabel = this._resolveText(label, ...vars);
-      const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : undefined;
-      const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : undefined;
+      const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : '';
+      const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : '';
 
       group = this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, group);
     };
@@ -247,7 +241,7 @@ export abstract class AbstractRunnable {
       this._shared.log.exceptionS(e);
     }
 
-    const old = group.children.find(t => t instanceof AbstractTest && t.testNameInOutput === testNameInOutput) as
+    const old = group.children.find(t => t instanceof AbstractTest && t.compare(testNameInOutput)) as
       | AbstractTest
       | undefined;
 
@@ -394,11 +388,11 @@ export abstract class AbstractRunnable {
 
   protected abstract _reloadChildren(): Promise<void>;
 
-  protected abstract _getRunParams(childrenToRun: readonly AbstractTest[]): string[];
+  protected abstract _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
 
   protected abstract _handleProcess(runInfo: RunningRunnable): Promise<void>;
 
-  public abstract getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[];
+  public abstract getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[];
 
   public reloadTests(taskPool: TaskPool): Promise<void> {
     return taskPool.scheduleTask(async () => {
@@ -442,6 +436,13 @@ export abstract class AbstractRunnable {
       this.properties.parallelizationPool.maxTaskCount > 1
         ? this._splitTestSetForMultirun(childrenToRun)
         : [childrenToRun];
+
+    if (buckets.length > 1) {
+      this._shared.log.info(
+        "Parallel execution of the same executable is enabled. Note: This can cause problems if the executable's test cases depend on the same resource.",
+        buckets.length,
+      );
+    }
 
     return Promise.all(
       buckets.map(async (bucket: readonly AbstractTest[]) => {
@@ -522,7 +523,9 @@ export abstract class AbstractRunnable {
 
     this._runInfos.push(runInfo);
 
-    this._shared.log.info('proc started:', this.properties.path, this.properties, execParams);
+    this._shared.log.info('proc started:', runInfo.process.pid, this.properties.path, this.properties, execParams);
+
+    runInfo.setPriorityAsync(this._shared.log);
 
     runInfo.process.on('error', (err: Error) => {
       this._shared.log.error('process error event:', err, this);
@@ -563,7 +566,7 @@ export abstract class AbstractRunnable {
         });
       };
 
-      shedule().then(() => {
+      shedule().finally(() => {
         changeConn.dispose();
       });
     }
