@@ -6,11 +6,11 @@ platform:
 
 environment:
   C2_DEBUG: true
-  nodejs_version: "10"
+  nodejs_version: '10'
 
   matrix:
-    - VSCODE_VERSION: "latest"
-    #- VSCODE_VERSION: "1.31.0" appveyor is too slow and we have similar tests using travis
+    - VSCODE_VERSION: 'latest'
+    #- VSCODE_VERSION: "1.38.0" appveyor is too slow and we have similar tests using travis
 
 install:
   - ps: Install-Product node $env:nodejs_version

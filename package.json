@@ -97,7 +97,7 @@
     "webpack-cli": "^3.3.11"
   },
   "engines": {
-    "vscode": "^1.23.0"
+    "vscode": "^1.38.0"
   },
   "activationEvents": [
     "onView:test-explorer",
