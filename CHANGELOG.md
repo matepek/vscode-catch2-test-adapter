@@ -2,17 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
 ## [3.0.0]
 
-It's a big day! the extension was renamed to `Copper Test Explorer`.
-All the configs has moved and renamed. ⚠
-(Sorry for that I don't do it every week, though there is an automatic migration.)
-Lots of small tweaks was added. (Please be patioent and report issues. ^^)
+It's a big day! the extension was finally renamed to `C++ TestMate`.
+(Finally, I mean I've been planning this since a long time ago in a galaxy far, far away....)
+Lots of small tweaks was added. (Please be patient and report issuess. ^^)
+
+May the 4th be with you 🖖
+(Yes, I know.. ^^)
+
+### Changed
+
+- All the configs has moved and renamed. ⚠
+  (Merge logic is implemented to make the transition easier.)
 
 ### Removed
 

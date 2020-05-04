@@ -8,7 +8,7 @@ import { TestGrouping } from './TestGroupingInterface';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
 
-const ConfigSection = 'copper';
+const ConfigSection = 'testMate.cpp';
 
 type MigratableConfig =
   | 'test.advancedExecutables'
@@ -276,7 +276,7 @@ export class Configurations {
     } else {
       this._log.info('no debug config');
       throw Error(
-        "For debugging 'copper.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+        "For debugging 'testMate.cpp.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
       );
     }
     return template;
@@ -592,6 +592,7 @@ export class Configurations {
 
       for (const conf of advanced) {
         if (typeof conf === 'string') {
+          // this is not supported in the package.json but working
           executables.push(createExecutableConfigFromPattern(conf));
         } else {
           executables.push(createExecutableConfigFromObj(conf));

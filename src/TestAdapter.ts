@@ -62,7 +62,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _isDebug: boolean = !!process.env['C2_DEBUG'];
 
   public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
-    this._log = new LoggerWrapper('copper.log', this.workspaceFolder, `Copper Test in ${this.workspaceFolder.name}`);
+    this._log = new LoggerWrapper(
+      'testMate.cpp.log',
+      this.workspaceFolder,
+      `C++ TestMate: ${this.workspaceFolder.name}`,
+    );
 
     const configuration = this._getConfiguration();
 
@@ -524,7 +528,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           terminateConn && terminateConn.dispose();
           return Promise.reject(
             new Error(
-              'Failed starting the debug session. ' + 'Maybe something wrong with "copper.debug.configTemplate".',
+              'Failed starting the debug session. ' + 'Maybe something wrong with "testMate.cpp.debug.configTemplate".',
             ),
           );
         }

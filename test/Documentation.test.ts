@@ -28,7 +28,7 @@ describe(path.basename(__filename), function () {
       throw new Error("couldn't find: " + name);
     };
     {
-      const executableSchemaProp = properties['copper.test.advancedExecutables']['items']['properties'] as any; //eslint-disable-line
+      const executableSchemaProp = properties['testMate.cpp.test.advancedExecutables']['items']['properties'] as any; //eslint-disable-line
       const keys = Object.keys(executableSchemaProp).filter(k => k !== 'comment');
       keys.forEach(key => {
         assert.strictEqual(findDescriptionInReadmeTable(key), executableSchemaProp[key]['markdownDescription'], key);
@@ -63,15 +63,15 @@ describe(path.basename(__filename), function () {
 
       keys.forEach(key => {
         if (
-          key === 'copper.log.logSentry' ||
-          key === 'copper.log.logfile' ||
-          key === 'copper.log.userId' ||
+          key === 'testMate.cpp.log.logSentry' ||
+          key === 'testMate.cpp.log.logfile' ||
+          key === 'testMate.cpp.log.userId' ||
           key.startsWith('catch2TestExplorer')
         ) {
           // skip: not documented
         } else {
-          assert.ok(key.startsWith('copper.'));
-          const trimmedKey = key.substring('copper.'.length);
+          assert.ok(key.startsWith('testMate.cpp.'));
+          const trimmedKey = key.substring('testMate.cpp.'.length);
           const descriptionInReadme = findDescriptionInReadmeTable(trimmedKey);
           assert.strictEqual(descriptionInReadme, properties[key]['markdownDescription'], key);
           assert.strictEqual(descriptionInReadme, properties[key]['markdownDescription'], key);

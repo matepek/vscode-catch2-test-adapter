@@ -1,13 +1,13 @@
 {
   "id": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "$comment": "https://macromates.com/manual/en/language_grammars  https://www.apeth.com/nonblog/stories/textmatebundle.html",
-  "scopeName": "source.copper-test",
+  "scopeName": "source.testMate.cpp",
   "patterns": [
     {
       "begin": "\\[ RUN      \\](.*)",
       "captures": {
         "1": {
-          "name": "entity.name.copper-test"
+          "name": "entity.name.testMate.cpp.gtest"
         }
       },
       "patterns": [
@@ -24,7 +24,7 @@
       "begin": "⏱Duration: ([\\d\\.]*)",
       "captures": {
         "1": {
-          "name": "constant.numeric"
+          "name": "constant.numeric.testMate.cpp.catch2"
         }
       },
       "patterns": [
@@ -44,10 +44,10 @@
           "match": "((.+)[:\\(]([0-9]+)\\)?|unknown file): (Failure|EXPECT_CALL|error)",
           "captures": {
             "1": {
-              "name": "comment"
+              "name": "comment.testMate.cpp.gtest"
             },
             "4": {
-              "name": "markup.italic.copper-test"
+              "name": "markup.italic.testMate.cpp.gtest"
             }
           }
         },
@@ -55,7 +55,7 @@
           "match": "Value of: (.+)",
           "captures": {
             "1": {
-              "name": "markup.other.copper-test"
+              "name": "markup.other.testMate.cpp.gtest"
             }
           }
         },
@@ -63,19 +63,19 @@
           "match": "The difference between (.+) and (.+) is (.+), which (exceeds) (.+), where",
           "captures": {
             "1": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.gtest"
             },
             "2": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.gtest"
             },
             "3": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.gtest"
             },
             "4": {
-              "name": "markup.bold.copper-test"
+              "name": "markup.bold.testMate.cpp.gtest"
             },
             "5": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.gtest"
             }
           }
         },
@@ -83,10 +83,10 @@
           "match": "(.+) evaluates to (.+)(,|, and|\\.)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.gtest"
             },
             "2": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.gtest"
             }
           }
         },
@@ -94,7 +94,7 @@
           "match": "\\s+Which is: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.gtest"
             }
           }
         },
@@ -102,10 +102,10 @@
           "match": "Expected: (.+), actual: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.gtest"
             },
             "2": {
-              "name": "markup.bold.copper-test"
+              "name": "markup.bold.testMate.cpp.gtest"
             }
           }
         },
@@ -113,7 +113,7 @@
           "match": "Expected: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.gtest"
             }
           }
         },
@@ -121,7 +121,7 @@
           "match": "Actual: (.+)",
           "captures": {
             "1": {
-              "name": "markup.bold.copper-test"
+              "name": "markup.bold.testMate.cpp.gtest"
             }
           }
         },
@@ -129,10 +129,10 @@
           "match": "\\[  (FAILED)  \\]([^\\(]*)(\\s.+\\s)?(?:\\((.+)\\))?",
           "captures": {
             "1": {
-              "name": "markup.bold.copper-test"
+              "name": "markup.bold.testMate.cpp.gtest"
             },
             "2": {
-              "name": "entity.name.copper-test"
+              "name": "entity.name.testMate.cpp.gtest"
             },
             "4": {
               "patterns": [
@@ -147,10 +147,10 @@
           "match": "\\[       (OK) \\]([^\\(]*)(?:\\((.+)\\))?",
           "captures": {
             "1": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.gtest"
             },
             "2": {
-              "name": "entity.name.copper-test"
+              "name": "entity.name.testMate.cpp.gtest"
             },
             "3": {
               "patterns": [
@@ -170,13 +170,13 @@
       "patterns": [
         {
           "match": "^Unexpected mock function call",
-          "name": "markup.bold.copper-test"
+          "name": "markup.bold.testMate.cpp.gtest"
         },
         {
           "match": "Expected arg #.+: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.gtest"
             }
           }
         },
@@ -189,13 +189,13 @@
       "patterns": [
         {
           "match": "\\(at .+\\)",
-          "name": "comment.copper-test"
+          "name": "comment.testMate.cpp.catch2"
         },
         {
           "match": "\"(.+)\"",
           "captures": {
             "1": {
-              "name": "entity.name.copper-test"
+              "name": "entity.name.testMate.cpp.catch2"
             }
           }
         },
@@ -203,7 +203,7 @@
           "match": "Exception was thrown: (.+)",
           "captures": {
             "1": {
-              "name": "markup.bold.copper-test"
+              "name": "markup.bold.testMate.cpp.catch2"
             }
           }
         },
@@ -211,7 +211,7 @@
           "match": "Original: (.+)",
           "captures": {
             "1": {
-              "name": "markup.heading.copper-test"
+              "name": "markup.heading.testMate.cpp.catch2"
             }
           }
         },
@@ -219,14 +219,14 @@
           "match": "Expanded: (.+)",
           "captures": {
             "1": {
-              "name": "markup.bold.copper-test"
+              "name": "markup.bold.testMate.cpp.catch2"
             }
           }
         },
         {
           "begin": "⬇ (.+):",
           "end": "⬆ \\1",
-          "contentName": "string.copper-test",
+          "contentName": "string.testMate.cpp.catch2",
           "patterns": [
             {
               "include": "#gmock"
@@ -246,97 +246,97 @@
         {
           "comment": "Quoted strings with \"",
           "match": "\"(.*?)\"",
-          "name": "string.quoted"
+          "name": "string.quoted.testMate.other"
         },
         {
           "comment": "Quoted strings with '",
           "match": "'(.*?)'",
-          "name": "string.quoted"
+          "name": "string.quoted.testMate.other"
         },
         {
           "comment": "GUID",
           "match": "\\b(?i:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))\\b",
-          "name": "support.class"
+          "name": "support.class.testMate.other"
         },
         {
           "comment": "email",
           "match": "\\S+@\\S+\\.\\S+",
-          "name": "markup.bold"
+          "name": "markup.bold.testMate.other"
         },
         {
           "comment": "Exception (with custom naming and namespacing)",
           "match": "\\b(?i:((\\.)*[a-z]|[0-9])*(Exception|Error|Failure|Fail))\\b",
-          "name": "invalid"
+          "name": "invalid.testMate.other"
         },
         {
           "comment": "Date MM/DD/(YY)YY",
           "match": "\\b(((0|1)?[0-9][1-2]?)|(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sept(ember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?))[/|\\-|\\.| ]([0-2]?[0-9]|[3][0-1])[/|\\-|\\.| ]((19|20)?[0-9]{2})\\b",
-          "name": "constant.numeric"
+          "name": "constant.numeric.testMate.other"
         },
         {
           "comment": "Date (YY)YY/DD/MM",
           "match": "\\b((19|20)?[0-9]{2}[/|\\-|\\.| ](((0|1)?[0-9][1-2]?)|(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sept(ember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?))[/|\\-|\\.| ]([0-2]?[0-9]|[3][0-1]))\\b",
-          "name": "constant.numeric"
+          "name": "constant.numeric.testMate.other"
         },
         {
           "comment": "Date DD/MM/(YY)YY",
           "match": "\\b([0-2]?[0-9]|[3][0-1])[/|\\-|\\.| ](((0|1)?[0-9][1-2]?)|(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sept(ember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?))[/|\\-|\\.| ]((19|20)?[0-9]{2})\\b",
-          "name": "constant.numeric"
+          "name": "constant.numeric.testMate.other"
         },
         {
           "comment": "Time HH:MM(:SS)? AM? timezone?",
           "match": "\\b([0|1]?[0-9]|2[0-3])\\:[0-5][0-9](\\:[0-5][0-9])?( ?(?i:(a|p)m?))?( ?[+-]?[0-9]*)?\\b",
-          "name": "constant.numeric"
+          "name": "constant.numeric.testMate.other"
         },
         {
           "comment": "Version number",
           "match": "\\b(v|version(\\.|-|\\/)?|@)?[0-9]+\\.[0-9]+(\\.[0-9]+)+(-[^\\s]+)?\\b",
-          "name": "constant.numeric"
+          "name": "constant.numeric.testMate.other"
         },
         {
           "comment": "Numeric (decimal)",
           "match": "\\b\\d+(\\.\\d+)?(e\\+\\d+)?\\b",
-          "name": "constant.numeric"
+          "name": "constant.numeric.testMate.other"
         },
         {
           "comment": "Numeric (hex)",
           "match": "\\b(?i:(0?x)?[0-9a-f][0-9a-f]+)\\b",
-          "name": "constant.numeric"
+          "name": "constant.numeric.testMate.other"
         },
         {
           "comment": "Namespace",
           "match": "\\b(?i:(([a-z]|[0-9]|[_|-])*(\\.([a-z]|[0-9]|[_|-])*)+))\\b",
-          "name": "support.key"
+          "name": "support.key.testMate.other"
         },
         {
           "match": "\\b(?i:(Down|Error|Failure|Fail|Fatal|false))(\\:|\\b)",
-          "name": "invalid.illegal"
+          "name": "invalid.illegal.testMate.other"
         },
         {
           "match": "\\b(?i:(hint|info|information|true|log))(\\:|\\b)",
-          "name": "keyword"
+          "name": "keyword.testMate.other"
         },
         {
           "match": "\\b(?i:(warning|warn|test|debug|null|nullptr|undefined|NaN))(\\:|\\b)",
-          "name": "invalid.deprecated"
+          "name": "invalid.deprecated.testMate.other"
         },
         {
           "match": "\\b(?i:(local))(\\:|\\b)",
-          "name": "support.function"
+          "name": "support.function.testMate.other"
         },
         {
           "match": "\\b(?i:(server|running|remote))(\\:|\\b)",
-          "name": "comment.line"
+          "name": "comment.line.testMate.other"
         },
         {
           "comment": "Generic URI/URL",
           "match": "\\b(?i:([a-z]|[0-9])+\\:((\\/\\/)|((\\/\\/)?(\\S)))+)",
-          "name": "storage"
+          "name": "storage.testMate.other"
         },
         {
           "comment": "output from (npm install) log",
           "match": "(-)+>|├(─)+|└(─)+",
-          "name": "comment.line"
+          "name": "comment.line.testMate.other"
         }
       ]
     }

@@ -39,7 +39,7 @@ export const settings = new (class {
   public readonly dotVscodePath = path.join(this.workspaceFolderUri.fsPath, '.vscode');
 
   public getConfig(): vscode.WorkspaceConfiguration {
-    return vscode.workspace.getConfiguration('copper', this.workspaceFolderUri);
+    return vscode.workspace.getConfiguration('testMate.cpp', this.workspaceFolderUri);
   }
 
   private _getOldConfig(): vscode.WorkspaceConfiguration {
@@ -56,10 +56,10 @@ export const settings = new (class {
     const properties: { [prop: string]: string }[] = packageJson['contributes']['configuration']['properties'];
     let t: Thenable<void> = Promise.resolve();
     Object.keys(properties).forEach(key => {
-      assert.ok(key.startsWith('copper.') || key.startsWith('catch2TestExplorer.'));
+      assert.ok(key.startsWith('testMate.cpp.') || key.startsWith('catch2TestExplorer.'));
 
-      if (key.startsWith('copper.')) {
-        const k = key.substr('copper.'.length);
+      if (key.startsWith('testMate.cpp.')) {
+        const k = key.substr('testMate.cpp.'.length);
         // don't want to override these
         if (k !== 'log.logfile' && k !== 'log.logSentry' && k !== 'log.userId')
           t = t.then(() => this.getConfig().update(k, undefined));
@@ -85,6 +85,11 @@ export async function waitFor(context: Mocha.Context, condition: Function, timeo
   while (!(c = await condition()) && (Date.now() - start < timeout || !context.enableTimeouts()))
     await promisify(setTimeout)(32);
   if (!c) throw Error('in test: ' + (context.test ? context.test.title : '?') + '. Condition: ' + condition.toString());
+}
+
+export async function waitForMilisec(context: Mocha.Context, milisec: number): Promise<void> {
+  const start = Date.now();
+  return waitFor(context, () => Date.now() - start > milisec);
 }
 
 ///
@@ -324,7 +329,7 @@ export class TestAdapter extends my.TestAdapter {
 
   public get testStatesEvents(): TestRunEvent[] {
     return this._testStatesEvents.map((v: TestRunEvent) => {
-      if (v.type === 'test' && v.tooltip)
+      if ((v.type === 'test' || v.type === 'suite') && v.tooltip)
         return Object.assign(v, { tooltip: v.tooltip.replace(/(Path|Cwd): .*/g, '$1: <masked>') });
       return v;
     });
@@ -343,28 +348,30 @@ export class TestAdapter extends my.TestAdapter {
     }
   }
 
-  public testStatesEventsSimplifiedAssertEqual(expected: TestRunEvent[]): void {
-    if (this._testStatesEvents.length != expected.length)
+  public testStatesEventsSimplifiedAssertEqual(expectedArr: TestRunEvent[]): void {
+    if (this._testStatesEvents.length != expectedArr.length)
       console.log(
-        `this._testStatesEvents.length(${this._testStatesEvents.length}) != expected.length(${expected.length})`,
+        `this._testStatesEvents.length(${this._testStatesEvents.length}) != expected.length(${expectedArr.length})`,
       );
 
     const testStatesEvents = this._testStatesEvents;
 
-    for (let i = 0; i < expected.length && i < testStatesEvents.length; ++i) {
-      assert.strictEqual(testStatesEvents[i].type, expected[i].type, `index: ${i}`);
-      if (testStatesEvents[i].type == 'test') {
-        const actual = testStatesEvents[i] as TestEvent;
-        const expect = expected[i] as TestEvent;
-        assert.strictEqual(actual.test, expect.test, `index: ${i}`);
-        assert.strictEqual(actual.state, expect.state, `index: ${i}`);
-      } else if (testStatesEvents[i].type == 'suite') {
-        const actual = testStatesEvents[i] as TestSuiteEvent;
-        const expect = expected[i] as TestSuiteEvent;
-        assert.strictEqual(actual.suite, expect.suite, `index: ${i}`);
-        assert.strictEqual(actual.state, expect.state, `index: ${i}`);
+    for (let i = 0; i < expectedArr.length && i < testStatesEvents.length; ++i) {
+      const actual = testStatesEvents[i];
+      const expected = expectedArr[i];
+
+      if (actual.type == 'test' && expected.type == 'test') {
+        assert.strictEqual(actual.test, expected.test, `index: ${i}`);
+        assert.strictEqual(actual.state, expected.state, `index: ${i}`);
+      } else if (actual.type == 'suite' && expected.type == 'suite') {
+        assert.strictEqual(actual.suite, expected.suite, `index: ${i}`);
+        assert.strictEqual(actual.state, expected.state, `index: ${i}`);
+      } else {
+        assert.deepStrictEqual(actual, expected, `index: ${i}`);
       }
     }
+
+    assert.strictEqual(this._testStatesEvents.length, expectedArr.length);
   }
 
   public getTestStatesEventIndex(searchFor: TestRunEvent): number {

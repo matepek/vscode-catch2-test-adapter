@@ -3,12 +3,12 @@
 # Debugger Configuration Template
 
 ```
-copper.debug.configTemplate
+testMate.cpp.debug.configTemplate
 ```
 
 Set the necessary debug configurations and the debug button will work.
 
-If `copper.debug.configTemplate` value is `null` (default),
+If `testMate.cpp.debug.configTemplate` value is `null` (default),
 
 > it searches for configurations in the workspacefolder's `.vscode/launch.json`.
 > It will choose the first one which's `"request"` property is `"launch"`
@@ -27,7 +27,7 @@ In case it hasn't found one it will look after:
 
 **Remark**: This feature to work automatically (value: `null`) has a lot of requirements which are not listed here.
 If it works it is good for you.
-If it isn't.. I suggest to create your own `"copper.debug.configTemplate"` template.
+If it isn't.. I suggest to create your own `"testMate.cpp.debug.configTemplate"` template.
 If you read the _Related documents_ and still have a question feel free to open an issue.
 Value `"extensionOnly"` will cause to skip the search of local launch configurations.
 
@@ -36,7 +36,7 @@ Value `"extensionOnly"` will cause to skip the search of local launch configurat
 For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) add something like this to settings.json:
 
 ```json
-"copper.debug.configTemplate": {
+"testMate.cpp.debug.configTemplate": {
   "type": "cppdbg",
   "MIMode": "lldb",
   "program": "${exec}",

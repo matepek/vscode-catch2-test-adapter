@@ -25,6 +25,7 @@ import {
   isWin,
   expectedLoggedErrorLine,
   TestRunEvent,
+  waitForMilisec,
 } from './Common';
 
 ///
@@ -207,7 +208,7 @@ describe(path.basename(__filename), function () {
       adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([suite1.id]);
-      assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
+      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
     });
 
     it('should run all', async function () {
@@ -1276,17 +1277,15 @@ describe(path.basename(__filename), function () {
       }
     });
 
-    // incompatible with multirun
-    it.skip('reloads because new tests found under run', async function () {
-      await loadAdapterAndAssert();
+    it('does not reload even if new tests found under run (multirun)', async function () {
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
       assert.equal(testListOutput.length, 10);
-      testListOutput.splice(1, 6);
+      testListOutput.splice(1, 3);
       imitation.spawnStub
         .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0], sinon.match.any)
-        .returns(new ChildProcessStub(testListOutput.join(EOL)));
+        .callsFake(() => new ChildProcessStub(testListOutput.join(EOL)));
 
-      assert.strictEqual(suite1.children.length, 2);
+      adapter = new TestAdapter();
 
       await adapter.load();
 
@@ -1295,11 +1294,11 @@ describe(path.basename(__filename), function () {
       assert.equal(root.children.length, 2);
       suite1 = adapter.group1;
 
-      assert.strictEqual(suite1.children.length, 0);
+      assert.strictEqual(suite1.children.length, 1);
 
       imitation.spawnStub
         .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0], sinon.match.any)
-        .returns(new ChildProcessStub(example1.suite1.outputs[1][1]));
+        .callsFake(() => new ChildProcessStub(example1.suite1.outputs[1][1]));
 
       const testLoadEventCount = adapter.testLoadsEvents.length;
       await adapter.run([suite1.id]);
@@ -1307,83 +1306,20 @@ describe(path.basename(__filename), function () {
       const expected: TestRunEvent[] = [
         { type: 'started', tests: [suite1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
+        { type: 'test', state: 'running', test: adapter.getTest(0, 0) },
+        { type: 'test', state: 'failed', test: adapter.getTest(0, 0) },
         {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: undefined,
-          tooltip: undefined,
         },
         { type: 'finished' },
       ];
       adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
-      await waitFor(this, function () {
-        return suite1.children.length == 2 && adapter.testStatesEvents.length >= 4 + 8;
-      });
+      await waitForMilisec(this, 500);
 
-      assert.strictEqual(adapter.testLoadsEvents.length, testLoadEventCount + 2);
-      assert.strictEqual(suite1.children.length, 2);
-      s1t1 = suite1.children[0] as TestInfo;
-      assert.strictEqual(s1t1.label, 's1t1');
-      s1t2 = suite1.children[1] as TestInfo;
-      assert.strictEqual(s1t2.label, 's1t2');
-
-      assert.deepStrictEqual(adapter.testStatesEvents, [
-        ...expected,
-        { type: 'started', tests: [s1t1.id, s1t2.id] },
-        { type: 'suite', state: 'running', suite: suite1 },
-        { type: 'test', state: 'running', test: s1t1 },
-        {
-          type: 'test',
-          state: 'passed',
-          test: s1t1,
-          decorations: [],
-          description: '(0ms)',
-          message: '⏱Duration: 0.000132 second(s).',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱Duration: 0ms',
-        },
-        {
-          type: 'suite',
-          state: 'completed',
-          suite: suite1,
-          description: `.${pathlib.sep} (0ms)`,
-          tooltip:
-            'Name: execPath1.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
-        },
-        { type: 'suite', state: 'running', suite: suite1 },
-        { type: 'test', state: 'running', test: s1t2 },
-        {
-          type: 'test',
-          state: 'failed',
-          test: s1t2,
-          decorations: [
-            {
-              file: path.normalize('../vscode-catch2-test-adapter/src/test/suite1.cpp'),
-              line: 14,
-              message: '⬅ false',
-              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
-            },
-          ],
-          description: '(0ms)',
-          tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message:
-            '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
-        },
-        {
-          type: 'suite',
-          state: 'completed',
-          suite: suite1,
-          description: `.${pathlib.sep} (0ms)`,
-          tooltip:
-            'Name: execPath1.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
-        },
-        { type: 'finished' },
-      ]);
+      assert.strictEqual(adapter.testLoadsEvents.length, testLoadEventCount);
     });
 
     it('reloads because removed test found under running suite', async function () {
@@ -1738,81 +1674,6 @@ describe(path.basename(__filename), function () {
     });
   });
 
-  // TODO: not so bad test but need time to calibrate
-  context.skip('executables=["execPath1.exe", "execPath2.exe", "execPath3.exe"]', async function () {
-    beforeEach(function () {
-      return settings.updateConfig('test.advancedExecutables', ['execPath1.exe', 'execPath2.exe', 'execPath3.exe']);
-    });
-
-    it('run suite3 one-by-one', async function () {
-      await loadAdapter();
-      assert.equal(root.children.length, 3);
-      assert.equal(root.children[0].type, 'suite');
-      const suite3 = root.children[2] as TestSuiteInfo;
-      assert.equal(suite3.children.length, 33);
-
-      const runAndCheckEvents = async (test: TestInfo, i: number): Promise<void> => {
-        assert.equal(adapter.testStatesEvents.length, 6 * i);
-
-        await adapter.run([test.id]);
-
-        assert.equal(adapter.testStatesEvents.length, 6 * (i + 1));
-
-        assert.deepStrictEqual({ type: 'started', tests: [test.id] }, adapter.testStatesEvents[6 * i + 0]);
-        assert.deepStrictEqual({ type: 'suite', state: 'running', suite: suite3 }, adapter.testStatesEvents[6 * i + 1]);
-
-        assert.equal(adapter.testStatesEvents[6 * i + 2].type, 'test');
-        assert.equal((adapter.testStatesEvents[6 * i + 2] as TestEvent).state, 'running');
-        assert.equal((adapter.testStatesEvents[6 * i + 2] as TestEvent).test, test);
-
-        assert.equal(adapter.testStatesEvents[6 * i + 3].type, 'test');
-        assert.ok(
-          (adapter.testStatesEvents[6 * i + 3] as TestEvent).state == 'passed' ||
-            (adapter.testStatesEvents[6 * i + 3] as TestEvent).state == 'skipped' ||
-            (adapter.testStatesEvents[6 * i + 3] as TestEvent).state == 'failed',
-        );
-        assert.equal((adapter.testStatesEvents[6 * i + 3] as TestEvent).test, test);
-
-        const tooltips = [
-          'Name: execPath3.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: 1\n⏱Duration: 0ms',
-          'Name: execPath3.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: 2\n⏱Duration: 0ms',
-        ];
-        const tooltipTemplate = [
-          'Name: execPath3.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: ${num}\n  - failed: 1\n⏱Duration: 1ms',
-          'Name: execPath3.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 33\n  - passed: ${num}\n  - failed: 1\n⏱Duration: 2ms',
-        ];
-
-        assert.deepStrictEqual(
-          adapter.testStatesEvents[6 * i + 4],
-          {
-            type: 'suite',
-            state: 'completed',
-            suite: suite3,
-            description: i >= 5 ? './ (2ms)' : i > 1 ? './ (1ms)' : './ (0ms)',
-            tooltip:
-              i < 2 ? tooltips[i] : (i >= 5 ? tooltipTemplate[1] : tooltipTemplate[0]).replace('${num}', i.toString()),
-          },
-          'index: ' + i,
-        );
-        assert.deepStrictEqual({ type: 'finished' }, adapter.testStatesEvents[6 * i + 5], 'index: ' + i);
-      };
-
-      let i = 0;
-      for (const test of suite3.children) {
-        assert.equal(test.type, 'test');
-        await runAndCheckEvents(test as TestInfo, i++);
-      }
-    });
-  });
-
   context('vscode.debug', function () {
     let startDebuggingStub: sinon.SinonStub<
       [vscode.WorkspaceFolder | undefined, string | vscode.DebugConfiguration, (vscode.DebugSession | undefined)?],
@@ -1830,7 +1691,7 @@ describe(path.basename(__filename), function () {
 
     it('should be debugged', async function () {
       expectedLoggedErrorLine(
-        '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "copper.debug.configTemplate".',
+        '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "testMate.cpp.debug.configTemplate".',
       );
 
       await settings.updateConfig('test.advancedExecutables', [

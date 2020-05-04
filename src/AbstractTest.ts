@@ -168,7 +168,7 @@ export abstract class AbstractTest implements TestInfo {
 
   public getTimeoutEvent(milisec: number): TestEvent {
     const ev = this.getFailedEventBase();
-    ev.message += '⌛️ Timed out: "copper.test.runtimeLimit": ' + milisec / 1000 + ' second(s).';
+    ev.message += '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + milisec / 1000 + ' second(s).';
     ev.state = 'errored';
     return ev;
   }

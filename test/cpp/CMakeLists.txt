@@ -6,7 +6,7 @@ project(Tests)
 
 #
 
-file(WRITE "${PROJECT_BINARY_DIR}/.vscode/settings.json" "{\n  \"copper.test.executables\": \"*.exe\",\n  \"copper.log.logpanel\": true\n}\n")
+file(WRITE "${PROJECT_BINARY_DIR}/.vscode/settings.json" "{\n  \"testMate.cpp.test.executables\": \"*.exe\",\n  \"testMate.cpp.log.logpanel\": true\n}\n")
 
 #
 

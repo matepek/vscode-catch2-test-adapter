@@ -9,7 +9,7 @@ node_modules
 
 !package.json
 !resources/icon.png
-!syntaxes/copper-test.tmLanguage.json
+!syntaxes/testMate.cpp.tmLanguage.json
 !README.md
 !LICENSE
 !CHANGELOG.md
