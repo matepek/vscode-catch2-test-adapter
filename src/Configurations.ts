@@ -30,7 +30,7 @@ type MigratableConfig =
   | 'gtest.treatGmockWarningAs'
   | 'gtest.gmockVerbose';
 
-export type Config = 'test.executables' | MigratableConfig;
+export type Config = 'test.executables' | 'test.parallelExecutionOfExecutableLimit' | MigratableConfig;
 
 type OldConfig =
   | 'executables'
@@ -360,7 +360,17 @@ export class Configurations {
     const res = Math.max(1, this._getNewOrOldOrDefAndMigrate<number>('test.parallelExecutionLimit', 1));
     if (typeof res != 'number') return 1;
     else {
-      if (res > 1) this._log.infoS('workerMaxNumber', 1);
+      if (res > 1) this._log.infoS('test.parallelExecutionLimit', res);
+      return res;
+    }
+  }
+
+  public getParallelExecutionOfExecutableLimit(): number {
+    const cfgName: Config = 'test.parallelExecutionOfExecutableLimit';
+    const res = Math.max(1, this._new.get<number>(cfgName, 1));
+    if (typeof res != 'number' || Number.isNaN(res)) return 1;
+    else {
+      if (res > 1) this._log.infoS(cfgName, res);
       return res;
     }
   }
@@ -459,6 +469,7 @@ export class Configurations {
     }
 
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
+    const defaultParallelExecutionOfExecLimit = this.getParallelExecutionOfExecutableLimit() || 1;
 
     const createExecutableConfigFromPattern = (pattern: string): ExecutableConfig => {
       return new ExecutableConfig(
@@ -469,7 +480,7 @@ export class Configurations {
         undefined,
         undefined,
         [],
-        1,
+        defaultParallelExecutionOfExecLimit,
         defaultCwd,
         variableToValue,
         {},
@@ -544,7 +555,9 @@ export class Configurations {
           : [];
 
         const parallelizationLimit: number =
-          typeof obj.parallelizationLimit === 'number' ? obj.parallelizationLimit : 1;
+          typeof obj.parallelizationLimit === 'number' && !Number.isNaN(obj.parallelizationLimit)
+            ? Math.max(1, obj.parallelizationLimit)
+            : defaultParallelExecutionOfExecLimit;
 
         const testGrouping = obj.testGrouping ? obj.testGrouping : undefined;
 

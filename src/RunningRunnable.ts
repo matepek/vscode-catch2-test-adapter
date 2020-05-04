@@ -105,6 +105,7 @@ export class RunningRunnable {
   }
 
   public setPriorityAsync(log: LoggerWrapper): void {
+    const priority = 16;
     let retryOnFailure = 5;
 
     const setPriorityInner = (): Promise<void> => {
@@ -112,15 +113,15 @@ export class RunningRunnable {
         if (this.terminated) {
           return Promise.resolve();
         } else if (process.connected && process.pid) {
-          os.setPriority(process.pid, 16);
-          log.debug('setPriority done', process.pid);
+          os.setPriority(process.pid, priority);
+          log.debug('setPriority is done', `priority(${priority})`, `pid(${process.pid})`);
 
           return Promise.resolve();
         } else {
           return promisify(setTimeout)(500).then(setPriorityInner);
         }
       } catch (e) {
-        log.warnS('setPriority failed', e, retryOnFailure);
+        log.warnS('setPriority failed', `pid(${process.pid})`, e, retryOnFailure);
         if (retryOnFailure-- > 0) return promisify(setTimeout)(500).then(setPriorityInner);
         else return Promise.resolve();
       }

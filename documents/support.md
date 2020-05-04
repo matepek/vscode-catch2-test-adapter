@@ -60,3 +60,8 @@ For solving issues use: check [support](#Support).
 > > ```
 > >
 > > This will remove the `build/` from the beggining of the relative path of the executable.
+
+> My tests are fine from command line but running fails using this extension.
+>
+> > What are the values of `testMate.cpp.test.parallelExecutionLimit`, `testMate.cpp.test.parallelExecutionOfExecutableLimit` or `testMate.cpp.test.advancedExecutables`'s `parallelizationLimit`?
+> > These values can make a mess if your excutable/executables depending on the same resource(s).

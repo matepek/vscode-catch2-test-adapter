@@ -784,7 +784,14 @@
           "minimum": -1
         },
         "testMate.cpp.test.parallelExecutionLimit": {
-          "markdownDescription": "The variable maximize the number of the parallel test execution. (It applies instantly.) Note: If your executables depends on the same resource than this could cause a problem.",
+          "markdownDescription": "The variable maximize the number of the parallel test execution. (It applies instantly.) Note: If your executables depends on the **same resource** than this **could cause a problem**.",
+          "scope": "resource",
+          "type": "integer",
+          "default": 1,
+          "minimum": 1
+        },
+        "testMate.cpp.test.parallelExecutionOfExecutableLimit": {
+          "markdownDescription": "The variable maximize the number of the parallel execution of a executable file. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. The `testMate.cpp.test.parallelExecutionLimit` is a global limit and this is a local one. Note: If your **test cases** depends on the same resource than this **could cause a problem**.",
           "scope": "resource",
           "type": "integer",
           "default": 1,

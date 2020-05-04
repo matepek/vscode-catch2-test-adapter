@@ -437,6 +437,13 @@ export abstract class AbstractRunnable {
         ? this._splitTestSetForMultirun(childrenToRun)
         : [childrenToRun];
 
+    if (buckets.length > 1) {
+      this._shared.log.info(
+        "Parallel execution of the same executable is enabled. Note: This can cause problems if the executable's test cases depend on the same resource.",
+        buckets.length,
+      );
+    }
+
     return Promise.all(
       buckets.map(async (bucket: readonly AbstractTest[]) => {
         const smallerTestSet = this._splitTestsToSmallEnoughSubsets(bucket);
