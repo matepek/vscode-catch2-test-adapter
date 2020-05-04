@@ -388,11 +388,11 @@ export abstract class AbstractRunnable {
 
   protected abstract _reloadChildren(): Promise<void>;
 
-  protected abstract _getRunParams(childrenToRun: readonly AbstractTest[]): string[];
+  protected abstract _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
 
   protected abstract _handleProcess(runInfo: RunningRunnable): Promise<void>;
 
-  public abstract getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[];
+  public abstract getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[];
 
   public reloadTests(taskPool: TaskPool): Promise<void> {
     return taskPool.scheduleTask(async () => {

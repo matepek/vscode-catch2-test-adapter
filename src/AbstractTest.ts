@@ -196,7 +196,7 @@ export abstract class AbstractTest implements TestInfo {
     fn(this);
   }
 
-  public findTest(pred: (v: AbstractTest) => boolean): AbstractTest | undefined {
+  public findTest(pred: (v: AbstractTest) => boolean): Readonly<AbstractTest> | undefined {
     return pred(this) ? this : undefined;
   }
 

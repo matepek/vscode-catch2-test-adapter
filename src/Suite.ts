@@ -213,14 +213,14 @@ export class Suite implements TestSuiteInfo {
     });
   }
 
-  public findTest(pred: (v: AbstractTest) => boolean): AbstractTest | undefined {
+  public findTest(pred: (v: AbstractTest) => boolean): Readonly<AbstractTest> | undefined {
     return Suite.findTestInArray(this.children, pred);
   }
 
   public static findTestInArray(
     array: (Suite | AbstractTest)[],
     pred: (v: AbstractTest) => boolean,
-  ): AbstractTest | undefined {
+  ): Readonly<AbstractTest> | undefined {
     for (let i = 0; i < array.length; ++i) {
       const found = array[i].findTest(pred);
       if (found !== undefined) return found;

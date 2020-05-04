@@ -408,7 +408,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         if (arr) arr[1].push(curr!);
         else prev.push([curr!.runnable, [curr!]]);
         return prev;
-      }, new Array<[AbstractRunnable, AbstractTest[]]>());
+      }, new Array<[AbstractRunnable, Readonly<AbstractTest>[]]>());
 
     if (runnables.length !== 1) {
       this._log.error('unsupported executable count', tests);

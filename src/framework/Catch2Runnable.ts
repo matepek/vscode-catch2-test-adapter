@@ -213,7 +213,7 @@ export class Catch2Runnable extends AbstractRunnable {
     }
   }
 
-  protected _getRunParams(childrenToRun: readonly Catch2Test[]): string[] {
+  protected _getRunParams(childrenToRun: readonly Readonly<Catch2Test>[]): string[] {
     const execParams: string[] = [];
 
     const testNames = childrenToRun.map(c => c.getEscapedTestName());
@@ -236,7 +236,7 @@ export class Catch2Runnable extends AbstractRunnable {
     return execParams;
   }
 
-  public getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[] {
+  public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
     const debugParams: string[] = [];
 
     const testNames = childrenToRun.map(c => (c as Catch2Test).getEscapedTestName());
