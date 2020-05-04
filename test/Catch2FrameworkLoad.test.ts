@@ -993,8 +993,9 @@ describe(path.basename(__filename), function () {
     });
 
     it('should timeout inside a test case', async function () {
-      this.slow(7000);
-      await settings.updateConfig('test.runtimeLimit', 3);
+      this.slow(10000);
+      const timeoutLimitSec = 2;
+      await settings.updateConfig('test.runtimeLimit', timeoutLimitSec);
       await loadAdapterAndAssert();
       const withArgs = imitation.spawnStub.withArgs(
         example1.suite1.execPath,
@@ -1016,7 +1017,7 @@ describe(path.basename(__filename), function () {
       const start = Date.now();
       await adapter.run([s1t1.id]);
       const elapsed = Date.now() - start;
-      assert.ok(3000 <= elapsed && elapsed <= 7000, elapsed.toString());
+      assert.ok(timeoutLimitSec * 1000 <= elapsed && elapsed <= 7000, elapsed.toString());
       assert.deepStrictEqual(
         spyKill.getCalls().map(c => c.args),
         [[]],
