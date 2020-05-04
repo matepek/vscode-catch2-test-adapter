@@ -100,6 +100,7 @@ describe(path.basename(__filename), function () {
 
   specify('resolving relative defaultCwd', async function () {
     this.slow(1000);
+    this.timeout(10000);
     await settings.updateConfig('test.executables', example1.suite1.execPath);
     await settings.updateConfig('test.workingDirectory', 'defaultCwdStr');
 

@@ -132,27 +132,37 @@ export class Configurations {
       // NOTE: update is async operation
       // This is not the nicest solution but should work and simple.
 
-      this._new
-        .update(newName, oldVals.globalValue, vscode.ConfigurationTarget.Global)
-        .then(undefined, e => this._log.exceptionS(e));
-      this._new
-        .update(newName, oldVals.workspaceValue, vscode.ConfigurationTarget.Workspace)
-        .then(undefined, e => this._log.exceptionS(e));
-      this._new
-        .update(newName, oldVals.workspaceFolderValue, vscode.ConfigurationTarget.WorkspaceFolder)
-        .then(undefined, e => this._log.exceptionS(e));
-
       const oldVal = this._old.get<T>(oldName);
 
-      this._old
-        .update(oldName, undefined, vscode.ConfigurationTarget.Global)
-        .then(undefined, e => this._log.exceptionS(e));
-      this._old
-        .update(oldName, undefined, vscode.ConfigurationTarget.Workspace)
-        .then(undefined, e => this._log.exceptionS(e));
-      this._old
-        .update(oldName, undefined, vscode.ConfigurationTarget.WorkspaceFolder)
-        .then(undefined, e => this._log.exceptionS(e));
+      if (oldVals.globalValue !== undefined)
+        this._new
+          .update(newName, oldVals.globalValue, vscode.ConfigurationTarget.Global)
+          .then(undefined, e => this._log.exceptionS(e));
+
+      if (oldVals.workspaceValue !== undefined)
+        this._new
+          .update(newName, oldVals.workspaceValue, vscode.ConfigurationTarget.Workspace)
+          .then(undefined, e => this._log.exceptionS(e));
+
+      if (oldVals.workspaceFolderValue !== undefined)
+        this._new
+          .update(newName, oldVals.workspaceFolderValue, vscode.ConfigurationTarget.WorkspaceFolder)
+          .then(undefined, e => this._log.exceptionS(e));
+
+      if (oldVals.globalValue !== undefined)
+        this._old
+          .update(oldName, undefined, vscode.ConfigurationTarget.Global)
+          .then(undefined, e => this._log.exceptionS(e));
+
+      if (oldVals.workspaceValue !== undefined)
+        this._old
+          .update(oldName, undefined, vscode.ConfigurationTarget.Workspace)
+          .then(undefined, e => this._log.exceptionS(e));
+
+      if (oldVals.workspaceFolderValue !== undefined)
+        this._old
+          .update(oldName, undefined, vscode.ConfigurationTarget.WorkspaceFolder)
+          .then(undefined, e => this._log.exceptionS(e));
 
       return oldVal;
     } else {

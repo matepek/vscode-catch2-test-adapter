@@ -40,6 +40,7 @@ describe(path.basename(__filename), function () {
     });
 
     it('discovery.gracePeriodForMissing', function () {
+      this.timeout(10000);
       return settings.updateConfig('discovery.gracePeriodForMissing', 9876).then(function () {
         assert.equal((adapter as any) /* eslint-disable-line */._shared.execWatchTimeout, 9876000);
       });
