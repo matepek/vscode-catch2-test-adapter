@@ -566,7 +566,7 @@ export abstract class AbstractRunnable {
         });
       };
 
-      shedule().then(() => {
+      shedule().finally(() => {
         changeConn.dispose();
       });
     }
