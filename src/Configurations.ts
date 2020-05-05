@@ -109,6 +109,16 @@ export class Configurations {
     this._getNewOrOldAndMigrate('log.logfile'); // force migrate
   }
 
+  // eslint-disable-next-line
+  public getValues(): { [prop: string]: any } {
+    const res = Object.assign({}, this._new);
+    delete res.get;
+    delete res.has;
+    delete res.inspect;
+    delete res.update;
+    return res;
+  }
+
   private _isDefinedConfig<T>(config: {
     key: string;
     defaultValue?: T;
@@ -540,7 +550,7 @@ export class Configurations {
     } else if (Array.isArray(advanced)) {
       const executables: ExecutableConfig[] = [];
 
-      this._log.setContext('executables', { executables: advanced });
+      this._log.setContext('executables', advanced);
 
       const createExecutableConfigFromObj = (obj: ExecutableObj): ExecutableConfig => {
         const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;

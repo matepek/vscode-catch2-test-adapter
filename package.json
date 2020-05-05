@@ -133,7 +133,7 @@
       "$comment": "Enums will cause that the vscode will offer auto-completion.",
       "properties": {
         "testMate.cpp.test.executables": {
-          "markdownDescription": "The location of your test executable (relative to the workspace folder or absolute path). Empty string means disabled. For more option set [testMate.cpp.test.advancedExecutables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) instead of this. NOTE: if `testMate.cpp.test.advancedExecutables` is set then this is ignored.",
+          "markdownDescription": "A [glob pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) to find test executables. (Relative to the workspace folder or absolute path.) Empty string means disabled. For more option set [testMate.cpp.test.advancedExecutables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) instead of this. NOTE: if `testMate.cpp.test.advancedExecutables` is set then this is ignored.",
           "scope": "resource",
           "type": "string",
           "default": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*"
@@ -749,7 +749,7 @@
           }
         },
         "testMate.cpp.test.workingDirectory": {
-          "markdownDescription": "Sets working directory of the test executable (relative to the workspace folder or absolute path). Note: `testMate.cpp.executables` overwrites it locally. ([Variables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#variables))",
+          "markdownDescription": "Sets the working directory of the test executable (relative to the workspace folder or absolute path). Note: `testMate.cpp.executables` overwrites it locally. ([Variables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#variables))",
           "scope": "resource",
           "type": "string",
           "default": "${absDirpath}",
@@ -777,21 +777,21 @@
           "pattern": "^(|time|[0-9]+)$"
         },
         "testMate.cpp.test.runtimeLimit": {
-          "markdownDescription": "[seconds] Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
+          "markdownDescription": "[seconds] Test executable is running in a process. In case of an infinite loop it will run forever unless this parameter is set. It applies instantly. (0 means infinite)",
           "scope": "resource",
           "type": "integer",
           "default": 600,
           "minimum": -1
         },
         "testMate.cpp.test.parallelExecutionLimit": {
-          "markdownDescription": "The variable maximize the number of the parallel test execution. (It applies instantly.) Note: If your executables depends on the **same resource** than this **could cause a problem**.",
+          "markdownDescription": "Maximizes the number of the parallel test executions. (It applies instantly.) Note: If your executables depend on the **same resource** then this **could cause a problem**.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
           "minimum": 1
         },
         "testMate.cpp.test.parallelExecutionOfExecutableLimit": {
-          "markdownDescription": "The variable maximize the number of the parallel execution of a executable file. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. The `testMate.cpp.test.parallelExecutionLimit` is a global limit and this is a local one. Note: If your **test cases** depends on the same resource than this **could cause a problem**.",
+          "markdownDescription": "Maximizes the number of the parallel execution of executables. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. The `testMate.cpp.test.parallelExecutionLimit` is a global limit and this is a local one. Note: If your **test cases** depend on the same resource then this **could cause a problem**.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
@@ -826,7 +826,7 @@
           "default": false
         },
         "testMate.cpp.debug.configTemplate": {
-          "markdownDescription": "Set the necessary debug configurations and the debug button will work.",
+          "markdownDescription": "Sets the necessary debug configurations and the debug button will work.",
           "scope": "resource",
           "default": null,
           "oneOf": [
@@ -1673,7 +1673,7 @@
           "minimum": 200
         },
         "catch2TestExplorer.defaultRunningTimeoutSec": {
-          "markdownDescription": "Test executable is running in a process. In case of an infinite loop, it will run forever, unless this parameter is set. It applies instantly. (0 means infinite)",
+          "markdownDescription": "Test executable is running in a process. In case of an infinite loop it will run forever unless this parameter is set. It applies instantly. (0 means infinite)",
           "deprecationMessage": "Use `testMate.cpp.test.runtimeLimit` instead of this.",
           "scope": "resource",
           "type": "integer",
@@ -1690,7 +1690,7 @@
           "maximum": 900
         },
         "catch2TestExplorer.workerMaxNumber": {
-          "markdownDescription": "The variable maximize the number of the parallel test execution. It applies instantly.",
+          "markdownDescription": "Maximizes the number of the parallel test executions. It applies instantly.",
           "deprecationMessage": "Use `testMate.cpp.test.parallelExecutionLimit` instead of this.",
           "scope": "resource",
           "type": "integer",
@@ -1698,7 +1698,7 @@
           "minimum": 1
         },
         "catch2TestExplorer.debugConfigTemplate": {
-          "markdownDescription": "Set the necessary debug configurations and the debug button will work.",
+          "markdownDescription": "Sets the necessary debug configurations and the debug button will work.",
           "deprecationMessage": "Use `testMate.cpp.debug.configTemplate` instead of this.",
           "scope": "resource",
           "default": null,

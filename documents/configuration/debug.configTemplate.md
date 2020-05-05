@@ -6,7 +6,7 @@
 testMate.cpp.debug.configTemplate
 ```
 
-Set the necessary debug configurations and the debug button will work.
+Sets the necessary debug configurations and the debug button will work.
 
 If `testMate.cpp.debug.configTemplate` value is `null` (default),
 

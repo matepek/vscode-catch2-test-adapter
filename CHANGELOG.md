@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.0.1]
+
+"Proofreading"
+
 ## [3.0.0] - 2020-05-04
 
 It's a big day! the extension was finally renamed to `C++ TestMate`.

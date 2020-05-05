@@ -105,6 +105,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         enabled,
         release,
         defaultIntegrations: false,
+        normalizeDepth: 4,
       });
 
       Sentry.setTags({
@@ -242,7 +243,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           const config = this._getConfiguration();
 
           try {
-            Sentry.setContext('config', config);
+            Sentry.setContext('config', config.getValues());
           } catch (e) {
             this._log.exceptionS(e);
           }
