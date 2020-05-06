@@ -22,68 +22,106 @@ For solving issues use: check [support](#Support).
 
 ## F.A.Q
 
-> Wanna see the test run results in the status bar too.
->
-> > Check this extension: [Test Explorer Status Bar](https://marketplace.visualstudio.com/items?itemName=connorshea.vscode-test-explorer-status-bar)
+Wanna see the test run results in the status bar too.
 
-> I want to run some **custom script** before the tests (for example to set some environment variables and do some init), how should I do that?
->
-> > Create command line wrapper (.sh/.bat) or a python script wrapper. The most convenient way is to generate one.
+> Check this extension: [Test Explorer Status Bar](https://marketplace.visualstudio.com/items?itemName=connorshea.vscode-test-explorer-status-bar)
+
+I want to run some **custom script** before the tests (for example to set some environment variables and do some init), how should I do that?
+
+> Create command line wrapper (.sh/.bat) or a python script wrapper. The most convenient way is to generate one.
 >
 > Would you show me an example?
 >
-> > Sure! For example in case of CMake: [check this](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/examples/test_wrapper/cmake_test_wrapper_example/CMakeLists.txt).
-> > Note: However this is the easiest, not the best solution.
-> > There is a drawback: Debugging button won't work, since the debuger will attach to the script not to the executable started by the script.
+> Sure! For example in case of CMake: [check this](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/examples/test_wrapper/cmake_test_wrapper_example/CMakeLists.txt).
+> Note: However this is the easiest, not the best solution.
+> There is a drawback: Debugging button won't work, since the debuger will attach to the script not to the executable started by the script.
 >
 > Is there a solution for that?
 >
-> > Yes. One can enhance their test executable from c++. The example is [here](https://github.com/matepek/vscode-catch2-test-adapter/tree/master/documents/examples/test_wrapper/cppmain_test_wrapper_example)
+> Yes. One can enhance their test executable from c++. The example is [here](https://github.com/matepek/vscode-catch2-test-adapter/tree/master/documents/examples/test_wrapper/cppmain_test_wrapper_example)
 
-> Wanna set `cwd` to the _source file_'s dir to use the resources next to it and my structure looks like (because I use cmake):
+Wanna set `cwd` to the _source file_'s dir to use the resources next to it and my structure looks like (because I use cmake):
+
+>
+
+```
+<workspaceFolder>/src/a/resources/
+<workspaceFolder>/src/a/test1.cpp
+<workspaceFolder>/build/a/test1.exe
+```
+
+> You can try this:
 >
 > ```
-> <workspaceFolder>/src/a/resources/
-> <workspaceFolder>/src/a/test1.cpp
-> <workspaceFolder>/build/a/test1.exe
+> "testMate.cpp.test.advancedExecutables": [
+>   {
+>     "pattern": "build/**/test*.exe",
+>     "cwd": "${relDirpath[1:]}/resources"
+>   }
+> ]
 > ```
 >
-> > You can try this:
-> >
-> > ```
-> > "testMate.cpp.test.advancedExecutables": [
-> >   {
-> >     "pattern": "build/**/test*.exe",
-> >     "cwd": "${relDirpath[1:]}/resources"
-> >   }
-> > ]
-> > ```
-> >
-> > This will remove the `build/` from the beggining of the relative path of the executable.
+> This will remove the `build/` from the beggining of the relative path of the executable.
 
-> My tests are fine from command line but running fails using this extension.
->
-> > What are the values of `testMate.cpp.test.parallelExecutionLimit`, `testMate.cpp.test.parallelExecutionOfExecutableLimit` or `testMate.cpp.test.advancedExecutables`'s `parallelizationLimit`?
-> > These values can make a mess if your excutable/executables depending on the same resource(s).
+My tests are fine from command line but running fails using this extension.
 
-> Loading takes a lot of time:
->
-> > Enable `testMate.cpp.discovery.testListCaching`.
+> What are the values of `testMate.cpp.test.parallelExecutionLimit`, `testMate.cpp.test.parallelExecutionOfExecutableLimit` or `testMate.cpp.test.advancedExecutables`'s `parallelizationLimit`?
+> These values can make a mess if your excutable/executables depending on the same resource(s).
 
-> Can I run test disovery or all my tests at startup?
+Loading takes a lot of time:
+
+> Enable `testMate.cpp.discovery.testListCaching`.
+
+Can I run test disovery or all my tests at startup?
+
+> Sure you can. VSCode provides a fine way to do it:
+> Create a task (`.vscode/tasks.json`) which will be triggered at startup:
 >
-> > Sure you can. VSCode provides a fine way to do it:
-> > Create a task (`.vscode/tasks.json`) which will be triggered at startup:
-> >
-> > ```
-> > {
-> >   "label": "Activate Test Explorer",
-> >   "command": "${command:test-explorer.reload}", // For running use "${command:test-explorer.run-all}"
-> >   "problemMatcher": [],
-> >   "runOptions": {
-> >     "runOn": "folderOpen" // This will cause the trigger. Have to run manually once!
-> >   }
-> > }
-> > ```
-> >
-> > Running currently is not working due to a possilbe Test Explorer bug.
+> ```
+> {
+>   "label": "Activate Test Explorer",
+>   "command": "${command:test-explorer.reload}", // For running use "${command:test-explorer.run-all}"
+>   "problemMatcher": [],
+>   "runOptions": {
+>     "runOn": "folderOpen" // This will cause the trigger. Have to run manually once!
+>   }
+> }
+> ```
+
+Can I run my tests at startup.
+
+> Well that is a bit triciker due to the activation event has to arrive before the run command.
+> Here is he workaround:
+>
+> ```
+> "tasks": [
+>  {
+>    "label": "LoadTestMate",
+>    "command": "${command:test-explorer.reload}",
+>    "problemMatcher": []
+>  },
+>  {
+>    "label": "sleepForASec",
+>    "type": "shell",
+>    "command":"sleep 1",
+>    "presentation": {
+>      "echo": true,
+>      "reveal": "never",
+>      "focus": false,
+>      "panel": "shared",
+>      "showReuseMessage": true,
+>      "clear": false
+>    }
+>  },
+>  {
+>    "label": "RunTestMate",
+>    "command": "${command:test-explorer.run-all}",
+>    "problemMatcher": [],
+>    "runOptions": {
+>      "runOn": "folderOpen"
+>    },
+>    "dependsOrder": "sequence",
+>    "dependsOn":["LoadTestMate","sleepForASec"]
+>  }
+> ]
+> ```
