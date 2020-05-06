@@ -44,6 +44,7 @@ about: Create a report to help us improve
 - VS Code Version:
 - Catch2 / Google Test / DOCTest Version:
 - OS Type and Version:
+- Using remote-ssh/docker/wsl?:
 
 **Log** (optional but recommended)
 

@@ -59,7 +59,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _shared: SharedVariables;
   private _rootSuite: RootSuite;
 
-  private readonly _isDebug: boolean = !!process.env['C2_DEBUG'];
+  private readonly _isDebug: boolean = process.env['C2_DEBUG'] === 'true';
 
   public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
     this._log = new LoggerWrapper(
@@ -70,7 +70,18 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const configuration = this._getConfiguration();
 
-    this._log.infoS('info:', this.workspaceFolder, process.platform, process.version, process.versions, vscode.version);
+    this._log.info(
+      'Extension constructor: activated',
+      this.workspaceFolder,
+      process.platform,
+      process.version,
+      process.versions,
+      vscode.version,
+    );
+
+    const activeExtensions = vscode.extensions.all.filter(ex => ex.isActive).map(ex => ex.id);
+    const vscodeRemote = activeExtensions.find(ex => ex.startsWith('ms-vscode-remote.'));
+    this._log.debug('Active extensions', `activeVSCodeRemote(${vscodeRemote})`, activeExtensions);
 
     // TODO:future feedback
     // if (false) {
@@ -105,7 +116,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         enabled,
         release,
         defaultIntegrations: false,
-        normalizeDepth: 4,
+        normalizeDepth: 10,
       });
 
       Sentry.setTags({
@@ -113,6 +124,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         vscodeVersion: vscode.version,
         version: extensionInfo.version,
         publisher: extensionInfo.publisher,
+        activeVSCodeRemote: vscodeRemote ? vscodeRemote : 'undefined',
       });
 
       try {
@@ -126,6 +138,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       //Sentry.setTag('workspaceFolder', hashString(this.workspaceFolder.uri.fsPath));
 
       //'Framework' message includes this old message too: Sentry.captureMessage('Extension was activated', Sentry.Severity.Log);
+
+      this._log.setContext('config', configuration.getValues());
     } catch (e) {
       this._log.exceptionS(e);
     }
@@ -399,30 +413,33 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       throw Error('The adapter is busy. Try it again a bit later.');
     }
 
-    this._log.infoS('Debugging');
+    this._log.info('Using debug');
 
-    const runnables = tests
+    const runnableToTestMap = tests
       .map(t => this._rootSuite.findTestById(t))
-      .filter(t => t !== undefined)
-      .reduce((prev, curr) => {
-        const arr = prev.find(x => x[0] === curr!.runnable);
-        if (arr) arr[1].push(curr!);
-        else prev.push([curr!.runnable, [curr!]]);
-        return prev;
+      .reduce((runnableToTestMap, test) => {
+        if (test === undefined) return runnableToTestMap;
+        const arr = runnableToTestMap.find(x => x[0] === test.runnable);
+        if (arr) arr[1].push(test!);
+        else runnableToTestMap.push([test.runnable, [test]]);
+        return runnableToTestMap;
       }, new Array<[AbstractRunnable, Readonly<AbstractTest>[]]>());
 
-    if (runnables.length !== 1) {
+    if (runnableToTestMap.length !== 1) {
       this._log.error('unsupported executable count', tests);
       throw Error('Unsupported input. It seems you would like to debug more tests from different executables.');
     }
 
-    const [runnable, runnableTests] = runnables[0];
+    const [runnable, runnableTests] = runnableToTestMap[0];
 
     this._log.info('test', runnable, runnableTests);
 
     const configuration = this._getConfiguration();
 
-    const template = configuration.getDebugConfigurationTemplate();
+    const [debugConfigTemplate, debugConfigTemplateSource] = configuration.getDebugConfigurationTemplate();
+
+    this._log.debugS('debugConfigTemplate', debugConfigTemplate);
+    this._log.infoSWithTags('Using debug', { debugConfigTemplateSource });
 
     const label = runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
 
@@ -499,7 +516,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       ['${envObj}', Object.assign(Object.assign({}, process.env), runnable.properties.options.env!)],
     ];
 
-    const debugConfig = resolveVariables(template, varToResolve);
+    const debugConfig = resolveVariables(debugConfigTemplate, varToResolve);
 
     // we dont know better :(
     // https://github.com/Microsoft/vscode/issues/70125

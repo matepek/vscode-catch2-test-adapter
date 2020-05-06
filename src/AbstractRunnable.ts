@@ -41,7 +41,7 @@ export abstract class AbstractRunnable {
         if (AbstractRunnable._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
           const versionStr = version ? version.toString() : 'unknown';
 
-          _shared.log.infoSMessageWithTags('Framework', {
+          _shared.log.infoSWithTags('Framework', {
             framework: this.frameworkName,
             frameworkVersion: `${this.frameworkName}@${versionStr}`,
           });
