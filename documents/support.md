@@ -80,10 +80,10 @@ Can I run test disovery or all my tests at startup?
 > ```
 > {
 >   "label": "Activate Test Explorer",
->   "command": "${command:test-explorer.reload}", // For running use "${command:test-explorer.run-all}"
+>   "command": "${command:test-explorer.reload}",
 >   "problemMatcher": [],
 >   "runOptions": {
->     "runOn": "folderOpen" // This will cause the trigger. Have to run manually once!
+>     "runOn": "folderOpen" // This will cause the triggering. Have to run manually once!
 >   }
 > }
 > ```
@@ -91,12 +91,12 @@ Can I run test disovery or all my tests at startup?
 Can I run my tests at startup.
 
 > Well that is a bit triciker due to the activation event has to arrive before the run command.
-> Here is he workaround:
+> Here is the workaround:
 >
 > ```
 > "tasks": [
 >  {
->    "label": "LoadTestMate",
+>    "label": "LoadTests",
 >    "command": "${command:test-explorer.reload}",
 >    "problemMatcher": []
 >  },
@@ -114,7 +114,7 @@ Can I run my tests at startup.
 >    }
 >  },
 >  {
->    "label": "RunTestMate",
+>    "label": "LoadAndRunAllTests",
 >    "command": "${command:test-explorer.run-all}",
 >    "problemMatcher": [],
 >    "runOptions": {

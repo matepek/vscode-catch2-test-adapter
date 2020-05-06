@@ -107,7 +107,7 @@ Use these commands in your `tasks.json` like
   "command": "${command:test-explorer.reload}",
   "problemMatcher": [],
   "runOptions": {
-    "runOn": "folderOpen" // This will cause the trigger. Have to run manually once!
+    "runOn": "folderOpen" // This will cause the triggering. Have to run manually once!
 }
 ```
 
