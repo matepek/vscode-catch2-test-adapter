@@ -80,10 +80,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       vscode.version,
     );
 
-    const activeExtensions = vscode.extensions.all.filter(ex => ex.isActive).map(ex => ex.id);
-    const vscodeRemote = activeExtensions.find(ex => ex.startsWith('ms-vscode-remote.'));
-    this._log.debug('Active extensions', `activeVSCodeRemote(${vscodeRemote})`, activeExtensions);
-
     // TODO:future feedback
     // if (false) {
     //   'https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter&ssr=false#review-details';
@@ -125,7 +121,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         vscodeVersion: vscode.version,
         version: extensionInfo.version,
         publisher: extensionInfo.publisher,
-        activeVSCodeRemote: vscodeRemote ? vscodeRemote : 'undefined',
       });
 
       try {
@@ -141,6 +136,20 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       //'Framework' message includes this old message too: Sentry.captureMessage('Extension was activated', Sentry.Severity.Log);
 
       this._log.setContext('config', configuration.getValues());
+
+      const extensionsChanged = (): void => {
+        try {
+          const activeExtensions = vscode.extensions.all.filter(ex => ex.isActive).map(ex => ex.id);
+          const vscodeRemote = activeExtensions.find(ex => ex.startsWith('ms-vscode-remote.'));
+          this._log.debug('Active extensions', `activeVSCodeRemote(${vscodeRemote})`, activeExtensions);
+          Sentry.setTag('activeVSCodeRemote', vscodeRemote ? vscodeRemote : 'undefined');
+        } catch (e) {
+          this._log.exceptionS(e);
+        }
+      };
+      extensionsChanged();
+
+      this._disposables.push(vscode.extensions.onDidChange(extensionsChanged));
     } catch (e) {
       this._log.exceptionS(e);
     }

@@ -154,7 +154,7 @@ export class GoogleRunnable extends AbstractRunnable {
   }
 
   protected async _reloadChildren(): Promise<void> {
-    const cacheFile = this.properties.path + '.cache.xml';
+    const cacheFile = this.properties.path + '.TestMate.testListCache.xml';
 
     if (this._shared.enabledTestListCaching) {
       try {

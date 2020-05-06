@@ -80,7 +80,7 @@ export class DOCRunnable extends AbstractRunnable {
   }
 
   protected async _reloadChildren(): Promise<void> {
-    const cacheFile = this.properties.path + '.cache.txt';
+    const cacheFile = this.properties.path + '.TestMate.testListCache.txt';
 
     if (this._shared.enabledTestListCaching) {
       try {

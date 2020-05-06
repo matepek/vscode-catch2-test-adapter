@@ -76,24 +76,55 @@ Plenty of more **fine-tuning options** are available under [test.advancedExecuta
 - ingoring std error
 - []...]
 
+### Test Explorer's configurations
+
 This extension is built upon the Test Explorer so its
 [configuration](https://github.com/hbenl/vscode-test-explorer#configuration) and [commands](https://github.com/hbenl/vscode-test-explorer#commands)
 can be used:
 
-| `testExplorer.___` | [Description](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                                                                                                              |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `errorDecoration`  | Show error messages from test failures as decorations in the editor.                                                                                                                                                                    |
-| `gutterDecoration` | Show the state of each test in the editor using Gutter Decorations.                                                                                                                                                                     |
-| `codeLens`         | Show a CodeLens above each test or suite for running or debugging the tests.                                                                                                                                                            |
-| `onStart`          | Retire or reset all test states whenever a test run is started.                                                                                                                                                                         |
-| `onReload`         | Retire or reset all test states whenever the test tree is reloaded.                                                                                                                                                                     |
-| `sort`             | Sort the tests and suites by label or location. If this is not set (or set to null), they will be shown in the order that they were received from the adapter                                                                           |
-| `hideEmptyLog`     | Hide the output channel used to show a test's log when the user clicks on a test whose log is empty                                                                                                                                     |
-| `hideWhen`         | Hide the Test Explorer when no test adapters have been registered or when no tests have been found by the registered adapters. The default is to never hide the Test Explorer (some test adapters only work with this default setting). |
+| `testExplorer.___`       | [Description](https://github.com/hbenl/vscode-test-explorer#configuration)                                                                                                                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `onStart`                | Retire or reset all test states whenever a test run is started                                                                                                                                                                          |
+| `onReload`               | Retire or reset all test states whenever the test tree is reloaded                                                                                                                                                                      |
+| `codeLens`               | Show a CodeLens above each test or suite for running or debugging the tests                                                                                                                                                             |
+| `gutterDecoration`       | Show the state of each test in the editor using Gutter Decorations                                                                                                                                                                      |
+| `errorDecoration`        | Show error messages from test failures as decorations in the editor                                                                                                                                                                     |
+| `errorDecorationHover`   | Provide hover messages for the error decorations in the editor                                                                                                                                                                          |
+| `sort`                   | Sort the tests and suites by label or location. If this is not set (or set to null), they will be shown in the order that they were received from the adapter                                                                           |
+| `showCollapseButton`     | Show a button for collapsing the nodes of the test tree                                                                                                                                                                                 |
+| `showExpandButton`       | Show a button for expanding the top nodes of the test tree, recursively for the given number of levels                                                                                                                                  |
+| `showOnRun`              | Switch to the Test Explorer view whenever a test run is started                                                                                                                                                                         |
+| `addToEditorContextMenu` | Add menu items for running and debugging the tests in the current file to the editor context menu                                                                                                                                       |
+| `mergeSuites`            | Merge suites with the same label and parent                                                                                                                                                                                             |
+| `hideEmptyLog`           | Hide the output channel used to show a test's log when the user clicks on a test whose log is empty                                                                                                                                     |
+| `hideWhen`               | Hide the Test Explorer when no test adapters have been registered or when no tests have been found by the registered adapters. The default is to never hide the Test Explorer (some test adapters only work with this default setting). |
+
+Use these commands in your `tasks.json` like
+
+```
+{
+  "label": "Activate Test Explorer",
+  "command": "${command:test-explorer.reload}",
+  "problemMatcher": [],
+  "runOptions": {
+    "runOn": "folderOpen" // This will cause the trigger. Have to run manually once!
+}
+```
+
+| ID                                   | Command                                       |
+| ------------------------------------ | --------------------------------------------- |
+| `test-explorer.reload`               | Reload tests                                  |
+| `test-explorer.run-all`              | Run all tests                                 |
+| `test-explorer.run-file`             | Run tests in current file                     |
+| `test-explorer.run-test-at-cursor`   | Run the test at the current cursor position   |
+| `test-explorer.rerun`                | Repeat the last test run                      |
+| `test-explorer.debug-test-at-cursor` | Debug the test at the current cursor position |
+| `test-explorer.redebug`              | Repeat the last test run in the debugger      |
+| `test-explorer.cancel`               | Cancel running tests                          |
 
 And more at [Test Explorer hompage](https://github.com/hbenl/vscode-test-explorer#configuration).
 
-#### About [Sentry.io]() integration
+## About [Sentry.io]() integration
 
 As a developer, you may know how valuable can be if you have some information.
 The feature is disabled by default, the user is promted to enable it.

@@ -65,3 +65,25 @@ For solving issues use: check [support](#Support).
 >
 > > What are the values of `testMate.cpp.test.parallelExecutionLimit`, `testMate.cpp.test.parallelExecutionOfExecutableLimit` or `testMate.cpp.test.advancedExecutables`'s `parallelizationLimit`?
 > > These values can make a mess if your excutable/executables depending on the same resource(s).
+
+> Loading takes a lot of time:
+>
+> > Enable `testMate.cpp.discovery.testListCaching`.
+
+> Can I run test disovery or all my tests at startup?
+>
+> > Sure you can. VSCode provides a fine way to do it:
+> > Create a task (`.vscode/tasks.json`) which will be triggered at startup:
+> >
+> > ```
+> > {
+> >   "label": "Activate Test Explorer",
+> >   "command": "${command:test-explorer.reload}", // For running use "${command:test-explorer.run-all}"
+> >   "problemMatcher": [],
+> >   "runOptions": {
+> >     "runOn": "folderOpen" // This will cause the trigger. Have to run manually once!
+> >   }
+> > }
+> > ```
+> >
+> > Running currently is not working due to a possilbe Test Explorer bug.
