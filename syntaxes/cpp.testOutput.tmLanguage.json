@@ -52,6 +52,11 @@
           }
         },
         {
+          "comment": "Location",
+          "match": "^((\\S*?)(?:[:\\(](\\d+)(?:\\)|[:,](\\d+)\\)?)?))",
+          "name": "comment.testMate.cpp.testOutput.gtest"
+        },
+        {
           "match": "Value of: (.+)",
           "captures": {
             "1": {
@@ -186,10 +191,16 @@
       ]
     },
     "catch2": {
+      "repository": {
+        "locationAt": {
+          "comment": "Location",
+          "match": "\\(at ((\\S*?)(?:[:\\(](\\d+)(?:\\)|[:,](\\d+)\\)?)?))\\)",
+          "name": "comment.testMate.cpp.testOutput.catch2"
+        }
+      },
       "patterns": [
         {
-          "match": "\\(at .+\\)",
-          "name": "comment.testMate.cpp.testOutput.catch2"
+          "include": "#locationAt"
         },
         {
           "match": "\"(.+)\"",
@@ -224,10 +235,22 @@
           }
         },
         {
-          "begin": "⬇ (.+):",
-          "end": "⬆ \\1",
+          "begin": "⬇(.+):",
+          "end": "⬆",
+          "beginCaptures": {
+            "1": {
+              "patterns": [
+                {
+                  "include": "#locationAt"
+                }
+              ]
+            }
+          },
           "contentName": "string.testMate.cpp.testOutput.catch2",
           "patterns": [
+            {
+              "include": "#locationAt"
+            },
             {
               "include": "#gmock"
             },

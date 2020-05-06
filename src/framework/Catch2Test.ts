@@ -274,7 +274,7 @@ export class Catch2Test extends AbstractTest {
       for (let i = 0; i < xml.Warning.length; i++) {
         try {
           const piece = xml.Warning[i];
-          testEventBuilder.appendMessage(`⬇ Warning: (at ${piece.$.filename}:${piece.$.line})`, 1);
+          testEventBuilder.appendMessage(`⬇ Warning (at ${piece.$.filename}:${piece.$.line}):`, 1);
           testEventBuilder.appendMessageWithDecorator(piece.$.filename, Number(piece.$.line) - 1, piece, 2);
           testEventBuilder.appendMessage('⬆ Warning', 1);
         } catch (e) {
@@ -287,7 +287,7 @@ export class Catch2Test extends AbstractTest {
       for (let i = 0; i < xml.Failure.length; i++) {
         try {
           const piece = xml.Failure[i];
-          testEventBuilder.appendMessage(`⬇ Failure: (at ${piece.$.filename}:${piece.$.line})`, 1);
+          testEventBuilder.appendMessage(`⬇ Failure (at ${piece.$.filename}:${piece.$.line}):`, 1);
           if (typeof piece._ !== 'string') this._shared.log.warn('No _ under failure', piece);
 
           const msg = typeof piece._ === 'string' ? piece._.trim() : piece.toString();
@@ -352,22 +352,19 @@ export class Catch2Test extends AbstractTest {
       }
     }
 
-    try {
-      if (xml.FatalErrorCondition) {
-        testEventBuilder.appendMessage('⬇ FatalErrorCondition:', 1);
-        for (let j = 0; j < xml.FatalErrorCondition.length; ++j) {
-          testEventBuilder.appendMessageWithDecorator(
-            xml.FatalErrorCondition[j].$.filename,
-            Number(xml.FatalErrorCondition[j].$.line) - 1,
-            xml.FatalErrorCondition[j]._,
-            2,
-          );
+    if (xml.FatalErrorCondition) {
+      for (let i = 0; i < xml.FatalErrorCondition.length; ++i) {
+        try {
+          const piece = xml.FatalErrorCondition[i];
+          testEventBuilder.appendMessage(`⬇ FatalErrorCondition (at ${piece.$.filename}:${piece.$.line}):`, 1);
+          testEventBuilder.appendMessage(piece._, 2);
+          testEventBuilder.appendDecorator(piece.$.filename, Number(piece.$.line) - 1, piece._);
+          testEventBuilder.appendMessage('⬆ FatalErrorCondition', 1);
+        } catch (error) {
+          this._shared.log.exceptionS(error);
+          testEventBuilder.appendMessage('Unknown fatal error: ' + inspect(error), 1);
         }
-        testEventBuilder.appendMessage('⬆ FatalErrorCondition', 1);
       }
-    } catch (error) {
-      this._shared.log.exceptionS(error);
-      testEventBuilder.appendMessage('Unknown fatal error: ' + inspect(error), 1);
     }
   }
 

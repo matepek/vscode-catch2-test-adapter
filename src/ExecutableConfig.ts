@@ -19,7 +19,6 @@ import { TestGrouping } from './TestGroupingInterface';
 import { Suite } from './Suite';
 import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
-import { GoogleTest } from './framework/GoogleTest';
 
 export interface ExecutableConfigFrameworkSpecific {
   helpRegex?: string;
@@ -63,15 +62,16 @@ export class ExecutableConfig implements vscode.Disposable {
               const result: vscode.DocumentLink[] = [];
               const lines = text.split(/\r?\n/);
               for (let i = 0; i < lines.length; ++i) {
-                const m = lines[i].match(GoogleTest.failureRe);
+                const m = lines[i].match(/^((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)):?\s/);
                 if (m) {
                   const file = getAbsolutePath(m[2], dirs);
                   if (file) {
                     const line = Number(m[3]);
+                    const col = m[4] ? `:${m[4]}` : '';
                     result.push(
                       new vscode.DocumentLink(
                         new vscode.Range(i, 0, i, m[1].length),
-                        vscode.Uri.file(file).with({ fragment: `${line}` }),
+                        vscode.Uri.file(file).with({ fragment: `${line}${col}` }),
                       ),
                     );
                   }
@@ -83,16 +83,17 @@ export class ExecutableConfig implements vscode.Disposable {
               const result: vscode.DocumentLink[] = [];
               const lines = text.split(/\r?\n/);
               for (let i = 0; i < lines.length; ++i) {
-                const m = lines[i].match(/\(at ((.+):([0-9]+))\)/);
+                const m = lines[i].match(/\(at ((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?))\)/);
                 if (m) {
                   const file = getAbsolutePath(m[2], dirs);
                   if (file) {
                     const line = Number(m[3]);
+                    const col = m[4] ? `:${m[4]}` : '';
                     const index = m.index ? m.index + 4 : 0;
                     result.push(
                       new vscode.DocumentLink(
                         new vscode.Range(i, index, i, index + m[1].length),
-                        vscode.Uri.file(file).with({ fragment: `${line}` }),
+                        vscode.Uri.file(file).with({ fragment: `${line}${col}` }),
                       ),
                     );
                   }
