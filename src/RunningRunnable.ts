@@ -113,7 +113,7 @@ export class RunningRunnable {
         if (this.terminated) {
           return Promise.resolve();
         } else if (process.connected && process.pid) {
-          os.setPriority(process.pid, priority);
+          os.setPriority(process.pid, os.constants.priority.PRIORITY_LOW);
           log.debug('setPriority is done', `priority(${priority})`, `pid(${process.pid})`);
 
           return Promise.resolve();

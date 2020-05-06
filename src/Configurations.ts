@@ -5,10 +5,19 @@ import { SharedVariables } from './SharedVariables';
 import { hashString, ResolveRulePair } from './Util';
 import { performance } from 'perf_hooks';
 import { TestGrouping } from './TestGroupingInterface';
+//import * as crypto from 'crypto';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
 
-const ConfigSection = 'testMate.cpp';
+const ConfigSectionBase = 'testMate.cpp';
+
+const enum Section {
+  'test' = 'test',
+  'discovery' = 'discovery',
+  'debug' = 'debug',
+  'log' = 'log',
+  'gtest' = 'gtest',
+}
 
 type MigratableConfig =
   | 'test.advancedExecutables'
@@ -31,6 +40,8 @@ type MigratableConfig =
   | 'gtest.gmockVerbose';
 
 export type Config = 'test.executables' | 'test.parallelExecutionOfExecutableLimit' | MigratableConfig;
+
+const OldConfigSectionBase = 'catch2TestExplorer';
 
 type OldConfig =
   | 'executables'
@@ -75,8 +86,8 @@ const MigrationV1V2NamePairs: { [key in MigratableConfig]: OldConfig } = {
 
 class ConfigurationChangeEvent {
   public constructor(private readonly event: vscode.ConfigurationChangeEvent) {}
-  affectsConfiguration(section: Config, resource?: vscode.Uri): boolean {
-    return this.event.affectsConfiguration(`${ConfigSection}.${section}`, resource);
+  affectsConfiguration(config: Config, resource?: vscode.Uri): boolean {
+    return this.event.affectsConfiguration(`${ConfigSectionBase}.${config}`, resource);
   }
 }
 
@@ -102,21 +113,23 @@ export class Configurations {
   private _new: vscode.WorkspaceConfiguration;
 
   public constructor(public _log: LoggerWrapper, private _workspaceFolderUri: vscode.Uri) {
-    this._old = vscode.workspace.getConfiguration('catch2TestExplorer', _workspaceFolderUri);
-    this._new = vscode.workspace.getConfiguration(ConfigSection, _workspaceFolderUri);
+    this._old = vscode.workspace.getConfiguration(OldConfigSectionBase, _workspaceFolderUri);
+    this._new = vscode.workspace.getConfiguration(ConfigSectionBase, _workspaceFolderUri);
 
     this._getNewOrOldAndMigrate('log.logpanel'); // force migrate
     this._getNewOrOldAndMigrate('log.logfile'); // force migrate
   }
 
   // eslint-disable-next-line
-  public getValues(): { [prop: string]: any } {
-    const res = Object.assign({}, this._new);
-    delete res.get;
-    delete res.has;
-    delete res.inspect;
-    delete res.update;
-    return res;
+  public getValues(): { test: any; discovery: any; debug: any; log: any; gtest: any; depricated: any } {
+    return {
+      test: this._new.get(Section.test),
+      discovery: this._new.get(Section.discovery),
+      debug: this._new.get(Section.debug),
+      log: this._new.get(Section.log),
+      gtest: this._new.get(Section.gtest),
+      depricated: this._old.get(OldConfigSectionBase),
+    };
   }
 
   private _isDefinedConfig<T>(config: {
@@ -192,7 +205,7 @@ export class Configurations {
     );
   }
 
-  public getDebugConfigurationTemplate(): vscode.DebugConfiguration {
+  public getDebugConfigurationTemplate(): [vscode.DebugConfiguration, string] {
     const templateFromConfig = this._getNewOrOldOrDefAndMigrate<object | null | 'extensionOnly'>(
       'debug.configTemplate',
       null,
@@ -207,9 +220,8 @@ export class Configurations {
         },
         templateFromConfig,
       );
-      this._log.infoS('using user defined debug config');
       this._log.debug('debugConfig', debugConfig);
-      return debugConfig;
+      return [debugConfig, 'userDefined'];
     }
 
     if (templateFromConfig === null) {
@@ -227,7 +239,7 @@ export class Configurations {
               wpLaunchConfigs[i].type.startsWith('gdb'))
           ) {
             // putting as much known properties as much we can and hoping for the best 🤞
-            const debugConfig = Object.assign({}, wpLaunchConfigs[i], {
+            const debugConfig: vscode.DebugConfiguration = Object.assign({}, wpLaunchConfigs[i], {
               name: '${label} (${suiteLabel})',
               program: '${exec}',
               target: '${exec}',
@@ -236,12 +248,11 @@ export class Configurations {
               cwd: '${cwd}',
               env: '${envObj}',
             });
-            this._log.infoS('using debug cofing from launch.json');
-            this._log.debug(
+            this._log.info(
               "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
               debugConfig,
             );
-            return debugConfig;
+            return [debugConfig, 'fromLaunchJson'];
           }
         }
       }
@@ -252,9 +263,10 @@ export class Configurations {
       request: 'launch',
       type: 'cppdbg',
     };
+    let source = 'unknown';
 
     if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
-      this._log.infoSMessageWithTags('using debug extension', { extension: 'vadimcn.vscode-lldb' });
+      source = 'vadimcn.vscode-lldb';
       Object.assign(template, {
         type: 'cppdbg',
         MIMode: 'lldb',
@@ -264,7 +276,7 @@ export class Configurations {
         env: '${envObj}',
       });
     } else if (vscode.extensions.getExtension('webfreak.debug')) {
-      this._log.infoSMessageWithTags('using debug extension', { extension: 'webfreak.debug' });
+      source = 'webfreak.debug';
       Object.assign(template, {
         type: 'gdb',
         target: '${exec}',
@@ -281,7 +293,7 @@ export class Configurations {
         template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
       }
     } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
-      this._log.infoSMessageWithTags('using debug extension', { extension: 'ms-vscode.cpptools' });
+      source = 'ms-vscode.cpptools';
       // documentation says debug"environment" = [{...}] but that doesn't work
       Object.assign(template, {
         type: 'cppvsdbg',
@@ -299,7 +311,7 @@ export class Configurations {
         "For debugging 'testMate.cpp.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
       );
     }
-    return template;
+    return [template, source];
   }
 
   public getOrCreateUserId(): string {
@@ -318,23 +330,40 @@ export class Configurations {
     }
   }
 
+  // public static decrypt(encryptedMsg: string): string {
+  //   const buffer = Buffer.from(encryptedMsg, 'base64');
+  //   const decrypted = crypto.privateDecrypt(Configurations.PublicKey, buffer);
+  //   return decrypted.toString('utf8');
+  // }
+
   public isSentryEnabled(): boolean {
     const val = this._getNewOrOldAndMigrate('log.logSentry');
     return val === 'enable' || val === 'enabled';
   }
 
   public askSentryConsent(): void {
+    const envAskSentry = process.env['TESTMATE_CPP_ASKSENTRYCONSENT'];
+    if (envAskSentry === 'disabled_3') {
+      return;
+      //const decrypted = Configurations.decrypt(process.env['TESTMATE_CPP_LOGSENTRY']);
+      //if (decrypted === 'disable_3') return;
+    }
+
     const logSentryConfig: Config = 'log.logSentry';
 
     const logSentry = this._getNewOrOldOrDefAndMigrate<SentryValue>(logSentryConfig, 'question');
 
     if (logSentry === 'question' || logSentry === 'disable' || logSentry === 'disable_1' || logSentry === 'disable_2') {
-      const options = ['Sure! I love this extension and happy to help.', 'Over my dead body (No)'];
+      const options = [
+        'Sure! I love this extension and happy to help.',
+        'Yes, but exclude current workspace',
+        'Over my dead body (No)',
+      ];
       vscode.window
         .showInformationMessage(
-          'Hey there! The extension now has [sentry.io](https://sentry.io/welcome) integration to ' +
-            'improve the stability and the development. 🤩 For this, I want to send logs and errors ' +
-            'to [sentry.io](https://sentry.io/welcome), but I would NEVER do it without your consent. ' +
+          'Hey there! C++ TestMate has [sentry.io](https://sentry.io/welcome) integration to ' +
+            'improve the stability and the development. 🤩 For this I want to send logs and errors ' +
+            'to [sentry.io](https://sentry.io/welcome) but I would NEVER do it without your consent. ' +
             'Please be understandable and allow it. 🙏',
           ...options,
         )
@@ -346,6 +375,13 @@ export class Configurations {
               .update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global)
               .then(undefined, e => this._log.exceptionS(e));
           } else if (value === options[1]) {
+            this._new
+              .update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global)
+              .then(undefined, e => this._log.exceptionS(e));
+            this._new
+              .update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.WorkspaceFolder)
+              .then(undefined, e => this._log.exceptionS(e));
+          } else if (value === options[2]) {
             this._new
               .update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.Global)
               .then(undefined, e => this._log.exceptionS(e));
@@ -380,7 +416,7 @@ export class Configurations {
     const res = Math.max(1, this._getNewOrOldOrDefAndMigrate<number>('test.parallelExecutionLimit', 1));
     if (typeof res != 'number') return 1;
     else {
-      if (res > 1) this._log.infoS('test.parallelExecutionLimit', res);
+      if (res > 1) this._log.infoS('Using test.parallelExecutionLimit');
       return res;
     }
   }
@@ -638,4 +674,6 @@ export class Configurations {
       throw Error("`test.advancedExecutables` couldn't be recognised");
     }
   }
+
+  //public static readonly PublicKey: string = '';
 }

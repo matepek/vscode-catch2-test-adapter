@@ -46,8 +46,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _doctest: ExecutableConfigFrameworkSpecific,
   ) {
     if ([_catch2, _gtest, _doctest].some(f => Object.keys(f).length > 0)) {
-      _shared.log.info('TestExecutableInfoFrameworkSpecific', _catch2, _gtest, _doctest);
-      _shared.log.infoSMessageWithTags('TestExecutableInfoFrameworkSpecific', {});
+      _shared.log.infoS('Using frameworks specific executable setting', _catch2, _gtest, _doctest);
     }
 
     this._disposables.push(

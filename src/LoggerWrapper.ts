@@ -1,36 +1,19 @@
 import * as util from 'vscode-test-adapter-util';
 import { WorkspaceFolder } from 'vscode';
 import * as Sentry from '@sentry/node';
-import { inspect } from 'util';
 
 ///
 
 export class LoggerWrapper extends util.Log {
   public constructor(configSection: string, workspaceFolder: WorkspaceFolder | undefined, outputChannelName: string) {
-    super(configSection, workspaceFolder, outputChannelName, { depth: 2 }, false);
-  }
-
-  private _inspect<T>(v: T): string {
-    return inspect(v, undefined, 1);
+    super(configSection, workspaceFolder, outputChannelName, { depth: 3 }, false);
   }
 
   //eslint-disable-next-line
-  public debugS(...msg: any[]): void {
-    super.debug(...msg);
+  public debugS(msg: any, ...msgs: any[]): void {
+    super.debug(msg, ...msgs);
     try {
-      Sentry.addBreadcrumb({ message: this._inspect(msg), data: msg, level: Sentry.Severity.Debug });
-    } catch (e) {
-      super.error(e);
-    }
-  }
-
-  public infoSMessageWithTags(m: string, tags: { [key: string]: string }): void {
-    super.info(m, tags);
-    try {
-      Sentry.withScope(function (scope) {
-        scope.setTags(tags);
-        Sentry.captureMessage(m, Sentry.Severity.Info);
-      });
+      Sentry.addBreadcrumb({ message: msg, data: msgs, level: Sentry.Severity.Debug });
     } catch (e) {
       super.error(e);
     }
@@ -50,7 +33,20 @@ export class LoggerWrapper extends util.Log {
   public infoS(m: string, ...msg: any[]): void {
     super.info(...msg);
     try {
+      Sentry.addBreadcrumb({ message: m, data: msg, level: Sentry.Severity.Info });
       Sentry.captureMessage(m, Sentry.Severity.Info);
+    } catch (e) {
+      super.error(e);
+    }
+  }
+
+  public infoSWithTags(m: string, tags: { [key: string]: string }): void {
+    super.info(m, tags);
+    try {
+      Sentry.withScope(function (scope) {
+        scope.setTags(tags);
+        Sentry.captureMessage(m, Sentry.Severity.Info);
+      });
     } catch (e) {
       super.error(e);
     }
