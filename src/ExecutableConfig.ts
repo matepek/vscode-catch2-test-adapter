@@ -256,6 +256,8 @@ export class ExecutableConfig implements vscode.Disposable {
     relativeToWsPosix: string;
   } {
     pattern = resolveOSEnvironmentVariables(pattern, false);
+    pattern = resolveVariables(pattern, this._variableToValue);
+
     const normPattern = pattern.replace(/\\/g, '/');
     const isAbsolute = pathlib.isAbsolute(normPattern);
     const absPattern = isAbsolute

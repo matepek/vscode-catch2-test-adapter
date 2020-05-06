@@ -39,7 +39,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     ['${workspaceDirectory}', this.workspaceFolder.uri.fsPath],
     ['${workspaceFolder}', this.workspaceFolder.uri.fsPath],
     ['${osPathSep}', osPathSeparator],
-    ['${osEnvSep}', process.platform === 'win32' ? ';' : ':'],
+    ['${osPathEnvSep}', process.platform === 'win32' ? ';' : ':'],
+    ['${osEnvSep}', process.platform === 'win32' ? ';' : ':'], // deprecated
     [
       /\$\{if\(isWin\)\}(.*)\$\{else\}(.*)\$\{endif\}/,
       (m: RegExpMatchArray): string => (process.platform === 'win32' ? m[1] : m[2]),

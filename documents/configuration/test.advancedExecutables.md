@@ -27,7 +27,7 @@ The first example (`.vscode/settings.json` or hit _Ctr/Cmd + ,_):
     "cwd": "${absDirpath}",
     "env": {
       "ExampleENV1": "You can use variables here too, like ${relPath}",
-      "PATH": "${os_env:PATH}${osEnvSep}/adding/new/item/to/PATH/env"
+      "PATH": "${os_env:PATH}${osPathEnvSep}/adding/new/item/to/PATH/env"
     }
   }
 ]
@@ -111,7 +111,7 @@ which can be used in `cwd` and `env` of `executables`:
 | `${os_env:<varname>}`               | Resolves it to the given(`<varname>`) environment variable if exists empty string otherwise. Can be used everywhere. On Windows it is case insensitive: `${os_env:pAtH}` == `${os_env:PATH}` |
 | `${os_env_strict:<varname>}`        | Resolves it to the given(`<varname>`) environment variable if exists won't set the variable othewise. Can be used ONLY in `env`.                                                             |
 | `${osPathSep}`                      | `/` on Linux and macOS, `\` on Windows.                                                                                                                                                      |
-| `${osEnvSep}`                       | `:` on Linux and macOS, `;` on Windows.                                                                                                                                                      |
+| `${osPathEnvSep}`                   | `:` on Linux and macOS, `;` on Windows.                                                                                                                                                      |
 | `${if(iswin)}<W>${else}<U>${endif}` | `<U>` on Linux and macOS, `<W>` on Windows.                                                                                                                                                  |
 
 [Array index]ing: `(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?`.
@@ -152,7 +152,7 @@ One should avoid that❗️
   "cwd": "${absDirpath}",
   "env": {
     "ExampleENV1": "You can use variables here too, like ${absPath}",
-    "PATH": "${os_env:PATH}${osEnvSep}/adding/new/item/to/PATH/env"
+    "PATH": "${os_env:PATH}${osPathEnvSep}/adding/new/item/to/PATH/env"
   }
 }
 ```
