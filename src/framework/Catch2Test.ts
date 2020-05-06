@@ -72,8 +72,7 @@ export class Catch2Test extends AbstractTest {
               '',
               `Current Catch2 framework version ${frameworkVersion} has a bug (https://github.com/catchorg/Catch2/issues/1905).`,
               `Update your framework to at least ${EscapeCharParserFix}.`,
-              'Avoid test names with:',
-              ...badChars.map(b => ` - ${b}`),
+              'Avoid test names with the following characters: ' + badChars.map(b => `'${b}'`).join(', ') + '.',
             ].join('\n'),
             description: '⚡️ Run me for details ⚡️',
             decorations: [
@@ -258,51 +257,47 @@ export class Catch2Test extends AbstractTest {
       testEventBuilder.appendMessage('⬆ std::cout', 1);
     }
 
-    try {
-      if (xml.Info) {
-        testEventBuilder.appendMessage('⬇ Info:', 1);
-        for (let i = 0; i < xml.Info.length; i++) testEventBuilder.appendMessage(xml.Info[i], 2);
-        testEventBuilder.appendMessage('⬆ Info', 1);
-      }
-    } catch (e) {
-      this._shared.log.exceptionS(e);
-    }
-
-    try {
-      if (xml.Warning) {
-        testEventBuilder.appendMessage('⬇ Warning:', 1);
-        for (let i = 0; i < xml.Warning.length; i++)
-          testEventBuilder.appendMessageWithDecorator(
-            xml.Warning[i].$.filename,
-            Number(xml.Warning[i].$.line) - 1,
-            xml.Warning[i],
-            2,
-          );
-        testEventBuilder.appendMessage('⬆ Warning', 1);
-      }
-    } catch (e) {
-      this._shared.log.exceptionS(e);
-    }
-
-    try {
-      if (xml.Failure) {
-        testEventBuilder.appendMessage('⬇ Failure:', 1);
-        for (let i = 0; i < xml.Failure.length; i++) {
-          if (typeof xml.Failure[i]._ !== 'string') this._shared.log.warn('No _ under failure', xml.Failure[i]);
-
-          const msg = typeof xml.Failure[i]._ === 'string' ? xml.Failure[i]._.trim() : xml.Failure[i].toString();
-
-          testEventBuilder.appendMessageWithDecorator(
-            xml.Failure[i].$.filename,
-            Number(xml.Failure[i].$.line) - 1,
-            msg,
-            2,
-          );
+    if (xml.Info) {
+      for (let i = 0; i < xml.Info.length; i++) {
+        try {
+          const piece = xml.Info[i];
+          testEventBuilder.appendMessage(`⬇ Info: (at ${piece.$.filename}:${piece.$.line})`, 1);
+          testEventBuilder.appendMessage(piece, 2);
+          testEventBuilder.appendMessage('⬆ Info', 1);
+        } catch (e) {
+          this._shared.log.exceptionS(e);
         }
-        testEventBuilder.appendMessage('⬆ Failure', 1);
       }
-    } catch (e) {
-      this._shared.log.exceptionS(e);
+    }
+
+    if (xml.Warning) {
+      for (let i = 0; i < xml.Warning.length; i++) {
+        try {
+          const piece = xml.Warning[i];
+          testEventBuilder.appendMessage(`⬇ Warning: (at ${piece.$.filename}:${piece.$.line})`, 1);
+          testEventBuilder.appendMessageWithDecorator(piece.$.filename, Number(piece.$.line) - 1, piece, 2);
+          testEventBuilder.appendMessage('⬆ Warning', 1);
+        } catch (e) {
+          this._shared.log.exceptionS(e);
+        }
+      }
+    }
+
+    if (xml.Failure) {
+      for (let i = 0; i < xml.Failure.length; i++) {
+        try {
+          const piece = xml.Failure[i];
+          testEventBuilder.appendMessage(`⬇ Failure: (at ${piece.$.filename}:${piece.$.line})`, 1);
+          if (typeof piece._ !== 'string') this._shared.log.warn('No _ under failure', piece);
+
+          const msg = typeof piece._ === 'string' ? piece._.trim() : piece.toString();
+
+          testEventBuilder.appendMessageWithDecorator(piece.$.filename, Number(piece.$.line) - 1, msg, 2);
+          testEventBuilder.appendMessage('⬆ Failure', 1);
+        } catch (e) {
+          this._shared.log.exceptionS(e);
+        }
+      }
     }
 
     try {
@@ -315,13 +310,12 @@ export class Catch2Test extends AbstractTest {
       this._shared.log.exceptionS(e);
     }
 
-    try {
-      if (xml.Expression) {
-        for (let j = 0; j < xml.Expression.length; ++j) {
-          const expr = xml.Expression[j];
+    if (xml.Expression) {
+      for (let i = 0; i < xml.Expression.length; ++i) {
+        try {
+          const expr = xml.Expression[i];
           const file = expr.$.filename;
           const line = Number(expr.$.line);
-          const location = `(at ${file}:${line})`;
 
           const message =
             '❕Original:  ' +
@@ -330,7 +324,7 @@ export class Catch2Test extends AbstractTest {
             '❗️Expanded:  ' +
             expr.Expanded.map((x: string) => x.trim()).join('; ');
 
-          testEventBuilder.appendMessage(`Expression failed ${location}:`, 1);
+          testEventBuilder.appendMessage(`Expression failed (at ${file}:${line}):`, 1);
           testEventBuilder.appendMessage(message, 2);
           testEventBuilder.appendDecorator(
             file,
@@ -338,27 +332,24 @@ export class Catch2Test extends AbstractTest {
             expr.Expanded.map((x: string) => x.trim()).join(' | '),
             message,
           );
+        } catch (e) {
+          this._shared.log.exceptionS(e);
         }
       }
-    } catch (e) {
-      this._shared.log.exceptionS(e);
     }
 
-    try {
-      for (let j = 0; xml.Exception && j < xml.Exception.length; ++j) {
-        if (typeof xml.Exception[j]._ !== 'string') this._shared.log.warn('No _ under exception', xml.Exception[j]);
+    for (let i = 0; xml.Exception && i < xml.Exception.length; ++i) {
+      try {
+        const piece = xml.Exception[i];
+        if (typeof piece._ !== 'string') this._shared.log.warn('No _ under exception', piece);
 
-        const msg = typeof xml.Exception[j]._ === 'string' ? xml.Exception[j]._.trim() : xml.Exception[j].toString();
+        const msg = typeof piece._ === 'string' ? piece._.trim() : piece.toString();
 
-        testEventBuilder.appendMessageWithDecorator(
-          xml.Exception[j].$.filename,
-          Number(xml.Exception[j].$.line) - 1,
-          `Exception was thrown: ${msg}`,
-          1,
-        );
+        testEventBuilder.appendMessage(`${msg} (at ${piece.$.filename}:${piece.$.line})`, 1);
+        testEventBuilder.appendDecorator(piece.$.filename, Number(piece.$.line) - 1, `Exception was thrown: ${msg}`);
+      } catch (e) {
+        this._shared.log.exceptionS(e);
       }
-    } catch (e) {
-      this._shared.log.exceptionS(e);
     }
 
     try {
