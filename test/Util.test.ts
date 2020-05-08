@@ -163,6 +163,8 @@ describe(path.basename(__filename), function () {
 
   context.skip('decorator playground', function () {
     /* eslint-disable @typescript-eslint/no-explicit-any */
+    /* eslint-disable @typescript-eslint/camelcase */
+    /* eslint-disable @typescript-eslint/no-unused-vars */
     function CacheableAsync<T, R>(
       storeOnlyResolved: boolean,
       customCache?: {
@@ -225,6 +227,8 @@ describe(path.basename(__filename), function () {
       };
     }
 
+    //function Invalidate
+
     function TryWithFallbackAsync<T, R>(
       defaultValue: R, // returns with this value in case of error
       handler?: {
@@ -247,7 +251,7 @@ describe(path.basename(__filename), function () {
 
         descriptor.value = async function (...args: any[]): Promise<R> {
           const resolveHandler = handler?.resolveHandler
-            ? (val: any): R => {
+            ? (val: R): R => {
                 handler.resolveHandler!(this as T, propertyKey);
                 return val;
               }
@@ -299,7 +303,7 @@ describe(path.basename(__filename), function () {
           },
         })(target, propertyKey, descriptor);
 
-        // ...
+        // ... Action(..)(..)
       };
     }
 
@@ -312,6 +316,10 @@ describe(path.basename(__filename), function () {
       @F_ActionAsync()
       async f(): Promise<number> {
         return new Promise(r => setTimeout(r, 200)).then(() => 3);
+      }
+
+      async ff(): Promise<void> {
+        await this.f();
       }
     }
 

@@ -97,31 +97,18 @@ Can I run my tests at startup.
 > "tasks": [
 >  {
 >    "label": "LoadTests",
->    "command": "${command:test-explorer.reload}",
+>    "type": "shell",
+>    "command": "sleep 1; echo ${command:test-explorer.reload}",
 >    "problemMatcher": []
 >  },
 >  {
->    "label": "sleepForASec",
->    "type": "shell",
->    "command":"sleep 1",
->    "presentation": {
->      "echo": true,
->      "reveal": "never",
->      "focus": false,
->      "panel": "shared",
->      "showReuseMessage": true,
->      "clear": false
->    }
->  },
->  {
 >    "label": "LoadAndRunAllTests",
->    "command": "${command:test-explorer.run-all}",
+>    "command": "echo ${command:test-explorer.run-all}",
 >    "problemMatcher": [],
 >    "runOptions": {
 >      "runOn": "folderOpen"
 >    },
->    "dependsOrder": "sequence",
->    "dependsOn":["LoadTestMate","sleepForASec"]
+>    "dependsOn": ["LoadTests"]
 >  }
 > ]
 > ```
