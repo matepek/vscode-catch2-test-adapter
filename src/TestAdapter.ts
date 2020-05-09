@@ -19,8 +19,6 @@ import { ResolveRule, resolveVariables } from './util/ResolveRule';
 import { inspect } from 'util';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
-  private readonly _log: LoggerWrapper;
-
   private readonly _testsEmitter = new vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>();
   private readonly _testStatesEmitter = new vscode.EventEmitter<TestRunEvent>();
   private readonly _retireEmitter = new vscode.EventEmitter<RetireEvent>();
@@ -33,18 +31,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private readonly _isDebug: boolean = process.env['C2_DEBUG'] === 'true';
 
-  public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder) {
-    this._log = new LoggerWrapper(
-      'testMate.cpp.log',
-      this.workspaceFolder,
-      `C++ TestMate: ${this.workspaceFolder.name}`,
-    );
+  public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder, log: LoggerWrapper) {
+    const configuration = this._getConfiguration(log);
 
-    const configuration = this._getConfiguration();
-
-    this._log.info(
-      'Extension constructor: activated',
-      this.workspaceFolder,
+    log.info(
+      'Extension constructor',
+      this.workspaceFolder.name,
+      this.workspaceFolder.index,
+      this.workspaceFolder.uri.fsPath,
       process.platform,
       process.version,
       process.versions,
@@ -69,13 +63,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         const pjson = readJSONSync(join(__dirname, '../../package.json'));
         extensionInfo = { version: pjson.version, publisher: pjson.publisher, name: pjson.name };
       } catch (e) {
-        this._log.exceptionS(e, __dirname);
+        log.exceptionS(e, __dirname);
         extensionInfo = { version: '<unknown-version>', publisher: '<unknown-publisher>', name: '<unknown-name>' };
       }
 
       const enabled = !this._isDebug && configuration.isSentryEnabled();
 
-      this._log.info('sentry.io is', enabled);
+      log.info('sentry.io is', enabled);
 
       const release = extensionInfo.publisher + '-' + extensionInfo.name + '@' + extensionInfo.version;
 
@@ -98,7 +92,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         const opt = Intl.DateTimeFormat().resolvedOptions();
         Sentry.setTags({ timeZone: opt.timeZone, locale: opt.locale });
       } catch (e) {
-        this._log.exceptionS(e);
+        log.exceptionS(e);
       }
 
       Sentry.setUser({ id: configuration.getOrCreateUserId() });
@@ -106,23 +100,23 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       //'Framework' message includes this old message too: Sentry.captureMessage('Extension was activated', Sentry.Severity.Log);
 
-      this._log.setContext('config', configuration.getValues());
+      log.setContext('config', configuration.getValues());
 
       const extensionsChanged = (): void => {
         try {
           const activeExtensions = vscode.extensions.all.filter(ex => ex.isActive).map(ex => ex.id);
           const vscodeRemote = activeExtensions.find(ex => ex.startsWith('ms-vscode-remote.'));
-          this._log.debug('Active extensions', `activeVSCodeRemote(${vscodeRemote})`, activeExtensions);
+          log.debug('Active extensions', `activeVSCodeRemote(${vscodeRemote})`, activeExtensions);
           Sentry.setTag('activeVSCodeRemote', vscodeRemote ? vscodeRemote : 'undefined');
         } catch (e) {
-          this._log.exceptionS(e);
+          log.exceptionS(e);
         }
       };
       extensionsChanged();
 
       this._disposables.push(vscode.extensions.onDidChange(extensionsChanged));
     } catch (e) {
-      this._log.exceptionS(e);
+      log.exceptionS(e);
     }
 
     this._disposables.push(this._testsEmitter);
@@ -152,7 +146,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
               route.forEach(v => v.sendCompletedEventIfNeeded());
             } else {
-              this._log.error('sendTestEventEmitter.event', testEvents[i], this._rootSuite);
+              log.error('sendTestEventEmitter.event', testEvents[i], this._rootSuite);
             }
           }
 
@@ -172,7 +166,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         const found = tasks.find(t => t.name === taskName);
         if (found === undefined) {
           const msg = `Could not find task with name "${taskName}".`;
-          this._log.warn(msg);
+          log.warn(msg);
           throw Error(msg);
         }
 
@@ -188,7 +182,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         const result = new Promise<number | undefined>(resolve => {
           const disp1 = vscode.tasks.onDidEndTask((e: vscode.TaskEndEvent) => {
             if (e.execution.task.name === resolvedTask.name) {
-              this._log.info('Task execution has finished', resolvedTask.name);
+              log.info('Task execution has finished', resolvedTask.name);
               disp1.dispose();
               resolve();
             }
@@ -196,19 +190,19 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
           const disp2 = vscode.tasks.onDidEndTaskProcess((e: vscode.TaskProcessEndEvent) => {
             if (e.execution.task.name === resolvedTask.name) {
-              this._log.info('Task execution has finished', resolvedTask.name, e.exitCode);
+              log.info('Task execution has finished', resolvedTask.name, e.exitCode);
               disp2.dispose();
               resolve(e.exitCode);
             }
           });
         });
 
-        this._log.info('Task execution has started', resolvedTask);
+        log.info('Task execution has started', resolvedTask);
 
         const execution = await vscode.tasks.executeTask(resolvedTask);
 
         cancellationToken.onCancellationRequested(() => {
-          this._log.info('Task execution was terminated', execution.task.name);
+          log.info('Task execution was terminated', execution.task.name);
           execution.terminate();
         });
 
@@ -223,7 +217,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           this._sendLoadingFinishedEventIfNeeded(errors);
         },
         (reason: Error) => {
-          this._log.warnS('loadTask exception', reason);
+          log.warnS('loadTask exception', reason);
           this._sendLoadingFinishedEventIfNeeded([reason]);
         },
       );
@@ -249,7 +243,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     );
 
     this._shared = new SharedVariables(
-      this._log,
+      log,
       this.workspaceFolder,
       this._testStatesEmitter,
       loadTask,
@@ -273,12 +267,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._disposables.push(
       Configurations.onDidChange(changeEvent => {
         try {
-          const config = this._getConfiguration();
+          const config = this._getConfiguration(log);
 
           try {
             Sentry.setContext('config', config.getValues());
           } catch (e) {
-            this._log.exceptionS(e);
+            log.exceptionS(e);
           }
 
           const affectsAny = (...config: Config[]): boolean =>
@@ -340,26 +334,26 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   public dispose(): void {
-    this._log.info('dispose', this.workspaceFolder);
+    this._shared.log.info('dispose', this.workspaceFolder);
 
     this._disposables.forEach(d => {
       try {
         d.dispose();
       } catch (e) {
-        this._log.error('dispose', e, d);
+        this._shared.log.error('dispose', e, d);
       }
     });
 
     try {
       this._shared.dispose();
     } catch (e) {
-      this._log.error('dispose', e, this._shared);
+      this._shared.log.error('dispose', e, this._shared);
     }
 
     try {
       this._rootSuite.dispose();
     } catch (e) {
-      this._log.error('dispose', e, this._rootSuite);
+      this._shared.log.error('dispose', e, this._rootSuite);
     }
   }
 
@@ -380,7 +374,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   private _sendLoadingEventIfNeeded(): void {
     if (this._testLoadingCounter++ === 0) {
-      this._log.info('load started');
+      this._shared.log.info('load started');
       this._testsEmitter.fire({ type: 'started' });
       this._testLoadingErrors = [];
     }
@@ -393,12 +387,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
 
     if (this._testLoadingCounter < 1) {
-      this._log.error('loading counter is too low');
+      this._shared.log.error('loading counter is too low');
       this._testLoadingCounter = 0;
       return;
     }
     if (this._testLoadingCounter-- === 1) {
-      this._log.info('load finished', this._rootSuite.children.length);
+      this._shared.log.info('load finished', this._rootSuite.children.length);
       if (this._testLoadingErrors.length > 0) {
         this._testsEmitter.fire({
           type: 'finished',
@@ -416,12 +410,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   public load(): Promise<void> {
-    this._log.info('load called');
+    this._shared.log.info('load called');
 
     this.cancel();
     this._rootSuite.dispose();
 
-    const configuration = this._getConfiguration();
+    const configuration = this._getConfiguration(this._shared.log);
 
     this._rootSuite = new RootSuite(this._rootSuite.id, this._shared);
 
@@ -433,7 +427,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private _cancellationTokenSource: vscode.CancellationTokenSource | undefined = undefined;
 
   public cancel(): void {
-    this._log.debug('canceled');
+    this._shared.log.debug('canceled');
     if (this._cancellationTokenSource) {
       this._cancellationTokenSource.cancel();
     }
@@ -441,7 +435,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   public run(tests: string[]): Promise<void> {
     if (this._mainTaskQueue.size > 0) {
-      this._log.info(
+      this._shared.log.info(
         "Run is busy. Your test maybe in an infinite loop: Try to limit the test's timeout with: defaultRunningTimeoutSec config option!",
       );
     }
@@ -452,7 +446,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return this._mainTaskQueue.then(() => {
       return this._rootSuite
         .run(tests, cancellationTokenSource.token)
-        .catch((reason: Error) => this._log.exceptionS(reason))
+        .catch((reason: Error) => this._shared.log.exceptionS(reason))
         .finally(() => {
           cancellationTokenSource.dispose();
           this._cancellationTokenSource = undefined;
@@ -462,11 +456,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   public async debug(tests: string[]): Promise<void> {
     if (this._mainTaskQueue.size > 0) {
-      this._log.info('Debug is busy');
+      this._shared.log.info('Debug is busy');
       throw Error('The adapter is busy. Try it again a bit later.');
     }
 
-    this._log.info('Using debug');
+    this._shared.log.info('Using debug');
 
     const runnableToTestMap = tests
       .map(t => this._rootSuite.findTestById(t))
@@ -479,20 +473,20 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }, new Map<AbstractRunnable, Readonly<AbstractTest>[]>());
 
     if (runnableToTestMap.size !== 1) {
-      this._log.error('unsupported executable count', tests);
+      this._shared.log.error('unsupported executable count', tests);
       throw Error('Unsupported input. It seems you would like to debug more tests from different executables.');
     }
 
     const [runnable, runnableTests] = [...runnableToTestMap][0];
 
-    this._log.info('test', runnable, runnableTests);
+    this._shared.log.info('test', runnable, runnableTests);
 
-    const configuration = this._getConfiguration();
+    const configuration = this._getConfiguration(this._shared.log);
 
     const [debugConfigTemplate, debugConfigTemplateSource] = configuration.getDebugConfigurationTemplate();
 
-    this._log.debugS('debugConfigTemplate', debugConfigTemplate);
-    this._log.infoSWithTags('Using debug', { debugConfigTemplateSource });
+    this._shared.log.debugS('debugConfigTemplate', debugConfigTemplate);
+    this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
 
     const label = runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
 
@@ -577,7 +571,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const magicValue = generateId();
     debugConfig[magicValueKey] = magicValue;
 
-    this._log.info('Debug: resolved debugConfig:', debugConfig);
+    this._shared.log.info('Debug: resolved debugConfig:', debugConfig);
 
     return this._mainTaskQueue
       .then(async () => {
@@ -597,15 +591,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             }
           });
         }).finally(() => {
-          this._log.info('debugSessionTerminated');
+          this._shared.log.info('debugSessionTerminated');
         });
 
-        this._log.info('startDebugging');
+        this._shared.log.info('startDebugging');
 
         const debugSessionStarted = await vscode.debug.startDebugging(this.workspaceFolder, debugConfig);
 
         if (debugSessionStarted) {
-          this._log.info('debugSessionStarted');
+          this._shared.log.info('debugSessionStarted');
           return terminated;
         } else {
           terminateConn && terminateConn.dispose();
@@ -617,12 +611,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         }
       })
       .catch(err => {
-        this._log.info(err);
+        this._shared.log.info(err);
         throw err;
       });
   }
 
-  private _getConfiguration(): Configurations {
-    return new Configurations(this._log, this.workspaceFolder.uri);
+  private _getConfiguration(log: LoggerWrapper): Configurations {
+    return new Configurations(log, this.workspaceFolder.uri);
   }
 }

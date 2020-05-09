@@ -16,6 +16,7 @@ import { TestLoadFinishedEvent, TestLoadStartedEvent, TestSuiteInfo, TestInfo } 
 import * as my from '../src/TestAdapter';
 import { Config } from '../src/Configurations';
 import { TestRunEvent } from '../src/SharedVariables';
+import { LoggerWrapper } from '../src/LoggerWrapper';
 
 ///
 
@@ -225,6 +226,10 @@ export class Imitation {
 
 ///
 
+const logger = new LoggerWrapper('testMate.cpp.log', undefined, `C++ TestMate`);
+
+///
+
 export class TestAdapter extends my.TestAdapter {
   public readonly testLoadsEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
   private readonly testLoadsEventsConnection: vscode.Disposable;
@@ -233,7 +238,7 @@ export class TestAdapter extends my.TestAdapter {
   private readonly testStatesEventsConnection: vscode.Disposable;
 
   public constructor() {
-    super(settings.workspaceFolder);
+    super(settings.workspaceFolder, logger);
 
     this.testLoadsEventsConnection = this.tests((e: TestLoadStartedEvent | TestLoadFinishedEvent) => {
       this.testLoadsEvents.push(e);

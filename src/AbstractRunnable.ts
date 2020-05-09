@@ -107,6 +107,9 @@ export abstract class AbstractRunnable {
     createTest: (parent: Suite) => AbstractTest,
     updateTest: (old: AbstractTest) => boolean,
   ): [AbstractTest, boolean] {
+    this._shared.log.setNextInspectOptions({ depth: 10 });
+    this._shared.log.info('testGrouping', { testName, testNameAsId, file, tags }, testGrouping);
+
     let group = this._rootSuite as Suite;
 
     const relPath = file ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file) : '';
@@ -145,6 +148,8 @@ export abstract class AbstractRunnable {
       const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : '';
       const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : '';
 
+      this._shared.log.info('groupBy', { label, resolvedLabel, description, resolvedDescr });
+
       group = this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, group);
     };
 
@@ -152,15 +157,16 @@ export abstract class AbstractRunnable {
 
     try {
       while (true) {
-        this._shared.log.info('groupBy', currentGrouping);
-
         if (currentGrouping.groupByExecutable) {
           const g = currentGrouping.groupByExecutable;
           updateVarsWithTags(g);
 
+          const label = g.label !== undefined ? g.label : '${filename}';
+          const description = g.description !== undefined ? g.description : '${relDirpath}${osPathSep}';
+
           getOrCreateChildSuite(
-            g.label !== undefined ? g.label : '${filename}',
-            g.description !== undefined ? g.description : '${relDirpath}${osPathSep}',
+            label,
+            description,
             `Path: ${this.properties.path}\nCwd: ${this.properties.options.cwd}`,
           );
 
@@ -170,9 +176,10 @@ export abstract class AbstractRunnable {
           updateVarsWithTags(g);
 
           if (file) {
-            this._shared.log.info('groupBySource');
+            const label = g.label ? g.label : relPath;
+            const description = g.description;
 
-            getOrCreateChildSuite(g.label ? g.label : relPath, g.description, undefined);
+            getOrCreateChildSuite(label, description, undefined);
           } else if (g.groupUngroupedTo) {
             getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
           }
