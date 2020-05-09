@@ -55,7 +55,7 @@ function _mapAllStrings<T>(value: T, mapperFunc: (s: string) => any): T {
     return ((value as any[]).map((v: any) => _mapAllStrings(v, mapperFunc)) as unknown) as T;
   } else if (typeof value === 'object') {
     // eslint-disable-next-line
-    const newValue: any = {};
+    const newValue: T = Object.create(value as any);
     for (const prop in value) {
       const val = _mapAllStrings(value[prop], mapperFunc);
       if (val !== undefined) newValue[prop] = val;

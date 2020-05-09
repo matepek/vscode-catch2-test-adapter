@@ -431,6 +431,10 @@ export class Configurations {
     }
   }
 
+  public getDependsOnTask(): string | undefined {
+    return this._new.get<string | undefined>('test.dependsOnTask', undefined);
+  }
+
   public getExecWatchTimeout(): number {
     const res = this._getNewOrOldOrDefAndMigrate<number>('discovery.gracePeriodForMissing', 10) * 1000;
     return res;

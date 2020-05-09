@@ -798,6 +798,12 @@
           "default": 1,
           "minimum": 1
         },
+        "testMate.cpp.test.dependsOnTask": {
+          "markdownDescription": "Name of task to execute before running/debugging tests.",
+          "scope": "resource",
+          "type": "string",
+          "default": ""
+        },
         "testMate.cpp.discovery.gracePeriodForMissing": {
           "markdownDescription": "[seconds] Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.",
           "scope": "resource",

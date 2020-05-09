@@ -1,5 +1,5 @@
 import { inspect } from 'util';
-import { sep as osPathSeparator } from 'path';
+import { sep as osPathSeparator, basename } from 'path';
 import * as vscode from 'vscode';
 import {
   TestEvent,
@@ -405,16 +405,21 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._rootSuite.cancel();
   }
 
-  public run(tests: string[]): Promise<void> {
+  public async run(tests: string[]): Promise<void> {
     if (this._mainTaskQueue.size > 0) {
       this._log.info(
         "Run is busy. Your test maybe in an infinite loop: Try to limit the test's timeout with: defaultRunningTimeoutSec config option!",
       );
     }
 
-    return this._mainTaskQueue.then(() => {
-      return this._rootSuite.run(tests).catch((reason: Error) => this._log.exceptionS(reason));
-    });
+    return this._mainTaskQueue
+      .then(async () => {
+        await this._executeDependsOnTaskIfDefined(this._getRunnableToTestMap(tests));
+        await this._rootSuite.run(tests);
+      })
+      .catch(err => {
+        this._log.exceptionS(err);
+      });
   }
 
   public async debug(tests: string[]): Promise<void> {
@@ -425,15 +430,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._log.info('Using debug');
 
-    const runnableToTestMap = tests
-      .map(t => this._rootSuite.findTestById(t))
-      .reduce((runnableToTestMap, test) => {
-        if (test === undefined) return runnableToTestMap;
-        const arr = runnableToTestMap.find(x => x[0] === test.runnable);
-        if (arr) arr[1].push(test!);
-        else runnableToTestMap.push([test.runnable, [test]]);
-        return runnableToTestMap;
-      }, new Array<[AbstractRunnable, Readonly<AbstractTest>[]]>());
+    const runnableToTestMap = this._getRunnableToTestMap(tests);
 
     if (runnableToTestMap.length !== 1) {
       this._log.error('unsupported executable count', tests);
@@ -451,16 +448,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._log.debugS('debugConfigTemplate', debugConfigTemplate);
     this._log.infoSWithTags('Using debug', { debugConfigTemplateSource });
 
-    const label = runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
-
-    const suiteLabels =
-      runnableTests.length > 1
-        ? ''
-        : [...runnableTests[0].route()]
-            .filter((v, i, a) => i < a.length - 1)
-            .map(s => s.label)
-            .join(' ← ');
-
     const argsArray = runnable.getDebugParams(runnableTests, configuration.getDebugBreakOnFailure());
 
     if (runnableTests.length === 1 && runnableTests[0] instanceof Catch2Test) {
@@ -472,7 +459,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
         const items: QuickPickItem[] = [
           {
-            label: label,
+            label: this._getRunnableLabel(runnableTests),
             sectionStack: [],
             description: 'Select the section combo you wish to debug or choose this to debug all of it.',
           },
@@ -514,19 +501,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
 
     const varToResolve: ResolveRulePair<string | object>[] = [
-      ...this._variableToValue,
-      ['${suitelabel}', suiteLabels], // deprecated
-      ['${suiteLabel}', suiteLabels],
-      ['${label}', label],
-      ['${exec}', runnable.properties.path],
       ['${args}', argsArray], // deprecated
       ['${argsArray}', argsArray],
       ['${argsStr}', '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"'],
-      ['${cwd}', runnable.properties.options.cwd!],
-      ['${envObj}', Object.assign(Object.assign({}, process.env), runnable.properties.options.env!)],
     ];
 
-    const debugConfig = resolveVariables(debugConfigTemplate, varToResolve);
+    const debugConfig = resolveVariables(
+      this._resolveVariablesForRunnables(debugConfigTemplate, runnableToTestMap),
+      varToResolve,
+    );
 
     // we dont know better :(
     // https://github.com/Microsoft/vscode/issues/70125
@@ -538,6 +521,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     return this._mainTaskQueue
       .then(async () => {
+        await this._executeDependsOnTaskIfDefined(runnableToTestMap);
+
         let terminateConn: vscode.Disposable | undefined;
 
         const terminated = new Promise<void>(resolve => {
@@ -574,7 +559,93 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
   }
 
+  private async _executeDependsOnTaskIfDefined(runnableToTestMap: Array<[AbstractRunnable, Readonly<AbstractTest>[]]>) {
+    const dependsOnTaskName = this._getConfiguration().getDependsOnTask();
+    if (!dependsOnTaskName) {
+      return;
+    }
+
+    const tasks = await vscode.tasks.fetchTasks();
+    const dependsOnTask = tasks.find(task => task.name === dependsOnTaskName);
+    if (!dependsOnTask) {
+      throw Error(`Could not find task with name "${dependsOnTaskName}" defined in testMate.cpp.test.dependsOnTask.`);
+    }
+
+    const task = this._resolveVariablesForRunnables(dependsOnTask, runnableToTestMap);
+    const label =
+      runnableToTestMap.length > 1
+        ? `${runnableToTestMap.length}-runnables`
+        : basename(runnableToTestMap[0][0].properties.path);
+    task.name += '-' + label;
+
+    const taskPromise = new Promise<number>(resolve => {
+      const subscriptionDisposable = vscode.tasks.onDidEndTaskProcess((event: vscode.TaskProcessEndEvent) => {
+        if (event.execution.task.name === task.name) {
+          subscriptionDisposable.dispose();
+          resolve(event.exitCode);
+        }
+      });
+    });
+
+    this._log.info('startDependsOnTask');
+    await vscode.tasks.executeTask(task);
+    this._log.info('dependsOnTaskStarted');
+
+    const taskExitCode = await taskPromise;
+    this._log.info('dependsOnTaskTerminated');
+    if (taskExitCode != 0) {
+      throw Error(`Depends on Task "${task.name}" exited with failure exit code ${taskExitCode}.`);
+    }
+  }
+
   private _getConfiguration(): Configurations {
     return new Configurations(this._log, this.workspaceFolder.uri);
+  }
+
+  private _getRunnableToTestMap(tests: string[]): Array<[AbstractRunnable, Readonly<AbstractTest>[]]> {
+    return this._rootSuite.collectTestToRun(tests).reduce((runnableToTestMap, test) => {
+      if (test === undefined) return runnableToTestMap;
+      const arr = runnableToTestMap.find(x => x[0] === test.runnable);
+      if (arr) arr[1].push(test!);
+      else runnableToTestMap.push([test.runnable, [test]]);
+      return runnableToTestMap;
+    }, new Array<[AbstractRunnable, Readonly<AbstractTest>[]]>());
+  }
+
+  private _getRunnableLabel(runnableTests: Readonly<AbstractTest>[]) {
+    return runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
+  }
+
+  private _resolveVariablesForRunnables<T>(
+    value: T,
+    runnableToTestMap: Array<[AbstractRunnable, Readonly<AbstractTest>[]]>,
+  ): T {
+    const runnables: AbstractRunnable[] = [];
+    const allRunnableTests: Readonly<AbstractTest>[] = [];
+    runnableToTestMap.forEach(([runnable, runnableTests]) => {
+      runnables.push(runnable);
+      allRunnableTests.push(...runnableTests);
+    });
+
+    const suiteLabels =
+      allRunnableTests.length > 1
+        ? ''
+        : [...allRunnableTests[0].route()]
+            .filter((v, i, a) => i < a.length - 1)
+            .map(s => s.label)
+            .join(' ← ');
+
+    const varToResolve: ResolveRulePair<string | object>[] = [
+      ...this._variableToValue,
+      ['${suitelabel}', suiteLabels], // deprecated
+      ['${suiteLabel}', suiteLabels],
+      ['${label}', this._getRunnableLabel(allRunnableTests)],
+      ['${exec}', runnables[0].properties.path],
+      ['${execs}', runnables.map(runnable => `"${runnable.properties.path}"`).join(' ')],
+      ['${cwd}', runnables[0].properties.options.cwd!],
+      ['${envObj}', Object.assign(Object.assign({}, process.env), runnables[0].properties.options.env!)],
+    ];
+
+    return resolveVariables(value, varToResolve);
   }
 }
