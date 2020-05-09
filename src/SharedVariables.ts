@@ -29,6 +29,7 @@ export class SharedVariables implements vscode.Disposable {
     public enabledTestListCaching: boolean,
     public googleTestTreatGMockWarningAs: 'nothing' | 'failure',
     public googleTestGMockVerbose: 'default' | 'info' | 'warning' | 'error',
+    public useGoogleInternalFlags: boolean,
   ) {
     this.taskPool = new TaskPool(workerMaxNumber);
   }

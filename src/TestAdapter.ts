@@ -259,6 +259,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       configuration.getEnableTestListCaching(),
       configuration.getGoogleTestTreatGMockWarningAs(),
       configuration.getGoogleTestGMockVerbose(),
+      configuration.getUseGoogleInternalFlags(),
     );
 
     this._disposables.push(
@@ -315,6 +316,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           }
           if (affectsAny('gtest.gmockVerbose')) {
             this._shared.googleTestGMockVerbose = config.getGoogleTestGMockVerbose();
+          }
+          if (affectsAny('gtest.useGoogleInternalFlags')) {
+            this._shared.useGoogleInternalFlags = config.getUseGoogleInternalFlags();
           }
         } catch (e) {
           this._shared.log.exceptionS(e);

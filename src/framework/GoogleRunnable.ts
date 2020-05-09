@@ -17,6 +17,8 @@ import { TestGrouping } from '../TestGroupingInterface';
 export class GoogleRunnable extends AbstractRunnable {
   public children: Suite[] = [];
 
+  private readonly _flagPrefix: string;
+
   public constructor(
     shared: SharedVariables,
     rootSuite: Suite,
@@ -24,6 +26,7 @@ export class GoogleRunnable extends AbstractRunnable {
     version: Promise<Version | undefined>,
   ) {
     super(shared, rootSuite, execInfo, 'GoogleTest', version);
+    this._flagPrefix = shared.useGoogleInternalFlags ? 'gunit' : 'gtest';
   }
 
   private getTestGrouping(): TestGrouping {
@@ -176,7 +179,10 @@ export class GoogleRunnable extends AbstractRunnable {
     return c2fs
       .spawnAsync(
         this.properties.path,
-        this.properties.prependTestListingArgs.concat(['--gtest_list_tests', '--gtest_output=xml:' + cacheFile]),
+        this.properties.prependTestListingArgs.concat([
+          `--${this._flagPrefix}_list_tests`,
+          `--${this._flagPrefix}_output=xml:` + cacheFile,
+        ]),
         this.properties.options,
         30000,
       )
@@ -216,19 +222,18 @@ export class GoogleRunnable extends AbstractRunnable {
   }
 
   protected _getRunParams(childrenToRun: readonly Readonly<GoogleTest>[]): string[] {
-    const execParams: string[] = ['--gtest_color=no'];
+    const execParams: string[] = [`--${this._flagPrefix}_color=no`];
 
     const testNames = childrenToRun.map(c => c.testName);
 
-    execParams.push('--gtest_filter=' + testNames.join(':'));
+    execParams.push(`--${this._flagPrefix}_filter=` + testNames.join(':'));
 
-    execParams.push('--gtest_also_run_disabled_tests');
+    execParams.push(`--${this._flagPrefix}_also_run_disabled_tests`);
 
     if (this._shared.rngSeed !== null) {
-      execParams.push('--gtest_shuffle');
-      execParams.push(
-        '--gtest_random_seed=' + (this._shared.rngSeed === 'time' ? '0' : this._shared.rngSeed.toString()),
-      );
+      execParams.push(`--${this._flagPrefix}_shuffle`);
+      const randomSeed = this._shared.rngSeed === 'time' ? '0' : this._shared.rngSeed.toString();
+      execParams.push(`--${this._flagPrefix}_random_seed=` + randomSeed);
     }
 
     if (this._shared.googleTestGMockVerbose !== 'default') {
@@ -240,7 +245,7 @@ export class GoogleRunnable extends AbstractRunnable {
 
   public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
     const debugParams = this._getRunParams(childrenToRun as readonly Readonly<GoogleTest>[]);
-    if (breakOnFailure) debugParams.push('--gtest_break_on_failure');
+    if (breakOnFailure) debugParams.push(`--${this._flagPrefix}_break_on_failure`);
     return debugParams;
   }
 

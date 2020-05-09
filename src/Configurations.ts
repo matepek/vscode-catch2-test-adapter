@@ -39,7 +39,11 @@ type MigratableConfig =
   | 'gtest.treatGmockWarningAs'
   | 'gtest.gmockVerbose';
 
-export type Config = 'test.executables' | 'test.parallelExecutionOfExecutableLimit' | MigratableConfig;
+export type Config =
+  | 'test.executables'
+  | 'test.parallelExecutionOfExecutableLimit'
+  | 'gtest.useGoogleInternalFlags'
+  | MigratableConfig;
 
 const OldConfigSectionBase = 'catch2TestExplorer';
 
@@ -461,6 +465,10 @@ export class Configurations {
 
   public getGoogleTestGMockVerbose(): 'default' | 'info' | 'warning' | 'error' {
     return this._getNewOrOldOrDefAndMigrate<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
+  }
+
+  public getUseGoogleInternalFlags(): boolean {
+    return this._new.get<boolean>('gtest.useGoogleInternalFlags', false);
   }
 
   public async getExecutables(

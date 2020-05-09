@@ -949,6 +949,12 @@
             "Google Mock will print errors only (least verbose)."
           ]
         },
+        "testMate.cpp.gtest.useGoogleInternalFlags": {
+          "markdownDescription": "Whether to use Google's internal flags (e.g. '--gunit_list_tests' instead of '--gtest_list_tests').",
+          "scope": "resource",
+          "type": "boolean",
+          "default": false
+        },
         "catch2TestExplorer.executables": {
           "markdownDescription": "The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting.",
           "deprecationMessage": "Use `testMate.cpp.executable` or `testMate.cpp.test.advancedExecutables` instead of this.",
