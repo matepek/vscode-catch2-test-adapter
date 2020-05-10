@@ -119,7 +119,7 @@ Exmaple: `${relPath[:-2]}`: 'a/b/c/d' -> 'a/b'
 
 ## Framework specific settings
 
-Under property: `catc2`, `gtest`, `doctest`.
+Under property: `catch2`, `gtest`, `doctest`.
 
 One can fine-tune framework related behaviour.
 
@@ -171,6 +171,18 @@ One should avoid that❗️
   }
 ]
 ```
+
+### helpRegex
+
+In case of `gtest` the helpRegex' the first capture should be the value of [`GTEST_FLAG_PREFIX`](https://github.com/google/googletest/blob/master/googletest/include/gtest/internal/gtest-port.h#L282).
+For example:
+
+- `--gtest_list_tests` + `--(\w+)list_tests` -> `gtest_`
+
+In case if `catch2` and `doctest` the first, second and third captures are the version number's major, minor and patch values.
+For example:
+
+- `Catch v2.11.1` + `/Catch v(\d+)\.(\d+)\.(\d+)\s?/` -> `[2, 11, 1]`
 
 ## testGrouping
 

@@ -23,7 +23,7 @@ export class DOCRunnable extends AbstractRunnable {
     shared: SharedVariables,
     rootSuite: Suite,
     execInfo: RunnableSuiteProperties,
-    docVersion: Version,
+    docVersion: Version | undefined,
   ) {
     super(shared, rootSuite, execInfo, 'doctest', Promise.resolve(docVersion));
   }
