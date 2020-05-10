@@ -4,6 +4,7 @@ import { ChildProcess } from 'child_process';
 import { AbstractTest } from './AbstractTest';
 import { LoggerWrapper } from './LoggerWrapper';
 import { promisify } from 'util';
+import { CancellationToken } from './Util';
 
 export class ProcessResult {
   public constructor(public readonly error?: Error) {}
@@ -74,34 +75,40 @@ export class ProcessResult {
 ///
 
 export class RunningRunnable {
-  public constructor(public readonly process: ChildProcess, public readonly childrenToRun: readonly AbstractTest[]) {
+  public constructor(
+    public readonly process: ChildProcess,
+    public readonly childrenToRun: readonly AbstractTest[],
+    private readonly _cancellationToken: CancellationToken,
+  ) {
+    const disp = _cancellationToken.onCancellationRequested(() => this.killProcess());
+
     process.once('close', () => {
       this._closed = true;
+      disp.dispose();
     });
 
     process.stderr && process.stderr.on('data', (chunk: Uint8Array) => (this._stderr += chunk.toString()));
   }
 
-  public isCancelled = false;
-
-  public cancel(): void {
-    this.isCancelled = true;
-    this.killProcess();
+  public get isCancelled(): boolean {
+    return this._cancellationToken.isCancellationRequested;
   }
 
   public killProcess(timeout: number | null = null): void {
-    if (!this._closed && !this._killed) {
-      this._killed = true;
-      this._timeout = timeout;
+    try {
+      if (!this._closed && !this._killed) {
+        this._killed = true;
+        this._timeout = timeout;
 
-      this.process.kill();
+        this.process.kill();
 
-      setTimeout(() => {
-        if (!this._closed) {
-          this.process.kill('SIGKILL'); // process has 5 secs to handle SIGTERM
-        }
-      }, 5000);
-    }
+        setTimeout(() => {
+          if (!this._closed) {
+            this.process.kill('SIGKILL'); // process has 5 secs to handle SIGTERM
+          }
+        }, 5000);
+      }
+    } catch {}
   }
 
   public setPriorityAsync(log: LoggerWrapper): void {

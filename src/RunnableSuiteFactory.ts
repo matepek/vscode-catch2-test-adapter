@@ -5,9 +5,10 @@ import { Catch2Runnable } from './framework/Catch2Runnable';
 import { GoogleRunnable } from './framework/GoogleRunnable';
 import { DOCRunnable } from './framework/DOCRunnable';
 import { SharedVariables } from './SharedVariables';
-import { ExecutableConfigFrameworkSpecific } from './ExecutableConfig';
-import { Version, ResolveRulePair } from './Util';
+import { ExecutableConfigFrameworkSpecific, RunTask } from './ExecutableConfig';
+import { Version } from './Util';
 import { Suite } from './Suite';
+import { ResolveRule } from './util/ResolveRule';
 
 export class RunnableSuiteFactory {
   public constructor(
@@ -17,11 +18,12 @@ export class RunnableSuiteFactory {
     private readonly _rootSuite: Suite,
     private readonly _execPath: string,
     private readonly _execOptions: c2fs.SpawnOptions,
-    private readonly _varToValue: ResolveRulePair[],
+    private readonly _varToValue: ResolveRule[],
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,
     private readonly _doctest: ExecutableConfigFrameworkSpecific,
     private readonly _parallelizationLimit: number,
+    private readonly _runTask: RunTask,
   ) {}
 
   public create(checkIsNativeExecutable: boolean): Promise<AbstractRunnable> {
@@ -54,6 +56,7 @@ export class RunnableSuiteFactory {
                 this._execOptions,
                 this._catch2,
                 this._parallelizationLimit,
+                this._runTask,
               ),
               this._parseVersion(catch2),
             );
@@ -79,6 +82,7 @@ export class RunnableSuiteFactory {
                 this._execOptions,
                 this._gtest,
                 this._parallelizationLimit,
+                this._runTask,
               ),
               gtest[1] ?? 'gtest_',
               Promise.resolve(undefined), //Util: GoogleTestVersionFinder
@@ -101,6 +105,7 @@ export class RunnableSuiteFactory {
                 this._execOptions,
                 this._gtest,
                 this._parallelizationLimit,
+                this._runTask,
               ),
               'gunit_',
               Promise.resolve(undefined),
@@ -127,6 +132,7 @@ export class RunnableSuiteFactory {
                 this._execOptions,
                 this._doctest,
                 this._parallelizationLimit,
+                this._runTask,
               ),
               this._parseVersion(doc),
             );

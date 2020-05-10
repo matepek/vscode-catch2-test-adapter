@@ -256,6 +256,29 @@
                   "minLength": 1
                 }
               },
+              "runTask": {
+                "markdownDescription": "Tasks to run before running/debugging tests. The task should be defined like any other task in vscode (e.g. in tasks.json). If the task exits with a non-zero code, execution of tests will be halted. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "before": {
+                    "markdownDescription": "Name of the tasks to execute before running/debugging tests. Test names are accessible using: - `${absPathArrayFlat}: add this to 'args' array; - ${absPathConcatWithSpace}`",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "beforeEach": {
+                    "markdownDescription": "Name of the tasks to execute before running/debugging tests. Variables like `${absPath}` will be substituted before running the task.`",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
               "parallelizationLimit": {
                 "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `testMate.cpp.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "scope": "resource",

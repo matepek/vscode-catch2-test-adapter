@@ -1,72 +1,73 @@
 import * as assert from 'assert';
 import * as path from 'path';
 
-import * as utils from '../src/Util';
+import { ResolveRule, resolveVariables } from '../src/util/ResolveRule';
 
 describe(path.basename(__filename), function () {
   it('resolveVariables', function () {
     const func1 = (): string => 'resolvedFunc1';
 
     // eslint-disable-next-line
-    const varsToResolve: utils.ResolveRulePair<null | undefined | string | number | object>[] = [
-      ['null1', null],
-      ['undefined1', undefined],
-      ['string1', 'resolvedString1'],
-      ['number1', 1],
-      ['double1', 1.0],
-      ['object1', { name: 'one' }],
-      ['array1', ['item1']],
-      ['func1', func1],
-      [/reg(ex1|ex2)/, '$1'],
-      [/Reg(ex1|ex2)/g, '$1'],
-      [/func(ex1|ex2)/, (m: RegExpMatchArray): string => m[1] + 'yee'],
+    const varsToResolve: ResolveRule<null | undefined | string | number | object>[] = [
+      { resolve: 'null1', rule: null },
+      { resolve: 'undefined1', rule: undefined },
+      { resolve: 'string1', rule: 'resolvedString1' },
+      { resolve: 'number1', rule: 1 },
+      { resolve: 'double1', rule: 1.0 },
+      { resolve: 'object1', rule: { name: 'one' } },
+      { resolve: 'array1', rule: ['item1'] },
+      { resolve: 'array2', rule: ['item2', 'item3'], isFlat: true },
+      { resolve: 'func1', rule: func1 },
+      { resolve: /reg(ex1|ex2)/, rule: '$1' },
+      { resolve: /Reg(ex1|ex2)/g, rule: '$1' },
+      { resolve: /func(ex1|ex2)/, rule: (m: RegExpMatchArray): string => m[1] + 'yee' },
     ];
 
-    assert.deepStrictEqual(utils.resolveVariables(null, varsToResolve), null);
-    assert.deepStrictEqual(utils.resolveVariables(undefined, varsToResolve), undefined);
-    assert.deepStrictEqual(utils.resolveVariables('', varsToResolve), '');
-    assert.deepStrictEqual(utils.resolveVariables(1, varsToResolve), 1);
-    assert.deepStrictEqual(utils.resolveVariables(1.0, varsToResolve), 1.0);
-    assert.deepStrictEqual(utils.resolveVariables({}, varsToResolve), {});
-    assert.deepStrictEqual(utils.resolveVariables([], varsToResolve), []);
-    assert.deepStrictEqual(utils.resolveVariables(func1, varsToResolve), func1);
-    assert.deepStrictEqual(utils.resolveVariables('func1', varsToResolve), 'resolvedFunc1');
+    assert.deepStrictEqual(resolveVariables(null, varsToResolve), null);
+    assert.deepStrictEqual(resolveVariables(undefined, varsToResolve), undefined);
+    assert.deepStrictEqual(resolveVariables('', varsToResolve), '');
+    assert.deepStrictEqual(resolveVariables(1, varsToResolve), 1);
+    assert.deepStrictEqual(resolveVariables(1.0, varsToResolve), 1.0);
+    assert.deepStrictEqual(resolveVariables({}, varsToResolve), {});
+    assert.deepStrictEqual(resolveVariables([], varsToResolve), []);
+    assert.deepStrictEqual(resolveVariables(func1, varsToResolve), func1);
+    assert.deepStrictEqual(resolveVariables('func1', varsToResolve), 'resolvedFunc1');
 
-    assert.deepStrictEqual(utils.resolveVariables('regex1', varsToResolve), 'ex1');
-    assert.deepStrictEqual(utils.resolveVariables('p_regex2_s', varsToResolve), 'p_ex2_s');
-    assert.deepStrictEqual(utils.resolveVariables('p_regex1_s p_regex2_s', varsToResolve), 'p_ex1_s p_regex2_s');
-    assert.deepStrictEqual(utils.resolveVariables('p_Regex1_s p_Regex2_s', varsToResolve), 'p_ex1_s p_ex2_s');
+    assert.deepStrictEqual(resolveVariables('regex1', varsToResolve), 'ex1');
+    assert.deepStrictEqual(resolveVariables('p_regex2_s', varsToResolve), 'p_ex2_s');
+    assert.deepStrictEqual(resolveVariables('p_regex1_s p_regex2_s', varsToResolve), 'p_ex1_s p_regex2_s');
+    assert.deepStrictEqual(resolveVariables('p_Regex1_s p_Regex2_s', varsToResolve), 'p_ex1_s p_ex2_s');
 
-    assert.deepStrictEqual(utils.resolveVariables('funcex1', varsToResolve), 'ex1yee');
-    assert.deepStrictEqual(utils.resolveVariables('funcex1 funcex2', varsToResolve), 'ex1yee ex2yee');
-    assert.deepStrictEqual(utils.resolveVariables('p funcex1 funcex2 s', varsToResolve), 'p ex1yee ex2yee s');
+    assert.deepStrictEqual(resolveVariables('funcex1', varsToResolve), 'ex1yee');
+    assert.deepStrictEqual(resolveVariables('funcex1 funcex2', varsToResolve), 'ex1yee ex2yee');
+    assert.deepStrictEqual(resolveVariables('p funcex1 funcex2 s', varsToResolve), 'p ex1yee ex2yee s');
 
     assert.deepStrictEqual(
-      utils.resolveVariables('p funcex1 funcex2 s', [[/func(ex1|ex2)/, (): string => 'yee']]),
+      resolveVariables('p funcex1 funcex2 s', [{ resolve: /func(ex1|ex2)/, rule: (): string => 'yee' }]),
       'p yee yee s',
     );
 
-    assert.deepStrictEqual(utils.resolveVariables([null], varsToResolve), [null]);
-    assert.deepStrictEqual(utils.resolveVariables([undefined], varsToResolve), [undefined]);
-    assert.deepStrictEqual(utils.resolveVariables([''], varsToResolve), ['']);
-    assert.deepStrictEqual(utils.resolveVariables([1], varsToResolve), [1]);
-    assert.deepStrictEqual(utils.resolveVariables([1.0], varsToResolve), [1.0]);
-    assert.deepStrictEqual(utils.resolveVariables([{}], varsToResolve), [{}]);
-    assert.deepStrictEqual(utils.resolveVariables([[]], varsToResolve), [[]]);
-    assert.deepStrictEqual(utils.resolveVariables([func1], varsToResolve), [func1]);
-    assert.deepStrictEqual(utils.resolveVariables(['func1'], varsToResolve), ['resolvedFunc1']);
+    assert.deepStrictEqual(resolveVariables([null], varsToResolve), [null]);
+    assert.deepStrictEqual(resolveVariables([undefined], varsToResolve), []);
+    assert.deepStrictEqual(resolveVariables([''], varsToResolve), ['']);
+    assert.deepStrictEqual(resolveVariables([1], varsToResolve), [1]);
+    assert.deepStrictEqual(resolveVariables([1.0], varsToResolve), [1.0]);
+    assert.deepStrictEqual(resolveVariables([{}], varsToResolve), [{}]);
+    assert.deepStrictEqual(resolveVariables([[]], varsToResolve), [[]]);
+    assert.deepStrictEqual(resolveVariables([func1], varsToResolve), [func1]);
+    assert.deepStrictEqual(resolveVariables(['notresolve', 'array1'], varsToResolve), ['notresolve', ['item1']]);
+    assert.deepStrictEqual(resolveVariables(['notresolve', 'array2'], varsToResolve), ['notresolve', 'item2', 'item3']);
+    assert.deepStrictEqual(resolveVariables(['func1'], varsToResolve), ['resolvedFunc1']);
 
-    assert.deepStrictEqual(utils.resolveVariables({ x: null }, varsToResolve), { x: null });
-    assert.deepStrictEqual(utils.resolveVariables({ x: undefined }, varsToResolve), {
-      /*x: undefined*/
-    });
-    assert.deepStrictEqual(utils.resolveVariables({ x: '' }, varsToResolve), { x: '' });
-    assert.deepStrictEqual(utils.resolveVariables({ x: 1 }, varsToResolve), { x: 1 });
-    assert.deepStrictEqual(utils.resolveVariables({ x: 1.0 }, varsToResolve), { x: 1.0 });
-    assert.deepStrictEqual(utils.resolveVariables({ x: {} }, varsToResolve), { x: {} });
-    assert.deepStrictEqual(utils.resolveVariables({ x: [] }, varsToResolve), { x: [] });
-    assert.deepStrictEqual(utils.resolveVariables({ x: func1 }, varsToResolve), { x: func1 });
-    assert.deepStrictEqual(utils.resolveVariables({ x: 'func1' }, varsToResolve), { x: 'resolvedFunc1' });
+    assert.deepStrictEqual(resolveVariables({ x: null }, varsToResolve), { x: null });
+    assert.deepStrictEqual(resolveVariables({ x: undefined }, varsToResolve), {});
+    assert.deepStrictEqual(resolveVariables({ x: '' }, varsToResolve), { x: '' });
+    assert.deepStrictEqual(resolveVariables({ x: 1 }, varsToResolve), { x: 1 });
+    assert.deepStrictEqual(resolveVariables({ x: 1.0 }, varsToResolve), { x: 1.0 });
+    assert.deepStrictEqual(resolveVariables({ x: {} }, varsToResolve), { x: {} });
+    assert.deepStrictEqual(resolveVariables({ x: [] }, varsToResolve), { x: [] });
+    assert.deepStrictEqual(resolveVariables({ x: func1 }, varsToResolve), { x: func1 });
+    assert.deepStrictEqual(resolveVariables({ x: 'func1' }, varsToResolve), { x: 'resolvedFunc1' });
 
     const input = {
       a: null,
@@ -90,8 +91,6 @@ describe(path.basename(__filename), function () {
     const expected = {
       a: null,
       b: null,
-      //c: undefined,
-      //d: undefined,
       e: '',
       f: 'resolvedString1',
       g: 1,
@@ -106,9 +105,9 @@ describe(path.basename(__filename), function () {
       p: 'resolvedFunc1',
     };
 
-    assert.deepStrictEqual(utils.resolveVariables(input, varsToResolve), expected);
-    assert.deepStrictEqual(utils.resolveVariables({ a: input, b: input }, varsToResolve), { a: expected, b: expected });
-    assert.deepStrictEqual(utils.resolveVariables([input, input], varsToResolve), [expected, expected]);
+    assert.deepStrictEqual(resolveVariables(input, varsToResolve), expected);
+    assert.deepStrictEqual(resolveVariables({ a: input, b: input }, varsToResolve), { a: expected, b: expected });
+    assert.deepStrictEqual(resolveVariables([input, input], varsToResolve), [expected, expected]);
   });
 
   context.skip('AdvancedII playground', function () {

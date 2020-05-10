@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 import { LoggerWrapper } from './LoggerWrapper';
-import { ExecutableConfig, ExecutableConfigFrameworkSpecific } from './ExecutableConfig';
+import { ExecutableConfig, ExecutableConfigFrameworkSpecific, RunTask } from './ExecutableConfig';
 import { SharedVariables } from './SharedVariables';
-import { hashString, ResolveRulePair } from './Util';
+import { hashString } from './Util';
 import { performance } from 'perf_hooks';
 import { TestGrouping } from './TestGroupingInterface';
+import { ResolveRule } from './util/ResolveRule';
 //import * as crypto from 'crypto';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
@@ -91,7 +92,7 @@ class ConfigurationChangeEvent {
   }
 }
 
-type ExecutableObj = {
+interface ExecutableObj {
   comment?: string;
   pattern?: string;
   name?: string;
@@ -99,12 +100,13 @@ type ExecutableObj = {
   cwd?: string;
   env?: { [key: string]: string };
   dependsOn?: string[];
+  runTask?: RunTask;
   parallelizationLimit?: number;
   catch2?: ExecutableConfigFrameworkSpecific;
   gtest?: ExecutableConfigFrameworkSpecific;
   doctest?: ExecutableConfigFrameworkSpecific;
   testGrouping?: TestGrouping; //undocumented
-};
+}
 
 ///
 
@@ -463,10 +465,7 @@ export class Configurations {
     return this._getNewOrOldOrDefAndMigrate<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  public async getExecutables(
-    shared: SharedVariables,
-    variableToValue: ResolveRulePair[],
-  ): Promise<ExecutableConfig[]> {
+  public async getExecutables(shared: SharedVariables, variableToValue: ResolveRule[]): Promise<ExecutableConfig[]> {
     type ExecOldType = null | string | string[] | ExecutableObj | (ExecutableObj | string)[];
 
     const oldVals = this._old.inspect<ExecOldType>('executables');
@@ -533,11 +532,11 @@ export class Configurations {
         pattern,
         undefined,
         undefined,
-        undefined,
+        defaultCwd,
         undefined,
         [],
+        { before: [], beforeEach: [] },
         defaultParallelExecutionOfExecLimit,
-        defaultCwd,
         variableToValue,
         {},
         {},
@@ -602,7 +601,7 @@ export class Configurations {
           }
         }
 
-        const cwd: string | undefined = typeof obj.cwd === 'string' ? obj.cwd : undefined;
+        const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : defaultCwd;
 
         const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
 
@@ -610,37 +609,17 @@ export class Configurations {
           ? obj.dependsOn.filter(v => typeof v === 'string')
           : [];
 
+        const runTask: RunTask =
+          typeof obj.runTask === 'object'
+            ? { before: obj.runTask.before || [], beforeEach: obj.runTask.beforeEach || [] }
+            : { before: [], beforeEach: [] };
+
         const parallelizationLimit: number =
           typeof obj.parallelizationLimit === 'number' && !Number.isNaN(obj.parallelizationLimit)
             ? Math.max(1, obj.parallelizationLimit)
             : defaultParallelExecutionOfExecLimit;
 
-        const testGrouping = obj.testGrouping ? obj.testGrouping : undefined;
-
-        const framework = (obj?: ExecutableConfigFrameworkSpecific): ExecutableConfigFrameworkSpecific => {
-          const r: ExecutableConfigFrameworkSpecific = {};
-          if (typeof obj === 'object') {
-            if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
-
-            if (
-              Array.isArray(obj.prependTestRunningArgs) &&
-              obj.prependTestRunningArgs.every(x => typeof x === 'string')
-            )
-              r.prependTestRunningArgs = obj.prependTestRunningArgs;
-
-            if (
-              Array.isArray(obj.prependTestListingArgs) &&
-              obj.prependTestListingArgs.every(x => typeof x === 'string')
-            )
-              r.prependTestListingArgs = obj.prependTestListingArgs;
-
-            if (obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
-
-            if (obj.testGrouping) r.testGrouping = obj.testGrouping;
-            else if (testGrouping) r.testGrouping = testGrouping;
-          }
-          return r;
-        };
+        const defaultTestGrouping = obj.testGrouping ? obj.testGrouping : undefined;
 
         return new ExecutableConfig(
           shared,
@@ -650,12 +629,12 @@ export class Configurations {
           cwd,
           env,
           dependsOn,
+          runTask,
           parallelizationLimit,
-          defaultCwd,
           variableToValue,
-          framework(obj['catch2']),
-          framework(obj['gtest']),
-          framework(obj['doctest']),
+          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
+          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
+          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),
         );
       };
 
@@ -673,6 +652,29 @@ export class Configurations {
       this._log.warn('test.advancedExecutables should be an array or undefined', advanced);
       throw Error("`test.advancedExecutables` couldn't be recognised");
     }
+  }
+
+  private _getFrameworkSpecificSettings(
+    defaultTestGrouping: TestGrouping | undefined,
+    obj?: ExecutableConfigFrameworkSpecific,
+  ): ExecutableConfigFrameworkSpecific {
+    const r: ExecutableConfigFrameworkSpecific = {};
+    if (typeof obj === 'object') {
+      if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
+
+      if (Array.isArray(obj.prependTestRunningArgs) && obj.prependTestRunningArgs.every(x => typeof x === 'string'))
+        r.prependTestRunningArgs = obj.prependTestRunningArgs;
+
+      if (Array.isArray(obj.prependTestListingArgs) && obj.prependTestListingArgs.every(x => typeof x === 'string'))
+        r.prependTestListingArgs = obj.prependTestListingArgs;
+
+      if (obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
+
+      if (obj.testGrouping) r.testGrouping = obj.testGrouping;
+      else r.testGrouping = defaultTestGrouping;
+    }
+
+    return r;
   }
 
   //public static readonly PublicKey: string = '';

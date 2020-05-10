@@ -1053,73 +1053,17 @@ describe(path.basename(__filename), function () {
     });
 
     it('cancels', async function () {
-      // since taskQueue/allTasks has benn added it works differently, so it
-      // wont test anything really, but i dont want to delete it either
       await loadAdapterAndAssert();
-      let spyKill1: sinon.SinonSpy<[(NodeJS.Signals | number)?], boolean>;
-      let spyKill2: sinon.SinonSpy<[(NodeJS.Signals | number)?], boolean>;
-      {
-        const spawnEvent = new ChildProcessStub(example1.suite1.outputs[2][1]);
-        spyKill1 = sinon.spy(spawnEvent, 'kill');
-        const withArgs = imitation.spawnStub.withArgs(
-          example1.suite1.execPath,
-          example1.suite1.outputs[2][0],
-          sinon.match.any,
-        );
-        withArgs.onCall(withArgs.callCount).returns(spawnEvent);
-      }
-      {
-        const spawnEvent = new ChildProcessStub(example1.suite2.outputs[2][1]);
-        spyKill2 = sinon.spy(spawnEvent, 'kill');
-        const withArgs = imitation.spawnStub.withArgs(
-          example1.suite2.execPath,
-          example1.suite2.outputs[2][0],
-          sinon.match.any,
-        );
-        withArgs.onCall(withArgs.callCount).returns(spawnEvent);
-      }
+
       const run = adapter.run([root.id]);
       adapter.cancel();
       await run;
 
-      assert.equal(spyKill1.callCount, 0);
-      assert.equal(spyKill2.callCount, 0);
-
       const running: TestRunStartedEvent = { type: 'started', tests: [root.id] };
-
-      const s1running: TestSuiteEvent = { type: 'suite', state: 'running', suite: suite1 };
-      const s1finished: TestSuiteEvent = {
-        type: 'suite',
-        state: 'completed',
-        suite: suite1,
-        description: `.${pathlib.sep} (0ms)`,
-        tooltip:
-          'Name: execPath1.exe\nDescription: .' +
-          pathlib.sep +
-          '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
-      };
-      adapter.testStateEventIndexLess(running, s1running);
-      adapter.testStateEventIndexLess(s1running, s1finished);
-
-      const s2running: TestSuiteEvent = { type: 'suite', state: 'running', suite: suite2 };
-      const s2finished: TestSuiteEvent = {
-        type: 'suite',
-        state: 'completed',
-        suite: suite2,
-        description: `.${pathlib.sep} (>1ms)`,
-        tooltip:
-          'Name: execPath2.exe\nDescription: .' +
-          pathlib.sep +
-          '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n⏱Duration: >1ms',
-      };
-      adapter.testStateEventIndexLess(running, s1running);
-      adapter.testStateEventIndexLess(s2running, s2finished);
-
       const finished: TestRunFinishedEvent = { type: 'finished' };
-      adapter.testStateEventIndexLess(s1finished, finished);
-      adapter.testStateEventIndexLess(s2finished, finished);
+      adapter.testStateEventIndexLess(running, finished);
 
-      assert.equal(adapter.testStatesEvents.length, 14, inspect(adapter.testStatesEvents));
+      assert.equal(adapter.testStatesEvents.length, 2, inspect(adapter.testStatesEvents));
     });
 
     it('cancels after run finished', async function () {
