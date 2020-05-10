@@ -102,6 +102,7 @@ interface ExecutableObj {
   dependsOn?: string[];
   runTask?: RunTask;
   parallelizationLimit?: number;
+  strictPattern?: boolean;
   catch2?: ExecutableConfigFrameworkSpecific;
   gtest?: ExecutableConfigFrameworkSpecific;
   doctest?: ExecutableConfigFrameworkSpecific;
@@ -537,6 +538,7 @@ export class Configurations {
         [],
         { before: [], beforeEach: [] },
         defaultParallelExecutionOfExecLimit,
+        false,
         variableToValue,
         {},
         {},
@@ -619,6 +621,8 @@ export class Configurations {
             ? Math.max(1, obj.parallelizationLimit)
             : defaultParallelExecutionOfExecLimit;
 
+        const strictPattern = !!obj.strictPattern;
+
         const defaultTestGrouping = obj.testGrouping ? obj.testGrouping : undefined;
 
         return new ExecutableConfig(
@@ -631,6 +635,7 @@ export class Configurations {
           dependsOn,
           runTask,
           parallelizationLimit,
+          strictPattern,
           variableToValue,
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),

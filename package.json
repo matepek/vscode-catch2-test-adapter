@@ -286,6 +286,12 @@
                 "default": 1,
                 "minimum": 1
               },
+              "strictPattern": {
+                "markdownDescription": "If true and the pattern matches an executable it will indicate some error. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "scope": "resource",
+                "type": "boolean",
+                "default": false
+              },
               "catch2": {
                 "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)",
                 "type": "object",

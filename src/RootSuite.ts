@@ -32,9 +32,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
 
     this._executables = executables;
 
-    return Promise.all(executables.map(v => v.load(this).catch(e => this._shared.log.exceptionS(e, v)))).then(
-      (): void => undefined,
-    );
+    return Promise.all(executables.map(v => v.load(this))).then((): void => undefined);
   }
 
   public sendRunningEventIfNeeded(): void {

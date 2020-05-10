@@ -44,6 +44,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _dependsOn: string[],
     private readonly _runTask: RunTask,
     private readonly _parallelizationLimit: number,
+    private readonly _strictPattern: boolean,
     private readonly _variableToValue: ResolveRule[],
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,
@@ -189,11 +190,15 @@ export class ExecutableConfig implements vscode.Disposable {
                     },
                     (reason: Error) => {
                       this._shared.log.warn("Couldn't load executable:", reason, suite);
+                      if (this._strictPattern)
+                        throw Error(`Coudn\'t load executable while using 'strictPattern': ${file}\n  ${reason}`);
                     },
                   );
                 },
                 (reason: Error) => {
                   this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
+                  if (this._strictPattern)
+                    throw Error(`Coudn\'t load executable while using 'strictPattern': ${file}\n  ${reason}`);
                 },
               );
           },
