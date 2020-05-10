@@ -16,7 +16,7 @@ import * as Sentry from '@sentry/node';
 
 import { LoggerWrapper } from './LoggerWrapper';
 import { RootSuite } from './RootSuite';
-import { resolveVariables, generateId, reverse, ResolveRulePair } from './Util';
+import { generateId, reverse } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { SharedVariables } from './SharedVariables';
 import { Catch2Section, Catch2Test } from './framework/Catch2Test';
@@ -25,6 +25,7 @@ import { Configurations, Config } from './Configurations';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 import { AbstractTest } from './AbstractTest';
+import { ResolveRule, resolveVariables } from './util/ResolveRule';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: LoggerWrapper;
@@ -34,17 +35,17 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   >();
   private readonly _retireEmitter = new vscode.EventEmitter<RetireEvent>();
 
-  private readonly _variableToValue: ResolveRulePair[] = [
-    ['${workspaceName}', this.workspaceFolder.name], // beware changing this line or the order
-    ['${workspaceDirectory}', this.workspaceFolder.uri.fsPath],
-    ['${workspaceFolder}', this.workspaceFolder.uri.fsPath],
-    ['${osPathSep}', osPathSeparator],
-    ['${osPathEnvSep}', process.platform === 'win32' ? ';' : ':'],
-    ['${osEnvSep}', process.platform === 'win32' ? ';' : ':'], // deprecated
-    [
-      /\$\{if\(isWin\)\}(.*)\$\{else\}(.*)\$\{endif\}/,
-      (m: RegExpMatchArray): string => (process.platform === 'win32' ? m[1] : m[2]),
-    ],
+  private readonly _variableToValue: ResolveRule[] = [
+    { resolve: '${workspaceName}', rule: this.workspaceFolder.name }, // beware changing this line or the order
+    { resolve: '${workspaceDirectory}', rule: this.workspaceFolder.uri.fsPath },
+    { resolve: '${workspaceFolder}', rule: this.workspaceFolder.uri.fsPath },
+    { resolve: '${osPathSep}', rule: osPathSeparator },
+    { resolve: '${osPathEnvSep}', rule: process.platform === 'win32' ? ';' : ':' },
+    { resolve: '${osEnvSep}', rule: process.platform === 'win32' ? ';' : ':' }, // deprecated
+    {
+      resolve: /\$\{if\(isWin\)\}(.*)\$\{else\}(.*)\$\{endif\}/,
+      rule: (m: RegExpMatchArray): string => (process.platform === 'win32' ? m[1] : m[2]),
+    },
   ];
 
   // because we always want to return with the current rootSuite suite
@@ -156,7 +157,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     this._disposables.push(
       vscode.workspace.onDidChangeWorkspaceFolders(() => {
-        this._variableToValue[0][1] = this.workspaceFolder.name;
+        this._variableToValue[0].rule = this.workspaceFolder.name;
       }),
     );
 
@@ -242,6 +243,64 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
+    const executeTaskQueue = new TaskQueue();
+    const executeTask = (
+      taskName: string,
+      varToValue: readonly ResolveRule[],
+      cancellationToken: vscode.CancellationToken,
+    ): Promise<number | undefined> => {
+      return executeTaskQueue.then(async () => {
+        const tasks = await vscode.tasks.fetchTasks();
+        const found = tasks.find(t => t.name === taskName);
+        if (found === undefined) {
+          const msg = `Could not find task with name "${taskName}".`;
+          this._log.warn(msg);
+          throw Error(msg);
+        }
+
+        const resolvedTask = new vscode.Task(
+          found.definition,
+          vscode.TaskScope.Workspace,
+          resolveVariables(found.name, varToValue),
+          found.source,
+          resolveVariables(found.execution, varToValue),
+          found.problemMatchers,
+        );
+
+        //TODO cancellation and timeout
+        if (cancellationToken.isCancellationRequested) return;
+
+        const result = new Promise<number | undefined>(resolve => {
+          const disp1 = vscode.tasks.onDidEndTask((e: vscode.TaskEndEvent) => {
+            if (e.execution.task.name === resolvedTask.name) {
+              this._log.info('Task execution has finished', resolvedTask.name);
+              disp1.dispose();
+              resolve();
+            }
+          });
+
+          const disp2 = vscode.tasks.onDidEndTaskProcess((e: vscode.TaskProcessEndEvent) => {
+            if (e.execution.task.name === resolvedTask.name) {
+              this._log.info('Task execution has finished', resolvedTask.name, e.exitCode);
+              disp2.dispose();
+              resolve(e.exitCode);
+            }
+          });
+        });
+
+        this._log.info('Task execution has started', resolvedTask);
+
+        const execution = await vscode.tasks.executeTask(resolvedTask);
+
+        cancellationToken.onCancellationRequested(() => {
+          this._log.info('Task execution was terminated', execution.task.name);
+          execution.terminate();
+        });
+
+        return result;
+      });
+    };
+
     this._shared = new SharedVariables(
       this._log,
       this.workspaceFolder,
@@ -249,6 +308,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._loadWithTaskEmitter,
       this._sendTestEventEmitter,
       this._sendRetireEmitter,
+      this._variableToValue,
+      executeTask,
       configuration.getRandomGeneratorSeed(),
       configuration.getExecWatchTimeout(),
       configuration.getRetireDebounceTime(),
@@ -401,8 +462,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     });
   }
 
+  // localish: just to connect cancel and run. shouldn't be uset from elsewhere
+  private _cancellationTokenSource: vscode.CancellationTokenSource | undefined = undefined;
+
   public cancel(): void {
-    this._rootSuite.cancel();
+    this._log.debug('canceled');
+    if (this._cancellationTokenSource) {
+      this._cancellationTokenSource.cancel();
+    }
   }
 
   public run(tests: string[]): Promise<void> {
@@ -412,8 +479,17 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       );
     }
 
+    const cancellationTokenSource = new vscode.CancellationTokenSource();
+    this._cancellationTokenSource = cancellationTokenSource;
+
     return this._mainTaskQueue.then(() => {
-      return this._rootSuite.run(tests).catch((reason: Error) => this._log.exceptionS(reason));
+      return this._rootSuite
+        .run(tests, cancellationTokenSource.token)
+        .catch((reason: Error) => this._log.exceptionS(reason))
+        .finally(() => {
+          cancellationTokenSource.dispose();
+          this._cancellationTokenSource = undefined;
+        });
     });
   }
 
@@ -429,18 +505,18 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       .map(t => this._rootSuite.findTestById(t))
       .reduce((runnableToTestMap, test) => {
         if (test === undefined) return runnableToTestMap;
-        const arr = runnableToTestMap.find(x => x[0] === test.runnable);
-        if (arr) arr[1].push(test!);
-        else runnableToTestMap.push([test.runnable, [test]]);
+        const tests = runnableToTestMap.get(test.runnable);
+        if (tests) tests.push(test!);
+        else runnableToTestMap.set(test.runnable, [test]);
         return runnableToTestMap;
-      }, new Array<[AbstractRunnable, Readonly<AbstractTest>[]]>());
+      }, new Map<AbstractRunnable, Readonly<AbstractTest>[]>());
 
-    if (runnableToTestMap.length !== 1) {
+    if (runnableToTestMap.size !== 1) {
       this._log.error('unsupported executable count', tests);
       throw Error('Unsupported input. It seems you would like to debug more tests from different executables.');
     }
 
-    const [runnable, runnableTests] = runnableToTestMap[0];
+    const [runnable, runnableTests] = [...runnableToTestMap][0];
 
     this._log.info('test', runnable, runnableTests);
 
@@ -513,17 +589,17 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }
     }
 
-    const varToResolve: ResolveRulePair<string | object>[] = [
-      ...this._variableToValue,
-      ['${suitelabel}', suiteLabels], // deprecated
-      ['${suiteLabel}', suiteLabels],
-      ['${label}', label],
-      ['${exec}', runnable.properties.path],
-      ['${args}', argsArray], // deprecated
-      ['${argsArray}', argsArray],
-      ['${argsStr}', '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"'],
-      ['${cwd}', runnable.properties.options.cwd!],
-      ['${envObj}', Object.assign(Object.assign({}, process.env), runnable.properties.options.env!)],
+    const varToResolve: ResolveRule[] = [
+      ...runnable.properties.varToValue,
+      { resolve: '${suitelabel}', rule: suiteLabels }, // deprecated
+      { resolve: '${suiteLabel}', rule: suiteLabels },
+      { resolve: '${label}', rule: label },
+      { resolve: '${exec}', rule: runnable.properties.path },
+      { resolve: '${args}', rule: argsArray }, // deprecated
+      { resolve: '${argsArray}', rule: argsArray },
+      { resolve: '${argsStr}', rule: '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"' },
+      { resolve: '${cwd}', rule: runnable.properties.options.cwd! },
+      { resolve: '${envObj}', rule: Object.assign(Object.assign({}, process.env), runnable.properties.options.env!) },
     ];
 
     const debugConfig = resolveVariables(debugConfigTemplate, varToResolve);
@@ -538,12 +614,17 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     return this._mainTaskQueue
       .then(async () => {
+        const cancellationTokenSource = new vscode.CancellationTokenSource();
+        await this._rootSuite.runTaskBefore(runnableToTestMap, cancellationTokenSource.token);
+        await runnable.runTaskbeforeEach(this._shared.taskPool, cancellationTokenSource.token);
+
         let terminateConn: vscode.Disposable | undefined;
 
         const terminated = new Promise<void>(resolve => {
           terminateConn = vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
             const session2 = (session as unknown) as { configuration: { [prop: string]: string } };
             if (session2.configuration && session2.configuration[magicValueKey] === magicValue) {
+              cancellationTokenSource.cancel();
               resolve();
               terminateConn && terminateConn.dispose();
             }
@@ -562,7 +643,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         } else {
           terminateConn && terminateConn.dispose();
           return Promise.reject(
-            new Error(
+            Error(
               'Failed starting the debug session. ' + 'Maybe something wrong with "testMate.cpp.debug.configTemplate".',
             ),
           );

@@ -9,23 +9,19 @@ import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningRunnable } from './RunningRunnable';
 import { promisify } from 'util';
+import { Version, reverse, getAbsolutePath, CancellationToken } from './Util';
 import {
-  Version,
-  reverse,
   resolveVariables,
   resolveOSEnvironmentVariables,
-  ResolveRulePair,
+  ResolveRule,
   createPythonIndexerForPathVariable,
-  getAbsolutePath,
-} from './Util';
+} from './util/ResolveRule';
 import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
 import { TestEvent } from 'vscode-test-adapter-api';
 
 export abstract class AbstractRunnable {
   private static _reportedFrameworks: string[] = [];
 
-  private _canceled = false;
-  private _runInfos: RunningRunnable[] = [];
   private _lastReloadTime: number | undefined = undefined;
   private _tests: AbstractTest[] = [];
 
@@ -76,7 +72,7 @@ export abstract class AbstractRunnable {
 
   private static readonly _variableRe = /\$\{[^ ]*\}/;
 
-  private _resolveText(text: string, ...additionalVarToValue: readonly ResolveRulePair[]): string {
+  private _resolveText(text: string, ...additionalVarToValue: readonly ResolveRule[]): string {
     let resolvedText = text;
     try {
       resolvedText = resolveVariables(resolvedText, this.properties.varToValue);
@@ -105,7 +101,7 @@ export abstract class AbstractRunnable {
     const absPath = file ? file : '';
     tags.sort();
 
-    const vars: ResolveRulePair[] = [
+    const vars: ResolveRule[] = [
       createPythonIndexerForPathVariable('sourceRelPath', relPath),
       createPythonIndexerForPathVariable('sourceAbsPath', absPath),
     ];
@@ -119,12 +115,12 @@ export abstract class AbstractRunnable {
 
       const tagFormat = tg.tagFormat !== undefined && tg.tagFormat.indexOf(tagVar) !== -1 ? tg.tagFormat : '[${tag}]';
       const formattedTags = (overrideTags ? overrideTags : tags).map(t => tagFormat.replace(tagVar, t)).join('');
-      const found = vars.find(v => v[0] === tagsVar);
+      const found = vars.find(v => v.resolve === tagsVar);
 
       if (found) {
-        found[1] = formattedTags;
+        found.rule = formattedTags;
       } else {
-        vars.push([tagsVar, formattedTags]);
+        vars.push({ resolve: tagsVar, rule: formattedTags });
       }
     };
 
@@ -216,7 +212,7 @@ export abstract class AbstractRunnable {
                 this._shared.log.info('groupByRegex matched on', testName, g.regexes[index - 1]);
                 const group = match[1] ? match[1] : match[0];
 
-                const matchVar: ResolveRulePair[] = [['${match}', group]];
+                const matchVar: ResolveRule[] = [{ resolve: '${match}', rule: group }];
 
                 const label = g.label ? this._resolveText(g.label, ...matchVar) : group;
                 const description =
@@ -411,23 +407,11 @@ export abstract class AbstractRunnable {
     });
   }
 
-  public cancel(): void {
-    this._shared.log.info('canceled:', this.properties.path);
-
-    this._runInfos.forEach(r => {
-      try {
-        r.cancel();
-      } catch (e) {
-        this._shared.log.exceptionS(e);
-      }
-    });
-
-    this._canceled = true;
-  }
-
-  public run(childrenToRun: readonly AbstractTest[], taskPool: TaskPool): Promise<void> {
-    this._canceled = false;
-
+  public async run(
+    childrenToRun: readonly AbstractTest[],
+    taskPool: TaskPool,
+    cancellationToken: CancellationToken,
+  ): Promise<void> {
     if (childrenToRun.length === 0) {
       return Promise.resolve();
     }
@@ -444,10 +428,23 @@ export abstract class AbstractRunnable {
       );
     }
 
+    try {
+      await this.runTaskbeforeEach(taskPool, cancellationToken);
+    } catch (e) {
+      this.sendStaticEvents(childrenToRun, {
+        type: 'test',
+        test: 'will be filled automatically',
+        state: 'errored',
+        message: e,
+      });
+
+      return;
+    }
+
     return Promise.all(
       buckets.map(async (bucket: readonly AbstractTest[]) => {
         const smallerTestSet = this._splitTestsToSmallEnoughSubsets(bucket);
-        for (const testSet of smallerTestSet) await this._runInner(testSet, taskPool);
+        for (const testSet of smallerTestSet) await this._runInner(testSet, taskPool, cancellationToken);
       }),
     )
       .finally(() => {
@@ -462,14 +459,53 @@ export abstract class AbstractRunnable {
       .then();
   }
 
-  private _runInner(childrenToRun: readonly AbstractTest[], taskPool: TaskPool): Promise<void> {
+  public async runTaskbeforeEach(taskPool: TaskPool, cancellationToken: CancellationToken): Promise<void> {
+    if (this.properties.runTask.beforeEach && this.properties.runTask.beforeEach.length > 0) {
+      try {
+        // sequential execution of tasks
+        for (const taskName of this.properties.runTask.beforeEach) {
+          const exitCode = await this._shared.executeTask(taskName, this.properties.varToValue, cancellationToken);
+
+          if (exitCode !== undefined) {
+            if (exitCode !== 0) {
+              return Promise.reject(Error(`Task "${taskName}" has returned with exitCode != 0: ${exitCode}`));
+            }
+          }
+        }
+      } catch (e) {
+        return Promise.reject(
+          Error('One of tasks of the `testMate.test.advancedExecutables:runTask` array has failed: ' + e),
+        );
+      }
+    }
+  }
+
+  public sendStaticEvents(childrenToRun: readonly AbstractTest[], staticEvent: TestEvent | undefined): void {
+    childrenToRun.forEach(test => {
+      const event = staticEvent || test.staticEvent;
+      if (event) {
+        event.test = test;
+        const route = [...test.route()];
+        reverse(route)((s: Suite): void => s.sendRunningEventIfNeeded());
+        this._shared.testStatesEmitter.fire(test!.getStartEvent());
+        this._shared.testStatesEmitter.fire(event);
+        route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
+      }
+    });
+  }
+
+  private _runInner(
+    childrenToRun: readonly AbstractTest[],
+    taskPool: TaskPool,
+    cancellationToken: CancellationToken,
+  ): Promise<void> {
     return this.properties.parallelizationPool.scheduleTask(() => {
       const runIfNotCancelled = (): Promise<void> => {
-        if (this._canceled) {
+        if (cancellationToken.isCancellationRequested) {
           this._shared.log.info('test was canceled:', this);
           return Promise.resolve();
         }
-        return this._runProcess(childrenToRun);
+        return this._runProcess(childrenToRun, cancellationToken);
       };
 
       return taskPool.scheduleTask(runIfNotCancelled).catch((err: Error) => {
@@ -487,7 +523,7 @@ export abstract class AbstractRunnable {
     });
   }
 
-  private _runProcess(childrenToRun: readonly AbstractTest[]): Promise<void> {
+  private _runProcess(childrenToRun: readonly AbstractTest[], cancellationToken: CancellationToken): Promise<void> {
     const descendantsWithStaticEvent: AbstractTest[] = [];
     const runnableDescendant: AbstractTest[] = [];
 
@@ -497,15 +533,7 @@ export abstract class AbstractRunnable {
     });
 
     if (descendantsWithStaticEvent.length > 0) {
-      descendantsWithStaticEvent.forEach(test => {
-        if (test) {
-          const route = [...test.route()];
-          reverse(route)((s: Suite): void => s.sendRunningEventIfNeeded());
-          this._shared.testStatesEmitter.fire(test!.getStartEvent());
-          this._shared.testStatesEmitter.fire(test!.staticEvent);
-          route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
-        }
-      });
+      this.sendStaticEvents(descendantsWithStaticEvent, undefined);
     }
 
     if (runnableDescendant.length === 0) {
@@ -519,9 +547,8 @@ export abstract class AbstractRunnable {
     const runInfo = new RunningRunnable(
       cp.spawn(this.properties.path, execParams, this.properties.options),
       runnableDescendant,
+      cancellationToken,
     );
-
-    this._runInfos.push(runInfo);
 
     this._shared.log.info('proc started:', runInfo.process.pid, this.properties.path, this.properties, execParams);
 
@@ -572,19 +599,8 @@ export abstract class AbstractRunnable {
     }
 
     return this._handleProcess(runInfo)
-      .catch((reason: Error) => {
-        this._shared.log.exceptionS(reason);
-      })
-      .then(() => {
-        this._shared.log.info('proc finished:', this.properties.path);
-
-        const index = this._runInfos.indexOf(runInfo);
-        if (index === -1) {
-          this._shared.log.error("assertion: shouldn't be here", this._runInfos, runInfo);
-        } else {
-          this._runInfos.splice(index, 1);
-        }
-      });
+      .catch((reason: Error) => this._shared.log.exceptionS(reason))
+      .finally(() => this._shared.log.info('proc finished:', this.properties.path));
   }
 
   protected _findTest(pred: (t: AbstractTest) => boolean): AbstractTest | undefined {

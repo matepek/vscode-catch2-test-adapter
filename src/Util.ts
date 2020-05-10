@@ -1,6 +1,47 @@
 import * as pathlib from 'path';
 import * as c2fs from './FSWrapper';
 
+///
+
+export interface Disposable {
+  dispose(): void;
+}
+
+/**
+ * Represents a typed event.
+ *
+ * A function that represents an event to which you subscribe by calling it with
+ * a listener function as argument.
+ *
+ * @sample `item.onDidChange(function(event) { console.log("Event happened: " + event); });`
+ */
+export interface Event<T> {
+  /**
+   * A function that represents an event to which you subscribe by calling it with
+   * a listener function as argument.
+   *
+   * @param listener The listener function will be called when the event happens.
+   * @param thisArgs The `this`-argument which will be used when calling the event listener.
+   * @param disposables An array to which a [disposable](#Disposable) will be added.
+   * @return A disposable which unsubscribes the event listener.
+   */
+  (listener: (e: T) => any, thisArgs?: any, disposables?: Disposable[]): Disposable; // eslint-disable-line
+}
+
+export interface CancellationToken {
+  /**
+   * Is `true` when the token has been cancelled, `false` otherwise.
+   */
+  isCancellationRequested: boolean;
+
+  /**
+   * An [event](#Event) which fires upon cancellation.
+   */
+  onCancellationRequested: Event<void>; // eslint-disable-line
+}
+
+///
+
 export function concatU(left: string | undefined, right: string | undefined, sep = ''): string | undefined {
   if (!right) return left;
   else if (!left) return right;
@@ -42,151 +83,6 @@ export class Version {
   public toString(): string {
     return `${this.major}.${this.minor}.${this.patch}`;
   }
-}
-
-// eslint-disable-next-line
-function _mapAllStrings<T>(value: T, mapperFunc: (s: string) => any): T {
-  if (value === null || value === undefined || typeof value === 'function') {
-    return value;
-  } else if (typeof value === 'string') {
-    return (mapperFunc(value) as unknown) as T;
-  } else if (Array.isArray(value)) {
-    // eslint-disable-next-line
-    return ((value as any[]).map((v: any) => _mapAllStrings(v, mapperFunc)) as unknown) as T;
-  } else if (typeof value === 'object') {
-    // eslint-disable-next-line
-    const newValue: any = {};
-    for (const prop in value) {
-      const val = _mapAllStrings(value[prop], mapperFunc);
-      if (val !== undefined) newValue[prop] = val;
-    }
-    return newValue;
-  } else {
-    return value;
-  }
-}
-
-export type ResolveRulePair<R = string> = [string | RegExp, R | (() => R) | ((m: RegExpMatchArray) => R)];
-
-export function resolveVariables<T, R = string>(value: T, varValue: readonly ResolveRulePair<R>[]): T {
-  // eslint-disable-next-line
-  return _mapAllStrings(value, (s: string): any => {
-    for (let i = 0; i < varValue.length; ++i) {
-      const [resolve, rule] = varValue[i];
-      if (typeof rule === 'string') {
-        s = s.replace(resolve, rule);
-      } else if (resolve instanceof RegExp && typeof rule === 'function') {
-        if ((rule as Function).length > 1) throw Error('resolveVariables regex func should expect 1 argument');
-
-        let m = s.match(resolve);
-
-        if (m) {
-          if (m.index === 0 && m[0].length === s.length) {
-            return (rule as Function)(m); // return type can be anything
-          }
-
-          let remainingStr = s;
-          const newStr: string[] = [];
-          while (m && m.index !== undefined) {
-            newStr.push(remainingStr.substr(0, m.index));
-
-            const repl = (rule as Function)(m);
-            if (typeof repl !== 'string') throw Error('resolveVariables regex func return type should be string');
-            newStr.push(repl);
-
-            remainingStr = remainingStr.substr(m.index + m[0].length);
-            m = remainingStr.match(resolve);
-          }
-          s = newStr.join('') + remainingStr;
-        }
-      } else if (s === resolve) {
-        if (typeof rule === 'function') {
-          return (rule as Function)();
-        } else {
-          return rule;
-        }
-      }
-    }
-    return s;
-  });
-}
-
-// eslint-disable-next-line
-export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolean): T {
-  const getValueOfEnv = (prop: string): string | undefined => {
-    const normalize = (s: string): string => (process.platform === 'win32' ? s.toLowerCase() : s);
-    const normProp = normalize(prop);
-    for (const prop in process.env) {
-      if (normalize(prop) == normProp) {
-        return process.env[prop];
-      }
-    }
-    return undefined;
-  };
-  // eslint-disable-next-line
-  return _mapAllStrings(value, (s: string): any => {
-    let replacedS = '';
-    while (true) {
-      const match = s.match(/\$\{(os_env|os_env_strict):([A-z_][A-z0-9_]*)\}/);
-
-      if (!match) return replacedS + s;
-
-      const val = getValueOfEnv(match[2]);
-
-      replacedS += s.substring(0, match.index!);
-
-      if (val !== undefined) {
-        replacedS += val;
-      } else {
-        if (match[1] === 'os_env_strict') {
-          if (strictAllowed) return undefined;
-          else replacedS += '<missing env>';
-        } else {
-          // skip: replaces to empty string
-        }
-      }
-
-      s = s.substring(match.index! + match[0].length);
-    }
-  });
-}
-
-export const PythonIndexerRegexStr = '(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])';
-
-export function processArrayWithPythonIndexer<T>(arr: readonly T[], match: RegExpMatchArray): T[] {
-  if (match[1]) {
-    const idx = Number(match[1]);
-    if (idx < 0) return [arr[arr.length + idx]];
-    else return [arr[idx]];
-  } else {
-    const idx1 = match[2] === undefined ? undefined : Number(match[2]);
-    const idx2 = match[3] === undefined ? undefined : Number(match[3]);
-    return arr.slice(idx1, idx2);
-  }
-}
-
-export function createPythonIndexerForStringVariable(
-  varName: string,
-  value: string,
-  separator: string | RegExp,
-  join: string,
-): [RegExp, (m: RegExpMatchArray) => string] {
-  const varRegex = new RegExp('\\${' + varName + PythonIndexerRegexStr + '?}');
-
-  const array = value.split(separator);
-  const replacer = (m: RegExpMatchArray): string => {
-    return processArrayWithPythonIndexer(array, m).join(join);
-  };
-
-  return [varRegex, replacer];
-}
-
-export function createPythonIndexerForPathVariable(
-  valName: string,
-  pathStr: string,
-): [RegExp, (m: RegExpMatchArray) => string] {
-  const [regex, repl] = createPythonIndexerForStringVariable(valName, pathlib.normalize(pathStr), /\/|\\/, pathlib.sep);
-  return [regex, (m: RegExpMatchArray): string => pathlib.normalize(repl(m))];
 }
 
 let uidCounter = 0;

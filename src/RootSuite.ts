@@ -1,10 +1,12 @@
 import * as vscode from 'vscode';
-import { TestInfo } from 'vscode-test-adapter-api';
+import { TestInfo, TestEvent } from 'vscode-test-adapter-api';
 import { ExecutableConfig } from './ExecutableConfig';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
 import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
+import { CancellationToken } from './Util';
+import { ResolveRule } from './util/ResolveRule';
 
 export class RootSuite extends Suite implements vscode.Disposable {
   private _executables: ExecutableConfig[] = [];
@@ -25,18 +27,12 @@ export class RootSuite extends Suite implements vscode.Disposable {
     this._executables.forEach(e => e.dispose());
   }
 
-  public cancel(): void {
-    this._executables.forEach(c => c.cancel());
-  }
-
   public load(executables: ExecutableConfig[]): Promise<void> {
     this._executables.forEach(e => e.dispose());
 
     this._executables = executables;
 
-    return Promise.all(executables.map(v => v.load(this).catch(e => this._shared.log.exceptionS(e, v)))).then(
-      (): void => undefined,
-    );
+    return Promise.all(executables.map(v => v.load(this))).then((): void => undefined);
   }
 
   public sendRunningEventIfNeeded(): void {
@@ -66,7 +62,43 @@ export class RootSuite extends Suite implements vscode.Disposable {
     }
   }
 
-  public run(tests: string[]): Promise<void> {
+  public async runTaskBefore(
+    runnables: Map<AbstractRunnable, Readonly<AbstractTest>[]>,
+    cancellationToken: vscode.CancellationToken,
+  ): Promise<void> {
+    const runTask = new Set<string>();
+    const runnableExecArray: string[] = [];
+
+    for (const runnable of runnables.keys()) {
+      runnable.properties.runTask.before.forEach(t => runTask.add(t));
+      runnableExecArray.push(runnable.properties.path);
+    }
+
+    if (runTask.size === 0) return;
+
+    const varToValue: ResolveRule[] = [
+      ...this._shared.varToValue,
+      { resolve: '${absPathArrayFlat}', rule: runnableExecArray, isFlat: true },
+      { resolve: '${absPathConcatWithSpace}', rule: runnableExecArray.map(r => `"${r}"`).join(' ') },
+    ];
+
+    try {
+      // sequential execution of tasks
+      for (const taskName of runTask) {
+        const exitCode = await this._shared.executeTask(taskName, varToValue, cancellationToken);
+
+        if (exitCode !== undefined) {
+          if (exitCode !== 0) {
+            return Promise.reject(Error(`Task "${taskName}" has returned with exitCode != 0: ${exitCode}`));
+          }
+        }
+      }
+    } catch (e) {
+      return Promise.reject(Error('One of tasks of the `testMate.test.runTask` array has failed: ' + e));
+    }
+  }
+
+  public async run(tests: string[], cancellationToken: CancellationToken): Promise<void> {
     this.sendStartEventIfNeeded(tests);
 
     const isParentIn = tests.indexOf(this.id) !== -1;
@@ -80,11 +112,29 @@ export class RootSuite extends Suite implements vscode.Disposable {
       return prev;
     }, new Map<AbstractRunnable, AbstractTest[]>());
 
+    try {
+      await this.runTaskBefore(runnables, cancellationToken);
+    } catch (e) {
+      const ev: TestEvent = {
+        type: 'test',
+        test: 'will be filled automatically',
+        state: 'errored',
+        message: e,
+      };
+
+      for (const [runnable, tests] of runnables) {
+        runnable.sendStaticEvents(tests, ev);
+      }
+
+      this.sendFinishedEventIfNeeded();
+      return;
+    }
+
     const ps: Promise<void>[] = [];
 
     for (const [runnable, runnableTests] of runnables) {
       ps.push(
-        runnable.run(runnableTests, this._shared.taskPool).catch(err => {
+        runnable.run(runnableTests, this._shared.taskPool, cancellationToken).catch(err => {
           this._shared.log.error('RootTestSuite.run.for.child', runnable.properties.path, err);
         }),
       );

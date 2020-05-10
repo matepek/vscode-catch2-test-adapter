@@ -4,14 +4,14 @@ import * as vscode from 'vscode';
 
 import { AbstractRunnable } from './AbstractRunnable';
 import * as c2fs from './FSWrapper';
+import { getAbsolutePath } from './Util';
 import {
   resolveVariables,
   resolveOSEnvironmentVariables,
-  ResolveRulePair,
+  ResolveRule,
   createPythonIndexerForPathVariable,
   createPythonIndexerForStringVariable,
-  getAbsolutePath,
-} from './Util';
+} from './util/ResolveRule';
 import { RunnableSuiteFactory } from './RunnableSuiteFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
@@ -19,6 +19,11 @@ import { TestGrouping } from './TestGroupingInterface';
 import { Suite } from './Suite';
 import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
+
+export interface RunTask {
+  before: string[];
+  beforeEach: string[];
+}
 
 export interface ExecutableConfigFrameworkSpecific {
   helpRegex?: string;
@@ -34,12 +39,13 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _pattern: string,
     private readonly _name: string | undefined,
     private readonly _description: string | undefined,
-    private readonly _cwd: string | undefined,
+    private readonly _cwd: string,
     private readonly _env: { [prop: string]: string } | undefined,
     private readonly _dependsOn: string[],
+    private readonly _runTask: RunTask,
     private readonly _parallelizationLimit: number,
-    private readonly _defaultCwd: string,
-    private readonly _variableToValue: ResolveRulePair[],
+    private readonly _strictPattern: boolean,
+    private readonly _variableToValue: ResolveRule[],
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,
     private readonly _doctest: ExecutableConfigFrameworkSpecific,
@@ -119,10 +125,6 @@ export class ExecutableConfig implements vscode.Disposable {
     this._disposables.forEach(d => d.dispose());
   }
 
-  public cancel(): void {
-    for (const r of this._runnables.values()) r.cancel();
-  }
-
   public async load(rootSuite: RootSuite): Promise<void> {
     const pattern = this._patternProcessor(this._pattern);
 
@@ -188,11 +190,15 @@ export class ExecutableConfig implements vscode.Disposable {
                     },
                     (reason: Error) => {
                       this._shared.log.warn("Couldn't load executable:", reason, suite);
+                      if (this._strictPattern)
+                        throw Error(`Coudn\'t load executable while using 'strictPattern': ${file}\n  ${reason}`);
                     },
                   );
                 },
                 (reason: Error) => {
                   this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
+                  if (this._strictPattern)
+                    throw Error(`Coudn\'t load executable while using 'strictPattern': ${file}\n  ${reason}`);
                 },
               );
           },
@@ -277,11 +283,11 @@ export class ExecutableConfig implements vscode.Disposable {
   private _createSuiteByUri(filePath: string, rootSuite: Suite): RunnableSuiteFactory {
     const relPath = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
-    let varToValue: ResolveRulePair[] = [];
+    let varToValue: ResolveRule[] = [];
 
     const subPath = createPythonIndexerForPathVariable;
 
-    const subFilename = (valName: string, filename: string): [RegExp, (m: RegExpMatchArray) => string] =>
+    const subFilename = (valName: string, filename: string): ResolveRule =>
       createPythonIndexerForStringVariable(valName, filename, '.', '.');
 
     try {
@@ -296,8 +302,8 @@ export class ExecutableConfig implements vscode.Disposable {
         subPath('absDirpath', pathlib.dirname(filePath)),
         subPath('relDirpath', pathlib.dirname(relPath)),
         subFilename('filename', filename),
-        ['${extFilename}', extFilename],
-        ['${baseFilename}', baseFilename],
+        { resolve: '${extFilename}', rule: extFilename },
+        { resolve: '${baseFilename}', rule: baseFilename },
       ];
     } catch (e) {
       this._shared.log.exceptionS(e);
@@ -307,8 +313,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
     let resolvedCwd = '.';
     try {
-      if (this._cwd) resolvedCwd = resolveVariables(this._cwd, varToValue);
-      else resolvedCwd = resolveVariables(this._defaultCwd, varToValue);
+      resolvedCwd = resolveVariables(this._cwd, varToValue);
 
       resolvedCwd = resolveOSEnvironmentVariables(resolvedCwd, false);
 
@@ -346,6 +351,7 @@ export class ExecutableConfig implements vscode.Disposable {
       this._gtest,
       this._doctest,
       this._parallelizationLimit,
+      this._runTask,
     );
   }
 

@@ -21,6 +21,7 @@ export class GoogleRunnable extends AbstractRunnable {
     shared: SharedVariables,
     rootSuite: Suite,
     execInfo: RunnableSuiteProperties,
+    private readonly _argumentPrefix: string,
     version: Promise<Version | undefined>,
   ) {
     super(shared, rootSuite, execInfo, 'GoogleTest', version);
@@ -176,7 +177,10 @@ export class GoogleRunnable extends AbstractRunnable {
     return c2fs
       .spawnAsync(
         this.properties.path,
-        this.properties.prependTestListingArgs.concat(['--gtest_list_tests', '--gtest_output=xml:' + cacheFile]),
+        this.properties.prependTestListingArgs.concat([
+          `--${this._argumentPrefix}list_tests`,
+          `--${this._argumentPrefix}output=xml:${cacheFile}`,
+        ]),
         this.properties.options,
         30000,
       )
@@ -216,18 +220,19 @@ export class GoogleRunnable extends AbstractRunnable {
   }
 
   protected _getRunParams(childrenToRun: readonly Readonly<GoogleTest>[]): string[] {
-    const execParams: string[] = ['--gtest_color=no'];
+    const execParams: string[] = [`--${this._argumentPrefix}color=no`];
 
     const testNames = childrenToRun.map(c => c.testName);
 
-    execParams.push('--gtest_filter=' + testNames.join(':'));
+    execParams.push(`--${this._argumentPrefix}filter=` + testNames.join(':'));
 
-    execParams.push('--gtest_also_run_disabled_tests');
+    execParams.push(`--${this._argumentPrefix}also_run_disabled_tests`);
 
     if (this._shared.rngSeed !== null) {
-      execParams.push('--gtest_shuffle');
+      execParams.push(`--${this._argumentPrefix}shuffle`);
       execParams.push(
-        '--gtest_random_seed=' + (this._shared.rngSeed === 'time' ? '0' : this._shared.rngSeed.toString()),
+        `--${this._argumentPrefix}random_seed=` +
+          (this._shared.rngSeed === 'time' ? '0' : this._shared.rngSeed.toString()),
       );
     }
 
@@ -240,7 +245,7 @@ export class GoogleRunnable extends AbstractRunnable {
 
   public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
     const debugParams = this._getRunParams(childrenToRun as readonly Readonly<GoogleTest>[]);
-    if (breakOnFailure) debugParams.push('--gtest_break_on_failure');
+    if (breakOnFailure) debugParams.push(`--${this._argumentPrefix}break_on_failure`);
     return debugParams;
   }
 

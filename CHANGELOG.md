@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.0.4]
+
+### Added
+
+- Support for custom [`GTEST_FLAG_PREFIX`](https://github.com/google/googletest/blob/master/googletest/include/gtest/internal/gtest-port.h#L282).
+  It is recognised automatically by running the executable with `--help`.
+- Support for running [vscode tasks](https://code.visualstudio.com/docs/editor/tasks) before tests. (Experimental)
+- Support for `strictPattern`: Test loading will fail if one of the matched executables cannot be loaded.
+
 ## [3.0.3] - 2020-05-07
 
 ### Changed

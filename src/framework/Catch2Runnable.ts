@@ -23,7 +23,7 @@ export class Catch2Runnable extends AbstractRunnable {
     shared: SharedVariables,
     rootSuite: Suite,
     execInfo: RunnableSuiteProperties,
-    private readonly _catch2Version: Version,
+    private readonly _catch2Version: Version | undefined,
   ) {
     super(shared, rootSuite, execInfo, 'Catch2', Promise.resolve(_catch2Version));
   }

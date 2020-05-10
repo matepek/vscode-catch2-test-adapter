@@ -2113,7 +2113,10 @@ For more detailed usage please see the project docs
     ].join(EOL);
 
     public readonly outputs: [string[], string][] = [
-      [['--help'], 'This program contains tests written using Google Test. Yo'],
+      [
+        ['--help'],
+        'This program contains tests written using Google Test. ...  --gtest_list_tests ... List the names of all tests instead of running them. ...',
+      ],
       [
         [
           '--gtest_color=no',

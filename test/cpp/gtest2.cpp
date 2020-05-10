@@ -11,6 +11,10 @@
 
 #include "gmock/gmock.h"
 
+// static struct X{ X(){
+//   std::terminate();
+// }} x;
+
 GTEST_TEST(TestCas3, test1) {
   //
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));

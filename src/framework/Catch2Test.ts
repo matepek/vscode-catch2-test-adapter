@@ -44,7 +44,7 @@ export class Catch2Test extends AbstractTest {
     shared: SharedWithCatch2Test,
     runnable: AbstractRunnable,
     parent: Suite,
-    frameworkVersion: Version,
+    frameworkVersion: Version | undefined,
     testNameAsId: string,
     tags: string[],
     file: string | undefined,
@@ -62,7 +62,9 @@ export class Catch2Test extends AbstractTest {
       '§',
     ];
     const forceIgnoreEvent: TestEvent | undefined =
-      frameworkVersion.smaller(EscapeCharParserFix) && badChars.some(b => testNameAsId.indexOf(b) != -1)
+      frameworkVersion &&
+      frameworkVersion.smaller(EscapeCharParserFix) &&
+      badChars.some(b => testNameAsId.indexOf(b) != -1)
         ? ({
             type: 'test',
             test: '',

@@ -50,7 +50,9 @@ If it is an object it can contains the following properties:
 | `cwd`                  | The current working directory for the test executable. If it isn't provided and `test.workingDirectory` does then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                             |
 | `env`                  | Environment variables for the test executable. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                              |
 | `dependsOn`            | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) |
+| `runTask`              | Tasks to run before running/debugging tests. The task should be defined like any other task in vscode (e.g. in tasks.json). If the task exits with a non-zero code, execution of tests will be halted. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                        |
 | `parallelizationLimit` | (Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `testMate.cpp.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                                     |
+| `strictPattern`        | If true and the pattern matches an executable it will indicate some error. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                                                                                                                                    |
 | `catch2`               | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
 | `gtest`                | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
 | `doctest`              | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
@@ -119,7 +121,7 @@ Exmaple: `${relPath[:-2]}`: 'a/b/c/d' -> 'a/b'
 
 ## Framework specific settings
 
-Under property: `catc2`, `gtest`, `doctest`.
+Under property: `catch2`, `gtest`, `doctest`.
 
 One can fine-tune framework related behaviour.
 
@@ -171,6 +173,18 @@ One should avoid that❗️
   }
 ]
 ```
+
+### helpRegex
+
+In case of `gtest` the helpRegex' the first capture should be the value of [`GTEST_FLAG_PREFIX`](https://github.com/google/googletest/blob/master/googletest/include/gtest/internal/gtest-port.h#L282).
+For example:
+
+- `--gtest_list_tests` + `--(\w+)list_tests` -> `gtest_`
+
+In case if `catch2` and `doctest` the first, second and third captures are the version number's major, minor and patch values.
+For example:
+
+- `Catch v2.11.1` + `/Catch v(\d+)\.(\d+)\.(\d+)\s?/` -> `[2, 11, 1]`
 
 ## testGrouping
 
