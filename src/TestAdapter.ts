@@ -258,14 +258,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           throw Error(msg);
         }
 
-        const resolvedTask = new vscode.Task(
-          found.definition,
-          vscode.TaskScope.Workspace,
-          resolveVariables(found.name, varToValue),
-          found.source,
-          resolveVariables(found.execution, varToValue),
-          found.problemMatchers,
-        );
+        const resolvedTask = resolveVariables(found, varToValue);
+        // Task.name setter needs to be triggered in order for the task to clear its __id field
+        // (https://github.com/microsoft/vscode/blob/ba33738bb3db01e37e3addcdf776c5a68d64671c/src/vs/workbench/api/common/extHostTypes.ts#L1976),
+        // otherwise task execution fails with "Task not found".
+        resolvedTask.name += '';
 
         //TODO cancellation and timeout
         if (cancellationToken.isCancellationRequested) return;
