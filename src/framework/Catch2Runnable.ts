@@ -492,7 +492,7 @@ export class Catch2Runnable extends AbstractRunnable {
                   this._shared.log.error('parsing and processing test', e, testCaseXml);
                 }
               }
-              events.length && this._shared.sendTestEventEmitter.fire(events);
+              events.length && this._shared.sendTestEvents(events);
             },
             (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.

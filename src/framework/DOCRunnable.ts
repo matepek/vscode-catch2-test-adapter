@@ -431,7 +431,7 @@ export class DOCRunnable extends AbstractRunnable {
                 }
               }
 
-              events.length && this._shared.sendTestEventEmitter.fire(events);
+              events.length && this._shared.sendTestEvents(events);
             },
             (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.

@@ -432,7 +432,7 @@ export class GoogleRunnable extends AbstractRunnable {
                   this._shared.log.error('parsing and processing test', e, testCase);
                 }
               }
-              events.length && this._shared.sendTestEventEmitter.fire(events);
+              events.length && this._shared.sendTestEvents(events);
             },
             (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.

@@ -299,7 +299,7 @@ export abstract class AbstractRunnable {
         }
       })();
 
-      this._shared.sendTestEventEmitter.fire([test.staticEvent!]);
+      this._shared.sendTestEvents([test.staticEvent!]);
 
       return test;
     };

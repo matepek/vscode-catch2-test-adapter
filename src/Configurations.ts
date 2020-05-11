@@ -466,7 +466,10 @@ export class Configurations {
     return this._getNewOrOldOrDefAndMigrate<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  public async getExecutables(shared: SharedVariables, variableToValue: ResolveRule[]): Promise<ExecutableConfig[]> {
+  public async getExecutables(
+    shared: SharedVariables,
+    variableToValue: readonly Readonly<ResolveRule>[],
+  ): Promise<ExecutableConfig[]> {
     type ExecOldType = null | string | string[] | ExecutableObj | (ExecutableObj | string)[];
 
     const oldVals = this._old.inspect<ExecOldType>('executables');
