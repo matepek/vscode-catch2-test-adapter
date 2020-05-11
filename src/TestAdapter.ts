@@ -1,4 +1,3 @@
-import { inspect } from 'util';
 import { sep as osPathSeparator } from 'path';
 import * as vscode from 'vscode';
 import {
@@ -11,7 +10,6 @@ import {
   RetireEvent,
 } from 'vscode-test-adapter-api';
 import * as api from 'vscode-test-adapter-api';
-import debounce = require('debounce-collect');
 import * as Sentry from '@sentry/node';
 
 import { LoggerWrapper } from './LoggerWrapper';
@@ -34,26 +32,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
   >();
   private readonly _retireEmitter = new vscode.EventEmitter<RetireEvent>();
-
-  private readonly _variableToValue: ResolveRule[] = [
-    { resolve: '${workspaceName}', rule: this.workspaceFolder.name }, // beware changing this line or the order
-    { resolve: '${workspaceDirectory}', rule: this.workspaceFolder.uri.fsPath },
-    { resolve: '${workspaceFolder}', rule: this.workspaceFolder.uri.fsPath },
-    { resolve: '${osPathSep}', rule: osPathSeparator },
-    { resolve: '${osPathEnvSep}', rule: process.platform === 'win32' ? ';' : ':' },
-    { resolve: '${osEnvSep}', rule: process.platform === 'win32' ? ';' : ':' }, // deprecated
-    {
-      resolve: /\$\{if\(isWin\)\}(.*)\$\{else\}(.*)\$\{endif\}/,
-      rule: (m: RegExpMatchArray): string => (process.platform === 'win32' ? m[1] : m[2]),
-    },
-  ];
-
-  // because we always want to return with the current rootSuite suite
-  private readonly _loadWithTaskEmitter = new vscode.EventEmitter<() => void | PromiseLike<void>>();
-
-  private readonly _sendTestEventEmitter = new vscode.EventEmitter<TestEvent[]>();
-
-  private readonly _sendRetireEmitter = new vscode.EventEmitter<readonly AbstractTest[]>();
 
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
@@ -155,93 +133,41 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._log.exceptionS(e);
     }
 
-    this._disposables.push(
-      vscode.workspace.onDidChangeWorkspaceFolders(() => {
-        this._variableToValue[0].rule = this.workspaceFolder.name;
-      }),
-    );
-
     this._disposables.push(this._testsEmitter);
     this._disposables.push(this._testStatesEmitter);
 
-    this._disposables.push(this._sendRetireEmitter);
-    {
-      const unique = new Set<AbstractTest>();
+    // TODO remove debounce config and package
+    const sendRetireEvent = (tests: readonly AbstractTest[]): void => {
+      this._retireEmitter.fire({ tests: tests.map(t => t.id) });
+    };
 
-      const retire = (aggregatedArgs: [readonly AbstractTest[]][]): void => {
-        const isScheduled = unique.size > 0;
-        aggregatedArgs.forEach(args => args[0].forEach(test => unique.add(test)));
+    const sendTestStateEvents = (testEvents: TestEvent[]): void => {
+      this._mainTaskQueue.then(() => {
+        if (testEvents.length > 0) {
+          this._rootSuite.sendStartEventIfNeeded(
+            testEvents.filter(v => v.type == 'test').map(v => (typeof v.test === 'string' ? v.test : v.test.id)),
+          );
 
-        if (!isScheduled)
-          this._mainTaskQueue.then(() => {
-            if (unique.size > 0) {
-              this._retireEmitter.fire({ tests: [...unique].map(t => t.id) });
-              unique.clear();
+          for (let i = 0; i < testEvents.length; ++i) {
+            const test = this._rootSuite.findTestById(testEvents[i].test);
+
+            if (test) {
+              const route = [...test.route()];
+              reverse(route)(v => v.sendRunningEventIfNeeded());
+
+              this._testStatesEmitter.fire(test.getStartEvent());
+              this._testStatesEmitter.fire(testEvents[i]);
+
+              route.forEach(v => v.sendCompletedEventIfNeeded());
+            } else {
+              this._log.error('sendTestEventEmitter.event', testEvents[i], this._rootSuite);
             }
-          });
-      };
-
-      this._disposables.push(this._sendRetireEmitter.event(debounce(retire, configuration.getRetireDebounceTime())));
-    }
-
-    this._disposables.push(this._loadWithTaskEmitter);
-    this._disposables.push(
-      this._loadWithTaskEmitter.event((task: () => void | PromiseLike<void>) => {
-        this._mainTaskQueue.then(() => {
-          this._testsEmitter.fire({ type: 'started' });
-          return Promise.resolve()
-            .then(task)
-            .then(
-              () => {
-                this._testsEmitter.fire({
-                  type: 'finished',
-                  suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
-                });
-              },
-              (reason: Error) => {
-                this._log.exceptionS(reason);
-                debugger;
-                this._testsEmitter.fire({
-                  type: 'finished',
-                  errorMessage: inspect(reason),
-                  suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
-                });
-              },
-            );
-        });
-      }),
-    );
-
-    this._disposables.push(this._sendTestEventEmitter);
-    this._disposables.push(
-      this._sendTestEventEmitter.event((testEvents: TestEvent[]) => {
-        this._mainTaskQueue.then(() => {
-          if (testEvents.length > 0) {
-            this._rootSuite.sendStartEventIfNeeded(
-              testEvents.filter(v => v.type == 'test').map(v => (typeof v.test === 'string' ? v.test : v.test.id)),
-            );
-
-            for (let i = 0; i < testEvents.length; ++i) {
-              const test = this._rootSuite.findTestById(testEvents[i].test);
-
-              if (test) {
-                const route = [...test.route()];
-                reverse(route)(v => v.sendRunningEventIfNeeded());
-
-                this._testStatesEmitter.fire(test.getStartEvent());
-                this._testStatesEmitter.fire(testEvents[i]);
-
-                route.forEach(v => v.sendCompletedEventIfNeeded());
-              } else {
-                this._log.error('sendTestEventEmitter.event', testEvents[i], this._rootSuite);
-              }
-            }
-
-            this._rootSuite.sendFinishedEventIfNeeded();
           }
-        });
-      }),
-    );
+
+          this._rootSuite.sendFinishedEventIfNeeded();
+        }
+      });
+    };
 
     const executeTaskQueue = new TaskQueue();
     const executeTask = (
@@ -264,7 +190,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         // otherwise task execution fails with "Task not found".
         resolvedTask.name += '';
 
-        //TODO cancellation and timeout
+        //TODO timeout
         if (cancellationToken.isCancellationRequested) return;
 
         const result = new Promise<number | undefined>(resolve => {
@@ -298,14 +224,47 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
     };
 
+    const loadTask = (task: () => Promise<void>): Promise<void> => {
+      this._rootSuite.sendLoadingEventIfNeeded();
+      return task().then(
+        () => {
+          this._rootSuite.sendLoadingFinishedEventIfNeeded();
+        },
+        (reason: Error) => {
+          this._log.exceptionS(reason);
+          debugger;
+          this._rootSuite.sendLoadingFinishedEventIfNeeded(reason);
+        },
+      );
+    };
+
+    const variableToValue: ResolveRule[] = [
+      { resolve: '${workspaceName}', rule: this.workspaceFolder.name }, // beware changing this line or the order
+      { resolve: '${workspaceDirectory}', rule: this.workspaceFolder.uri.fsPath },
+      { resolve: '${workspaceFolder}', rule: this.workspaceFolder.uri.fsPath },
+      { resolve: '${osPathSep}', rule: osPathSeparator },
+      { resolve: '${osPathEnvSep}', rule: process.platform === 'win32' ? ';' : ':' },
+      { resolve: '${osEnvSep}', rule: process.platform === 'win32' ? ';' : ':' }, // deprecated
+      {
+        resolve: /\$\{if\(isWin\)\}(.*)\$\{else\}(.*)\$\{endif\}/,
+        rule: (m: RegExpMatchArray): string => (process.platform === 'win32' ? m[1] : m[2]),
+      },
+    ];
+
+    this._disposables.push(
+      vscode.workspace.onDidChangeWorkspaceFolders(() => {
+        variableToValue[0].rule = this.workspaceFolder.name;
+      }),
+    );
+
     this._shared = new SharedVariables(
       this._log,
       this.workspaceFolder,
       this._testStatesEmitter,
-      this._loadWithTaskEmitter,
-      this._sendTestEventEmitter,
-      this._sendRetireEmitter,
-      this._variableToValue,
+      loadTask,
+      sendTestStateEvents,
+      sendRetireEvent,
+      variableToValue,
       executeTask,
       configuration.getRandomGeneratorSeed(),
       configuration.getExecWatchTimeout(),
@@ -380,7 +339,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
-    this._rootSuite = new RootSuite(undefined, this._shared);
+    this._rootSuite = new RootSuite(undefined, this._shared, this._testsEmitter);
   }
 
   public dispose(): void {
@@ -421,45 +380,31 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   public load(): Promise<void> {
     this._log.info('load called');
-    this._mainTaskQueue.size > 0 && this.cancel();
+
+    this.cancel();
+    this._rootSuite.dispose();
 
     const configuration = this._getConfiguration();
 
-    this._rootSuite.dispose();
+    this._rootSuite = new RootSuite(this._rootSuite.id, this._shared, this._testsEmitter);
 
-    this._rootSuite = new RootSuite(this._rootSuite.id, this._shared);
+    this._rootSuite.sendLoadingEventIfNeeded();
 
-    return this._mainTaskQueue.then(() => {
-      this._log.info('load started');
+    return configuration
+      .getExecutables(this._shared, this._shared.varToValue)
+      .then(exec => this._rootSuite.load(exec))
+      .then(
+        () => {
+          this._rootSuite.sendLoadingFinishedEventIfNeeded();
+        },
+        (e: Error) => {
+          this._log.exceptionS(e);
 
-      this._testsEmitter.fire({ type: 'started' });
-
-      return configuration
-        .getExecutables(this._shared, this._variableToValue)
-        .then(exec => this._rootSuite.load(exec))
-        .then(
-          () => {
-            this._log.info('load finished', this._rootSuite.children.length);
-
-            this._testsEmitter.fire({
-              type: 'finished',
-              suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
-            });
-          },
-          (e: Error) => {
-            this._log.exceptionS(e);
-
-            this._testsEmitter.fire({
-              type: 'finished',
-              suite: undefined,
-              errorMessage: e instanceof Error ? `${e.name}\n${e.message}` : inspect(e),
-            });
-          },
-        );
-    });
+          this._rootSuite.sendLoadingFinishedEventIfNeeded(e);
+        },
+      );
   }
 
-  // localish: just to connect cancel and run. shouldn't be uset from elsewhere
   private _cancellationTokenSource: vscode.CancellationTokenSource | undefined = undefined;
 
   public cancel(): void {

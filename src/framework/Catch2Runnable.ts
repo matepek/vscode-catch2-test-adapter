@@ -13,6 +13,7 @@ import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
+import { RootSuite } from '../RootSuite';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -21,7 +22,7 @@ interface XmlObject {
 export class Catch2Runnable extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
-    rootSuite: Suite,
+    rootSuite: RootSuite,
     execInfo: RunnableSuiteProperties,
     private readonly _catch2Version: Version | undefined,
   ) {
@@ -456,11 +457,7 @@ export class Catch2Runnable extends AbstractRunnable {
           data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
-          new Promise<void>((resolve, reject) => {
-            this._shared.loadWithTaskEmitter.fire(() => {
-              return this.reloadTests(this._shared.taskPool).then(resolve, reject);
-            });
-          }).then(
+          this.reloadTests(this._shared.taskPool).then(
             () => {
               // we have test results for the newly detected tests
               // after reload we can set the results
@@ -496,7 +493,7 @@ export class Catch2Runnable extends AbstractRunnable {
                   this._shared.log.error('parsing and processing test', e, testCaseXml);
                 }
               }
-              events.length && this._shared.sendTestEventEmitter.fire(events);
+              events.length && this._shared.sendTestEvents(events);
             },
             (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.

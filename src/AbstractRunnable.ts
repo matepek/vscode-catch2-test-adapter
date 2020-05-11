@@ -18,6 +18,7 @@ import {
 } from './util/ResolveRule';
 import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
 import { TestEvent } from 'vscode-test-adapter-api';
+import { RootSuite } from './RootSuite';
 
 export class RunnableReloadResult {
   public tests: AbstractTest[] = [];
@@ -38,7 +39,7 @@ export abstract class AbstractRunnable {
 
   public constructor(
     protected readonly _shared: SharedVariables,
-    protected readonly _rootSuite: Suite,
+    protected readonly _rootSuite: RootSuite,
     public readonly properties: RunnableSuiteProperties,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<Version | undefined>,
@@ -308,7 +309,7 @@ export abstract class AbstractRunnable {
         }
       })();
 
-      this._shared.sendTestEventEmitter.fire([test.staticEvent!]);
+      this._shared.sendTestEvents([test.staticEvent!]);
 
       return test;
     };
@@ -348,12 +349,6 @@ export abstract class AbstractRunnable {
       stat => stat.mtimeMs,
       () => undefined,
     );
-  }
-
-  private async _isOutDated(): Promise<boolean> {
-    const lastModiTime = await this._getModiTime();
-
-    return this._lastReloadTime !== undefined && lastModiTime !== undefined && this._lastReloadTime !== lastModiTime;
   }
 
   private _splitTestSetForMultirun(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
@@ -415,12 +410,14 @@ export abstract class AbstractRunnable {
         return this._reloadChildren().then((reloadResult: RunnableReloadResult) => {
           const toRemove = this._tests.filter(t => reloadResult.tests.indexOf(t) === -1);
           if (toRemove.length > 0 || reloadResult.changedAny) {
-            //TODO event
+            this._rootSuite.sendLoadingEventIfNeeded();
+
             toRemove.forEach(t => {
               t.removeWithLeafAscendants();
               this._tests.splice(this._tests.indexOf(t), 1);
             });
-            //TODO end event
+
+            this._rootSuite.sendLoadingFinishedEventIfNeeded();
           }
         });
       } else {
@@ -430,13 +427,20 @@ export abstract class AbstractRunnable {
   }
 
   public async run(
-    childrenToRun: readonly AbstractTest[],
+    tests: readonly string[],
+    isParentIn: boolean,
     taskPool: TaskPool,
     cancellationToken: CancellationToken,
   ): Promise<void> {
-    if (childrenToRun.length === 0) {
-      return Promise.resolve();
-    }
+    await this.reloadTests(taskPool);
+
+    const childrenToRun: readonly AbstractTest[] = this._rootSuite.collectTestToRun(
+      tests,
+      isParentIn,
+      (test: AbstractTest): boolean => test.runnable === this,
+    );
+
+    if (childrenToRun.length === 0) return;
 
     const buckets =
       this.properties.parallelizationPool.maxTaskCount > 1
@@ -468,17 +472,7 @@ export abstract class AbstractRunnable {
         const smallerTestSet = this._splitTestsToSmallEnoughSubsets(bucket);
         for (const testSet of smallerTestSet) await this._runInner(testSet, taskPool, cancellationToken);
       }),
-    )
-      .finally(() => {
-        // last resort: if no fswatcher are functioning, this might notice the change
-        this._isOutDated().then(
-          (isOutDated: boolean) => {
-            if (isOutDated) this._shared.loadWithTaskEmitter.fire(() => this.reloadTests(this._shared.taskPool));
-          },
-          err => this._shared.log.exceptionS(err),
-        );
-      })
-      .then();
+    ).then();
   }
 
   public async runTaskbeforeEach(taskPool: TaskPool, cancellationToken: CancellationToken): Promise<void> {
@@ -486,6 +480,7 @@ export abstract class AbstractRunnable {
       try {
         // sequential execution of tasks
         for (const taskName of this.properties.runTask.beforeEach) {
+          // task execution is sequentioal currently so we dont nee the taskPool
           const exitCode = await this._shared.executeTask(taskName, this.properties.varToValue, cancellationToken);
 
           if (exitCode !== undefined) {

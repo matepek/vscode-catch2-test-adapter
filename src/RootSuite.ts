@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TestInfo, TestEvent } from 'vscode-test-adapter-api';
+import { TestInfo, TestEvent, TestLoadStartedEvent, TestLoadFinishedEvent } from 'vscode-test-adapter-api';
 import { ExecutableConfig } from './ExecutableConfig';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
@@ -7,11 +7,16 @@ import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
 import { CancellationToken } from './Util';
 import { ResolveRule } from './util/ResolveRule';
+import { inspect } from 'util';
 
 export class RootSuite extends Suite implements vscode.Disposable {
   private _executables: ExecutableConfig[] = [];
 
-  public constructor(id: string | undefined, shared: SharedVariables) {
+  public constructor(
+    id: string | undefined,
+    shared: SharedVariables,
+    private readonly _testsEmitter: vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>,
+  ) {
     super(shared, undefined, 'C++ TestMate', '', '', id);
   }
 
@@ -62,6 +67,38 @@ export class RootSuite extends Suite implements vscode.Disposable {
     }
   }
 
+  private _testLoadingCounter = 0;
+
+  public sendLoadingEventIfNeeded(): void {
+    if (this._testLoadingCounter++ === 0) {
+      this._shared.log.info('load started');
+      this._testsEmitter.fire({ type: 'started' });
+    }
+  }
+
+  // eslint-disable-next-line
+  public sendLoadingFinishedEventIfNeeded(err?: any): void {
+    if (this._testLoadingCounter < 1) {
+      this._shared.log.error('loading counter is too low');
+      this._testLoadingCounter = 0;
+      return;
+    }
+    if (this._testLoadingCounter-- === 1) {
+      this._shared.log.info('load finished', this.children.length);
+      if (err) {
+        this._testsEmitter.fire({
+          type: 'finished',
+          errorMessage: err instanceof Error ? `${err.name}\n${err.message}` : inspect(err),
+        });
+      } else {
+        this._testsEmitter.fire({
+          type: 'finished',
+          suite: this.children.length > 0 ? this : undefined,
+        });
+      }
+    }
+  }
+
   public async runTaskBefore(
     runnables: Map<AbstractRunnable, Readonly<AbstractTest>[]>,
     cancellationToken: vscode.CancellationToken,
@@ -98,22 +135,25 @@ export class RootSuite extends Suite implements vscode.Disposable {
     }
   }
 
-  public async run(tests: string[], cancellationToken: CancellationToken): Promise<void> {
-    this.sendStartEventIfNeeded(tests);
-
-    const isParentIn = tests.indexOf(this.id) !== -1;
-
-    const childrenToRun = this.collectTestToRun(tests, isParentIn);
-
-    const runnables = childrenToRun.reduce((prev, curr) => {
+  private _collectRunnables(tests: string[], isParentIn: boolean): Map<AbstractRunnable, AbstractTest[]> {
+    return this.collectTestToRun(tests, isParentIn).reduce((prev, curr) => {
       const arr = prev.get(curr.runnable);
       if (arr) arr.push(curr);
       else prev.set(curr.runnable, [curr]);
       return prev;
     }, new Map<AbstractRunnable, AbstractTest[]>());
+  }
+
+  public async run(tests: string[], cancellationToken: CancellationToken): Promise<void> {
+    this.sendStartEventIfNeeded(tests);
+
+    const isParentIn = tests.indexOf(this.id) !== -1;
+
+    let runnables = this._collectRunnables(tests, isParentIn);
 
     try {
       await this.runTaskBefore(runnables, cancellationToken);
+      runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
     } catch (e) {
       const ev: TestEvent = {
         type: 'test',
@@ -132,9 +172,9 @@ export class RootSuite extends Suite implements vscode.Disposable {
 
     const ps: Promise<void>[] = [];
 
-    for (const [runnable, runnableTests] of runnables) {
+    for (const [runnable] of runnables) {
       ps.push(
-        runnable.run(runnableTests, this._shared.taskPool, cancellationToken).catch(err => {
+        runnable.run(tests, isParentIn, this._shared.taskPool, cancellationToken).catch(err => {
           this._shared.log.error('RootTestSuite.run.for.child', runnable.properties.path, err);
         }),
       );

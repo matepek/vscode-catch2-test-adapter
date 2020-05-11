@@ -15,8 +15,8 @@ function _mapAllStrings<T>(value: T, parent: any, mapperFunc: (s: string, parent
     }
     return (newValue as unknown) as T;
   } else if (typeof value === 'object') {
-    // eslint-disable-next-line
     const newValue: T = Object.create(Object.getPrototypeOf(value));
+    Object.defineProperties(newValue, Object.getOwnPropertyDescriptors(value));
     for (const prop in value) {
       const res = _mapAllStrings(value[prop], newValue, mapperFunc);
       if (res !== undefined) newValue[prop] = res;

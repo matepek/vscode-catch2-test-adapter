@@ -240,11 +240,15 @@ export class Suite implements TestSuiteInfo {
   }
 
   /** If the return value is not empty then we should run the parent */
-  public collectTestToRun(tests: readonly string[], isParentIn: boolean): AbstractTest[] {
+  public collectTestToRun(
+    tests: readonly string[],
+    isParentIn: boolean,
+    filter: (test: AbstractTest) => boolean = (): boolean => true,
+  ): AbstractTest[] {
     const isCurrParentIn = isParentIn || tests.indexOf(this.id) != -1;
 
     return this.children
-      .map(v => v.collectTestToRun(tests, isCurrParentIn))
+      .map(v => v.collectTestToRun(tests, isCurrParentIn, filter))
       .reduce((prev: AbstractTest[], curr: AbstractTest[]) => prev.concat(...curr), []);
   }
 

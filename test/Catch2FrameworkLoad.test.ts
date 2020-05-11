@@ -1594,7 +1594,7 @@ describe(path.basename(__filename), function () {
         if (isWin) assert.equal(withArgs.firstCall.args[2].env!.C2ENVVARS2, 'X' + process.env['PATH'] + 'X');
         else assert.equal(withArgs.firstCall.args[2].env!.C2ENVVARS2, 'XX');
 
-        assert.strictEqual(withArgs.firstCall.args[2].env!.C2ENVVARS3, undefined);
+        assert.strictEqual(withArgs.firstCall.args[2].env!.C2ENVVARS3, 'X${os_env_strict:NOT_EXISTING}X');
       }
       {
         const withArgs = imitation.spawnStub.withArgs(
