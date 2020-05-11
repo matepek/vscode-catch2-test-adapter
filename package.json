@@ -35,7 +35,7 @@
     "doctest",
     "onqtam"
   ],
-  "main": "out/dist/main.js",
+  "main": "out/src/main.js",
   "scripts": {
     "reinstall": "rimraf node_modules package-lock.json && npm install",
     "clean": "rimraf out node_modules vscode-catch2-test-adapter-*.vsix",

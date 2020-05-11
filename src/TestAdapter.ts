@@ -11,7 +11,6 @@ import {
   RetireEvent,
 } from 'vscode-test-adapter-api';
 import * as api from 'vscode-test-adapter-api';
-import debounce = require('debounce-collect');
 import * as Sentry from '@sentry/node';
 
 import { LoggerWrapper } from './LoggerWrapper';
@@ -165,50 +164,26 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._disposables.push(this._testStatesEmitter);
 
     this._disposables.push(this._sendRetireEmitter);
-    {
-      const unique = new Set<AbstractTest>();
 
-      const retire = (aggregatedArgs: [readonly AbstractTest[]][]): void => {
-        const isScheduled = unique.size > 0;
-        aggregatedArgs.forEach(args => args[0].forEach(test => unique.add(test)));
-
-        if (!isScheduled)
-          this._mainTaskQueue.then(() => {
-            if (unique.size > 0) {
-              this._retireEmitter.fire({ tests: [...unique].map(t => t.id) });
-              unique.clear();
-            }
-          });
-      };
-
-      this._disposables.push(this._sendRetireEmitter.event(debounce(retire, configuration.getRetireDebounceTime())));
-    }
+    // TODO remove debounce config and package
+    this._disposables.push(this._sendRetireEmitter.event(ts => this._retireEmitter.fire({ tests: ts.map(t => t.id) })));
 
     this._disposables.push(this._loadWithTaskEmitter);
     this._disposables.push(
       this._loadWithTaskEmitter.event((task: () => void | PromiseLike<void>) => {
-        this._mainTaskQueue.then(() => {
-          this._testsEmitter.fire({ type: 'started' });
-          return Promise.resolve()
-            .then(task)
-            .then(
-              () => {
-                this._testsEmitter.fire({
-                  type: 'finished',
-                  suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
-                });
-              },
-              (reason: Error) => {
-                this._log.exceptionS(reason);
-                debugger;
-                this._testsEmitter.fire({
-                  type: 'finished',
-                  errorMessage: inspect(reason),
-                  suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
-                });
-              },
-            );
-        });
+        this._sendLoadingEventIfNeeded();
+        return Promise.resolve()
+          .then(task)
+          .then(
+            () => {
+              this._sendLoadingFinishedEventIfNeeded();
+            },
+            (reason: Error) => {
+              this._log.exceptionS(reason);
+              debugger;
+              this._sendLoadingFinishedEventIfNeeded(reason);
+            },
+          );
       }),
     );
 
@@ -264,7 +239,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         // otherwise task execution fails with "Task not found".
         resolvedTask.name += '';
 
-        //TODO cancellation and timeout
+        //TODO timeout
         if (cancellationToken.isCancellationRequested) return;
 
         const result = new Promise<number | undefined>(resolve => {
@@ -383,6 +358,38 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._rootSuite = new RootSuite(undefined, this._shared);
   }
 
+  private _testLoadingCounter = 0;
+
+  private _sendLoadingEventIfNeeded(): void {
+    if (this._testLoadingCounter++ === 0) {
+      this._log.info('load started');
+      this._testsEmitter.fire({ type: 'started' });
+    }
+  }
+
+  // eslint-disable-next-line
+  private _sendLoadingFinishedEventIfNeeded(err?: any): void {
+    if (this._testLoadingCounter < 1) {
+      this._shared.log.error('loading counter is too low');
+      this._testLoadingCounter = 0;
+      return;
+    }
+    if (this._testLoadingCounter-- === 1) {
+      this._log.info('load finished', this._rootSuite.children.length);
+      if (err) {
+        this._testsEmitter.fire({
+          type: 'finished',
+          errorMessage: err instanceof Error ? `${err.name}\n${err.message}` : inspect(err),
+        });
+      } else {
+        this._testsEmitter.fire({
+          type: 'finished',
+          suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
+        });
+      }
+    }
+  }
+
   public dispose(): void {
     this._log.info('dispose', this.workspaceFolder);
 
@@ -421,45 +428,31 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
   public load(): Promise<void> {
     this._log.info('load called');
-    this._mainTaskQueue.size > 0 && this.cancel();
+
+    this.cancel();
+    this._rootSuite.dispose();
 
     const configuration = this._getConfiguration();
 
-    this._rootSuite.dispose();
-
     this._rootSuite = new RootSuite(this._rootSuite.id, this._shared);
 
-    return this._mainTaskQueue.then(() => {
-      this._log.info('load started');
+    this._sendLoadingEventIfNeeded();
 
-      this._testsEmitter.fire({ type: 'started' });
+    return configuration
+      .getExecutables(this._shared, this._variableToValue)
+      .then(exec => this._rootSuite.load(exec))
+      .then(
+        () => {
+          this._sendLoadingFinishedEventIfNeeded();
+        },
+        (e: Error) => {
+          this._log.exceptionS(e);
 
-      return configuration
-        .getExecutables(this._shared, this._variableToValue)
-        .then(exec => this._rootSuite.load(exec))
-        .then(
-          () => {
-            this._log.info('load finished', this._rootSuite.children.length);
-
-            this._testsEmitter.fire({
-              type: 'finished',
-              suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
-            });
-          },
-          (e: Error) => {
-            this._log.exceptionS(e);
-
-            this._testsEmitter.fire({
-              type: 'finished',
-              suite: undefined,
-              errorMessage: e instanceof Error ? `${e.name}\n${e.message}` : inspect(e),
-            });
-          },
-        );
-    });
+          this._sendLoadingFinishedEventIfNeeded(e);
+        },
+      );
   }
 
-  // localish: just to connect cancel and run. shouldn't be uset from elsewhere
   private _cancellationTokenSource: vscode.CancellationTokenSource | undefined = undefined;
 
   public cancel(): void {

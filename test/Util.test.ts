@@ -60,7 +60,7 @@ describe(path.basename(__filename), function () {
     assert.deepStrictEqual(resolveVariables(['func1'], varsToResolve), ['resolvedFunc1']);
 
     assert.deepStrictEqual(resolveVariables({ x: null }, varsToResolve), { x: null });
-    assert.deepStrictEqual(resolveVariables({ x: undefined }, varsToResolve), {});
+    assert.deepStrictEqual(resolveVariables({ x: undefined }, varsToResolve), { x: undefined });
     assert.deepStrictEqual(resolveVariables({ x: '' }, varsToResolve), { x: '' });
     assert.deepStrictEqual(resolveVariables({ x: 1 }, varsToResolve), { x: 1 });
     assert.deepStrictEqual(resolveVariables({ x: 1.0 }, varsToResolve), { x: 1.0 });
@@ -91,6 +91,8 @@ describe(path.basename(__filename), function () {
     const expected = {
       a: null,
       b: null,
+      c: undefined,
+      d: 'undefined1',
       e: '',
       f: 'resolvedString1',
       g: 1,

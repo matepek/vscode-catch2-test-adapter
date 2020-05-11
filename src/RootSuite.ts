@@ -65,7 +65,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
   public async runTaskBefore(
     runnables: Map<AbstractRunnable, Readonly<AbstractTest>[]>,
     cancellationToken: vscode.CancellationToken,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const runTask = new Set<string>();
     const runnableExecArray: string[] = [];
 
@@ -74,7 +74,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
       runnableExecArray.push(runnable.properties.path);
     }
 
-    if (runTask.size === 0) return;
+    if (runTask.size === 0) return false;
 
     const varToValue: ResolveRule[] = [
       ...this._shared.varToValue,
@@ -93,27 +93,35 @@ export class RootSuite extends Suite implements vscode.Disposable {
           }
         }
       }
+
+      return true;
     } catch (e) {
       return Promise.reject(Error('One of tasks of the `testMate.test.runTask` array has failed: ' + e));
     }
   }
 
-  public async run(tests: string[], cancellationToken: CancellationToken): Promise<void> {
-    this.sendStartEventIfNeeded(tests);
-
+  private _collectRunnables(tests: string[]): Map<AbstractRunnable, AbstractTest[]> {
     const isParentIn = tests.indexOf(this.id) !== -1;
 
-    const childrenToRun = this.collectTestToRun(tests, isParentIn);
-
-    const runnables = childrenToRun.reduce((prev, curr) => {
+    return this.collectTestToRun(tests, isParentIn).reduce((prev, curr) => {
       const arr = prev.get(curr.runnable);
       if (arr) arr.push(curr);
       else prev.set(curr.runnable, [curr]);
       return prev;
     }, new Map<AbstractRunnable, AbstractTest[]>());
+  }
+
+  public async run(tests: string[], cancellationToken: CancellationToken): Promise<void> {
+    this.sendStartEventIfNeeded(tests);
+
+    const runnables = this._collectRunnables(tests);
 
     try {
       await this.runTaskBefore(runnables, cancellationToken);
+      // TODO check if executables are modified and reload them if necessary
+      // actually that could be done anyway
+      // and runnables cound decide that they need that test or not
+      // if (wasRun) ...
     } catch (e) {
       const ev: TestEvent = {
         type: 'test',
