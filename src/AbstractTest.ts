@@ -200,9 +200,14 @@ export abstract class AbstractTest implements TestInfo {
     return pred(this) ? this : undefined;
   }
 
-  public collectTestToRun(tests: readonly string[], isParentIn: boolean): AbstractTest[] {
+  public collectTestToRun(
+    tests: readonly string[],
+    isParentIn: boolean,
+    filter: (test: AbstractTest) => boolean = (): boolean => true,
+  ): AbstractTest[] {
     if ((isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1) {
-      return [this];
+      if (filter(this)) return [this];
+      else return [];
     } else {
       return [];
     }

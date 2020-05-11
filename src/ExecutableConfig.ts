@@ -16,7 +16,6 @@ import { RunnableSuiteFactory } from './RunnableSuiteFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
 import { TestGrouping } from './TestGroupingInterface';
-import { Suite } from './Suite';
 import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
 
@@ -280,7 +279,7 @@ export class ExecutableConfig implements vscode.Disposable {
     };
   }
 
-  private _createSuiteByUri(filePath: string, rootSuite: Suite): RunnableSuiteFactory {
+  private _createSuiteByUri(filePath: string, rootSuite: RootSuite): RunnableSuiteFactory {
     const relPath = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
     let varToValue: ResolveRule[] = [];
@@ -406,16 +405,14 @@ export class ExecutableConfig implements vscode.Disposable {
       }
     } else if (isFileExistsAndExecutable) {
       return new Promise<void>((resolve, reject) => {
-        this._shared.loadWithTaskEmitter.fire(() => {
-          return runnable
-            .reloadTests(this._shared.taskPool)
-            .then(() => {
-              this._runnables.set(filePath, runnable); // it might be set already but we don't care
-              this._lastEventArrivedAt.delete(filePath);
-              this._shared.retire.fire(runnable.tests);
-            })
-            .then(resolve, reject);
-        });
+        return runnable
+          .reloadTests(this._shared.taskPool)
+          .then(() => {
+            this._runnables.set(filePath, runnable); // it might be set already but we don't care
+            this._lastEventArrivedAt.delete(filePath);
+            this._shared.retire.fire(runnable.tests);
+          })
+          .then(resolve, reject);
       }).catch((reason: Error & { code: undefined | number }) => {
         if (reason.code === undefined) {
           this._shared.log.debug('reason', reason);

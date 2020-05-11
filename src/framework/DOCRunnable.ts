@@ -13,6 +13,7 @@ import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
+import { RootSuite } from '../RootSuite';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -21,7 +22,7 @@ interface XmlObject {
 export class DOCRunnable extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
-    rootSuite: Suite,
+    rootSuite: RootSuite,
     execInfo: RunnableSuiteProperties,
     docVersion: Version | undefined,
   ) {
@@ -392,11 +393,7 @@ export class DOCRunnable extends AbstractRunnable {
           data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
-          new Promise<void>((resolve, reject) => {
-            this._shared.loadWithTaskEmitter.fire(() => {
-              return this.reloadTests(this._shared.taskPool).then(resolve, reject);
-            });
-          }).then(
+          this.reloadTests(this._shared.taskPool).then(
             () => {
               // we have test results for the newly detected tests
               // after reload we can set the results

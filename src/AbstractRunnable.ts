@@ -18,6 +18,7 @@ import {
 } from './util/ResolveRule';
 import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
 import { TestEvent } from 'vscode-test-adapter-api';
+import { RootSuite } from './RootSuite';
 
 export abstract class AbstractRunnable {
   private static _reportedFrameworks: string[] = [];
@@ -27,7 +28,7 @@ export abstract class AbstractRunnable {
 
   public constructor(
     protected readonly _shared: SharedVariables,
-    protected readonly _rootSuite: Suite,
+    protected readonly _rootSuite: RootSuite,
     public readonly properties: RunnableSuiteProperties,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<Version | undefined>,
@@ -400,7 +401,13 @@ export abstract class AbstractRunnable {
         this._lastReloadTime = lastModiTime;
         const oldTests = this._tests;
         this._tests = [];
-        return this._reloadChildren().finally(() => oldTests.forEach(t => t.removeWithLeafAscendants()));
+        this._rootSuite.sendLoadingEventIfNeeded();
+        return this._reloadChildren()
+          .finally(() => oldTests.forEach(t => t.removeWithLeafAscendants()))
+          .then(
+            () => this._rootSuite.sendLoadingFinishedEventIfNeeded(),
+            e => this._rootSuite.sendLoadingFinishedEventIfNeeded(e),
+          );
       } else {
         this._shared.log.debug('reloadTests was skipped due to mtime', this.properties.path);
       }
@@ -408,13 +415,20 @@ export abstract class AbstractRunnable {
   }
 
   public async run(
-    childrenToRun: readonly AbstractTest[],
+    tests: readonly string[],
+    isParentIn: boolean,
     taskPool: TaskPool,
     cancellationToken: CancellationToken,
   ): Promise<void> {
-    if (childrenToRun.length === 0) {
-      return Promise.resolve();
-    }
+    await this.reloadTests(taskPool);
+
+    const childrenToRun: readonly AbstractTest[] = this._rootSuite.collectTestToRun(
+      tests,
+      isParentIn,
+      (test: AbstractTest): boolean => test.runnable === this,
+    );
+
+    if (childrenToRun.length === 0) return;
 
     const buckets =
       this.properties.parallelizationPool.maxTaskCount > 1
@@ -451,7 +465,7 @@ export abstract class AbstractRunnable {
         // last resort: if no fswatcher are functioning, this might notice the change
         this._isOutDated().then(
           (isOutDated: boolean) => {
-            if (isOutDated) this._shared.loadWithTaskEmitter.fire(() => this.reloadTests(this._shared.taskPool));
+            if (isOutDated) this.reloadTests(this._shared.taskPool);
           },
           err => this._shared.log.exceptionS(err),
         );

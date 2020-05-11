@@ -13,13 +13,14 @@ import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
+import { RootSuite } from '../RootSuite';
 
 export class GoogleRunnable extends AbstractRunnable {
   public children: Suite[] = [];
 
   public constructor(
     shared: SharedVariables,
-    rootSuite: Suite,
+    rootSuite: RootSuite,
     execInfo: RunnableSuiteProperties,
     private readonly _argumentPrefix: string,
     version: Promise<Version | undefined>,
@@ -407,11 +408,7 @@ export class GoogleRunnable extends AbstractRunnable {
           data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedTestCases.length > 0 || isTestRemoved) {
-          new Promise<void>((resolve, reject) => {
-            this._shared.loadWithTaskEmitter.fire(() => {
-              return this.reloadTests(this._shared.taskPool).then(resolve, reject);
-            });
-          }).then(
+          this.reloadTests(this._shared.taskPool).then(
             () => {
               // we have test results for the newly detected tests
               // after reload we can set the results

@@ -1,4 +1,3 @@
-import { inspect } from 'util';
 import { sep as osPathSeparator } from 'path';
 import * as vscode from 'vscode';
 import {
@@ -171,17 +170,17 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._disposables.push(this._loadWithTaskEmitter);
     this._disposables.push(
       this._loadWithTaskEmitter.event((task: () => void | PromiseLike<void>) => {
-        this._sendLoadingEventIfNeeded();
+        this._rootSuite.sendLoadingEventIfNeeded();
         return Promise.resolve()
           .then(task)
           .then(
             () => {
-              this._sendLoadingFinishedEventIfNeeded();
+              this._rootSuite.sendLoadingFinishedEventIfNeeded();
             },
             (reason: Error) => {
               this._log.exceptionS(reason);
               debugger;
-              this._sendLoadingFinishedEventIfNeeded(reason);
+              this._rootSuite.sendLoadingFinishedEventIfNeeded(reason);
             },
           );
       }),
@@ -355,39 +354,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
-    this._rootSuite = new RootSuite(undefined, this._shared);
-  }
-
-  private _testLoadingCounter = 0;
-
-  private _sendLoadingEventIfNeeded(): void {
-    if (this._testLoadingCounter++ === 0) {
-      this._log.info('load started');
-      this._testsEmitter.fire({ type: 'started' });
-    }
-  }
-
-  // eslint-disable-next-line
-  private _sendLoadingFinishedEventIfNeeded(err?: any): void {
-    if (this._testLoadingCounter < 1) {
-      this._shared.log.error('loading counter is too low');
-      this._testLoadingCounter = 0;
-      return;
-    }
-    if (this._testLoadingCounter-- === 1) {
-      this._log.info('load finished', this._rootSuite.children.length);
-      if (err) {
-        this._testsEmitter.fire({
-          type: 'finished',
-          errorMessage: err instanceof Error ? `${err.name}\n${err.message}` : inspect(err),
-        });
-      } else {
-        this._testsEmitter.fire({
-          type: 'finished',
-          suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
-        });
-      }
-    }
+    this._rootSuite = new RootSuite(undefined, this._shared, this._testsEmitter);
   }
 
   public dispose(): void {
@@ -434,21 +401,21 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const configuration = this._getConfiguration();
 
-    this._rootSuite = new RootSuite(this._rootSuite.id, this._shared);
+    this._rootSuite = new RootSuite(this._rootSuite.id, this._shared, this._testsEmitter);
 
-    this._sendLoadingEventIfNeeded();
+    this._rootSuite.sendLoadingEventIfNeeded();
 
     return configuration
       .getExecutables(this._shared, this._variableToValue)
       .then(exec => this._rootSuite.load(exec))
       .then(
         () => {
-          this._sendLoadingFinishedEventIfNeeded();
+          this._rootSuite.sendLoadingFinishedEventIfNeeded();
         },
         (e: Error) => {
           this._log.exceptionS(e);
 
-          this._sendLoadingFinishedEventIfNeeded(e);
+          this._rootSuite.sendLoadingFinishedEventIfNeeded(e);
         },
       );
   }

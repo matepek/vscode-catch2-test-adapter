@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TestInfo, TestEvent } from 'vscode-test-adapter-api';
+import { TestInfo, TestEvent, TestLoadStartedEvent, TestLoadFinishedEvent } from 'vscode-test-adapter-api';
 import { ExecutableConfig } from './ExecutableConfig';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
@@ -7,11 +7,16 @@ import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
 import { CancellationToken } from './Util';
 import { ResolveRule } from './util/ResolveRule';
+import { inspect } from 'util';
 
 export class RootSuite extends Suite implements vscode.Disposable {
   private _executables: ExecutableConfig[] = [];
 
-  public constructor(id: string | undefined, shared: SharedVariables) {
+  public constructor(
+    id: string | undefined,
+    shared: SharedVariables,
+    private readonly _testsEmitter: vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>,
+  ) {
     super(shared, undefined, 'C++ TestMate', '', '', id);
   }
 
@@ -62,10 +67,42 @@ export class RootSuite extends Suite implements vscode.Disposable {
     }
   }
 
+  private _testLoadingCounter = 0;
+
+  public sendLoadingEventIfNeeded(): void {
+    if (this._testLoadingCounter++ === 0) {
+      this._shared.log.info('load started');
+      this._testsEmitter.fire({ type: 'started' });
+    }
+  }
+
+  // eslint-disable-next-line
+  public sendLoadingFinishedEventIfNeeded(err?: any): void {
+    if (this._testLoadingCounter < 1) {
+      this._shared.log.error('loading counter is too low');
+      this._testLoadingCounter = 0;
+      return;
+    }
+    if (this._testLoadingCounter-- === 1) {
+      this._shared.log.info('load finished', this.children.length);
+      if (err) {
+        this._testsEmitter.fire({
+          type: 'finished',
+          errorMessage: err instanceof Error ? `${err.name}\n${err.message}` : inspect(err),
+        });
+      } else {
+        this._testsEmitter.fire({
+          type: 'finished',
+          suite: this.children.length > 0 ? this : undefined,
+        });
+      }
+    }
+  }
+
   public async runTaskBefore(
     runnables: Map<AbstractRunnable, Readonly<AbstractTest>[]>,
     cancellationToken: vscode.CancellationToken,
-  ): Promise<boolean> {
+  ): Promise<void> {
     const runTask = new Set<string>();
     const runnableExecArray: string[] = [];
 
@@ -74,7 +111,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
       runnableExecArray.push(runnable.properties.path);
     }
 
-    if (runTask.size === 0) return false;
+    if (runTask.size === 0) return;
 
     const varToValue: ResolveRule[] = [
       ...this._shared.varToValue,
@@ -93,16 +130,12 @@ export class RootSuite extends Suite implements vscode.Disposable {
           }
         }
       }
-
-      return true;
     } catch (e) {
       return Promise.reject(Error('One of tasks of the `testMate.test.runTask` array has failed: ' + e));
     }
   }
 
-  private _collectRunnables(tests: string[]): Map<AbstractRunnable, AbstractTest[]> {
-    const isParentIn = tests.indexOf(this.id) !== -1;
-
+  private _collectRunnables(tests: string[], isParentIn: boolean): Map<AbstractRunnable, AbstractTest[]> {
     return this.collectTestToRun(tests, isParentIn).reduce((prev, curr) => {
       const arr = prev.get(curr.runnable);
       if (arr) arr.push(curr);
@@ -114,14 +147,13 @@ export class RootSuite extends Suite implements vscode.Disposable {
   public async run(tests: string[], cancellationToken: CancellationToken): Promise<void> {
     this.sendStartEventIfNeeded(tests);
 
-    const runnables = this._collectRunnables(tests);
+    const isParentIn = tests.indexOf(this.id) !== -1;
+
+    let runnables = this._collectRunnables(tests, isParentIn);
 
     try {
       await this.runTaskBefore(runnables, cancellationToken);
-      // TODO check if executables are modified and reload them if necessary
-      // actually that could be done anyway
-      // and runnables cound decide that they need that test or not
-      // if (wasRun) ...
+      runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
     } catch (e) {
       const ev: TestEvent = {
         type: 'test',
@@ -140,9 +172,9 @@ export class RootSuite extends Suite implements vscode.Disposable {
 
     const ps: Promise<void>[] = [];
 
-    for (const [runnable, runnableTests] of runnables) {
+    for (const [runnable] of runnables) {
       ps.push(
-        runnable.run(runnableTests, this._shared.taskPool, cancellationToken).catch(err => {
+        runnable.run(tests, isParentIn, this._shared.taskPool, cancellationToken).catch(err => {
           this._shared.log.error('RootTestSuite.run.for.child', runnable.properties.path, err);
         }),
       );

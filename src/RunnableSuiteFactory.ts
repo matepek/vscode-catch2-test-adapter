@@ -7,15 +7,15 @@ import { DOCRunnable } from './framework/DOCRunnable';
 import { SharedVariables } from './SharedVariables';
 import { ExecutableConfigFrameworkSpecific, RunTask } from './ExecutableConfig';
 import { Version } from './Util';
-import { Suite } from './Suite';
 import { ResolveRule } from './util/ResolveRule';
+import { RootSuite } from './RootSuite';
 
 export class RunnableSuiteFactory {
   public constructor(
     private readonly _shared: SharedVariables,
     private readonly _execName: string | undefined,
     private readonly _execDescription: string | undefined,
-    private readonly _rootSuite: Suite,
+    private readonly _rootSuite: RootSuite,
     private readonly _execPath: string,
     private readonly _execOptions: c2fs.SpawnOptions,
     private readonly _varToValue: ResolveRule[],
