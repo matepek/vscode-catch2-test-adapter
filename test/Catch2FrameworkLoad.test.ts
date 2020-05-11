@@ -1204,7 +1204,7 @@ describe(path.basename(__filename), function () {
 
       assert.equal(suite1.children.length, oldSuite1Children.length + 1);
       for (let i = 0; i < oldSuite1Children.length; i++) {
-        const c1 = suite1.children[i + 1] as TestInfo;
+        const c1 = suite1.children[i] as TestInfo;
         const c2 = oldSuite1Children[i] as TestInfo;
         assert.deepStrictEqual(
           [c1.file, c1.id, c1.label, c1.line, c1.skipped, c1.type],
@@ -1212,7 +1212,7 @@ describe(path.basename(__filename), function () {
           `at index: ${i}`,
         );
       }
-      const newTest = suite1.children[0];
+      const newTest = suite1.children[2];
       assert.ok(!uniqueIdC.has(newTest.id));
       assert.equal(newTest.label, 's1t0');
 
@@ -1441,8 +1441,8 @@ describe(path.basename(__filename), function () {
       );
 
       assert.strictEqual(suite1.children.length, 2);
-      assert.strictEqual(suite1.children[0].label, 's1-t1');
-      s1t1 = suite1.children[0] as TestInfo;
+      s1t1 = suite1.children[1] as TestInfo;
+      assert.strictEqual(s1t1.label, 's1-t1');
 
       const expected: TestRunEvent[] = [
         { type: 'started', tests: [suite1.id] },

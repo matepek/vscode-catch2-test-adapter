@@ -20,13 +20,11 @@ export class GoogleTest extends AbstractTest {
     valueParam: string | undefined,
     file: string | undefined,
     line: number | undefined,
-    old: AbstractTest | undefined,
   ) {
     super(
       shared,
       runnable,
       parent,
-      old,
       testNameAsId,
       label,
       file,
@@ -40,8 +38,27 @@ export class GoogleTest extends AbstractTest {
     );
   }
 
-  public get testNameInOutput(): string {
-    return this.testName;
+  public update(
+    typeParam: string | undefined,
+    valueParam: string | undefined,
+    file: string | undefined,
+    line: number | undefined,
+  ): boolean {
+    return this._updateBase(
+      this._label,
+      file,
+      line,
+      this._skipped,
+      this._tags,
+      this._testDescription,
+      typeParam,
+      valueParam,
+      this._staticEvent,
+    );
+  }
+
+  public compare(testNameAsId: string): boolean {
+    return this.testNameAsId === testNameAsId;
   }
 
   public static readonly failureRe = /^((.+)[:\(]([0-9]+)\)?): ((Failure|EXPECT_CALL|error: )(.*))$/;

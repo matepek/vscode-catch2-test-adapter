@@ -5,7 +5,7 @@ import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
-import { AbstractRunnable } from '../AbstractRunnable';
+import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { Suite } from '../Suite';
 import { Catch2Test } from './Catch2Test';
 import { SharedVariables } from '../SharedVariables';
@@ -37,7 +37,7 @@ export class Catch2Runnable extends AbstractRunnable {
     }
   }
 
-  private _reloadFromString(testListOutput: string): void {
+  private _reloadFromString(testListOutput: string): RunnableReloadResult {
     const lines = testListOutput.split(/\r?\n/);
 
     const startRe = /Matching test cases:/;
@@ -55,6 +55,8 @@ export class Catch2Runnable extends AbstractRunnable {
       throw Error('Wrong test list output format');
     }
 
+    const reloadResult = new RunnableReloadResult();
+
     while (i < lines.length) {
       const m = lines[i].match(endRe);
       if (m !== null) break;
@@ -64,7 +66,7 @@ export class Catch2Runnable extends AbstractRunnable {
       if (lines[i].startsWith('    ')) {
         this._shared.log.warn('Probably too long test name', i, lines);
 
-        this._createAndAddError(
+        return this._createAndAddError(
           `⚡️ Too long test name`,
           [
             '⚠️ Probably too long test name or the test name starts with space characters!',
@@ -72,8 +74,6 @@ export class Catch2Runnable extends AbstractRunnable {
             '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
           ].join('\n'),
         );
-
-        return;
       }
       const testName = lines[i++].substr(2);
 
@@ -127,34 +127,36 @@ export class Catch2Runnable extends AbstractRunnable {
         ++i;
       }
 
-      const tagsWithoutHide = tags.filter((v: string) => !v.startsWith('.') && v != 'hide' && v != '!hide');
-
-      this._createSubtreeAndAddTest(
-        testName,
-        testName,
-        filePath,
-        tagsWithoutHide,
-        this.getTestGrouping(),
-        (parent: Suite, old: AbstractTest | undefined) =>
-          new Catch2Test(
-            this._shared,
-            this,
-            parent,
-            this._catch2Version,
-            testName,
-            tags,
-            filePath,
-            line,
-            description,
-            old as Catch2Test | undefined,
-          ),
+      reloadResult.add(
+        ...this._createSubtreeAndAddTest(
+          this.getTestGrouping(),
+          testName,
+          testName,
+          filePath,
+          tags,
+          (parent: Suite) =>
+            new Catch2Test(
+              this._shared,
+              this,
+              parent,
+              this._catch2Version,
+              testName,
+              tags,
+              filePath,
+              line,
+              description,
+            ),
+          (old: AbstractTest): boolean => (old as Catch2Test).update(tags, filePath, line, description),
+        ),
       );
     }
 
     if (i >= lines.length) this._shared.log.error('Wrong test list output format #2', lines);
+
+    return reloadResult;
   }
 
-  protected async _reloadChildren(): Promise<void> {
+  protected async _reloadChildren(): Promise<RunnableReloadResult> {
     const cacheFile = this.properties.path + '.TestMate.testListCache.txt';
 
     if (this._shared.enabledTestListCaching) {
@@ -169,9 +171,7 @@ export class Catch2Runnable extends AbstractRunnable {
           if (content === '') {
             this._shared.log.debug('loading from cache failed because file is empty');
           } else {
-            this._reloadFromString(content);
-
-            return;
+            return await this._reloadFromString(content);
           }
         }
       } catch (e) {
@@ -195,8 +195,7 @@ export class Catch2Runnable extends AbstractRunnable {
 
     if (catch2TestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
-      this._createAndAddUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
-      return Promise.resolve();
+      return await this._createAndAddUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
     }
 
     if (catch2TestListOutput.stdout.length === 0) {
@@ -204,13 +203,15 @@ export class Catch2Runnable extends AbstractRunnable {
       throw Error('stoud is empty');
     }
 
-    this._reloadFromString(catch2TestListOutput.stdout);
+    const result = await this._reloadFromString(catch2TestListOutput.stdout);
 
     if (this._shared.enabledTestListCaching) {
-      return promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>
+      promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>
         this._shared.log.warn('couldnt write cache file:', err),
       );
     }
+
+    return result;
   }
 
   protected _getRunParams(childrenToRun: readonly Readonly<Catch2Test>[]): string[] {
@@ -321,7 +322,7 @@ export class Catch2Runnable extends AbstractRunnable {
               data.route = route;
 
               data.currentChild = test;
-              this._shared.log.info('Test', data.currentChild.testName, 'has started.');
+              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
               this._shared.log.info('TestCase not found in children', name);
@@ -336,7 +337,7 @@ export class Catch2Runnable extends AbstractRunnable {
             const testCaseXml = data.stdoutBuffer.substring(0, b + endTestCase.length);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testName, 'has finished.');
+              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
                 const ev = data.currentChild.parseAndProcessTestCase(
                   testCaseXml,

@@ -43,36 +43,46 @@ export class DOCTest extends AbstractTest {
     shared: SharedWithDOCTest,
     runnable: AbstractRunnable,
     parent: Suite,
-    id: string | undefined,
     testNameAsId: string,
-    skipped: boolean | undefined,
+    skipped: boolean,
     file: string | undefined,
     line: number | undefined,
     tags: string[],
-    old?: DOCTest,
   ) {
     super(
       shared,
       runnable,
       parent,
-      old,
       testNameAsId,
       testNameAsId.startsWith('  Scenario:') ? '⒮' + testNameAsId.substr(11) : testNameAsId,
       file,
       line,
-      skipped !== undefined ? skipped : false,
+      skipped,
       undefined,
       tags,
       undefined,
       undefined,
       undefined,
     );
-    this._sections = old ? old.sections : undefined;
     this._isSecnario = testNameAsId.startsWith('  Scenario:');
   }
 
-  public get testNameInOutput(): string {
-    return this.testName.trim();
+  public update(file: string | undefined, line: number | undefined, tags: string[], skipped: boolean): boolean {
+    return this._updateBase(
+      this._label,
+      file,
+      line,
+      skipped,
+      tags,
+      this._testDescription,
+      this._typeParam,
+      this._valueParam,
+      this._staticEvent,
+    );
+  }
+
+  public compare(testNameAsId: string): boolean {
+    return this.testNameAsId === testNameAsId;
   }
 
   private _sections: undefined | DOCSection[];
@@ -84,7 +94,7 @@ export class DOCTest extends AbstractTest {
 
   public getEscapedTestName(): string {
     /* ',' has special meaning */
-    return this.testName.replace(/,/g, '\\,');
+    return this.testNameAsId.replace(/,/g, '\\,');
   }
 
   public parseAndProcessTestCase(

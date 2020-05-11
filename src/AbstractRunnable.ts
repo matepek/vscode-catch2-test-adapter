@@ -19,6 +19,17 @@ import {
 import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
 import { TestEvent } from 'vscode-test-adapter-api';
 
+export class RunnableReloadResult {
+  public tests: AbstractTest[] = [];
+  public changedAny = false;
+
+  public add(test: AbstractTest, changed: boolean): this {
+    this.tests.push(test);
+    this.changedAny = this.changedAny || changed;
+    return this;
+  }
+}
+
 export abstract class AbstractRunnable {
   private static _reportedFrameworks: string[] = [];
 
@@ -88,13 +99,14 @@ export abstract class AbstractRunnable {
   }
 
   protected _createSubtreeAndAddTest(
+    testGrouping: TestGrouping,
+    testNameAsId: string,
     testName: string,
-    testNameInOutput: string,
     file: string | undefined,
     tags: string[], // in case of google test it is the TestCase
-    testGrouping: TestGrouping,
-    createTest: (parent: Suite, old: AbstractTest | undefined) => AbstractTest,
-  ): void {
+    createTest: (parent: Suite) => AbstractTest,
+    updateTest: (old: AbstractTest) => boolean,
+  ): [AbstractTest, boolean] {
     let group = this._rootSuite as Suite;
 
     const relPath = file ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file) : '';
@@ -237,15 +249,17 @@ export abstract class AbstractRunnable {
       this._shared.log.exceptionS(e);
     }
 
-    const old = group.children.find(t => t instanceof AbstractTest && t.compare(testNameInOutput)) as
+    const old = group.children.find(t => t instanceof AbstractTest && t.compare(testNameAsId)) as
       | AbstractTest
       | undefined;
 
-    const test = createTest(group, old);
-
-    this._tests.push(test);
-
-    group.addTest(test);
+    if (old) {
+      return [old, updateTest(old)];
+    } else {
+      const test = group.addTest(createTest(group));
+      this._tests.push(test);
+      return [test, true];
+    }
   }
 
   public removeTests(): void {
@@ -253,10 +267,7 @@ export abstract class AbstractRunnable {
     this._tests = [];
   }
 
-  protected _createError(
-    title: string,
-    message: string,
-  ): (parent: Suite, old: AbstractTest | undefined) => AbstractTest {
+  protected _createError(title: string, message: string): (parent: Suite) => AbstractTest {
     return (parent: Suite): AbstractTest => {
       const shared = this._shared;
       const runnable = this as AbstractRunnable;
@@ -266,7 +277,6 @@ export abstract class AbstractRunnable {
             shared,
             runnable,
             parent,
-            undefined,
             title,
             title,
             undefined,
@@ -285,8 +295,8 @@ export abstract class AbstractRunnable {
           );
         }
 
-        public get testNameInOutput(): string {
-          return this.testName;
+        public compare(testNameAsId: string): boolean {
+          return testNameAsId === testNameAsId;
         }
 
         public getDebugParams(): string[] {
@@ -304,19 +314,22 @@ export abstract class AbstractRunnable {
     };
   }
 
-  protected _createAndAddError(label: string, message: string): void {
-    this._createSubtreeAndAddTest(
-      label,
-      label,
-      undefined,
-      [],
-      { groupByExecutable: this._getGroupByExecutable() },
-      this._createError(label, message),
+  protected _createAndAddError(label: string, message: string): RunnableReloadResult {
+    return new RunnableReloadResult().add(
+      ...this._createSubtreeAndAddTest(
+        { groupByExecutable: this._getGroupByExecutable() },
+        label,
+        label,
+        undefined,
+        [],
+        this._createError(label, message),
+        () => false,
+      ),
     );
   }
 
-  protected _createAndAddUnexpectedStdError(stdout: string, stderr: string): void {
-    this._createAndAddError(
+  protected _createAndAddUnexpectedStdError(stdout: string, stderr: string): RunnableReloadResult {
+    return this._createAndAddError(
       `⚡️ Unexpected ERROR while parsing`,
       [
         `❗️Unexpected stderr!`,
@@ -371,18 +384,18 @@ export abstract class AbstractRunnable {
     const limit = 30000;
 
     for (const test of tests) {
-      if (charCount + test.testName.length >= limit) {
+      if (charCount + test.testNameAsId.length >= limit) {
         lastSet = [];
         subsets.push(lastSet);
       }
       lastSet.push(test);
-      charCount += test.testName.length;
+      charCount += test.testNameAsId.length;
     }
 
     return subsets;
   }
 
-  protected abstract _reloadChildren(): Promise<void>;
+  protected abstract _reloadChildren(): Promise<RunnableReloadResult>;
 
   protected abstract _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
 
@@ -398,9 +411,18 @@ export abstract class AbstractRunnable {
 
       if (this._lastReloadTime === undefined || lastModiTime === undefined || this._lastReloadTime !== lastModiTime) {
         this._lastReloadTime = lastModiTime;
-        const oldTests = this._tests;
-        this._tests = [];
-        return this._reloadChildren().finally(() => oldTests.forEach(t => t.removeWithLeafAscendants()));
+
+        return this._reloadChildren().then((reloadResult: RunnableReloadResult) => {
+          const toRemove = this._tests.filter(t => reloadResult.tests.indexOf(t) === -1);
+          if (toRemove.length > 0 || reloadResult.changedAny) {
+            //TODO event
+            toRemove.forEach(t => {
+              t.removeWithLeafAscendants();
+              this._tests.splice(this._tests.indexOf(t), 1);
+            });
+            //TODO end event
+          }
+        });
       } else {
         this._shared.log.debug('reloadTests was skipped due to mtime', this.properties.path);
       }

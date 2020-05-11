@@ -4,7 +4,7 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
-import { AbstractRunnable } from '../AbstractRunnable';
+import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { AbstractTest } from '../AbstractTest';
 import { Suite } from '../Suite';
 import { DOCTest } from './DOCTest';
@@ -37,7 +37,7 @@ export class DOCRunnable extends AbstractRunnable {
     }
   }
 
-  private _reloadFromString(testListOutput: string): void {
+  private _reloadFromString(testListOutput: string): RunnableReloadResult {
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
       if (err) {
@@ -47,39 +47,37 @@ export class DOCRunnable extends AbstractRunnable {
       }
     });
 
+    const reloadResult = new RunnableReloadResult();
+
     for (let i = 0; i < res.doctest.TestCase.length; ++i) {
       const testCase = res.doctest.TestCase[i].$;
 
       const testName = testCase.name;
       const filePath: string | undefined = testCase.filename ? this._findFilePath(testCase.filename) : undefined;
       const line: number | undefined = testCase.line !== undefined ? Number(testCase.line) - 1 : undefined;
-      const skipped: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
+      const skippedOpt: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
 
-      this._createSubtreeAndAddTest(
-        testName,
-        testName,
-        filePath,
-        [],
-        this.getTestGrouping(),
-        (parent: Suite, old: AbstractTest | undefined) =>
-          new DOCTest(
-            this._shared,
-            this,
-            parent,
-            undefined,
-            testName,
-            skipped,
-            filePath,
-            line,
-            suite !== undefined ? [`${suite}`] : [],
-            old as DOCTest,
-          ),
+      const tags = suite !== undefined ? [`${suite}`] : [];
+      const skipped = skippedOpt !== undefined ? skippedOpt : false;
+
+      reloadResult.add(
+        ...this._createSubtreeAndAddTest(
+          this.getTestGrouping(),
+          testName,
+          testName,
+          filePath,
+          [],
+          (parent: Suite) => new DOCTest(this._shared, this, parent, testName, skipped, filePath, line, tags),
+          (old: AbstractTest): boolean => (old as DOCTest).update(filePath, line, tags, skipped),
+        ),
       );
     }
+
+    return reloadResult;
   }
 
-  protected async _reloadChildren(): Promise<void> {
+  protected async _reloadChildren(): Promise<RunnableReloadResult> {
     const cacheFile = this.properties.path + '.TestMate.testListCache.txt';
 
     if (this._shared.enabledTestListCaching) {
@@ -91,48 +89,45 @@ export class DOCRunnable extends AbstractRunnable {
           this._shared.log.info('loading from cache: ', cacheFile);
           const content = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          this._reloadFromString(content);
-          return Promise.resolve();
+          return await this._reloadFromString(content);
         }
       } catch (e) {
         this._shared.log.warn('coudnt use cache', e);
       }
     }
 
-    return c2fs
-      .spawnAsync(
-        this.properties.path,
-        this.properties.prependTestListingArgs.concat([
-          '--list-test-cases',
-          '--reporters=xml',
-          '--no-skip=true',
-          '--no-color=true',
-        ]),
-        this.properties.options,
-        30000,
-      )
-      .then(docTestListOutput => {
-        if (docTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
-          this._shared.log.warn(
-            'reloadChildren -> docTestListOutput.stderr',
-            docTestListOutput.stdout,
-            docTestListOutput.stderr,
-            docTestListOutput.error,
-            docTestListOutput.status,
-          );
-          this._createAndAddUnexpectedStdError(docTestListOutput.stdout, docTestListOutput.stderr);
-          return Promise.resolve();
-        }
+    const docTestListOutput = await c2fs.spawnAsync(
+      this.properties.path,
+      this.properties.prependTestListingArgs.concat([
+        '--list-test-cases',
+        '--reporters=xml',
+        '--no-skip=true',
+        '--no-color=true',
+      ]),
+      this.properties.options,
+      30000,
+    );
 
-        this._reloadFromString(docTestListOutput.stdout);
+    if (docTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
+      this._shared.log.warn(
+        'reloadChildren -> docTestListOutput.stderr',
+        docTestListOutput.stdout,
+        docTestListOutput.stderr,
+        docTestListOutput.error,
+        docTestListOutput.status,
+      );
+      return await this._createAndAddUnexpectedStdError(docTestListOutput.stdout, docTestListOutput.stderr);
+    }
 
-        if (this._shared.enabledTestListCaching) {
-          return promisify(fs.writeFile)(cacheFile, docTestListOutput.stdout).catch(err =>
-            this._shared.log.warn('couldnt write cache file:', err),
-          );
-        }
-        return Promise.resolve();
-      });
+    const result = await this._reloadFromString(docTestListOutput.stdout);
+
+    if (this._shared.enabledTestListCaching) {
+      promisify(fs.writeFile)(cacheFile, docTestListOutput.stdout).catch(err =>
+        this._shared.log.warn('couldnt write cache file:', err),
+      );
+    }
+
+    return result;
   }
 
   protected _getRunParams(childrenToRun: readonly Readonly<DOCTest>[]): string[] {
@@ -224,7 +219,7 @@ export class DOCRunnable extends AbstractRunnable {
 
             data.beforeFirstTestCase = false;
 
-            const test = this._findTest(v => v.testName == name);
+            const test = this._findTest(v => v.compare(name));
 
             if (test) {
               const route = [...test.route()];
@@ -232,13 +227,13 @@ export class DOCRunnable extends AbstractRunnable {
               data.route = route;
 
               data.currentChild = test;
-              this._shared.log.info('Test', data.currentChild.testName, 'has started.');
+              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
 
               if (!skipped) {
                 this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
                 data.stdoutBuffer = data.stdoutBuffer.substr(m.index!);
               } else {
-                this._shared.log.info('Test ', data.currentChild.testName, 'has skipped.');
+                this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has skipped.');
 
                 // this always comes so we skip it
                 //const testCaseXml = m[0];
@@ -273,7 +268,7 @@ export class DOCRunnable extends AbstractRunnable {
             const testCaseXml = data.stdoutBuffer.substring(0, b + endTestCase.length);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testName, 'has finished.');
+              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
                 const ev = data.currentChild.parseAndProcessTestCase(
                   testCaseXml,
@@ -422,7 +417,7 @@ export class DOCRunnable extends AbstractRunnable {
                 if (name === undefined) break;
 
                 // xml output trimmes the name of the test
-                const currentChild = this._findTest(v => v.testName === name);
+                const currentChild = this._findTest(v => v.compare(name!));
 
                 if (currentChild === undefined) break;
 

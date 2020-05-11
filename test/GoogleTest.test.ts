@@ -22,7 +22,6 @@ describe(path.basename(__filename), function () {
     undefined,
     'gtest.cpp',
     11,
-    undefined,
   );
 
   it('parses EXPECT_CALL', function () {

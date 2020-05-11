@@ -22,7 +22,6 @@ describe(path.basename(__filename), function () {
     'gtest.cpp',
     11,
     undefined,
-    undefined,
   );
 
   it('should parse s1t', function () {
