@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.1.0]
+
+Lot of changes under the hood to make your life easier.
+
 ## [3.0.4] - 2020-05-10
 
 ### Added

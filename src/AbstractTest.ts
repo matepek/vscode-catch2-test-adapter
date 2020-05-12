@@ -91,8 +91,7 @@ export abstract class AbstractTest implements TestInfo {
       this._testDescription = testDescription;
     }
 
-    // TODO
-    if (tags.length !== this.tags.length) {
+    if (tags.length !== this._tags.length || tags.some(t => this._tags.indexOf(t) === -1)) {
       changed = true;
       this._tags = tags;
     }
@@ -167,11 +166,6 @@ export abstract class AbstractTest implements TestInfo {
 
   public get skipped(): boolean {
     return this._skipped;
-  }
-
-  // TODO kelle ez?
-  public get tags(): string[] {
-    return this._tags.filter(v => v != '.' && v != 'hide');
   }
 
   public get staticEvent(): TestEvent | undefined {
