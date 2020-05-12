@@ -542,27 +542,18 @@ describe(path.basename(__filename), function () {
           type: 'test',
           state: 'passed',
           test: s1t1,
-          decorations: [],
-          description: '(0ms)',
-          message: '⏱Duration: 0.000112 second(s).',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱Duration: 0ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (>0ms)`,
-          tooltip:
-            'Name: execPath1.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: >0ms',
         },
         { type: 'finished' },
       ];
       adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([s1t1.id]);
-      assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
+      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
     });
 
     it('should run skipped s2t2', async function () {
