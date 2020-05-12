@@ -45,215 +45,197 @@ type JsonResp = { [key: string]: any };
 ///
 
 async function updateChangelog(): Promise<Info | undefined> {
-  try {
-    console.log('Parsing CHANGELOG.md');
+  console.log('Parsing CHANGELOG.md');
 
-    const changelogBuffer = await promisify(fs.readFile)('CHANGELOG.md');
+  const changelogBuffer = await promisify(fs.readFile)('CHANGELOG.md');
 
-    const changelog = changelogBuffer.toString();
-    // example:'## [0.1.0-beta] - 2018-04-12'
-    const re = new RegExp(/## \[(([0-9]+)\.([0-9]+)\.([0-9]+)(?:|(?:-([^\]]+))))\](?: - (\S+))?/);
+  const changelog = changelogBuffer.toString();
+  // example:'## [0.1.0-beta] - 2018-04-12'
+  const re = new RegExp(/## \[(([0-9]+)\.([0-9]+)\.([0-9]+)(?:|(?:-([^\]]+))))\](?: - (\S+))?/);
 
-    const match = changelog.match(re);
-    if (match === null) {
-      throw Error("Release error: Couldn't find version entry");
-    }
-
-    assert.strictEqual(match.length, 7);
-
-    if (match[6] != undefined) {
-      // we dont want to release it now
-      console.log('CHANGELOG.md doesn\'t contain unreleased version entry (ex.: "## [1.2.3]" (without date)).');
-      console.log('(Last released version: ' + match[0] + ')');
-      return undefined;
-    }
-
-    const now = new Date();
-    const month = now.getUTCMonth() + 1 < 10 ? '0' + (now.getUTCMonth() + 1) : now.getUTCMonth() + 1;
-    const day = now.getUTCDate() < 10 ? '0' + now.getUTCDate() : now.getUTCDate();
-    const date = now.getUTCFullYear() + '-' + month + '-' + day;
-
-    const changelogWithReleaseDate =
-      changelog.substr(0, match.index! + match[0].length) +
-      ' - ' +
-      date +
-      changelog.substr(match.index! + match[0].length);
-
-    console.log('Updating CHANGELOG.md');
-
-    await promisify(fs.writeFile)('CHANGELOG.md', changelogWithReleaseDate);
-
-    return {
-      version: match[1],
-      vver: 'v' + match[1],
-      major: match[2],
-      minor: match[3],
-      patch: match[4],
-      label: match[5],
-      date: date,
-      full: match[0].substr(3).trim() + ' - ' + date,
-    };
-  } catch (e) {
-    return Promise.reject(e);
+  const match = changelog.match(re);
+  if (match === null) {
+    throw Error("Release error: Couldn't find version entry");
   }
+
+  assert.strictEqual(match.length, 7);
+
+  if (match[6] != undefined) {
+    // we dont want to release it now
+    console.log('CHANGELOG.md doesn\'t contain unreleased version entry (ex.: "## [1.2.3]" (without date)).');
+    console.log('(Last released version: ' + match[0] + ')');
+    return undefined;
+  }
+
+  const now = new Date();
+  const month = now.getUTCMonth() + 1 < 10 ? '0' + (now.getUTCMonth() + 1) : now.getUTCMonth() + 1;
+  const day = now.getUTCDate() < 10 ? '0' + now.getUTCDate() : now.getUTCDate();
+  const date = now.getUTCFullYear() + '-' + month + '-' + day;
+
+  const changelogWithReleaseDate =
+    changelog.substr(0, match.index! + match[0].length) +
+    ' - ' +
+    date +
+    changelog.substr(match.index! + match[0].length);
+
+  console.log('Updating CHANGELOG.md');
+
+  await promisify(fs.writeFile)('CHANGELOG.md', changelogWithReleaseDate);
+
+  return {
+    version: match[1],
+    vver: 'v' + match[1],
+    major: match[2],
+    minor: match[3],
+    patch: match[4],
+    label: match[5],
+    date: date,
+    full: match[0].substr(3).trim() + ' - ' + date,
+  };
 }
 
 async function waitForAppveyorTestsToBeFinished(): Promise<void> {
-  try {
-    assert.ok(process.env['APPVEYOR_TOKEN']);
-    assert.ok(process.env['TRAVIS_COMMIT']);
+  assert.ok(process.env['APPVEYOR_TOKEN']);
+  assert.ok(process.env['TRAVIS_COMMIT']);
+  assert.ok(process.env['TRAVIS_COMMIT_MESSAGE']);
 
-    console.log('Checking Appveyor job with commit:', process.env['TRAVIS_COMMIT']);
+  if (process.env['TRAVIS_COMMIT_MESSAGE'].indexOf('[skip-appveyor-check]') !== -1) {
+    console.log('Skipping  Appveyor because commit message includes the magic word');
+    return;
+  }
 
-    const appveyor = bent('https://ci.appveyor.com', 'json', 'GET');
+  console.log('Checking Appveyor job with commit:', process.env['TRAVIS_COMMIT']);
 
-    const response: JsonResp = await appveyor(`/api/projects/${githubRepoFullId}/history?recordsNumber=50`, undefined, {
+  const appveyor = bent('https://ci.appveyor.com', 'json', 'GET');
+
+  const response: JsonResp = await appveyor(`/api/projects/${githubRepoFullId}/history?recordsNumber=50`, undefined, {
+    Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'],
+    'Content-Type': 'application/json',
+  });
+
+  assert.ok(typeof response === 'object', JSON.stringify(response));
+  assert.ok(typeof response.builds === 'object' && response.builds.length > 0, JSON.stringify(response));
+
+  let build;
+  for (const b of response.builds) {
+    if (b.commitId === process.env['TRAVIS_COMMIT']) {
+      build = b;
+      break;
+    }
+  }
+  assert.notStrictEqual(build, undefined);
+
+  const timeout = 40 * 60 * 1000;
+  const version = build.version;
+  let status = build.status;
+
+  console.log(version);
+
+  const queuedOrRunning = (status: string): boolean => status === 'running' || status === 'queued';
+
+  const start = Date.now();
+  while (queuedOrRunning(status) && Date.now() - start < timeout) {
+    console.log('Waiting for Appveyor:', version, status);
+
+    await promisify(setTimeout)(20000);
+
+    const response: JsonResp = await appveyor(`/api/projects/${githubRepoFullId}/build/${version}`, undefined, {
       Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'],
       'Content-Type': 'application/json',
     });
 
     assert.ok(typeof response === 'object', JSON.stringify(response));
-    assert.ok(typeof response.builds === 'object' && response.builds.length > 0, JSON.stringify(response));
+    assert.ok(typeof response.build === 'object', JSON.stringify(response));
+    assert.ok(typeof response.build.status === 'string', JSON.stringify(response));
 
-    let build;
-    for (const b of response.builds) {
-      if (b.commitId === process.env['TRAVIS_COMMIT']) {
-        build = b;
-        break;
+    status = response.build.status;
+
+    if (status === 'running') {
+      const filteredJobs = response.build.jobs.filter(
+        (j: { status: string }) => !queuedOrRunning(j.status) && j.status !== 'success',
+      );
+      if (filteredJobs.length > 0) {
+        throw new Error('Appveyor job status: ' + filteredJobs[0].status);
       }
     }
-    assert.notStrictEqual(build, undefined);
+  }
 
-    const timeout = 40 * 60 * 1000;
-    const version = build.version;
-    let status = build.status;
-
-    console.log(version);
-
-    const queuedOrRunning = (status: string): boolean => status === 'running' || status === 'queued';
-
-    const start = Date.now();
-    while (queuedOrRunning(status) && Date.now() - start < timeout) {
-      console.log('Waiting for Appveyor:', version, status);
-
-      await promisify(setTimeout)(20000);
-
-      const response: JsonResp = await appveyor(`/api/projects/${githubRepoFullId}/build/${version}`, undefined, {
-        Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'],
-        'Content-Type': 'application/json',
-      });
-
-      assert.ok(typeof response === 'object', JSON.stringify(response));
-      assert.ok(typeof response.build === 'object', JSON.stringify(response));
-      assert.ok(typeof response.build.status === 'string', JSON.stringify(response));
-
-      status = response.build.status;
-
-      if (status === 'running') {
-        const filteredJobs = response.build.jobs.filter(
-          (j: { status: string }) => !queuedOrRunning(j.status) && j.status !== 'success',
-        );
-        if (filteredJobs.length > 0) {
-          throw new Error('Appveyor job status: ' + filteredJobs[0].status);
-        }
-      }
-    }
-
-    if (status === 'success') {
-      return Promise.resolve();
-    } else if (Date.now() - start > timeout) {
-      throw new Error('Appveyor timeout has been reached: ' + timeout);
-    } else {
-      throw new Error('Appveyor status: ' + status);
-    }
-  } catch (e) {
-    return Promise.reject(e);
+  if (status === 'success') {
+    return Promise.resolve();
+  } else if (Date.now() - start > timeout) {
+    throw new Error('Appveyor timeout has been reached: ' + timeout);
+  } else {
+    throw new Error('Appveyor status: ' + status);
   }
 }
 
 async function updatePackageJson(info: Info): Promise<void> {
-  try {
-    console.log('Parsing package.json');
+  console.log('Parsing package.json');
 
-    const packageJsonBuffer = await promisify(fs.readFile)('package.json');
+  const packageJsonBuffer = await promisify(fs.readFile)('package.json');
 
-    const packageJson = packageJsonBuffer.toString();
-    // example:'"version": "1.2.3"'
-    const re = new RegExp(/(['"]version['"]\s*:\s*['"])([^'"]*)(['"])/);
+  const packageJson = packageJsonBuffer.toString();
+  // example:'"version": "1.2.3"'
+  const re = new RegExp(/(['"]version['"]\s*:\s*['"])([^'"]*)(['"])/);
 
-    const match: RegExpMatchArray | null = packageJson.match(re);
-    assert.notStrictEqual(match, null);
-    if (match === null) throw Error("Release error: Couldn't find version entry.");
+  const match: RegExpMatchArray | null = packageJson.match(re);
+  assert.notStrictEqual(match, null);
+  if (match === null) throw Error("Release error: Couldn't find version entry.");
 
-    assert.strictEqual(match.length, 4);
-    assert.notStrictEqual(match[1], undefined);
-    assert.notStrictEqual(match[2], undefined);
-    assert.notStrictEqual(match[3], undefined);
+  assert.strictEqual(match.length, 4);
+  assert.notStrictEqual(match[1], undefined);
+  assert.notStrictEqual(match[2], undefined);
+  assert.notStrictEqual(match[3], undefined);
 
-    const packageJsonWithVer =
-      packageJson.substr(0, match.index! + match[1].length) +
-      info.version +
-      packageJson.substr(match.index! + match[1].length + match[2].length);
+  const packageJsonWithVer =
+    packageJson.substr(0, match.index! + match[1].length) +
+    info.version +
+    packageJson.substr(match.index! + match[1].length + match[2].length);
 
-    console.log('Updating package.json');
+  console.log('Updating package.json');
 
-    await promisify(fs.writeFile)('package.json', packageJsonWithVer);
-  } catch (e) {
-    return Promise.reject(e);
-  }
+  await promisify(fs.writeFile)('package.json', packageJsonWithVer);
 }
 
 async function gitCommitAndTag(info: Info): Promise<void> {
-  try {
-    console.log('Creating commit and tag');
+  console.log('Creating commit and tag');
 
-    assert.ok(process.env['TRAVIS_BRANCH']);
+  assert.ok(process.env['TRAVIS_BRANCH']);
 
-    await spawn('git', 'checkout', process.env['TRAVIS_BRANCH']!);
-    await spawn('git', 'config', '--local', 'user.name', 'deploy.js script');
+  await spawn('git', 'checkout', process.env['TRAVIS_BRANCH']!);
+  await spawn('git', 'config', '--local', 'user.name', 'deploy.js script');
 
-    const deployerMail = process.env['DEPLOYER_MAIL'] || 'deployer@deployer.de';
-    await spawn('git', 'config', '--local', 'user.email', deployerMail);
+  const deployerMail = process.env['DEPLOYER_MAIL'] || 'deployer@deployer.de';
+  await spawn('git', 'config', '--local', 'user.email', deployerMail);
 
-    await spawn('git', 'status');
-    await spawn('git', 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
-    await spawn('git', 'status');
-    await spawn('git', 'commit', '-m', '[Updated] Release info in CHANGELOG.md: ' + info.full!);
-    await spawn('git', 'tag', '-a', info.vver!, '-m', 'Version ' + info.vver!);
-  } catch (e) {
-    return Promise.reject(e);
-  }
+  await spawn('git', 'status');
+  await spawn('git', 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
+  await spawn('git', 'status');
+  await spawn('git', 'commit', '-m', '[Updated] Release info in CHANGELOG.md: ' + info.full!);
+  await spawn('git', 'tag', '-a', info.vver!, '-m', 'Version ' + info.vver!);
 }
 
 async function gitPush(): Promise<void> {
-  try {
-    console.log('Pushing to origin');
+  console.log('Pushing to origin');
 
-    assert.ok(process.env['GITHUB_API_KEY'] != undefined);
+  assert.ok(process.env['GITHUB_API_KEY'] != undefined);
 
-    await spawn(
-      'git',
-      'push',
-      '--follow-tags',
-      'https://' + githubOwnerId + ':' + process.env['GITHUB_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
-    );
-  } catch (e) {
-    return Promise.reject(e);
-  }
+  await spawn(
+    'git',
+    'push',
+    '--follow-tags',
+    'https://' + githubOwnerId + ':' + process.env['GITHUB_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+  );
 }
 
 async function createPackage(info: Info): Promise<string> {
-  try {
-    console.log('Creating vsce package');
+  console.log('Creating vsce package');
 
-    const packagePath = './out/' + vscodeExtensionId + '-' + info.version + '.vsix';
+  const packagePath = './out/' + vscodeExtensionId + '-' + info.version + '.vsix';
 
-    await vsce.createVSIX({ cwd: '.', packagePath });
+  await vsce.createVSIX({ cwd: '.', packagePath });
 
-    return packagePath;
-  } catch (e) {
-    return Promise.reject(e);
-  }
+  return packagePath;
 }
 
 function publishPackage(packagePath: string): Promise<void> {
@@ -264,60 +246,56 @@ function publishPackage(packagePath: string): Promise<void> {
 }
 
 async function createGithubRelease(info: Info, packagePath: string): Promise<void> {
-  try {
-    console.log('Publishing to github releases');
-    assert.ok(typeof process.env['GITHUB_API_KEY'] === 'string');
-    const apiKey = process.env['GITHUB_API_KEY']!;
-    const keyBase64 = Buffer.from(`${githubOwnerId}:${apiKey}`, 'utf-8').toString('base64');
-    const headerBase = {
-      'User-Agent': `${githubOwnerId}-deploy.js`,
-      Authorization: `Basic ${keyBase64}`,
-    };
+  console.log('Publishing to github releases');
+  assert.ok(typeof process.env['GITHUB_API_KEY'] === 'string');
+  const apiKey = process.env['GITHUB_API_KEY']!;
+  const keyBase64 = Buffer.from(`${githubOwnerId}:${apiKey}`, 'utf-8').toString('base64');
+  const headerBase = {
+    'User-Agent': `${githubOwnerId}-deploy.js`,
+    Authorization: `Basic ${keyBase64}`,
+  };
 
-    const response: JsonResp = await bent(`https://api.github.com`, 'json', 'GET')(
-      `/repos/${githubRepoFullId}/releases/latest`,
-      undefined,
-      headerBase,
-    );
+  const response: JsonResp = await bent(`https://api.github.com`, 'json', 'GET')(
+    `/repos/${githubRepoFullId}/releases/latest`,
+    undefined,
+    headerBase,
+  );
 
-    assert.notStrictEqual(response.tag_name, info.vver);
+  assert.notStrictEqual(response.tag_name, info.vver);
 
-    const createReleaseResponse: JsonResp = await bent(
-      `https://api.github.com`,
-      'json',
-      'POST',
-      201,
-    )(
-      `/repos/${githubRepoFullId}/releases`,
+  const createReleaseResponse: JsonResp = await bent(
+    `https://api.github.com`,
+    'json',
+    'POST',
+    201,
+  )(
+    `/repos/${githubRepoFullId}/releases`,
+    {
+      tag_name: info.vver, // eslint-disable-line
+      name: info.full,
+      body: 'See [CHANGELOG.md](CHANGELOG.md) for details.',
+    },
+    headerBase,
+  );
+
+  const stats = fs.statSync(packagePath);
+  assert.ok(stats.isFile(), packagePath);
+
+  console.log('Uploading artifact to github releases');
+
+  const stream = fs.createReadStream(packagePath);
+
+  await bent('json', 'POST', 201)(
+    createReleaseResponse.upload_url.replace('{?name,label}', `?name=${vscodeExtensionId}-${info.version}.vsix`),
+    stream,
+    Object.assign(
       {
-        tag_name: info.vver, // eslint-disable-line
-        name: info.full,
-        body: 'See [CHANGELOG.md](CHANGELOG.md) for details.',
+        'Content-Type': 'application/zip',
+        'Content-Length': stats.size,
       },
       headerBase,
-    );
-
-    const stats = fs.statSync(packagePath);
-    assert.ok(stats.isFile(), packagePath);
-
-    console.log('Uploading artifact to github releases');
-
-    const stream = fs.createReadStream(packagePath);
-
-    await bent('json', 'POST', 201)(
-      createReleaseResponse.upload_url.replace('{?name,label}', `?name=${vscodeExtensionId}-${info.version}.vsix`),
-      stream,
-      Object.assign(
-        {
-          'Content-Type': 'application/zip',
-          'Content-Length': stats.size,
-        },
-        headerBase,
-      ),
-    );
-  } catch (e) {
-    return Promise.reject(e);
-  }
+    ),
+  );
 }
 
 ///
