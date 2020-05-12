@@ -6,7 +6,7 @@ platform:
 
 environment:
   C2_DEBUG: true
-  nodejs_version: '10'
+  nodejs_version: '12'
 
   matrix:
     - VSCODE_VERSION: 'latest'
