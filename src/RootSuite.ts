@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TestInfo, TestEvent, TestLoadStartedEvent, TestLoadFinishedEvent } from 'vscode-test-adapter-api';
+import { TestInfo } from 'vscode-test-adapter-api';
 import { ExecutableConfig } from './ExecutableConfig';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
@@ -7,16 +7,11 @@ import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
 import { CancellationToken } from './Util';
 import { ResolveRule } from './util/ResolveRule';
-import { inspect } from 'util';
 
 export class RootSuite extends Suite implements vscode.Disposable {
   private _executables: ExecutableConfig[] = [];
 
-  public constructor(
-    id: string | undefined,
-    shared: SharedVariables,
-    private readonly _testsEmitter: vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>,
-  ) {
+  public constructor(id: string | undefined, shared: SharedVariables) {
     super(shared, undefined, 'C++ TestMate', '', '', id);
   }
 
@@ -64,38 +59,6 @@ export class RootSuite extends Suite implements vscode.Disposable {
     if (this._runningCounter-- === 1) {
       this._shared.log.debug('RootSuite finished event fired', this.label);
       this._shared.testStatesEmitter.fire({ type: 'finished' });
-    }
-  }
-
-  private _testLoadingCounter = 0;
-
-  public sendLoadingEventIfNeeded(): void {
-    if (this._testLoadingCounter++ === 0) {
-      this._shared.log.info('load started');
-      this._testsEmitter.fire({ type: 'started' });
-    }
-  }
-
-  // eslint-disable-next-line
-  public sendLoadingFinishedEventIfNeeded(err?: any): void {
-    if (this._testLoadingCounter < 1) {
-      this._shared.log.error('loading counter is too low');
-      this._testLoadingCounter = 0;
-      return;
-    }
-    if (this._testLoadingCounter-- === 1) {
-      this._shared.log.info('load finished', this.children.length);
-      if (err) {
-        this._testsEmitter.fire({
-          type: 'finished',
-          errorMessage: err instanceof Error ? `${err.name}\n${err.message}` : inspect(err),
-        });
-      } else {
-        this._testsEmitter.fire({
-          type: 'finished',
-          suite: this.children.length > 0 ? this : undefined,
-        });
-      }
     }
   }
 
@@ -155,15 +118,8 @@ export class RootSuite extends Suite implements vscode.Disposable {
       await this.runTaskBefore(runnables, cancellationToken);
       runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
     } catch (e) {
-      const ev: TestEvent = {
-        type: 'test',
-        test: 'will be filled automatically',
-        state: 'errored',
-        message: e,
-      };
-
       for (const [runnable, tests] of runnables) {
-        runnable.sendStaticEvents(tests, ev);
+        runnable.sendStaticEvents(tests, e);
       }
 
       this.sendFinishedEventIfNeeded();

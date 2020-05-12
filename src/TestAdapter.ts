@@ -1,14 +1,6 @@
 import { sep as osPathSeparator } from 'path';
 import * as vscode from 'vscode';
-import {
-  TestEvent,
-  TestLoadFinishedEvent,
-  TestLoadStartedEvent,
-  TestRunFinishedEvent,
-  TestRunStartedEvent,
-  TestSuiteEvent,
-  RetireEvent,
-} from 'vscode-test-adapter-api';
+import { TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, RetireEvent } from 'vscode-test-adapter-api';
 import * as api from 'vscode-test-adapter-api';
 import * as Sentry from '@sentry/node';
 
@@ -16,7 +8,7 @@ import { LoggerWrapper } from './LoggerWrapper';
 import { RootSuite } from './RootSuite';
 import { generateId, reverse } from './Util';
 import { TaskQueue } from './TaskQueue';
-import { SharedVariables } from './SharedVariables';
+import { SharedVariables, TestRunEvent } from './SharedVariables';
 import { Catch2Section, Catch2Test } from './framework/Catch2Test';
 import { AbstractRunnable } from './AbstractRunnable';
 import { Configurations, Config } from './Configurations';
@@ -24,13 +16,13 @@ import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 import { AbstractTest } from './AbstractTest';
 import { ResolveRule, resolveVariables } from './util/ResolveRule';
+import { inspect } from 'util';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _log: LoggerWrapper;
+
   private readonly _testsEmitter = new vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>();
-  private readonly _testStatesEmitter = new vscode.EventEmitter<
-    TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
-  >();
+  private readonly _testStatesEmitter = new vscode.EventEmitter<TestRunEvent>();
   private readonly _retireEmitter = new vscode.EventEmitter<RetireEvent>();
 
   private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
@@ -137,8 +129,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._disposables.push(this._testStatesEmitter);
 
     // TODO remove debounce config and package
-    const sendRetireEvent = (tests: readonly AbstractTest[]): void => {
-      this._retireEmitter.fire({ tests: tests.map(t => t.id) });
+    const sendRetireEvent = (tests: Iterable<AbstractTest>): void => {
+      const ids: string[] = [];
+      for (const t of tests) ids.push(t.id);
+      this._retireEmitter.fire({ tests: ids });
     };
 
     const sendTestStateEvents = (testEvents: TestEvent[]): void => {
@@ -225,15 +219,14 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     };
 
     const loadTask = (task: () => Promise<void>): Promise<void> => {
-      this._rootSuite.sendLoadingEventIfNeeded();
+      this._sendLoadingEventIfNeeded();
       return task().then(
         () => {
-          this._rootSuite.sendLoadingFinishedEventIfNeeded();
+          this._sendLoadingFinishedEventIfNeeded();
         },
         (reason: Error) => {
           this._log.exceptionS(reason);
-          debugger;
-          this._rootSuite.sendLoadingFinishedEventIfNeeded(reason);
+          this._sendLoadingFinishedEventIfNeeded(reason);
         },
       );
     };
@@ -264,8 +257,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       loadTask,
       sendTestStateEvents,
       sendRetireEvent,
-      variableToValue,
       executeTask,
+      variableToValue,
       configuration.getRandomGeneratorSeed(),
       configuration.getExecWatchTimeout(),
       configuration.getRetireDebounceTime(),
@@ -339,7 +332,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }),
     );
 
-    this._rootSuite = new RootSuite(undefined, this._shared, this._testsEmitter);
+    this._rootSuite = new RootSuite(undefined, this._shared);
   }
 
   public dispose(): void {
@@ -366,7 +359,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
   }
 
-  public get testStates(): vscode.Event<TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent> {
+  public get testStates(): vscode.Event<TestRunEvent> {
     return this._testStatesEmitter.event;
   }
 
@@ -378,6 +371,38 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return this._retireEmitter.event;
   }
 
+  private _testLoadingCounter = 0;
+
+  private _sendLoadingEventIfNeeded(): void {
+    if (this._testLoadingCounter++ === 0) {
+      this._log.info('load started');
+      this._testsEmitter.fire({ type: 'started' });
+    }
+  }
+
+  // eslint-disable-next-line
+  private _sendLoadingFinishedEventIfNeeded(err?: any): void {
+    if (this._testLoadingCounter < 1) {
+      this._log.error('loading counter is too low');
+      this._testLoadingCounter = 0;
+      return;
+    }
+    if (this._testLoadingCounter-- === 1) {
+      this._log.info('load finished', this._rootSuite.children.length);
+      if (err) {
+        this._testsEmitter.fire({
+          type: 'finished',
+          errorMessage: err instanceof Error ? `${err.name}\n${err.message}` : inspect(err),
+        });
+      } else {
+        this._testsEmitter.fire({
+          type: 'finished',
+          suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
+        });
+      }
+    }
+  }
+
   public load(): Promise<void> {
     this._log.info('load called');
 
@@ -386,23 +411,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const configuration = this._getConfiguration();
 
-    this._rootSuite = new RootSuite(this._rootSuite.id, this._shared, this._testsEmitter);
+    this._rootSuite = new RootSuite(this._rootSuite.id, this._shared);
 
-    this._rootSuite.sendLoadingEventIfNeeded();
-
-    return configuration
-      .getExecutables(this._shared, this._shared.varToValue)
-      .then(exec => this._rootSuite.load(exec))
-      .then(
-        () => {
-          this._rootSuite.sendLoadingFinishedEventIfNeeded();
-        },
-        (e: Error) => {
-          this._log.exceptionS(e);
-
-          this._rootSuite.sendLoadingFinishedEventIfNeeded(e);
-        },
-      );
+    return this._shared.loadWithTask(() =>
+      configuration.getExecutables(this._shared, this._shared.varToValue).then(exec => this._rootSuite.load(exec)),
+    );
   }
 
   private _cancellationTokenSource: vscode.CancellationTokenSource | undefined = undefined;

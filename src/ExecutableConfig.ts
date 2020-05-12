@@ -355,8 +355,8 @@ export class ExecutableConfig implements vscode.Disposable {
   }
 
   private _handleEverything(filePath: string, rootSuite: RootSuite): void {
-    const isRunning = this._lastEventArrivedAt.get(filePath) !== undefined;
-    if (isRunning) return;
+    const isHandlerRunningForFile = this._lastEventArrivedAt.get(filePath) !== undefined;
+    if (isHandlerRunningForFile) return;
 
     this._lastEventArrivedAt.set(filePath, Date.now());
 
@@ -388,20 +388,6 @@ export class ExecutableConfig implements vscode.Disposable {
       this._shared.log.error('assert');
       debugger;
       return Promise.resolve();
-    } else if (Date.now() - lastEventArrivedAt > this._shared.execWatchTimeout) {
-      this._shared.log.info('refresh timeout:', filePath);
-      this._lastEventArrivedAt.delete(filePath);
-      const foundRunnable = this._runnables.get(filePath);
-      if (foundRunnable) {
-        return this._shared.loadWithTask(
-          async (): Promise<void> => {
-            foundRunnable.removeTests();
-            this._runnables.delete(filePath);
-          },
-        );
-      } else {
-        return Promise.resolve();
-      }
     } else if (isFileExistsAndExecutable) {
       return new Promise<void>((resolve, reject) => {
         return runnable
@@ -421,6 +407,20 @@ export class ExecutableConfig implements vscode.Disposable {
         }
         return this._recursiveHandleEverything(runnable, false, Math.min(delay * 2, 2000));
       });
+    } else if (Date.now() - lastEventArrivedAt > this._shared.execWatchTimeout) {
+      this._shared.log.info('refresh timeout:', filePath);
+      this._lastEventArrivedAt.delete(filePath);
+      const foundRunnable = this._runnables.get(filePath);
+      if (foundRunnable) {
+        return this._shared.loadWithTask(
+          async (): Promise<void> => {
+            foundRunnable.removeTests();
+            this._runnables.delete(filePath);
+          },
+        );
+      } else {
+        return Promise.resolve();
+      }
     } else {
       return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
         return c2fs

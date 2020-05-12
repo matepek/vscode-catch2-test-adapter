@@ -11,19 +11,11 @@ import { EventEmitter } from 'events';
 import { Readable, Writable } from 'stream';
 import { ChildProcess } from 'child_process';
 
-import {
-  TestEvent,
-  TestLoadFinishedEvent,
-  TestLoadStartedEvent,
-  TestRunFinishedEvent,
-  TestRunStartedEvent,
-  TestSuiteEvent,
-  TestSuiteInfo,
-  TestInfo,
-} from 'vscode-test-adapter-api';
+import { TestLoadFinishedEvent, TestLoadStartedEvent, TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
 
 import * as my from '../src/TestAdapter';
 import { Config } from '../src/Configurations';
+import { TestRunEvent } from '../src/SharedVariables';
 
 ///
 
@@ -230,10 +222,6 @@ export class Imitation {
     };
   }
 }
-
-///
-
-export type TestRunEvent = TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent;
 
 ///
 

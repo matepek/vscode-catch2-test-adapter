@@ -15,8 +15,6 @@ GTEST_TEST(TestCas1, test1) {
   ASSERT_TRUE(1 == 1);
 }
 
-GTEST_TEST(TestCas1, xxxs) {}
-
 GTEST_TEST(TestCas1, test2) {
   //
   ASSERT_TRUE(1 == 1);

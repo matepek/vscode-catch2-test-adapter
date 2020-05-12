@@ -8,7 +8,7 @@ import { Suite } from './Suite';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningRunnable } from './RunningRunnable';
-import { promisify } from 'util';
+import { promisify, inspect } from 'util';
 import { Version, reverse, getAbsolutePath, CancellationToken } from './Util';
 import {
   resolveVariables,
@@ -21,11 +21,11 @@ import { TestEvent } from 'vscode-test-adapter-api';
 import { RootSuite } from './RootSuite';
 
 export class RunnableReloadResult {
-  public tests: AbstractTest[] = [];
+  public tests = new Set<AbstractTest>();
   public changedAny = false;
 
   public add(test: AbstractTest, changed: boolean): this {
-    this.tests.push(test);
+    this.tests.add(test);
     this.changedAny = this.changedAny || changed;
     return this;
   }
@@ -35,7 +35,7 @@ export abstract class AbstractRunnable {
   private static _reportedFrameworks: string[] = [];
 
   private _lastReloadTime: number | undefined = undefined;
-  private _tests: AbstractTest[] = [];
+  private _tests = new Set<AbstractTest>();
 
   public constructor(
     protected readonly _shared: SharedVariables,
@@ -67,7 +67,7 @@ export abstract class AbstractRunnable {
     };
   }
 
-  public get tests(): readonly AbstractTest[] {
+  public get tests(): Set<AbstractTest> {
     return this._tests;
   }
 
@@ -258,14 +258,14 @@ export abstract class AbstractRunnable {
       return [old, updateTest(old)];
     } else {
       const test = group.addTest(createTest(group));
-      this._tests.push(test);
+      this._tests.add(test);
       return [test, true];
     }
   }
 
   public removeTests(): void {
     this._tests.forEach(t => t.removeWithLeafAscendants());
-    this._tests = [];
+    this._tests = new Set();
   }
 
   protected _createError(title: string, message: string): (parent: Suite) => AbstractTest {
@@ -351,25 +351,36 @@ export abstract class AbstractRunnable {
     );
   }
 
-  private _splitTestSetForMultirun(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
+  private _splitTestSetForMultirunIfEnabled(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
     const parallelizationLimit = this.properties.parallelizationPool.maxTaskCount;
 
-    // user intention?
-    const testPerTask = Math.max(1, Math.round(this.tests.length / parallelizationLimit));
+    if (parallelizationLimit > 1) {
+      // user intention?
+      const testPerTask = Math.max(1, Math.round(this.tests.size / parallelizationLimit));
 
-    const targetTaskCount = Math.min(tests.length, Math.max(1, Math.round(tests.length / testPerTask)));
+      const targetTaskCount = Math.min(tests.length, Math.max(1, Math.round(tests.length / testPerTask)));
 
-    const buckets: AbstractTest[][] = [];
+      const buckets: AbstractTest[][] = [];
 
-    for (let i = 0; i < targetTaskCount; ++i) {
-      buckets.push([]);
+      for (let i = 0; i < targetTaskCount; ++i) {
+        buckets.push([]);
+      }
+
+      for (let i = 0; i < tests.length; ++i) {
+        buckets[i % buckets.length].push(tests[i]);
+      }
+
+      if (buckets.length > 1) {
+        this._shared.log.info(
+          "Parallel execution of the same executable is enabled. Note: This can cause problems if the executable's test cases depend on the same resource.",
+          buckets.length,
+        );
+      }
+
+      return buckets;
+    } else {
+      return [tests];
     }
-
-    for (let i = 0; i < tests.length; ++i) {
-      buckets[i % buckets.length].push(tests[i]);
-    }
-
-    return buckets;
   }
 
   private _splitTestsToSmallEnoughSubsets(tests: readonly AbstractTest[]): AbstractTest[][] {
@@ -407,19 +418,19 @@ export abstract class AbstractRunnable {
       if (this._lastReloadTime === undefined || lastModiTime === undefined || this._lastReloadTime !== lastModiTime) {
         this._lastReloadTime = lastModiTime;
 
-        return this._reloadChildren().then((reloadResult: RunnableReloadResult) => {
-          const toRemove = this._tests.filter(t => reloadResult.tests.indexOf(t) === -1);
-          if (toRemove.length > 0 || reloadResult.changedAny) {
-            this._rootSuite.sendLoadingEventIfNeeded();
+        const reloadResult = await this._reloadChildren();
 
+        const toRemove: AbstractTest[] = [];
+        for (const t of this._tests) if (!reloadResult.tests.has(t)) toRemove.push(t);
+
+        if (toRemove.length > 0 || reloadResult.changedAny) {
+          await this._shared.loadWithTask(async () => {
             toRemove.forEach(t => {
               t.removeWithLeafAscendants();
-              this._tests.splice(this._tests.indexOf(t), 1);
+              this._tests.delete(t);
             });
-
-            this._rootSuite.sendLoadingFinishedEventIfNeeded();
-          }
-        });
+          });
+        }
       } else {
         this._shared.log.debug('reloadTests was skipped due to mtime', this.properties.path);
       }
@@ -432,40 +443,24 @@ export abstract class AbstractRunnable {
     taskPool: TaskPool,
     cancellationToken: CancellationToken,
   ): Promise<void> {
-    await this.reloadTests(taskPool);
-
-    const childrenToRun: readonly AbstractTest[] = this._rootSuite.collectTestToRun(
-      tests,
-      isParentIn,
-      (test: AbstractTest): boolean => test.runnable === this,
-    );
-
-    if (childrenToRun.length === 0) return;
-
-    const buckets =
-      this.properties.parallelizationPool.maxTaskCount > 1
-        ? this._splitTestSetForMultirun(childrenToRun)
-        : [childrenToRun];
-
-    if (buckets.length > 1) {
-      this._shared.log.info(
-        "Parallel execution of the same executable is enabled. Note: This can cause problems if the executable's test cases depend on the same resource.",
-        buckets.length,
-      );
-    }
+    const collectChildrenToRun = (): readonly AbstractTest[] =>
+      this._rootSuite.collectTestToRun(tests, isParentIn, (test: AbstractTest): boolean => test.runnable === this);
 
     try {
       await this.runTaskbeforeEach(taskPool, cancellationToken);
     } catch (e) {
-      this.sendStaticEvents(childrenToRun, {
-        type: 'test',
-        test: 'will be filled automatically',
-        state: 'errored',
-        message: e,
-      });
+      this.sentStaticErrorEvent(collectChildrenToRun(), e);
 
       return;
     }
+
+    await this.reloadTests(taskPool);
+
+    const childrenToRun = collectChildrenToRun();
+
+    if (childrenToRun.length === 0) return;
+
+    const buckets = this._splitTestSetForMultirunIfEnabled(childrenToRun);
 
     return Promise.all(
       buckets.map(async (bucket: readonly AbstractTest[]) => {
@@ -508,6 +503,16 @@ export abstract class AbstractRunnable {
         this._shared.testStatesEmitter.fire(event);
         route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
       }
+    });
+  }
+
+  // eslint-disable-next-line
+  public sentStaticErrorEvent(childrenToRun: readonly AbstractTest[], err: any): void {
+    this.sendStaticEvents(childrenToRun, {
+      type: 'test',
+      test: 'will be filled automatically',
+      state: 'errored',
+      message: err instanceof Error ? `${err.name}\n${err.message}` : inspect(err),
     });
   }
 
@@ -621,7 +626,8 @@ export abstract class AbstractRunnable {
   }
 
   protected _findTest(pred: (t: AbstractTest) => boolean): AbstractTest | undefined {
-    return this._tests.find(pred);
+    for (const t of this._tests) if (pred(t)) return t;
+    return undefined;
   }
 
   protected _findFilePath(matchedPath: string): string {

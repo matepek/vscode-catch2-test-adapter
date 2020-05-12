@@ -5,9 +5,9 @@ import { TaskPool } from './TaskPool';
 import { AbstractTest } from './AbstractTest';
 import { ResolveRule } from './util/ResolveRule';
 
-type TestStateEmitterType = vscode.EventEmitter<
-  TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent
->;
+export type TestRunEvent = TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent;
+
+type TestStateEmitterType = vscode.EventEmitter<TestRunEvent>;
 
 export class SharedVariables implements vscode.Disposable {
   private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
@@ -16,16 +16,16 @@ export class SharedVariables implements vscode.Disposable {
   public constructor(
     public readonly log: LoggerWrapper,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
-    public readonly testStatesEmitter: TestStateEmitterType,
+    public readonly testStatesEmitter: TestStateEmitterType, //TODO check
     public readonly loadWithTask: (task: () => Promise<void>) => Promise<void>,
     public readonly sendTestEvents: (testEvents: (TestEvent & { type: 'test' })[]) => void,
-    public readonly retire: (tests: readonly AbstractTest[]) => void,
-    public readonly varToValue: readonly Readonly<ResolveRule>[],
+    public readonly retire: (tests: Iterable<AbstractTest>) => void,
     public readonly executeTask: (
       taskName: string,
       varsToResolve: readonly ResolveRule[],
       cancellationToken: vscode.CancellationToken,
     ) => Promise<number | undefined>,
+    public readonly varToValue: readonly Readonly<ResolveRule>[],
     public rngSeed: 'time' | number | null,
     public execWatchTimeout: number,
     public retireDebounceTime: number,

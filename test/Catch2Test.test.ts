@@ -1,11 +1,12 @@
 import * as assert from 'assert';
 import * as path from 'path';
-import { settings, TestRunEvent } from './Common';
+import { settings } from './Common';
 import { Catch2Test } from '../src/framework/Catch2Test';
 import { LoggerWrapper } from '../src/LoggerWrapper';
 import { AbstractRunnable } from '../src/AbstractRunnable';
 import { Suite } from '../src/Suite';
 import { Version } from '../src/Util';
+import { TestRunEvent } from '../src/SharedVariables';
 
 ///
 

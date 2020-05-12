@@ -4,7 +4,8 @@ import * as pathlib from 'path';
 import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, settings, ChildProcessStub, expectedLoggedErrorLine, TestRunEvent } from './Common';
+import { TestAdapter, Imitation, settings, ChildProcessStub, expectedLoggedErrorLine } from './Common';
+import { TestRunEvent } from '../src/SharedVariables';
 
 ///
 
