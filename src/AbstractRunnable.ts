@@ -8,7 +8,7 @@ import { Suite } from './Suite';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningRunnable } from './RunningRunnable';
-import { promisify } from 'util';
+import { promisify, inspect } from 'util';
 import { Version, reverse, getAbsolutePath, CancellationToken } from './Util';
 import {
   resolveVariables,
@@ -18,16 +18,28 @@ import {
 } from './util/ResolveRule';
 import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
 import { TestEvent } from 'vscode-test-adapter-api';
+import { RootSuite } from './RootSuite';
+
+export class RunnableReloadResult {
+  public tests = new Set<AbstractTest>();
+  public changedAny = false;
+
+  public add(test: AbstractTest, changed: boolean): this {
+    this.tests.add(test);
+    this.changedAny = this.changedAny || changed;
+    return this;
+  }
+}
 
 export abstract class AbstractRunnable {
   private static _reportedFrameworks: string[] = [];
 
   private _lastReloadTime: number | undefined = undefined;
-  private _tests: AbstractTest[] = [];
+  private _tests = new Set<AbstractTest>();
 
   public constructor(
     protected readonly _shared: SharedVariables,
-    protected readonly _rootSuite: Suite,
+    protected readonly _rootSuite: RootSuite,
     public readonly properties: RunnableSuiteProperties,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<Version | undefined>,
@@ -55,7 +67,7 @@ export abstract class AbstractRunnable {
     };
   }
 
-  public get tests(): readonly AbstractTest[] {
+  public get tests(): Set<AbstractTest> {
     return this._tests;
   }
 
@@ -88,13 +100,14 @@ export abstract class AbstractRunnable {
   }
 
   protected _createSubtreeAndAddTest(
+    testGrouping: TestGrouping,
+    testNameAsId: string,
     testName: string,
-    testNameInOutput: string,
     file: string | undefined,
     tags: string[], // in case of google test it is the TestCase
-    testGrouping: TestGrouping,
-    createTest: (parent: Suite, old: AbstractTest | undefined) => AbstractTest,
-  ): void {
+    createTest: (parent: Suite) => AbstractTest,
+    updateTest: (old: AbstractTest) => boolean,
+  ): [AbstractTest, boolean] {
     let group = this._rootSuite as Suite;
 
     const relPath = file ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file) : '';
@@ -237,26 +250,25 @@ export abstract class AbstractRunnable {
       this._shared.log.exceptionS(e);
     }
 
-    const old = group.children.find(t => t instanceof AbstractTest && t.compare(testNameInOutput)) as
+    const old = group.children.find(t => t instanceof AbstractTest && t.compare(testNameAsId)) as
       | AbstractTest
       | undefined;
 
-    const test = createTest(group, old);
-
-    this._tests.push(test);
-
-    group.addTest(test);
+    if (old) {
+      return [old, updateTest(old)];
+    } else {
+      const test = group.addTest(createTest(group));
+      this._tests.add(test);
+      return [test, true];
+    }
   }
 
   public removeTests(): void {
     this._tests.forEach(t => t.removeWithLeafAscendants());
-    this._tests = [];
+    this._tests = new Set();
   }
 
-  protected _createError(
-    title: string,
-    message: string,
-  ): (parent: Suite, old: AbstractTest | undefined) => AbstractTest {
+  protected _createError(title: string, message: string): (parent: Suite) => AbstractTest {
     return (parent: Suite): AbstractTest => {
       const shared = this._shared;
       const runnable = this as AbstractRunnable;
@@ -266,7 +278,6 @@ export abstract class AbstractRunnable {
             shared,
             runnable,
             parent,
-            undefined,
             title,
             title,
             undefined,
@@ -285,8 +296,8 @@ export abstract class AbstractRunnable {
           );
         }
 
-        public get testNameInOutput(): string {
-          return this.testName;
+        public compare(testNameAsId: string): boolean {
+          return testNameAsId === testNameAsId;
         }
 
         public getDebugParams(): string[] {
@@ -298,25 +309,28 @@ export abstract class AbstractRunnable {
         }
       })();
 
-      this._shared.sendTestEventEmitter.fire([test.staticEvent!]);
+      this._shared.sendTestEvents([test.staticEvent!]);
 
       return test;
     };
   }
 
-  protected _createAndAddError(label: string, message: string): void {
-    this._createSubtreeAndAddTest(
-      label,
-      label,
-      undefined,
-      [],
-      { groupByExecutable: this._getGroupByExecutable() },
-      this._createError(label, message),
+  protected _createAndAddError(label: string, message: string): RunnableReloadResult {
+    return new RunnableReloadResult().add(
+      ...this._createSubtreeAndAddTest(
+        { groupByExecutable: this._getGroupByExecutable() },
+        label,
+        label,
+        undefined,
+        [],
+        this._createError(label, message),
+        () => false,
+      ),
     );
   }
 
-  protected _createAndAddUnexpectedStdError(stdout: string, stderr: string): void {
-    this._createAndAddError(
+  protected _createAndAddUnexpectedStdError(stdout: string, stderr: string): RunnableReloadResult {
+    return this._createAndAddError(
       `⚡️ Unexpected ERROR while parsing`,
       [
         `❗️Unexpected stderr!`,
@@ -337,31 +351,36 @@ export abstract class AbstractRunnable {
     );
   }
 
-  private async _isOutDated(): Promise<boolean> {
-    const lastModiTime = await this._getModiTime();
-
-    return this._lastReloadTime !== undefined && lastModiTime !== undefined && this._lastReloadTime !== lastModiTime;
-  }
-
-  private _splitTestSetForMultirun(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
+  private _splitTestSetForMultirunIfEnabled(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
     const parallelizationLimit = this.properties.parallelizationPool.maxTaskCount;
 
-    // user intention?
-    const testPerTask = Math.max(1, Math.round(this.tests.length / parallelizationLimit));
+    if (parallelizationLimit > 1) {
+      // user intention?
+      const testPerTask = Math.max(1, Math.round(this.tests.size / parallelizationLimit));
 
-    const targetTaskCount = Math.min(tests.length, Math.max(1, Math.round(tests.length / testPerTask)));
+      const targetTaskCount = Math.min(tests.length, Math.max(1, Math.round(tests.length / testPerTask)));
 
-    const buckets: AbstractTest[][] = [];
+      const buckets: AbstractTest[][] = [];
 
-    for (let i = 0; i < targetTaskCount; ++i) {
-      buckets.push([]);
+      for (let i = 0; i < targetTaskCount; ++i) {
+        buckets.push([]);
+      }
+
+      for (let i = 0; i < tests.length; ++i) {
+        buckets[i % buckets.length].push(tests[i]);
+      }
+
+      if (buckets.length > 1) {
+        this._shared.log.info(
+          "Parallel execution of the same executable is enabled. Note: This can cause problems if the executable's test cases depend on the same resource.",
+          buckets.length,
+        );
+      }
+
+      return buckets;
+    } else {
+      return [tests];
     }
-
-    for (let i = 0; i < tests.length; ++i) {
-      buckets[i % buckets.length].push(tests[i]);
-    }
-
-    return buckets;
   }
 
   private _splitTestsToSmallEnoughSubsets(tests: readonly AbstractTest[]): AbstractTest[][] {
@@ -371,18 +390,18 @@ export abstract class AbstractRunnable {
     const limit = 30000;
 
     for (const test of tests) {
-      if (charCount + test.testName.length >= limit) {
+      if (charCount + test.testNameAsId.length >= limit) {
         lastSet = [];
         subsets.push(lastSet);
       }
       lastSet.push(test);
-      charCount += test.testName.length;
+      charCount += test.testNameAsId.length;
     }
 
     return subsets;
   }
 
-  protected abstract _reloadChildren(): Promise<void>;
+  protected abstract _reloadChildren(): Promise<RunnableReloadResult>;
 
   protected abstract _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
 
@@ -398,9 +417,20 @@ export abstract class AbstractRunnable {
 
       if (this._lastReloadTime === undefined || lastModiTime === undefined || this._lastReloadTime !== lastModiTime) {
         this._lastReloadTime = lastModiTime;
-        const oldTests = this._tests;
-        this._tests = [];
-        return this._reloadChildren().finally(() => oldTests.forEach(t => t.removeWithLeafAscendants()));
+
+        const reloadResult = await this._reloadChildren();
+
+        const toRemove: AbstractTest[] = [];
+        for (const t of this._tests) if (!reloadResult.tests.has(t)) toRemove.push(t);
+
+        if (toRemove.length > 0 || reloadResult.changedAny) {
+          await this._shared.loadWithTask(async () => {
+            toRemove.forEach(t => {
+              t.removeWithLeafAscendants();
+              this._tests.delete(t);
+            });
+          });
+        }
       } else {
         this._shared.log.debug('reloadTests was skipped due to mtime', this.properties.path);
       }
@@ -408,55 +438,36 @@ export abstract class AbstractRunnable {
   }
 
   public async run(
-    childrenToRun: readonly AbstractTest[],
+    tests: readonly string[],
+    isParentIn: boolean,
     taskPool: TaskPool,
     cancellationToken: CancellationToken,
   ): Promise<void> {
-    if (childrenToRun.length === 0) {
-      return Promise.resolve();
-    }
-
-    const buckets =
-      this.properties.parallelizationPool.maxTaskCount > 1
-        ? this._splitTestSetForMultirun(childrenToRun)
-        : [childrenToRun];
-
-    if (buckets.length > 1) {
-      this._shared.log.info(
-        "Parallel execution of the same executable is enabled. Note: This can cause problems if the executable's test cases depend on the same resource.",
-        buckets.length,
-      );
-    }
+    const collectChildrenToRun = (): readonly AbstractTest[] =>
+      this._rootSuite.collectTestToRun(tests, isParentIn, (test: AbstractTest): boolean => test.runnable === this);
 
     try {
       await this.runTaskbeforeEach(taskPool, cancellationToken);
     } catch (e) {
-      this.sendStaticEvents(childrenToRun, {
-        type: 'test',
-        test: 'will be filled automatically',
-        state: 'errored',
-        message: e,
-      });
+      this.sentStaticErrorEvent(collectChildrenToRun(), e);
 
       return;
     }
+
+    await this.reloadTests(taskPool);
+
+    const childrenToRun = collectChildrenToRun();
+
+    if (childrenToRun.length === 0) return;
+
+    const buckets = this._splitTestSetForMultirunIfEnabled(childrenToRun);
 
     return Promise.all(
       buckets.map(async (bucket: readonly AbstractTest[]) => {
         const smallerTestSet = this._splitTestsToSmallEnoughSubsets(bucket);
         for (const testSet of smallerTestSet) await this._runInner(testSet, taskPool, cancellationToken);
       }),
-    )
-      .finally(() => {
-        // last resort: if no fswatcher are functioning, this might notice the change
-        this._isOutDated().then(
-          (isOutDated: boolean) => {
-            if (isOutDated) this._shared.loadWithTaskEmitter.fire(() => this.reloadTests(this._shared.taskPool));
-          },
-          err => this._shared.log.exceptionS(err),
-        );
-      })
-      .then();
+    ).then();
   }
 
   public async runTaskbeforeEach(taskPool: TaskPool, cancellationToken: CancellationToken): Promise<void> {
@@ -464,6 +475,7 @@ export abstract class AbstractRunnable {
       try {
         // sequential execution of tasks
         for (const taskName of this.properties.runTask.beforeEach) {
+          // task execution is sequentioal currently so we dont nee the taskPool
           const exitCode = await this._shared.executeTask(taskName, this.properties.varToValue, cancellationToken);
 
           if (exitCode !== undefined) {
@@ -491,6 +503,16 @@ export abstract class AbstractRunnable {
         this._shared.testStatesEmitter.fire(event);
         route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
       }
+    });
+  }
+
+  // eslint-disable-next-line
+  public sentStaticErrorEvent(childrenToRun: readonly AbstractTest[], err: any): void {
+    this.sendStaticEvents(childrenToRun, {
+      type: 'test',
+      test: 'will be filled automatically',
+      state: 'errored',
+      message: err instanceof Error ? `${err.name}\n${err.message}` : inspect(err),
     });
   }
 
@@ -604,7 +626,8 @@ export abstract class AbstractRunnable {
   }
 
   protected _findTest(pred: (t: AbstractTest) => boolean): AbstractTest | undefined {
-    return this._tests.find(pred);
+    for (const t of this._tests) if (pred(t)) return t;
+    return undefined;
   }
 
   protected _findFilePath(matchedPath: string): string {

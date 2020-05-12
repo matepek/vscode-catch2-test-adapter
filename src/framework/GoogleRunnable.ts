@@ -4,7 +4,7 @@ import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
 import { Suite } from '../Suite';
-import { AbstractRunnable } from '../AbstractRunnable';
+import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { GoogleTest } from './GoogleTest';
 import { Parser } from 'xml2js';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
@@ -13,13 +13,14 @@ import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
+import { RootSuite } from '../RootSuite';
 
 export class GoogleRunnable extends AbstractRunnable {
   public children: Suite[] = [];
 
   public constructor(
     shared: SharedVariables,
-    rootSuite: Suite,
+    rootSuite: RootSuite,
     execInfo: RunnableSuiteProperties,
     private readonly _argumentPrefix: string,
     version: Promise<Version | undefined>,
@@ -37,7 +38,7 @@ export class GoogleRunnable extends AbstractRunnable {
     }
   }
 
-  private _reloadFromXml(xmlStr: string): void {
+  private _reloadFromXml(xmlStr: string): RunnableReloadResult {
     interface XmlObject {
       [prop: string]: any; //eslint-disable-line
     }
@@ -52,44 +53,40 @@ export class GoogleRunnable extends AbstractRunnable {
       }
     });
 
+    const reloadResult = new RunnableReloadResult();
+
     for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
       const suiteName = xml.testsuites.testsuite[i].$.name;
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
         const testCase = xml.testsuites.testsuite[i].testcase[j];
         const testName = testCase.$.name.startsWith('DISABLED_') ? testCase.$.name.substr(9) : testCase.$.name;
-        const testNameInOutput = suiteName + '.' + testCase.$.name;
+        const testNameAsId = suiteName + '.' + testCase.$.name;
         const typeParam: string | undefined = testCase.$.type_param;
         const valueParam: string | undefined = testCase.$.value_param;
 
         const file = testCase.$.file ? this._findFilePath(testCase.$.file) : undefined;
         const line = testCase.$.line ? testCase.$.line - 1 : undefined;
 
-        this._createSubtreeAndAddTest(
-          testName,
-          testNameInOutput,
-          file,
-          [suiteName],
-          this.getTestGrouping(),
-          (parent: Suite, old: AbstractTest | undefined) =>
-            new GoogleTest(
-              this._shared,
-              this,
-              parent,
-              testNameInOutput,
-              testName,
-              typeParam,
-              valueParam,
-              file,
-              line,
-              old,
-            ),
+        reloadResult.add(
+          ...this._createSubtreeAndAddTest(
+            this.getTestGrouping(),
+            testNameAsId,
+            testName,
+            file,
+            [suiteName],
+            (parent: Suite) =>
+              new GoogleTest(this._shared, this, parent, testNameAsId, testName, typeParam, valueParam, file, line),
+            (old: AbstractTest) => (old as GoogleTest).update(typeParam, valueParam, file, line),
+          ),
         );
       }
     }
+
+    return reloadResult;
   }
 
-  private _reloadFromStdOut(stdOutStr: string): void {
+  private _reloadFromStdOut(stdOutStr: string): RunnableReloadResult {
     this.children = [];
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -110,6 +107,8 @@ export class GoogleRunnable extends AbstractRunnable {
 
     let testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
 
+    const reloadResult = new RunnableReloadResult();
+
     while (testGroupMatch) {
       lineNum++;
 
@@ -124,27 +123,29 @@ export class GoogleRunnable extends AbstractRunnable {
 
         const testName = testMatch[1].startsWith('DISABLED_') ? testMatch[1].substr(9) : testMatch[1];
         const valueParam: string | undefined = testMatch[3];
-        const testNameInOutput = testGroupName + '.' + testMatch[1];
+        const testNameAsId = testGroupName + '.' + testMatch[1];
 
-        this._createSubtreeAndAddTest(
-          testName,
-          testNameInOutput,
-          undefined,
-          [suiteName],
-          this.getTestGrouping(),
-          (parent: Suite, old: AbstractTest | undefined) =>
-            new GoogleTest(
-              this._shared,
-              this,
-              parent,
-              testNameInOutput,
-              testName,
-              typeParam,
-              valueParam,
-              undefined,
-              undefined,
-              old,
-            ),
+        reloadResult.add(
+          ...this._createSubtreeAndAddTest(
+            this.getTestGrouping(),
+            testNameAsId,
+            testName,
+            undefined,
+            [suiteName],
+            (parent: Suite) =>
+              new GoogleTest(
+                this._shared,
+                this,
+                parent,
+                testNameAsId,
+                testName,
+                typeParam,
+                valueParam,
+                undefined,
+                undefined,
+              ),
+            (old: AbstractTest) => (old as GoogleTest).update(typeParam, valueParam, undefined, undefined),
+          ),
         );
 
         testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
@@ -152,9 +153,11 @@ export class GoogleRunnable extends AbstractRunnable {
 
       testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
     }
+
+    return reloadResult;
   }
 
-  protected async _reloadChildren(): Promise<void> {
+  protected async _reloadChildren(): Promise<RunnableReloadResult> {
     const cacheFile = this.properties.path + '.TestMate.testListCache.xml';
 
     if (this._shared.enabledTestListCaching) {
@@ -166,63 +169,62 @@ export class GoogleRunnable extends AbstractRunnable {
           this._shared.log.info('loading from cache: ', cacheFile);
           const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          this._reloadFromXml(xmlStr);
-          return Promise.resolve();
+          return await this._reloadFromXml(xmlStr);
         }
       } catch (e) {
         this._shared.log.info('coudnt use cache', e);
       }
     }
 
-    return c2fs
-      .spawnAsync(
-        this.properties.path,
-        this.properties.prependTestListingArgs.concat([
-          `--${this._argumentPrefix}list_tests`,
-          `--${this._argumentPrefix}output=xml:${cacheFile}`,
-        ]),
-        this.properties.options,
-        30000,
-      )
-      .then(async googleTestListOutput => {
-        this.children = [];
+    const googleTestListOutput = await c2fs.spawnAsync(
+      this.properties.path,
+      this.properties.prependTestListingArgs.concat([
+        `--${this._argumentPrefix}list_tests`,
+        `--${this._argumentPrefix}output=xml:${cacheFile}`,
+      ]),
+      this.properties.options,
+      30000,
+    );
 
-        if (googleTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
-          this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
-          this._createAndAddUnexpectedStdError(googleTestListOutput.stdout, googleTestListOutput.stderr);
-        } else {
-          const hasXmlFile = await promisify(fs.exists)(cacheFile);
+    this.children = [];
 
-          if (hasXmlFile) {
-            const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
+    if (googleTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
+      this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
+      return await this._createAndAddUnexpectedStdError(googleTestListOutput.stdout, googleTestListOutput.stderr);
+    } else {
+      const hasXmlFile = await promisify(fs.exists)(cacheFile);
 
-            this._reloadFromXml(xmlStr);
+      if (hasXmlFile) {
+        const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-            if (!this._shared.enabledTestListCaching) {
-              fs.unlink(cacheFile, (err: Error | null) => {
-                err && this._shared.log.warn("Couldn't remove: ", cacheFile, err);
-              });
-            }
-          } else {
-            this._shared.log.info(
-              "Couldn't parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output",
-            );
+        const result = await this._reloadFromXml(xmlStr);
 
-            try {
-              this._reloadFromStdOut(googleTestListOutput.stdout);
-            } catch (e) {
-              this._shared.log.info('GoogleTest._reloadFromStdOut error', e, googleTestListOutput);
-              throw e;
-            }
-          }
+        if (!this._shared.enabledTestListCaching) {
+          fs.unlink(cacheFile, (err: Error | null) => {
+            err && this._shared.log.warn("Couldn't remove: ", cacheFile, err);
+          });
         }
-      });
+
+        return result;
+      } else {
+        this._shared.log.info(
+          "Couldn't parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output",
+        );
+
+        try {
+          return await this._reloadFromStdOut(googleTestListOutput.stdout);
+        } catch (e) {
+          this._shared.log.info('GoogleTest._reloadFromStdOut error', e, googleTestListOutput);
+          throw e;
+        }
+      }
+    }
   }
 
   protected _getRunParams(childrenToRun: readonly Readonly<GoogleTest>[]): string[] {
     const execParams: string[] = [`--${this._argumentPrefix}color=no`];
 
-    const testNames = childrenToRun.map(c => c.testName);
+    const testNames = childrenToRun.map(c => c.testNameAsId);
 
     execParams.push(`--${this._argumentPrefix}filter=` + testNames.join(':'));
 
@@ -275,7 +277,7 @@ export class GoogleRunnable extends AbstractRunnable {
 
             data.currentTestCaseNameFull = m[1];
 
-            const test = this._findTest(v => v.testName == data.currentTestCaseNameFull);
+            const test = this._findTest(v => v.testNameAsId == data.currentTestCaseNameFull);
 
             if (test) {
               const route = [...test.route()];
@@ -283,7 +285,7 @@ export class GoogleRunnable extends AbstractRunnable {
               data.route = route;
 
               data.currentChild = test;
-              this._shared.log.info('Test', data.currentChild.testName, 'has started.');
+              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
               this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
             } else {
               this._shared.log.info('TestCase not found in children', data.currentTestCaseNameFull);
@@ -302,7 +304,7 @@ export class GoogleRunnable extends AbstractRunnable {
             const testCase = data.stdoutAndErrBuffer.substring(0, m.index! + m[0].length);
 
             if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testName, 'has finished.');
+              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
                 const ev = data.currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo.timeout, undefined);
 
@@ -407,11 +409,7 @@ export class GoogleRunnable extends AbstractRunnable {
           data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedTestCases.length > 0 || isTestRemoved) {
-          new Promise<void>((resolve, reject) => {
-            this._shared.loadWithTaskEmitter.fire(() => {
-              return this.reloadTests(this._shared.taskPool).then(resolve, reject);
-            });
-          }).then(
+          this.reloadTests(this._shared.taskPool).then(
             () => {
               // we have test results for the newly detected tests
               // after reload we can set the results
@@ -423,9 +421,9 @@ export class GoogleRunnable extends AbstractRunnable {
                 const m = testCase.match(testBeginRe);
                 if (m == null) break;
 
-                const testNameInOutput = m[1];
+                const testNameAsId = m[1];
 
-                const currentChild = this._findTest(v => v.compare(testNameInOutput));
+                const currentChild = this._findTest(v => v.compare(testNameAsId));
 
                 if (currentChild === undefined) break;
                 try {
@@ -435,7 +433,7 @@ export class GoogleRunnable extends AbstractRunnable {
                   this._shared.log.error('parsing and processing test', e, testCase);
                 }
               }
-              events.length && this._shared.sendTestEventEmitter.fire(events);
+              events.length && this._shared.sendTestEvents(events);
             },
             (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.

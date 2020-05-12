@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
-import { generateId, milisecToStr, concat } from './Util';
+import { generateId, concat } from './Util';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
 import { LoggerWrapper } from './LoggerWrapper';
@@ -12,13 +12,19 @@ interface SharedWithAbstractTest {
 export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
   public readonly id: string;
-  public readonly file: string | undefined;
-  public readonly line: number | undefined;
+  public readonly testNameAsId: string;
 
-  private readonly _descriptionBase: string;
-  private readonly _tooltipBase: string;
-  private _additionalDesciption: string;
-  private _additionalTooltip: string;
+  protected _label = '';
+  protected _additionalDesciption = '';
+  protected _additionalTooltip = '';
+  protected _skipped = false;
+  protected _tags: string[] = [];
+  protected _testDescription: string | undefined = undefined;
+  protected _typeParam: string | undefined = undefined; // gtest specific
+  protected _valueParam: string | undefined = undefined; // gtest specific
+  protected _file: string | undefined = undefined;
+  protected _line: number | undefined = undefined;
+  protected _staticEvent: TestEvent | undefined;
 
   public lastRunEvent: TestEvent | undefined;
   public lastRunMilisec: number | undefined;
@@ -27,69 +33,89 @@ export abstract class AbstractTest implements TestInfo {
     protected readonly _shared: SharedWithAbstractTest,
     public readonly runnable: AbstractRunnable,
     public readonly parent: Suite, // ascending
-    old: AbstractTest | undefined,
-    public readonly testName: string,
-    public readonly label: string,
+    testNameAsId: string,
+    label: string,
     file: string | undefined,
     line: number | undefined,
-    public readonly skipped: boolean,
-    public readonly staticEvent: TestEvent | undefined,
-    private readonly _pureTags: string[], // without brackets
+    skipped: boolean,
+    staticEvent: TestEvent | undefined,
+    pureTags: string[], // without brackets
     testDescription: string | undefined,
     typeParam: string | undefined, // gtest specific
     valueParam: string | undefined, // gtest specific
   ) {
+    this.id = generateId();
+    this.testNameAsId = testNameAsId;
+
+    this._updateBase(label, file, line, skipped, pureTags, testDescription, typeParam, valueParam, staticEvent);
+  }
+
+  protected _updateBase(
+    label: string,
+    file: string | undefined,
+    line: number | undefined,
+    skipped: boolean,
+    tags: string[], // without brackets
+    testDescription: string | undefined,
+    typeParam: string | undefined, // gtest specific
+    valueParam: string | undefined, // gtest specific
+    staticEvent: (TestEvent & { type: 'test' }) | undefined,
+  ): boolean {
     if (line && line < 0) throw Error('line smaller than zero');
 
-    this.id = old ? old.id : generateId();
-    this.file = file ? path.normalize(file) : undefined;
-    this.line = file ? line : undefined;
+    let changed = false;
 
-    const description: string[] = [];
-
-    const tooltip = [`Name: ${testName}`];
-
-    if (_pureTags.length > 0) {
-      const tagsStr = _pureTags.map(t => `[${t}]`).join('');
-      description.push(tagsStr);
-      tooltip.push(`Tags: ${tagsStr}`);
+    if (this._label != label) {
+      changed = true;
+      this._label = label;
     }
 
-    if (testDescription) {
-      tooltip.push(`Description: ${testDescription}`);
+    const newFile = file ? path.normalize(file) : undefined;
+    if (this._file != newFile) {
+      changed = true;
+      this._file = newFile;
     }
 
-    if (typeParam) {
-      description.push(`#️⃣Type: ${typeParam}`);
-      tooltip.push(`#️⃣TypeParam() = ${typeParam}`);
+    if (this._line != line) {
+      changed = true;
+      this._line = line;
     }
 
-    if (valueParam) {
-      description.push(`#️⃣Value: ${valueParam}`);
-      tooltip.push(`#️⃣GetParam() = ${valueParam}`);
+    if (this._skipped != skipped) {
+      changed = true;
+      this._skipped = skipped;
     }
 
-    this._descriptionBase = description.join('');
-    this._tooltipBase = tooltip.join('\n');
-
-    if (staticEvent) {
-      staticEvent.test = this;
+    if (this._testDescription != testDescription) {
+      changed = true;
+      this._testDescription = testDescription;
     }
 
-    if (old) {
-      this.lastRunEvent = old.lastRunEvent;
-      this.lastRunMilisec = old.lastRunMilisec;
-      this._additionalDesciption = old._additionalDesciption;
-      this._additionalTooltip = old._additionalTooltip;
-    } else {
-      this._additionalDesciption = '';
-      this._additionalTooltip = '';
+    if (tags.length !== this._tags.length || tags.some(t => this._tags.indexOf(t) === -1)) {
+      changed = true;
+      this._tags = tags;
     }
+
+    if (this._typeParam != typeParam) {
+      changed = true;
+      this._typeParam = typeParam;
+    }
+
+    if (this._valueParam != valueParam) {
+      changed = true;
+      this._valueParam = valueParam;
+    }
+
+    if (this._staticEvent !== staticEvent) {
+      changed = true;
+      this._staticEvent = staticEvent;
+      this._staticEvent!.test = this;
+    }
+
+    return changed;
   }
 
-  public compare(testNameInOutput: string): boolean {
-    return this.testNameInOutput === testNameInOutput;
-  }
+  public abstract compare(testNameAsId: string): boolean;
 
   // should be used only from TestEventBuilder
   public _updateDescriptionAndTooltip(description: string, tooltip: string): void {
@@ -97,18 +123,53 @@ export abstract class AbstractTest implements TestInfo {
     this._additionalTooltip = tooltip;
   }
 
+  public get label(): string {
+    return this._label;
+  }
+
   public get description(): string {
-    return concat(this._descriptionBase, this._additionalDesciption, ' ');
+    const description: string[] = [];
+
+    if (this._tags.length > 0) description.push(this._tags.map(t => `[${t}]`).join(''));
+
+    if (this._typeParam) description.push(`#️⃣Type: ${this._typeParam}`);
+
+    if (this._valueParam) description.push(`#️⃣Value: ${this._valueParam}`);
+
+    return concat(description.join('\n'), this._additionalDesciption, ' ');
   }
 
   public get tooltip(): string {
-    return concat(this._tooltipBase, this._additionalTooltip, '\n');
+    const tooltip = [`Name: ${this.testNameAsId}`];
+
+    if (this._tags.length > 0) {
+      const tagsStr = this._tags.map(t => `[${t}]`).join('');
+      tooltip.push(`Tags: ${tagsStr}`);
+    }
+
+    if (this._testDescription) tooltip.push(`Description: ${this._testDescription}`);
+
+    if (this._typeParam) tooltip.push(`#️⃣TypeParam() = ${this._typeParam}`);
+
+    if (this._valueParam) tooltip.push(`#️⃣GetParam() = ${this._valueParam}`);
+
+    return concat(tooltip.join('\n'), this._additionalTooltip, '\n');
   }
 
-  protected abstract get testNameInOutput(): string;
+  public get file(): string | undefined {
+    return this._file;
+  }
 
-  public get tags(): string[] {
-    return this._pureTags.filter(v => v != '.' && v != 'hide');
+  public get line(): number | undefined {
+    return this._line;
+  }
+
+  public get skipped(): boolean {
+    return this._skipped;
+  }
+
+  public get staticEvent(): TestEvent | undefined {
+    return this._staticEvent;
   }
 
   public *route(): IterableIterator<Suite> {
@@ -183,15 +244,6 @@ export abstract class AbstractTest implements TestInfo {
     };
   }
 
-  protected _extendDescriptionAndTooltip(ev: TestEvent, durationInMilisec: number): void {
-    this.lastRunMilisec = durationInMilisec;
-
-    const durationStr = milisecToStr(durationInMilisec);
-
-    ev.description = this._descriptionBase + (this._descriptionBase ? ' ' : '') + '(' + durationStr + ')';
-    ev.tooltip = this._tooltipBase + (this._tooltipBase ? '\n' : '') + '⏱Duration: ' + durationStr;
-  }
-
   public enumerateTestInfos(fn: (v: AbstractTest) => void): void {
     fn(this);
   }
@@ -200,9 +252,14 @@ export abstract class AbstractTest implements TestInfo {
     return pred(this) ? this : undefined;
   }
 
-  public collectTestToRun(tests: readonly string[], isParentIn: boolean): AbstractTest[] {
+  public collectTestToRun(
+    tests: readonly string[],
+    isParentIn: boolean,
+    filter: (test: AbstractTest) => boolean = (): boolean => true,
+  ): AbstractTest[] {
     if ((isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1) {
-      return [this];
+      if (filter(this)) return [this];
+      else return [];
     } else {
       return [];
     }

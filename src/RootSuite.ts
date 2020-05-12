@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TestInfo, TestEvent } from 'vscode-test-adapter-api';
+import { TestInfo } from 'vscode-test-adapter-api';
 import { ExecutableConfig } from './ExecutableConfig';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
@@ -98,32 +98,28 @@ export class RootSuite extends Suite implements vscode.Disposable {
     }
   }
 
-  public async run(tests: string[], cancellationToken: CancellationToken): Promise<void> {
-    this.sendStartEventIfNeeded(tests);
-
-    const isParentIn = tests.indexOf(this.id) !== -1;
-
-    const childrenToRun = this.collectTestToRun(tests, isParentIn);
-
-    const runnables = childrenToRun.reduce((prev, curr) => {
+  private _collectRunnables(tests: string[], isParentIn: boolean): Map<AbstractRunnable, AbstractTest[]> {
+    return this.collectTestToRun(tests, isParentIn).reduce((prev, curr) => {
       const arr = prev.get(curr.runnable);
       if (arr) arr.push(curr);
       else prev.set(curr.runnable, [curr]);
       return prev;
     }, new Map<AbstractRunnable, AbstractTest[]>());
+  }
+
+  public async run(tests: string[], cancellationToken: CancellationToken): Promise<void> {
+    this.sendStartEventIfNeeded(tests);
+
+    const isParentIn = tests.indexOf(this.id) !== -1;
+
+    let runnables = this._collectRunnables(tests, isParentIn);
 
     try {
       await this.runTaskBefore(runnables, cancellationToken);
+      runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
     } catch (e) {
-      const ev: TestEvent = {
-        type: 'test',
-        test: 'will be filled automatically',
-        state: 'errored',
-        message: e,
-      };
-
       for (const [runnable, tests] of runnables) {
-        runnable.sendStaticEvents(tests, ev);
+        runnable.sendStaticEvents(tests, e);
       }
 
       this.sendFinishedEventIfNeeded();
@@ -132,9 +128,9 @@ export class RootSuite extends Suite implements vscode.Disposable {
 
     const ps: Promise<void>[] = [];
 
-    for (const [runnable, runnableTests] of runnables) {
+    for (const [runnable] of runnables) {
       ps.push(
-        runnable.run(runnableTests, this._shared.taskPool, cancellationToken).catch(err => {
+        runnable.run(tests, isParentIn, this._shared.taskPool, cancellationToken).catch(err => {
           this._shared.log.error('RootTestSuite.run.for.child', runnable.properties.path, err);
         }),
       );

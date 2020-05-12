@@ -8,6 +8,8 @@
 
 #include "gmock/gmock.h"
 
+//GTEST_TEST(TestCas1, test1ss) {}
+
 GTEST_TEST(TestCas1, test1) {
   //
   ASSERT_TRUE(1 == 1);

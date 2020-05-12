@@ -11,19 +11,11 @@ import { EventEmitter } from 'events';
 import { Readable, Writable } from 'stream';
 import { ChildProcess } from 'child_process';
 
-import {
-  TestEvent,
-  TestLoadFinishedEvent,
-  TestLoadStartedEvent,
-  TestRunFinishedEvent,
-  TestRunStartedEvent,
-  TestSuiteEvent,
-  TestSuiteInfo,
-  TestInfo,
-} from 'vscode-test-adapter-api';
+import { TestLoadFinishedEvent, TestLoadStartedEvent, TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
 
 import * as my from '../src/TestAdapter';
 import { Config } from '../src/Configurations';
+import { TestRunEvent } from '../src/SharedVariables';
 
 ///
 
@@ -233,10 +225,6 @@ export class Imitation {
 
 ///
 
-export type TestRunEvent = TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent;
-
-///
-
 export class TestAdapter extends my.TestAdapter {
   public readonly testLoadsEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
   private readonly testLoadsEventsConnection: vscode.Disposable;
@@ -356,22 +344,29 @@ export class TestAdapter extends my.TestAdapter {
 
     const testStatesEvents = this._testStatesEvents;
 
-    for (let i = 0; i < expectedArr.length && i < testStatesEvents.length; ++i) {
-      const actual = testStatesEvents[i];
-      const expected = expectedArr[i];
+    try {
+      for (let i = 0; i < expectedArr.length && i < testStatesEvents.length; ++i) {
+        const actual = testStatesEvents[i];
+        const expected = expectedArr[i];
 
-      if (actual.type == 'test' && expected.type == 'test') {
-        assert.strictEqual(actual.test, expected.test, `index: ${i}`);
-        assert.strictEqual(actual.state, expected.state, `index: ${i}`);
-      } else if (actual.type == 'suite' && expected.type == 'suite') {
-        assert.strictEqual(actual.suite, expected.suite, `index: ${i}`);
-        assert.strictEqual(actual.state, expected.state, `index: ${i}`);
-      } else {
-        assert.deepStrictEqual(actual, expected, `index: ${i}`);
+        if (actual.type == 'test' && expected.type == 'test') {
+          // eslint-disable-next-line
+          assert.strictEqual((actual.test as any).id, (expected.test as any).id, `index: ${i}`);
+          assert.strictEqual(actual.state, expected.state, `index: ${i}`);
+        } else if (actual.type == 'suite' && expected.type == 'suite') {
+          // eslint-disable-next-line
+          assert.strictEqual((actual.suite as any).id, (expected.suite as any).id, `index: ${i}`);
+          assert.strictEqual(actual.state, expected.state, `index: ${i}`);
+        } else {
+          assert.deepStrictEqual(actual, expected, `index: ${i}`);
+        }
       }
-    }
 
-    assert.strictEqual(this._testStatesEvents.length, expectedArr.length);
+      assert.strictEqual(this._testStatesEvents.length, expectedArr.length);
+    } catch (e) {
+      debugger;
+      throw e;
+    }
   }
 
   public getTestStatesEventIndex(searchFor: TestRunEvent): number {

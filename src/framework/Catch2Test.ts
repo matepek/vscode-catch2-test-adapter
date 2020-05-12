@@ -50,7 +50,6 @@ export class Catch2Test extends AbstractTest {
     file: string | undefined,
     line: number | undefined,
     description: string | undefined,
-    old?: Catch2Test | undefined,
   ) {
     const badChars = [
       // this 3 relates some catch2 bug
@@ -90,25 +89,40 @@ export class Catch2Test extends AbstractTest {
       shared,
       runnable,
       parent,
-      old,
       testNameAsId,
       testNameAsId,
       file,
       line,
-      tags.some((v: string) => v.startsWith('.') || v == 'hide' || v == '!hide') || testNameAsId.startsWith('./'),
+      Catch2Test._isSkipped(tags, testNameAsId),
       forceIgnoreEvent,
       tags,
       description,
       undefined,
       undefined,
     );
-
-    this._sections = old ? old.sections : undefined;
   }
 
-  public get testNameInOutput(): string {
-    // xml output trimmes the name of the test
-    return this.testName.trim();
+  private static _isSkipped(tags: string[], testNameAsId: string): boolean {
+    return tags.some((v: string) => v.startsWith('.') || v == 'hide' || v == '!hide') || testNameAsId.startsWith('./');
+  }
+
+  public update(tags: string[], file: string | undefined, line: number | undefined, description: string): boolean {
+    return this._updateBase(
+      super.label,
+      file,
+      line,
+      Catch2Test._isSkipped(tags, this.testNameAsId),
+      tags.filter((v: string) => !v.startsWith('.') && v != 'hide' && v != '!hide'),
+      description,
+      undefined,
+      undefined,
+      undefined,
+    );
+  }
+
+  public compare(testNameAsId: string): boolean {
+    // Catch2: xml output trimmes the name of the test
+    return this.testNameAsId.trim() === testNameAsId;
   }
 
   private _sections: undefined | Catch2Section[];
@@ -119,7 +133,7 @@ export class Catch2Test extends AbstractTest {
 
   public getEscapedTestName(): string {
     /* ',' and '[' has special meaning */
-    return this.testName.replace('\\', '\\\\').replace(/,/g, '\\,').replace(/\[/g, '\\[');
+    return this.testNameAsId.replace('\\', '\\\\').replace(/,/g, '\\,').replace(/\[/g, '\\[');
   }
 
   public parseAndProcessTestCase(

@@ -118,6 +118,33 @@ export const example1 = new (class {
       ];
     })();
 
+    public readonly specialReverseTestOrder: [string[], string][] = [
+      [
+        ['s1t2,s1t1', '--reporter', 'xml', '--durations', 'yes'],
+        `<?xml version="1.0" encoding="UTF-8"?>
+          <Catch name="suite1">
+            <Group name="suite1">
+              <TestCase name="s1t1" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="7">
+                <OverallResult success="true" durationInSeconds="0.000132"/>
+              </TestCase>
+              <TestCase name="s1t2" description="tag1" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="13">
+                <Expression success="false" type="REQUIRE" filename="../vscode-catch2-test-adapter/src/test/suite1.cpp" line="15">
+                  <Original>
+                    std::false_type::value
+                  </Original>
+                  <Expanded>
+                    false
+                  </Expanded>
+                </Expression>
+                <OverallResult success="false" durationInSeconds="0.000204"/>
+              </TestCase>
+              <OverallResults successes="1" failures="1" expectedFailures="0"/>
+            </Group>
+            <OverallResults successes="1" failures="1" expectedFailures="0"/>
+          </Catch>`,
+      ],
+    ];
+
     public readonly outputs: [string[], string][] = [
       [['--help'], 'Catch v2.4.1'],
       [
@@ -182,6 +209,7 @@ export const example1 = new (class {
       ],
       ...this.t1.outputs,
       ...this.t2.outputs,
+      ...this.specialReverseTestOrder,
     ];
 
     public assert(label: string, childLabels: string[], suite: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
@@ -2346,6 +2374,7 @@ For more detailed usage please see the project docs
 
     for (const suite of this.outputs) {
       for (const scenario of suite[1]) {
+        scenario[0][0].split(',').sort().join(',');
         imitation.spawnStub
           .withArgs(suite[0], scenario[0], sinon.match.any)
           .callsFake(() => new ChildProcessStub(scenario[1]));
