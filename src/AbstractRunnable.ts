@@ -480,14 +480,12 @@ export abstract class AbstractRunnable {
 
           if (exitCode !== undefined) {
             if (exitCode !== 0) {
-              return Promise.reject(Error(`Task "${taskName}" has returned with exitCode != 0: ${exitCode}`));
+              throw Error(`Task "${taskName}" has returned with exitCode != 0: ${exitCode}`);
             }
           }
         }
       } catch (e) {
-        return Promise.reject(
-          Error('One of tasks of the `testMate.test.advancedExecutables:runTask` array has failed: ' + e),
-        );
+        throw Error('One of the tasks of the `testMate.test.advancedExecutables:runTask` array has failed: ' + e);
       }
     }
   }
@@ -512,7 +510,7 @@ export abstract class AbstractRunnable {
       type: 'test',
       test: 'will be filled automatically',
       state: 'errored',
-      message: err instanceof Error ? `${err.name}\n${err.message}` : inspect(err),
+      message: err instanceof Error ? `⚡️ ${err.name}: ${err.message}` : inspect(err),
     });
   }
 
