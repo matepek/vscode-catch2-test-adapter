@@ -287,7 +287,7 @@
                 "minimum": 1
               },
               "strictPattern": {
-                "markdownDescription": "If true and the pattern matches an executable it will indicate some error. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "markdownDescription": "Test loading fails if one of the files matched by `pattern` is not a test executable. (Helps noticing unexpected crashes/problems under test loading.)",
                 "scope": "resource",
                 "type": "boolean",
                 "default": false
@@ -854,6 +854,12 @@
           "scope": "resource",
           "type": "boolean",
           "default": false
+        },
+        "testMate.cpp.discovery.strictPattern": {
+          "markdownDescription": "Test loading fails if one of the files matched by `test.executable` is not a test executable. (Helps noticing unexpected crashes/problems under test loading.)",
+          "scope": "resource",
+          "type": "boolean",
+          "default": null
         },
         "testMate.cpp.debug.configTemplate": {
           "markdownDescription": "Sets the necessary debug configurations and the debug button will work.",

@@ -422,12 +422,15 @@ export abstract class AbstractRunnable {
         for (const t of this._tests) if (!reloadResult.tests.has(t)) toRemove.push(t);
 
         if (toRemove.length > 0 || reloadResult.changedAny) {
-          await this._shared.loadWithTask(async () => {
-            toRemove.forEach(t => {
-              t.removeWithLeafAscendants();
-              this._tests.delete(t);
-            });
-          });
+          await this._shared.loadWithTask(
+            async (): Promise<Error[]> => {
+              toRemove.forEach(t => {
+                t.removeWithLeafAscendants();
+                this._tests.delete(t);
+              });
+              return [];
+            },
+          );
         }
       } else {
         this._shared.log.debug('reloadTests was skipped due to mtime', this.properties.path);

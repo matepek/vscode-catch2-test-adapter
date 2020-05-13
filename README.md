@@ -2,9 +2,10 @@
 
 ## A **Catch2**, **GoogleTest** and **DOCtest** Explorer for VSCode
 
-[![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
-[![GitHub issues](https://img.shields.io/github/issues/matepek/vscode-catch2-test-adapter?color=green&style=for-the-badge)](https://github.com/matepek/vscode-catch2-test-adapter/issues)
-[![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/d/matepek.vscode-catch2-test-adapter.svg?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
+[![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
+[![GitHub issues](https://img.shields.io/github/issues/matepek/vscode-catch2-test-adapter?color=green)](https://github.com/matepek/vscode-catch2-test-adapter/issues)
+[![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/d/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
+[![Gitter](https://badges.gitter.im/CppTestMate/community.svg)](https://gitter.im/CppTestMate/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 This extension allows you to run your [Catch2](https://github.com/catchorg/Catch2),
 [Google Test](https://github.com/google/googletest)
@@ -38,6 +39,7 @@ tests using the [Test Explorer for Visual Studio Code](https://marketplace.visua
   - [Test Explorer Live Share](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer-liveshare)
 - Grouping can be fully customized. ([Details](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping))
 - Colorizes output window. (This might conflict with other output colorizer extensions, it's a vscode limitation.)
+- and many more.. Ask on [gitter](https://gitter.im/CppTestMate/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge).
 
 ## [Configuration](https://github.com/matepek/vscode-catch2-test-adapter/tree/master/documents/configuration)
 
@@ -61,6 +63,7 @@ Not good enough for you?!: Edit your `.vscode/`[settings.json] file according to
 | `discovery.retireDebounceLimit`           | [milisec] Retire events will be held back for the given duration. (Reload is required)                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `discovery.runtimeLimit`                  | [seconds] The timeout of the test-executable used to identify it (Calls the exec with `--help`).                                                                                                                                                                                                                                                                                                                                                                                              |
 | `discovery.testListCaching`               | (Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.)                                                                                                                                                                                                                                                  |
+| `discovery.strictPattern`                 | Test loading fails if one of the files matched by `test.executable` is not a test executable. (Helps noticing unexpected crashes/problems under test loading.)                                                                                                                                                                                                                                                                                                                                |
 | [debug.configTemplate]                    | Sets the necessary debug configurations and the debug button will work.                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `debug.breakOnFailure`                    | Debugger breaks on failure while debugging the test. Catch2: [--break](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#breaking-into-the-debugger); Google Test: [--gtest_break_on_failure](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#turning-assertion-failures-into-break-points);                                                                                                                                                   |
 | `debug.noThrow`                           | Skips all assertions that test that an exception is thrown, e.g. REQUIRE_THROWS. This is a Catch2 parameter: [--nothrow](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#eliding-assertions-expected-to-throw);                                                                                                                                                                                                                                                           |
@@ -74,7 +77,7 @@ Plenty of more **fine-tuning options** are available under [test.advancedExecuta
 - test grouping
 - parallel running
 - ingoring std error
-- []...]
+- ...
 
 ### Test Explorer's configurations
 

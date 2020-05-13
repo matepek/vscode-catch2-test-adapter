@@ -17,7 +17,7 @@ export class SharedVariables implements vscode.Disposable {
     public readonly log: LoggerWrapper,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
     public readonly testStatesEmitter: TestStateEmitterType,
-    public readonly loadWithTask: (task: () => Promise<void>) => Promise<void>,
+    public readonly loadWithTask: (task: () => Promise<Error[]>) => Promise<void>,
     public readonly sendTestEvents: (testEvents: AbstractTestEvent[]) => void,
     public readonly retire: (tests: Iterable<AbstractTest>) => void,
     public readonly executeTask: (
@@ -34,6 +34,7 @@ export class SharedVariables implements vscode.Disposable {
     public isNoThrow: boolean,
     workerMaxNumber: number,
     public enabledTestListCaching: boolean,
+    public enabledStrictPattern: boolean,
     public googleTestTreatGMockWarningAs: 'nothing' | 'failure',
     public googleTestGMockVerbose: 'default' | 'info' | 'warning' | 'error',
   ) {

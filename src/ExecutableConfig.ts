@@ -43,7 +43,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _dependsOn: string[],
     private readonly _runTask: RunTask,
     private readonly _parallelizationLimit: number,
-    private readonly _strictPattern: boolean,
+    private readonly _strictPattern: boolean | undefined,
     private readonly _variableToValue: readonly Readonly<ResolveRule>[],
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,
@@ -124,7 +124,7 @@ export class ExecutableConfig implements vscode.Disposable {
     this._disposables.forEach(d => d.dispose());
   }
 
-  public async load(rootSuite: RootSuite): Promise<void> {
+  public async load(rootSuite: RootSuite): Promise<Error[]> {
     const pattern = this._patternProcessor(this._pattern);
 
     this._shared.log.info('pattern', this._pattern, this._shared.workspaceFolder.uri.fsPath, pattern);
@@ -189,15 +189,25 @@ export class ExecutableConfig implements vscode.Disposable {
                     },
                     (reason: Error) => {
                       this._shared.log.warn("Couldn't load executable:", reason, suite);
-                      if (this._strictPattern)
-                        throw Error(`Coudn\'t load executable while using 'strictPattern': ${file}\n  ${reason}`);
+                      if (
+                        this._strictPattern === true ||
+                        (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
+                      )
+                        throw Error(
+                          `Coudn\'t load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
+                        );
                     },
                   );
                 },
                 (reason: Error) => {
                   this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
-                  if (this._strictPattern)
-                    throw Error(`Coudn\'t load executable while using 'strictPattern': ${file}\n  ${reason}`);
+                  if (
+                    this._strictPattern === true ||
+                    (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
+                  )
+                    throw Error(
+                      `Coudn\'t load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
+                    );
                 },
               );
           },
@@ -208,7 +218,15 @@ export class ExecutableConfig implements vscode.Disposable {
       );
     }
 
-    await Promise.all(suiteCreationAndLoadingTasks);
+    const errors: Error[] = [];
+    for (const task of suiteCreationAndLoadingTasks) {
+      try {
+        await task;
+      } catch (e) {
+        errors.push(e);
+      }
+    }
+    if (errors.length > 0) return errors;
 
     if (this._dependsOn.length > 0) {
       try {
@@ -251,6 +269,8 @@ export class ExecutableConfig implements vscode.Disposable {
         this._shared.log.error('dependsOn error:', e);
       }
     }
+
+    return [];
   }
 
   private _patternProcessor(
@@ -413,9 +433,10 @@ export class ExecutableConfig implements vscode.Disposable {
       const foundRunnable = this._runnables.get(filePath);
       if (foundRunnable) {
         return this._shared.loadWithTask(
-          async (): Promise<void> => {
+          async (): Promise<Error[]> => {
             foundRunnable.removeTests();
             this._runnables.delete(filePath);
+            return [];
           },
         );
       } else {

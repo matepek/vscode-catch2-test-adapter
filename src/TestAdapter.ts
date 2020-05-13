@@ -216,15 +216,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
     };
 
-    const loadTask = (task: () => Promise<void>): Promise<void> => {
+    const loadTask = (task: () => Promise<Error[]>): Promise<void> => {
       this._sendLoadingEventIfNeeded();
       return task().then(
-        () => {
-          this._sendLoadingFinishedEventIfNeeded();
+        (errors: Error[]) => {
+          this._sendLoadingFinishedEventIfNeeded(errors);
         },
         (reason: Error) => {
-          this._log.exceptionS(reason);
-          this._sendLoadingFinishedEventIfNeeded(reason);
+          this._log.warnS('loadTask exception', reason);
+          this._sendLoadingFinishedEventIfNeeded([reason]);
         },
       );
     };
@@ -265,6 +265,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       configuration.getDefaultNoThrow(),
       configuration.getParallelExecutionLimit(),
       configuration.getEnableTestListCaching(),
+      configuration.getEnableStrictPattern(),
       configuration.getGoogleTestTreatGMockWarningAs(),
       configuration.getGoogleTestGMockVerbose(),
     );
@@ -283,16 +284,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           const affectsAny = (...config: Config[]): boolean =>
             config.some(c => changeEvent.affectsConfiguration(c, this.workspaceFolder.uri));
 
-          if (
-            affectsAny(
-              'test.workingDirectory',
-              'test.advancedExecutables',
-              'test.executables',
-              'test.parallelExecutionOfExecutableLimit',
-            )
-          ) {
-            this.load();
-          }
           if (affectsAny('test.randomGeneratorSeed')) {
             this._shared.rngSeed = config.getRandomGeneratorSeed();
             this._retireEmitter.fire({});
@@ -318,11 +309,26 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           if (affectsAny('discovery.testListCaching')) {
             this._shared.enabledTestListCaching = config.getEnableTestListCaching();
           }
+          if (affectsAny('discovery.strictPattern')) {
+            this._shared.enabledStrictPattern = config.getEnableStrictPattern();
+          }
           if (affectsAny('gtest.treatGmockWarningAs')) {
             this._shared.googleTestTreatGMockWarningAs = config.getGoogleTestTreatGMockWarningAs();
           }
           if (affectsAny('gtest.gmockVerbose')) {
             this._shared.googleTestGMockVerbose = config.getGoogleTestGMockVerbose();
+          }
+
+          if (
+            affectsAny(
+              'test.workingDirectory',
+              'test.advancedExecutables',
+              'test.executables',
+              'test.parallelExecutionOfExecutableLimit',
+              'discovery.strictPattern',
+            )
+          ) {
+            this.load();
           }
         } catch (e) {
           this._shared.log.exceptionS(e);
@@ -370,16 +376,22 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   private _testLoadingCounter = 0;
+  private _testLoadingErrors: Error[] = [];
 
   private _sendLoadingEventIfNeeded(): void {
     if (this._testLoadingCounter++ === 0) {
       this._log.info('load started');
       this._testsEmitter.fire({ type: 'started' });
+      this._testLoadingErrors = [];
     }
   }
 
   // eslint-disable-next-line
-  private _sendLoadingFinishedEventIfNeeded(err?: any): void {
+  private _sendLoadingFinishedEventIfNeeded(errors?: Error[]): void {
+    if (errors?.length) {
+      this._testLoadingErrors.push(...errors);
+    }
+
     if (this._testLoadingCounter < 1) {
       this._log.error('loading counter is too low');
       this._testLoadingCounter = 0;
@@ -387,10 +399,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
     if (this._testLoadingCounter-- === 1) {
       this._log.info('load finished', this._rootSuite.children.length);
-      if (err) {
+      if (this._testLoadingErrors.length > 0) {
         this._testsEmitter.fire({
           type: 'finished',
-          errorMessage: err instanceof Error ? `${err.name}\n${err.message}` : inspect(err),
+          errorMessage: this._testLoadingErrors
+            .map(err => (err instanceof Error ? `${err.name}: ${err.message}` : inspect(err)))
+            .join('\n'),
         });
       } else {
         this._testsEmitter.fire({

@@ -27,12 +27,13 @@ export class RootSuite extends Suite implements vscode.Disposable {
     this._executables.forEach(e => e.dispose());
   }
 
-  public load(executables: ExecutableConfig[]): Promise<void> {
+  public async load(executables: ExecutableConfig[]): Promise<Error[]> {
     this._executables.forEach(e => e.dispose());
 
     this._executables = executables;
 
-    return Promise.all(executables.map(v => v.load(this))).then((): void => undefined);
+    const loadResults = await Promise.all(executables.map(v => v.load(this)));
+    return loadResults.reduce((acc, val) => acc.concat(val), []);
   }
 
   public sendRunningEventIfNeeded(): void {

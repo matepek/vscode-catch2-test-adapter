@@ -40,7 +40,11 @@ type MigratableConfig =
   | 'gtest.treatGmockWarningAs'
   | 'gtest.gmockVerbose';
 
-export type Config = 'test.executables' | 'test.parallelExecutionOfExecutableLimit' | MigratableConfig;
+export type Config =
+  | 'test.executables'
+  | 'test.parallelExecutionOfExecutableLimit'
+  | 'discovery.strictPattern'
+  | MigratableConfig;
 
 const OldConfigSectionBase = 'catch2TestExplorer';
 
@@ -458,6 +462,10 @@ export class Configurations {
     return this._getNewOrOldOrDefAndMigrate<boolean>('discovery.testListCaching', false);
   }
 
+  public getEnableStrictPattern(): boolean {
+    return this._new.get<boolean>('discovery.strictPattern', false);
+  }
+
   public getGoogleTestTreatGMockWarningAs(): 'nothing' | 'failure' {
     return this._getNewOrOldOrDefAndMigrate<'nothing' | 'failure'>('gtest.treatGmockWarningAs', 'nothing');
   }
@@ -624,7 +632,7 @@ export class Configurations {
             ? Math.max(1, obj.parallelizationLimit)
             : defaultParallelExecutionOfExecLimit;
 
-        const strictPattern = !!obj.strictPattern;
+        const strictPattern: boolean | undefined = obj.strictPattern;
 
         const defaultTestGrouping = obj.testGrouping ? obj.testGrouping : undefined;
 
