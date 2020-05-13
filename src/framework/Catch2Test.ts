@@ -108,11 +108,11 @@ export class Catch2Test extends AbstractTest {
 
   public update(tags: string[], file: string | undefined, line: number | undefined, description: string): boolean {
     return this._updateBase(
-      super.label,
+      this._label,
       file,
       line,
       Catch2Test._isSkipped(tags, this.testNameAsId),
-      tags.filter((v: string) => !v.startsWith('.') && v != 'hide' && v != '!hide'),
+      tags,
       description,
       undefined,
       undefined,

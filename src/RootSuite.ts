@@ -89,12 +89,14 @@ export class RootSuite extends Suite implements vscode.Disposable {
 
         if (exitCode !== undefined) {
           if (exitCode !== 0) {
-            return Promise.reject(Error(`Task "${taskName}" has returned with exitCode != 0: ${exitCode}`));
+            throw Error(
+              `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.before\`)`,
+            );
           }
         }
       }
     } catch (e) {
-      return Promise.reject(Error('One of tasks of the `testMate.test.runTask` array has failed: ' + e));
+      throw Error('One of the tasks of the `testMate.test.advancedExecutables:runTask.before` array has failed: ' + e);
     }
   }
 
@@ -119,7 +121,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
       runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
     } catch (e) {
       for (const [runnable, tests] of runnables) {
-        runnable.sendStaticEvents(tests, e);
+        runnable.sentStaticErrorEvent(tests, e);
       }
 
       this.sendFinishedEventIfNeeded();

@@ -480,40 +480,18 @@ export abstract class AbstractRunnable {
 
           if (exitCode !== undefined) {
             if (exitCode !== 0) {
-              return Promise.reject(Error(`Task "${taskName}" has returned with exitCode != 0: ${exitCode}`));
+              throw Error(
+                `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.beforeEach\`)`,
+              );
             }
           }
         }
       } catch (e) {
-        return Promise.reject(
-          Error('One of tasks of the `testMate.test.advancedExecutables:runTask` array has failed: ' + e),
+        throw Error(
+          'One of the tasks of the `testMate.test.advancedExecutables:runTask.beforeEach` array has failed: ' + e,
         );
       }
     }
-  }
-
-  public sendStaticEvents(childrenToRun: readonly AbstractTest[], staticEvent: TestEvent | undefined): void {
-    childrenToRun.forEach(test => {
-      const event = staticEvent || test.staticEvent;
-      if (event) {
-        event.test = test;
-        const route = [...test.route()];
-        reverse(route)((s: Suite): void => s.sendRunningEventIfNeeded());
-        this._shared.testStatesEmitter.fire(test!.getStartEvent());
-        this._shared.testStatesEmitter.fire(event);
-        route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
-      }
-    });
-  }
-
-  // eslint-disable-next-line
-  public sentStaticErrorEvent(childrenToRun: readonly AbstractTest[], err: any): void {
-    this.sendStaticEvents(childrenToRun, {
-      type: 'test',
-      test: 'will be filled automatically',
-      state: 'errored',
-      message: err instanceof Error ? `${err.name}\n${err.message}` : inspect(err),
-    });
   }
 
   private _runInner(
@@ -522,12 +500,28 @@ export abstract class AbstractRunnable {
     cancellationToken: CancellationToken,
   ): Promise<void> {
     return this.properties.parallelizationPool.scheduleTask(() => {
+      const descendantsWithStaticEvent: AbstractTest[] = [];
+      const runnableDescendant: AbstractTest[] = [];
+
+      childrenToRun.forEach(t => {
+        if (t.staticEvent) descendantsWithStaticEvent.push(t);
+        else runnableDescendant.push(t);
+      });
+
+      if (descendantsWithStaticEvent.length > 0) {
+        this.sendStaticEvents(descendantsWithStaticEvent, undefined);
+      }
+
+      if (runnableDescendant.length === 0) {
+        return Promise.resolve();
+      }
+
       const runIfNotCancelled = (): Promise<void> => {
         if (cancellationToken.isCancellationRequested) {
           this._shared.log.info('test was canceled:', this);
           return Promise.resolve();
         }
-        return this._runProcess(childrenToRun, cancellationToken);
+        return this._runProcess(runnableDescendant, cancellationToken);
       };
 
       return taskPool.scheduleTask(runIfNotCancelled).catch((err: Error) => {
@@ -546,33 +540,17 @@ export abstract class AbstractRunnable {
   }
 
   private _runProcess(childrenToRun: readonly AbstractTest[], cancellationToken: CancellationToken): Promise<void> {
-    const descendantsWithStaticEvent: AbstractTest[] = [];
-    const runnableDescendant: AbstractTest[] = [];
-
-    childrenToRun.forEach(t => {
-      if (t.staticEvent) descendantsWithStaticEvent.push(t);
-      else runnableDescendant.push(t);
-    });
-
-    if (descendantsWithStaticEvent.length > 0) {
-      this.sendStaticEvents(descendantsWithStaticEvent, undefined);
-    }
-
-    if (runnableDescendant.length === 0) {
-      return Promise.resolve();
-    }
-
-    const execParams = this.properties.prependTestRunningArgs.concat(this._getRunParams(runnableDescendant));
+    const execParams = this.properties.prependTestRunningArgs.concat(this._getRunParams(childrenToRun));
 
     this._shared.log.info('proc starting', this.properties.path, execParams);
 
     const runInfo = new RunningRunnable(
       cp.spawn(this.properties.path, execParams, this.properties.options),
-      runnableDescendant,
+      childrenToRun,
       cancellationToken,
     );
 
-    this._shared.log.info('proc started:', runInfo.process.pid, this.properties.path, this.properties, execParams);
+    this._shared.log.info('proc started', runInfo.process.pid, this.properties.path, this.properties, execParams);
 
     runInfo.setPriorityAsync(this._shared.log);
 
@@ -668,5 +646,29 @@ export abstract class AbstractRunnable {
       for (let i = 0; i < completedIndex; ++i) completed[i].sendCompletedEventIfNeeded();
       for (let i = runningIndex - 1; i >= 0; --i) running[i].sendRunningEventIfNeeded();
     }
+  }
+
+  public sendStaticEvents(childrenToRun: readonly AbstractTest[], staticEvent: TestEvent | undefined): void {
+    childrenToRun.forEach(test => {
+      const event = staticEvent || test.staticEvent;
+      if (event) {
+        event.test = test;
+        const route = [...test.route()];
+        reverse(route)((s: Suite): void => s.sendRunningEventIfNeeded());
+        this._shared.testStatesEmitter.fire(test!.getStartEvent());
+        this._shared.testStatesEmitter.fire(event);
+        route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
+      }
+    });
+  }
+
+  // eslint-disable-next-line
+  public sentStaticErrorEvent(childrenToRun: readonly AbstractTest[], err: any): void {
+    this.sendStaticEvents(childrenToRun, {
+      type: 'test',
+      test: 'will be filled automatically',
+      state: 'errored',
+      message: err instanceof Error ? `⚡️ ${err.name}: ${err.message}` : inspect(err),
+    });
   }
 }
