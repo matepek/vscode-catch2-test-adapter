@@ -89,12 +89,14 @@ export class RootSuite extends Suite implements vscode.Disposable {
 
         if (exitCode !== undefined) {
           if (exitCode !== 0) {
-            throw Error(`Task "${taskName}" has returned with exitCode != 0: ${exitCode}`);
+            throw Error(
+              `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.before\`)`,
+            );
           }
         }
       }
     } catch (e) {
-      throw Error('One of the tasks of the `testMate.test.runTask` array has failed: ' + e);
+      throw Error('One of the tasks of the `testMate.test.advancedExecutables:runTask.before` array has failed: ' + e);
     }
   }
 
