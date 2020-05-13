@@ -114,7 +114,7 @@ describe(path.basename(__filename), function () {
       await loadAdapterAndAssert();
       await adapter.run(['not existing id']);
 
-      assert.deepStrictEqual(adapter.testStatesEvents, [
+      adapter.testStatesEventsSimplifiedAssertEqual([
         { type: 'started', tests: ['not existing id'] },
         { type: 'finished' },
       ]);
@@ -264,11 +264,11 @@ describe(path.basename(__filename), function () {
       await loadAdapterAndAssert();
       adapter.cancel();
       assert.deepStrictEqual(adapter.testLoadsEvents, []);
-      assert.deepStrictEqual(adapter.testStatesEvents, []);
+      adapter.testStatesEventsSimplifiedAssertEqual([]);
 
       adapter.cancel();
       assert.deepStrictEqual(adapter.testLoadsEvents, []);
-      assert.deepStrictEqual(adapter.testStatesEvents, []);
+      adapter.testStatesEventsSimplifiedAssertEqual([]);
 
       await adapter.run([s1t1.id]);
       const expected: TestRunEvent[] = [
@@ -319,27 +319,18 @@ describe(path.basename(__filename), function () {
             type: 'test',
             state: 'passed',
             test: s1t1,
-            decorations: [],
-            description: '(0ms)',
-            message: '⏱Duration: 0.000327 second(s).\n🔀 Randomness seeded to: 2',
-            tooltip: 'Name: s1t1\nDescription: tag1\n⏱Duration: 0ms',
           },
           {
             type: 'suite',
             state: 'completed',
             suite: suite1,
-            description: `.${pathlib.sep} (>0ms)`,
-            tooltip:
-              'Name: execPath1.exe\nDescription: .' +
-              pathlib.sep +
-              '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: >0ms',
           },
           { type: 'finished' },
         ];
         adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
         await adapter.run([s1t1.id]);
-        assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
+        adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
       });
     });
   });
@@ -525,7 +516,7 @@ describe(path.basename(__filename), function () {
       await loadAdapterAndAssert();
       await adapter.run(['not existing id']);
 
-      assert.deepStrictEqual(adapter.testStatesEvents, [
+      adapter.testStatesEventsSimplifiedAssertEqual([
         { type: 'started', tests: ['not existing id'] },
         { type: 'finished' },
       ]);
@@ -567,27 +558,18 @@ describe(path.basename(__filename), function () {
           type: 'test',
           state: 'passed',
           test: s2t2,
-          decorations: [],
-          description: '[.] (1ms)',
-          message: '⏱Duration: 0.001294 second(s).',
-          tooltip: 'Name: s2t2\nTags: [.]\nDescription: tag1\n⏱Duration: 1ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: `.${pathlib.sep} (>1ms)`,
-          tooltip:
-            'Name: execPath2.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n⏱Duration: >1ms',
         },
         { type: 'finished' },
       ];
       adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([s2t2.id]);
-      assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
+      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
     });
 
     it('should run failing test s2t3', async function () {
@@ -601,35 +583,18 @@ describe(path.basename(__filename), function () {
           type: 'test',
           state: 'failed',
           test: s2t3,
-          decorations: [
-            {
-              file: path.normalize('../vscode-catch2-test-adapter/src/test/suite2.cpp'),
-              line: 20,
-              message: '⬅ false',
-              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
-            },
-          ],
-          description: '(1ms)',
-          message:
-            '⏱Duration: 0.000596 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite2.cpp:21):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
-          tooltip: 'Name: s2t3\nDescription: tag1\n⏱Duration: 1ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: suite2,
-          description: `.${pathlib.sep} (>1ms)`,
-          tooltip:
-            'Name: execPath2.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - failed: 1\n⏱Duration: >1ms',
         },
         { type: 'finished' },
       ];
       adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([s2t3.id]);
-      assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
+      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
     });
 
     it('should run failing test s2t3 with chunks', async function () {
@@ -678,7 +643,7 @@ describe(path.basename(__filename), function () {
       adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([s2t3.id]);
-      assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
+      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
     });
 
     it('should run suite1', async function () {
@@ -730,7 +695,7 @@ describe(path.basename(__filename), function () {
       adapter.testStatesEventsSimplifiedAssertEqual(expected);
 
       await adapter.run([suite1.id]);
-      assert.deepStrictEqual(adapter.testStatesEvents, [...expected, ...expected]);
+      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
     });
 
     it('should run with [suite1.id,s2t2.id]', async function () {
@@ -977,7 +942,7 @@ describe(path.basename(__filename), function () {
         return adapter.testStatesEvents.length >= 2;
       });
 
-      assert.deepStrictEqual(adapter.testStatesEvents, [{ type: 'started', tests: [s1t1.id] }, { type: 'finished' }]);
+      adapter.testStatesEventsSimplifiedAssertEqual([{ type: 'started', tests: [s1t1.id] }, { type: 'finished' }]);
     });
 
     it('should timeout inside a test case', async function () {

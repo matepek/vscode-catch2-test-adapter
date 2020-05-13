@@ -10,7 +10,7 @@ import {
   FileSystemWatcherStub,
   expectedLoggedErrorLine,
   isWin,
-  waitFor,
+  waitForMilisec,
 } from './Common';
 import { example1 } from './example1';
 import { inspect } from 'util';
@@ -206,10 +206,10 @@ describe(path.basename(__filename), function () {
         .callsFake(imitation.handleAccessFileNotExists);
 
       const start = Date.now();
+
       watcher.sendDelete();
 
-      await waitFor(this, () => Date.now() - start > 1000);
-
+      await waitForMilisec(this, 1000);
       assert.equal(adapter.testLoadsEvents.length, 2);
       assert.strictEqual(adapter.root.children.length, 2);
 
@@ -218,10 +218,9 @@ describe(path.basename(__filename), function () {
         .callsFake(imitation.handleAccessFileExists);
 
       watcher.sendCreate();
-
-      await waitFor(this, () => Date.now() - start > 2000);
-
       const elapsed = Date.now() - start;
+
+      await waitForMilisec(this, 1000);
 
       // no reload event because there was no change
       assert.equal(adapter.testLoadsEvents.length, 2);
