@@ -3,7 +3,7 @@ import * as pathlib from 'path';
 import * as fs from 'fs';
 
 import { RunnableSuiteProperties } from './RunnableSuiteProperties';
-import { AbstractTest } from './AbstractTest';
+import { AbstractTest, AbstractTestEvent } from './AbstractTest';
 import { Suite } from './Suite';
 import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
@@ -284,8 +284,6 @@ export abstract class AbstractRunnable {
             undefined,
             true,
             {
-              type: 'test',
-              test: '',
               state: 'errored',
               message,
             },
@@ -304,7 +302,7 @@ export abstract class AbstractRunnable {
           throw Error('assert');
         }
 
-        public parseAndProcessTestCase(): TestEvent {
+        public parseAndProcessTestCase(): AbstractTestEvent {
           throw Error('assert');
         }
       })();
@@ -472,25 +470,26 @@ export abstract class AbstractRunnable {
 
   public async runTaskbeforeEach(taskPool: TaskPool, cancellationToken: CancellationToken): Promise<void> {
     if (this.properties.runTask.beforeEach && this.properties.runTask.beforeEach.length > 0) {
-      try {
-        // sequential execution of tasks
-        for (const taskName of this.properties.runTask.beforeEach) {
-          // task execution is sequentioal currently so we dont nee the taskPool
-          const exitCode = await this._shared.executeTask(taskName, this.properties.varToValue, cancellationToken);
+      return taskPool.scheduleTask(async () => {
+        try {
+          // sequential execution of tasks
+          for (const taskName of this.properties.runTask.beforeEach) {
+            const exitCode = await this._shared.executeTask(taskName, this.properties.varToValue, cancellationToken);
 
-          if (exitCode !== undefined) {
-            if (exitCode !== 0) {
-              throw Error(
-                `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.beforeEach\`)`,
-              );
+            if (exitCode !== undefined) {
+              if (exitCode !== 0) {
+                throw Error(
+                  `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.beforeEach\`)`,
+                );
+              }
             }
           }
+        } catch (e) {
+          throw Error(
+            'One of the tasks of the `testMate.test.advancedExecutables:runTask.beforeEach` array has failed: ' + e,
+          );
         }
-      } catch (e) {
-        throw Error(
-          'One of the tasks of the `testMate.test.advancedExecutables:runTask.beforeEach` array has failed: ' + e,
-        );
-      }
+      });
     }
   }
 

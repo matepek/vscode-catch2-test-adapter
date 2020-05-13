@@ -1,11 +1,10 @@
 import * as fs from 'fs';
 import { inspect, promisify } from 'util';
-import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
-import { AbstractTest } from '../AbstractTest';
+import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
 import { Suite } from '../Suite';
 import { DOCTest } from './DOCTest';
 import { SharedVariables } from '../SharedVariables';
@@ -344,7 +343,7 @@ export class DOCRunnable extends AbstractRunnable {
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
             this._shared.log.info('data.currentChild !== undefined: ', data);
-            let ev: TestEvent;
+            let ev: AbstractTestEvent;
 
             if (runInfo.isCancelled) {
               ev = data.currentChild.getCancelledEvent(data.stdoutBuffer);
@@ -392,7 +391,7 @@ export class DOCRunnable extends AbstractRunnable {
             () => {
               // we have test results for the newly detected tests
               // after reload we can set the results
-              const events: TestEvent[] = [];
+              const events: AbstractTestEvent[] = [];
 
               for (let i = 0; i < data.unprocessedXmlTestCases.length; i++) {
                 const [testCaseXml, stderr] = data.unprocessedXmlTestCases[i];

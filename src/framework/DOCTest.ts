@@ -1,6 +1,5 @@
-import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
-import { AbstractTest } from '../AbstractTest';
+import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
 import { TestEventBuilder } from '../TestEventBuilder';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
@@ -102,7 +101,7 @@ export class DOCTest extends AbstractTest {
     rngSeed: number | undefined,
     timeout: number | null,
     stderr: string | undefined,
-  ): TestEvent {
+  ): AbstractTestEvent {
     if (timeout !== null) {
       const ev = this.getTimeoutEvent(timeout);
       this.lastRunEvent = ev;

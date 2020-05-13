@@ -1,6 +1,5 @@
-import { TestEvent } from 'vscode-test-adapter-api';
 import * as xml2js from 'xml2js';
-import { AbstractTest } from '../AbstractTest';
+import { AbstractTest, StaticTestEventBase, AbstractTestEvent } from '../AbstractTest';
 import { inspect } from 'util';
 import { TestEventBuilder } from '../TestEventBuilder';
 import * as pathlib from 'path';
@@ -60,13 +59,11 @@ export class Catch2Test extends AbstractTest {
       '±',
       '§',
     ];
-    const forceIgnoreEvent: TestEvent | undefined =
+    const forceIgnoreEvent: StaticTestEventBase | undefined =
       frameworkVersion &&
       frameworkVersion.smaller(EscapeCharParserFix) &&
       badChars.some(b => testNameAsId.indexOf(b) != -1)
         ? ({
-            type: 'test',
-            test: '',
             state: 'errored',
             message: [
               '⚡️ This extension is unable to run this test.',
@@ -82,7 +79,7 @@ export class Catch2Test extends AbstractTest {
                 message: 'Invalid character in test name. Check the output.',
               },
             ],
-          } as TestEvent)
+          } as StaticTestEventBase)
         : undefined;
 
     super(
@@ -141,7 +138,7 @@ export class Catch2Test extends AbstractTest {
     rngSeed: number | undefined,
     timeout: number | null,
     stderr: string | undefined,
-  ): TestEvent {
+  ): AbstractTestEvent {
     if (timeout !== null) {
       const ev = this.getTimeoutEvent(timeout);
       this.lastRunEvent = ev;

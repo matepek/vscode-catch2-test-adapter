@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as api from 'vscode-test-adapter-api';
 import { reindentStr, reindentLines, milisecToStr, concatU } from './Util';
-import { AbstractTest } from './AbstractTest';
+import { AbstractTest, AbstractTestEvent } from './AbstractTest';
 
 export type TestEventState = 'running' | 'passed' | 'failed' | 'skipped' | 'errored';
 
@@ -106,7 +106,7 @@ export class TestEventBuilder {
     this.appendDecorator(file, line, str);
   }
 
-  public build(overwriteMessage?: string): api.TestEvent {
+  public build(overwriteMessage?: string): AbstractTestEvent {
     const duration = this.test.lastRunMilisec !== undefined ? milisecToStr(this.test.lastRunMilisec) : undefined;
 
     const description: string[] = [];
@@ -131,7 +131,7 @@ export class TestEventBuilder {
 
     this.test._updateDescriptionAndTooltip(descriptionStr, tooltipStr);
 
-    const ev: api.TestEvent = {
+    const ev: AbstractTestEvent = {
       type: 'test',
       test: this.test,
       state: this._state,

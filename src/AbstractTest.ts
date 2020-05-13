@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
+import { TestEvent, TestInfo, TestDecoration } from 'vscode-test-adapter-api';
 import { generateId, concat } from './Util';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
@@ -7,6 +7,18 @@ import { LoggerWrapper } from './LoggerWrapper';
 
 interface SharedWithAbstractTest {
   log: LoggerWrapper;
+}
+
+export interface StaticTestEventBase {
+  state: 'errored' | 'passed' | 'failed';
+  message: string;
+  description?: string;
+  decoration?: TestDecoration[];
+}
+
+export interface AbstractTestEvent extends TestEvent {
+  type: 'test';
+  test: AbstractTest;
 }
 
 export abstract class AbstractTest implements TestInfo {
@@ -24,9 +36,9 @@ export abstract class AbstractTest implements TestInfo {
   protected _valueParam: string | undefined = undefined; // gtest specific
   protected _file: string | undefined = undefined;
   protected _line: number | undefined = undefined;
-  protected _staticEvent: TestEvent | undefined;
+  protected _staticEvent: StaticTestEventBase | undefined;
 
-  public lastRunEvent: TestEvent | undefined;
+  public lastRunEvent: AbstractTestEvent | undefined;
   public lastRunMilisec: number | undefined;
 
   protected constructor(
@@ -38,7 +50,7 @@ export abstract class AbstractTest implements TestInfo {
     file: string | undefined,
     line: number | undefined,
     skipped: boolean,
-    staticEvent: TestEvent | undefined,
+    staticEvent: StaticTestEventBase | undefined,
     pureTags: string[], // without brackets
     testDescription: string | undefined,
     typeParam: string | undefined, // gtest specific
@@ -59,7 +71,7 @@ export abstract class AbstractTest implements TestInfo {
     testDescription: string | undefined,
     typeParam: string | undefined, // gtest specific
     valueParam: string | undefined, // gtest specific
-    staticEvent: (TestEvent & { type: 'test' }) | undefined,
+    staticEvent: StaticTestEventBase | undefined,
   ): boolean {
     if (line && line < 0) throw Error('line smaller than zero');
 
@@ -109,7 +121,6 @@ export abstract class AbstractTest implements TestInfo {
     if (this._staticEvent !== staticEvent) {
       changed = true;
       this._staticEvent = staticEvent;
-      this._staticEvent!.test = this;
     }
 
     return changed;
@@ -168,8 +179,10 @@ export abstract class AbstractTest implements TestInfo {
     return this._skipped;
   }
 
-  public get staticEvent(): TestEvent | undefined {
-    return this._staticEvent;
+  public get staticEvent(): AbstractTestEvent | undefined {
+    if (this._staticEvent)
+      return { type: 'test', test: this, state: this._staticEvent.state, message: this._staticEvent?.message };
+    else return undefined;
   }
 
   public *route(): IterableIterator<Suite> {
@@ -203,11 +216,11 @@ export abstract class AbstractTest implements TestInfo {
     }
   }
 
-  public getStartEvent(): TestEvent {
+  public getStartEvent(): AbstractTestEvent {
     return { type: 'test', test: this, state: 'running' };
   }
 
-  public getSkippedEvent(): TestEvent {
+  public getSkippedEvent(): AbstractTestEvent {
     return { type: 'test', test: this, state: 'skipped' };
   }
 
@@ -216,9 +229,9 @@ export abstract class AbstractTest implements TestInfo {
     rngSeed: number | undefined,
     timeout: number | null,
     stderr: string | undefined,
-  ): TestEvent;
+  ): AbstractTestEvent;
 
-  public getCancelledEvent(testOutput: string): TestEvent {
+  public getCancelledEvent(testOutput: string): AbstractTestEvent {
     const ev = this.getFailedEventBase();
     ev.message += '⏹ Run is stopped by user. ✋';
     ev.message += '\n\nTest Output : R"""';
@@ -227,14 +240,14 @@ export abstract class AbstractTest implements TestInfo {
     return ev;
   }
 
-  public getTimeoutEvent(milisec: number): TestEvent {
+  public getTimeoutEvent(milisec: number): AbstractTestEvent {
     const ev = this.getFailedEventBase();
     ev.message += '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + milisec / 1000 + ' second(s).';
     ev.state = 'errored';
     return ev;
   }
 
-  public getFailedEventBase(): TestEvent {
+  public getFailedEventBase(): AbstractTestEvent {
     return {
       type: 'test',
       test: this,

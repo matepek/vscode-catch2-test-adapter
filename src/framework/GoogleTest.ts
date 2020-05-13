@@ -1,5 +1,4 @@
-import { TestEvent } from 'vscode-test-adapter-api';
-import { AbstractTest } from '../AbstractTest';
+import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
 import { LoggerWrapper } from '../LoggerWrapper';
@@ -68,7 +67,7 @@ export class GoogleTest extends AbstractTest {
     rngSeed: number | undefined,
     timeout: number | null,
     stderr: string | undefined, //eslint-disable-line
-  ): TestEvent {
+  ): AbstractTestEvent {
     if (timeout !== null) {
       const ev = this.getTimeoutEvent(timeout);
       this.lastRunEvent = ev;

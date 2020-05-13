@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import { inspect, promisify } from 'util';
-import { TestEvent } from 'vscode-test-adapter-api';
 
 import * as c2fs from '../FSWrapper';
 import { Suite } from '../Suite';
@@ -10,7 +9,7 @@ import { Parser } from 'xml2js';
 import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
 import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
-import { AbstractTest } from '../AbstractTest';
+import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
 import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { RootSuite } from '../RootSuite';
@@ -373,7 +372,7 @@ export class GoogleRunnable extends AbstractRunnable {
           if (data.currentChild !== undefined) {
             this._shared.log.info('data.currentChild !== undefined: ', data);
 
-            let ev: TestEvent;
+            let ev: AbstractTestEvent;
 
             if (runInfo.isCancelled) {
               ev = data.currentChild.getCancelledEvent(data.stdoutAndErrBuffer);
@@ -413,7 +412,7 @@ export class GoogleRunnable extends AbstractRunnable {
             () => {
               // we have test results for the newly detected tests
               // after reload we can set the results
-              const events: TestEvent[] = [];
+              const events: AbstractTestEvent[] = [];
 
               for (let i = 0; i < data.unprocessedTestCases.length; i++) {
                 const testCase = data.unprocessedTestCases[i];

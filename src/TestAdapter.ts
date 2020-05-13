@@ -1,6 +1,6 @@
 import { sep as osPathSeparator } from 'path';
 import * as vscode from 'vscode';
-import { TestEvent, TestLoadFinishedEvent, TestLoadStartedEvent, RetireEvent } from 'vscode-test-adapter-api';
+import { TestLoadFinishedEvent, TestLoadStartedEvent, RetireEvent } from 'vscode-test-adapter-api';
 import * as api from 'vscode-test-adapter-api';
 import * as Sentry from '@sentry/node';
 
@@ -14,7 +14,7 @@ import { AbstractRunnable } from './AbstractRunnable';
 import { Configurations, Config } from './Configurations';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
-import { AbstractTest } from './AbstractTest';
+import { AbstractTest, AbstractTestEvent } from './AbstractTest';
 import { ResolveRule, resolveVariables } from './util/ResolveRule';
 import { inspect } from 'util';
 
@@ -135,12 +135,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._retireEmitter.fire({ tests: ids });
     };
 
-    const sendTestStateEvents = (testEvents: TestEvent[]): void => {
+    const sendTestStateEvents = (testEvents: AbstractTestEvent[]): void => {
       this._mainTaskQueue.then(() => {
         if (testEvents.length > 0) {
-          this._rootSuite.sendStartEventIfNeeded(
-            testEvents.filter(v => v.type == 'test').map(v => (typeof v.test === 'string' ? v.test : v.test.id)),
-          );
+          this._rootSuite.sendStartEventIfNeeded(testEvents.map(v => v.test.id));
 
           for (let i = 0; i < testEvents.length; ++i) {
             const test = this._rootSuite.findTestById(testEvents[i].test);
