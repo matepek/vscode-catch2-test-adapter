@@ -210,10 +210,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
     };
 
-    const loadTask = (task: () => Promise<Error[]>): Promise<void> => {
+    const loadTask = (task: () => Promise<void | Error[]>): Promise<void> => {
       this._sendLoadingEventIfNeeded();
       return task().then(
-        (errors: Error[]) => {
+        (errors: void | Error[]) => {
           this._sendLoadingFinishedEventIfNeeded(errors);
         },
         (reason: Error) => {
@@ -280,7 +280,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
           if (affectsAny('test.randomGeneratorSeed')) {
             this._shared.rngSeed = config.getRandomGeneratorSeed();
-            this._retireEmitter.fire({});
           }
           if (affectsAny('discovery.gracePeriodForMissing')) {
             this._shared.execWatchTimeout = config.getExecWatchTimeout();
@@ -311,6 +310,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           }
           if (affectsAny('gtest.gmockVerbose')) {
             this._shared.googleTestGMockVerbose = config.getGoogleTestGMockVerbose();
+          }
+
+          if (affectsAny('test.randomGeneratorSeed', 'gtest.treatGmockWarningAs', 'gtest.gmockVerbose')) {
+            this._retireEmitter.fire({});
           }
 
           if (
@@ -381,8 +384,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   // eslint-disable-next-line
-  private _sendLoadingFinishedEventIfNeeded(errors?: Error[]): void {
-    if (errors?.length) {
+  private _sendLoadingFinishedEventIfNeeded(errors?: void | Error[]): void {
+    if (errors && errors.length) {
       this._testLoadingErrors.push(...errors);
     }
 
