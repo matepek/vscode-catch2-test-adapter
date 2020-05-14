@@ -27,7 +27,7 @@ describe(path.basename(__filename), function () {
     });
 
     it('test.workingDirectory', function () {
-      this.slow(600);
+      this.slow(2600);
       return adapter.doAndWaitForReloadEvent(this, () => {
         return settings.updateConfig('test.workingDirectory', 'apple/peach');
       });

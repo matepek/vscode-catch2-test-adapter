@@ -423,7 +423,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._rootSuite = new RootSuite(this._rootSuite.id, this._shared);
 
     return this._shared.loadWithTask(() =>
-      configuration.getExecutables(this._shared, this._shared.varToValue).then(exec => this._rootSuite.load(exec)),
+      configuration.getExecutables(this._shared).then(exec => this._rootSuite.load(exec)),
     );
   }
 
@@ -607,14 +607,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         } else {
           terminateConn && terminateConn.dispose();
           return Promise.reject(
-            Error(
-              'Failed starting the debug session. ' + 'Maybe something wrong with "testMate.cpp.debug.configTemplate".',
-            ),
+            Error('Failed starting the debug session. Maybe something wrong with "testMate.cpp.debug.configTemplate".'),
           );
         }
       })
       .catch(err => {
-        this._shared.log.info(err);
+        this._shared.log.warn(err);
         throw err;
       });
   }

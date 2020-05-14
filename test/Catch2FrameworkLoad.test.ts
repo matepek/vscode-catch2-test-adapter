@@ -23,10 +23,10 @@ import {
   ChildProcessStub,
   FileSystemWatcherStub,
   isWin,
-  expectedLoggedErrorLine,
   waitForMilisec,
 } from './Common';
 import { TestRunEvent } from '../src/SharedVariables';
+import { expectedLoggedWarning } from './LogOutputContent.test';
 
 ///
 
@@ -109,8 +109,6 @@ describe(path.basename(__filename), function () {
     }
 
     it('should run with not existing test id', async function () {
-      expectedLoggedErrorLine("[ERROR] Some tests have remained:  Set { 'not existing id' }");
-
       await loadAdapterAndAssert();
       await adapter.run(['not existing id']);
 
@@ -508,18 +506,6 @@ describe(path.basename(__filename), function () {
       adapter.testStateEventIndexLess(s2finished, finished);
 
       assert.equal(adapter.testStatesEvents.length, 14);
-    });
-
-    it('should run with not existing test id', async function () {
-      expectedLoggedErrorLine("[ERROR] Some tests have remained:  Set { 'not existing id' }");
-
-      await loadAdapterAndAssert();
-      await adapter.run(['not existing id']);
-
-      adapter.testStatesEventsSimplifiedAssertEqual([
-        { type: 'started', tests: ['not existing id'] },
-        { type: 'finished' },
-      ]);
     });
 
     it('should run s1t1', async function () {
@@ -1436,10 +1422,9 @@ describe(path.basename(__filename), function () {
     });
 
     it('should be debugged', async function () {
-      expectedLoggedErrorLine(
-        '[ERROR] Error: Failed starting the debug session. Maybe something wrong with "testMate.cpp.debug.configTemplate".',
+      expectedLoggedWarning(
+        'Error: Failed starting the debug session. Maybe something wrong with "testMate.cpp.debug.configTemplate".',
       );
-
       await settings.updateConfig('test.advancedExecutables', [
         {
           name: 'X${baseFilename}',

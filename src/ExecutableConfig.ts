@@ -187,7 +187,7 @@ export class ExecutableConfig implements vscode.Disposable {
                       this._runnables.set(file, suite);
                     },
                     (reason: Error) => {
-                      this._shared.log.warn("Couldn't load executable:", reason, suite);
+                      this._shared.log.warn("Couldn't load executable", reason, suite);
                       if (
                         this._strictPattern === true ||
                         (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)

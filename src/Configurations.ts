@@ -604,7 +604,7 @@ export class Configurations {
         {
           if (typeof obj.pattern == 'string') pattern = obj.pattern;
           else {
-            this._log.debug('pattern property is required', obj);
+            this._log.warn('pattern property is required', obj);
             throw Error('pattern property is required.');
           }
         }

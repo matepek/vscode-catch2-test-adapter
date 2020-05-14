@@ -6,6 +6,7 @@ import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
 import { TestAdapter, Imitation, waitFor, settings, ChildProcessStub } from './Common';
+import { expectedLoggedWarning } from './LogOutputContent.test';
 
 ///
 
@@ -42,6 +43,7 @@ describe(path.basename(__filename), function () {
 
   specify('test list error: duplicated test name', async function () {
     this.slow(500);
+    expectedLoggedWarning('reloadChildren -> catch2TestListOutput.stderr');
     await settings.updateConfig('test.executables', example1.suite1.execPath);
 
     adapter = new TestAdapter();

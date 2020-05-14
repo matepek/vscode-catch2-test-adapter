@@ -16,7 +16,7 @@ import { TestLoadFinishedEvent, TestLoadStartedEvent, TestSuiteInfo, TestInfo } 
 import * as my from '../src/TestAdapter';
 import { Config } from '../src/Configurations';
 import { TestRunEvent } from '../src/SharedVariables';
-import { LoggerWrapper } from '../src/LoggerWrapper';
+import { logger } from './LogOutputContent.test';
 
 ///
 
@@ -64,12 +64,6 @@ export const settings = new (class {
     return new Promise(r => t.then(r));
   }
 })();
-
-export const globalExpectedLoggedErrorLine = new Set<string>();
-
-export function expectedLoggedErrorLine(errorLine: string): void {
-  globalExpectedLoggedErrorLine.add(errorLine);
-}
 
 export async function waitFor(context: Mocha.Context, condition: Function, timeout?: number): Promise<void> {
   if (timeout === undefined) timeout = context.timeout() - 1000 /*need some time for error handling*/;
@@ -223,10 +217,6 @@ export class Imitation {
     };
   }
 }
-
-///
-
-const logger = new LoggerWrapper('testMate.cpp.log', undefined, `C++ TestMate`);
 
 ///
 
