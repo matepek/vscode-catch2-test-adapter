@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.1.2]
+
+- Absolute patterns in Windows can now point to a different volume than the workspace folder.
+
 ## [3.1.1] - 2020-05-14
 
 ### Added

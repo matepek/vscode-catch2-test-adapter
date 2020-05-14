@@ -294,7 +294,7 @@ export class ExecutableConfig implements vscode.Disposable {
     return {
       isAbsolute,
       absPattern,
-      isPartOfWs: !relativeToWs.startsWith('..'),
+      isPartOfWs: relativeToWs !== absPattern && !relativeToWs.startsWith('..'),
       relativeToWsPosix: relativeToWs.replace(/\\/g, '/'),
     };
   }
