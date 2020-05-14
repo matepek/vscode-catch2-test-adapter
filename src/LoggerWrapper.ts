@@ -29,6 +29,14 @@ export class LoggerWrapper extends util.Log {
     }
   }
 
+  public setTags(tags: { [key: string]: string }): void {
+    try {
+      Sentry.setTags(tags);
+    } catch (e) {
+      this.exceptionS(e);
+    }
+  }
+
   //eslint-disable-next-line
   public infoS(m: string, ...msg: any[]): void {
     super.info(...msg);
