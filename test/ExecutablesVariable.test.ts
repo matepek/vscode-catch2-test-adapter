@@ -8,12 +8,12 @@ import {
   settings,
   ChildProcessStub,
   FileSystemWatcherStub,
-  expectedLoggedErrorLine,
   isWin,
   waitForMilisec,
 } from './Common';
 import { example1 } from './example1';
 import { inspect } from 'util';
+import { expectedLoggedWarning } from './LogOutputContent.test';
 
 ///
 
@@ -150,6 +150,7 @@ describe(path.basename(__filename), function () {
 
   specify('load executables=["execPath1.exe", "./execPath2.exe"] with error', async function () {
     this.slow(500);
+    expectedLoggedWarning("Couldn't load executable");
     await settings.updateConfig('test.advancedExecutables', ['execPath1.exe', './execPath2.exe']);
     adapter = new TestAdapter();
 
@@ -282,9 +283,8 @@ describe(path.basename(__filename), function () {
   });
 
   specify('wrong executables format', async function () {
-    expectedLoggedErrorLine('[Error: pattern property is required.');
-
     this.slow(5000);
+    expectedLoggedWarning('pattern property is required');
     await settings.updateConfig('test.advancedExecutables', [{ name: '' }]);
 
     adapter = new TestAdapter();

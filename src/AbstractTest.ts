@@ -18,7 +18,7 @@ export interface StaticTestEventBase {
 
 export interface AbstractTestEvent extends TestEvent {
   type: 'test';
-  test: AbstractTest;
+  test: TestInfo;
 }
 
 export abstract class AbstractTest implements TestInfo {

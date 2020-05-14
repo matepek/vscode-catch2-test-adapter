@@ -4,7 +4,7 @@ import * as pathlib from 'path';
 import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, settings, ChildProcessStub, expectedLoggedErrorLine } from './Common';
+import { TestAdapter, Imitation, settings, ChildProcessStub } from './Common';
 import { TestRunEvent } from '../src/SharedVariables';
 
 ///
@@ -38,8 +38,6 @@ describe(pathlib.basename(__filename), function () {
   });
 
   it('loads gtest1 from output because there is xml parsing error', async function () {
-    expectedLoggedErrorLine('[ERROR] Error: Google Test version not found');
-
     this.slow(500);
     await settings.updateConfig('test.executables', example1.gtest1.execPath);
 

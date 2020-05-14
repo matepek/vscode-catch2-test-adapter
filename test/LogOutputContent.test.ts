@@ -1,35 +1,38 @@
 import * as assert from 'assert';
-import * as fse from 'fs-extra';
-import * as path from 'path';
-import * as readline from 'readline';
-import { settings, globalExpectedLoggedErrorLine } from './Common';
+import * as sinon from 'sinon';
+import { LoggerWrapper } from '../src/LoggerWrapper';
 
 ///
 
-const aggregatedLogFilePath = path.join(settings.workspaceFolderUri.fsPath, 'alltestlogs.txt');
-const failedTestLogDir = path.join(settings.workspaceFolderUri.fsPath, 'FailedTestLogs');
+export const globalExpectedLoggedErrors = new Set<string>();
 
-let counter = 1;
-let currentLogfilePath: string;
+export function expectedLoggedError(errorLine: string): void {
+  globalExpectedLoggedErrors.add(errorLine);
+}
+
+export const globalExpectedLoggedWarnings = new Set<string>();
+
+export function expectedLoggedWarning(warning: string): void {
+  globalExpectedLoggedWarnings.add(warning);
+}
+
+///
+
+export const logger = new LoggerWrapper('testMate.cpp.log', undefined, `C++ TestMate`);
+// eslint-disable-next-line
+const spyError: sinon.SinonSpy<any[], void> = sinon.spy(logger, 'error');
+// eslint-disable-next-line
+const spyWarning: sinon.SinonSpy<any[], void> = sinon.spy(logger, 'warn');
 
 ///
 
 // this is "global". it will run before every test
-before(function () {
-  fse.removeSync(aggregatedLogFilePath);
-  fse.removeSync(failedTestLogDir);
-  fse.mkdirSync(failedTestLogDir);
-});
 
 beforeEach(function () {
-  globalExpectedLoggedErrorLine.clear();
-  currentLogfilePath = path.join(failedTestLogDir, 'log_' + counter++ + '.txt');
-
-  const w = fse.createWriteStream(currentLogfilePath, { flags: 'w' });
-  const title = this.currentTest ? this.currentTest.titlePath().join(': ') : '<unknown>';
-  w.write('\n' + '#'.repeat(title.length + 6) + '\n## ' + title + ' ##\n' + '#'.repeat(title.length + 6) + '\n');
-
-  return settings.updateConfig('log.logfile', currentLogfilePath);
+  spyError.resetHistory();
+  spyWarning.resetHistory();
+  globalExpectedLoggedErrors.clear();
+  globalExpectedLoggedWarnings.clear();
 });
 
 afterEach(async function () {
@@ -40,31 +43,41 @@ afterEach(async function () {
   const title = currentTest.titlePath().join(' -> ');
 
   if (currentTest.state === 'passed') {
-    const inputLineStream = readline.createInterface(fse.createReadStream(currentLogfilePath));
+    {
+      const arrived = new Set<string>();
 
-    const exceptions: Error[] = [];
-
-    inputLineStream.on('line', (line: string) => {
-      try {
-        const index = line.indexOf('[ERROR]');
-        if (index !== -1) {
-          const error = line.substr(index + '[ERROR]'.length).trim();
-          assert.notStrictEqual(globalExpectedLoggedErrorLine, undefined, title + '>>>' + error + '<<<');
-          assert.ok(globalExpectedLoggedErrorLine.has(error), title + '>>>' + error + '<<<');
-        } else if (line.substr(26, 6) === '[WARN]') {
-          // we could test this once
+      for (const arg of spyError.args) {
+        const msg = arg[0].toString();
+        if (!globalExpectedLoggedErrors.has(msg)) {
+          assert.fail(`Test: "${title}":  Got error: "${msg}" but not expected.`);
+        } else {
+          arrived.add(msg);
         }
-      } catch (e) {
-        exceptions.push(e);
       }
-    });
 
-    await new Promise<void>(resolve => inputLineStream.on('close', resolve));
-    assert.deepStrictEqual(exceptions, []);
-  }
+      for (const expected of globalExpectedLoggedErrors) {
+        if (!arrived.has(expected)) {
+          assert.fail(`Test: "${title}":  Expected error: "${expected}" but not arrived.`);
+        }
+      }
+    }
+    {
+      const arrived = new Set<string>();
 
-  // removing passed or skipped test logs
-  if (this.currentTest && this.currentTest.state !== 'failed') {
-    fse.removeSync(currentLogfilePath);
+      for (const arg of spyWarning.args) {
+        const msg = arg[0].toString();
+        if (!globalExpectedLoggedWarnings.has(msg)) {
+          assert.fail(`Test: "${title}":  Got warning: "${msg}" but not expected.`);
+        } else {
+          arrived.add(msg);
+        }
+      }
+
+      for (const expected of globalExpectedLoggedWarnings) {
+        if (!arrived.has(expected)) {
+          assert.fail(`Test: "${title}":  Expected warning: "${expected}" but not arrived.`);
+        }
+      }
+    }
   }
 });

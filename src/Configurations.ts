@@ -5,7 +5,6 @@ import { SharedVariables } from './SharedVariables';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
 import { TestGrouping } from './TestGroupingInterface';
-import { ResolveRule } from './util/ResolveRule';
 //import * as crypto from 'crypto';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
@@ -474,10 +473,7 @@ export class Configurations {
     return this._getNewOrOldOrDefAndMigrate<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  public async getExecutables(
-    shared: SharedVariables,
-    variableToValue: readonly Readonly<ResolveRule>[],
-  ): Promise<ExecutableConfig[]> {
+  public async getExecutables(shared: SharedVariables): Promise<ExecutableConfig[]> {
     type ExecOldType = null | string | string[] | ExecutableObj | (ExecutableObj | string)[];
 
     const oldVals = this._old.inspect<ExecOldType>('executables');
@@ -550,7 +546,6 @@ export class Configurations {
         { before: [], beforeEach: [] },
         defaultParallelExecutionOfExecLimit,
         false,
-        variableToValue,
         {},
         {},
         {},
@@ -609,7 +604,7 @@ export class Configurations {
         {
           if (typeof obj.pattern == 'string') pattern = obj.pattern;
           else {
-            this._log.debug('pattern property is required', obj);
+            this._log.warn('pattern property is required', obj);
             throw Error('pattern property is required.');
           }
         }
@@ -647,7 +642,6 @@ export class Configurations {
           runTask,
           parallelizationLimit,
           strictPattern,
-          variableToValue,
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),

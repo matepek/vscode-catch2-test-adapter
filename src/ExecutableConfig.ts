@@ -44,7 +44,6 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _runTask: RunTask,
     private readonly _parallelizationLimit: number,
     private readonly _strictPattern: boolean | undefined,
-    private readonly _variableToValue: readonly Readonly<ResolveRule>[],
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,
     private readonly _doctest: ExecutableConfigFrameworkSpecific,
@@ -188,7 +187,7 @@ export class ExecutableConfig implements vscode.Disposable {
                       this._runnables.set(file, suite);
                     },
                     (reason: Error) => {
-                      this._shared.log.warn("Couldn't load executable:", reason, suite);
+                      this._shared.log.warn("Couldn't load executable", reason, suite);
                       if (
                         this._strictPattern === true ||
                         (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
@@ -282,7 +281,7 @@ export class ExecutableConfig implements vscode.Disposable {
     relativeToWsPosix: string;
   } {
     pattern = resolveOSEnvironmentVariables(pattern, false);
-    pattern = resolveVariables(pattern, this._variableToValue);
+    pattern = resolveVariables(pattern, this._shared.varToValue);
 
     const normPattern = pattern.replace(/\\/g, '/');
     const isAbsolute = pathlib.isAbsolute(normPattern);
@@ -294,7 +293,7 @@ export class ExecutableConfig implements vscode.Disposable {
     return {
       isAbsolute,
       absPattern,
-      isPartOfWs: relativeToWs !== absPattern && !relativeToWs.startsWith('..'),
+      isPartOfWs: !relativeToWs.startsWith('..') && relativeToWs !== absPattern, // pathlib.relative('B:\wp', 'C:\a\b') == 'C:\a\b'
       relativeToWsPosix: relativeToWs.replace(/\\/g, '/'),
     };
   }
@@ -315,7 +314,7 @@ export class ExecutableConfig implements vscode.Disposable {
       const baseFilename = pathlib.basename(filename, extFilename);
 
       varToValue = [
-        ...this._variableToValue,
+        ...this._shared.varToValue,
         subPath('absPath', filePath),
         subPath('relPath', relPath),
         subPath('absDirpath', pathlib.dirname(filePath)),
