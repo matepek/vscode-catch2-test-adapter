@@ -5,7 +5,6 @@ import { SharedVariables } from './SharedVariables';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
 import { TestGrouping } from './TestGroupingInterface';
-import { ResolveRule } from './util/ResolveRule';
 //import * as crypto from 'crypto';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
@@ -474,10 +473,7 @@ export class Configurations {
     return this._getNewOrOldOrDefAndMigrate<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  public async getExecutables(
-    shared: SharedVariables,
-    variableToValue: readonly Readonly<ResolveRule>[],
-  ): Promise<ExecutableConfig[]> {
+  public async getExecutables(shared: SharedVariables): Promise<ExecutableConfig[]> {
     type ExecOldType = null | string | string[] | ExecutableObj | (ExecutableObj | string)[];
 
     const oldVals = this._old.inspect<ExecOldType>('executables');
