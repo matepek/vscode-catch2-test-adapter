@@ -129,12 +129,7 @@ Use these commands in your `tasks.json` like
 
 And more at [Test Explorer hompage](https://github.com/hbenl/vscode-test-explorer#configuration).
 
-## About [Sentry.io]() integration
-
-As a developer, you may know how valuable can be if you have some information.
-The feature is disabled by default, the user is promted to enable it.
-It can be enabled globally and disabled for the workspace or the other way around.
-I've already fixed several issues using it. With enabling you support my work. 🙏
+## About [Sentry.io](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md) integration
 
 ## [License](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/LICENSE)
 

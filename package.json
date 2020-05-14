@@ -940,7 +940,7 @@
           "default": ""
         },
         "testMate.cpp.log.logSentry": {
-          "markdownDescription": "Errors/Exceptions will be logged and sent automatically for further analysis.",
+          "markdownDescription": "Errors/Exceptions will be logged and sent automatically for further analysis. ([More](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md))",
           "scope": "resource",
           "type": "string",
           "default": "question"

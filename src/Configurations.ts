@@ -368,9 +368,9 @@ export class Configurations {
       ];
       vscode.window
         .showInformationMessage(
-          'Hey there! C++ TestMate has [sentry.io](https://sentry.io/welcome) integration to ' +
+          'Hey there! C++ TestMate has [sentry.io](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md) integration to ' +
             'improve the stability and the development. 🤩 For this I want to send logs and errors ' +
-            'to [sentry.io](https://sentry.io/welcome) but I would NEVER do it without your consent. ' +
+            'but I would NEVER do it without your consent. ' +
             'Please be understandable and allow it. 🙏',
           ...options,
         )
