@@ -282,6 +282,12 @@
           "name": "string.quoted.testMate.other"
         },
         {
+          "comment": "Probably Path",
+          "match": "(?:(?:\\\\\\\\\\?\\\\)?(?:UNC|\\w:)|\\.\\.?|~|)(?:\\\\|\\/)[^ ]+",
+          "name": "storage.testMate.other"
+        },
+
+        {
           "comment": "GUID",
           "match": "\\b(?i:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))\\b",
           "name": "support.class.testMate.other"
