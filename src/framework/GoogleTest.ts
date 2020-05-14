@@ -1,16 +1,11 @@
-import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
+import { AbstractTest, AbstractTestEvent, SharedWithTest } from '../AbstractTest';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
-import { LoggerWrapper } from '../LoggerWrapper';
 import { TestEventBuilder } from '../TestEventBuilder';
-
-interface SharedWithGoogleTest {
-  log: LoggerWrapper;
-}
 
 export class GoogleTest extends AbstractTest {
   public constructor(
-    shared: SharedWithGoogleTest,
+    shared: SharedWithTest,
     runnable: AbstractRunnable,
     parent: Suite,
     testNameAsId: string,

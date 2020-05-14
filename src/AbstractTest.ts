@@ -5,7 +5,7 @@ import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
 import { LoggerWrapper } from './LoggerWrapper';
 
-interface SharedWithAbstractTest {
+export interface SharedWithTest {
   log: LoggerWrapper;
 }
 
@@ -42,7 +42,7 @@ export abstract class AbstractTest implements TestInfo {
   public lastRunMilisec: number | undefined;
 
   protected constructor(
-    protected readonly _shared: SharedWithAbstractTest,
+    protected readonly _shared: SharedWithTest,
     public readonly runnable: AbstractRunnable,
     public readonly parent: Suite, // ascending
     testNameAsId: string,

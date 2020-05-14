@@ -1,13 +1,8 @@
 import * as xml2js from 'xml2js';
-import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
+import { AbstractTest, AbstractTestEvent, SharedWithTest } from '../AbstractTest';
 import { TestEventBuilder } from '../TestEventBuilder';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
-import { LoggerWrapper } from '../LoggerWrapper';
-
-interface SharedWithDOCTest {
-  log: LoggerWrapper;
-}
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -39,7 +34,7 @@ export class DOCSection implements Frame {
 
 export class DOCTest extends AbstractTest {
   public constructor(
-    shared: SharedWithDOCTest,
+    shared: SharedWithTest,
     runnable: AbstractRunnable,
     parent: Suite,
     testNameAsId: string,

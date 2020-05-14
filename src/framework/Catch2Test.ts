@@ -1,16 +1,11 @@
 import * as xml2js from 'xml2js';
-import { AbstractTest, StaticTestEventBase, AbstractTestEvent } from '../AbstractTest';
+import { AbstractTest, StaticTestEventBase, AbstractTestEvent, SharedWithTest } from '../AbstractTest';
 import { inspect } from 'util';
 import { TestEventBuilder } from '../TestEventBuilder';
 import * as pathlib from 'path';
 import { Version } from '../Util';
 import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
-import { LoggerWrapper } from '../LoggerWrapper';
-
-interface SharedWithCatch2Test {
-  log: LoggerWrapper;
-}
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -40,7 +35,7 @@ const EscapeCharParserFix = new Version(2, 11, 4);
 
 export class Catch2Test extends AbstractTest {
   public constructor(
-    shared: SharedWithCatch2Test,
+    shared: SharedWithTest,
     runnable: AbstractRunnable,
     parent: Suite,
     frameworkVersion: Version | undefined,
