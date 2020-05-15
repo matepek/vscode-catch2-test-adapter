@@ -306,6 +306,8 @@ export class Catch2Runnable extends AbstractRunnable {
       debugParams.push(this._shared.rngSeed.toString());
     }
 
+    // TODO colouring 'debug.enableOutputColouring'
+
     if (breakOnFailure) debugParams.push('--break');
     return debugParams;
   }

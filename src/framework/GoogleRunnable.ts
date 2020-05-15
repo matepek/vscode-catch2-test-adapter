@@ -249,7 +249,8 @@ export class GoogleRunnable extends AbstractRunnable {
   }
 
   public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
-    const debugParams = [`--${this._argumentPrefix}color=yes`, ...this._getRunParamsCommon(childrenToRun)];
+    const colouring = this.properties.enableDebugColouring ? 'yes' : 'no';
+    const debugParams = [`--${this._argumentPrefix}color=${colouring}`, ...this._getRunParamsCommon(childrenToRun)];
     if (breakOnFailure) debugParams.push(`--${this._argumentPrefix}break_on_failure`);
     return debugParams;
   }

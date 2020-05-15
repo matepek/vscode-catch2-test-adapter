@@ -25,11 +25,12 @@ export interface RunTask {
 }
 
 export interface ExecutableConfigFrameworkSpecific {
+  testGrouping?: TestGrouping;
   helpRegex?: string;
   prependTestRunningArgs?: string[];
   prependTestListingArgs?: string[];
   ignoreTestEnumerationStdErr?: boolean;
-  testGrouping?: TestGrouping;
+  'debug.enableOutputColouring'?: boolean;
 }
 
 export class ExecutableConfig implements vscode.Disposable {

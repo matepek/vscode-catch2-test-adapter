@@ -20,6 +20,10 @@ export class RunnableSuiteProperties {
 
   public readonly parallelizationPool: TaskPool;
 
+  public get testGrouping(): TestGrouping | undefined {
+    return this._frameworkSpecific.testGrouping;
+  }
+
   public get prependTestRunningArgs(): string[] {
     return this._frameworkSpecific.prependTestRunningArgs ? this._frameworkSpecific.prependTestRunningArgs : [];
   }
@@ -32,7 +36,7 @@ export class RunnableSuiteProperties {
     return this._frameworkSpecific.ignoreTestEnumerationStdErr === true;
   }
 
-  public get testGrouping(): TestGrouping | undefined {
-    return this._frameworkSpecific.testGrouping;
+  public get enableDebugColouring(): boolean {
+    return this._frameworkSpecific['debug.enableOutputColouring'] === true;
   }
 }

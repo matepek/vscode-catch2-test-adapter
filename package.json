@@ -343,6 +343,10 @@
                     "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "boolean"
                   },
+                  "debug.enableOutputColouring": {
+                    "markdownDescription": "Sets the colouring of the output for debug session.",
+                    "type": "boolean"
+                  },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                     "additionalProperties": false,
@@ -503,6 +507,10 @@
                     "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "boolean"
                   },
+                  "debug.enableOutputColouring": {
+                    "markdownDescription": "Sets the colouring of the output for debug session.",
+                    "type": "boolean"
+                  },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                     "additionalProperties": false,
@@ -661,6 +669,10 @@
                   },
                   "ignoreTestEnumerationStdErr": {
                     "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "boolean"
+                  },
+                  "debug.enableOutputColouring": {
+                    "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
                   },
                   "testGrouping": {

@@ -678,7 +678,10 @@ export class Configurations {
   ): ExecutableConfigFrameworkSpecific {
     const r: ExecutableConfigFrameworkSpecific = {};
     if (typeof obj === 'object') {
-      if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
+      if (obj.testGrouping) r.testGrouping = obj.testGrouping;
+      else r.testGrouping = defaultTestGrouping;
+
+      r.helpRegex = obj['helpRegex'];
 
       if (Array.isArray(obj.prependTestRunningArgs) && obj.prependTestRunningArgs.every(x => typeof x === 'string'))
         r.prependTestRunningArgs = obj.prependTestRunningArgs;
@@ -686,10 +689,9 @@ export class Configurations {
       if (Array.isArray(obj.prependTestListingArgs) && obj.prependTestListingArgs.every(x => typeof x === 'string'))
         r.prependTestListingArgs = obj.prependTestListingArgs;
 
-      if (obj.ignoreTestEnumerationStdErr) r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
+      r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
 
-      if (obj.testGrouping) r.testGrouping = obj.testGrouping;
-      else r.testGrouping = defaultTestGrouping;
+      r['debug.enableOutputColouring'] = obj['debug.enableOutputColouring'];
     }
 
     return r;
