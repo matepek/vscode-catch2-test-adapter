@@ -156,6 +156,51 @@ export class Catch2Runnable extends AbstractRunnable {
     return reloadResult;
   }
 
+  private _reloadFromXml(testListOutput: string): RunnableReloadResult {
+    let res: XmlObject = {};
+    new xml2js.Parser({ explicitArray: false }).parseString(testListOutput, (err: Error, result: XmlObject) => {
+      if (err) {
+        throw err;
+      } else {
+        res = result;
+      }
+    });
+
+    const reloadResult = new RunnableReloadResult();
+
+    const testCases = res.MatchingTests.TestCase;
+    for (let i = 0; i < testCases.length; ++i) {
+      const testCase = testCases[i];
+
+      const testName = testCase.Name;
+      const filePath = testCase?.SourceInfo ? this._findFilePath(testCase?.SourceInfo.File) : undefined;
+      const line = testCase?.SourceInfo ? Number(testCase?.SourceInfo.Line) - 1 : undefined;
+      const className = testCase.ClassName ? testCase.ClassName : undefined;
+
+      const tags: string[] = [];
+      if (testCase.Tags) {
+        const matches = testCase.Tags.match(/\[[^\[\]]+\]/g);
+        if (matches) matches.forEach((t: string) => tags.push(t.substring(1, t.length - 1)));
+        ++i;
+      }
+
+      reloadResult.add(
+        ...this._createSubtreeAndAddTest(
+          this.getTestGrouping(),
+          testName,
+          testName,
+          filePath,
+          tags,
+          (parent: Suite) =>
+            new Catch2Test(this._shared, this, parent, this._catch2Version, testName, tags, filePath, line, className),
+          (old: AbstractTest): boolean => (old as Catch2Test).update(tags, filePath, line, className),
+        ),
+      );
+    }
+
+    return reloadResult;
+  }
+
   protected async _reloadChildren(): Promise<RunnableReloadResult> {
     const cacheFile = this.properties.path + '.TestMate.testListCache.txt';
 
@@ -171,7 +216,9 @@ export class Catch2Runnable extends AbstractRunnable {
           if (content === '') {
             this._shared.log.debug('loading from cache failed because file is empty');
           } else {
-            return await this._reloadFromString(content);
+            return this._catch2Version && this._catch2Version.major >= 3
+              ? await this._reloadFromXml(content)
+              : await this._reloadFromString(content);
           }
         }
       } catch (e) {
@@ -179,19 +226,18 @@ export class Catch2Runnable extends AbstractRunnable {
       }
     }
 
-    const catch2TestListOutput = await c2fs.spawnAsync(
-      this.properties.path,
-      this.properties.prependTestListingArgs.concat([
-        '[.],*',
-        '--verbosity',
-        'high',
-        '--list-tests',
-        '--use-colour',
-        'no',
-      ]),
-      this.properties.options,
-      30000,
-    );
+    const args = this.properties.prependTestListingArgs.concat([
+      '[.],*',
+      '--verbosity',
+      'high',
+      '--list-tests',
+      '--use-colour',
+      'no',
+    ]);
+
+    if (this._catch2Version && this._catch2Version.major >= 3) args.push('--reporter', 'xml');
+
+    const catch2TestListOutput = await c2fs.spawnAsync(this.properties.path, args, this.properties.options, 30000);
 
     if (catch2TestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
@@ -203,7 +249,10 @@ export class Catch2Runnable extends AbstractRunnable {
       throw Error('stoud is empty');
     }
 
-    const result = await this._reloadFromString(catch2TestListOutput.stdout);
+    const result =
+      this._catch2Version && this._catch2Version.major >= 3
+        ? await this._reloadFromXml(catch2TestListOutput.stdout)
+        : await this._reloadFromString(catch2TestListOutput.stdout);
 
     if (this._shared.enabledTestListCaching) {
       promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>

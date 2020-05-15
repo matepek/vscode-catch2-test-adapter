@@ -33,6 +33,6 @@ target_link_libraries(ThirdParty.Catch2v3WithMain
 
 function(add_catch2v3test_with_main target cpp_file)
   add_executable(${target} "${cpp_file}")
-  target_link_libraries(${target} PUBLIC ThirdParty.Catch2v3)
+  target_link_libraries(${target} PUBLIC ThirdParty.Catch2v3WithMain)
   target_compile_definitions(${target} PUBLIC "CATCH_CONFIG_MAIN" "CATCH_CONFIG_ENABLE_BENCHMARKING")
 endfunction()
