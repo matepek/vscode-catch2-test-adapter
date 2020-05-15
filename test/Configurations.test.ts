@@ -65,7 +65,7 @@ describe(path.basename(__filename), function () {
       });
     });
 
-    it.only('test.advancedExecutables', async function () {
+    it('test.advancedExecutables', async function () {
       process.platform;
       const setting: Partial<Record<NodeJS.Platform, object>> = {};
       setting[process.platform] = { pattern: 'spec' };

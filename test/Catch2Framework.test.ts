@@ -186,6 +186,26 @@ describe(path.basename(__filename), function () {
     assert.strictEqual(suite1.children[0].label, 'first');
   });
 
+  specify('custom4 test case list', async function () {
+    this.slow(500);
+    await settings.updateConfig('test.executables', example1.suite1.execPath);
+
+    adapter = new TestAdapter();
+
+    const testListOutput = ['', 'Catch v2.12.1', 'usage:', '  Tests [<test name|pattern|tags> ... ] options', '', ''];
+
+    const withArgs = imitation.spawnStub.withArgs(
+      example1.suite1.execPath,
+      example1.suite1.outputs[0][0],
+      sinon.match.any,
+    );
+    withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
+
+    await adapter.load();
+
+    assert.equal(adapter.root.children.length, 1);
+  });
+
   specify('too long filename', async function () {
     this.slow(500);
     await settings.updateConfig('test.executables', example1.suite1.execPath);

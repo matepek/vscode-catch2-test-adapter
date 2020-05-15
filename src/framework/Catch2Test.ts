@@ -98,7 +98,12 @@ export class Catch2Test extends AbstractTest {
     return tags.some((v: string) => v.startsWith('.') || v == 'hide' || v == '!hide') || testNameAsId.startsWith('./');
   }
 
-  public update(tags: string[], file: string | undefined, line: number | undefined, description: string): boolean {
+  public update(
+    tags: string[],
+    file: string | undefined,
+    line: number | undefined,
+    description: string | undefined,
+  ): boolean {
     return this._updateBase(
       this._label,
       file,

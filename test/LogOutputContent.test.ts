@@ -79,5 +79,13 @@ afterEach(async function () {
         }
       }
     }
+  } else {
+    for (const e of spyError.args) {
+      console.warn(`Logged ERROR: ${e}`);
+    }
+
+    for (const e of spyWarning.args) {
+      console.warn(`Logged WANRING: ${e}`);
+    }
   }
 });

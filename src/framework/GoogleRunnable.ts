@@ -220,8 +220,8 @@ export class GoogleRunnable extends AbstractRunnable {
     }
   }
 
-  protected _getRunParams(childrenToRun: readonly Readonly<GoogleTest>[]): string[] {
-    const execParams: string[] = [`--${this._argumentPrefix}color=no`];
+  private _getRunParamsCommon(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+    const execParams: string[] = [];
 
     const testNames = childrenToRun.map(c => c.testNameAsId);
 
@@ -244,8 +244,13 @@ export class GoogleRunnable extends AbstractRunnable {
     return execParams;
   }
 
+  protected _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+    return [`--${this._argumentPrefix}color=no`, ...this._getRunParamsCommon(childrenToRun)];
+  }
+
   public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
-    const debugParams = this._getRunParams(childrenToRun as readonly Readonly<GoogleTest>[]);
+    const colouring = this.properties.enableDebugColouring ? 'yes' : 'no';
+    const debugParams = [`--${this._argumentPrefix}color=${colouring}`, ...this._getRunParamsCommon(childrenToRun)];
     if (breakOnFailure) debugParams.push(`--${this._argumentPrefix}break_on_failure`);
     return debugParams;
   }
