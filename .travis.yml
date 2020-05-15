@@ -35,9 +35,6 @@ install:
 script:
   - npm test
 
-after_failure:
-  - cat ./out/tmp/workspaceFolder/FailedTestLogs/log_*.txt
-
 branches:
   only:
     - master

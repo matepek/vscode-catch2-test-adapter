@@ -105,9 +105,10 @@ export class RootSuite extends Suite implements vscode.Disposable {
       return;
     }
 
-    if (this._runningCounter-- === 1) {
+    if (this._runningCounter === 1) {
       this._shared.log.debug('RootSuite finished event fired', this.label);
       this._shared.testStatesEmitter.fire({ type: 'finished' });
+      this._runningCounter -= 1;
       this._runningPromiseResolver();
       this._cancellationTokenSource?.dispose();
     }
