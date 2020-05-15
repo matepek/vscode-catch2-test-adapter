@@ -38,6 +38,10 @@ script:
 after_failure:
   - cat ./out/tmp/workspaceFolder/FailedTestLogs/log_*.txt
 
+branches:
+  only:
+    - master
+
 jobs:
   include:
     - os: linux
