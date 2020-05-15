@@ -234,4 +234,74 @@ describe(path.basename(__filename), function () {
     assert.strictEqual(suite1.label, 'execPath1.exe');
     assert.equal(suite1.children.length, 5, inspect([testListOutput, adapter.testLoadsEvents]));
   });
+
+  specify('tests without description line', async function () {
+    this.slow(500);
+    await settings.updateConfig('test.executables', example1.suite1.execPath);
+
+    adapter = new TestAdapter();
+
+    const testListOutput = [
+      'Matching test cases:',
+      '  first',
+      '    /mnt/c/Users/a.cpp:12',
+      '      [a]',
+      '  second',
+      '    /mnt/c/Users/b.cpp:42',
+      '      [b]',
+      '2 matching test cases',
+    ];
+
+    const withArgs = imitation.spawnStub.withArgs(
+      example1.suite1.execPath,
+      example1.suite1.outputs[1][0],
+      sinon.match.any,
+    );
+    withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
+
+    await adapter.load();
+
+    assert.equal(adapter.root.children.length, 1);
+
+    const suite1 = adapter.group1;
+    assert.equal(suite1.children.length, 2, inspect([testListOutput, adapter.testLoadsEvents]));
+
+    assert.strictEqual(suite1.label, 'execPath1.exe');
+    assert.strictEqual(suite1.children[0].label, 'first');
+    assert.strictEqual(suite1.children[1].label, 'second');
+  });
+
+  specify('tests without description or tags line', async function () {
+    this.slow(500);
+    await settings.updateConfig('test.executables', example1.suite1.execPath);
+
+    adapter = new TestAdapter();
+
+    const testListOutput = [
+      'Matching test cases:',
+      '  first',
+      '    /mnt/c/Users/a.cpp:12',
+      '  second',
+      '    /mnt/c/Users/b.cpp:42',
+      '2 matching test cases',
+    ];
+
+    const withArgs = imitation.spawnStub.withArgs(
+      example1.suite1.execPath,
+      example1.suite1.outputs[1][0],
+      sinon.match.any,
+    );
+    withArgs.onCall(withArgs.callCount).returns(new ChildProcessStub(testListOutput.join(EOL)));
+
+    await adapter.load();
+
+    assert.equal(adapter.root.children.length, 1);
+
+    const suite1 = adapter.group1;
+    assert.equal(suite1.children.length, 2, inspect([testListOutput, adapter.testLoadsEvents]));
+
+    assert.strictEqual(suite1.label, 'execPath1.exe');
+    assert.strictEqual(suite1.children[0].label, 'first');
+    assert.strictEqual(suite1.children[1].label, 'second');
+  });
 });
