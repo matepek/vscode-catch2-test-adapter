@@ -1,6 +1,5 @@
-#include "catch2/catch_all.hpp"
+#include "catch2/catch.hpp"
 
-#include <iostream>
 // c++ -x c++ -std=c++17 -I ../Catch2/single_include -O0 -g -o suite1
 // ../vscode-catch2-test-adapter/src/test/suite1.cpp
 

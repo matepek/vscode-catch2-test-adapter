@@ -8,17 +8,26 @@ FetchContent_GetProperties(catch2v3test)
 if(NOT catch2v3test_POPULATED)
   FetchContent_Populate(catch2v3test)
   add_subdirectory(${catch2v3test_SOURCE_DIR} ${catch2v3test_BINARY_DIR}
-                  EXCLUDE_FROM_ALL)
+                   EXCLUDE_FROM_ALL)
 endif()
 
 #
 
 add_library(ThirdParty.Catch2v3 INTERFACE)
 
-target_include_directories(ThirdParty.Catch2v3 
-    INTERFACE "${catch2v3test_SOURCE_DIR}/src")
+target_link_libraries(ThirdParty.Catch2v3
+                      INTERFACE Catch2)
 
-target_compile_features(ThirdParty.Catch2v3 INTERFACE cxx_std_14)
+target_compile_features(ThirdParty.Catch2v3 INTERFACE cxx_std_11)
+
+target_include_directories(
+  ThirdParty.Catch2v3
+  INTERFACE "${catch2v3test_SOURCE_DIR}/src")
+
+add_library(ThirdParty.Catch2v3WithMain INTERFACE)
+
+target_link_libraries(ThirdParty.Catch2v3WithMain
+                      INTERFACE ThirdParty.Catch2v3 Catch2WithMain)
 
 #
 

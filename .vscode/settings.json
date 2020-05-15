@@ -120,5 +120,6 @@
       "fileMatch": ["/syntaxes/cpp.testOutput.tmLanguage.json"],
       "url": "/src/tmLanguage.schema.json"
     }
-  ]
+  ],
+  "testMate.cpp.test.executables": "{build,Build,BUILD,out,Out,OUT}/**/*{suite,test,Test,TEST}*"
 }
