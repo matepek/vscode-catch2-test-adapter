@@ -17,13 +17,13 @@
 
 GTEST_TEST(TestCas3, test1) {
   //
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(4000));
   ASSERT_TRUE(1 == 1);
 }
 
 GTEST_TEST(TestCas3, test2) {
   //
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(4000));
 
   ASSERT_TRUE(1 == 1);
   ASSERT_TRUE(1 == 2);
@@ -40,7 +40,7 @@ GTEST_TEST(TestCas3, test4) {
 }
 
 GTEST_TEST(TestCas3, test5) {
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(4000));
 
   printf("Is True");
 }

@@ -245,7 +245,12 @@ export class TestAdapter extends my.TestAdapter {
 
   public async waitAndDispose(context: Mocha.Context): Promise<void> {
     await waitFor(context, () => {
-      return (this as any) /* eslint-disable-line */._mainTaskQueue._count == 0;
+      return (
+        /* eslint-disable-next-line */
+        (this as any)._isDebugging === false &&
+        /* eslint-disable-next-line */
+        (this as any)._rootSuite._runningCounter === 0
+      );
     });
 
     super.dispose();

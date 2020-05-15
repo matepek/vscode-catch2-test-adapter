@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.1.3]
+
+### Added
+
+- Now tests can be added to the run-queue even if there are some tests running already.
+  (UI experience [isn't the best](https://github.com/hbenl/vscode-test-explorer/issues/141) though.)
+
 ## [3.1.2] - 2020-05-14
 
 - Absolute patterns in Windows can now point to a different volume than the workspace folder.

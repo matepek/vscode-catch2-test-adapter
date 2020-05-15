@@ -12,6 +12,11 @@ environment:
     - VSCODE_VERSION: 'latest'
     #- VSCODE_VERSION: '1.38.0' # appveyor is too slow and we have similar tests using travis
 
+branches:
+  # whitelist
+  only:
+    - master
+
 install:
   - ps: Install-Product node $env:nodejs_version
   - node --version
