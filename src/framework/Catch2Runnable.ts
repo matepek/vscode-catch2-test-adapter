@@ -108,11 +108,11 @@ export class Catch2Runnable extends AbstractRunnable {
                   this._shared.log.error('Could not find catch2 file info3', lines);
                 }
               } else {
-                this._shared.log.error('Could not find catch2 file inf2', lines);
+                this._shared.log.error('Could not find catch2 file info2', lines);
               }
             }
           } else {
-            this._shared.log.error('Could not find catch2 file info', lines);
+            this._shared.log.error('Could not find catch2 file info1', lines);
           }
         }
       }
