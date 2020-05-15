@@ -227,8 +227,26 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       { resolve: '${osPathEnvSep}', rule: process.platform === 'win32' ? ';' : ':' },
       { resolve: '${osEnvSep}', rule: process.platform === 'win32' ? ';' : ':' }, // deprecated
       {
-        resolve: /\$\{if\(isWin\)\}(.*)\$\{else\}(.*)\$\{endif\}/,
+        resolve: /\$\{if\(isWin\)\}(.*?)\$\{else\}(.*?)\$\{endif\}/,
         rule: (m: RegExpMatchArray): string => (process.platform === 'win32' ? m[1] : m[2]),
+      },
+      {
+        resolve: /\$\{switch\(os\)\}\$\{(win|mac|lin)\}(.*?)(?:\$\{(win|mac|lin)\}(.*?))?(?:\$\{(win|mac|lin|def)\}(.*?))?\$\{endswitch\}/,
+        rule: (m: RegExpMatchArray): string => {
+          const osMap = { [m[1]]: m[2], [m[3]]: m[4], [m[5]]: m[6] };
+          if (!('def' in osMap)) osMap.def = '';
+          const getValue = (os: string) => (os in osMap ? osMap[os] : osMap.def);
+          switch (process.platform) {
+            case 'win32':
+              return getValue('win');
+            case 'darwin':
+              return getValue('mac');
+            case 'linux':
+              return getValue('lin');
+            default:
+              return osMap.def;
+          }
+        },
       },
     ];
 
