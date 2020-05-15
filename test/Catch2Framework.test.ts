@@ -5,7 +5,7 @@ import { inspect } from 'util';
 import * as sinon from 'sinon';
 import { EOL } from 'os';
 import { example1 } from './example1';
-import { TestAdapter, Imitation, waitFor, settings, ChildProcessStub } from './Common';
+import { TestAdapter, Imitation, settings, ChildProcessStub, waitForMilisec } from './Common';
 import { expectedLoggedWarning } from './LogOutputContent.test';
 
 ///
@@ -73,16 +73,10 @@ describe(path.basename(__filename), function () {
     assert.strictEqual(suite1.label, 'execPath1.exe');
     assert.strictEqual(suite1.children[0].label, '⚡️ Unexpected ERROR while parsing');
 
-    await waitFor(this, () => {
-      return adapter!.testStatesEvents.length == 6;
-    });
+    await waitForMilisec(this, 200);
 
-    assert.strictEqual('test', adapter.testStatesEvents[3].type);
-    if (adapter.testStatesEvents[3].type === 'test') {
-      assert.strictEqual('errored', adapter.testStatesEvents[3].state);
-      assert.strictEqual(suite1.children[0], adapter.testStatesEvents[3].test);
-      assert.ok(adapter.testStatesEvents[3].message?.indexOf(testListErrOutput.join(EOL)));
-    }
+    // we dont send static events anymore
+    assert.strictEqual(adapter!.testStatesEvents.length, 0);
   });
 
   specify('custom1 test case list', async function () {

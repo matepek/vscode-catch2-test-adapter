@@ -22,14 +22,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   private readonly _testsEmitter = new vscode.EventEmitter<TestLoadStartedEvent | TestLoadFinishedEvent>();
   private readonly _testStatesEmitter = new vscode.EventEmitter<TestRunEvent>();
   private readonly _retireEmitter = new vscode.EventEmitter<RetireEvent>();
-
-  private readonly _mainTaskQueue = new TaskQueue([], 'TestAdapter');
   private readonly _disposables: vscode.Disposable[] = [];
 
   private readonly _shared: SharedVariables;
   private _rootSuite: RootSuite;
 
-  private readonly _isDebug: boolean = process.env['C2_DEBUG'] === 'true';
+  private readonly _isDebugExtension: boolean = process.env['C2_DEBUG'] === 'true';
 
   public constructor(public readonly workspaceFolder: vscode.WorkspaceFolder, log: LoggerWrapper) {
     const configuration = this._getConfiguration(log);
@@ -50,7 +48,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     //   'https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter&ssr=false#review-details';
     // }
 
-    if (!this._isDebug) configuration.askSentryConsent();
+    if (!this._isDebugExtension) configuration.askSentryConsent();
 
     try {
       let extensionInfo: {
@@ -67,7 +65,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         extensionInfo = { version: '<unknown-version>', publisher: '<unknown-publisher>', name: '<unknown-name>' };
       }
 
-      const enabled = !this._isDebug && configuration.isSentryEnabled();
+      const enabled = !this._isDebugExtension && configuration.isSentryEnabled();
 
       log.info('sentry.io is', enabled);
 
@@ -130,29 +128,27 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     };
 
     const sendTestStateEvents = (testEvents: AbstractTestEvent[]): void => {
-      this._mainTaskQueue.then(() => {
-        if (testEvents.length > 0) {
-          this._rootSuite.sendStartEventIfNeeded(testEvents.map(v => v.test.id));
+      if (testEvents.length > 0) {
+        this._rootSuite.sendStartEventIfNeeded(testEvents.map(v => v.test.id));
 
-          for (let i = 0; i < testEvents.length; ++i) {
-            const test = this._rootSuite.findTestById(testEvents[i].test);
+        for (let i = 0; i < testEvents.length; ++i) {
+          const test = this._rootSuite.findTestById(testEvents[i].test);
 
-            if (test) {
-              const route = [...test.route()];
-              reverse(route)(v => v.sendRunningEventIfNeeded());
+          if (test) {
+            const route = [...test.route()];
+            reverse(route)(v => v.sendRunningEventIfNeeded());
 
-              this._testStatesEmitter.fire(test.getStartEvent());
-              this._testStatesEmitter.fire(testEvents[i]);
+            this._testStatesEmitter.fire(test.getStartEvent());
+            this._testStatesEmitter.fire(testEvents[i]);
 
-              route.forEach(v => v.sendCompletedEventIfNeeded());
-            } else {
-              log.error('sendTestEventEmitter.event', testEvents[i], this._rootSuite);
-            }
+            route.forEach(v => v.sendCompletedEventIfNeeded());
+          } else {
+            log.error('sendTestEventEmitter.event', testEvents[i], this._rootSuite);
           }
-
-          this._rootSuite.sendFinishedEventIfNeeded();
         }
-      });
+
+        this._rootSuite.sendFinishedEventIfNeeded();
+      }
     };
 
     const executeTaskQueue = new TaskQueue();
@@ -427,194 +423,186 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     );
   }
 
-  private _cancellationTokenSource: vscode.CancellationTokenSource | undefined = undefined;
-
   public cancel(): void {
     this._shared.log.debug('canceled');
-    if (this._cancellationTokenSource) {
-      this._cancellationTokenSource.cancel();
-    }
+    this._rootSuite.cancel();
   }
+
+  private readonly _busyMsg =
+    'The adapter is busy. Please wait before you start another task. (If you are not running tests or debugging currently then this is a bug.)';
 
   public run(tests: string[]): Promise<void> {
-    if (this._mainTaskQueue.size > 0) {
-      this._shared.log.info(
-        "Run is busy. Your test maybe in an infinite loop: Try to limit the test's timeout with: defaultRunningTimeoutSec config option!",
-      );
+    if (this._isDebugging) {
+      this._shared.log.warn(this._busyMsg);
+      throw Error(this._busyMsg);
     }
 
-    const cancellationTokenSource = new vscode.CancellationTokenSource();
-    this._cancellationTokenSource = cancellationTokenSource;
-
-    return this._mainTaskQueue.then(() => {
-      return this._rootSuite
-        .run(tests, cancellationTokenSource.token)
-        .catch((reason: Error) => this._shared.log.exceptionS(reason))
-        .finally(() => {
-          cancellationTokenSource.dispose();
-          this._cancellationTokenSource = undefined;
-        });
-    });
+    return this._rootSuite.run(tests);
   }
 
+  private _isDebugging = false;
+
   public async debug(tests: string[]): Promise<void> {
-    if (this._mainTaskQueue.size > 0) {
-      this._shared.log.info('Debug is busy');
-      throw Error('The adapter is busy. Try it again a bit later.');
+    if (this._rootSuite.isRunning || this._isDebugging) {
+      this._shared.log.warn(this._busyMsg);
+      throw Error(this._busyMsg);
     }
 
-    this._shared.log.info('Using debug');
+    this._isDebugging = true;
 
-    const runnableToTestMap = tests
-      .map(t => this._rootSuite.findTestById(t))
-      .reduce((runnableToTestMap, test) => {
-        if (test === undefined) return runnableToTestMap;
-        const tests = runnableToTestMap.get(test.runnable);
-        if (tests) tests.push(test!);
-        else runnableToTestMap.set(test.runnable, [test]);
-        return runnableToTestMap;
-      }, new Map<AbstractRunnable, Readonly<AbstractTest>[]>());
+    try {
+      this._shared.log.info('Using debug');
 
-    if (runnableToTestMap.size !== 1) {
-      this._shared.log.error('unsupported executable count', tests);
-      throw Error('Unsupported input. It seems you would like to debug more tests from different executables.');
-    }
+      const runnableToTestMap = tests
+        .map(t => this._rootSuite.findTestById(t))
+        .reduce((runnableToTestMap, test) => {
+          if (test === undefined) return runnableToTestMap;
+          const tests = runnableToTestMap.get(test.runnable);
+          if (tests) tests.push(test!);
+          else runnableToTestMap.set(test.runnable, [test]);
+          return runnableToTestMap;
+        }, new Map<AbstractRunnable, Readonly<AbstractTest>[]>());
 
-    const [runnable, runnableTests] = [...runnableToTestMap][0];
-
-    this._shared.log.info('test', runnable, runnableTests);
-
-    const configuration = this._getConfiguration(this._shared.log);
-
-    const [debugConfigTemplate, debugConfigTemplateSource] = configuration.getDebugConfigurationTemplate();
-
-    this._shared.log.debugS('debugConfigTemplate', debugConfigTemplate);
-    this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
-
-    const label = runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
-
-    const suiteLabels =
-      runnableTests.length > 1
-        ? ''
-        : [...runnableTests[0].route()]
-            .filter((v, i, a) => i < a.length - 1)
-            .map(s => s.label)
-            .join(' ← ');
-
-    const argsArray = runnable.getDebugParams(runnableTests, configuration.getDebugBreakOnFailure());
-
-    if (runnableTests.length === 1 && runnableTests[0] instanceof Catch2Test) {
-      const sections = (runnableTests[0] as Catch2Test).sections;
-      if (sections && sections.length > 0) {
-        interface QuickPickItem extends vscode.QuickPickItem {
-          sectionStack: Catch2Section[];
-        }
-
-        const items: QuickPickItem[] = [
-          {
-            label: label,
-            sectionStack: [],
-            description: 'Select the section combo you wish to debug or choose this to debug all of it.',
-          },
-        ];
-
-        const traverse = (
-          stack: Catch2Section[],
-          section: Catch2Section,
-          hasNextStack: boolean[],
-          hasNext: boolean,
-        ): void => {
-          const currStack = stack.concat(section);
-          const space = '\u3000';
-          let label = hasNextStack.map(h => (h ? '┃' : space)).join('');
-          label += hasNext ? '┣' : '┗';
-          label += section.name;
-
-          items.push({
-            label: label,
-            description: section.failed ? '❌' : '✅',
-            sectionStack: currStack,
-          });
-
-          for (let i = 0; i < section.children.length; ++i)
-            traverse(currStack, section.children[i], hasNextStack.concat(hasNext), i < section.children.length - 1);
-        };
-
-        for (let i = 0; i < sections.length; ++i) traverse([], sections[i], [], i < sections.length - 1);
-
-        const pick = await vscode.window.showQuickPick(items);
-
-        if (pick === undefined) return Promise.resolve();
-
-        pick.sectionStack.forEach(s => {
-          argsArray.push('-c');
-          argsArray.push(s.escapedName);
-        });
+      if (runnableToTestMap.size !== 1) {
+        this._shared.log.error('unsupported executable count', tests);
+        throw Error('Unsupported input. It seems you would like to debug more tests from different executables.');
       }
-    }
 
-    const varToResolve: ResolveRule[] = [
-      ...runnable.properties.varToValue,
-      { resolve: '${suitelabel}', rule: suiteLabels }, // deprecated
-      { resolve: '${suiteLabel}', rule: suiteLabels },
-      { resolve: '${label}', rule: label },
-      { resolve: '${exec}', rule: runnable.properties.path },
-      { resolve: '${args}', rule: argsArray }, // deprecated
-      { resolve: '${argsArray}', rule: argsArray },
-      { resolve: '${argsStr}', rule: '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"' },
-      { resolve: '${cwd}', rule: runnable.properties.options.cwd! },
-      { resolve: '${envObj}', rule: Object.assign(Object.assign({}, process.env), runnable.properties.options.env!) },
-    ];
+      const [runnable, runnableTests] = [...runnableToTestMap][0];
 
-    const debugConfig = resolveVariables(debugConfigTemplate, varToResolve);
+      this._shared.log.info('test', runnable, runnableTests);
 
-    // we dont know better :(
-    // https://github.com/Microsoft/vscode/issues/70125
-    const magicValueKey = 'magic variable  🤦🏼‍';
-    const magicValue = generateId();
-    debugConfig[magicValueKey] = magicValue;
+      const configuration = this._getConfiguration(this._shared.log);
 
-    this._shared.log.info('Debug: resolved debugConfig:', debugConfig);
+      const [debugConfigTemplate, debugConfigTemplateSource] = configuration.getDebugConfigurationTemplate();
 
-    return this._mainTaskQueue
-      .then(async () => {
-        const cancellationTokenSource = new vscode.CancellationTokenSource();
-        await this._rootSuite.runTaskBefore(runnableToTestMap, cancellationTokenSource.token);
-        await runnable.runTaskbeforeEach(this._shared.taskPool, cancellationTokenSource.token);
+      this._shared.log.debugS('debugConfigTemplate', debugConfigTemplate);
+      this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
 
-        let terminateConn: vscode.Disposable | undefined;
+      const label = runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
 
-        const terminated = new Promise<void>(resolve => {
-          terminateConn = vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
-            const session2 = (session as unknown) as { configuration: { [prop: string]: string } };
-            if (session2.configuration && session2.configuration[magicValueKey] === magicValue) {
-              cancellationTokenSource.cancel();
-              resolve();
-              terminateConn && terminateConn.dispose();
-            }
+      const suiteLabels =
+        runnableTests.length > 1
+          ? ''
+          : [...runnableTests[0].route()]
+              .filter((v, i, a) => i < a.length - 1)
+              .map(s => s.label)
+              .join(' ← ');
+
+      const argsArray = runnable.getDebugParams(runnableTests, configuration.getDebugBreakOnFailure());
+
+      if (runnableTests.length === 1 && runnableTests[0] instanceof Catch2Test) {
+        const sections = (runnableTests[0] as Catch2Test).sections;
+        if (sections && sections.length > 0) {
+          interface QuickPickItem extends vscode.QuickPickItem {
+            sectionStack: Catch2Section[];
+          }
+
+          const items: QuickPickItem[] = [
+            {
+              label: label,
+              sectionStack: [],
+              description: 'Select the section combo you wish to debug or choose this to debug all of it.',
+            },
+          ];
+
+          const traverse = (
+            stack: Catch2Section[],
+            section: Catch2Section,
+            hasNextStack: boolean[],
+            hasNext: boolean,
+          ): void => {
+            const currStack = stack.concat(section);
+            const space = '\u3000';
+            let label = hasNextStack.map(h => (h ? '┃' : space)).join('');
+            label += hasNext ? '┣' : '┗';
+            label += section.name;
+
+            items.push({
+              label: label,
+              description: section.failed ? '❌' : '✅',
+              sectionStack: currStack,
+            });
+
+            for (let i = 0; i < section.children.length; ++i)
+              traverse(currStack, section.children[i], hasNextStack.concat(hasNext), i < section.children.length - 1);
+          };
+
+          for (let i = 0; i < sections.length; ++i) traverse([], sections[i], [], i < sections.length - 1);
+
+          const pick = await vscode.window.showQuickPick(items);
+
+          if (pick === undefined) return Promise.resolve();
+
+          pick.sectionStack.forEach(s => {
+            argsArray.push('-c');
+            argsArray.push(s.escapedName);
           });
-        }).finally(() => {
-          this._shared.log.info('debugSessionTerminated');
-        });
-
-        this._shared.log.info('startDebugging');
-
-        const debugSessionStarted = await vscode.debug.startDebugging(this.workspaceFolder, debugConfig);
-
-        if (debugSessionStarted) {
-          this._shared.log.info('debugSessionStarted');
-          return terminated;
-        } else {
-          terminateConn && terminateConn.dispose();
-          return Promise.reject(
-            Error('Failed starting the debug session. Maybe something wrong with "testMate.cpp.debug.configTemplate".'),
-          );
         }
-      })
-      .catch(err => {
-        this._shared.log.warn(err);
-        throw err;
+      }
+
+      const varToResolve: ResolveRule[] = [
+        ...runnable.properties.varToValue,
+        { resolve: '${suitelabel}', rule: suiteLabels }, // deprecated
+        { resolve: '${suiteLabel}', rule: suiteLabels },
+        { resolve: '${label}', rule: label },
+        { resolve: '${exec}', rule: runnable.properties.path },
+        { resolve: '${args}', rule: argsArray }, // deprecated
+        { resolve: '${argsArray}', rule: argsArray },
+        { resolve: '${argsStr}', rule: '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"' },
+        { resolve: '${cwd}', rule: runnable.properties.options.cwd! },
+        { resolve: '${envObj}', rule: Object.assign(Object.assign({}, process.env), runnable.properties.options.env!) },
+      ];
+
+      const debugConfig = resolveVariables(debugConfigTemplate, varToResolve);
+
+      // we dont know better :(
+      // https://github.com/Microsoft/vscode/issues/70125
+      const magicValueKey = 'magic variable  🤦🏼‍';
+      const magicValue = generateId();
+      debugConfig[magicValueKey] = magicValue;
+
+      this._shared.log.info('Debug: resolved debugConfig:', debugConfig);
+
+      const cancellationTokenSource = new vscode.CancellationTokenSource();
+
+      await this._rootSuite.runTaskBefore(runnableToTestMap, cancellationTokenSource.token);
+      await runnable.runTaskbeforeEach(this._shared.taskPool, cancellationTokenSource.token);
+
+      let terminateConn: vscode.Disposable | undefined;
+
+      const terminated = new Promise<void>(resolve => {
+        terminateConn = vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
+          const session2 = (session as unknown) as { configuration: { [prop: string]: string } };
+          if (session2.configuration && session2.configuration[magicValueKey] === magicValue) {
+            cancellationTokenSource.cancel();
+            resolve();
+            terminateConn && terminateConn.dispose();
+          }
+        });
+      }).finally(() => {
+        this._shared.log.info('debugSessionTerminated');
       });
+
+      this._shared.log.info('startDebugging');
+
+      const debugSessionStarted = await vscode.debug.startDebugging(this.workspaceFolder, debugConfig);
+
+      if (debugSessionStarted) {
+        this._shared.log.info('debugSessionStarted');
+        await terminated;
+      } else {
+        terminateConn && terminateConn.dispose();
+        throw Error(
+          'Failed starting the debug session. Maybe something wrong with "testMate.cpp.debug.configTemplate".',
+        );
+      }
+    } catch (err) {
+      this._shared.log.warn(err);
+      throw err;
+    } finally {
+      this._isDebugging = false;
+    }
   }
 
   private _getConfiguration(log: LoggerWrapper): Configurations {

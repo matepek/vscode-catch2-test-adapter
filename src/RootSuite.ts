@@ -5,7 +5,6 @@ import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
 import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
-import { CancellationToken } from './Util';
 import { ResolveRule } from './util/ResolveRule';
 
 export class RootSuite extends Suite implements vscode.Disposable {
@@ -36,18 +35,66 @@ export class RootSuite extends Suite implements vscode.Disposable {
     return loadResults.reduce((acc, val) => acc.concat(val), []);
   }
 
-  public sendRunningEventIfNeeded(): void {
-    // do nothing, special handling
+  private _cancellationTokenSource = new vscode.CancellationTokenSource();
+  private _runningPromise: Promise<void> = Promise.resolve();
+  private _runningPromiseResolver = (): void => {}; //eslint-disable-line
+
+  public get isRunning(): boolean {
+    return this._runningCounter > 0;
   }
 
-  public sendCompletedEventIfNeeded(): void {
-    // do nothing, special handling
+  public async run(tests: string[]): Promise<void> {
+    this.sendStartEventIfNeeded(tests); // has to be first line, initilizes important variables
+
+    const isParentIn = tests.indexOf(this.id) !== -1;
+
+    let runnables = this._collectRunnables(tests, isParentIn);
+
+    try {
+      await this.runTaskBefore(runnables, this._cancellationTokenSource.token);
+      runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
+    } catch (e) {
+      for (const [runnable, tests] of runnables) {
+        runnable.sentStaticErrorEvent(tests, e);
+      }
+
+      this.sendFinishedEventIfNeeded();
+      return;
+    }
+
+    const ps: Promise<void>[] = [];
+
+    for (const [runnable] of runnables) {
+      ps.push(
+        runnable.run(tests, isParentIn, this._shared.taskPool, this._cancellationTokenSource.token).catch(err => {
+          this._shared.log.error('RootTestSuite.run.for.child', runnable.properties.path, err);
+        }),
+      );
+    }
+
+    await Promise.all(ps)
+      .finally(() => {
+        this.sendFinishedEventIfNeeded();
+      })
+      .catch((e: Error) => {
+        debugger;
+        this._shared.log.error('everything should be handled', e);
+      });
+
+    return this._runningPromise;
+  }
+
+  public cancel(): void {
+    if (this._cancellationTokenSource) this._cancellationTokenSource.cancel();
   }
 
   public sendStartEventIfNeeded(tests: string[]): void {
     if (this._runningCounter++ === 0) {
+      this._runningPromise = new Promise(r => (this._runningPromiseResolver = r));
+      this._cancellationTokenSource = new vscode.CancellationTokenSource();
       this._shared.log.debug('RootSuite start event fired', this.label);
       this._shared.testStatesEmitter.fire({ type: 'started', tests: tests });
+      // TODO:future https://github.com/hbenl/vscode-test-explorer/issues/141
     }
   }
 
@@ -57,10 +104,21 @@ export class RootSuite extends Suite implements vscode.Disposable {
       this._runningCounter = 0;
       return;
     }
+
     if (this._runningCounter-- === 1) {
       this._shared.log.debug('RootSuite finished event fired', this.label);
       this._shared.testStatesEmitter.fire({ type: 'finished' });
+      this._runningPromiseResolver();
+      this._cancellationTokenSource?.dispose();
     }
+  }
+
+  public sendRunningEventIfNeeded(): void {
+    // do nothing, special handling
+  }
+
+  public sendCompletedEventIfNeeded(): void {
+    // do nothing, special handling
   }
 
   public async runTaskBefore(
@@ -108,45 +166,6 @@ export class RootSuite extends Suite implements vscode.Disposable {
       else prev.set(curr.runnable, [curr]);
       return prev;
     }, new Map<AbstractRunnable, AbstractTest[]>());
-  }
-
-  public async run(tests: string[], cancellationToken: CancellationToken): Promise<void> {
-    this.sendStartEventIfNeeded(tests);
-
-    const isParentIn = tests.indexOf(this.id) !== -1;
-
-    let runnables = this._collectRunnables(tests, isParentIn);
-
-    try {
-      await this.runTaskBefore(runnables, cancellationToken);
-      runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
-    } catch (e) {
-      for (const [runnable, tests] of runnables) {
-        runnable.sentStaticErrorEvent(tests, e);
-      }
-
-      this.sendFinishedEventIfNeeded();
-      return;
-    }
-
-    const ps: Promise<void>[] = [];
-
-    for (const [runnable] of runnables) {
-      ps.push(
-        runnable.run(tests, isParentIn, this._shared.taskPool, cancellationToken).catch(err => {
-          this._shared.log.error('RootTestSuite.run.for.child', runnable.properties.path, err);
-        }),
-      );
-    }
-
-    return Promise.all(ps)
-      .catch((e: Error) => {
-        debugger;
-        this._shared.log.error('everything should be handled', e);
-      })
-      .then(() => {
-        this.sendFinishedEventIfNeeded();
-      });
   }
 
   public findTestById(idOrInfo: string | TestInfo): Readonly<AbstractTest> | undefined {
