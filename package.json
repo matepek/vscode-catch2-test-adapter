@@ -281,16 +281,39 @@
               },
               "parallelizationLimit": {
                 "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `testMate.cpp.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
-                "scope": "resource",
                 "type": "integer",
                 "default": 1,
                 "minimum": 1
               },
               "strictPattern": {
                 "markdownDescription": "Test loading fails if one of the files matched by `pattern` is not a test executable. (Helps noticing unexpected crashes/problems under test loading.)",
-                "scope": "resource",
                 "type": "boolean",
                 "default": false
+              },
+              "android": {
+                "markdownDescription": "Override the parent's properties on the given operating system.",
+                "type": "object",
+                "additionalProperties": true
+              },
+              "darwin": {
+                "markdownDescription": "Override the parent's properties on the given operating system.",
+                "type": "object",
+                "additionalProperties": true
+              },
+              "linux": {
+                "markdownDescription": "Override the parent's properties on the given operating system.",
+                "type": "object",
+                "additionalProperties": true
+              },
+              "win32": {
+                "markdownDescription": "Override the parent's properties on the given operating system.",
+                "type": "object",
+                "additionalProperties": true
+              },
+              "cygwin": {
+                "markdownDescription": "Override the parent's properties on the given operating system.",
+                "type": "object",
+                "additionalProperties": true
               },
               "catch2": {
                 "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)",

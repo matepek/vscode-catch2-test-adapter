@@ -97,24 +97,23 @@ which can be used in `cwd` and `env` of `executables`:
 
 [array index]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
 
-| Variable                            | Description                                                                                                                                                                                  |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `${absPath}`                        | Absolute path of the test executable. Supports [array index]ing.                                                                                                                             |
-| `${relPath}`                        | Relative path of the test executable to the workspace folder. Supports [array index]ing.                                                                                                     |
-| `${absDirpath}`                     | Absolute path of the test executable's parent directory. Supports [array index]ing.                                                                                                          |
-| `${relDirpath}`                     | Relative path of the test executable's parent directory to the workspace folder. Supports [array index]ing.                                                                                  |
-| `${filename}`                       | Filename (Path without directories; "`d/a.b.c`" => "`a.b.c`") Supports [array index]ing.                                                                                                     |
-| `${baseFilename}`                   | Filename without extension ("`d/a.b.c`" => "`a.b`")                                                                                                                                          |
-| `${extFilename}`                    | Filename extension. ("`d/a.b.c`" => "`.c`")                                                                                                                                                  |
-| `${workspaceDirectory}`             | (You can only guess once.)                                                                                                                                                                   |
-| `${workspaceFolder}`                | Alias of `${workspaceDirectory}`                                                                                                                                                             |
-| `${workspaceName}`                  | Workspace name can be custom in case of [`workspace file`](https://code.visualstudio.com/docs/editor/multi-root-workspaces#_workspace-file-schema).                                          |
-| `${cwd}`                            | The resolved `executables`'s cwd. Can be used only in `env`. Supports [array index]ing.                                                                                                      |
-| `${os_env:<varname>}`               | Resolves it to the given(`<varname>`) environment variable if exists empty string otherwise. Can be used everywhere. On Windows it is case insensitive: `${os_env:pAtH}` == `${os_env:PATH}` |
-| `${os_env_strict:<varname>}`        | Resolves it to the given(`<varname>`) environment variable if exists won't set the variable othewise. Can be used ONLY in `env`.                                                             |
-| `${osPathSep}`                      | `/` on Linux and macOS, `\` on Windows.                                                                                                                                                      |
-| `${osPathEnvSep}`                   | `:` on Linux and macOS, `;` on Windows.                                                                                                                                                      |
-| `${if(iswin)}<W>${else}<U>${endif}` | `<U>` on Linux and macOS, `<W>` on Windows.                                                                                                                                                  |
+| Variable                     | Description                                                                                                                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `${absPath}`                 | Absolute path of the test executable. Supports [array index]ing.                                                                                                                             |
+| `${relPath}`                 | Relative path of the test executable to the workspace folder. Supports [array index]ing.                                                                                                     |
+| `${absDirpath}`              | Absolute path of the test executable's parent directory. Supports [array index]ing.                                                                                                          |
+| `${relDirpath}`              | Relative path of the test executable's parent directory to the workspace folder. Supports [array index]ing.                                                                                  |
+| `${filename}`                | Filename (Path without directories; "`d/a.b.c`" => "`a.b.c`") Supports [array index]ing.                                                                                                     |
+| `${baseFilename}`            | Filename without extension ("`d/a.b.c`" => "`a.b`")                                                                                                                                          |
+| `${extFilename}`             | Filename extension. ("`d/a.b.c`" => "`.c`")                                                                                                                                                  |
+| `${workspaceDirectory}`      | (You can only guess once.)                                                                                                                                                                   |
+| `${workspaceFolder}`         | Alias of `${workspaceDirectory}`                                                                                                                                                             |
+| `${workspaceName}`           | Workspace name can be custom in case of [`workspace file`](https://code.visualstudio.com/docs/editor/multi-root-workspaces#_workspace-file-schema).                                          |
+| `${cwd}`                     | The resolved `executables`'s cwd. Can be used only in `env`. Supports [array index]ing.                                                                                                      |
+| `${os_env:<varname>}`        | Resolves it to the given(`<varname>`) environment variable if exists empty string otherwise. Can be used everywhere. On Windows it is case insensitive: `${os_env:pAtH}` == `${os_env:PATH}` |
+| `${os_env_strict:<varname>}` | Resolves it to the given(`<varname>`) environment variable if exists won't set the variable othewise. Can be used ONLY in `env`.                                                             |
+| `${osPathSep}`               | `/` on Linux and macOS, `\` on Windows.                                                                                                                                                      |
+| `${osPathEnvSep}`            | `:` on Linux and macOS, `;` on Windows.                                                                                                                                                      |
 
 [Array index]ing: `(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?`.
 Exmaple: `${relPath[:-2]}`: 'a/b/c/d' -> 'a/b'
@@ -139,6 +138,28 @@ If the regex is too general it will mach all the executables❗️
 One should avoid that❗️
 
 **Note** `.*` matches `\n`
+
+## Scoping
+
+| Property  | Description                                                     |
+| --------- | --------------------------------------------------------------- |
+| `android` | Override the parent's properties on the given operating system. |
+| `darwin`  | Override the parent's properties on the given operating system. |
+| `linux`   | Override the parent's properties on the given operating system. |
+| `win32`   | Override the parent's properties on the given operating system. |
+| `cygwin`  | Override the parent's properties on the given operating system. |
+
+Example:
+
+```
+  "testMate.test.advancedExecutables": [{
+    "pattern": "<default pattern>",
+    "darwin": { "pattern":"<value on mac>" },
+    "win32": { "pattern":"<value on win>" },
+    "linux": { "pattern":"<value on linux>" },
+    ....
+  }]
+```
 
 ## Examples:
 

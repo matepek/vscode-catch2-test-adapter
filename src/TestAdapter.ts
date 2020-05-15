@@ -227,7 +227,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       { resolve: '${osPathEnvSep}', rule: process.platform === 'win32' ? ';' : ':' },
       { resolve: '${osEnvSep}', rule: process.platform === 'win32' ? ';' : ':' }, // deprecated
       {
-        resolve: /\$\{if\(isWin\)\}(.*)\$\{else\}(.*)\$\{endif\}/,
+        resolve: /\$\{if\(isWin\)\}(.*?)\$\{else\}(.*?)\$\{endif\}/,
         rule: (m: RegExpMatchArray): string => (process.platform === 'win32' ? m[1] : m[2]),
       },
     ];

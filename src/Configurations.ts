@@ -95,7 +95,7 @@ class ConfigurationChangeEvent {
   }
 }
 
-interface ExecutableObj {
+interface ExecutableObjBase {
   comment?: string;
   pattern?: string;
   name?: string;
@@ -111,6 +111,10 @@ interface ExecutableObj {
   doctest?: ExecutableConfigFrameworkSpecific;
   testGrouping?: TestGrouping; //undocumented
 }
+
+type Scopes = { [scope in NodeJS.Platform]?: ExecutableObjBase };
+
+interface ExecutableObj extends ExecutableObjBase, Scopes {}
 
 ///
 
@@ -595,7 +599,11 @@ export class Configurations {
 
       this._log.setContext('executables', advanced);
 
-      const createExecutableConfigFromObj = (obj: ExecutableObj): ExecutableConfig => {
+      const createExecutableConfigFromObj = (origObj: ExecutableObj): ExecutableConfig => {
+        const obj: ExecutableObj = Object.assign({}, origObj);
+
+        if (typeof origObj[process.platform] === 'object') Object.assign(obj, origObj[process.platform]);
+
         const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 
         const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;

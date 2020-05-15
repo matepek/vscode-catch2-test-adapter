@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+# [3.2.0]
+
+### Added
+
+- Scoping for `testMate.test.advancedExecutables`.
+  Example:
+  ```
+  "testMate.test.advancedExecutables": [{
+    "pattern": "<default pattern>",
+    "darwin": { "pattern":"<value on mac>" },
+    "win32": { "pattern":"<value on win>" },
+    "linux": { "pattern":"<value on linux>" },
+    ....
+  }]
+  ```
+
 ## [3.1.3] - 2020-05-15
 
 ### Added
