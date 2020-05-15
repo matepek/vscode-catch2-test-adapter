@@ -117,8 +117,13 @@ export class Catch2Runnable extends AbstractRunnable {
         }
       }
 
-      let description = lines[i++].substr(4);
-      if (description.startsWith('(NO DESCRIPTION)')) description = '';
+      let description = '';
+      // Catch2 v3 deprecates descriptions
+      if (i < lines.length && lines[i].startsWith('   ') && !lines[i].startsWith('      [')) {
+        description = lines[i].substr(4);
+        if (description.startsWith('(NO DESCRIPTION)')) description = '';
+        ++i;
+      }
 
       const tags: string[] = [];
       if (i < lines.length && lines[i].startsWith('      [')) {
