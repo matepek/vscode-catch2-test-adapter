@@ -51,7 +51,7 @@ describe(pathlib.basename(__filename), function () {
 
     await adapter.load();
 
-    assert.equal(adapter.testLoadsEvents.length, 2);
+    assert.equal(adapter.loadEvents.length, 2);
     assert.equal(adapter.root.children.length, 1);
     assert.equal(adapter.group1.children.length, 7);
   });
@@ -76,7 +76,7 @@ describe(pathlib.basename(__filename), function () {
 
       await adapter.load();
 
-      assert.equal(adapter.testLoadsEvents.length, 2);
+      assert.equal(adapter.loadEvents.length, 2);
       assert.equal(adapter.root.children.length, 1);
       assert.equal(adapter.group1.children.length, 7);
     });
@@ -233,7 +233,7 @@ describe(pathlib.basename(__filename), function () {
 
       await adapter.run([adapter.root.id]);
 
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
     });
 
     specify('run first', async function () {
@@ -264,7 +264,7 @@ describe(pathlib.basename(__filename), function () {
 
       await adapter.run([adapter.getTest(0, 0, 0).id]);
 
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
     });
 
     specify('run param', async function () {
@@ -295,7 +295,7 @@ describe(pathlib.basename(__filename), function () {
 
       await adapter.run([adapter.getTest(0, 3, 0).id]);
 
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
     });
   });
 

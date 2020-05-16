@@ -206,17 +206,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
     };
 
-    const loadTask = (task: () => Promise<void | Error[]>): Promise<void> => {
+    const loadWithTask = async (task: () => Promise<void | Error[]>): Promise<void> => {
       this._sendLoadingEventIfNeeded();
-      return task().then(
-        (errors: void | Error[]) => {
-          this._sendLoadingFinishedEventIfNeeded(errors);
-        },
-        (reason: Error) => {
-          log.warnS('loadTask exception', reason);
-          this._sendLoadingFinishedEventIfNeeded([reason]);
-        },
-      );
+
+      try {
+        const errors = await task();
+        this._sendLoadingFinishedEventIfNeeded(errors);
+      } catch (reason) {
+        log.warnS('loadTask exception', reason);
+        this._sendLoadingFinishedEventIfNeeded([reason]);
+      }
     };
 
     const variableToValue: ResolveRule[] = [
@@ -242,7 +241,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       log,
       this.workspaceFolder,
       this._testStatesEmitter,
-      loadTask,
+      loadWithTask,
       sendTestStateEvents,
       sendRetireEvent,
       executeTask,
@@ -388,9 +387,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     if (this._testLoadingCounter < 1) {
       this._shared.log.error('loading counter is too low');
       this._testLoadingCounter = 0;
+      debugger;
       return;
     }
-    if (this._testLoadingCounter-- === 1) {
+
+    if (this._testLoadingCounter === 1) {
       this._shared.log.info('load finished', this._rootSuite.children.length);
       if (this._testLoadingErrors.length > 0) {
         this._testsEmitter.fire({
@@ -406,6 +407,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         });
       }
     }
+
+    this._testLoadingCounter -= 1;
   }
 
   public load(): Promise<void> {

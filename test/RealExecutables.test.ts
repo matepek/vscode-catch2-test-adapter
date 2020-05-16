@@ -128,11 +128,11 @@ describe(path.basename(__filename), function () {
       await adapter.load();
       assert.strictEqual(adapter.root.children.length, 3);
 
-      const eventCount = adapter.testStatesEvents.length;
+      const eventCount = adapter.stateEvents.length;
       await adapter.run([adapter.root.id]);
 
       assert.strictEqual(
-        adapter.testStatesEvents.length - eventCount,
+        adapter.stateEvents.length - eventCount,
         2 + // start,fin
         2 + //suite1 start,fin
         5 * 2 + // suite1 tests
@@ -142,7 +142,7 @@ describe(path.basename(__filename), function () {
         35 * 2 + // suite3 tests
           6 * 2, // because old catch2 is buggy and we send staticEvent for 6 tests with parent
         inspect(
-          adapter.testStatesEvents.map((v, i) => {
+          adapter.stateEvents.map((v, i) => {
             if (v.type === 'suite' && typeof v.suite != 'string')
               return `${i}: [${v.type} ${v.state}: "${v.suite.label}" ]`;
             if (v.type === 'test' && typeof v.test != 'string')
@@ -208,10 +208,10 @@ describe(path.basename(__filename), function () {
       assert.strictEqual(adapter.root.children.length, 2);
       assert.strictEqual(retireCounter, 1);
 
-      const eventCount = adapter.testStatesEvents.length;
+      const eventCount = adapter.stateEvents.length;
       await adapter.run([adapter.root.id]);
 
-      assert.strictEqual(adapter.testStatesEvents.length, eventCount + 14);
+      assert.strictEqual(adapter.stateEvents.length, eventCount + 14);
       assert.strictEqual(retireCounter, 1);
     });
   });
@@ -240,9 +240,9 @@ describe(path.basename(__filename), function () {
       await adapter.load();
       assert.strictEqual(adapter.root.children.length, 1);
 
-      const eventCount = adapter.testStatesEvents.length;
+      const eventCount = adapter.stateEvents.length;
       await adapter.run([adapter.root.id]);
-      assert.strictEqual(adapter.testStatesEvents.length - eventCount, 52, inspect(adapter.testStatesEvents));
+      assert.strictEqual(adapter.stateEvents.length - eventCount, 52, inspect(adapter.stateEvents));
     });
   });
 
@@ -270,9 +270,9 @@ describe(path.basename(__filename), function () {
       await adapter.load();
       assert.strictEqual(adapter.root.children.length, 1);
 
-      const eventCount = adapter.testStatesEvents.length;
+      const eventCount = adapter.stateEvents.length;
       await adapter.run([adapter.root.id]);
-      assert.strictEqual(adapter.testStatesEvents.length - eventCount, 30);
+      assert.strictEqual(adapter.stateEvents.length - eventCount, 30);
     });
   });
 

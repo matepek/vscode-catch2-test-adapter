@@ -194,9 +194,9 @@ describe(path.basename(__filename), function () {
       await settings.updateConfig('test.advancedExecutables', ['execPath1.exe', 'execPath2Copy.exe']);
       adapter = new TestAdapter();
 
-      assert.equal(adapter.testLoadsEvents.length, 0);
+      assert.equal(adapter.loadEvents.length, 0);
       await adapter.load();
-      assert.equal(adapter.testLoadsEvents.length, 2);
+      assert.equal(adapter.loadEvents.length, 2);
       assert.strictEqual(adapter.root.children.length, 2);
 
       assert.ok(watchers.has(execPath2CopyPath));
@@ -211,7 +211,7 @@ describe(path.basename(__filename), function () {
       watcher.sendDelete();
 
       await waitForMilisec(this, 1000);
-      assert.equal(adapter.testLoadsEvents.length, 2);
+      assert.equal(adapter.loadEvents.length, 2);
       assert.strictEqual(adapter.root.children.length, 2);
 
       imitation.fsAccessStub
@@ -224,7 +224,7 @@ describe(path.basename(__filename), function () {
       await waitForMilisec(this, 1000);
 
       // no reload event because there was no change
-      assert.equal(adapter.testLoadsEvents.length, 2);
+      assert.equal(adapter.loadEvents.length, 2);
 
       assert.equal(adapter.root.children.length, 2);
       assert.ok(900 < elapsed, inspect(elapsed));
@@ -233,7 +233,7 @@ describe(path.basename(__filename), function () {
   });
 
   specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete second', async function () {
-    const watchTimeout = 2;
+    const watchTimeout = 1;
     await settings.updateConfig('discovery.gracePeriodForMissing', watchTimeout);
     this.timeout(watchTimeout * 1000 + 7500 /* because of 'delay' */);
     this.slow(watchTimeout * 1000 + 5500 /* because of 'delay' */);
@@ -267,12 +267,11 @@ describe(path.basename(__filename), function () {
     assert.ok(watchers.has(execPath2CopyPath));
     const watcher = watchers.get(execPath2CopyPath)!;
 
-    let start = 0;
+    const start = Date.now();
     await adapter.doAndWaitForReloadEvent(this, async () => {
       imitation.fsAccessStub
         .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
         .callsFake(imitation.handleAccessFileNotExists);
-      start = Date.now();
       watcher.sendDelete();
     });
     const elapsed = Date.now() - start;
@@ -289,7 +288,7 @@ describe(path.basename(__filename), function () {
 
     adapter = new TestAdapter();
 
-    adapter.load();
+    await adapter.load();
 
     assert.strictEqual(adapter.root.children.length, 0);
   });

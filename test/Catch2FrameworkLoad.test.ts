@@ -74,8 +74,8 @@ describe(path.basename(__filename), function () {
     adapter = new TestAdapter();
 
     await adapter.load();
-    adapter.testLoadsEvents.pop();
-    adapter.testLoadsEvents.pop();
+    adapter.loadEvents.pop();
+    adapter.loadEvents.pop();
 
     suite1 = (undefined as unknown) as TestSuiteInfo;
     s1t1 = (undefined as unknown) as TestInfo;
@@ -112,10 +112,7 @@ describe(path.basename(__filename), function () {
       await loadAdapterAndAssert();
       await adapter.run(['not existing id']);
 
-      adapter.testStatesEventsSimplifiedAssertEqual([
-        { type: 'started', tests: ['not existing id'] },
-        { type: 'finished' },
-      ]);
+      adapter.simplifiedAssertEqualStateEvents([{ type: 'started', tests: ['not existing id'] }, { type: 'finished' }]);
     });
 
     it('should run s1t1 with success', async function () {
@@ -148,10 +145,10 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
 
       await adapter.run([s1t1.id]);
-      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
+      adapter.simplifiedAssertEqualStateEvents([...expected, ...expected]);
     });
 
     it('should run suite1', async function () {
@@ -200,10 +197,10 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
 
       await adapter.run([suite1.id]);
-      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
+      adapter.simplifiedAssertEqualStateEvents([...expected, ...expected]);
     });
 
     it('should run all', async function () {
@@ -252,21 +249,21 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
 
       await adapter.run([adapter.root.id]);
-      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
+      adapter.simplifiedAssertEqualStateEvents([...expected, ...expected]);
     });
 
     it('cancels without any problem', async function () {
       await loadAdapterAndAssert();
       adapter.cancel();
-      assert.deepStrictEqual(adapter.testLoadsEvents, []);
-      adapter.testStatesEventsSimplifiedAssertEqual([]);
+      assert.deepStrictEqual(adapter.loadEvents, []);
+      adapter.simplifiedAssertEqualStateEvents([]);
 
       adapter.cancel();
-      assert.deepStrictEqual(adapter.testLoadsEvents, []);
-      adapter.testStatesEventsSimplifiedAssertEqual([]);
+      assert.deepStrictEqual(adapter.loadEvents, []);
+      adapter.simplifiedAssertEqualStateEvents([]);
 
       await adapter.run([s1t1.id]);
       const expected: TestRunEvent[] = [
@@ -294,11 +291,11 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
 
       adapter.cancel();
-      assert.deepStrictEqual(adapter.testLoadsEvents, []);
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      assert.deepStrictEqual(adapter.loadEvents, []);
+      adapter.simplifiedAssertEqualStateEvents(expected);
     });
 
     context('with config: defaultRngSeed=2', function () {
@@ -325,10 +322,10 @@ describe(path.basename(__filename), function () {
           },
           { type: 'finished' },
         ];
-        adapter.testStatesEventsSimplifiedAssertEqual(expected);
+        adapter.simplifiedAssertEqualStateEvents(expected);
 
         await adapter.run([s1t1.id]);
-        adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
+        adapter.simplifiedAssertEqualStateEvents([...expected, ...expected]);
       });
     });
   });
@@ -408,8 +405,8 @@ describe(path.basename(__filename), function () {
           pathlib.sep +
           '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
       };
-      adapter.testStateEventIndexLess(running, s1running);
-      adapter.testStateEventIndexLess(s1running, s1finished);
+      adapter.stateEventSequence(running, s1running);
+      adapter.stateEventSequence(s1running, s1finished);
 
       const s2running: TestSuiteEvent = { type: 'suite', state: 'running', suite: suite2 };
       const s2finished: TestSuiteEvent = {
@@ -422,11 +419,11 @@ describe(path.basename(__filename), function () {
           pathlib.sep +
           '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 3\n  - passed: 1\n  - failed: 1\n⏱Duration: 1ms',
       };
-      adapter.testStateEventIndexLess(running, s1running);
-      adapter.testStateEventIndexLess(s2running, s2finished);
+      adapter.stateEventSequence(running, s1running);
+      adapter.stateEventSequence(s2running, s2finished);
 
       const s1t1running: TestEvent = { type: 'test', state: 'running', test: s1t1 };
-      adapter.testStateEventIndexLess(s1running, s1t1running);
+      adapter.stateEventSequence(s1running, s1t1running);
 
       const s1t1finished: TestEvent = {
         type: 'test',
@@ -437,11 +434,11 @@ describe(path.basename(__filename), function () {
         message: '⏱Duration: 0.000132 second(s).',
         tooltip: 'Name: s1t1\nDescription: tag1\n⏱Duration: 0ms',
       };
-      adapter.testStateEventIndexLess(s1t1running, s1t1finished);
-      adapter.testStateEventIndexLess(s1t1finished, s1finished);
+      adapter.stateEventSequence(s1t1running, s1t1finished);
+      adapter.stateEventSequence(s1t1finished, s1finished);
 
       const s1t2running: TestEvent = { type: 'test', state: 'running', test: s1t2 };
-      adapter.testStateEventIndexLess(s1running, s1t2running);
+      adapter.stateEventSequence(s1running, s1t2running);
 
       const s1t2finished: TestEvent = {
         type: 'test',
@@ -460,11 +457,11 @@ describe(path.basename(__filename), function () {
         message:
           '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
       };
-      adapter.testStateEventIndexLess(s1t2running, s1t2finished);
-      adapter.testStateEventIndexLess(s1t2finished, s1finished);
+      adapter.stateEventSequence(s1t2running, s1t2finished);
+      adapter.stateEventSequence(s1t2finished, s1finished);
 
       const s2t1running: TestEvent = { type: 'test', state: 'running', test: s2t1 };
-      adapter.testStateEventIndexLess(s2running, s2t1running);
+      adapter.stateEventSequence(s2running, s2t1running);
 
       const s2t1finished: TestEvent = {
         type: 'test',
@@ -475,11 +472,11 @@ describe(path.basename(__filename), function () {
         description: '(0ms)',
         tooltip: 'Name: s2t1\nDescription: tag1\n⏱Duration: 0ms',
       };
-      adapter.testStateEventIndexLess(s2t1running, s2t1finished);
-      adapter.testStateEventIndexLess(s2t1finished, s2finished);
+      adapter.stateEventSequence(s2t1running, s2t1finished);
+      adapter.stateEventSequence(s2t1finished, s2finished);
 
       const s2t3running: TestEvent = { type: 'test', state: 'running', test: s2t3 };
-      adapter.testStateEventIndexLess(s2running, s2t3running);
+      adapter.stateEventSequence(s2running, s2t3running);
 
       const s2t3finished: TestEvent = {
         type: 'test',
@@ -498,14 +495,14 @@ describe(path.basename(__filename), function () {
         message:
           '⏱Duration: 0.000178 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite2.cpp:21):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
       };
-      adapter.testStateEventIndexLess(s2t3running, s2t3finished);
-      adapter.testStateEventIndexLess(s2t3finished, s2finished);
+      adapter.stateEventSequence(s2t3running, s2t3finished);
+      adapter.stateEventSequence(s2t3finished, s2finished);
 
       const finished: TestRunFinishedEvent = { type: 'finished' };
-      adapter.testStateEventIndexLess(s1finished, finished);
-      adapter.testStateEventIndexLess(s2finished, finished);
+      adapter.stateEventSequence(s1finished, finished);
+      adapter.stateEventSequence(s2finished, finished);
 
-      assert.equal(adapter.testStatesEvents.length, 14);
+      assert.equal(adapter.stateEvents.length, 14);
     });
 
     it('should run s1t1', async function () {
@@ -527,10 +524,10 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
 
       await adapter.run([s1t1.id]);
-      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
+      adapter.simplifiedAssertEqualStateEvents([...expected, ...expected]);
     });
 
     it('should run skipped s2t2', async function () {
@@ -552,10 +549,10 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
 
       await adapter.run([s2t2.id]);
-      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
+      adapter.simplifiedAssertEqualStateEvents([...expected, ...expected]);
     });
 
     it('should run failing test s2t3', async function () {
@@ -577,10 +574,10 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
 
       await adapter.run([s2t3.id]);
-      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
+      adapter.simplifiedAssertEqualStateEvents([...expected, ...expected]);
     });
 
     it('should run failing test s2t3 with chunks', async function () {
@@ -626,10 +623,10 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
 
       await adapter.run([s2t3.id]);
-      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
+      adapter.simplifiedAssertEqualStateEvents([...expected, ...expected]);
     });
 
     it('should run suite1', async function () {
@@ -678,10 +675,10 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
 
       await adapter.run([suite1.id]);
-      adapter.testStatesEventsSimplifiedAssertEqual([...expected, ...expected]);
+      adapter.simplifiedAssertEqualStateEvents([...expected, ...expected]);
     });
 
     it('should run with [suite1.id,s2t2.id]', async function () {
@@ -752,7 +749,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
     });
 
     it('should run with wrong xml with exit code', async function () {
@@ -792,14 +789,14 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
 
       // this tests the sinon stubs too
       await adapter.run([s1t1.id]);
 
       s1t1 = adapter.getTest(0, 0);
 
-      adapter.testStatesEventsSimplifiedAssertEqual([
+      adapter.simplifiedAssertEqualStateEvents([
         ...expected,
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
@@ -864,14 +861,14 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
 
       // this tests the sinon stubs too
       await adapter.run([s1t1.id]);
 
       s1t1 = adapter.getTest(0, 0);
 
-      adapter.testStatesEventsSimplifiedAssertEqual([
+      adapter.simplifiedAssertEqualStateEvents([
         ...expected,
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
@@ -925,10 +922,10 @@ describe(path.basename(__filename), function () {
       cp.close();
 
       await waitFor(this, () => {
-        return adapter.testStatesEvents.length >= 2;
+        return adapter.stateEvents.length >= 2;
       });
 
-      adapter.testStatesEventsSimplifiedAssertEqual([{ type: 'started', tests: [s1t1.id] }, { type: 'finished' }]);
+      adapter.simplifiedAssertEqualStateEvents([{ type: 'started', tests: [s1t1.id] }, { type: 'finished' }]);
     });
 
     it('should timeout inside a test case', async function () {
@@ -965,10 +962,10 @@ describe(path.basename(__filename), function () {
       cp.close();
 
       await waitFor(this, () => {
-        return adapter.testStatesEvents.length >= 6;
+        return adapter.stateEvents.length >= 6;
       });
 
-      adapter.testStatesEventsSimplifiedAssertEqual([
+      adapter.simplifiedAssertEqualStateEvents([
         { type: 'started', tests: [s1t1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
         { type: 'test', state: 'running', test: s1t1 },
@@ -1000,9 +997,9 @@ describe(path.basename(__filename), function () {
 
       const running: TestRunStartedEvent = { type: 'started', tests: [adapter.root.id] };
       const finished: TestRunFinishedEvent = { type: 'finished' };
-      adapter.testStateEventIndexLess(running, finished);
+      adapter.stateEventSequence(running, finished);
 
-      assert.equal(adapter.testStatesEvents.length, 2, inspect(adapter.testStatesEvents));
+      assert.equal(adapter.stateEvents.length, 2, inspect(adapter.stateEvents));
     });
 
     it('cancels after run finished', async function () {
@@ -1039,9 +1036,9 @@ describe(path.basename(__filename), function () {
       await loadAdapterAndAssert();
       const oldRoot = adapter.root;
       suite1Watcher.sendChange();
-      await waitForMilisec(this, 500);
+      await waitForMilisec(this, 300);
       assert.deepStrictEqual(oldRoot, adapter.root);
-      assert.deepStrictEqual(adapter.testLoadsEvents, []); // no change, no event
+      assert.deepStrictEqual(adapter.loadEvents, []); // no change, no event
     });
 
     it('reloads because of fswatcher event: double touch(changed)', async function () {
@@ -1049,9 +1046,9 @@ describe(path.basename(__filename), function () {
       const oldRoot = adapter.root;
       suite1Watcher.sendChange();
       suite1Watcher.sendChange();
-      await waitForMilisec(this, 500);
+      await waitForMilisec(this, 300);
       assert.deepStrictEqual(oldRoot, adapter.root);
-      assert.deepStrictEqual(adapter.testLoadsEvents, []); // no change, no event
+      assert.deepStrictEqual(adapter.loadEvents, []); // no change, no event
     });
 
     it('reloads because of fswatcher event: double touch(changed) with delay', async function () {
@@ -1061,10 +1058,10 @@ describe(path.basename(__filename), function () {
       setTimeout(() => {
         suite1Watcher.sendChange();
       }, 20);
-      await waitForMilisec(this, 500);
+      await waitForMilisec(this, 300);
       assert.deepStrictEqual(oldRoot, adapter.root);
 
-      assert.deepStrictEqual(adapter.testLoadsEvents, []); // no change, no event
+      assert.deepStrictEqual(adapter.loadEvents, []); // no change, no event
     });
 
     it('reloads because of fswatcher event: touch(delete,create)', async function () {
@@ -1072,9 +1069,9 @@ describe(path.basename(__filename), function () {
       const oldRoot = adapter.root;
       suite1Watcher.sendDelete();
       suite1Watcher.sendCreate();
-      await waitForMilisec(this, 500);
+      await waitForMilisec(this, 300);
       assert.deepStrictEqual(oldRoot, adapter.root);
-      assert.deepStrictEqual(adapter.testLoadsEvents, []); // no change, no event
+      assert.deepStrictEqual(adapter.loadEvents, []); // no change, no event
     });
 
     it('reloads because of fswatcher event: double touch(delete,create)', async function () {
@@ -1082,9 +1079,9 @@ describe(path.basename(__filename), function () {
       const oldRoot = adapter.root;
       suite1Watcher.sendChange();
       suite1Watcher.sendChange();
-      await waitForMilisec(this, 500);
+      await waitForMilisec(this, 300);
       assert.deepStrictEqual(oldRoot, adapter.root);
-      assert.deepStrictEqual(adapter.testLoadsEvents, []); // no change, no event
+      assert.deepStrictEqual(adapter.loadEvents, []); // no change, no event
     });
 
     it('reloads because of fswatcher event: double touch(delete,create) with delay', async function () {
@@ -1094,9 +1091,9 @@ describe(path.basename(__filename), function () {
       setTimeout(() => {
         suite1Watcher.sendChange();
       }, 20);
-      await waitForMilisec(this, 500);
+      await waitForMilisec(this, 300);
       assert.deepStrictEqual(oldRoot, adapter.root);
-      assert.deepStrictEqual(adapter.testLoadsEvents, []); // no change, no event
+      assert.deepStrictEqual(adapter.loadEvents, []); // no change, no event
     });
 
     it('reloads because of fswatcher event: test added', async function () {
@@ -1158,7 +1155,7 @@ describe(path.basename(__filename), function () {
 
       await adapter.load();
 
-      assert.equal(adapter.testLoadsEvents.length, 2);
+      assert.equal(adapter.loadEvents.length, 2);
       assert.equal(adapter.root.children.length, 2);
       suite1 = adapter.group1;
 
@@ -1168,10 +1165,10 @@ describe(path.basename(__filename), function () {
         .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0], sinon.match.any)
         .callsFake(() => new ChildProcessStub(example1.suite1.outputs[1][1]));
 
-      const testLoadEventCount = adapter.testLoadsEvents.length;
+      const testLoadEventCount = adapter.loadEvents.length;
       await adapter.run([suite1.id]);
 
-      assert.strictEqual(adapter.testLoadsEvents.length, testLoadEventCount + 2);
+      assert.strictEqual(adapter.loadEvents.length, testLoadEventCount + 2);
       const expected: TestRunEvent[] = [
         { type: 'started', tests: [suite1.id] },
         { type: 'suite', state: 'running', suite: suite1 },
@@ -1186,7 +1183,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
     });
 
     it('reloads because of fswatcher event: test deleted', async function () {
@@ -1256,7 +1253,7 @@ describe(path.basename(__filename), function () {
       await waitFor(
         this,
         function () {
-          return adapter.testStatesEvents.length >= 8 && adapter.testLoadsEvents.length == 2;
+          return adapter.stateEvents.length >= 8 && adapter.loadEvents.length == 2;
         },
         2000,
       );
@@ -1287,7 +1284,7 @@ describe(path.basename(__filename), function () {
         },
         { type: 'finished' },
       ];
-      adapter.testStatesEventsSimplifiedAssertEqual(expected);
+      adapter.simplifiedAssertEqualStateEvents(expected);
     });
 
     it('data arrives in pieces', async function () {

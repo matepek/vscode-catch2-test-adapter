@@ -427,12 +427,11 @@ export abstract class AbstractRunnable {
 
         if (toRemove.length > 0 || reloadResult.changedAny) {
           await this._shared.loadWithTask(
-            async (): Promise<Error[]> => {
+            async (): Promise<void> => {
               toRemove.forEach(t => {
                 t.removeWithLeafAscendants();
                 this._tests.delete(t);
               });
-              return [];
             },
           );
         }

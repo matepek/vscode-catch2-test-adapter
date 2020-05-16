@@ -68,7 +68,7 @@ describe(path.basename(__filename), function () {
     assert.equal(adapter.root.children.length, 1);
 
     const suite1 = adapter.group1;
-    assert.equal(suite1.children.length, 1, inspect([testListErrOutput, adapter.testLoadsEvents]));
+    assert.equal(suite1.children.length, 1, inspect([testListErrOutput, adapter.loadEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
     assert.strictEqual(suite1.children[0].label, '⚡️ Unexpected ERROR while parsing');
@@ -76,7 +76,7 @@ describe(path.basename(__filename), function () {
     await waitForMilisec(this, 200);
 
     // we dont send static events anymore
-    assert.strictEqual(adapter!.testStatesEvents.length, 0);
+    assert.strictEqual(adapter!.stateEvents.length, 0);
   });
 
   specify('custom1 test case list', async function () {
@@ -110,7 +110,7 @@ describe(path.basename(__filename), function () {
     assert.equal(adapter.root.children.length, 1);
 
     const suite1 = adapter.group1;
-    assert.equal(suite1.children.length, 2, inspect([testListOutput, adapter.testLoadsEvents]));
+    assert.equal(suite1.children.length, 2, inspect([testListOutput, adapter.loadEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
     assert.strictEqual(suite1.children[0].label, 'first');
@@ -144,7 +144,7 @@ describe(path.basename(__filename), function () {
     assert.equal(adapter.root.children.length, 1);
 
     const suite1 = adapter.group1;
-    assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
+    assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.loadEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
     assert.strictEqual(suite1.children[0].label, 'first');
@@ -180,7 +180,7 @@ describe(path.basename(__filename), function () {
     assert.equal(adapter.root.children.length, 1);
 
     const suite1 = adapter.group1;
-    assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.testLoadsEvents]));
+    assert.equal(suite1.children.length, 1, inspect([testListOutput, adapter.loadEvents]));
 
     assert.strictEqual(suite1.label, 'execPath1.exe');
     assert.strictEqual(suite1.children[0].label, 'first');
@@ -252,6 +252,6 @@ describe(path.basename(__filename), function () {
 
     const suite1 = adapter.group1;
     assert.strictEqual(suite1.label, 'execPath1.exe');
-    assert.equal(suite1.children.length, 5, inspect([testListOutput, adapter.testLoadsEvents]));
+    assert.equal(suite1.children.length, 5, inspect([testListOutput, adapter.loadEvents]));
   });
 });

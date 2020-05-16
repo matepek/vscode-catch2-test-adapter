@@ -433,10 +433,9 @@ export class ExecutableConfig implements vscode.Disposable {
       const foundRunnable = this._runnables.get(filePath);
       if (foundRunnable) {
         return this._shared.loadWithTask(
-          async (): Promise<Error[]> => {
+          async (): Promise<void> => {
             foundRunnable.removeTests();
             this._runnables.delete(filePath);
-            return [];
           },
         );
       } else {

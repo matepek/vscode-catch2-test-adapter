@@ -41,13 +41,16 @@ export const settings = new (class {
 
   // eslint-disable-next-line
   public updateConfig(key: Config, value: any): Promise<void> {
-    return new Promise(r => this.getConfig().update(key, value).then(r));
+    return new Promise((r, rj) => this.getConfig().update(key, value).then(r, rj));
   }
 
   public resetConfig(): Promise<void> {
     const packageJson = fse.readJSONSync(path.join(__dirname, '../..', 'package.json'));
     const properties: { [prop: string]: string }[] = packageJson['contributes']['configuration']['properties'];
-    let t: Thenable<void> = Promise.resolve();
+    const updatePs: Thenable<void>[] = [];
+    const config = this.getConfig();
+    const oldConfig = this._getOldConfig();
+
     Object.keys(properties).forEach(key => {
       assert.ok(key.startsWith('testMate.cpp.') || key.startsWith('catch2TestExplorer.'));
 
@@ -55,13 +58,14 @@ export const settings = new (class {
         const k = key.substr('testMate.cpp.'.length);
         // don't want to override these
         if (k !== 'log.logfile' && k !== 'log.logSentry' && k !== 'log.userId')
-          t = t.then(() => this.getConfig().update(k, undefined));
+          updatePs.push(config.update(k, undefined));
       } else if (key.startsWith('catch2TestExplorer.')) {
         const k = key.substr('catch2TestExplorer.'.length);
-        t = t.then(() => this._getOldConfig().update(k, undefined));
+        updatePs.push(oldConfig.update(k, undefined));
       }
     });
-    return new Promise(r => t.then(r));
+
+    return Promise.all(updatePs).then();
   }
 })();
 
@@ -221,21 +225,21 @@ export class Imitation {
 ///
 
 export class TestAdapter extends my.TestAdapter {
-  public readonly testLoadsEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
-  private readonly testLoadsEventsConnection: vscode.Disposable;
+  public readonly loadEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
+  private readonly _loadEventsConn: vscode.Disposable;
 
-  private readonly _testStatesEvents: TestRunEvent[] = [];
-  private readonly testStatesEventsConnection: vscode.Disposable;
+  public readonly stateEvents: TestRunEvent[] = [];
+  private readonly _stateEventsConn: vscode.Disposable;
 
   public constructor() {
     super(settings.workspaceFolder, logger);
 
-    this.testLoadsEventsConnection = this.tests((e: TestLoadStartedEvent | TestLoadFinishedEvent) => {
-      this.testLoadsEvents.push(e);
+    this._loadEventsConn = this.tests((e: TestLoadStartedEvent | TestLoadFinishedEvent) => {
+      this.loadEvents.push(e);
     });
 
-    this.testStatesEventsConnection = this.testStates((e: TestRunEvent) => {
-      this._testStatesEvents.push(e);
+    this._stateEventsConn = this.testStates((e: TestRunEvent) => {
+      this.stateEvents.push(e);
     });
   }
 
@@ -245,29 +249,43 @@ export class TestAdapter extends my.TestAdapter {
 
   public async waitAndDispose(context: Mocha.Context): Promise<void> {
     await waitFor(context, () => {
-      return (
-        /* eslint-disable-next-line */
-        (this as any)._isDebugging === false &&
-        /* eslint-disable-next-line */
-        (this as any)._rootSuite._runningCounter === 0
-      );
+      /* eslint-disable-next-line */
+      return (this as any)._isDebugging === false;
+    });
+
+    await waitFor(context, () => {
+      /* eslint-disable-next-line */
+      return (this as any)._rootSuite._runningCounter === 0;
+    });
+
+    await waitFor(context, () => {
+      /* eslint-disable-next-line */
+      return (this as any)._testLoadingCounter === 0;
     });
 
     super.dispose();
 
-    this.testLoadsEventsConnection.dispose();
-    this.testStatesEventsConnection.dispose();
+    this._loadEventsConn.dispose();
+    this._stateEventsConn.dispose();
 
     // check
-    for (let i = 0; i < this.testLoadsEvents.length; i++) {
+    for (let i = 0; i < this.loadEvents.length; i += 2) {
       assert.deepStrictEqual(
-        this.testLoadsEvents[i],
+        this.loadEvents[i],
         { type: 'started' },
-        inspect({ index: i, testsEvents: this.testLoadsEvents }),
+        'Should be started but got: ' + inspect({ index: i, testsEvents: this.loadEvents }),
       );
-      i++;
-      assert.ok(i < this.testLoadsEvents.length, inspect({ index: i, testLoadsEvents: this.testLoadsEvents }));
-      assert.equal(this.testLoadsEvents[i].type, 'finished', inspect({ index: i, testsEvents: this.testLoadsEvents }));
+
+      assert.ok(
+        i + 1 < this.loadEvents.length,
+        'Missing finished: ' + inspect({ index: i + 1, loadEvents: this.loadEvents }),
+      );
+
+      assert.equal(
+        this.loadEvents[i + 1].type,
+        'finished',
+        'Should be finished but got: ' + inspect({ index: i + 1, loadEvents: this.loadEvents }),
+      );
     }
   }
 
@@ -315,62 +333,53 @@ export class TestAdapter extends my.TestAdapter {
     return this.getGroup(3);
   }
 
-  public get testStatesEvents(): TestRunEvent[] {
-    return this._testStatesEvents.map((v: TestRunEvent) => {
-      if ((v.type === 'test' || v.type === 'suite') && v.tooltip)
-        return Object.assign(v, { tooltip: v.tooltip.replace(/(Path|Cwd): .*/g, '$1: <masked>') });
-      return v;
-    });
-  }
-
-  public testStatesEventsAssertDeepEqual(expected: TestRunEvent[]): void {
-    if (this._testStatesEvents.length != expected.length)
+  public simplifiedAssertEqualStateEvents(expectedArr: TestRunEvent[]): void {
+    if (this.stateEvents.length != expectedArr.length)
       console.log(
-        `this._testStatesEvents.length(${this._testStatesEvents.length}) != expected.length(${expected.length})`,
+        `this._testStatesEvents.length(${this.stateEvents.length}) != expected.length(${expectedArr.length})`,
       );
 
-    const testStatesEvents = this.testStatesEvents;
-
-    for (let i = 0; i < expected.length && i < testStatesEvents.length; ++i) {
-      assert.deepStrictEqual(testStatesEvents[i], expected[i], `index: ${i}`);
-    }
-  }
-
-  public testStatesEventsSimplifiedAssertEqual(expectedArr: TestRunEvent[]): void {
-    if (this._testStatesEvents.length != expectedArr.length)
-      console.log(
-        `this._testStatesEvents.length(${this._testStatesEvents.length}) != expected.length(${expectedArr.length})`,
-      );
-
-    const testStatesEvents = this._testStatesEvents;
+    const getId = (t: TestRunEvent): string => {
+      switch (t.type) {
+        case 'test':
+          return typeof t.test == 'string' ? t.test : t.test.id;
+        case 'suite':
+          return typeof t.suite == 'string' ? t.suite : t.suite.id;
+        case 'started':
+        case 'finished':
+          return t.type;
+        default:
+          throw Error('assert');
+      }
+    };
 
     try {
-      for (let i = 0; i < expectedArr.length && i < testStatesEvents.length; ++i) {
-        const actual = testStatesEvents[i];
+      for (let i = 0; i < expectedArr.length && i < this.stateEvents.length; ++i) {
+        const actual = this.stateEvents[i];
         const expected = expectedArr[i];
 
         if (actual.type == 'test' && expected.type == 'test') {
           // eslint-disable-next-line
-          assert.strictEqual((actual.test as any).id, (expected.test as any).id, `index: ${i}`);
+          assert.strictEqual(getId(actual), getId(expected), `index: ${i}`);
           assert.strictEqual(actual.state, expected.state, `index: ${i}`);
         } else if (actual.type == 'suite' && expected.type == 'suite') {
           // eslint-disable-next-line
-          assert.strictEqual((actual.suite as any).id, (expected.suite as any).id, `index: ${i}`);
+          assert.strictEqual(getId(actual), getId(expected), `index: ${i}`);
           assert.strictEqual(actual.state, expected.state, `index: ${i}`);
         } else {
           assert.deepStrictEqual(actual, expected, `index: ${i}`);
         }
       }
 
-      assert.strictEqual(this._testStatesEvents.length, expectedArr.length);
+      assert.strictEqual(this.stateEvents.length, expectedArr.length);
     } catch (e) {
       debugger;
       throw e;
     }
   }
 
-  public getTestStatesEventIndex(searchFor: TestRunEvent): number {
-    const i = this.testStatesEvents.findIndex((v: TestRunEvent) => {
+  public indexOfStateEvent(searchFor: TestRunEvent): number {
+    const i = this.stateEvents.findIndex((v: TestRunEvent) => {
       if (v.type !== searchFor.type) return false;
       if (v.type === 'suite' && searchFor.type === 'suite') {
         if (v.suite !== searchFor.suite) return false;
@@ -390,19 +399,19 @@ export class TestAdapter extends my.TestAdapter {
       `getTestStatesEventIndex failed to find: ` +
         inspect(searchFor, false, 0) +
         '\nin:\n' +
-        inspect(this.testStatesEvents, false, 1),
+        inspect(this.stateEvents, false, 1),
     );
     return i;
   }
 
-  public testStateEventIndexLess(less: TestRunEvent, thanThis: TestRunEvent): void {
-    const l = this.getTestStatesEventIndex(less);
-    const r = this.getTestStatesEventIndex(thanThis);
-    assert.ok(l < r, 'testStateEventIndexLess: ' + inspect({ less: [l, less], thanThis: [r, thanThis] }));
+  public stateEventSequence(before: TestRunEvent, thanThis: TestRunEvent): void {
+    const l = this.indexOfStateEvent(before);
+    const r = this.indexOfStateEvent(thanThis);
+    assert.ok(l < r, 'testStateEventIndexLess: ' + inspect({ less: [l, before], thanThis: [r, thanThis] }));
   }
 
   public async doAndWaitForReloadEvent(context: Mocha.Context, action: Function): Promise<TestSuiteInfo | undefined> {
-    const origCount = this.testLoadsEvents.length;
+    const origCount = this.loadEvents.length;
     try {
       await action();
     } catch (e) {
@@ -410,14 +419,14 @@ export class TestAdapter extends my.TestAdapter {
     }
     try {
       await waitFor(context, () => {
-        return this.testLoadsEvents.length >= origCount + 2;
+        return this.loadEvents.length >= origCount + 2;
       });
     } catch (e) {
       throw Error('waiting after action: "' + action.toString() + '" errored: ' + e.toString());
     }
-    assert.equal(this.testLoadsEvents.length, origCount + 2, action.toString());
-    assert.equal(this.testLoadsEvents[this.testLoadsEvents.length - 1].type, 'finished');
-    const e = this.testLoadsEvents[this.testLoadsEvents.length - 1] as TestLoadFinishedEvent;
+    assert.equal(this.loadEvents.length, origCount + 2, action.toString());
+    assert.equal(this.loadEvents[this.loadEvents.length - 1].type, 'finished');
+    const e = this.loadEvents[this.loadEvents.length - 1] as TestLoadFinishedEvent;
     if (e.suite) {
       assert.strictEqual(e.suite, this.root);
     } else {
