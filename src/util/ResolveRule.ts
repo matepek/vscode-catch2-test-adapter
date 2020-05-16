@@ -93,7 +93,7 @@ export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolea
     return undefined;
   };
   // eslint-disable-next-line
-  return _mapAllStrings(value, undefined, (s: string, parent: any): any => {
+  return _mapAllStrings(value, undefined, (s: string, parent: any): string | undefined => {
     let replacedS = '';
     while (true) {
       const match = s.match(/\$\{(os_env|os_env_strict):([A-z_][A-z0-9_]*)\}/);

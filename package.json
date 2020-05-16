@@ -290,28 +290,18 @@
                 "type": "boolean",
                 "default": false
               },
-              "android": {
-                "markdownDescription": "Override the parent's properties on the given operating system.",
-                "type": "object",
-                "additionalProperties": true
-              },
               "darwin": {
-                "markdownDescription": "Override the parent's properties on the given operating system.",
+                "markdownDescription": "Overrides the parent's properties on the given OS.",
                 "type": "object",
                 "additionalProperties": true
               },
               "linux": {
-                "markdownDescription": "Override the parent's properties on the given operating system.",
+                "markdownDescription": "Overrides the parent's properties on the given OS.",
                 "type": "object",
                 "additionalProperties": true
               },
               "win32": {
-                "markdownDescription": "Override the parent's properties on the given operating system.",
-                "type": "object",
-                "additionalProperties": true
-              },
-              "cygwin": {
-                "markdownDescription": "Override the parent's properties on the given operating system.",
+                "markdownDescription": "Overrides the parent's properties on the given OS.",
                 "type": "object",
                 "additionalProperties": true
               },

@@ -142,13 +142,11 @@ One should avoid that❗️
 
 ## Scoping
 
-| Property  | Description                                                     |
-| --------- | --------------------------------------------------------------- |
-| `android` | Override the parent's properties on the given operating system. |
-| `darwin`  | Override the parent's properties on the given operating system. |
-| `linux`   | Override the parent's properties on the given operating system. |
-| `win32`   | Override the parent's properties on the given operating system. |
-| `cygwin`  | Override the parent's properties on the given operating system. |
+| Property | Description                                        |
+| -------- | -------------------------------------------------- |
+| `darwin` | Overrides the parent's properties on the given OS. |
+| `linux`  | Overrides the parent's properties on the given OS. |
+| `win32`  | Overrides the parent's properties on the given OS. |
 
 Example:
 
