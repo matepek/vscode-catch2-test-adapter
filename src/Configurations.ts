@@ -547,7 +547,7 @@ export class Configurations {
         defaultCwd,
         undefined,
         [],
-        { before: [], beforeEach: [] },
+        { before: [], beforeEach: [], after: [], afterEach: [] },
         defaultParallelExecutionOfExecLimit,
         false,
         {},
@@ -627,8 +627,13 @@ export class Configurations {
 
         const runTask: RunTask =
           typeof obj.runTask === 'object'
-            ? { before: obj.runTask.before || [], beforeEach: obj.runTask.beforeEach || [] }
-            : { before: [], beforeEach: [] };
+            ? {
+                before: obj.runTask.before || [],
+                beforeEach: obj.runTask.beforeEach || [],
+                after: obj.runTask.after || [],
+                afterEach: obj.runTask.afterEach || [],
+              }
+            : { before: [], beforeEach: [], after: [], afterEach: [] };
 
         const parallelizationLimit: number =
           typeof obj.parallelizationLimit === 'number' && !Number.isNaN(obj.parallelizationLimit)

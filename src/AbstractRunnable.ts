@@ -451,7 +451,7 @@ export abstract class AbstractRunnable {
       this._rootSuite.collectTestToRun(tests, isParentIn, (test: AbstractTest): boolean => test.runnable === this);
 
     try {
-      await this.runTaskbeforeEach(taskPool, cancellationToken);
+      await this.runTasks('beforeEach', taskPool, cancellationToken);
     } catch (e) {
       this.sentStaticErrorEvent(collectChildrenToRun(), e);
 
@@ -466,33 +466,43 @@ export abstract class AbstractRunnable {
 
     const buckets = this._splitTestSetForMultirunIfEnabled(childrenToRun);
 
-    return Promise.all(
+    await Promise.all(
       buckets.map(async (bucket: readonly AbstractTest[]) => {
         const smallerTestSet = this._splitTestsToSmallEnoughSubsets(bucket);
         for (const testSet of smallerTestSet) await this._runInner(testSet, taskPool, cancellationToken);
       }),
-    ).then();
+    );
+
+    try {
+      await this.runTasks('afterEach', taskPool, cancellationToken);
+    } catch (e) {
+      this.sentStaticErrorEvent(collectChildrenToRun(), e);
+    }
   }
 
-  public async runTaskbeforeEach(taskPool: TaskPool, cancellationToken: CancellationToken): Promise<void> {
-    if (this.properties.runTask.beforeEach && this.properties.runTask.beforeEach.length > 0) {
+  public async runTasks(
+    type: 'beforeEach' | 'afterEach',
+    taskPool: TaskPool,
+    cancellationToken: CancellationToken,
+  ): Promise<void> {
+    if (this.properties.runTask[type].length > 0) {
       return taskPool.scheduleTask(async () => {
         try {
           // sequential execution of tasks
-          for (const taskName of this.properties.runTask.beforeEach) {
+          for (const taskName of this.properties.runTask[type]) {
             const exitCode = await this._shared.executeTask(taskName, this.properties.varToValue, cancellationToken);
 
             if (exitCode !== undefined) {
               if (exitCode !== 0) {
                 throw Error(
-                  `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.beforeEach\`)`,
+                  `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.${type}\`)`,
                 );
               }
             }
           }
         } catch (e) {
           throw Error(
-            'One of the tasks of the `testMate.test.advancedExecutables:runTask.beforeEach` array has failed: ' + e,
+            `One of the tasks of the \`testMate.test.advancedExecutables:runTask.${type}\` array has failed: ` + e,
           );
         }
       });

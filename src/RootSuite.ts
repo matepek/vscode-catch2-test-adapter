@@ -51,7 +51,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
     let runnables = this._collectRunnables(tests, isParentIn);
 
     try {
-      await this.runTaskBefore(runnables, this._cancellationTokenSource.token);
+      await this.runTasks('before', runnables, this._cancellationTokenSource.token);
       runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
     } catch (e) {
       for (const [runnable, tests] of runnables) {
@@ -59,7 +59,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
       }
 
       this.sendFinishedEventIfNeeded();
-      return;
+      return this._runningPromise;
     }
 
     const ps: Promise<void>[] = [];
@@ -72,14 +72,22 @@ export class RootSuite extends Suite implements vscode.Disposable {
       );
     }
 
-    await Promise.all(ps)
-      .finally(() => {
-        this.sendFinishedEventIfNeeded();
-      })
-      .catch((e: Error) => {
-        debugger;
-        this._shared.log.error('everything should be handled', e);
-      });
+    try {
+      await Promise.all(ps);
+
+      try {
+        await this.runTasks('after', runnables, this._cancellationTokenSource.token);
+      } catch (e) {
+        for (const [runnable, tests] of runnables) {
+          runnable.sentStaticErrorEvent(tests, e);
+        }
+      }
+    } catch (e) {
+      debugger;
+      this._shared.log.error('everything should be handled', e);
+    }
+
+    this.sendFinishedEventIfNeeded();
 
     return this._runningPromise;
   }
@@ -122,19 +130,20 @@ export class RootSuite extends Suite implements vscode.Disposable {
     // do nothing, special handling
   }
 
-  public async runTaskBefore(
+  public async runTasks(
+    type: 'before' | 'after',
     runnables: Map<AbstractRunnable, Readonly<AbstractTest>[]>,
     cancellationToken: vscode.CancellationToken,
   ): Promise<void> {
-    const runTask = new Set<string>();
+    const runTasks = new Set<string>();
     const runnableExecArray: string[] = [];
 
     for (const runnable of runnables.keys()) {
-      runnable.properties.runTask.before.forEach(t => runTask.add(t));
+      runnable.properties.runTask[type].forEach(t => runTasks.add(t));
       runnableExecArray.push(runnable.properties.path);
     }
 
-    if (runTask.size === 0) return;
+    if (runTasks.size === 0) return;
 
     const varToValue: ResolveRule[] = [
       ...this._shared.varToValue,
@@ -144,19 +153,21 @@ export class RootSuite extends Suite implements vscode.Disposable {
 
     try {
       // sequential execution of tasks
-      for (const taskName of runTask) {
+      for (const taskName of runTasks) {
         const exitCode = await this._shared.executeTask(taskName, varToValue, cancellationToken);
 
         if (exitCode !== undefined) {
           if (exitCode !== 0) {
             throw Error(
-              `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.before\`)`,
+              `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.${type}\`)`,
             );
           }
         }
       }
     } catch (e) {
-      throw Error('One of the tasks of the `testMate.test.advancedExecutables:runTask.before` array has failed: ' + e);
+      throw Error(
+        `One of the tasks of the \`testMate.test.advancedExecutables:runTask.${type}\` array has failed: ` + e,
+      );
     }
   }
 

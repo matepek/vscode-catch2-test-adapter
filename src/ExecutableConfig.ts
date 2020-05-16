@@ -22,6 +22,8 @@ import { AbstractTest } from './AbstractTest';
 export interface RunTask {
   before: string[];
   beforeEach: string[];
+  after: string[];
+  afterEach: string[];
 }
 
 export interface ExecutableConfigFrameworkSpecific {

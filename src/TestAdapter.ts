@@ -569,8 +569,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const cancellationTokenSource = new vscode.CancellationTokenSource();
 
-      await this._rootSuite.runTaskBefore(runnableToTestMap, cancellationTokenSource.token);
-      await runnable.runTaskbeforeEach(this._shared.taskPool, cancellationTokenSource.token);
+      await this._rootSuite.runTasks('before', runnableToTestMap, cancellationTokenSource.token);
+      await runnable.runTasks('beforeEach', this._shared.taskPool, cancellationTokenSource.token);
 
       let terminateConn: vscode.Disposable | undefined;
 
@@ -600,6 +600,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           'Failed starting the debug session. Maybe something wrong with "testMate.cpp.debug.configTemplate".',
         );
       }
+
+      await runnable.runTasks('afterEach', this._shared.taskPool, cancellationTokenSource.token);
+      await this._rootSuite.runTasks('after', runnableToTestMap, cancellationTokenSource.token);
     } catch (err) {
       this._shared.log.warn(err);
       throw err;
