@@ -256,7 +256,11 @@ describe(pathlib.basename(__filename), function () {
       ];
 
       imitation.spawnStub
-        .withArgs(runnableProperties.path, sinon.match.any, sinon.match.any)
+        .withArgs(
+          runnableProperties.path,
+          ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
+          sinon.match.any,
+        )
         .returns(new ChildProcessStub('Matching test cases:' + EOL, undefined, testListErrOutput.join(EOL)));
 
       const res = await getPriv(catch2Runnable)._reloadChildren();

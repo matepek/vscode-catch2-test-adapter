@@ -15,8 +15,8 @@
       "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
       "preLaunchTask": "npm: watch",
       "env": {
-        "C2AVCVA": "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat",
-        "C2_DEBUG": "true"
+        "C2_DEBUG": "true",
+        "C2_INTEGRATIONFROMVSCODE": "true"
       }
     },
     {
