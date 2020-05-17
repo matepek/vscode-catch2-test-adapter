@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import * as path from 'path';
+import * as pathlib from 'path';
 import { settings, Imitation, ChildProcessStub } from '../Common';
 import * as sinon from 'sinon';
 import { Version } from '../../src/Util';
@@ -13,7 +13,7 @@ import { EOL } from 'os';
 
 ///
 
-describe(path.basename(__filename), function () {
+describe(pathlib.basename(__filename), function () {
   const sharedVariables = new SharedVariables(
     logger,
     settings.workspaceFolder,
@@ -99,7 +99,7 @@ describe(path.basename(__filename), function () {
       assert.strictEqual(tests[0].testNameAsId, 'first');
       assert.strictEqual(tests[0].label, 'first');
       assert.strictEqual(tests[0].description, '[a]');
-      assert.strictEqual(tests[0].file, '/mnt/c/Users/a.cpp');
+      assert.strictEqual(tests[0].file, pathlib.normalize('/mnt/c/Users/a.cpp'));
       assert.strictEqual(tests[0].line, 12 - 1);
       assert.strictEqual(tests[0].skipped, false);
       assert.strictEqual(tests[0].staticEvent, undefined);
@@ -129,7 +129,7 @@ describe(path.basename(__filename), function () {
       assert.strictEqual(tests[0].testNameAsId, 'first');
       assert.strictEqual(tests[0].label, 'first');
       assert.strictEqual(tests[0].description, '[a]');
-      assert.strictEqual(tests[0].file, '/mnt/c/Users/a.cpp');
+      assert.strictEqual(tests[0].file, pathlib.normalize('/mnt/c/Users/a.cpp'));
       assert.strictEqual(tests[0].line, 12 - 1);
       assert.strictEqual(tests[0].skipped, false);
       assert.strictEqual(tests[0].staticEvent, undefined);
@@ -137,7 +137,7 @@ describe(path.basename(__filename), function () {
       assert.strictEqual(tests[1].testNameAsId, 'second');
       assert.strictEqual(tests[1].label, 'second');
       assert.strictEqual(tests[1].description, '[b]');
-      assert.strictEqual(tests[1].file, '/mnt/c/Users/b.cpp');
+      assert.strictEqual(tests[1].file, pathlib.normalize('/mnt/c/Users/b.cpp'));
       assert.strictEqual(tests[1].line, 42 - 1);
       assert.strictEqual(tests[1].skipped, false);
       assert.strictEqual(tests[1].staticEvent, undefined);
@@ -165,7 +165,7 @@ describe(path.basename(__filename), function () {
       assert.strictEqual(tests[0].testNameAsId, 'first');
       assert.strictEqual(tests[0].label, 'first');
       assert.strictEqual(tests[0].description, '[a]');
-      assert.strictEqual(tests[0].file, '/mnt/c/Users/a.cpp');
+      assert.strictEqual(tests[0].file, pathlib.normalize('/mnt/c/Users/a.cpp'));
       assert.strictEqual(tests[0].line, 12 - 1);
       assert.strictEqual(tests[0].skipped, false);
       assert.strictEqual(tests[0].staticEvent, undefined);
@@ -207,32 +207,37 @@ describe(path.basename(__filename), function () {
       assert.strictEqual(tests[0].label, 'nnnnnnnnnnnnnnnnnnnnn1');
       assert.strictEqual(
         tests[0].file,
-        '../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/fffffffffffffffffffffffffffffffffffffffff.cpp',
+        pathlib.normalize('../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/fffffffffffffffffffffffffffffffffffffffff.cpp'),
       );
       assert.strictEqual(tests[0].line, 11 - 1);
 
       assert.strictEqual(tests[1].label, 'nnnnnnnnnnnnnnnnnnnnn2');
-      assert.strictEqual(tests[1].file, '../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/fffffffffffffffffff.cpp');
+      assert.strictEqual(
+        tests[1].file,
+        pathlib.normalize('../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/fffffffffffffffffff.cpp'),
+      );
       assert.strictEqual(tests[1].line, 14 - 1);
 
       assert.strictEqual(tests[2].label, 'nnnnnnnnnnnnnnnnnnnnn3');
       assert.strictEqual(
         tests[2].file,
-        '../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff.cpp',
+        pathlib.normalize('../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff.cpp'),
       );
       assert.strictEqual(tests[2].line, 19 - 1);
 
       assert.strictEqual(tests[3].label, 'nnnnnnnnnnnnnnnnnnnnn4');
       assert.strictEqual(
         tests[3].file,
-        '../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff.cpp',
+        pathlib.normalize('../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff.cpp'),
       );
       assert.strictEqual(tests[3].line, 14 - 1);
 
       assert.strictEqual(tests[4].label, 'nnnnnnnnnnnnnnnnnnnnn5');
       assert.strictEqual(
         tests[4].file,
-        '../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff/ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff.cpp',
+        pathlib.normalize(
+          '../ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff/ddddddd1/dddd1/dddd1/dddd1/dddd1/dddddd1/ffffffffffffffffffffffffffffff.cpp',
+        ),
       );
       assert.strictEqual(tests[4].line, 14 - 1);
     });
