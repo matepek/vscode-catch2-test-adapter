@@ -275,7 +275,7 @@ describe(pathlib.basename(__filename), function () {
           '',
           `stderr:`,
           ...testListErrOutput,
-        ].join('\n'),
+        ].join(EOL),
       );
     });
   });

@@ -19,6 +19,7 @@ import {
 import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
 import { TestEvent } from 'vscode-test-adapter-api';
 import { RootSuite } from './RootSuite';
+import { EOL } from 'os';
 
 export class RunnableReloadResult {
   public tests = new Set<AbstractTest>();
@@ -342,7 +343,7 @@ export abstract class AbstractRunnable {
         `${stdout}`,
         `stderr:`,
         `${stderr}`,
-      ].join('\n'),
+      ].join(EOL),
     );
   }
 
