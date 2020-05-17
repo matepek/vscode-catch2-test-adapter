@@ -369,12 +369,12 @@ describe(path.basename(__filename), function () {
     assert.equal(adapter.root.children.length, 1);
     assert.equal(adapter.root.children[0].type, 'suite');
 
-    const actual = adapter.group1.label.split(' | ');
+    const actual = adapter.group.label.split(' | ');
     const expected = toResolveAndExpectedResolvedValue.map(v => v[1]);
     assert.deepStrictEqual(actual, expected);
-    assert.equal(adapter.group1.children.length, 3);
+    assert.equal(adapter.group.children.length, 3);
 
-    await adapter.run([adapter.group1.children[0].id]);
+    await adapter.run([adapter.group.children[0].id]);
 
     assert.ok(spawnWithArgs.calledOnce, spawnWithArgs.args.toString());
     assert.equal(spawnWithArgs.firstCall.args[2].cwd, expectStr);
@@ -395,12 +395,12 @@ describe(path.basename(__filename), function () {
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 1);
-      assert.strictEqual(adapter.group1.label, 'dup');
+      assert.strictEqual(adapter.group.label, 'dup');
 
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 1);
-      assert.strictEqual(adapter.group1.label, 'dup');
+      assert.strictEqual(adapter.group.label, 'dup');
     });
 
     specify('duplicated suite names with different desciption', async function () {
@@ -415,18 +415,18 @@ describe(path.basename(__filename), function () {
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.group.label, 'dup');
+      assert.strictEqual(adapter.group.description, 'a');
       assert.strictEqual(adapter.group1.label, 'dup');
-      assert.strictEqual(adapter.group1.description, 'a');
-      assert.strictEqual(adapter.group2.label, 'dup');
-      assert.strictEqual(adapter.group2.description, 'b');
+      assert.strictEqual(adapter.group1.description, 'b');
 
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.group.label, 'dup');
+      assert.strictEqual(adapter.group.description, 'a');
       assert.strictEqual(adapter.group1.label, 'dup');
-      assert.strictEqual(adapter.group1.description, 'a');
-      assert.strictEqual(adapter.group2.label, 'dup');
-      assert.strictEqual(adapter.group2.description, 'b');
+      assert.strictEqual(adapter.group1.description, 'b');
     });
 
     specify('duplicated executable', async function () {
@@ -449,14 +449,14 @@ describe(path.basename(__filename), function () {
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 2); //TODO make  eq 1 one day
-      assert.strictEqual(adapter.group1.label, 'name1 execPath1.exe');
-      assert.strictEqual(adapter.group2.label, 'name2');
+      assert.strictEqual(adapter.group.label, 'name1 execPath1.exe');
+      assert.strictEqual(adapter.group1.label, 'name2');
 
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 2);
-      assert.strictEqual(adapter.group1.label, 'name1 execPath1.exe');
-      assert.strictEqual(adapter.group2.label, 'name2');
+      assert.strictEqual(adapter.group.label, 'name1 execPath1.exe');
+      assert.strictEqual(adapter.group1.label, 'name2');
     });
   });
 
@@ -474,12 +474,12 @@ describe(path.basename(__filename), function () {
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 1);
-      assert.strictEqual(adapter.group1.label, 'dup');
+      assert.strictEqual(adapter.group.label, 'dup');
 
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 1);
-      assert.strictEqual(adapter.group1.label, 'dup');
+      assert.strictEqual(adapter.group.label, 'dup');
     });
 
     specify('duplicated suite names but different description', async function () {
@@ -497,18 +497,18 @@ describe(path.basename(__filename), function () {
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.group.label, 'dup');
+      assert.strictEqual(adapter.group.description, example1.suite1.execPath);
       assert.strictEqual(adapter.group1.label, 'dup');
-      assert.strictEqual(adapter.group1.description, example1.suite1.execPath);
-      assert.strictEqual(adapter.group2.label, 'dup');
-      assert.strictEqual(adapter.group2.description, example1.suite2.execPath);
+      assert.strictEqual(adapter.group1.description, example1.suite2.execPath);
 
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.group.label, 'dup');
+      assert.strictEqual(adapter.group.description, example1.suite1.execPath);
       assert.strictEqual(adapter.group1.label, 'dup');
-      assert.strictEqual(adapter.group1.description, example1.suite1.execPath);
-      assert.strictEqual(adapter.group2.label, 'dup');
-      assert.strictEqual(adapter.group2.description, example1.suite2.execPath);
+      assert.strictEqual(adapter.group1.description, example1.suite2.execPath);
     });
   });
 
@@ -529,12 +529,12 @@ describe(path.basename(__filename), function () {
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 1);
-      assert.strictEqual(adapter.group1.label, 'dup');
+      assert.strictEqual(adapter.group.label, 'dup');
 
       await adapter.load();
 
       assert.strictEqual(adapter.root.children.length, 1);
-      assert.strictEqual(adapter.group1.label, 'dup');
+      assert.strictEqual(adapter.group.label, 'dup');
     });
   });
 });

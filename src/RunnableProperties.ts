@@ -4,7 +4,7 @@ import { TestGrouping } from './TestGroupingInterface';
 import { ResolveRule } from './util/ResolveRule';
 import { TaskPool } from './TaskPool';
 
-export class RunnableSuiteProperties {
+export class RunnableProperties {
   public constructor(
     public readonly name: string | undefined,
     public readonly description: string | undefined,

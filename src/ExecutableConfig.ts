@@ -12,7 +12,7 @@ import {
   createPythonIndexerForPathVariable,
   createPythonIndexerForStringVariable,
 } from './util/ResolveRule';
-import { RunnableSuiteFactory } from './RunnableSuiteFactory';
+import { RunnableFactory } from './RunnableFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
 import { TestGrouping } from './TestGroupingInterface';
@@ -301,7 +301,7 @@ export class ExecutableConfig implements vscode.Disposable {
     };
   }
 
-  private _createSuiteByUri(filePath: string, rootSuite: RootSuite): RunnableSuiteFactory {
+  private _createSuiteByUri(filePath: string, rootSuite: RootSuite): RunnableFactory {
     const relPath = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
     let varToValue: ResolveRule[] = [];
@@ -357,7 +357,7 @@ export class ExecutableConfig implements vscode.Disposable {
       this._shared.log.error('resolvedEnv', e);
     }
 
-    return new RunnableSuiteFactory(
+    return new RunnableFactory(
       this._shared,
       this._name,
       this._description,

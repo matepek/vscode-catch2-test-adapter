@@ -10,12 +10,13 @@ import { inspect, promisify } from 'util';
 import { EventEmitter } from 'events';
 import { Readable, Writable } from 'stream';
 import { ChildProcess } from 'child_process';
+import { RootSuite as OrigRootSuite } from '../src/RootSuite';
 
 import { TestLoadFinishedEvent, TestLoadStartedEvent, TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
 
 import * as my from '../src/TestAdapter';
+import * as my2 from '../src/SharedVariables';
 import { Config } from '../src/Configurations';
-import { TestRunEvent } from '../src/SharedVariables';
 import { logger } from './LogOutputContent.test';
 
 ///
@@ -227,11 +228,92 @@ export class Imitation {
 
 ///
 
+function simplifiedAssertEqualStateEvents(stateEvents: my2.TestRunEvent[], expectedArr: my2.TestRunEvent[]): void {
+  if (stateEvents.length != expectedArr.length)
+    console.log(`this._testStatesEvents.length(${stateEvents.length}) != expected.length(${expectedArr.length})`);
+
+  const getId = (t: my2.TestRunEvent): string => {
+    switch (t.type) {
+      case 'test':
+        return typeof t.test == 'string' ? t.test : t.test.id;
+      case 'suite':
+        return typeof t.suite == 'string' ? t.suite : t.suite.id;
+      case 'started':
+      case 'finished':
+        return t.type;
+      default:
+        throw Error('assert');
+    }
+  };
+
+  try {
+    for (let i = 0; i < expectedArr.length && i < stateEvents.length; ++i) {
+      const actual = stateEvents[i];
+      const expected = expectedArr[i];
+
+      if (actual.type == 'test' && expected.type == 'test') {
+        // eslint-disable-next-line
+        assert.strictEqual(getId(actual), getId(expected), `index: ${i}`);
+        assert.strictEqual(actual.state, expected.state, `index: ${i}`);
+      } else if (actual.type == 'suite' && expected.type == 'suite') {
+        // eslint-disable-next-line
+        assert.strictEqual(getId(actual), getId(expected), `index: ${i}`);
+        assert.strictEqual(actual.state, expected.state, `index: ${i}`);
+      } else {
+        assert.deepStrictEqual(actual, expected, `index: ${i}`);
+      }
+    }
+
+    assert.strictEqual(stateEvents.length, expectedArr.length);
+  } catch (e) {
+    debugger;
+    throw e;
+  }
+}
+
+function indexOfStateEvent(stateEvents: my2.TestRunEvent[], searchFor: my2.TestRunEvent): number {
+  const i = stateEvents.findIndex((v: my2.TestRunEvent) => {
+    if (v.type !== searchFor.type) return false;
+    if (v.type === 'suite' && searchFor.type === 'suite') {
+      if (v.suite !== searchFor.suite) return false;
+      if (v.state !== searchFor.state) return false;
+    }
+    if (v.type === 'test' && searchFor.type === 'test') {
+      if (v.test !== searchFor.test) return false;
+      if (v.state !== searchFor.state) return false;
+    }
+    if (v.type === 'started' && searchFor.type === 'started') {
+      if (!deepStrictEqual(v.tests, searchFor.tests)) return false;
+    }
+    return true;
+  });
+  assert.ok(
+    0 <= i,
+    `getTestStatesEventIndex failed to find: ` +
+      inspect(searchFor, false, 0) +
+      '\nin:\n' +
+      inspect(stateEvents, false, 1),
+  );
+  return i;
+}
+
+function stateEventSequence(
+  stateEvents: my2.TestRunEvent[],
+  before: my2.TestRunEvent,
+  thanThis: my2.TestRunEvent,
+): void {
+  const l = indexOfStateEvent(stateEvents, before);
+  const r = indexOfStateEvent(stateEvents, thanThis);
+  assert.ok(l < r, 'testStateEventIndexLess: ' + inspect({ less: [l, before], thanThis: [r, thanThis] }));
+}
+
+///
+
 export class TestAdapter extends my.TestAdapter {
   public readonly loadEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
   private readonly _loadEventsConn: vscode.Disposable;
 
-  public readonly stateEvents: TestRunEvent[] = [];
+  public readonly stateEvents: my2.TestRunEvent[] = [];
   private readonly _stateEventsConn: vscode.Disposable;
 
   public constructor() {
@@ -241,7 +323,7 @@ export class TestAdapter extends my.TestAdapter {
       this.loadEvents.push(e);
     });
 
-    this._stateEventsConn = this.testStates((e: TestRunEvent) => {
+    this._stateEventsConn = this.testStates((e: my2.TestRunEvent) => {
       this.stateEvents.push(e);
     });
   }
@@ -323,94 +405,29 @@ export class TestAdapter extends my.TestAdapter {
     throw Error(`coudn't find test ${index}`);
   }
 
-  public get group1(): TestSuiteInfo {
+  public get group(): TestSuiteInfo {
     return this.getGroup(0);
   }
-  public get group2(): TestSuiteInfo {
+  public get group1(): TestSuiteInfo {
     return this.getGroup(1);
   }
-  public get group3(): TestSuiteInfo {
+  public get group2(): TestSuiteInfo {
     return this.getGroup(2);
   }
-  public get group4(): TestSuiteInfo {
+  public get group3(): TestSuiteInfo {
     return this.getGroup(3);
   }
 
-  public simplifiedAssertEqualStateEvents(expectedArr: TestRunEvent[]): void {
-    if (this.stateEvents.length != expectedArr.length)
-      console.log(
-        `this._testStatesEvents.length(${this.stateEvents.length}) != expected.length(${expectedArr.length})`,
-      );
-
-    const getId = (t: TestRunEvent): string => {
-      switch (t.type) {
-        case 'test':
-          return typeof t.test == 'string' ? t.test : t.test.id;
-        case 'suite':
-          return typeof t.suite == 'string' ? t.suite : t.suite.id;
-        case 'started':
-        case 'finished':
-          return t.type;
-        default:
-          throw Error('assert');
-      }
-    };
-
-    try {
-      for (let i = 0; i < expectedArr.length && i < this.stateEvents.length; ++i) {
-        const actual = this.stateEvents[i];
-        const expected = expectedArr[i];
-
-        if (actual.type == 'test' && expected.type == 'test') {
-          // eslint-disable-next-line
-          assert.strictEqual(getId(actual), getId(expected), `index: ${i}`);
-          assert.strictEqual(actual.state, expected.state, `index: ${i}`);
-        } else if (actual.type == 'suite' && expected.type == 'suite') {
-          // eslint-disable-next-line
-          assert.strictEqual(getId(actual), getId(expected), `index: ${i}`);
-          assert.strictEqual(actual.state, expected.state, `index: ${i}`);
-        } else {
-          assert.deepStrictEqual(actual, expected, `index: ${i}`);
-        }
-      }
-
-      assert.strictEqual(this.stateEvents.length, expectedArr.length);
-    } catch (e) {
-      debugger;
-      throw e;
-    }
+  public simplifiedAssertEqualStateEvents(expectedArr: my2.TestRunEvent[]): void {
+    simplifiedAssertEqualStateEvents(this.stateEvents, expectedArr);
   }
 
-  public indexOfStateEvent(searchFor: TestRunEvent): number {
-    const i = this.stateEvents.findIndex((v: TestRunEvent) => {
-      if (v.type !== searchFor.type) return false;
-      if (v.type === 'suite' && searchFor.type === 'suite') {
-        if (v.suite !== searchFor.suite) return false;
-        if (v.state !== searchFor.state) return false;
-      }
-      if (v.type === 'test' && searchFor.type === 'test') {
-        if (v.test !== searchFor.test) return false;
-        if (v.state !== searchFor.state) return false;
-      }
-      if (v.type === 'started' && searchFor.type === 'started') {
-        if (!deepStrictEqual(v.tests, searchFor.tests)) return false;
-      }
-      return true;
-    });
-    assert.ok(
-      0 <= i,
-      `getTestStatesEventIndex failed to find: ` +
-        inspect(searchFor, false, 0) +
-        '\nin:\n' +
-        inspect(this.stateEvents, false, 1),
-    );
-    return i;
+  public indexOfStateEvent(searchFor: my2.TestRunEvent): number {
+    return indexOfStateEvent(this.stateEvents, searchFor);
   }
 
-  public stateEventSequence(before: TestRunEvent, thanThis: TestRunEvent): void {
-    const l = this.indexOfStateEvent(before);
-    const r = this.indexOfStateEvent(thanThis);
-    assert.ok(l < r, 'testStateEventIndexLess: ' + inspect({ less: [l, before], thanThis: [r, thanThis] }));
+  public stateEventSequence(before: my2.TestRunEvent, thanThis: my2.TestRunEvent): void {
+    stateEventSequence(this.stateEvents, before, thanThis);
   }
 
   public async doAndWaitForReloadEvent(context: Mocha.Context, action: Function): Promise<TestSuiteInfo | undefined> {
@@ -551,5 +568,84 @@ export class ChildProcessStub extends EventEmitter implements ChildProcess {
       this.write(l + '\n');
     });
     this.close();
+  }
+}
+
+export class SharedVariables extends my2.SharedVariables {
+  public loadCount = 0;
+  public readonly stateEvents: my2.TestRunEvent[] = [];
+
+  public constructor() {
+    super(
+      logger,
+      settings.workspaceFolder,
+      async () => {
+        ++this.loadCount;
+        return undefined;
+      },
+      () => undefined,
+      (event: my2.TestRunEvent) => {
+        this.stateEvents.push(event);
+      },
+      () => undefined,
+      async () => undefined,
+      [],
+      null,
+      1000,
+      1000,
+      null,
+      1000,
+      false,
+      1,
+      false,
+      false,
+      'nothing',
+      'default',
+    );
+  }
+
+  public assertSimplifiedEqualStateEvents(expectedArr: my2.TestRunEvent[]): void {
+    simplifiedAssertEqualStateEvents(this.stateEvents, expectedArr);
+  }
+
+  public indexOfStateEvent(searchFor: my2.TestRunEvent): number {
+    return indexOfStateEvent(this.stateEvents, searchFor);
+  }
+
+  public assertStateEventSequence(before: my2.TestRunEvent, thanThis: my2.TestRunEvent): void {
+    stateEventSequence(this.stateEvents, before, thanThis);
+  }
+}
+
+export class RootSuite extends OrigRootSuite {
+  public constructor(shared: SharedVariables) {
+    super(undefined, shared);
+  }
+
+  public getGroup(...index: number[]): TestSuiteInfo {
+    let group = this as TestSuiteInfo;
+    for (let i = 0; i < index.length; i++) {
+      assert.ok(group.children.length > index[i], index[i].toString());
+      const next = group.children[index[i]];
+      if (next.type === 'suite') group = next;
+      else throw Error(`wrong type for ${index}[${i}]`);
+    }
+    return group;
+  }
+
+  public getTest(...index: number[]): TestInfo {
+    let group = this as TestSuiteInfo;
+    for (let i = 0; i < index.length; i++) {
+      assert.ok(group.children.length > index[i], index[i].toString());
+      const next = group.children[index[i]];
+      if (i + 1 === index.length) {
+        if (next.type === 'test') return next;
+        else throw Error(`wrong type for ${index}[${i}]`);
+      } else {
+        if (next.type === 'suite') group = next;
+        else throw Error(`wrong type for ${index}[${i}]`);
+      }
+    }
+    throw Error(`coudn't find test ${index}`);
   }
 }

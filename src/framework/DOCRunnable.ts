@@ -9,7 +9,7 @@ import { Suite } from '../Suite';
 import { DOCTest } from './DOCTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
-import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
+import { RunnableProperties } from '../RunnableProperties';
 import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { RootSuite } from '../RootSuite';
@@ -22,7 +22,7 @@ export class DOCRunnable extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
     rootSuite: RootSuite,
-    execInfo: RunnableSuiteProperties,
+    execInfo: RunnableProperties,
     docVersion: Version | undefined,
   ) {
     super(shared, rootSuite, execInfo, 'doctest', Promise.resolve(docVersion));

@@ -2,7 +2,7 @@ import * as cp from 'child_process';
 import * as pathlib from 'path';
 import * as fs from 'fs';
 
-import { RunnableSuiteProperties } from './RunnableSuiteProperties';
+import { RunnableProperties } from './RunnableProperties';
 import { AbstractTest, AbstractTestEvent } from './AbstractTest';
 import { Suite } from './Suite';
 import { TaskPool } from './TaskPool';
@@ -40,7 +40,7 @@ export abstract class AbstractRunnable {
   public constructor(
     protected readonly _shared: SharedVariables,
     protected readonly _rootSuite: RootSuite,
-    public readonly properties: RunnableSuiteProperties,
+    public readonly properties: RunnableProperties,
     public readonly frameworkName: string,
     public readonly frameworkVersion: Promise<Version | undefined>,
   ) {

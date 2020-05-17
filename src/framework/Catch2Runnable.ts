@@ -3,7 +3,7 @@ import { inspect, promisify } from 'util';
 import * as xml2js from 'xml2js';
 
 import * as c2fs from '../FSWrapper';
-import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
+import { RunnableProperties } from '../RunnableProperties';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { Suite } from '../Suite';
 import { Catch2Test } from './Catch2Test';
@@ -22,7 +22,7 @@ export class Catch2Runnable extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
     rootSuite: RootSuite,
-    execInfo: RunnableSuiteProperties,
+    execInfo: RunnableProperties,
     private readonly _catch2Version: Version | undefined,
   ) {
     super(shared, rootSuite, execInfo, 'Catch2', Promise.resolve(_catch2Version));
@@ -286,7 +286,7 @@ export class Catch2Runnable extends AbstractRunnable {
     return execParams;
   }
 
-  public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
+  public getDebugParams(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[] {
     const debugParams: string[] = [];
 
     const testNames = childrenToRun.map(c => (c as Catch2Test).getEscapedTestName());

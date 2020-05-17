@@ -6,7 +6,7 @@ import { Suite } from '../Suite';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { GoogleTest } from './GoogleTest';
 import { Parser } from 'xml2js';
-import { RunnableSuiteProperties } from '../RunnableSuiteProperties';
+import { RunnableProperties } from '../RunnableProperties';
 import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
@@ -20,7 +20,7 @@ export class GoogleRunnable extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
     rootSuite: RootSuite,
-    execInfo: RunnableSuiteProperties,
+    execInfo: RunnableProperties,
     private readonly _argumentPrefix: string,
     version: Promise<Version | undefined>,
   ) {
@@ -85,7 +85,7 @@ export class GoogleRunnable extends AbstractRunnable {
     return reloadResult;
   }
 
-  private _reloadFromStdOut(stdOutStr: string): RunnableReloadResult {
+  private _reloadFromString(stdOutStr: string): RunnableReloadResult {
     this.children = [];
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -211,7 +211,7 @@ export class GoogleRunnable extends AbstractRunnable {
         );
 
         try {
-          return await this._reloadFromStdOut(googleTestListOutput.stdout);
+          return await this._reloadFromString(googleTestListOutput.stdout);
         } catch (e) {
           this._shared.log.info('GoogleTest._reloadFromStdOut error', e, googleTestListOutput);
           throw e;

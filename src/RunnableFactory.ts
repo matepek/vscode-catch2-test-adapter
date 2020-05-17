@@ -1,5 +1,5 @@
 import * as c2fs from './FSWrapper';
-import { RunnableSuiteProperties } from './RunnableSuiteProperties';
+import { RunnableProperties } from './RunnableProperties';
 import { AbstractRunnable } from './AbstractRunnable';
 import { Catch2Runnable } from './framework/Catch2Runnable';
 import { GoogleRunnable } from './framework/GoogleRunnable';
@@ -10,7 +10,7 @@ import { Version } from './Util';
 import { ResolveRule } from './util/ResolveRule';
 import { RootSuite } from './RootSuite';
 
-export class RunnableSuiteFactory {
+export class RunnableFactory {
   public constructor(
     private readonly _shared: SharedVariables,
     private readonly _execName: string | undefined,
@@ -48,7 +48,7 @@ export class RunnableSuiteFactory {
             return new Catch2Runnable(
               this._shared,
               this._rootSuite,
-              new RunnableSuiteProperties(
+              new RunnableProperties(
                 this._execName,
                 this._execDescription,
                 this._varToValue,
@@ -74,7 +74,7 @@ export class RunnableSuiteFactory {
             return new GoogleRunnable(
               this._shared,
               this._rootSuite,
-              new RunnableSuiteProperties(
+              new RunnableProperties(
                 this._execName,
                 this._execDescription,
                 this._varToValue,
@@ -97,7 +97,7 @@ export class RunnableSuiteFactory {
             return new GoogleRunnable(
               this._shared,
               this._rootSuite,
-              new RunnableSuiteProperties(
+              new RunnableProperties(
                 this._execName,
                 this._execDescription,
                 this._varToValue,
@@ -124,7 +124,7 @@ export class RunnableSuiteFactory {
             return new DOCRunnable(
               this._shared,
               this._rootSuite,
-              new RunnableSuiteProperties(
+              new RunnableProperties(
                 this._execName,
                 this._execDescription,
                 this._varToValue,

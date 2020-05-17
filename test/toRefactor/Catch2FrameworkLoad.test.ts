@@ -98,7 +98,7 @@ describe(path.basename(__filename), function () {
       assert.deepStrictEqual(settings.getConfig().get<string>('test.executables'), 'execPath1.exe');
       assert.equal(adapter.root.children.length, 1);
 
-      suite1 = adapter.group1;
+      suite1 = adapter.group;
       example1.suite1.assert('execPath1.exe', ['s1t1', 's1t2'], suite1, uniqueIdC);
 
       assert.equal(suite1.children.length, 2);
@@ -1097,7 +1097,7 @@ describe(path.basename(__filename), function () {
 
       assert.equal(adapter.loadEvents.length, 2);
       assert.equal(adapter.root.children.length, 2);
-      suite1 = adapter.group1;
+      suite1 = adapter.group;
 
       assert.strictEqual(suite1.children.length, 1);
 
@@ -1389,7 +1389,7 @@ describe(path.basename(__filename), function () {
       startDebuggingStub.onFirstCall().resolves(false);
 
       try {
-        await adapter.debug([adapter.group1.children[0].id]);
+        await adapter.debug([adapter.group.children[0].id]);
       } catch (e) {
         //skip
       }

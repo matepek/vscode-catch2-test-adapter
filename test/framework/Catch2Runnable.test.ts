@@ -1,44 +1,21 @@
 import * as assert from 'assert';
 import * as pathlib from 'path';
-import { settings, Imitation, ChildProcessStub } from '../Common';
+import { Imitation, ChildProcessStub, SharedVariables } from '../Common';
 import * as sinon from 'sinon';
 import { Version } from '../../src/Util';
-import { SharedVariables } from '../../src/SharedVariables';
 import { Catch2Runnable } from '../../src/framework/Catch2Runnable';
 import { RootSuite } from '../../src/RootSuite';
-import { RunnableSuiteProperties } from '../../src/RunnableSuiteProperties';
-import { logger, expectedLoggedWarning } from '../LogOutputContent.test';
+import { RunnableProperties } from '../../src/RunnableProperties';
+import { expectedLoggedWarning } from '../LogOutputContent.test';
 import { RunnableReloadResult } from '../../src/AbstractRunnable';
 import { EOL } from 'os';
 
 ///
 
 describe(pathlib.basename(__filename), function () {
-  const sharedVariables = new SharedVariables(
-    logger,
-    settings.workspaceFolder,
-    async () => undefined,
-    () => undefined,
-    () => undefined,
-    () => undefined,
-    async () => undefined,
-    [],
-    null,
-    1000,
-    1000,
-    null,
-    1000,
-    false,
-    1,
-    false,
-    false,
-    'nothing',
-    'default',
-  );
+  const sharedVariables = new SharedVariables();
 
-  const rootSuite = new RootSuite(undefined, sharedVariables);
-
-  const runnableProperties = new RunnableSuiteProperties(
+  const runnableProperties = new RunnableProperties(
     'name',
     undefined,
     [
@@ -52,8 +29,10 @@ describe(pathlib.basename(__filename), function () {
     {},
   );
 
-  const createCatch2Runnable = (): Catch2Runnable =>
-    new Catch2Runnable(sharedVariables, rootSuite, runnableProperties, new Version(2, 11, 0));
+  const createCatch2Runnable = (): { runnable: Catch2Runnable; root: RootSuite } => {
+    const root = new RootSuite(undefined, sharedVariables);
+    return { root, runnable: new Catch2Runnable(sharedVariables, root, runnableProperties, new Version(2, 11, 0)) };
+  };
 
   type Catch2RunnablePriv = {
     _reloadChildren(): Promise<RunnableReloadResult>;
@@ -79,8 +58,8 @@ describe(pathlib.basename(__filename), function () {
 
   context('_reloadFromString', function () {
     it('should reload ex.1', async function () {
-      const catch2Runnable = createCatch2Runnable();
-      assert.strictEqual(catch2Runnable.tests.size, 0);
+      const { root, runnable } = createCatch2Runnable();
+      assert.strictEqual(runnable.tests.size, 0);
 
       const testOutput: string[] = [
         'Matching test cases:',
@@ -90,7 +69,7 @@ describe(pathlib.basename(__filename), function () {
         '      [a]',
         '1 matching test case',
       ];
-      const res = await getPriv(catch2Runnable)._reloadFromString(testOutput.join(EOL));
+      const res = getPriv(runnable)._reloadFromString(testOutput.join(EOL));
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -103,10 +82,20 @@ describe(pathlib.basename(__filename), function () {
       assert.strictEqual(tests[0].line, 12 - 1);
       assert.strictEqual(tests[0].skipped, false);
       assert.strictEqual(tests[0].staticEvent, undefined);
+
+      assert.strictEqual(root.children.length, 1);
+      const suite1 = root.children[0];
+      assert.strictEqual(suite1.label, 'name');
+      if (suite1.type === 'suite') {
+        assert.strictEqual(suite1.children.length, 1);
+        assert.strictEqual(suite1.children[0], tests[0]);
+      } else {
+        assert.strictEqual(suite1.type, 'suite');
+      }
     });
 
     it('should reload ex.2', async function () {
-      const catch2Runnable = createCatch2Runnable();
+      const { runnable } = createCatch2Runnable();
 
       const testOutput: string[] = [
         'Matching test cases:',
@@ -120,7 +109,7 @@ describe(pathlib.basename(__filename), function () {
         '      [b]',
         '2 matching test cases',
       ];
-      const res = await getPriv(catch2Runnable)._reloadFromString(testOutput.join(EOL));
+      const res = getPriv(runnable)._reloadFromString(testOutput.join(EOL));
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -144,7 +133,7 @@ describe(pathlib.basename(__filename), function () {
     });
 
     it('should reload with extra lines before and after', async function () {
-      const catch2Runnable = createCatch2Runnable();
+      const { runnable } = createCatch2Runnable();
 
       const testOutput: string[] = [
         'some random unrelated text....',
@@ -156,7 +145,7 @@ describe(pathlib.basename(__filename), function () {
         '1 matching test case',
         'bla bla bla',
       ];
-      const res = await getPriv(catch2Runnable)._reloadFromString(testOutput.join(EOL));
+      const res = getPriv(runnable)._reloadFromString(testOutput.join(EOL));
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -172,7 +161,7 @@ describe(pathlib.basename(__filename), function () {
     });
 
     it('should reload with too long filename', async function () {
-      const catch2Runnable = createCatch2Runnable();
+      const { runnable } = createCatch2Runnable();
 
       const testOutput: string[] = [
         'Matching test cases:',
@@ -198,7 +187,7 @@ describe(pathlib.basename(__filename), function () {
         '    (NO DESCRIPTION)',
         '5 matching test cases',
       ];
-      const res = await getPriv(catch2Runnable)._reloadFromString(testOutput.join(EOL));
+      const res = getPriv(runnable)._reloadFromString(testOutput.join(EOL));
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -246,7 +235,7 @@ describe(pathlib.basename(__filename), function () {
   context('reloadText', function () {
     it('should handle duplicated test name', async function () {
       expectedLoggedWarning('reloadChildren -> catch2TestListOutput.stderr');
-      const catch2Runnable = createCatch2Runnable();
+      const { runnable } = createCatch2Runnable();
 
       const testListErrOutput = [
         'error: TEST_CASE( "biggest rectangle" ) already defined.',
@@ -263,7 +252,7 @@ describe(pathlib.basename(__filename), function () {
         )
         .returns(new ChildProcessStub('Matching test cases:' + EOL, undefined, testListErrOutput.join(EOL)));
 
-      const res = await getPriv(catch2Runnable)._reloadChildren();
+      const res = await getPriv(runnable)._reloadChildren();
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
