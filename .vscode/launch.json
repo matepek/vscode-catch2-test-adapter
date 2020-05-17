@@ -12,7 +12,7 @@
         "--extensionTestsPath=${workspaceFolder}/out/test",
         "${workspaceFolder}/out/tmp/workspaceFolder"
       ],
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
       "preLaunchTask": "npm: watch",
       "env": {
         "C2AVCVA": "c:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat",

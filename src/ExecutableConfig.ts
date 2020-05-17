@@ -20,10 +20,10 @@ import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
 
 export interface RunTask {
-  before: string[];
-  beforeEach: string[];
-  after: string[];
-  afterEach: string[];
+  before?: string[];
+  beforeEach?: string[];
+  after?: string[];
+  afterEach?: string[];
 }
 
 export interface ExecutableConfigFrameworkSpecific {
@@ -247,7 +247,7 @@ export class ExecutableConfig implements vscode.Disposable {
               this._shared.log.info('dependsOn watcher event:', fsPath);
               const tests: AbstractTest[] = [];
               for (const runnable of this._runnables) tests.push(...runnable[1].tests);
-              this._shared.retire(tests);
+              this._shared.sendRetireEvent(tests);
             });
           } else {
             absPatterns.push(p.absPattern);
@@ -264,7 +264,7 @@ export class ExecutableConfig implements vscode.Disposable {
             this._shared.log.info('dependsOn watcher event:', fsPath);
             const tests: AbstractTest[] = [];
             for (const runnable of this._runnables) tests.push(...runnable[1].tests);
-            this._shared.retire(tests);
+            this._shared.sendRetireEvent(tests);
           });
         }
       } catch (e) {
@@ -417,7 +417,7 @@ export class ExecutableConfig implements vscode.Disposable {
           .then(() => {
             this._runnables.set(filePath, runnable); // it might be set already but we don't care
             this._lastEventArrivedAt.delete(filePath);
-            this._shared.retire(runnable.tests);
+            this._shared.sendRetireEvent(runnable.tests);
           })
           .then(resolve, reject);
       }).catch((reason: Error & { code: undefined | number }) => {

@@ -135,6 +135,8 @@ export class Imitation {
     .stub(vscode.workspace, 'createFileSystemWatcher')
     .named('vscode.createFileSystemWatcher');
 
+  public readonly fsStat = this.sinonSandbox.stub(fs, 'stat').named('stat');
+
   public readonly fsAccessStub = (this.sinonSandbox.stub(fs, 'access').named('access') as unknown) as sinon.SinonStub<
     [fs.PathLike, string, (err: NodeJS.ErrnoException | null) => void],
     void
@@ -156,6 +158,7 @@ export class Imitation {
     this.sinonSandbox.reset();
     this.spawnStub.callThrough();
     this.vsfsWatchStub.callThrough();
+    this.fsStat.callThrough();
     this.fsAccessStub.callThrough();
     this.fsReadFileSyncStub.callThrough();
     this.vsFindFilesStub.callThrough();

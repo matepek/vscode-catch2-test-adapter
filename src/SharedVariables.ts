@@ -7,8 +7,6 @@ import { ResolveRule } from './util/ResolveRule';
 
 export type TestRunEvent = TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent;
 
-type TestStateEmitterType = vscode.EventEmitter<TestRunEvent>;
-
 export class SharedVariables implements vscode.Disposable {
   private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
   public readonly taskPool: TaskPool;
@@ -16,10 +14,10 @@ export class SharedVariables implements vscode.Disposable {
   public constructor(
     public readonly log: LoggerWrapper,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
-    public readonly testStatesEmitter: TestStateEmitterType,
     public readonly loadWithTask: (task: () => Promise<void | Error[]>) => Promise<void>,
-    public readonly sendTestEvents: (testEvents: AbstractTestEvent[]) => void,
-    public readonly retire: (tests: Iterable<AbstractTest>) => void,
+    public readonly sendRetireEvent: (tests: Iterable<AbstractTest>) => void,
+    public readonly sendTestEvent: (event: TestRunEvent) => void,
+    public readonly sendTestAndParentEvents: (testEvents: AbstractTestEvent[]) => void,
     public readonly executeTask: (
       taskName: string,
       varsToResolve: readonly ResolveRule[],

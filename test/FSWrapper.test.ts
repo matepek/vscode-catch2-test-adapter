@@ -9,8 +9,8 @@ import { ChildProcessStub, isWin } from './Common';
 
 ///
 
-describe('FsWrapper.spawnAsync', function() {
-  it('echoes', async function() {
+describe('FsWrapper.spawnAsync', function () {
+  it('echoes', async function () {
     const isWin = process.platform === 'win32';
     const opt: SpawnOptions = isWin ? { shell: true } : {};
     const r = await spawnAsync('echo', ['apple'], opt);
@@ -21,7 +21,7 @@ describe('FsWrapper.spawnAsync', function() {
     assert.equal(r.status, 0);
   });
 
-  it('not existing', function() {
+  it('not existing', function () {
     let hasErr = false;
     return spawnAsync('notexisting.exe')
       .then(
@@ -38,7 +38,7 @@ describe('FsWrapper.spawnAsync', function() {
   });
 });
 
-describe('fs.spawn vs FsWrapper.spawnAsync', function() {
+describe('fs.spawn vs FsWrapper.spawnAsync', function () {
   function compare(actual: SpawnReturns, expected: cp.SpawnSyncReturns<string>): void {
     assert.deepStrictEqual(actual.signal, expected.signal);
     assert.deepStrictEqual(actual.status, expected.status);
@@ -49,7 +49,7 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function() {
     assert.deepStrictEqual(actual.error, expected.error);
   }
 
-  it('echo apple', async function() {
+  it('echo apple', async function () {
     const fsRes = cp.spawnSync('echo', ['apple'], { encoding: 'utf8' });
     assert.strictEqual(fsRes.signal, null);
     assert.strictEqual(fsRes.status, 0);
@@ -65,7 +65,7 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function() {
   });
 
   if (!isWin) {
-    it('ls --wrongparam', async function() {
+    it('ls --wrongparam', async function () {
       const fsRes = cp.spawnSync('ls', ['--wrongparam'], { encoding: 'utf8' });
       assert.strictEqual(fsRes.signal, null);
       assert.notStrictEqual(fsRes.status, 0);
@@ -82,7 +82,7 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function() {
     });
   }
 
-  it('<not existing>', async function() {
+  it('<not existing>', async function () {
     const fsRes = cp.spawnSync('fnksdlfnlskfdn', [], { encoding: 'utf8' });
     assert.strictEqual(fsRes.signal, null);
     assert.strictEqual(fsRes.status, null);
@@ -102,16 +102,16 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function() {
   });
 });
 
-describe('path', function() {
-  describe('Uri', function() {
-    it('sould resolve', function() {
+describe('path', function () {
+  describe('Uri', function () {
+    it('sould resolve', function () {
       const a = vscode.Uri.file('/a/b/c');
       const b = vscode.Uri.file('/a/b/c/d/e');
       assert.equal(path.relative(a.fsPath, b.fsPath), path.normalize('d/e'));
     });
   });
-  describe('extname', function() {
-    it('extname', function() {
+  describe('extname', function () {
+    it('extname', function () {
       const filename = path.basename('bar/foo/base.ext2.ext1');
       assert.equal(filename, 'base.ext2.ext1');
 
@@ -134,7 +134,7 @@ describe('path', function() {
       assert.equal(base3Filename, 'base');
     });
 
-    it('.extname', function() {
+    it('.extname', function () {
       const filename = path.basename('bar/foo/.base.ext2.ext1');
       assert.equal(filename, '.base.ext2.ext1');
 
@@ -159,12 +159,12 @@ describe('path', function() {
   });
 });
 
-describe('vscode.Uri', function() {
-  it('!=', function() {
+describe('vscode.Uri', function () {
+  it('!=', function () {
     assert.ok(vscode.Uri.file(__filename) != vscode.Uri.file(__filename));
   });
 
-  it('normalizes', function() {
+  it('normalizes', function () {
     const parent = path.dirname(__filename);
     const filename = path.basename(__filename);
     assert.ok(!parent.endsWith('/') && !parent.endsWith('\\'));
@@ -175,8 +175,8 @@ describe('vscode.Uri', function() {
   });
 });
 
-describe('ChildProcessFake', function() {
-  it('should works', async function() {
+describe('ChildProcessFake', function () {
+  it('should works', async function () {
     const cp = new ChildProcessStub('alma');
     let output = '';
     cp.stdout.on('data', (d: string) => {
@@ -189,7 +189,7 @@ describe('ChildProcessFake', function() {
     });
   });
 
-  it('should works2', async function() {
+  it('should works2', async function () {
     this.timeout(2000);
     this.slow(1500);
     const cp = new ChildProcessStub();

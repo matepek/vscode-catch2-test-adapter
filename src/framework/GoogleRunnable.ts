@@ -290,7 +290,7 @@ export class GoogleRunnable extends AbstractRunnable {
 
               data.currentChild = test;
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
-              this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
+              this._shared.sendTestEvent(data.currentChild.getStartEvent());
             } else {
               this._shared.log.info('TestCase not found in children', data.currentTestCaseNameFull);
             }
@@ -312,7 +312,7 @@ export class GoogleRunnable extends AbstractRunnable {
               try {
                 const ev = data.currentChild.parseAndProcessTestCase(testCase, rngSeed, runInfo.timeout, undefined);
 
-                this._shared.testStatesEmitter.fire(ev);
+                this._shared.sendTestEvent(ev);
 
                 data.processedTestCases.push(data.currentChild);
               } catch (e) {
@@ -331,7 +331,7 @@ export class GoogleRunnable extends AbstractRunnable {
                   ].join('\n'),
                 };
 
-                this._shared.testStatesEmitter.fire(data.currentChild.lastRunEvent);
+                this._shared.sendTestEvent(data.currentChild.lastRunEvent);
               }
             } else {
               this._shared.log.info('Test case found without TestInfo: ', this, '; ' + testCase);
@@ -397,7 +397,7 @@ export class GoogleRunnable extends AbstractRunnable {
             }
 
             data.currentChild.lastRunEvent = ev;
-            this._shared.testStatesEmitter.fire(ev);
+            this._shared.sendTestEvent(ev);
           } else {
             this._shared.log.warn('data.inTestCase: ', data);
           }
@@ -437,7 +437,7 @@ export class GoogleRunnable extends AbstractRunnable {
                   this._shared.log.error('parsing and processing test', e, testCase);
                 }
               }
-              events.length && this._shared.sendTestEvents(events);
+              events.length && this._shared.sendTestAndParentEvents(events);
             },
             (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.

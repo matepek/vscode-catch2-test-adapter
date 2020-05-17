@@ -230,21 +230,21 @@ export class DOCRunnable extends AbstractRunnable {
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
 
               if (!skipped) {
-                this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
+                this._shared.sendTestEvent(data.currentChild.getStartEvent());
                 data.stdoutBuffer = data.stdoutBuffer.substr(m.index!);
               } else {
                 this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has skipped.');
 
                 // this always comes so we skip it
                 //const testCaseXml = m[0];
-                //this._shared.testStatesEmitter.fire(data.currentChild.getStartEvent());
+                //this._shared.sendTestEvent(data.currentChild.getStartEvent());
                 // try {
                 //   const ev: TestEvent = data.currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo);
                 //   data.processedTestCases.push(data.currentChild);
-                //   this._shared.testStatesEmitter.fire(ev);
+                //   this._shared.sendTestEvent(ev);
                 // } catch (e) {
                 //   this._shared.log.error('parsing and processing test', e, data, testCaseXml);
-                //   this._shared.testStatesEmitter.fire({
+                //   this._shared.sendTestEvent({
                 //     type: 'test',
                 //     test: data.currentChild,
                 //     state: 'errored',
@@ -277,12 +277,12 @@ export class DOCRunnable extends AbstractRunnable {
                   data.stderrBuffer,
                 );
 
-                this._shared.testStatesEmitter.fire(ev);
+                this._shared.sendTestEvent(ev);
 
                 data.processedTestCases.push(data.currentChild);
               } catch (e) {
                 this._shared.log.error('parsing and processing test', e, data, chunks, testCaseXml);
-                this._shared.testStatesEmitter.fire({
+                this._shared.sendTestEvent({
                   type: 'test',
                   test: data.currentChild,
                   state: 'errored',
@@ -371,7 +371,7 @@ export class DOCRunnable extends AbstractRunnable {
             }
 
             data.currentChild.lastRunEvent = ev;
-            this._shared.testStatesEmitter.fire(ev);
+            this._shared.sendTestEvent(ev);
           } else {
             this._shared.log.warn('data.inTestCase: ', data);
           }
@@ -425,7 +425,7 @@ export class DOCRunnable extends AbstractRunnable {
                 }
               }
 
-              events.length && this._shared.sendTestEvents(events);
+              events.length && this._shared.sendTestAndParentEvents(events);
             },
             (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.

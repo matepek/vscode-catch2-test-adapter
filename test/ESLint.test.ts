@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-describe(path.basename(__filename), function() {
+describe(path.basename(__filename), function () {
   require('mocha-eslint')('src/**/*.ts', {
     // Specify style of output
     formatter: 'compact', // Defaults to `stylish`

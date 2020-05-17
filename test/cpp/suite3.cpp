@@ -31,9 +31,13 @@ TEST_CASE("SECTION tree") {
   }
 }
 
+#include <chrono>
+#include <thread>
+
+
 TEST_CASE("name with * character") {}
-TEST_CASE("spec ! char") {}
-TEST_CASE("spec @ char") {}
+TEST_CASE("spec ! char") { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
+TEST_CASE("spec @ char") { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
 TEST_CASE("spec # char") {}
 TEST_CASE("spec $ char") {}
 TEST_CASE("spec % char") {}

@@ -85,7 +85,7 @@ afterEach(async function () {
     }
 
     for (const e of spyWarning.args) {
-      console.warn(`Logged WANRING: ${e}`);
+      console.warn(`Logged WARNING: ${e}`);
     }
   }
 });

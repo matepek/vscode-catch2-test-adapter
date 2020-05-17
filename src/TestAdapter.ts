@@ -120,6 +120,18 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._disposables.push(this._testsEmitter);
     this._disposables.push(this._testStatesEmitter);
 
+    const loadWithTask = async (task: () => Promise<void | Error[]>): Promise<void> => {
+      this._sendLoadingEventIfNeeded();
+
+      try {
+        const errors = await task();
+        this._sendLoadingFinishedEventIfNeeded(errors);
+      } catch (reason) {
+        log.warnS('loadTask exception', reason);
+        this._sendLoadingFinishedEventIfNeeded([reason]);
+      }
+    };
+
     // TODO remove debounce config and package
     const sendRetireEvent = (tests: Iterable<AbstractTest>): void => {
       const ids: string[] = [];
@@ -127,7 +139,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._retireEmitter.fire({ tests: ids });
     };
 
-    const sendTestStateEvents = (testEvents: AbstractTestEvent[]): void => {
+    const sendTestEvent = (event: TestRunEvent): void => {
+      this._testStatesEmitter.fire(event);
+    };
+
+    const sendTestAndParentEvents = (testEvents: AbstractTestEvent[]): void => {
       if (testEvents.length > 0) {
         this._rootSuite.sendStartEventIfNeeded(testEvents.map(v => v.test.id));
 
@@ -135,6 +151,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           const test = this._rootSuite.findTestById(testEvents[i].test);
 
           if (test) {
+            // TODO we might dont need the paretn events: dont forget to adjust RealCatch2 tests
             const route = [...test.route()];
             reverse(route)(v => v.sendRunningEventIfNeeded());
 
@@ -206,18 +223,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
     };
 
-    const loadWithTask = async (task: () => Promise<void | Error[]>): Promise<void> => {
-      this._sendLoadingEventIfNeeded();
-
-      try {
-        const errors = await task();
-        this._sendLoadingFinishedEventIfNeeded(errors);
-      } catch (reason) {
-        log.warnS('loadTask exception', reason);
-        this._sendLoadingFinishedEventIfNeeded([reason]);
-      }
-    };
-
     const variableToValue: ResolveRule[] = [
       { resolve: '${workspaceName}', rule: this.workspaceFolder.name }, // beware changing this line or the order
       { resolve: '${workspaceDirectory}', rule: this.workspaceFolder.uri.fsPath },
@@ -240,10 +245,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._shared = new SharedVariables(
       log,
       this.workspaceFolder,
-      this._testStatesEmitter,
       loadWithTask,
-      sendTestStateEvents,
       sendRetireEvent,
+      sendTestEvent,
+      sendTestAndParentEvents,
       executeTask,
       variableToValue,
       configuration.getRandomGeneratorSeed(),
@@ -455,6 +460,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     try {
       this._shared.log.info('Using debug');
+
+      if (this._rootSuite.findChildSuite(s => tests.indexOf(s.id) != -1)) {
+        this._shared.log.info('unsupported suite debug', tests);
+        throw Error('Suites cannot be debugged.');
+      }
 
       const runnableToTestMap = tests
         .map(t => this._rootSuite.findTestById(t))

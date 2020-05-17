@@ -14,7 +14,7 @@ import {
 } from 'vscode-test-adapter-api';
 import { inspect } from 'util';
 import { EOL } from 'os';
-import { example1 } from './example1';
+import { example1 } from '../example1';
 import {
   TestAdapter,
   Imitation,
@@ -24,9 +24,9 @@ import {
   FileSystemWatcherStub,
   isWin,
   waitForMilisec,
-} from './Common';
-import { TestRunEvent } from '../src/SharedVariables';
-import { expectedLoggedWarning } from './LogOutputContent.test';
+} from '../Common';
+import { TestRunEvent } from '../../src/SharedVariables';
+import { expectedLoggedWarning } from '../LogOutputContent.test';
 
 ///
 
@@ -128,20 +128,11 @@ describe(path.basename(__filename), function () {
           type: 'test',
           state: 'passed',
           test: s1t1,
-          decorations: [],
-          description: '(0ms)',
-          message: '⏱Duration: 0.000112 second(s).',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱Duration: 0ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (>0ms)`,
-          tooltip:
-            'Name: execPath1.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: >0ms',
         },
         { type: 'finished' },
       ];
@@ -162,38 +153,17 @@ describe(path.basename(__filename), function () {
           type: 'test',
           state: 'passed',
           test: s1t1,
-          decorations: [],
-          description: '(0ms)',
-          message: '⏱Duration: 0.000132 second(s).',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱Duration: 0ms',
         },
         { type: 'test', state: 'running', test: s1t2 },
         {
           type: 'test',
           state: 'failed',
           test: s1t2,
-          decorations: [
-            {
-              file: path.normalize('../vscode-catch2-test-adapter/src/test/suite1.cpp'),
-              line: 14,
-              message: '⬅ false',
-              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
-            },
-          ],
-          description: '(0ms)',
-          tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message:
-            '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (0ms)`,
-          tooltip:
-            'Name: execPath1.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -214,38 +184,17 @@ describe(path.basename(__filename), function () {
           type: 'test',
           state: 'passed',
           test: s1t1,
-          decorations: [],
-          description: '(0ms)',
-          message: '⏱Duration: 0.000132 second(s).',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱Duration: 0ms',
         },
         { type: 'test', state: 'running', test: s1t2 },
         {
           type: 'test',
           state: 'failed',
           test: s1t2,
-          decorations: [
-            {
-              file: path.normalize('../vscode-catch2-test-adapter/src/test/suite1.cpp'),
-              line: 14,
-              message: '⬅ false',
-              hover: '❕Original:  std::false_type::value\n❗️Expanded:  false',
-            },
-          ],
-          description: '(0ms)',
-          tooltip: 'Name: s1t2\nDescription: tag1\n⏱Duration: 0ms',
-          message:
-            '⏱Duration: 0.000204 second(s).\n  Expression failed (at ../vscode-catch2-test-adapter/src/test/suite1.cpp:15):\n    ❕Original:  std::false_type::value\n    ❗️Expanded:  false',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (0ms)`,
-          tooltip:
-            'Name: execPath1.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n  - failed: 1\n⏱Duration: 0ms',
         },
         { type: 'finished' },
       ];
@@ -274,20 +223,11 @@ describe(path.basename(__filename), function () {
           type: 'test',
           state: 'passed',
           test: s1t1,
-          decorations: [],
-          description: '(0ms)',
-          message: '⏱Duration: 0.000112 second(s).',
-          tooltip: 'Name: s1t1\nDescription: tag1\n⏱Duration: 0ms',
         },
         {
           type: 'suite',
           state: 'completed',
           suite: suite1,
-          description: `.${pathlib.sep} (>0ms)`,
-          tooltip:
-            'Name: execPath1.exe\nDescription: .' +
-            pathlib.sep +
-            '\n\nPath: <masked>\nCwd: <masked>\n\nTests: 2\n  - passed: 1\n⏱Duration: >0ms',
         },
         { type: 'finished' },
       ];

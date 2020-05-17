@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.2.2]
+
+### Fixed
+
+- Error message in case of attempt of debugging suites.
+
 ## [3.2.1] - 2020-05-16
 
 ### Added

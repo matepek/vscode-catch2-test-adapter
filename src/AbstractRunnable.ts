@@ -485,11 +485,11 @@ export abstract class AbstractRunnable {
     taskPool: TaskPool,
     cancellationToken: CancellationToken,
   ): Promise<void> {
-    if (this.properties.runTask[type].length > 0) {
+    if (this.properties.runTask[type]?.length) {
       return taskPool.scheduleTask(async () => {
         try {
           // sequential execution of tasks
-          for (const taskName of this.properties.runTask[type]) {
+          for (const taskName of this.properties.runTask[type] || []) {
             const exitCode = await this._shared.executeTask(taskName, this.properties.varToValue, cancellationToken);
 
             if (exitCode !== undefined) {
@@ -668,10 +668,11 @@ export abstract class AbstractRunnable {
       const event = staticEvent || test.staticEvent;
       if (event) {
         event.test = test;
+        // TODO: we might dont need this at all
         const route = [...test.route()];
         reverse(route)((s: Suite): void => s.sendRunningEventIfNeeded());
-        this._shared.testStatesEmitter.fire(test!.getStartEvent());
-        this._shared.testStatesEmitter.fire(event);
+        this._shared.sendTestEvent(test!.getStartEvent());
+        this._shared.sendTestEvent(event);
         route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
       }
     });

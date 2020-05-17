@@ -3,9 +3,9 @@ import * as assert from 'assert';
 import * as pathlib from 'path';
 import * as sinon from 'sinon';
 import { EOL } from 'os';
-import { example1 } from './example1';
-import { TestAdapter, Imitation, settings, ChildProcessStub } from './Common';
-import { TestRunEvent } from '../src/SharedVariables';
+import { example1 } from '../example1';
+import { TestAdapter, Imitation, settings, ChildProcessStub } from '../Common';
+import { TestRunEvent } from '../../src/SharedVariables';
 
 ///
 

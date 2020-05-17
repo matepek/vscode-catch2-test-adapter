@@ -4,7 +4,7 @@ import * as path from 'path';
 
 import { TaskQueue } from '../src/TaskQueue';
 
-describe(path.basename(__filename), function() {
+describe(path.basename(__filename), function () {
   async function waitFor(test: Mocha.Context, condition: Function, timeout = 1000): Promise<void> {
     const start = Date.now();
     let c = await condition();
@@ -15,16 +15,16 @@ describe(path.basename(__filename), function() {
     return c;
   }
 
-  context('a<--b<--c', function() {
+  context('a<--b<--c', function () {
     const a = new TaskQueue(undefined, 'a');
     const b = new TaskQueue([a], 'b');
     const c = new TaskQueue([b], 'c');
 
-    it('a<--c', function() {
+    it('a<--c', function () {
       c.dependsOn([a]);
     });
 
-    it('$x<--$x throws', function() {
+    it('$x<--$x throws', function () {
       assert.throws(() => {
         a.dependsOn([a]);
       });
@@ -36,20 +36,20 @@ describe(path.basename(__filename), function() {
       });
     });
 
-    it('c<--b throws', function() {
+    it('c<--b throws', function () {
       assert.throws(() => {
         b.dependsOn([c]);
       });
     });
 
-    it('c<--a throws', function() {
+    it('c<--a throws', function () {
       assert.throws(() => {
         a.dependsOn([c]);
       });
     });
   });
 
-  it('promise practice 1', async function() {
+  it('promise practice 1', async function () {
     let resolve: Function;
     let second = false;
     new Promise(r => {
@@ -66,7 +66,7 @@ describe(path.basename(__filename), function() {
     assert.ok(second);
   });
 
-  it('promise practice 2', async function() {
+  it('promise practice 2', async function () {
     let resolve: Function;
     let second = false;
     const p = new Promise(r => {
@@ -86,7 +86,7 @@ describe(path.basename(__filename), function() {
     assert.ok(second);
   });
 
-  context('example 1', function() {
+  context('example 1', function () {
     /**
      *  node1 <___ nodeD
      *  node2 <___/
@@ -95,7 +95,7 @@ describe(path.basename(__filename), function() {
     const node2 = new TaskQueue([], 'node2');
     const nodeD = new TaskQueue([node1, node2], 'nodeD');
 
-    it('add:depends before', async function() {
+    it('add:depends before', async function () {
       this.slow(300);
       let startD: Function;
       let hasRunDatOnce = false;
