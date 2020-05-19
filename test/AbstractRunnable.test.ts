@@ -451,12 +451,7 @@ describe(pathlib.basename(__filename), function () {
       await runnable.run([], true, shared.taskPool, new CancellationTokenSource().token);
 
       // static event
-      shared.assertSimplifiedEqualStateEvents([
-        { type: 'suite', suite: root.getGroup(0), state: 'running' },
-        { type: 'test', test: root.getTest(0, 2), state: 'running' },
-        { type: 'test', test: root.getTest(0, 2), state: 'errored' },
-        { type: 'suite', suite: root.getGroup(0), state: 'completed' },
-      ]);
+      shared.assertSimplifiedEqualStateEvents([{ type: 'test', test: root.getTest(0, 2), state: 'errored' }]);
 
       // because 2 normal, 1 staticevent and 1 skipped
       assert.deepStrictEqual(
@@ -494,12 +489,7 @@ describe(pathlib.basename(__filename), function () {
       await runnable.run([staticEvent.id], false, shared.taskPool, new CancellationTokenSource().token);
 
       // static event
-      shared.assertSimplifiedEqualStateEvents([
-        { type: 'suite', suite: root.getGroup(0), state: 'running' },
-        { type: 'test', test: root.getTest(0, 2), state: 'running' },
-        { type: 'test', test: root.getTest(0, 2), state: 'errored' },
-        { type: 'suite', suite: root.getGroup(0), state: 'completed' },
-      ]);
+      shared.assertSimplifiedEqualStateEvents([{ type: 'test', test: root.getTest(0, 2), state: 'errored' }]);
 
       assert.deepStrictEqual(
         spawnStub.args.map(a => a[1]),

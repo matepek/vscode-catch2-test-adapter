@@ -481,35 +481,6 @@ export abstract class AbstractRunnable {
     }
   }
 
-  public async runTasks(
-    type: 'beforeEach' | 'afterEach',
-    taskPool: TaskPool,
-    cancellationToken: CancellationToken,
-  ): Promise<void> {
-    if (this.properties.runTask[type]?.length) {
-      return taskPool.scheduleTask(async () => {
-        try {
-          // sequential execution of tasks
-          for (const taskName of this.properties.runTask[type] || []) {
-            const exitCode = await this._shared.executeTask(taskName, this.properties.varToValue, cancellationToken);
-
-            if (exitCode !== undefined) {
-              if (exitCode !== 0) {
-                throw Error(
-                  `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.${type}\`)`,
-                );
-              }
-            }
-          }
-        } catch (e) {
-          throw Error(
-            `One of the tasks of the \`testMate.test.advancedExecutables:runTask.${type}\` array has failed: ` + e,
-          );
-        }
-      });
-    }
-  }
-
   private _runInner(
     childrenToRun: readonly AbstractTest[],
     taskPool: TaskPool,
@@ -619,6 +590,35 @@ export abstract class AbstractRunnable {
       .finally(() => this._shared.log.info('proc finished:', this.properties.path));
   }
 
+  public async runTasks(
+    type: 'beforeEach' | 'afterEach',
+    taskPool: TaskPool,
+    cancellationToken: CancellationToken,
+  ): Promise<void> {
+    if (this.properties.runTask[type]?.length) {
+      return taskPool.scheduleTask(async () => {
+        try {
+          // sequential execution of tasks
+          for (const taskName of this.properties.runTask[type] || []) {
+            const exitCode = await this._shared.executeTask(taskName, this.properties.varToValue, cancellationToken);
+
+            if (exitCode !== undefined) {
+              if (exitCode !== 0) {
+                throw Error(
+                  `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.${type}\`)`,
+                );
+              }
+            }
+          }
+        } catch (e) {
+          throw Error(
+            `One of the tasks of the \`testMate.test.advancedExecutables:runTask.${type}\` array has failed: ` + e,
+          );
+        }
+      });
+    }
+  }
+
   protected _findTest(pred: (t: AbstractTest) => boolean): AbstractTest | undefined {
     for (const t of this._tests) if (pred(t)) return t;
     return undefined;
@@ -669,12 +669,9 @@ export abstract class AbstractRunnable {
       const event = staticEvent || test.staticEvent;
       if (event) {
         event.test = test;
-        // TODO: we might dont need this at all
-        const route = [...test.route()];
-        reverse(route)((s: Suite): void => s.sendRunningEventIfNeeded());
-        this._shared.sendTestEvent(test!.getStartEvent());
-        this._shared.sendTestEvent(event);
-        route.forEach((s: Suite): void => s.sendCompletedEventIfNeeded());
+        // we dont need to send events about ancestors: https://github.com/hbenl/vscode-test-explorer/issues/141
+        // probably we dont need this either: this._shared.sendTestEvent(test!.getStartEvent());
+        this._shared.sendTestRunEvent(event);
       }
     });
   }

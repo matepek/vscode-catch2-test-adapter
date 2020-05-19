@@ -101,7 +101,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
       this._runningPromise = new Promise(r => (this._runningPromiseResolver = r));
       this._cancellationTokenSource = new vscode.CancellationTokenSource();
       this._shared.log.debug('RootSuite start event fired', this.label);
-      this._shared.sendTestEvent({ type: 'started', tests: tests });
+      this._shared.sendTestRunEvent({ type: 'started', tests: tests });
       // TODO:future https://github.com/hbenl/vscode-test-explorer/issues/141
     }
   }
@@ -115,11 +115,11 @@ export class RootSuite extends Suite implements vscode.Disposable {
 
     if (this._runningCounter === 1) {
       this._shared.log.debug('RootSuite finished event fired', this.label);
-      this._shared.sendTestEvent({ type: 'finished' });
-      this._runningCounter -= 1;
+      this._shared.sendTestRunEvent({ type: 'finished' });
       this._runningPromiseResolver();
       this._cancellationTokenSource?.dispose();
     }
+    this._runningCounter -= 1;
   }
 
   public sendRunningEventIfNeeded(): void {

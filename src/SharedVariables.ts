@@ -16,8 +16,8 @@ export class SharedVariables implements vscode.Disposable {
     public readonly workspaceFolder: vscode.WorkspaceFolder,
     public readonly loadWithTask: (task: () => Promise<void | Error[]>) => Promise<void>,
     public readonly sendRetireEvent: (tests: Iterable<AbstractTest>) => void,
-    public readonly sendTestEvent: (event: TestRunEvent) => void,
-    public readonly sendTestAndParentEvents: (testEvents: AbstractTestEvent[]) => void,
+    public readonly sendTestRunEvent: (event: TestRunEvent) => void,
+    public readonly sendTestEvents: (testEvents: AbstractTestEvent[]) => void,
     public readonly executeTask: (
       taskName: string,
       varsToResolve: readonly ResolveRule[],

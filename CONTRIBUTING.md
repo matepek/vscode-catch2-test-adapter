@@ -46,6 +46,7 @@ Then Travis will publish it automatically.
 
 ## TODOs
 
+- https://www.npmjs.com/package/fast-xml-parser
 - doctest: supporting test suites
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip, gmock_verbose
 - gaze is not good enough: detects change and delete, but not creation

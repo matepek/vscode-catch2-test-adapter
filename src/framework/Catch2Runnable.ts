@@ -374,7 +374,7 @@ export class Catch2Runnable extends AbstractRunnable {
 
               data.currentChild = test;
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
-              this._shared.sendTestEvent(data.currentChild.getStartEvent());
+              this._shared.sendTestRunEvent(data.currentChild.getStartEvent());
             } else {
               this._shared.log.info('TestCase not found in children', name);
             }
@@ -397,12 +397,12 @@ export class Catch2Runnable extends AbstractRunnable {
                   data.stderrBuffer,
                 );
 
-                this._shared.sendTestEvent(ev);
+                this._shared.sendTestRunEvent(ev);
 
                 data.processedTestCases.push(data.currentChild);
               } catch (e) {
                 this._shared.log.error('parsing and processing test', e, data, chunks, testCaseXml);
-                this._shared.sendTestEvent({
+                this._shared.sendTestRunEvent({
                   type: 'test',
                   test: data.currentChild,
                   state: 'errored',
@@ -491,7 +491,7 @@ export class Catch2Runnable extends AbstractRunnable {
             }
 
             data.currentChild.lastRunEvent = ev;
-            this._shared.sendTestEvent(ev);
+            this._shared.sendTestRunEvent(ev);
           } else {
             this._shared.log.warn('data.inTestCase: ', data);
           }
@@ -543,7 +543,7 @@ export class Catch2Runnable extends AbstractRunnable {
                   this._shared.log.error('parsing and processing test', e, testCaseXml);
                 }
               }
-              events.length && this._shared.sendTestAndParentEvents(events);
+              events.length && this._shared.sendTestEvents(events);
             },
             (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.

@@ -139,8 +139,8 @@ describe(path.basename(__filename), function () {
         2 + //suite2 start,fin
         2 * 2 + // suite2 tests
         2 + //suite3 start,fin
-        35 * 2 + // suite3 tests
-          6 * 2, // because old catch2 is buggy and we send staticEvent for 6 tests with parent
+        29 * 2 + // suite3 tests
+          6 * 1, // because old catch2 is buggy and we send staticEvent for 6 tests with parent
         inspect(
           adapter.stateEvents.map((v, i) => {
             if (v.type === 'suite' && typeof v.suite != 'string')

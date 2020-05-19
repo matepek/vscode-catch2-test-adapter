@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/node';
 
 import { LoggerWrapper } from './LoggerWrapper';
 import { RootSuite } from './RootSuite';
-import { generateId, reverse } from './Util';
+import { generateId } from './Util';
 import { TaskQueue } from './TaskQueue';
 import { SharedVariables, TestRunEvent } from './SharedVariables';
 import { Catch2Section, Catch2Test } from './framework/Catch2Test';
@@ -139,11 +139,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this._retireEmitter.fire({ tests: ids });
     };
 
-    const sendTestEvent = (event: TestRunEvent): void => {
+    const sendTestRunEvent = (event: TestRunEvent): void => {
       this._testStatesEmitter.fire(event);
     };
 
-    const sendTestAndParentEvents = (testEvents: AbstractTestEvent[]): void => {
+    const sendTestEventsWithStartAndFin = (testEvents: AbstractTestEvent[]): void => {
       if (testEvents.length > 0) {
         this._rootSuite.sendStartEventIfNeeded(testEvents.map(v => v.test.id));
 
@@ -151,14 +151,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           const test = this._rootSuite.findTestById(testEvents[i].test);
 
           if (test) {
+            // we dont need to send events about ancestors: https://github.com/hbenl/vscode-test-explorer/issues/141
             // TODO we might dont need the paretn events: dont forget to adjust RealCatch2 tests
-            const route = [...test.route()];
-            reverse(route)(v => v.sendRunningEventIfNeeded());
-
-            this._testStatesEmitter.fire(test.getStartEvent());
             this._testStatesEmitter.fire(testEvents[i]);
-
-            route.forEach(v => v.sendCompletedEventIfNeeded());
           } else {
             log.error('sendTestEventEmitter.event', testEvents[i], this._rootSuite);
           }
@@ -247,8 +242,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       this.workspaceFolder,
       loadWithTask,
       sendRetireEvent,
-      sendTestEvent,
-      sendTestAndParentEvents,
+      sendTestRunEvent,
+      sendTestEventsWithStartAndFin,
       executeTask,
       variableToValue,
       configuration.getRandomGeneratorSeed(),
