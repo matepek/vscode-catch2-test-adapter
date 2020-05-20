@@ -175,15 +175,13 @@ export class GoogleRunnable extends AbstractRunnable {
       }
     }
 
-    const googleTestListOutput = await c2fs.spawnAsync(
-      this.properties.path,
-      this.properties.prependTestListingArgs.concat([
-        `--${this._argumentPrefix}list_tests`,
-        `--${this._argumentPrefix}output=xml:${cacheFile}`,
-      ]),
-      this.properties.options,
-      30000,
-    );
+    const args = this.properties.prependTestListingArgs.concat([
+      `--${this._argumentPrefix}list_tests`,
+      `--${this._argumentPrefix}output=xml:${cacheFile}`,
+    ]);
+
+    this._shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
+    const googleTestListOutput = await c2fs.spawnAsync(this.properties.path, args, this.properties.options, 30000);
 
     this.children = [];
 

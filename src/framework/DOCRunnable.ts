@@ -96,17 +96,15 @@ export class DOCRunnable extends AbstractRunnable {
       }
     }
 
-    const docTestListOutput = await c2fs.spawnAsync(
-      this.properties.path,
-      this.properties.prependTestListingArgs.concat([
-        '--list-test-cases',
-        '--reporters=xml',
-        '--no-skip=true',
-        '--no-color=true',
-      ]),
-      this.properties.options,
-      30000,
-    );
+    const args = this.properties.prependTestListingArgs.concat([
+      '--list-test-cases',
+      '--reporters=xml',
+      '--no-skip=true',
+      '--no-color=true',
+    ]);
+
+    this._shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
+    const docTestListOutput = await c2fs.spawnAsync(this.properties.path, args, this.properties.options, 30000);
 
     if (docTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
       this._shared.log.warn(

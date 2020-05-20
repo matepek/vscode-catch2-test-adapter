@@ -237,6 +237,7 @@ export class Catch2Runnable extends AbstractRunnable {
 
     if (this._catch2Version && this._catch2Version.major >= 3) args.push('--reporter', 'xml');
 
+    this._shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
     const catch2TestListOutput = await c2fs.spawnAsync(this.properties.path, args, this.properties.options, 30000);
 
     if (catch2TestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
