@@ -98,14 +98,14 @@ export class Suite implements TestSuiteInfo {
     }
   }
 
-  private _getRunningEvent(): TestSuiteEvent {
-    return { type: 'suite', suite: this, state: 'running' };
+  private _getRunningEvent(testRunId: string): TestSuiteEvent {
+    return { testRunId, type: 'suite', suite: this, state: 'running' };
   }
 
-  public sendRunningEventIfNeeded(): void {
+  public sendRunningEventIfNeeded(testRunId: string): void {
     if (this._runningCounter++ === 0) {
       this._shared.log.debug('Suite running event fired', this.label);
-      this._shared.sendTestRunEvent(this._getRunningEvent());
+      this._shared.sendTestRunEvent(this._getRunningEvent(testRunId));
     }
   }
 
@@ -153,13 +153,20 @@ export class Suite implements TestSuiteInfo {
     }
   }
 
-  private _getCompletedEvent(): TestSuiteEvent {
+  private _getCompletedEvent(testRunId: string): TestSuiteEvent {
     this._updateDescriptionAndTooltip();
 
-    return { type: 'suite', suite: this, state: 'completed', description: this.description, tooltip: this.tooltip };
+    return {
+      testRunId,
+      type: 'suite',
+      suite: this,
+      state: 'completed',
+      description: this.description,
+      tooltip: this.tooltip,
+    };
   }
 
-  public sendCompletedEventIfNeeded(): void {
+  public sendCompletedEventIfNeeded(testRunId: string): void {
     if (this._runningCounter < 1) {
       this._shared.log.error('Suite running counter is too low');
       this._runningCounter = 0;
@@ -167,7 +174,7 @@ export class Suite implements TestSuiteInfo {
     }
     if (this._runningCounter-- === 1) {
       this._shared.log.debug('Suite completed event fired', this.label);
-      this._shared.sendTestRunEvent(this._getCompletedEvent());
+      this._shared.sendTestRunEvent(this._getCompletedEvent(testRunId));
     }
   }
 

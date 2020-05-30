@@ -313,7 +313,7 @@ export class Catch2Runnable extends AbstractRunnable {
     return debugParams;
   }
 
-  protected _handleProcess(runInfo: RunningRunnable): Promise<void> {
+  protected _handleProcess(testRunId: string, runInfo: RunningRunnable): Promise<void> {
     const data = new (class {
       public stdoutBuffer = '';
       public stderrBuffer = '';
@@ -370,12 +370,12 @@ export class Catch2Runnable extends AbstractRunnable {
 
             if (test) {
               const route = [...test.route()];
-              this.sendMinimalEventsIfNeeded(data.route, route);
+              this.sendMinimalEventsIfNeeded(testRunId, data.route, route);
               data.route = route;
 
               data.currentChild = test;
               this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
-              this._shared.sendTestRunEvent(data.currentChild.getStartEvent());
+              this._shared.sendTestRunEvent(data.currentChild.getStartEvent(testRunId));
             } else {
               this._shared.log.info('TestCase not found in children', name);
             }
@@ -392,6 +392,7 @@ export class Catch2Runnable extends AbstractRunnable {
               this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
                 const ev = data.currentChild.parseAndProcessTestCase(
+                  testRunId,
                   testCaseXml,
                   data.rngSeed,
                   runInfo.timeout,
@@ -467,11 +468,11 @@ export class Catch2Runnable extends AbstractRunnable {
             let ev: AbstractTestEvent;
 
             if (runInfo.isCancelled) {
-              ev = data.currentChild.getCancelledEvent(data.stdoutBuffer);
+              ev = data.currentChild.getCancelledEvent(testRunId, data.stdoutBuffer);
             } else if (runInfo.timeout !== null) {
-              ev = data.currentChild.getTimeoutEvent(runInfo.timeout);
+              ev = data.currentChild.getTimeoutEvent(testRunId, runInfo.timeout);
             } else {
-              ev = data.currentChild.getFailedEventBase();
+              ev = data.currentChild.getFailedEventBase(testRunId);
 
               ev.message = '😱 Unexpected error !!';
 
@@ -498,7 +499,7 @@ export class Catch2Runnable extends AbstractRunnable {
           }
         }
 
-        this.sendMinimalEventsIfNeeded(data.route, []);
+        this.sendMinimalEventsIfNeeded(testRunId, data.route, []);
         data.route = [];
 
         const isTestRemoved =
@@ -538,7 +539,13 @@ export class Catch2Runnable extends AbstractRunnable {
                 if (currentChild === undefined) break;
 
                 try {
-                  const ev = currentChild.parseAndProcessTestCase(testCaseXml, data.rngSeed, runInfo.timeout, stderr);
+                  const ev = currentChild.parseAndProcessTestCase(
+                    testRunId,
+                    testCaseXml,
+                    data.rngSeed,
+                    runInfo.timeout,
+                    stderr,
+                  );
                   events.push(ev);
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCaseXml);

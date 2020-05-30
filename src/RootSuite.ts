@@ -6,6 +6,7 @@ import { AbstractRunnable } from './AbstractRunnable';
 import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
 import { ResolveRule } from './util/ResolveRule';
+import { generateId } from './Util';
 
 export class RootSuite extends Suite implements vscode.Disposable {
   private _executables: ExecutableConfig[] = [];
@@ -44,7 +45,8 @@ export class RootSuite extends Suite implements vscode.Disposable {
   }
 
   public async run(tests: string[]): Promise<void> {
-    this.sendStartEventIfNeeded(tests); // has to be first line, initilizes important variables
+    const testRunId = generateId();
+    this.sendStartEventIfNeeded(testRunId, tests); // has to be first line, initilizes important variables
 
     const isParentIn = tests.indexOf(this.id) !== -1;
 
@@ -55,10 +57,10 @@ export class RootSuite extends Suite implements vscode.Disposable {
       runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
     } catch (e) {
       for (const [runnable, tests] of runnables) {
-        runnable.sentStaticErrorEvent(tests, e);
+        runnable.sentStaticErrorEvent(testRunId, tests, e);
       }
 
-      this.sendFinishedEventIfNeeded();
+      this.sendFinishedEventIfNeeded(testRunId);
       return this._runningPromise;
     }
 
@@ -66,9 +68,11 @@ export class RootSuite extends Suite implements vscode.Disposable {
 
     for (const [runnable] of runnables) {
       ps.push(
-        runnable.run(tests, isParentIn, this._shared.taskPool, this._cancellationTokenSource.token).catch(err => {
-          this._shared.log.error('RootTestSuite.run.for.child', runnable.properties.path, err);
-        }),
+        runnable
+          .run(testRunId, tests, isParentIn, this._shared.taskPool, this._cancellationTokenSource.token)
+          .catch(err => {
+            this._shared.log.error('RootTestSuite.run.for.child', runnable.properties.path, err);
+          }),
       );
     }
 
@@ -79,7 +83,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
         await this.runTasks('after', runnables, this._cancellationTokenSource.token);
       } catch (e) {
         for (const [runnable, tests] of runnables) {
-          runnable.sentStaticErrorEvent(tests, e);
+          runnable.sentStaticErrorEvent(testRunId, tests, e);
         }
       }
     } catch (e) {
@@ -87,7 +91,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
       this._shared.log.error('everything should be handled', e);
     }
 
-    this.sendFinishedEventIfNeeded();
+    this.sendFinishedEventIfNeeded(testRunId);
 
     return this._runningPromise;
   }
@@ -96,26 +100,27 @@ export class RootSuite extends Suite implements vscode.Disposable {
     if (this._cancellationTokenSource) this._cancellationTokenSource.cancel();
   }
 
-  public sendStartEventIfNeeded(tests: string[]): void {
+  public sendStartEventIfNeeded(testRunId: string, tests: string[]): void {
     if (this._runningCounter++ === 0) {
       this._runningPromise = new Promise(r => (this._runningPromiseResolver = r));
       this._cancellationTokenSource = new vscode.CancellationTokenSource();
-      this._shared.log.debug('RootSuite start event fired', this.label);
-      this._shared.sendTestRunEvent({ type: 'started', tests: tests });
-      // TODO:future https://github.com/hbenl/vscode-test-explorer/issues/141
     }
+
+    this._shared.log.debug('RootSuite start event fired', this.label, testRunId, tests);
+    this._shared.sendTestRunEvent({ testRunId, type: 'started', tests });
   }
 
-  public sendFinishedEventIfNeeded(): void {
+  public sendFinishedEventIfNeeded(testRunId: string): void {
     if (this._runningCounter < 1) {
       this._shared.log.error('Root Suite running counter is too low');
       this._runningCounter = 0;
       return;
     }
 
+    this._shared.log.debug('RootSuite finished event fired', this.label);
+    this._shared.sendTestRunEvent({ testRunId, type: 'finished' });
+
     if (this._runningCounter === 1) {
-      this._shared.log.debug('RootSuite finished event fired', this.label);
-      this._shared.sendTestRunEvent({ type: 'finished' });
       this._runningPromiseResolver();
       this._cancellationTokenSource?.dispose();
     }

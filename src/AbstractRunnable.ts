@@ -408,7 +408,7 @@ export abstract class AbstractRunnable {
 
   protected abstract _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
 
-  protected abstract _handleProcess(runInfo: RunningRunnable): Promise<void>;
+  protected abstract _handleProcess(testRunId: string, runInfo: RunningRunnable): Promise<void>;
 
   public abstract getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[];
 
@@ -443,6 +443,7 @@ export abstract class AbstractRunnable {
   }
 
   public async run(
+    testRunId: string,
     tests: readonly string[],
     isParentIn: boolean,
     taskPool: TaskPool,
@@ -454,7 +455,7 @@ export abstract class AbstractRunnable {
     try {
       await this.runTasks('beforeEach', taskPool, cancellationToken);
     } catch (e) {
-      this.sentStaticErrorEvent(collectChildrenToRun(), e);
+      this.sentStaticErrorEvent(testRunId, collectChildrenToRun(), e);
 
       return;
     }
@@ -470,18 +471,19 @@ export abstract class AbstractRunnable {
     await Promise.all(
       buckets.map(async (bucket: readonly AbstractTest[]) => {
         const smallerTestSet = this._splitTestsToSmallEnoughSubsets(bucket);
-        for (const testSet of smallerTestSet) await this._runInner(testSet, taskPool, cancellationToken);
+        for (const testSet of smallerTestSet) await this._runInner(testRunId, testSet, taskPool, cancellationToken);
       }),
     );
 
     try {
       await this.runTasks('afterEach', taskPool, cancellationToken);
     } catch (e) {
-      this.sentStaticErrorEvent(collectChildrenToRun(), e);
+      this.sentStaticErrorEvent(testRunId, collectChildrenToRun(), e);
     }
   }
 
   private _runInner(
+    testRunId: string,
     childrenToRun: readonly AbstractTest[],
     taskPool: TaskPool,
     cancellationToken: CancellationToken,
@@ -491,12 +493,13 @@ export abstract class AbstractRunnable {
       const runnableDescendant: AbstractTest[] = [];
 
       childrenToRun.forEach(t => {
-        if (t.staticEvent) descendantsWithStaticEvent.push(t);
+        const staticEvent = t.getStaticEvent(testRunId);
+        if (staticEvent) descendantsWithStaticEvent.push(t);
         else runnableDescendant.push(t);
       });
 
       if (descendantsWithStaticEvent.length > 0) {
-        this.sendStaticEvents(descendantsWithStaticEvent, undefined);
+        this.sendStaticEvents(testRunId, descendantsWithStaticEvent, undefined);
       }
 
       if (runnableDescendant.length === 0) {
@@ -508,7 +511,7 @@ export abstract class AbstractRunnable {
           this._shared.log.info('test was canceled:', this);
           return Promise.resolve();
         }
-        return this._runProcess(runnableDescendant, cancellationToken);
+        return this._runProcess(testRunId, runnableDescendant, cancellationToken);
       };
 
       return taskPool.scheduleTask(runIfNotCancelled).catch((err: Error) => {
@@ -526,7 +529,11 @@ export abstract class AbstractRunnable {
     });
   }
 
-  private _runProcess(childrenToRun: readonly AbstractTest[], cancellationToken: CancellationToken): Promise<void> {
+  private _runProcess(
+    testRunId: string,
+    childrenToRun: readonly AbstractTest[],
+    cancellationToken: CancellationToken,
+  ): Promise<void> {
     const execParams = this.properties.prependTestRunningArgs.concat(this._getRunParams(childrenToRun));
 
     this._shared.log.info('proc starting', this.properties.path, execParams);
@@ -585,7 +592,7 @@ export abstract class AbstractRunnable {
       });
     }
 
-    return this._handleProcess(runInfo)
+    return this._handleProcess(testRunId, runInfo)
       .catch((reason: Error) => this._shared.log.exceptionS(reason))
       .finally(() => this._shared.log.info('proc finished:', this.properties.path));
   }
@@ -643,11 +650,11 @@ export abstract class AbstractRunnable {
     return found || matchedPath;
   }
 
-  public sendMinimalEventsIfNeeded(completed: Suite[], running: Suite[]): void {
+  public sendMinimalEventsIfNeeded(testRunId: string, completed: Suite[], running: Suite[]): void {
     if (completed.length === 0) {
-      reverse(running)(v => v.sendRunningEventIfNeeded());
+      reverse(running)(v => v.sendRunningEventIfNeeded(testRunId));
     } else if (running.length === 0) {
-      completed.forEach(v => v.sendCompletedEventIfNeeded());
+      completed.forEach(v => v.sendCompletedEventIfNeeded(testRunId));
     } else if (completed[0] === running[0]) {
       if (completed.length !== running.length) this._shared.log.error('completed.length !== running.length');
     } else {
@@ -659,14 +666,19 @@ export abstract class AbstractRunnable {
         runningIndex = running.indexOf(completed[completedIndex]);
       } while (completedIndex < completed.length && runningIndex === -1);
 
-      for (let i = 0; i < completedIndex; ++i) completed[i].sendCompletedEventIfNeeded();
-      for (let i = runningIndex - 1; i >= 0; --i) running[i].sendRunningEventIfNeeded();
+      for (let i = 0; i < completedIndex; ++i) completed[i].sendCompletedEventIfNeeded(testRunId);
+      for (let i = runningIndex - 1; i >= 0; --i) running[i].sendRunningEventIfNeeded(testRunId);
     }
   }
 
-  public sendStaticEvents(childrenToRun: readonly AbstractTest[], staticEvent: TestEvent | undefined): void {
+  public sendStaticEvents(
+    testRunId: string,
+    childrenToRun: readonly AbstractTest[],
+    staticEvent: TestEvent | undefined,
+  ): void {
     childrenToRun.forEach(test => {
-      const event = staticEvent || test.staticEvent;
+      const testStaticEvent = test.getStaticEvent(testRunId);
+      const event = staticEvent || testStaticEvent;
       if (event) {
         event.test = test;
         // we dont need to send events about ancestors: https://github.com/hbenl/vscode-test-explorer/issues/141
@@ -677,11 +689,12 @@ export abstract class AbstractRunnable {
   }
 
   // eslint-disable-next-line
-  public sentStaticErrorEvent(childrenToRun: readonly AbstractTest[], err: any): void {
-    this.sendStaticEvents(childrenToRun, {
+  public sentStaticErrorEvent(testRunId: string, childrenToRun: readonly AbstractTest[], err: any): void {
+    this.sendStaticEvents(testRunId, childrenToRun, {
       type: 'test',
       test: 'will be filled automatically',
       state: 'errored',
+      testRunId,
       message: err instanceof Error ? `⚡️ ${err.name}: ${err.message}` : inspect(err),
     });
   }

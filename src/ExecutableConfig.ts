@@ -69,6 +69,7 @@ export class ExecutableConfig implements vscode.Disposable {
               const result: vscode.DocumentLink[] = [];
               const lines = text.split(/\r?\n/);
               for (let i = 0; i < lines.length; ++i) {
+                if (token.isCancellationRequested) return;
                 const m = lines[i].match(/^((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)):?\s/);
                 if (m) {
                   const file = getAbsolutePath(m[2], dirs);
@@ -90,6 +91,7 @@ export class ExecutableConfig implements vscode.Disposable {
               const result: vscode.DocumentLink[] = [];
               const lines = text.split(/\r?\n/);
               for (let i = 0; i < lines.length; ++i) {
+                if (token.isCancellationRequested) return;
                 const m = lines[i].match(/\(at ((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?))\)/);
                 if (m) {
                   const file = getAbsolutePath(m[2], dirs);

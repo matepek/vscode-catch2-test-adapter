@@ -134,13 +134,14 @@ export class Catch2Test extends AbstractTest {
   }
 
   public parseAndProcessTestCase(
+    testRunId: string,
     output: string,
     rngSeed: number | undefined,
     timeout: number | null,
     stderr: string | undefined,
   ): AbstractTestEvent {
     if (timeout !== null) {
-      const ev = this.getTimeoutEvent(timeout);
+      const ev = this.getTimeoutEvent(testRunId, timeout);
       this.lastRunEvent = ev;
       return ev;
     }

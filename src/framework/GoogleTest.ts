@@ -58,13 +58,14 @@ export class GoogleTest extends AbstractTest {
   public static readonly failureRe = /^((.+)[:\(]([0-9]+)\)?): ((Failure|EXPECT_CALL|error: )(.*))$/;
 
   public parseAndProcessTestCase(
+    testRunId: string,
     output: string,
     rngSeed: number | undefined,
     timeout: number | null,
     stderr: string | undefined, //eslint-disable-line
   ): AbstractTestEvent {
     if (timeout !== null) {
-      const ev = this.getTimeoutEvent(timeout);
+      const ev = this.getTimeoutEvent(testRunId, timeout);
       this.lastRunEvent = ev;
       return ev;
     }
@@ -232,7 +233,7 @@ export class GoogleTest extends AbstractTest {
     } catch (e) {
       this._shared.log.exceptionS(e, output);
 
-      const ev = this.getFailedEventBase();
+      const ev = this.getFailedEventBase(testRunId);
       ev.message = 'Unexpected error: ' + e.toString();
 
       return e;

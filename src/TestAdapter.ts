@@ -145,7 +145,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const sendTestEventsWithStartAndFin = (testEvents: AbstractTestEvent[]): void => {
       if (testEvents.length > 0) {
-        this._rootSuite.sendStartEventIfNeeded(testEvents.map(v => v.test.id));
+        const testRunId = generateId();
+        this._rootSuite.sendStartEventIfNeeded(
+          testRunId,
+          testEvents.map(v => v.test.id),
+        );
 
         for (let i = 0; i < testEvents.length; ++i) {
           const test = this._rootSuite.findTestById(testEvents[i].test);
@@ -159,7 +163,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           }
         }
 
-        this._rootSuite.sendFinishedEventIfNeeded();
+        this._rootSuite.sendFinishedEventIfNeeded(testRunId);
       }
     };
 

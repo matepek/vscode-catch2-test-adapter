@@ -186,9 +186,15 @@ export abstract class AbstractTest implements TestInfo {
     return this._staticEvent?.message;
   }
 
-  public get staticEvent(): AbstractTestEvent | undefined {
+  public getStaticEvent(testRunId: string): AbstractTestEvent | undefined {
     if (this._staticEvent)
-      return { type: 'test', test: this, state: this._staticEvent.state, message: this._staticEvent?.message };
+      return {
+        testRunId,
+        type: 'test',
+        test: this,
+        state: this._staticEvent.state,
+        message: this._staticEvent?.message,
+      };
     else return undefined;
   }
 
@@ -223,23 +229,24 @@ export abstract class AbstractTest implements TestInfo {
     }
   }
 
-  public getStartEvent(): AbstractTestEvent {
-    return { type: 'test', test: this, state: 'running' };
+  public getStartEvent(testRunId: string): AbstractTestEvent {
+    return { testRunId, type: 'test', test: this, state: 'running' };
   }
 
-  public getSkippedEvent(): AbstractTestEvent {
-    return { type: 'test', test: this, state: 'skipped' };
+  public getSkippedEvent(testRunId: string): AbstractTestEvent {
+    return { testRunId, type: 'test', test: this, state: 'skipped' };
   }
 
   public abstract parseAndProcessTestCase(
+    testRunId: string,
     output: string,
     rngSeed: number | undefined,
     timeout: number | null,
     stderr: string | undefined,
   ): AbstractTestEvent;
 
-  public getCancelledEvent(testOutput: string): AbstractTestEvent {
-    const ev = this.getFailedEventBase();
+  public getCancelledEvent(testRunId: string, testOutput: string): AbstractTestEvent {
+    const ev = this.getFailedEventBase(testRunId);
     ev.message += '⏹ Run is stopped by user. ✋';
     ev.message += '\n\nTest Output : R"""';
     ev.message += testOutput;
@@ -247,15 +254,16 @@ export abstract class AbstractTest implements TestInfo {
     return ev;
   }
 
-  public getTimeoutEvent(milisec: number): AbstractTestEvent {
-    const ev = this.getFailedEventBase();
+  public getTimeoutEvent(testRunId: string, milisec: number): AbstractTestEvent {
+    const ev = this.getFailedEventBase(testRunId);
     ev.message += '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + milisec / 1000 + ' second(s).';
     ev.state = 'errored';
     return ev;
   }
 
-  public getFailedEventBase(): AbstractTestEvent {
+  public getFailedEventBase(testRunId: string): AbstractTestEvent {
     return {
+      testRunId,
       type: 'test',
       test: this,
       state: 'failed',

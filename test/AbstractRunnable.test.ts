@@ -438,7 +438,7 @@ describe(pathlib.basename(__filename), function () {
     });
 
     it('should run none', async function () {
-      await runnable.run([], false, shared.taskPool, new CancellationTokenSource().token);
+      await runnable.run('1', [], false, shared.taskPool, new CancellationTokenSource().token);
 
       shared.assertSimplifiedEqualStateEvents([]);
       assert.deepStrictEqual(
@@ -448,7 +448,7 @@ describe(pathlib.basename(__filename), function () {
     });
 
     it('should run all', async function () {
-      await runnable.run([], true, shared.taskPool, new CancellationTokenSource().token);
+      await runnable.run('1', [], true, shared.taskPool, new CancellationTokenSource().token);
 
       // static event
       shared.assertSimplifiedEqualStateEvents([{ type: 'test', test: root.getTest(0, 2), state: 'errored' }]);
@@ -462,7 +462,7 @@ describe(pathlib.basename(__filename), function () {
 
     it('should run normal', async function () {
       const normal = root.getTest(0, 0);
-      await runnable.run([normal.id], false, shared.taskPool, new CancellationTokenSource().token);
+      await runnable.run('1', [normal.id], false, shared.taskPool, new CancellationTokenSource().token);
 
       shared.assertSimplifiedEqualStateEvents([]);
       assert.deepStrictEqual(
@@ -474,7 +474,7 @@ describe(pathlib.basename(__filename), function () {
     it('should run force run skipped', async function () {
       const skipped = root.getTest(0, 3);
 
-      await runnable.run([skipped.id], false, shared.taskPool, new CancellationTokenSource().token);
+      await runnable.run('1', [skipped.id], false, shared.taskPool, new CancellationTokenSource().token);
 
       shared.assertSimplifiedEqualStateEvents([]);
       assert.deepStrictEqual(
@@ -486,7 +486,7 @@ describe(pathlib.basename(__filename), function () {
     it('should run force staticEvent', async function () {
       const staticEvent = root.getTest(0, 2);
 
-      await runnable.run([staticEvent.id], false, shared.taskPool, new CancellationTokenSource().token);
+      await runnable.run('1', [staticEvent.id], false, shared.taskPool, new CancellationTokenSource().token);
 
       // static event
       shared.assertSimplifiedEqualStateEvents([{ type: 'test', test: root.getTest(0, 2), state: 'errored' }]);

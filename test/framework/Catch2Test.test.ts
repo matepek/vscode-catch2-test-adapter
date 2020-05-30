@@ -31,9 +31,10 @@ describe(path.basename(__filename), function () {
             <OverallResult success="true" durationInSeconds="0.000112"/>
           </TestCase>`;
 
-    const ev = catch2.parseAndProcessTestCase(output, 42, null, '');
+    const ev = catch2.parseAndProcessTestCase('runid', output, 42, null, '');
 
     const expected: TestRunEvent = {
+      testRunId: 'runid',
       type: 'test',
       state: 'passed',
       test: catch2,

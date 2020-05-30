@@ -81,7 +81,7 @@ describe(pathlib.basename(__filename), function () {
       assert.strictEqual(tests[0].file, pathlib.normalize('/mnt/c/Users/a.cpp'));
       assert.strictEqual(tests[0].line, 12 - 1);
       assert.strictEqual(tests[0].skipped, false);
-      assert.strictEqual(tests[0].staticEvent, undefined);
+      assert.strictEqual(tests[0].getStaticEvent('1'), undefined);
 
       assert.strictEqual(root.children.length, 1);
       const suite1 = root.children[0];
@@ -121,7 +121,7 @@ describe(pathlib.basename(__filename), function () {
       assert.strictEqual(tests[0].file, pathlib.normalize('/mnt/c/Users/a.cpp'));
       assert.strictEqual(tests[0].line, 12 - 1);
       assert.strictEqual(tests[0].skipped, false);
-      assert.strictEqual(tests[0].staticEvent, undefined);
+      assert.strictEqual(tests[0].getStaticEvent('1'), undefined);
 
       assert.strictEqual(tests[1].testNameAsId, 'second');
       assert.strictEqual(tests[1].label, 'second');
@@ -129,7 +129,7 @@ describe(pathlib.basename(__filename), function () {
       assert.strictEqual(tests[1].file, pathlib.normalize('/mnt/c/Users/b.cpp'));
       assert.strictEqual(tests[1].line, 42 - 1);
       assert.strictEqual(tests[1].skipped, false);
-      assert.strictEqual(tests[1].staticEvent, undefined);
+      assert.strictEqual(tests[1].getStaticEvent('1'), undefined);
     });
 
     it('should reload with extra lines before and after', async function () {
@@ -157,7 +157,7 @@ describe(pathlib.basename(__filename), function () {
       assert.strictEqual(tests[0].file, pathlib.normalize('/mnt/c/Users/a.cpp'));
       assert.strictEqual(tests[0].line, 12 - 1);
       assert.strictEqual(tests[0].skipped, false);
-      assert.strictEqual(tests[0].staticEvent, undefined);
+      assert.strictEqual(tests[0].getStaticEvent('1'), undefined);
     });
 
     it('should reload with too long filename', async function () {
@@ -263,9 +263,9 @@ describe(pathlib.basename(__filename), function () {
       assert.strictEqual(tests[0].file, undefined);
       assert.strictEqual(tests[0].line, undefined);
       assert.strictEqual(tests[0].skipped, true);
-      assert.strictEqual(tests[0].staticEvent?.state, 'errored');
+      assert.strictEqual(tests[0].getStaticEvent('1')?.state, 'errored');
       assert.strictEqual(
-        tests[0].staticEvent?.message,
+        tests[0].getStaticEvent('1')?.message,
         [
           `❗️Unexpected stderr!`,
           `(One might can use ignoreTestEnumerationStdErr as the LAST RESORT. Check README for details.)`,
