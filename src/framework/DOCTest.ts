@@ -113,7 +113,7 @@ export class DOCTest extends AbstractTest {
       }
     });
 
-    const testEventBuilder = new TestEventBuilder(this);
+    const testEventBuilder = new TestEventBuilder(this, testRunId);
 
     if (rngSeed) testEventBuilder.appendTooltip(`🔀 Randomness seeded to: ${rngSeed.toString()}`);
 

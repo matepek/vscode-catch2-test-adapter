@@ -260,7 +260,7 @@ function simplifiedAssertEqualStateEvents(stateEvents: my2.TestRunEvent[], expec
         assert.strictEqual(getId(actual), getId(expected), `index: ${i}`);
         assert.strictEqual(actual.state, expected.state, `index: ${i}`);
       } else {
-        assert.deepStrictEqual(actual, expected, `index: ${i}`);
+        assert.deepStrictEqual(actual.type, expected.type, `index: ${i}`);
       }
     }
 

@@ -155,7 +155,7 @@ export class Catch2Test extends AbstractTest {
       }
     });
 
-    const testEventBuilder = new TestEventBuilder(this);
+    const testEventBuilder = new TestEventBuilder(this, testRunId);
 
     if (rngSeed) testEventBuilder.appendMessage(`🔀 Randomness seeded to: ${rngSeed.toString()}`, 0);
 

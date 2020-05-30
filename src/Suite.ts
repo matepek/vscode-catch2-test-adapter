@@ -104,7 +104,6 @@ export class Suite implements TestSuiteInfo {
 
   public sendRunningEventIfNeeded(testRunId: string): void {
     if (this._runningCounter++ === 0) {
-      this._shared.log.debug('Suite running event fired', this.label);
       this._shared.sendTestRunEvent(this._getRunningEvent(testRunId));
     }
   }
@@ -173,7 +172,6 @@ export class Suite implements TestSuiteInfo {
       return;
     }
     if (this._runningCounter-- === 1) {
-      this._shared.log.debug('Suite completed event fired', this.label);
       this._shared.sendTestRunEvent(this._getCompletedEvent(testRunId));
     }
   }

@@ -323,6 +323,7 @@ export class GoogleRunnable extends AbstractRunnable {
                 this._shared.log.error('parsing and processing test', e, data);
 
                 data.currentChild.lastRunEvent = {
+                  testRunId,
                   type: 'test',
                   test: data.currentChild,
                   state: 'errored',

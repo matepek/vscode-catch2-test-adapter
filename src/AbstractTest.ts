@@ -15,6 +15,7 @@ export interface StaticTestEventBase {
 }
 
 export interface AbstractTestEvent extends TestEvent {
+  testRunId: string;
   type: 'test';
   test: TestInfo;
 }

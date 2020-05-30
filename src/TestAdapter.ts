@@ -140,6 +140,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     };
 
     const sendTestRunEvent = (event: TestRunEvent): void => {
+      this._shared.log.debug('Event fired: ', event);
       this._testStatesEmitter.fire(event);
     };
 

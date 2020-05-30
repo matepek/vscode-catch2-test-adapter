@@ -75,7 +75,7 @@ export class GoogleTest extends AbstractTest {
 
       if (lines.length < 2) throw new Error('unexpected');
 
-      const eventBuilder = new TestEventBuilder(this);
+      const eventBuilder = new TestEventBuilder(this, testRunId);
 
       const runDuration = lines[lines.length - 1].match(/\(([0-9]+) ms\)$/);
       eventBuilder.setDurationMilisec(runDuration ? Number(runDuration[1]) : undefined);

@@ -6,7 +6,7 @@ import { AbstractTest, AbstractTestEvent } from './AbstractTest';
 export type TestEventState = 'running' | 'passed' | 'failed' | 'skipped' | 'errored';
 
 export class TestEventBuilder {
-  public constructor(public test: AbstractTest) {}
+  public constructor(public test: AbstractTest, private readonly _testRunId: string) {}
 
   private _message: string[] = [];
   private _decorations: api.TestDecoration[] = [];
@@ -132,6 +132,7 @@ export class TestEventBuilder {
     this.test._updateDescriptionAndTooltip(descriptionStr, tooltipStr);
 
     const ev: AbstractTestEvent = {
+      testRunId: this._testRunId,
       type: 'test',
       test: this.test,
       state: this._state,

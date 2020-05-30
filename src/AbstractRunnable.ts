@@ -149,7 +149,7 @@ export abstract class AbstractRunnable {
       const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : '';
       const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : '';
 
-      this._shared.log.info('groupBy', { label, resolvedLabel, description, resolvedDescr });
+      this._shared.log.debug('groupBy', { label, resolvedLabel, description, resolvedDescr });
 
       group = this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, group);
     };
@@ -678,9 +678,10 @@ export abstract class AbstractRunnable {
   ): void {
     childrenToRun.forEach(test => {
       const testStaticEvent = test.getStaticEvent(testRunId);
-      const event = staticEvent || testStaticEvent;
+      const event: TestEvent | undefined = staticEvent || testStaticEvent;
       if (event) {
         event.test = test;
+        event.testRunId = testRunId;
         // we dont need to send events about ancestors: https://github.com/hbenl/vscode-test-explorer/issues/141
         // probably we dont need this either: this._shared.sendTestEvent(test!.getStartEvent());
         this._shared.sendTestRunEvent(event);
@@ -694,7 +695,6 @@ export abstract class AbstractRunnable {
       type: 'test',
       test: 'will be filled automatically',
       state: 'errored',
-      testRunId,
       message: err instanceof Error ? `⚡️ ${err.name}: ${err.message}` : inspect(err),
     });
   }
