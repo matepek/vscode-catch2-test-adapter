@@ -483,6 +483,18 @@ export class ChildProcessStub extends EventEmitter implements ChildProcess {
   public ref(): void {
     throw Error('methond not implemented');
   }
+  public get exitCode(): number | null {
+    throw Error('methond not implemented');
+  }
+  public get signalCode(): number | null {
+    throw Error('methond not implemented');
+  }
+  public get spawnargs(): string[] {
+    throw Error('methond not implemented');
+  }
+  public get spawnfile(): string {
+    throw Error('methond not implemented');
+  }
 
   public readonly stdout: Readable;
   private _stdoutChunks: (string | null)[] = [];

@@ -9,6 +9,7 @@ import { AbstractTest } from './AbstractTest';
 export class Suite implements TestSuiteInfo {
   public readonly type: 'suite' = 'suite';
   public readonly id: string;
+  public readonly debuggable = false;
   public children: (Suite | AbstractTest)[] = [];
   protected _runningCounter = 0;
 

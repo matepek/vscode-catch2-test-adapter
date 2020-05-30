@@ -25,6 +25,7 @@ export abstract class AbstractTest implements TestInfo {
   public readonly type: 'test' = 'test';
   public readonly id: string;
   public readonly testNameAsId: string;
+  public readonly debuggable = true;
 
   protected _label = '';
   protected _additionalDesciption = '';
