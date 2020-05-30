@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { TestEvent, TestInfo, TestDecoration } from 'vscode-test-adapter-api';
+import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
 import { generateId, concat } from './Util';
 import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
@@ -12,8 +12,6 @@ export interface SharedWithTest {
 export interface StaticTestEventBase {
   state: 'errored' | 'passed' | 'failed';
   message: string;
-  description?: string;
-  decoration?: TestDecoration[];
 }
 
 export interface AbstractTestEvent extends TestEvent {
@@ -178,6 +176,14 @@ export abstract class AbstractTest implements TestInfo {
 
   public get skipped(): boolean {
     return this._skipped;
+  }
+
+  public get errored(): boolean {
+    return this._staticEvent !== undefined && this._staticEvent!.state === 'errored';
+  }
+
+  public get message(): string | undefined {
+    return this._staticEvent?.message;
   }
 
   public get staticEvent(): AbstractTestEvent | undefined {
