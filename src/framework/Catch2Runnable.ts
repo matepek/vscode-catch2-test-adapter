@@ -158,7 +158,7 @@ export class Catch2Runnable extends AbstractRunnable {
 
   private _reloadFromXml(testListOutput: string): RunnableReloadResult {
     let res: XmlObject = {};
-    new xml2js.Parser({ explicitArray: false }).parseString(testListOutput, (err: Error, result: XmlObject) => {
+    new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
       if (err) {
         throw err;
       } else {
@@ -172,13 +172,13 @@ export class Catch2Runnable extends AbstractRunnable {
     for (let i = 0; i < testCases.length; ++i) {
       const testCase = testCases[i];
 
-      const testName = testCase.Name;
-      const filePath = testCase?.SourceInfo ? this._findFilePath(testCase?.SourceInfo.File) : undefined;
-      const line = testCase?.SourceInfo ? Number(testCase?.SourceInfo.Line) - 1 : undefined;
-      const className = testCase.ClassName ? testCase.ClassName : undefined;
+      const testName = testCase.Name[0];
+      const filePath = testCase?.SourceInfo ? this._findFilePath(testCase?.SourceInfo[0].File[0]) : undefined;
+      const line = testCase?.SourceInfo ? Number(testCase?.SourceInfo[0].Line[0]) - 1 : undefined;
+      const className = testCase.ClassName[0] ? testCase.ClassName[0] : undefined;
 
       const tags: string[] = [];
-      if (testCase.Tags) {
+      if (testCase.Tags[0]) {
         const matches = testCase.Tags.match(/\[[^\[\]]+\]/g);
         if (matches) matches.forEach((t: string) => tags.push(t.substring(1, t.length - 1)));
         ++i;
