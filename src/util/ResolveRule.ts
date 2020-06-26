@@ -35,6 +35,8 @@ export interface ResolveRule<R = any> {
 }
 
 export function resolveVariables<T, R = string>(value: T, varValue: readonly ResolveRule<R>[]): T {
+  type RuleFuncType = (m?: RegExpMatchArray) => R;
+
   // eslint-disable-next-line
   return _mapAllStrings(value, undefined, (s: string, parent: any): any => {
     for (let i = 0; i < varValue.length; ++i) {
@@ -42,13 +44,13 @@ export function resolveVariables<T, R = string>(value: T, varValue: readonly Res
       if (typeof rule === 'string') {
         s = s.replace(resolve, rule);
       } else if (resolve instanceof RegExp && typeof rule === 'function') {
-        if ((rule as Function).length > 1) throw Error('resolveVariables regex func should expect 1 argument');
+        if ((rule as RuleFuncType).length > 1) throw Error('resolveVariables regex func should expect 1 argument');
 
         let m = s.match(resolve);
 
         if (m) {
           if (m.index === 0 && m[0].length === s.length) {
-            return (rule as Function)(m); // return type can be anything
+            return (rule as RuleFuncType)(m); // return type can be anything
           }
 
           let remainingStr = s;
@@ -56,7 +58,7 @@ export function resolveVariables<T, R = string>(value: T, varValue: readonly Res
           while (m && m.index !== undefined) {
             newStr.push(remainingStr.substr(0, m.index));
 
-            const repl = (rule as Function)(m);
+            const repl = (rule as RuleFuncType)(m);
             if (typeof repl !== 'string') throw Error('resolveVariables regex func return type should be string');
             newStr.push(repl);
 
@@ -67,7 +69,7 @@ export function resolveVariables<T, R = string>(value: T, varValue: readonly Res
         }
       } else if (s === resolve) {
         if (typeof rule === 'function') {
-          return (rule as Function)();
+          return (rule as RuleFuncType)();
         } else if (isFlat && Array.isArray(rule) && Array.isArray(parent)) {
           parent.push(...rule);
           return undefined;

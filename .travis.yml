@@ -35,9 +35,9 @@ install:
 script:
   - npm test
 
-branches:
-  only:
-    - master
+# branches:
+#   only:
+#     - master
 
 jobs:
   include:

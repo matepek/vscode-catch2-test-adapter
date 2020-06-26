@@ -44,7 +44,7 @@ export class GoogleRunnable extends AbstractRunnable {
 
     let xml: XmlObject = {};
 
-    new Parser({ explicitArray: true }).parseString(xmlStr, (err: Error, result: object) => {
+    new Parser({ explicitArray: true }).parseString(xmlStr, (err: Error, result: Record<string, unknown>) => {
       if (err) {
         throw err;
       } else {
