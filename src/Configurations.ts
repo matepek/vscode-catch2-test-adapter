@@ -216,7 +216,7 @@ export class Configurations {
   }
 
   public getDebugConfigurationTemplate(): [vscode.DebugConfiguration, string] {
-    const templateFromConfig = this._getNewOrOldOrDefAndMigrate<object | null | 'extensionOnly'>(
+    const templateFromConfig = this._getNewOrOldOrDefAndMigrate<Record<string, unknown> | null | 'extensionOnly'>(
       'debug.configTemplate',
       null,
     );
