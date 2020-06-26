@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.2.8]
+
+### Added
+
+- Recognising regular links to workaround this [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/207).
+
 ## [3.2.7] - 2020-06-26
 
 - This version tries to limit the coloring to fix an [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/207).

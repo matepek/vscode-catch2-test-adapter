@@ -19,11 +19,6 @@ import { TestGrouping } from './TestGroupingInterface';
 import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
 
-interface LinkData {
-  file: string;
-  fragment: string;
-}
-
 export interface RunTask {
   before?: string[];
   beforeEach?: string[];
@@ -60,7 +55,8 @@ export class ExecutableConfig implements vscode.Disposable {
       _shared.log.infoS('Using frameworks specific executable setting', _catch2, _gtest, _doctest);
     }
 
-    const linkDataSymbol = Symbol('DocumentLink data');
+    const createUriSymbol: unique symbol = Symbol('createUri');
+    type CreateUri = { [createUriSymbol]: () => vscode.Uri };
 
     this._disposables.push(
       vscode.languages.registerDocumentLinkProvider(
@@ -71,8 +67,8 @@ export class ExecutableConfig implements vscode.Disposable {
             token: vscode.CancellationToken, // eslint-disable-line
           ): vscode.ProviderResult<vscode.DocumentLink[]> => {
             const text = document.getText();
-            const findLinks = (linkRegex: RegExp): vscode.ProviderResult<vscode.DocumentLink[]> => {
-              const result: vscode.DocumentLink[] = [];
+            const result: vscode.DocumentLink[] = [];
+            const findLinks = (linkRegex: RegExp): void => {
               const lines = text.split(/\r?\n/);
               for (let i = 0; i < lines.length; ++i) {
                 if (token.isCancellationRequested) return;
@@ -83,26 +79,46 @@ export class ExecutableConfig implements vscode.Disposable {
                   const col = m[4] ? `:${m[4]}` : '';
                   const index = m.index ? m.index + 4 : 0;
                   const fragment = `${line}${col}`;
-                  const link = new vscode.DocumentLink(new vscode.Range(i, index, i, index + m[1].length));
-                  (link as any)[linkDataSymbol] = { file, fragment }; // eslint-disable-line
+                  const link: vscode.DocumentLink = new vscode.DocumentLink(
+                    new vscode.Range(i, index, i, index + m[1].length),
+                  );
+
+                  ((link as unknown) as CreateUri)[createUriSymbol] = (): vscode.Uri => {
+                    const dirs = new Set([...this._runnables.keys()].map(k => pathlib.dirname(k)));
+                    const resolvedFile = getAbsolutePath(file, dirs);
+                    return vscode.Uri.file(resolvedFile).with({ fragment: fragment });
+                  };
                   result.push(link);
                 }
               }
-              return result;
             };
             if (text.startsWith('[ RUN      ]')) {
-              return findLinks(/^(([./\w].*[\\/].*[.].*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)):?\s/);
+              findLinks(/^(([./\w].*[\\/].*[.].*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)):?\s/);
             } else if (text.startsWith('⏱Duration:')) {
-              return findLinks(/\(at ((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?))\)/);
+              findLinks(/\(at ((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?))\)/);
             } else {
-              return null;
+              //https://github.com/matepek/vscode-catch2-test-adapter/issues/207
+              const regularFileLinkRegex = /\s?(([A-z]:\\|\.\.?[\\/]|\/)([^\\/\n]+[\\/])*[\w,-.]+([\w,\s-.]*?\.\w{3})?)\b/;
+              const lines = text.split(/\r?\n/);
+              for (let i = 0; i < lines.length; ++i) {
+                if (token.isCancellationRequested) return;
+
+                const m = lines[i].match(regularFileLinkRegex);
+                if (m && c2fs.existsSync(m[1])) {
+                  const index = m.index ? m.index + m[0].length - m[1].length : 0;
+                  const file = m[1];
+                  const link = new vscode.DocumentLink(
+                    new vscode.Range(i, index, i, index + m[1].length),
+                    vscode.Uri.file(file),
+                  );
+                  result.push(link);
+                }
+              }
             }
+            return result;
           },
           resolveDocumentLink: (link: vscode.DocumentLink): vscode.ProviderResult<vscode.DocumentLink> => {
-            const dirs = new Set([...this._runnables.keys()].map(k => pathlib.dirname(k)));
-            const linkData: LinkData = (link as any)[linkDataSymbol]; // eslint-disable-line
-            const resolvedFile = getAbsolutePath(linkData.file, dirs);
-            if (resolvedFile) link.target = vscode.Uri.file(resolvedFile).with({ fragment: linkData.fragment });
+            link.target = ((link as unknown) as CreateUri)[createUriSymbol]();
             return link;
           },
         },

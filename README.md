@@ -12,11 +12,6 @@ This extension allows you to run your [Catch2](https://github.com/catchorg/Catch
 and [DOCtest](https://github.com/onqtam/doctest) (experimental)
 tests using the [Test Explorer for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
 
-## Whats new?
-
-- Version 3: **New name**: The extension is renamed from **Catch2, Google Test and DOCtest Explorer**.
-- Simplified settings. This is a breaking change but hopefully the auto migration will handle most of it. 🤞
-
 ## Features / Show-Off
 
 - Reloads test list of an executable if it is recompiled. (_Hint: Right click -> Enable Autorun_)

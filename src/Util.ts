@@ -235,7 +235,7 @@ export function unique<T>(array: readonly T[]): readonly T[] {
   return array.filter((v, i, a) => a.indexOf(v) === i);
 }
 
-export function getAbsolutePath(filePath: string, directories: Iterable<string>): string | undefined {
+export function getAbsolutePath(filePath: string, directories: Iterable<string>): string {
   if (pathlib.isAbsolute(filePath)) return filePath;
 
   for (const dir of directories) {
@@ -253,5 +253,5 @@ export function getAbsolutePath(filePath: string, directories: Iterable<string>)
     } catch {}
   }
 
-  return undefined;
+  return filePath;
 }
