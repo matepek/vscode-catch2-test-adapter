@@ -8,7 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [3.2.7]
 
-This version tries to limit the coloring to fix an [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/207).
+- This version tries to limit the coloring to fix an [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/207).
+- Improved link detection
 
 ## [3.2.6] - 2020-06-21
 

@@ -19,6 +19,11 @@ import { TestGrouping } from './TestGroupingInterface';
 import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
 
+interface LinkData {
+  file: string;
+  fragment: string;
+}
+
 export interface RunTask {
   before?: string[];
   beforeEach?: string[];
@@ -55,6 +60,8 @@ export class ExecutableConfig implements vscode.Disposable {
       _shared.log.infoS('Using frameworks specific executable setting', _catch2, _gtest, _doctest);
     }
 
+    const linkDataSymbol = Symbol('DocumentLink data');
+
     this._disposables.push(
       vscode.languages.registerDocumentLinkProvider(
         { language: 'testMate.cpp.testOutput' },
@@ -64,54 +71,39 @@ export class ExecutableConfig implements vscode.Disposable {
             token: vscode.CancellationToken, // eslint-disable-line
           ): vscode.ProviderResult<vscode.DocumentLink[]> => {
             const text = document.getText();
+            const findLinks = (linkRegex: RegExp): vscode.ProviderResult<vscode.DocumentLink[]> => {
+              const result: vscode.DocumentLink[] = [];
+              const lines = text.split(/\r?\n/);
+              for (let i = 0; i < lines.length; ++i) {
+                if (token.isCancellationRequested) return;
+                const m = lines[i].match(linkRegex);
+                if (m) {
+                  const file = m[2];
+                  const line = Number(m[3]);
+                  const col = m[4] ? `:${m[4]}` : '';
+                  const index = m.index ? m.index + 4 : 0;
+                  const fragment = `${line}${col}`;
+                  const link = new vscode.DocumentLink(new vscode.Range(i, index, i, index + m[1].length));
+                  (link as any)[linkDataSymbol] = { file, fragment }; // eslint-disable-line
+                  result.push(link);
+                }
+              }
+              return result;
+            };
             if (text.startsWith('[ RUN      ]')) {
-              const dirs = new Set([...this._runnables.keys()].map(k => pathlib.dirname(k)));
-              const result: vscode.DocumentLink[] = [];
-              const lines = text.split(/\r?\n/);
-              for (let i = 0; i < lines.length; ++i) {
-                if (token.isCancellationRequested) return;
-                const m = lines[i].match(/^((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)):?\s/);
-                if (m) {
-                  const file = getAbsolutePath(m[2], dirs);
-                  if (file) {
-                    const line = Number(m[3]);
-                    const col = m[4] ? `:${m[4]}` : '';
-                    result.push(
-                      new vscode.DocumentLink(
-                        new vscode.Range(i, 0, i, m[1].length),
-                        vscode.Uri.file(file).with({ fragment: `${line}${col}` }),
-                      ),
-                    );
-                  }
-                }
-              }
-              return result;
+              return findLinks(/^(([./\w].*[\\/].*[.].*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)):?\s/);
             } else if (text.startsWith('⏱Duration:')) {
-              const dirs = new Set([...this._runnables.keys()].map(k => pathlib.dirname(k)));
-              const result: vscode.DocumentLink[] = [];
-              const lines = text.split(/\r?\n/);
-              for (let i = 0; i < lines.length; ++i) {
-                if (token.isCancellationRequested) return;
-                const m = lines[i].match(/\(at ((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?))\)/);
-                if (m) {
-                  const file = getAbsolutePath(m[2], dirs);
-                  if (file) {
-                    const line = Number(m[3]);
-                    const col = m[4] ? `:${m[4]}` : '';
-                    const index = m.index ? m.index + 4 : 0;
-                    result.push(
-                      new vscode.DocumentLink(
-                        new vscode.Range(i, index, i, index + m[1].length),
-                        vscode.Uri.file(file).with({ fragment: `${line}${col}` }),
-                      ),
-                    );
-                  }
-                }
-              }
-              return result;
+              return findLinks(/\(at ((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?))\)/);
             } else {
               return null;
             }
+          },
+          resolveDocumentLink: (link: vscode.DocumentLink): vscode.ProviderResult<vscode.DocumentLink> => {
+            const dirs = new Set([...this._runnables.keys()].map(k => pathlib.dirname(k)));
+            const linkData: LinkData = (link as any)[linkDataSymbol]; // eslint-disable-line
+            const resolvedFile = getAbsolutePath(linkData.file, dirs);
+            if (resolvedFile) link.target = vscode.Uri.file(resolvedFile).with({ fragment: linkData.fragment });
+            return link;
           },
         },
       ),
