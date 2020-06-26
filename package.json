@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "3.2.6",
+  "version": "3.2.7",
   "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -118,7 +118,8 @@
         "mimetypes": [
           "text/x-code-output",
           "x-code-output"
-        ]
+        ],
+        "firstLine": "(\\[ RUN      \\]|⏱Duration:)"
       }
     ],
     "grammars": [

@@ -4,6 +4,7 @@
   "scopeName": "text.testMate.cpp.testOutput",
   "patterns": [
     {
+      "comment": "gtest is matching on this",
       "begin": "\\[ RUN      \\](.*)",
       "captures": {
         "1": {
@@ -20,7 +21,7 @@
       ]
     },
     {
-      "comment": "catch2 and doctest is matching on this and it is fine, they have similar output",
+      "comment": "catch2 and doctest are matching on this and it is fine, they have similar output",
       "begin": "⏱Duration: ([\\d\\.]*)",
       "captures": {
         "1": {
@@ -286,7 +287,6 @@
           "match": "(?:(?:\\\\\\\\\\?\\\\)?(?:UNC|\\w:)|\\.\\.?|~|)(?:\\\\|\\/)[^ ]+",
           "name": "storage.testMate.other"
         },
-
         {
           "comment": "GUID",
           "match": "\\b(?i:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))\\b",
