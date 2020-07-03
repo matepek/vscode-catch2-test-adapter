@@ -1,19 +1,18 @@
 import * as assert from 'assert';
 import * as path from 'path';
-import { settings } from '../Common';
 import { Catch2Test } from '../../src/framework/Catch2Test';
-import { LoggerWrapper } from '../../src/LoggerWrapper';
 import { AbstractRunnable } from '../../src/AbstractRunnable';
 import { Suite } from '../../src/Suite';
 import { Version } from '../../src/Util';
 import { TestRunEvent } from '../../src/SharedVariables';
+import { logger } from '../LogOutputContent.test';
 
 ///
 
 describe(path.basename(__filename), function () {
   const catch2: Catch2Test = new Catch2Test(
     {
-      log: new LoggerWrapper('config', settings.workspaceFolder, 'outputChannel'),
+      log: logger,
     },
     (null as unknown) as AbstractRunnable,
     (null as unknown) as Suite,

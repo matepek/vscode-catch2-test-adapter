@@ -1,19 +1,18 @@
 import * as assert from 'assert';
 import * as path from 'path';
-import { settings } from '../Common';
 import { GoogleTest } from '../../src/framework/GoogleTest';
-import { LoggerWrapper } from '../../src/LoggerWrapper';
 import { AbstractRunnable } from '../../src/AbstractRunnable';
 import { Suite } from '../../src/Suite';
 import { EOL } from 'os';
 import { TestRunEvent } from '../../src/SharedVariables';
+import { logger } from '../LogOutputContent.test';
 
 ///
 
 describe(path.basename(__filename), function () {
   const gtest: GoogleTest = new GoogleTest(
     {
-      log: new LoggerWrapper('config', settings.workspaceFolder, 'outputChannel'),
+      log: logger,
     },
     (null as unknown) as AbstractRunnable,
     (null as unknown) as Suite,
