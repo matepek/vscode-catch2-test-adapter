@@ -8,7 +8,7 @@ import { RunnableFactory } from '../src/RunnableFactory';
 
 ///
 
-describe.only(path.basename(__filename), function () {
+describe(path.basename(__filename), function () {
   const sharedVariables = new SharedVariables();
   const root = new RootSuite(sharedVariables);
 
