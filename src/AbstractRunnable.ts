@@ -414,7 +414,7 @@ export abstract class AbstractRunnable {
 
   public reloadTests(taskPool: TaskPool): Promise<void> {
     return taskPool.scheduleTask(async () => {
-      this._shared.log.info('reloadChildren', this.frameworkName, this.frameworkVersion, this.properties.path);
+      this._shared.log.info('reloadTests', this.frameworkName, this.frameworkVersion, this.properties.path);
 
       const lastModiTime = await this._getModiTime();
 
@@ -460,7 +460,7 @@ export abstract class AbstractRunnable {
       return;
     }
 
-    await this.reloadTests(taskPool);
+    await this.reloadTests(taskPool); // this might relod the test list if the file timestam has changed
 
     const childrenToRun = collectChildrenToRun();
 

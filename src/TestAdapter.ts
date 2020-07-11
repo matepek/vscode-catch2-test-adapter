@@ -140,7 +140,19 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     };
 
     const sendTestRunEvent = (event: TestRunEvent): void => {
-      this._shared.log.debug('Event fired: ', event);
+      const label =
+        event.type === 'suite'
+          ? typeof event.suite === 'string'
+            ? event.suite
+            : event.suite.label
+          : event.type === 'test'
+          ? typeof event.test === 'string'
+            ? event.test
+            : event.test.label
+          : event.type;
+      this._shared.log.setNextInspectOptions({ depth: 0 });
+      this._shared.log.debug('Event fired', label, event);
+
       this._testStatesEmitter.fire(event);
     };
 
@@ -383,20 +395,24 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
   }
 
-  // eslint-disable-next-line
   private _sendLoadingFinishedEventIfNeeded(errors?: void | Error[]): void {
     if (errors && errors.length) {
-      this._testLoadingErrors.push(...errors);
+      try {
+        this._testLoadingErrors.push(...errors);
+      } catch (reason) {
+        this._shared.log.exceptionS(reason);
+      }
     }
 
     if (this._testLoadingCounter < 1) {
       this._shared.log.error('loading counter is too low');
       this._testLoadingCounter = 0;
+      this._testLoadingErrors = [];
       debugger;
       return;
     }
 
-    if (this._testLoadingCounter === 1) {
+    if (this._testLoadingCounter-- === 1) {
       this._shared.log.info('load finished', this._rootSuite.children.length);
       if (this._testLoadingErrors.length > 0) {
         this._testsEmitter.fire({
@@ -412,8 +428,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         });
       }
     }
-
-    this._testLoadingCounter -= 1;
   }
 
   public load(): Promise<void> {
