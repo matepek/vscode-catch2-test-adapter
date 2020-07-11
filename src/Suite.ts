@@ -24,6 +24,23 @@ export class Suite implements TestSuiteInfo {
     this.id = id ? id : generateId();
   }
 
+  // LiveShare serialization: https://github.com/hbenl/vscode-test-explorer-liveshare/pull/5
+  public getInterfaceObj(): TestSuiteInfo {
+    return {
+      type: 'suite',
+      id: this.id,
+      label: this.label,
+      description: this.description,
+      tooltip: this.tooltip,
+      file: this.file,
+      line: this.line,
+      debuggable: this.debuggable,
+      children: this.children.map(c => c.getInterfaceObj()),
+      errored: this.errored,
+      message: this.message,
+    };
+  }
+
   public compare(label: string, description: string): boolean {
     return this._label === label && this._descriptionBase === description;
   }
@@ -82,6 +99,10 @@ export class Suite implements TestSuiteInfo {
       this._line = this._file ? 0 : undefined;
     }
   }
+
+  public readonly errored = undefined;
+
+  public readonly message = undefined;
 
   public removeIfLeaf(): void {
     if (this.children.length == 0 && this.parent !== undefined) {

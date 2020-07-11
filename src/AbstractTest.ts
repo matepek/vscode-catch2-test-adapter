@@ -134,6 +134,22 @@ export abstract class AbstractTest implements TestInfo {
     this._additionalTooltip = tooltip;
   }
 
+  public getInterfaceObj(): TestInfo {
+    return {
+      type: 'test',
+      id: this.id,
+      label: this.label,
+      description: this.description,
+      tooltip: this.tooltip,
+      file: this.file,
+      line: this.line,
+      skipped: this.skipped,
+      debuggable: this.debuggable,
+      errored: this.errored,
+      message: this.message,
+    };
+  }
+
   public get label(): string {
     return this._label;
   }

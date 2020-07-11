@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - npm update
 - Logging improvemets
+- Passing serializeble data for [Live Share](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer-liveshare)
 
 ## [3.2.8] - 2020-06-26
 

@@ -421,10 +421,15 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             .map(err => (err instanceof Error ? `${err.name}: ${err.message}` : inspect(err)))
             .join('\n'),
         });
+      } else if (this._rootSuite.children.length === 0) {
+        this._testsEmitter.fire({
+          type: 'finished',
+          suite: undefined,
+        });
       } else {
         this._testsEmitter.fire({
           type: 'finished',
-          suite: this._rootSuite.children.length > 0 ? this._rootSuite : undefined,
+          suite: this._rootSuite.getInterfaceObj(),
         });
       }
     }
