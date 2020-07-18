@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [3.2.10] - 2020-07-18
 
+### Added
+
+- Support for open-vsx https://github.com/eclipse/openvsx/wiki/Publishing-Extensions
+
 ### Fixed
 
 - file link recognition for workaround
