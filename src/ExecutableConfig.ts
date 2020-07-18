@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 
 import { AbstractRunnable } from './AbstractRunnable';
 import * as c2fs from './FSWrapper';
-import { getAbsolutePath } from './Util';
+import { getAbsolutePath, findURIs } from './Util';
 import {
   resolveVariables,
   resolveOSEnvironmentVariables,
@@ -68,52 +68,46 @@ export class ExecutableConfig implements vscode.Disposable {
           ): vscode.ProviderResult<vscode.DocumentLink[]> => {
             const text = document.getText();
             const result: vscode.DocumentLink[] = [];
-            const findLinks = (linkRegex: RegExp): void => {
+
+            const findLinks = (regexType: 'catch2' | 'gtest' | 'general', resolvePath: boolean): void => {
               const lines = text.split(/\r?\n/);
               for (let i = 0; i < lines.length; ++i) {
                 if (token.isCancellationRequested) return;
-                const m = lines[i].match(linkRegex);
-                if (m) {
-                  const file = m[2];
-                  const line = Number(m[3]);
-                  const col = m[4] ? `:${m[4]}` : '';
-                  const index = m.index ? m.index + 4 : 0;
-                  const fragment = `${line}${col}`;
+
+                const matches = findURIs(lines[i], regexType);
+
+                for (let j = 0; j < matches.length; ++j) {
+                  const match = matches[j];
+
+                  const file = match.file;
+                  const col = match.column ? `:${match.column}` : '';
+                  const fragment = match.line ? `${match.line}${col}` : undefined;
                   const link: vscode.DocumentLink = new vscode.DocumentLink(
-                    new vscode.Range(i, index, i, index + m[1].length),
+                    new vscode.Range(i, match.index, i, match.index + match.full.length),
                   );
 
-                  ((link as unknown) as CreateUri)[createUriSymbol] = (): vscode.Uri => {
-                    const dirs = new Set([...this._runnables.keys()].map(k => pathlib.dirname(k)));
-                    const resolvedFile = getAbsolutePath(file, dirs);
-                    return vscode.Uri.file(resolvedFile).with({ fragment: fragment });
-                  };
+                  if (resolvePath) {
+                    ((link as unknown) as CreateUri)[createUriSymbol] = (): vscode.Uri => {
+                      const dirs = new Set([...this._runnables.keys()].map(k => pathlib.dirname(k)));
+                      const resolvedFile = getAbsolutePath(file, dirs);
+                      return vscode.Uri.file(resolvedFile).with({ fragment });
+                    };
+                  } else {
+                    link.target = vscode.Uri.file(file).with({ fragment });
+                  }
+
                   result.push(link);
                 }
               }
             };
+
             if (text.startsWith('[ RUN      ]')) {
-              findLinks(/^(([./\w].*[\\/].*[.].*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)):?\s/);
+              findLinks('gtest', true);
             } else if (text.startsWith('⏱Duration:')) {
-              findLinks(/\(at ((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?))\)/);
+              findLinks('catch2', true);
             } else {
               //https://github.com/matepek/vscode-catch2-test-adapter/issues/207
-              const regularFileLinkRegex = /\s?(([A-z]:\\|\.\.?[\\/]|\/)([^\\/\n]+[\\/])*[\w,-.]+([\w,\s-.]*?\.\w{3})?)\b/;
-              const lines = text.split(/\r?\n/);
-              for (let i = 0; i < lines.length; ++i) {
-                if (token.isCancellationRequested) return;
-
-                const m = lines[i].match(regularFileLinkRegex);
-                if (m && c2fs.existsSync(m[1])) {
-                  const index = m.index ? m.index + m[0].length - m[1].length : 0;
-                  const file = m[1];
-                  const link = new vscode.DocumentLink(
-                    new vscode.Range(i, index, i, index + m[1].length),
-                    vscode.Uri.file(file),
-                  );
-                  result.push(link);
-                }
-              }
+              findLinks('general', false);
             }
             return result;
           },

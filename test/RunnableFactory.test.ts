@@ -14,9 +14,13 @@ describe(path.basename(__filename), function () {
 
   const sinonSandbox = sinon.createSandbox();
 
-  const spawnStub = sinonSandbox.stub(cp, 'spawn').named('spawnStub');
+  let spawnStub: sinon.SinonStub<[string, readonly string[], cp.SpawnOptions], cp.ChildProcess>;
 
   before(function () {
+    spawnStub = sinonSandbox.stub(cp, 'spawn').named('spawnStub');
+  });
+
+  beforeEach(function () {
     sinonSandbox.reset();
   });
 
