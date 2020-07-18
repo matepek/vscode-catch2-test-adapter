@@ -255,3 +255,39 @@ export function getAbsolutePath(filePath: string, directories: Iterable<string>)
 
   return filePath;
 }
+
+// TODO handle multiple links in same line
+/**
+ * - 1: full
+ * - 2: file
+ * - 3: line
+ * - 4: column
+ */
+export function findURIs(
+  line: string,
+  regexType: 'gtest' | 'catch2' | 'general',
+): { index: number; full: string; file: string; line?: string; column?: string }[] {
+  let regex = /\s?(((?:[A-z]:\\|\.\.?[\\\/]|\/)(?:[^\\\/\n]+[\\\/])*[\w,-.]+(?:[\w,\s-.]*?\.\w{3})?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)?)\b/;
+  let indexShift = 0;
+  switch (regexType) {
+    case 'gtest':
+      regex = /^(([./\w].*[\\/].*[.].*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)):?\s/;
+      break;
+    case 'catch2':
+      regex = /\(at ((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?))\)/;
+      indexShift = 4;
+      break;
+    case 'general':
+    default:
+      break;
+  }
+
+  const m = line.match(regex);
+
+  if (m) {
+    const index = m.index ? m.index + indexShift : indexShift;
+    return [{ index, full: m[1], file: m[2], line: m[3] ?? '', column: m[4] ?? '' }];
+  } else {
+    return [];
+  }
+}
