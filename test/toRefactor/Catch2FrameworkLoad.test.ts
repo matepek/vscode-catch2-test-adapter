@@ -1052,12 +1052,12 @@ describe(path.basename(__filename), function () {
       const oldSuite1Children = [...suite1.children];
       const oldSuite2Children = [...suite2.children];
 
-      const newRoot = await adapter.doAndWaitForReloadEvent(this, () => {
+      const newRoot = await adapter.doAndWaitForReloadEvent(this, async () => {
         suite1Watcher.sendDelete();
         suite1Watcher.sendCreate();
       });
 
-      assert.equal(newRoot, adapter.root);
+      assert.equal(newRoot?.id, adapter.root.id);
       assert.equal(adapter.root.children.length, oldRootChildren.length);
       for (let i = 0; i < oldRootChildren.length; i++) {
         assert.equal(adapter.root.children[i], oldRootChildren[i]);
@@ -1142,12 +1142,12 @@ describe(path.basename(__filename), function () {
       const oldSuite1Children = [...suite1.children];
       const oldSuite2Children = [...suite2.children];
 
-      const newRoot = await adapter.doAndWaitForReloadEvent(this, () => {
+      const newRoot = await adapter.doAndWaitForReloadEvent(this, async () => {
         suite1Watcher.sendDelete();
         suite1Watcher.sendCreate();
       });
 
-      assert.equal(newRoot, adapter.root);
+      assert.equal(newRoot?.id, adapter.root.id);
       assert.equal(adapter.root.children.length, oldRootChildren.length);
       for (let i = 0; i < oldRootChildren.length; i++) {
         assert.equal(adapter.root.children[i], oldRootChildren[i]);

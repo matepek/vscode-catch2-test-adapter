@@ -67,7 +67,7 @@ describe(path.basename(__filename), function () {
 
     it('test.advancedExecutables', async function () {
       process.platform;
-      const setting: Partial<Record<NodeJS.Platform, object>> = {};
+      const setting: Partial<Record<NodeJS.Platform, Record<string, unknown>>> = {};
       setting[process.platform] = { pattern: 'spec' };
 
       await settings.updateConfig('test.advancedExecutables', [setting]);

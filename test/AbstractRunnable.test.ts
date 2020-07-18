@@ -103,10 +103,6 @@ describe(pathlib.basename(__filename), function () {
     sinonSandbox.restore();
   });
 
-  afterEach(function () {
-    sinonSandbox.resetHistory();
-  });
-
   const exec1Prop = new RunnableProperties(
     'name',
     undefined,
@@ -298,9 +294,12 @@ describe(pathlib.basename(__filename), function () {
     const shared = new SharedVariables();
     const root = new RootSuite(shared);
     const runnable = new Runnable(shared, root, exec1Prop);
+
     let spawnStub: sinon.SinonStub<[string, readonly string[], cp.SpawnOptions], cp.ChildProcess>;
 
     before(async function () {
+      spawnStub = sinonSandbox.stub(cp, 'spawn');
+
       sinonSandbox.stub(runnable, '_reloadChildren').callsFake(
         async (): Promise<RunnableReloadResult> => {
           return new RunnableReloadResult()
@@ -422,19 +421,17 @@ describe(pathlib.basename(__filename), function () {
 
       sinonSandbox.stub(runnable, '_handleProcess').resolves();
 
-      spawnStub = sinonSandbox
-        .stub(cp, 'spawn')
-        .withArgs(exec1Prop.path, sinon.match.any, sinon.match.any)
-        .callsFake(
-          (): cp.ChildProcess => {
-            return new ChildProcessStub('');
-          },
-        );
+      spawnStub.withArgs(exec1Prop.path, sinon.match.any, sinon.match.any).callsFake(() => new ChildProcessStub(''));
     });
 
     beforeEach(function () {
       shared.stateEvents.splice(0);
       shared.loadCount = 0;
+      spawnStub.resetHistory();
+    });
+
+    after(function () {
+      spawnStub.restore();
     });
 
     it('should run none', async function () {

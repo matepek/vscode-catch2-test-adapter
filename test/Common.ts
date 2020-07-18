@@ -70,7 +70,7 @@ export const settings = new (class {
   }
 })();
 
-export async function waitFor(context: Mocha.Context, condition: Function, timeout?: number): Promise<void> {
+export async function waitFor(context: Mocha.Context, condition: () => boolean, timeout?: number): Promise<void> {
   if (timeout === undefined) timeout = context.timeout() - 1000 /*need some time for error handling*/;
   const start = Date.now();
   let c = await condition();
@@ -430,7 +430,10 @@ export class TestAdapter extends my.TestAdapter {
     stateEventSequence(this.stateEvents, before, thanThis);
   }
 
-  public async doAndWaitForReloadEvent(context: Mocha.Context, action: Function): Promise<TestSuiteInfo | undefined> {
+  public async doAndWaitForReloadEvent(
+    context: Mocha.Context,
+    action: () => Promise<void>,
+  ): Promise<TestSuiteInfo | undefined> {
     const origCount = this.loadEvents.length;
     try {
       await action();
@@ -448,7 +451,7 @@ export class TestAdapter extends my.TestAdapter {
     assert.equal(this.loadEvents[this.loadEvents.length - 1].type, 'finished');
     const e = this.loadEvents[this.loadEvents.length - 1] as TestLoadFinishedEvent;
     if (e.suite) {
-      assert.strictEqual(e.suite, this.root);
+      assert.strictEqual(e.suite.id, this.root.id);
     } else {
       assert.deepStrictEqual([], this.root.children);
     }
