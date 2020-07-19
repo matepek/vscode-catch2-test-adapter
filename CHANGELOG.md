@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+Migration from old version is removed. (If one still want it, they can downgrade for temporarily.)
+
 ## [3.2.10] - 2020-07-18
 
 ### Added
