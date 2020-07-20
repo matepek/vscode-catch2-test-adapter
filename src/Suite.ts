@@ -120,7 +120,7 @@ export class Suite implements TestSuiteInfo {
   }
 
   private _getRunningEvent(testRunId: string): TestSuiteEvent {
-    return { testRunId, type: 'suite', suite: this, state: 'running' };
+    return { testRunId, type: 'suite', suite: this.id, state: 'running' };
   }
 
   public sendRunningEventIfNeeded(testRunId: string): void {
@@ -179,7 +179,7 @@ export class Suite implements TestSuiteInfo {
     return {
       testRunId,
       type: 'suite',
-      suite: this,
+      suite: this.id,
       state: 'completed',
       description: this.description,
       tooltip: this.tooltip,

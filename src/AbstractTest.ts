@@ -17,7 +17,7 @@ export interface StaticTestEventBase {
 export interface AbstractTestEvent extends TestEvent {
   testRunId: string;
   type: 'test';
-  test: TestInfo;
+  test: string;
 }
 
 export abstract class AbstractTest implements TestInfo {
@@ -208,7 +208,7 @@ export abstract class AbstractTest implements TestInfo {
       return {
         testRunId,
         type: 'test',
-        test: this,
+        test: this.id,
         state: this._staticEvent.state,
         message: this._staticEvent?.message,
       };
@@ -247,11 +247,11 @@ export abstract class AbstractTest implements TestInfo {
   }
 
   public getStartEvent(testRunId: string): AbstractTestEvent {
-    return { testRunId, type: 'test', test: this, state: 'running' };
+    return { testRunId, type: 'test', test: this.id, state: 'running' };
   }
 
   public getSkippedEvent(testRunId: string): AbstractTestEvent {
-    return { testRunId, type: 'test', test: this, state: 'skipped' };
+    return { testRunId, type: 'test', test: this.id, state: 'skipped' };
   }
 
   public abstract parseAndProcessTestCase(
@@ -282,7 +282,7 @@ export abstract class AbstractTest implements TestInfo {
     return {
       testRunId,
       type: 'test',
-      test: this,
+      test: this.id,
       state: 'failed',
       message: '',
       decorations: [],

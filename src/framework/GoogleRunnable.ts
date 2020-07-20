@@ -325,7 +325,7 @@ export class GoogleRunnable extends AbstractRunnable {
                 data.currentChild.lastRunEvent = {
                   testRunId,
                   type: 'test',
-                  test: data.currentChild,
+                  test: data.currentChild.id,
                   state: 'errored',
                   message: [
                     '😱 Unexpected error under parsing output !! Error: ' + inspect(e),

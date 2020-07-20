@@ -161,7 +161,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         const testRunId = generateId();
         this._rootSuite.sendStartEventIfNeeded(
           testRunId,
-          testEvents.map(v => v.test.id),
+          testEvents.map(v => v.test),
         );
 
         for (let i = 0; i < testEvents.length; ++i) {

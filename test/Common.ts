@@ -228,23 +228,23 @@ export class Imitation {
 
 ///
 
+function getId(t: my2.TestRunEvent): string {
+  switch (t.type) {
+    case 'test':
+      return typeof t.test == 'string' ? t.test : t.test.id;
+    case 'suite':
+      return typeof t.suite == 'string' ? t.suite : t.suite.id;
+    case 'started':
+    case 'finished':
+      return t.type;
+    default:
+      throw Error('assert');
+  }
+}
+
 function simplifiedAssertEqualStateEvents(stateEvents: my2.TestRunEvent[], expectedArr: my2.TestRunEvent[]): void {
   if (stateEvents.length != expectedArr.length)
     console.log(`this._testStatesEvents.length(${stateEvents.length}) != expected.length(${expectedArr.length})`);
-
-  const getId = (t: my2.TestRunEvent): string => {
-    switch (t.type) {
-      case 'test':
-        return typeof t.test == 'string' ? t.test : t.test.id;
-      case 'suite':
-        return typeof t.suite == 'string' ? t.suite : t.suite.id;
-      case 'started':
-      case 'finished':
-        return t.type;
-      default:
-        throw Error('assert');
-    }
-  };
 
   try {
     for (let i = 0; i < expectedArr.length && i < stateEvents.length; ++i) {
@@ -275,11 +275,11 @@ function indexOfStateEvent(stateEvents: my2.TestRunEvent[], searchFor: my2.TestR
   const i = stateEvents.findIndex((v: my2.TestRunEvent) => {
     if (v.type !== searchFor.type) return false;
     if (v.type === 'suite' && searchFor.type === 'suite') {
-      if (v.suite !== searchFor.suite) return false;
+      if (getId(v) !== getId(searchFor)) return false;
       if (v.state !== searchFor.state) return false;
     }
     if (v.type === 'test' && searchFor.type === 'test') {
-      if (v.test !== searchFor.test) return false;
+      if (getId(v) !== getId(searchFor)) return false;
       if (v.state !== searchFor.state) return false;
     }
     if (v.type === 'started' && searchFor.type === 'started') {

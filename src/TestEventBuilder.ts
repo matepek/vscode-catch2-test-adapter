@@ -134,7 +134,7 @@ export class TestEventBuilder {
     const ev: AbstractTestEvent = {
       testRunId: this._testRunId,
       type: 'test',
-      test: this.test,
+      test: this.test.id,
       state: this._state,
       message: overwriteMessage ? overwriteMessage : message.length ? message.join('\n') : undefined,
       decorations: this._decorations.length ? this._decorations : [],

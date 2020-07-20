@@ -50,7 +50,7 @@ describe(path.basename(__filename), function () {
     const expected: TestRunEvent = {
       testRunId: 'runid',
       type: 'test',
-      test: gtest,
+      test: gtest.id,
       message: output,
       state: 'failed',
       description: '(66ms)',
@@ -111,7 +111,7 @@ describe(path.basename(__filename), function () {
     const expected: TestRunEvent = {
       testRunId: 'runid',
       type: 'test',
-      test: gtest,
+      test: gtest.id,
       message: output,
       state: 'failed',
       description: '(66ms)',
@@ -186,7 +186,7 @@ describe(path.basename(__filename), function () {
     const expected: TestRunEvent = {
       testRunId: 'runid',
       type: 'test',
-      test: gtest,
+      test: gtest.id,
       message: output.replace(/\): error: /g, '): error: \n'),
       state: 'failed',
       description: '(66ms)',

@@ -36,7 +36,7 @@ describe(path.basename(__filename), function () {
       testRunId: 'runid',
       type: 'test',
       state: 'passed',
-      test: catch2,
+      test: catch2.id,
       decorations: [],
       description: '[tag1] (0ms)',
       tooltip: 'Name: TestName\nTags: [tag1]\n⏱Duration: 0ms',
