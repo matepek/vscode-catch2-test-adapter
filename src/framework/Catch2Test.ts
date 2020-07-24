@@ -275,12 +275,14 @@ export class Catch2Test extends AbstractTest {
       for (let i = 0; i < xml.Info.length; i++) {
         try {
           const piece = xml.Info[i];
-          const location = piece.$.filename && piece.$.line ? ` (at ${piece.$.filename}:${piece.$.line})` : '';
+          const location =
+            piece.$ && piece.$.filename && piece.$.line ? ` (at ${piece.$.filename}:${piece.$.line})` : '';
           testEventBuilder.appendMessage(`⬇ Info:${location}`, 1);
           testEventBuilder.appendMessage(piece, 2);
           testEventBuilder.appendMessage('⬆ Info', 1);
         } catch (e) {
           this._shared.log.exceptionS(e);
+          testEventBuilder.appendMessage('Error during processing output', 2);
         }
       }
     }
@@ -289,12 +291,14 @@ export class Catch2Test extends AbstractTest {
       for (let i = 0; i < xml.Warning.length; i++) {
         try {
           const piece = xml.Warning[i];
-          const location = piece.$.filename && piece.$.line ? ` (at ${piece.$.filename}:${piece.$.line})` : '';
+          const location =
+            piece.$ && piece.$.filename && piece.$.line ? ` (at ${piece.$.filename}:${piece.$.line})` : '';
           testEventBuilder.appendMessage(`⬇ Warning${location}:`, 1);
           testEventBuilder.appendMessageWithDecorator(piece.$.filename, Number(piece.$.line) - 1, piece, 2);
           testEventBuilder.appendMessage('⬆ Warning', 1);
         } catch (e) {
           this._shared.log.exceptionS(e);
+          testEventBuilder.appendMessage('Error during processing output', 2);
         }
       }
     }
@@ -303,7 +307,8 @@ export class Catch2Test extends AbstractTest {
       for (let i = 0; i < xml.Failure.length; i++) {
         try {
           const piece = xml.Failure[i];
-          const location = piece.$.filename && piece.$.line ? ` (at ${piece.$.filename}:${piece.$.line})` : '';
+          const location =
+            piece.$ && piece.$.filename && piece.$.line ? ` (at ${piece.$.filename}:${piece.$.line})` : '';
           testEventBuilder.appendMessage(`⬇ Failure${location}:`, 1);
           if (typeof piece._ !== 'string') this._shared.log.warn('No _ under failure', piece);
 
@@ -313,6 +318,7 @@ export class Catch2Test extends AbstractTest {
           testEventBuilder.appendMessage('⬆ Failure', 1);
         } catch (e) {
           this._shared.log.exceptionS(e);
+          testEventBuilder.appendMessage('Error during processing output', 2);
         }
       }
     }
