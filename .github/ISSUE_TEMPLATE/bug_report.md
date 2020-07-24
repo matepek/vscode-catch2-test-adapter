@@ -57,4 +57,6 @@ about: Create a report to help us improve
   - Close VSCode
 
   _Warning_: Log probably contains file and test names too.
+
+  PLEASE attach an extensive log. A lot of times reportes just select what they think it is important and those logs sometime not sufficient.
 -->
