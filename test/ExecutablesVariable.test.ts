@@ -173,23 +173,7 @@ describe(path.basename(__filename), function () {
       this.slow(watchTimeout * 1000 + 2500 /* because of 'delay' */);
       const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
-      for (const scenario of example1.suite2.outputs) {
-        imitation.spawnStub
-          .withArgs(execPath2CopyPath, scenario[0], sinon.match.any)
-          .callsFake(() => new ChildProcessStub(scenario[1]));
-      }
-
-      imitation.fsAccessStub
-        .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
-        .callsFake(imitation.handleAccessFileExists);
-
-      imitation.vsfsWatchStub
-        .withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
-        .callsFake(imitation.createCreateFSWatcherHandler(watchers));
-
-      imitation.vsFindFilesStub
-        .withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
-        .resolves([vscode.Uri.file(execPath2CopyPath)]);
+      example1.initImitationWithSuite(imitation, example1.suite2, watchers, execPath2CopyPath);
 
       await settings.updateConfig('test.advancedExecutables', ['execPath1.exe', 'execPath2Copy.exe']);
       adapter = new TestAdapter();
@@ -233,29 +217,13 @@ describe(path.basename(__filename), function () {
   });
 
   specify('load executables=["execPath1.exe", "execPath2Copy.exe"]; delete second', async function () {
-    const watchTimeout = 1;
-    await settings.updateConfig('discovery.gracePeriodForMissing', watchTimeout);
-    this.timeout(watchTimeout * 1000 + 7500 /* because of 'delay' */);
-    this.slow(watchTimeout * 1000 + 5500 /* because of 'delay' */);
+    const watchTimeoutSec = 1;
+    await settings.updateConfig('discovery.gracePeriodForMissing', watchTimeoutSec);
+    this.timeout(watchTimeoutSec * 1000 + 7500 /* because of 'delay' */);
+    this.slow(watchTimeoutSec * 1000 + 5500 /* because of 'delay' */);
     const execPath2CopyPath = path.join(settings.workspaceFolderUri.fsPath, 'execPath2Copy.exe');
 
-    for (const scenario of example1.suite2.outputs) {
-      imitation.spawnStub
-        .withArgs(execPath2CopyPath, scenario[0], sinon.match.any)
-        .callsFake(() => new ChildProcessStub(scenario[1]));
-    }
-
-    imitation.fsAccessStub
-      .withArgs(execPath2CopyPath, sinon.match.any, sinon.match.any)
-      .callsFake(imitation.handleAccessFileExists);
-
-    imitation.vsfsWatchStub
-      .withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
-      .callsFake(imitation.createCreateFSWatcherHandler(watchers));
-
-    imitation.vsFindFilesStub
-      .withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath2CopyPath))
-      .resolves([vscode.Uri.file(execPath2CopyPath)]);
+    example1.initImitationWithSuite(imitation, example1.suite2, watchers, execPath2CopyPath);
 
     await settings.updateConfig('test.advancedExecutables', ['execPath1.exe', 'execPath2Copy.exe']);
     adapter = new TestAdapter();
@@ -277,8 +245,8 @@ describe(path.basename(__filename), function () {
     const elapsed = Date.now() - start;
 
     assert.equal(adapter.root.children.length, 1);
-    assert.ok(watchTimeout * 1000 < elapsed, inspect(elapsed));
-    assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
+    assert.ok(watchTimeoutSec * 1000 < elapsed, inspect(elapsed));
+    assert.ok(elapsed < watchTimeoutSec * 1000 + 2400, inspect(elapsed));
   });
 
   specify('wrong executables format', async function () {

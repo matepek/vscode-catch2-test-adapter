@@ -74,7 +74,10 @@ export async function waitFor(context: Mocha.Context, condition: () => boolean, 
   if (timeout === undefined) timeout = context.timeout() - 1000 /*need some time for error handling*/;
   const start = Date.now();
   let c = await condition();
-  while (!(c = await condition()) && (Date.now() - start < timeout || !context.enableTimeouts()))
+  while (
+    !(c = await condition()) &&
+    (Date.now() - start < timeout || (context.enableTimeouts && !context.enableTimeouts()))
+  )
     await promisify(setTimeout)(32);
   if (!c) throw Error('in test: ' + (context.test ? context.test.title : '?') + '. Condition: ' + condition.toString());
 }

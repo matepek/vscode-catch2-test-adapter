@@ -46,7 +46,7 @@ describe(path.basename(__filename), function () {
       );
 
       spawnStub
-        .withArgs('execpath.exe', ['--help'], {})
+        .withArgs('execpath.exe', ['--help'], { timeout: sharedVariables.execParsingTimeout })
         .returns(
           new ChildProcessStub(
             [
@@ -86,7 +86,7 @@ describe(path.basename(__filename), function () {
       );
 
       spawnStub
-        .withArgs('execpath.exe', ['--help'], {})
+        .withArgs('execpath.exe', ['--help'], { timeout: sharedVariables.execParsingTimeout })
         .returns(
           new ChildProcessStub(
             [

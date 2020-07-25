@@ -68,7 +68,7 @@ export class RunnableFactory {
           const gtest = runWithHelpRes.stdout.match(
             this._gtest.helpRegex
               ? new RegExp(this._gtest.helpRegex, regexFlags)
-              : /This program contains tests written using .*--(\w+)list_tests.*List the names of all tests instead of running them./s,
+              : /This program contains tests written using .*--(\w+)list_tests.*List the names of all tests instead of running them/s,
           );
           if (gtest) {
             return new GoogleRunnable(

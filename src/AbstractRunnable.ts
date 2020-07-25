@@ -20,6 +20,7 @@ import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
 import { TestEvent } from 'vscode-test-adapter-api';
 import { RootSuite } from './RootSuite';
 import { EOL } from 'os';
+import { isSpawnBusyError } from './FSWrapper';
 
 export class RunnableReloadResult {
   public tests = new Set<AbstractTest>();
@@ -149,7 +150,7 @@ export abstract class AbstractRunnable {
       const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : '';
       const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : '';
 
-      this._shared.log.debug('groupBy', { label, resolvedLabel, description, resolvedDescr });
+      //this._shared.log.debug('groupBy', { label, resolvedLabel, description, resolvedDescr });
 
       group = this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, group);
     };
@@ -515,8 +516,7 @@ export abstract class AbstractRunnable {
       };
 
       return taskPool.scheduleTask(runIfNotCancelled).catch((err: Error) => {
-        // eslint-disable-next-line
-        if ((err as any).code === 'EBUSY' || (err as any).code === 'ETXTBSY') {
+        if (isSpawnBusyError(err)) {
           this._shared.log.info('executable is busy, rescheduled: 2sec', err);
 
           return promisify(setTimeout)(2000).then(() => {

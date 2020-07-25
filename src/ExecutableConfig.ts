@@ -120,15 +120,15 @@ export class ExecutableConfig implements vscode.Disposable {
     );
   }
 
+  private _disposed = false;
   private _disposables: vscode.Disposable[] = [];
-
-  private readonly _runnables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
-
-  private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
   public dispose(): void {
     this._disposables.forEach(d => d.dispose());
+    this._disposed = true;
   }
+
+  private readonly _runnables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
 
   public async load(rootSuite: RootSuite): Promise<Error[]> {
     const pattern = this._patternProcessor(this._pattern);
@@ -380,62 +380,117 @@ export class ExecutableConfig implements vscode.Disposable {
     );
   }
 
+  private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
+
   private _handleEverything(filePath: string, rootSuite: RootSuite): void {
+    if (this._disposed) return;
+
     const isHandlerRunningForFile = this._lastEventArrivedAt.get(filePath) !== undefined;
-    if (isHandlerRunningForFile) return;
 
     this._lastEventArrivedAt.set(filePath, Date.now());
+
+    if (isHandlerRunningForFile) return;
 
     const runnable = this._runnables.get(filePath);
 
     if (runnable !== undefined) {
-      this._recursiveHandleEverything(runnable, false, 128);
+      this._recursiveHandleRunnable(runnable)
+        .catch(reject => {
+          this._shared.log.errorS(`_recursiveHandleRunnable errors should be handled inside`, reject);
+        })
+        .finally(() => {
+          this._lastEventArrivedAt.delete(filePath);
+        });
     } else {
       if (this._shouldIgnorePath(filePath)) return;
 
       this._shared.log.info('possibly new suite: ' + filePath);
-      this._createSuiteByUri(filePath, rootSuite)
-        .create(true)
-        .then(
-          (s: AbstractRunnable) => this._recursiveHandleEverything(s, false, 128),
-          (reason: Error) => this._shared.log.info("couldn't add: " + filePath, 'reson:', reason),
-        );
+
+      this._recursiveHandleFile(filePath, rootSuite)
+        .catch(reject => {
+          this._shared.log.errorS(`_recursiveHandleFile errors should be handled inside`, reject);
+        })
+        .finally(() => {
+          this._lastEventArrivedAt.delete(filePath);
+        });
     }
   }
 
-  private _recursiveHandleEverything(
-    runnable: AbstractRunnable,
-    isFileExistsAndExecutable: boolean,
-    delay: number,
+  private async _recursiveHandleFile(
+    filePath: string,
+    rootSuite: RootSuite,
+    delay = 1024,
+    tryCount = 1,
   ): Promise<void> {
+    if (this._disposed) return;
+
+    const lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
+
+    if (lastEventArrivedAt === undefined) {
+      this._shared.log.errorS('_recursiveHandleFile: lastEventArrivedAt');
+      debugger;
+      return;
+    }
+
+    if (Date.now() - lastEventArrivedAt > this._shared.execWatchTimeout) {
+      this._shared.log.info('file refresh timeout:', filePath);
+      return;
+    }
+
+    try {
+      const runnable = await this._createSuiteByUri(filePath, rootSuite).create(true);
+
+      return this._recursiveHandleRunnable(runnable).catch(reject => {
+        this._shared.log.errorS(`_recursiveHandleFile._recursiveHandleFile errors should be handled inside`, reject);
+      });
+    } catch (reason) {
+      const nextDelay = Math.min(delay + 1000, 5000);
+
+      if (tryCount > 20) {
+        this._shared.log.info("couldn't add file", filePath, 'reson', reason, tryCount);
+        return;
+      }
+
+      if (c2fs.isSpawnBusyError(reason)) {
+        this._shared.log.debug('_recursiveHandleFile: busy, retrying... ' + filePath, 'reson:', reason);
+      } else {
+        this._shared.log.debug('_recursiveHandleFile: other error... ' + filePath, 'reson:', reason);
+      }
+
+      await promisify(setTimeout)(delay);
+
+      return this._recursiveHandleFile(filePath, rootSuite, nextDelay, tryCount + 1);
+    }
+  }
+
+  private async _recursiveHandleRunnable(
+    runnable: AbstractRunnable,
+    isFileExistsAndExecutable = false,
+    delay = 128,
+  ): Promise<void> {
+    if (this._disposed) return;
+
     const filePath = runnable.properties.path;
     const lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
+
     if (lastEventArrivedAt === undefined) {
-      this._shared.log.error('assert');
+      this._shared.log.errorS('_recursiveHandleRunnable: lastEventArrivedAt');
       debugger;
-      return Promise.resolve();
-    } else if (isFileExistsAndExecutable) {
-      return new Promise<void>((resolve, reject) => {
-        return runnable
-          .reloadTests(this._shared.taskPool)
-          .then(() => {
-            this._runnables.set(filePath, runnable); // it might be set already but we don't care
-            this._lastEventArrivedAt.delete(filePath);
-            this._shared.sendRetireEvent(runnable.tests);
-          })
-          .then(resolve, reject);
-      }).catch((reason: Error & { code: undefined | number }) => {
-        if (reason.code === undefined) {
-          this._shared.log.debug('reason', reason);
-          this._shared.log.debug('filePath', filePath);
-          this._shared.log.debug('suite', runnable);
-          this._shared.log.warn('problem under reloading', reason);
-        }
-        return this._recursiveHandleEverything(runnable, false, Math.min(delay * 2, 2000));
-      });
+      return;
+    }
+
+    if (isFileExistsAndExecutable) {
+      try {
+        await runnable.reloadTests(this._shared.taskPool);
+        this._runnables.set(filePath, runnable); // it might be set already but we don't care
+        this._shared.sendRetireEvent(runnable.tests);
+      } catch (reason) {
+        if (reason.code === undefined)
+          this._shared.log.debug('problem under reloading', { reason, filePath, runnable });
+        return this._recursiveHandleRunnable(runnable, false, Math.min(delay * 2, 2000));
+      }
     } else if (Date.now() - lastEventArrivedAt > this._shared.execWatchTimeout) {
       this._shared.log.info('refresh timeout:', filePath);
-      this._lastEventArrivedAt.delete(filePath);
       const foundRunnable = this._runnables.get(filePath);
       if (foundRunnable) {
         return this._shared.loadWithTask(
@@ -444,19 +499,16 @@ export class ExecutableConfig implements vscode.Disposable {
             this._runnables.delete(filePath);
           },
         );
-      } else {
-        return Promise.resolve();
       }
     } else {
-      return promisify(setTimeout)(Math.min(delay * 2, 2000)).then(() => {
-        return c2fs
-          .isNativeExecutableAsync(filePath)
-          .then(
-            () => true,
-            () => false,
-          )
-          .then(isExec => this._recursiveHandleEverything(runnable, isExec, Math.min(delay * 2, 2000)));
-      });
+      await promisify(setTimeout)(delay);
+
+      const isExec = await c2fs.isNativeExecutableAsync(filePath).then(
+        () => true,
+        () => false,
+      );
+
+      return this._recursiveHandleRunnable(runnable, isExec, Math.min(delay * 2, 2000));
     }
   }
 

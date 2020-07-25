@@ -8,7 +8,16 @@ import * as sinon from 'sinon';
 
 ///
 
+interface SuiteExample {
+  execPath: string;
+  outputs: [string[], string][];
+}
+
+///
+
 export const example1 = new (class {
+  //public initImitationOfSuite();
+
   public readonly suite1 = new (class {
     public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath1.exe')).fsPath;
 
@@ -2362,43 +2371,39 @@ For more detailed usage please see the project docs
     ];
   })();
 
-  public readonly outputs: [string, [string[], string][]][] = [
-    [this.suite1.execPath, this.suite1.outputs],
-    [this.suite2.execPath, this.suite2.outputs],
-    [this.suite3.execPath, this.suite3.outputs],
-    [this.gtest1.execPath, this.gtest1.outputs],
-  ];
+  public readonly suites: SuiteExample[] = [this.suite1, this.suite2, this.suite3, this.gtest1];
 
-  public initImitation(imitation: Imitation): Map<string, FileSystemWatcherStub> {
-    const watchers: Map<string, FileSystemWatcherStub> = new Map();
-
-    for (const suite of this.outputs) {
-      for (const scenario of suite[1]) {
-        scenario[0][0].split(',').sort().join(',');
-        imitation.spawnStub
-          .withArgs(suite[0], scenario[0], sinon.match.any)
-          .callsFake(() => new ChildProcessStub(scenario[1]));
-      }
-
-      imitation.fsAccessStub
-        .withArgs(suite[0], sinon.match.any, sinon.match.any)
-        .callsFake(imitation.handleAccessFileExists);
-
-      imitation.vsfsWatchStub
-        .withArgs(imitation.createAbsVscodeRelativePatternMatcher(suite[0]))
-        .callsFake(imitation.createCreateFSWatcherHandler(watchers));
+  public initImitationWithSuite(
+    imitation: Imitation,
+    suiteExample: SuiteExample,
+    watchers: Map<string, FileSystemWatcherStub>,
+    overrideExecPath?: string,
+  ): void {
+    const execPath = overrideExecPath ?? suiteExample.execPath;
+    for (const scenario of suiteExample.outputs) {
+      scenario[0][0].split(',').sort().join(',');
+      imitation.spawnStub
+        .withArgs(execPath, scenario[0], sinon.match.any)
+        .callsFake(() => new ChildProcessStub(scenario[1]));
     }
+
+    imitation.fsAccessStub
+      .withArgs(execPath, sinon.match.any, sinon.match.any)
+      .callsFake(imitation.handleAccessFileExists);
+
+    imitation.vsfsWatchStub
+      .withArgs(imitation.createAbsVscodeRelativePatternMatcher(execPath))
+      .callsFake(imitation.createCreateFSWatcherHandler(watchers));
 
     const dirContent: Map<string, vscode.Uri[]> = new Map();
-    for (const p of this.outputs) {
-      const parent = vscode.Uri.file(path.dirname(p[0])).fsPath;
-      let children: vscode.Uri[] = [];
-      if (dirContent.has(parent)) children = dirContent.get(parent)!;
-      else {
-        dirContent.set(parent, children);
-      }
-      children.push(vscode.Uri.file(p[0]));
+
+    const parent = vscode.Uri.file(path.dirname(execPath)).fsPath;
+    let children: vscode.Uri[] = [];
+    if (dirContent.has(parent)) children = dirContent.get(parent)!;
+    else {
+      dirContent.set(parent, children);
     }
+    children.push(vscode.Uri.file(execPath));
 
     dirContent.forEach((v: vscode.Uri[], k: string) => {
       assert.equal(settings.workspaceFolderUri.fsPath, k);
@@ -2407,6 +2412,12 @@ For more detailed usage please see the project docs
         imitation.vsFindFilesStub.withArgs(imitation.createAbsVscodeRelativePatternMatcher(p.fsPath)).resolves([p]);
       }
     });
+  }
+
+  public initImitation(imitation: Imitation): Map<string, FileSystemWatcherStub> {
+    const watchers: Map<string, FileSystemWatcherStub> = new Map();
+
+    this.suites.forEach(s => this.initImitationWithSuite(imitation, s, watchers));
 
     return watchers;
   }

@@ -23,11 +23,14 @@ export function spawnAsync(
       stderr: '',
       status: 0,
       signal: null,
-      error: (undefined as unknown) as Error,
+      error: undefined,
       closed: false,
     };
 
-    const command = cp.spawn(cmd, args || [], options || {});
+    const optionsEx = Object.assign<SpawnOptions, SpawnOptions>({ timeout }, options || {});
+
+    const command = cp.spawn(cmd, args || [], optionsEx);
+
     Object.assign(ret, { process: command }); // for debugging
 
     ret.pid = command.pid;
@@ -58,17 +61,19 @@ export function spawnAsync(
         resolve(ret);
       }
     });
-
-    if (timeout !== undefined && timeout > 0) {
-      setTimeout(() => {
-        if (ret.closed !== true) {
-          command.kill('SIGKILL');
-          reject(new Error('FsWrapper.spawnAsync timeout: ' + timeout));
-        }
-      }, timeout);
-    }
   });
 }
+
+export function isSpawnBusyError(err: Error): boolean {
+  const errEx = err as Error & { code: undefined | string };
+  if (errEx.code === 'EBUSY' || errEx.code === 'ETXTBSY') {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+///
 
 const ExecutableFlag = fs.constants.X_OK;
 
