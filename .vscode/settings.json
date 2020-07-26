@@ -100,7 +100,6 @@
     "*.tcc": "cpp",
     "memory_resource": "cpp"
   },
-  "editor.formatOnSaveTimeout": 5000,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[javascript]": {
     "editor.formatOnSave": false
@@ -112,12 +111,11 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
-  "mochaExplorer.files": "/out/test/**/*.test.js",
-  "mochaExplorer.require": "source-map-support/register",
-  "mochaExplorer.logpanel": true,
   "json.schemas": [
     {
-      "fileMatch": ["/syntaxes/cpp.testOutput.tmLanguage.json"],
+      "fileMatch": [
+        "/syntaxes/cpp.testOutput.tmLanguage.json"
+      ],
       "url": "/src/tmLanguage.schema.json"
     }
   ],

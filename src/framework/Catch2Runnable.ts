@@ -179,7 +179,7 @@ export class Catch2Runnable extends AbstractRunnable {
 
       const tags: string[] = [];
       if (testCase.Tags[0]) {
-        const matches = testCase.Tags.match(/\[[^\[\]]+\]/g);
+        const matches = testCase.Tags[0].match(/\[[^\[\]]+\]/g);
         if (matches) matches.forEach((t: string) => tags.push(t.substring(1, t.length - 1)));
         ++i;
       }

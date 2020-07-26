@@ -9,6 +9,7 @@ export interface SpawnReturns extends cp.SpawnSyncReturns<string> {
 
 export type SpawnOptions = cp.SpawnOptions;
 
+// because then it's easuer to mock
 export function spawnAsync(
   cmd: string,
   args?: string[],
@@ -107,6 +108,7 @@ const nativeExecutableExtensionFilter = new Set([
   '.log',
   '.md',
   '.mm',
+  '.ninja',
   '.o',
   '.obj',
   '.pc',
@@ -114,6 +116,7 @@ const nativeExecutableExtensionFilter = new Set([
   '.pyc',
   '.rpm',
   '.so',
+  '.stamp',
   '.tar',
   '.txt',
   '.vcxproj.user',

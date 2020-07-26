@@ -517,6 +517,10 @@ export class ExecutableConfig implements vscode.Disposable {
       // cmake fetches the dependencies here. we dont care about it 🤞
       this._shared.log.info('skipping because it is under "/_deps/"', filePath);
       return true;
+    } else if (!this._pattern.match(/(\/|\\)CMakeFiles(\/|\\)/) && filePath.indexOf('/CMakeFiles/') !== -1) {
+      // cmake fetches the dependencies here. we dont care about it 🤞
+      this._shared.log.info('skipping because it is under "/CMakeFiles/"', filePath);
+      return true;
     } else {
       return false;
     }
