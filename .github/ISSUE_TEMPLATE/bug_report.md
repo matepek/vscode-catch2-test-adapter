@@ -49,7 +49,7 @@ about: Create a report to help us improve
 **Log** (optional but recommended)
 
 <!--
-  https://github.com/matepek/vscode-catch2-test-adapter#getting-logs
+  https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/support.md#getting-logs
 
   Attach log:
   - Set: `testMate.cpp.log.logfile`
@@ -59,4 +59,5 @@ about: Create a report to help us improve
   _Warning_: Log probably contains file and test names too.
 
   PLEASE attach an extensive log. A lot of times reportes just select what they think it is important and those logs sometime not sufficient.
+  Even igf you allowed sentry.
 -->

@@ -288,13 +288,20 @@ export class DOCRunnable extends AbstractRunnable {
                   message: [
                     '😱 Unexpected error under parsing output !! Error: ' + inspect(e),
                     'Consider opening an issue: https://github.com/matepek/vscode-catch2-test-adapter/issues/new/choose',
+                    `Please attach the output of: "${runInfo.process.spawnfile} ${runInfo.process.spawnargs}"`,
                     '',
                     '⬇ std::cout:',
-                    data.stdoutBuffer,
+                    runInfo.process.stdout,
                     '⬆ std::cout',
+                    '⬇ stdoutBuffer:',
+                    data.stdoutBuffer,
+                    '⬆ stdoutBuffer',
                     '⬇ std::cerr:',
-                    data.stderrBuffer,
+                    runInfo.process.stderr,
                     '⬆ std::cerr',
+                    '⬇ stderrBuffer:',
+                    data.stderrBuffer,
+                    '⬆ stderrBuffer',
                   ].join('\n'),
                 });
               }

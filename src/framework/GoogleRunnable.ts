@@ -330,9 +330,19 @@ export class GoogleRunnable extends AbstractRunnable {
                   message: [
                     '😱 Unexpected error under parsing output !! Error: ' + inspect(e),
                     'Consider opening an issue: https://github.com/matepek/vscode-catch2-test-adapter/issues/new/choose',
+                    `Please attach the output of: "${runInfo.process.spawnfile} ${runInfo.process.spawnargs}"`,
                     '=== Output ===',
                     testCase,
                     '==============',
+                    '⬇ stdoutAndErrBuffer:',
+                    data.stdoutAndErrBuffer,
+                    '⬆ stdoutAndErrBuffer',
+                    '⬇ std::cout:',
+                    runInfo.process.stdout,
+                    '⬆ std::cout',
+                    '⬇ std::cerr:',
+                    runInfo.process.stderr,
+                    '⬆ std::cerr',
                   ].join('\n'),
                 };
 
