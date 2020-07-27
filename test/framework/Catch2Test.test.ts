@@ -58,4 +58,51 @@ describe(path.basename(__filename), function () {
     assert.deepStrictEqual(ev, expected);
     assert.deepStrictEqual(catch2.lastRunEvent, expected);
   });
+
+  it.only('should parse custom1', function () {
+    //https://github.com/matepek/vscode-catch2-test-adapter/issues/214
+    const output =
+      '<TestCase name="Encode Function" tags="[encode]" ' +
+      'filename="/home/dinne/isenseit/firmwares/iMeasureConvert/aws-lambda-imeasure-convert/main.cpp" ' +
+      //'line="340">\nBlaat:px2$.%)%&#^?;:<.+sk<1>\n0:POST /0004A3D46576/m?d=|\n' +
+      'line="340">\nBlaat:px2$.%)%&amp;#^?;:&lt;.+sk&lt;1&gt;\n0:POST /0004A3D46576/m?d=|\n' +
+      '1:20200726182438\nToken:A3C94386BFF38164\n2:0004A3D46576|20200726182438|A3\n' +
+      '3:0005|R||100\nHeader Length:  169\nSeed:px\nPlugin:  3\nFlags:  2\nChannels: ' +
+      ' 2\nCh:  0\nStatus:  0\nValue:       2400\nSecondary:          0\nCh:  1\n' +
+      'Status:  0\nValue:       6450\nSecondary:          0\n4:|3;2400,G;6450,G\n' +
+      'Plugin:  0\n4:|0\nPlugin:  0\n4:|0\nFrame Length:  191\nChecksum pos Length:  ' +
+      '123\nEnc:px|3;2400,G;6450,G|0|0\nEncr Len:   22\nSeed:  232\nBody Length:   ' +
+      '22\nContent Length:   22\nHTTP Length:   192\ntsync: 1595787878\n' +
+      'Header1:async: \nHeader2:async: \nHeader3: 10\n1591435475\nHTTP_ASYNC ' +
+      '1591435475\nHeader1:csync: \nHeader1:ssync: \nHeader1:rsync: \n' +
+      'Header1:dsync: \nHeader1:hres: \nHres not found\nFound HTTP Response:    0\n ' +
+      '     <OverallResult success="true" durationInSeconds="0.112402">\n        ' +
+      '<StdOut>\nParse JSON:\n { "sn": [0, 4, 163, 212, 101, 118],"sc": ' +
+      '[0,0,0,0,0,0,0,0,0,0,0,0],"ch": [2400,6450,0,0,0,0,0,0,0,0,0,0],"pl": ' +
+      '[3,0,0],"pf": [2,0,0],"da": [0,0,0,0,0,0,0,0,0,0,0,0] }\nParsed json ' +
+      'request:\n{\n    "sn": [\n        0,\n        4,\n        163,\n        212,\n  ' +
+      '      101,\n        118\n    ],\n    "sc": [\n        0,\n        0,\n        ' +
+      '0,\n        0,\n        0,\n        0,\n        0,\n        0,\n        0,\n    ' +
+      '    0,\n        0,\n        0\n    ],\n    "ch": [\n        2400,\n        ' +
+      '6450,\n        0,\n        0,\n        0,\n        0,\n        0,\n        0,\n ' +
+      '       0,\n        0,\n        0,\n        0\n    ],\n    "pl": [\n        3,\n ' +
+      '       0,\n        0\n    ],\n    "pf": [\n        2,\n        0,\n        0\n  ' +
+      '  ],\n    "da": [\n        0,\n        0,\n        0,\n        0,\n        0,\n ' +
+      '       0,\n        0,\n        0,\n        0,\n        0,\n        0,\n        ' +
+      '0\n    ]\n}----------------\ndecode response\n        </StdOut>\n      ' +
+      '</OverallResult>\n    </TestCase>';
+
+    const ev = catch2.parseAndProcessTestCase('runid', output, 42, null, '');
+
+    const expected: TestRunEvent = {
+      testRunId: 'runid',
+      type: 'test',
+      state: 'passed',
+      test: catch2.id,
+    };
+
+    assert.deepStrictEqual(ev.type, expected.type);
+    assert.deepStrictEqual(ev.state, expected.state);
+    assert.deepStrictEqual(ev.test, expected.test);
+  });
 });

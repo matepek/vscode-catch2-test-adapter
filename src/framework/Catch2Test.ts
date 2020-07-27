@@ -425,10 +425,6 @@ export class Catch2Test extends AbstractTest {
           currSection.failed = true;
         }
 
-        // const location = currSection.filename
-        //   ? `(at ${currSection.filename}:${currSection.line})`
-        //   : `(at line ${currSection.line})`;
-
         const msg = `⮑ ${isLeaf ? (currSection.failed ? '❌' : '✅') : ''}"${currSection.name}"`;
 
         testEventBuilder.appendMessage(msg, stack.length, 3);
