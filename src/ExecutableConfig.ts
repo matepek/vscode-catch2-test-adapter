@@ -19,6 +19,12 @@ import { TestGrouping } from './TestGroupingInterface';
 import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
 import { readJSONSync } from 'fs-extra';
+import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
+
+export interface SpawnerConfig {
+  path: string;
+  args?: string[];
+}
 
 export interface RunTask {
   before?: string[];
@@ -49,6 +55,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _runTask: RunTask,
     private readonly _parallelizationLimit: number,
     private readonly _strictPattern: boolean | undefined,
+    private readonly _executionWrapper: SpawnerConfig | undefined,
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,
     private readonly _doctest: ExecutableConfigFrameworkSpecific,
@@ -384,6 +391,18 @@ export class ExecutableConfig implements vscode.Disposable {
       }
     }
 
+    let spawner: Spawner = new DefaultSpawner();
+    if (this._executionWrapper) {
+      try {
+        const resolvedPath = resolveVariables(this._pathProcessor(this._executionWrapper.path), varToValue);
+        const resolvedArgs = resolveVariables(this._executionWrapper.args, varToValue);
+        spawner = new SpawnWithExecutor(resolvedPath.absPath, resolvedArgs);
+        this._shared.log.info('executionWrapper was specified', resolvedPath, resolvedArgs);
+      } catch (e) {
+        this._shared.log.warn('Unable to apply executionWrapper', e);
+      }
+    }
+
     return new RunnableFactory(
       this._shared,
       this._name,
@@ -400,6 +419,7 @@ export class ExecutableConfig implements vscode.Disposable {
       this._doctest,
       this._parallelizationLimit,
       this._runTask,
+      spawner,
     );
   }
 

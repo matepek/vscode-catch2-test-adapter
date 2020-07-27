@@ -1,69 +1,6 @@
-import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
-
-export interface SpawnReturns extends cp.SpawnSyncReturns<string> {
-  closed: boolean;
-}
-
-export type SpawnOptions = cp.SpawnOptions;
-
-// because then it's easuer to mock
-export function spawnAsync(
-  cmd: string,
-  args?: string[],
-  options?: SpawnOptions,
-  timeout?: number,
-): Promise<SpawnReturns> {
-  return new Promise((resolve, reject) => {
-    const ret: SpawnReturns = {
-      pid: 0,
-      output: [(null as unknown) as string, '', ''],
-      stdout: '',
-      stderr: '',
-      status: 0,
-      signal: null,
-      error: undefined,
-      closed: false,
-    };
-
-    const optionsEx = Object.assign<SpawnOptions, SpawnOptions>({ timeout }, options || {});
-
-    const command = cp.spawn(cmd, args || [], optionsEx);
-
-    Object.assign(ret, { process: command }); // for debugging
-
-    ret.pid = command.pid;
-
-    command.stdout!.on('data', function (data) {
-      ret.stdout += data;
-      ret.output[1] = ret.stdout;
-    });
-
-    command.stderr!.on('data', function (data) {
-      ret.stderr += data;
-      ret.output[2] = ret.stderr;
-    });
-
-    command.on('error', function (err: Error) {
-      ret.error = err;
-      reject(err);
-    });
-
-    command.on('close', function (code: number, signal: NodeJS.Signals) {
-      ret.closed = true;
-
-      if (signal !== null) {
-        ret.signal = signal;
-        reject(new Error('FsWrapper.spawnAsync signal: ' + signal));
-      } else {
-        ret.status = code;
-        resolve(ret);
-      }
-    });
-  });
-}
 
 export function isSpawnBusyError(err: Error): boolean {
   const errEx = err as Error & { code: undefined | string };

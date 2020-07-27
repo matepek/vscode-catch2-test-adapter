@@ -222,8 +222,8 @@
                 ]
               },
               "env": {
-                "type": "object",
                 "markdownDescription": "Environment variables for the test executable. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "type": "object",
                 "additionalProperties": {
                   "anyOf": [
                     {
@@ -251,8 +251,30 @@
                 }
               },
               "envFile": {
-                "type": "string",
-                "markdownDescription": "File containing environment variables for the test executable. (As a JSON object.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)"
+                "markdownDescription": "File containing environment variables for the test executable. (As a JSON object.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "type": "string"
+              },
+              "executionWrapper": {
+                "markdownDescription": "Specifies an executor which wraps the executions. Useful for emulators. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "description": "The path of the executor",
+                    "type": "string"
+                  },
+                  "args": {
+                    "description": "An array wich specifies the arguments of the executor. It should contain '${cmd}' and '${args}' too. Default: ['${cmd}', '${args}']",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 2
+                  }
+                },
+                "required": [
+                  "path"
+                ]
               },
               "dependsOn": {
                 "markdownDescription": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",

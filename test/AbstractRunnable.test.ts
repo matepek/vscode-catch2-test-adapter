@@ -9,6 +9,7 @@ import { TestGrouping, GroupByExecutable } from '../src/TestGroupingInterface';
 import { Suite } from '../src/Suite';
 import { CancellationTokenSource } from 'vscode';
 import * as cp from 'child_process';
+import { DefaultSpawner } from '../src/Spawner';
 
 ///
 
@@ -116,6 +117,7 @@ describe(pathlib.basename(__filename), function () {
     {},
     1,
     {},
+    new DefaultSpawner(),
   );
 
   it('should reloadTests only if changed', async function () {

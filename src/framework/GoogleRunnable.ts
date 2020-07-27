@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 
-import * as c2fs from '../FSWrapper';
 import { Suite } from '../Suite';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { GoogleTest } from './GoogleTest';
@@ -181,7 +180,12 @@ export class GoogleRunnable extends AbstractRunnable {
     ]);
 
     this._shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
-    const googleTestListOutput = await c2fs.spawnAsync(this.properties.path, args, this.properties.options, 30000);
+    const googleTestListOutput = await this.properties.spawner.spawnAsync(
+      this.properties.path,
+      args,
+      this.properties.options,
+      30000,
+    );
 
     this.children = [];
 

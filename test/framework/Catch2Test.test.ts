@@ -59,7 +59,7 @@ describe(path.basename(__filename), function () {
     assert.deepStrictEqual(catch2.lastRunEvent, expected);
   });
 
-  it.only('should parse custom1', function () {
+  it('should parse custom1', function () {
     //https://github.com/matepek/vscode-catch2-test-adapter/issues/214
     const output =
       '<TestCase name="Encode Function" tags="[encode]" ' +

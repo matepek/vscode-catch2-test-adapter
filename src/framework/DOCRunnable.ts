@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 import * as xml2js from 'xml2js';
 
-import * as c2fs from '../FSWrapper';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
 import { Suite } from '../Suite';
@@ -104,7 +103,12 @@ export class DOCRunnable extends AbstractRunnable {
     ]);
 
     this._shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
-    const docTestListOutput = await c2fs.spawnAsync(this.properties.path, args, this.properties.options, 30000);
+    const docTestListOutput = await this.properties.spawner.spawnAsync(
+      this.properties.path,
+      args,
+      this.properties.options,
+      30000,
+    );
 
     if (docTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
       this._shared.log.warn(

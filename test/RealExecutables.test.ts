@@ -6,7 +6,12 @@ import { inspect, promisify } from 'util';
 import * as vscode from 'vscode';
 
 import { TestAdapter, settings, isWin, waitFor } from './Common';
+import { DefaultSpawner } from '../src/Spawner';
 import * as c2fs from '../src/FSWrapper';
+
+///
+
+const spawner = new DefaultSpawner();
 
 ///
 
@@ -283,7 +288,7 @@ describe(path.basename(__filename), function () {
 
         const args = Array.from(Array(count).keys()).map(x => (x % 10).toString().repeat(10));
 
-        const res = await c2fs.spawnAsync(inCpp('echo_args.exe'), ['0', ...args]);
+        const res = await spawner.spawnAsync(inCpp('echo_args.exe'), ['0', ...args], {});
 
         const stdout = res.stdout.trimRight().split(/\r?\n/);
 
@@ -300,7 +305,7 @@ describe(path.basename(__filename), function () {
 
         const args = ['x'.repeat(length)];
 
-        const res = await c2fs.spawnAsync(inCpp('echo_args.exe'), args);
+        const res = await spawner.spawnAsync(inCpp('echo_args.exe'), args, {});
 
         const stdout = res.stdout.trimRight().split(/\r?\n/);
 
@@ -313,7 +318,7 @@ describe(path.basename(__filename), function () {
   });
 
   context('parallel spawn', function () {
-    async function waitFor(condition: Function, timeout: number): Promise<void> {
+    async function waitFor(condition: () => Promise<boolean>, timeout: number): Promise<void> {
       const start = Date.now();
       let c = await condition();
       while (!(c = await condition()) && Date.now() - start < timeout) await promisify(setTimeout)(128);
@@ -345,8 +350,8 @@ describe(path.basename(__filename), function () {
           });
         }
 
-        await waitFor(() => {
-          return finished == count;
+        await waitFor(async () => {
+          return finished === count;
         }, count * 3500);
 
         assert.ok(max >= atLeast, `Failed: ${max} >= ${atLeast}`);

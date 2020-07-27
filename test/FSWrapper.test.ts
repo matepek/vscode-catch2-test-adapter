@@ -4,8 +4,12 @@ import { EOL } from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { spawnAsync, SpawnOptions, SpawnReturns } from '../src/FSWrapper';
+import { DefaultSpawner, SpawnOptions, SpawnReturns } from '../src/Spawner';
 import { ChildProcessStub, isWin } from './Common';
+
+///
+
+const spawner = new DefaultSpawner();
 
 ///
 
@@ -13,7 +17,7 @@ describe('FsWrapper.spawnAsync', function () {
   it('echoes', async function () {
     const isWin = process.platform === 'win32';
     const opt: SpawnOptions = isWin ? { shell: true } : {};
-    const r = await spawnAsync('echo', ['apple'], opt);
+    const r = await spawner.spawnAsync('echo', ['apple'], opt);
     assert.equal(r.stdout, 'apple' + EOL);
     assert.equal(r.output.length, 3);
     assert.equal(r.output[1], 'apple' + EOL);
@@ -23,7 +27,8 @@ describe('FsWrapper.spawnAsync', function () {
 
   it('not existing', function () {
     let hasErr = false;
-    return spawnAsync('notexisting.exe')
+    return spawner
+      .spawnAsync('notexisting.exe', [], {})
       .then(
         () => {
           assert.ok(false);
@@ -59,7 +64,7 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function () {
     assert.strictEqual(fsRes.stderr, '');
     assert.strictEqual(fsRes.error, undefined);
 
-    return spawnAsync('echo', ['apple']).then(res => {
+    return spawner.spawnAsync('echo', ['apple'], {}).then(res => {
       compare(res, fsRes);
     });
   });
@@ -76,7 +81,7 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function () {
       assert.ok(typeof fsRes.output[2] === 'string');
       assert.ok(typeof fsRes.stderr === 'string');
 
-      return spawnAsync('ls', ['--wrongparam']).then(res => {
+      return spawner.spawnAsync('ls', ['--wrongparam'], {}).then(res => {
         compare(res, fsRes);
       });
     });
@@ -91,7 +96,7 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function () {
     assert.strictEqual(fsRes.stderr, null);
     assert.ok(fsRes.error instanceof Error, fsRes.error);
 
-    return spawnAsync('fnksdlfnlskfdn', ['']).then(
+    return spawner.spawnAsync('fnksdlfnlskfdn', [''], {}).then(
       () => {
         assert.fail();
       },

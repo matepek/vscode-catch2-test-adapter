@@ -9,6 +9,7 @@ import { RunnableProperties } from '../../src/RunnableProperties';
 import { expectedLoggedWarning } from '../LogOutputContent.test';
 import { RunnableReloadResult } from '../../src/AbstractRunnable';
 import { EOL } from 'os';
+import { DefaultSpawner } from '../../src/Spawner';
 
 ///
 
@@ -27,6 +28,7 @@ describe(pathlib.basename(__filename), function () {
     {},
     1,
     {},
+    new DefaultSpawner(),
   );
 
   const createCatch2Runnable = (): { runnable: Catch2Runnable; root: RootSuite } => {

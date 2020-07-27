@@ -9,6 +9,7 @@ import { ExecutableConfigFrameworkSpecific, RunTask } from './ExecutableConfig';
 import { Version } from './Util';
 import { ResolveRule } from './util/ResolveRule';
 import { RootSuite } from './RootSuite';
+import { Spawner, SpawnOptions, SpawnReturns } from './Spawner';
 
 export class RunnableFactory {
   public constructor(
@@ -17,13 +18,14 @@ export class RunnableFactory {
     private readonly _execDescription: string | undefined,
     private readonly _rootSuite: RootSuite,
     private readonly _execPath: string,
-    private readonly _execOptions: c2fs.SpawnOptions,
+    private readonly _execOptions: SpawnOptions,
     private readonly _varToValue: ResolveRule[],
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,
     private readonly _doctest: ExecutableConfigFrameworkSpecific,
     private readonly _parallelizationLimit: number,
     private readonly _runTask: RunTask,
+    private readonly _spawner: Spawner,
   ) {}
 
   public create(checkIsNativeExecutable: boolean): Promise<AbstractRunnable> {
@@ -31,9 +33,9 @@ export class RunnableFactory {
       .scheduleTask(async () => {
         if (checkIsNativeExecutable) await c2fs.isNativeExecutableAsync(this._execPath);
 
-        return c2fs.spawnAsync(this._execPath, ['--help'], this._execOptions, this._shared.execParsingTimeout);
+        return this._spawner.spawnAsync(this._execPath, ['--help'], this._execOptions, this._shared.execParsingTimeout);
       })
-      .then((runWithHelpRes: c2fs.SpawnReturns) => {
+      .then((runWithHelpRes: SpawnReturns) => {
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
         // s: dotAll
         // u: unicode
@@ -57,6 +59,7 @@ export class RunnableFactory {
                 this._catch2,
                 this._parallelizationLimit,
                 this._runTask,
+                this._spawner,
               ),
               this._parseVersion(catch2),
             );
@@ -83,6 +86,7 @@ export class RunnableFactory {
                 this._gtest,
                 this._parallelizationLimit,
                 this._runTask,
+                this._spawner,
               ),
               gtest[1] ?? 'gtest_',
               Promise.resolve(undefined), //Util: GoogleTestVersionFinder
@@ -106,6 +110,7 @@ export class RunnableFactory {
                 this._gtest,
                 this._parallelizationLimit,
                 this._runTask,
+                this._spawner,
               ),
               'gunit_',
               Promise.resolve(undefined),
@@ -133,13 +138,16 @@ export class RunnableFactory {
                 this._doctest,
                 this._parallelizationLimit,
                 this._runTask,
+                this._spawner,
               ),
               this._parseVersion(doc),
             );
           }
         }
 
-        throw new Error('Not a supported test executable: ' + this._execPath + '\n output: ' + runWithHelpRes.stdout);
+        throw new Error(
+          'Not a supported test executable: ' + this._spawner + this._execPath + '\n output: ' + runWithHelpRes.stdout,
+        );
       });
   }
 

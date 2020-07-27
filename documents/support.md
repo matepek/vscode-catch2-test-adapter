@@ -33,6 +33,7 @@ Check
 - [`advancedExecutables.dependsOn`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)
 - [`advancedExecutables.envFile`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) (usually used togheter with `dependsOn`)
 - [`advancedExecutables.runTask`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)
+- [`advancedExecutables.executionWrapper`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)
 
 #### I want to add custom environment variables
 

@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 import * as xml2js from 'xml2js';
 
-import * as c2fs from '../FSWrapper';
 import { RunnableProperties } from '../RunnableProperties';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { Suite } from '../Suite';
@@ -238,7 +237,12 @@ export class Catch2Runnable extends AbstractRunnable {
     if (this._catch2Version && this._catch2Version.major >= 3) args.push('--reporter', 'xml');
 
     this._shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
-    const catch2TestListOutput = await c2fs.spawnAsync(this.properties.path, args, this.properties.options, 30000);
+    const catch2TestListOutput = await this.properties.spawner.spawnAsync(
+      this.properties.path,
+      args,
+      this.properties.options,
+      30000,
+    );
 
     if (catch2TestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);

@@ -1,4 +1,3 @@
-import * as cp from 'child_process';
 import * as pathlib from 'path';
 import * as fs from 'fs';
 
@@ -539,7 +538,7 @@ export abstract class AbstractRunnable {
     this._shared.log.info('proc starting', this.properties.path, execParams);
 
     const runInfo = new RunningRunnable(
-      cp.spawn(this.properties.path, execParams, this.properties.options),
+      this.properties.spawner.spawn(this.properties.path, execParams, this.properties.options),
       childrenToRun,
       cancellationToken,
     );

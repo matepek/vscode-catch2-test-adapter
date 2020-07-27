@@ -5,6 +5,7 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { SharedVariables, RootSuite, ChildProcessStub } from './Common';
 import { RunnableFactory } from '../src/RunnableFactory';
+import { DefaultSpawner } from '../src/Spawner';
 
 ///
 
@@ -43,6 +44,7 @@ describe(path.basename(__filename), function () {
         {},
         1,
         {},
+        new DefaultSpawner(),
       );
 
       spawnStub
@@ -83,6 +85,7 @@ describe(path.basename(__filename), function () {
         {},
         1,
         {},
+        new DefaultSpawner(),
       );
 
       spawnStub

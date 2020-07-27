@@ -6,6 +6,7 @@ import { RootSuite } from '../../src/RootSuite';
 import { RunnableProperties } from '../../src/RunnableProperties';
 import { RunnableReloadResult } from '../../src/AbstractRunnable';
 import { EOL } from 'os';
+import { DefaultSpawner } from '../../src/Spawner';
 
 ///
 
@@ -24,6 +25,7 @@ describe(pathlib.basename(__filename), function () {
     {},
     1,
     {},
+    new DefaultSpawner(),
   );
 
   const createGoogleRunnable = (): { runnable: GoogleRunnable; root: RootSuite } => {

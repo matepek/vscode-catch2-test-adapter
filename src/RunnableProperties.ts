@@ -1,8 +1,8 @@
-import * as c2fs from './FSWrapper';
 import { ExecutableConfigFrameworkSpecific, RunTask } from './ExecutableConfig';
 import { TestGrouping } from './TestGroupingInterface';
 import { ResolveRule } from './util/ResolveRule';
 import { TaskPool } from './TaskPool';
+import { Spawner, SpawnOptions } from './Spawner';
 
 export class RunnableProperties {
   public constructor(
@@ -10,10 +10,11 @@ export class RunnableProperties {
     public readonly description: string | undefined,
     public readonly varToValue: readonly ResolveRule[],
     public readonly path: string,
-    public readonly options: c2fs.SpawnOptions,
+    public readonly options: SpawnOptions,
     private readonly _frameworkSpecific: ExecutableConfigFrameworkSpecific,
     _parallelizationLimit: number,
     public readonly runTask: RunTask,
+    public readonly spawner: Spawner,
   ) {
     this.parallelizationPool = new TaskPool(_parallelizationLimit);
   }

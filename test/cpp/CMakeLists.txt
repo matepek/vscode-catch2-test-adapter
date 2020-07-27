@@ -51,3 +51,6 @@ add_doctest_with_main(doctest1 "doctest1.cpp")
 add_executable(echo_args "echo_args.cpp")
 target_compile_features(echo_args PUBLIC cxx_std_11)
 
+add_executable(emulator "emulator.cpp")
+target_compile_features(emulator PUBLIC cxx_std_11)
+

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { LoggerWrapper } from './LoggerWrapper';
-import { ExecutableConfig, ExecutableConfigFrameworkSpecific, RunTask } from './ExecutableConfig';
+import { ExecutableConfig, ExecutableConfigFrameworkSpecific, RunTask, SpawnerConfig } from './ExecutableConfig';
 import { SharedVariables } from './SharedVariables';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
@@ -65,6 +65,7 @@ interface ExecutableObjBase {
   gtest?: ExecutableConfigFrameworkSpecific;
   doctest?: ExecutableConfigFrameworkSpecific;
   testGrouping?: TestGrouping; //undocumented
+  executionWrapper?: SpawnerConfig;
 }
 
 type Scopes = { [scope in NodeJS.Platform]?: ExecutableObjBase };
@@ -376,6 +377,7 @@ export class Configurations {
         { before: [], beforeEach: [], after: [], afterEach: [] },
         defaultParallelExecutionOfExecLimit,
         false,
+        undefined,
         {},
         {},
         {},
@@ -472,6 +474,14 @@ export class Configurations {
 
         const defaultTestGrouping = obj.testGrouping ? obj.testGrouping : undefined;
 
+        const spawnerConfig: SpawnerConfig | undefined =
+          typeof obj.executionWrapper === 'object' &&
+          typeof obj.executionWrapper.path === 'string' &&
+          (obj.executionWrapper.args === undefined ||
+            (Array.isArray(obj.executionWrapper.args) && obj.executionWrapper.args.every(x => typeof x === 'string')))
+            ? obj.executionWrapper
+            : undefined;
+
         return new ExecutableConfig(
           shared,
           pattern,
@@ -484,6 +494,7 @@ export class Configurations {
           runTask,
           parallelizationLimit,
           strictPattern,
+          spawnerConfig,
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),
