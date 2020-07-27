@@ -56,6 +56,7 @@ interface ExecutableObjBase {
   description?: string;
   cwd?: string;
   env?: { [key: string]: string };
+  envFile?: string;
   dependsOn?: string[];
   runTask?: RunTask;
   parallelizationLimit?: number;
@@ -370,6 +371,7 @@ export class Configurations {
         undefined,
         defaultCwd,
         undefined,
+        undefined,
         [],
         { before: [], beforeEach: [], after: [], afterEach: [] },
         defaultParallelExecutionOfExecLimit,
@@ -445,6 +447,8 @@ export class Configurations {
 
         const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
 
+        const envFile: string | undefined = typeof obj.envFile === 'string' ? obj.envFile : undefined;
+
         const dependsOn: string[] = Array.isArray(obj.dependsOn)
           ? obj.dependsOn.filter(v => typeof v === 'string')
           : [];
@@ -475,6 +479,7 @@ export class Configurations {
           description,
           cwd,
           env,
+          envFile,
           dependsOn,
           runTask,
           parallelizationLimit,

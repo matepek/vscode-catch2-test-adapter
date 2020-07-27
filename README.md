@@ -122,7 +122,7 @@ Use these commands in your `tasks.json` like
 | `test-explorer.redebug`              | Repeat the last test run in the debugger      |
 | `test-explorer.cancel`               | Cancel running tests                          |
 
-And more at [Test Explorer hompage](https://github.com/hbenl/vscode-test-explorer#configuration).
+And more at [Test Explorer homepage](https://github.com/hbenl/vscode-test-explorer#configuration).
 
 ## About [Sentry.io](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md) integration
 

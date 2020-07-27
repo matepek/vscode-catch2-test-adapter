@@ -22,11 +22,25 @@ For solving issues use: check [support](#Support).
 
 ## F.A.Q
 
-Wanna see the test run results in the status bar too.
+### Wanna see the test run results in the status bar too.
 
 > Check this extension: [Test Explorer Status Bar](https://marketplace.visualstudio.com/items?itemName=connorshea.vscode-test-explorer-status-bar)
 
-I want to run some **custom script** before the tests (for example to set some environment variables and do some init), how should I do that?
+### Custom scripts and **environment** variables
+
+Check
+
+- [`advancedExecutables.dependsOn`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)
+- [`advancedExecutables.envFile`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) (usually used togheter with `dependsOn`)
+- [`advancedExecutables.runTask`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)
+
+#### I want to add custom environment variables
+
+Easiest: `advancedExecutables.env`
+
+If you want dynamically set enviranment variables generate a file which contains those variables in a JSON format and set `envFile` and `dependsOn`.
+
+#### I want to run some **custom script** before the tests (for example to set some environment variables and do some init), how should I do that?
 
 > Create command line wrapper (.sh/.bat) or a python script wrapper. The most convenient way is to generate one.
 >
@@ -40,7 +54,7 @@ I want to run some **custom script** before the tests (for example to set some e
 >
 > Yes. One can enhance their test executable from c++. The example is [here](https://github.com/matepek/vscode-catch2-test-adapter/tree/master/documents/examples/test_wrapper/cppmain_test_wrapper_example)
 
-Wanna set `cwd` to the _source file_'s dir to use the resources next to it and my structure looks like (because I use cmake):
+### Wanna set `cwd` to the _source file_'s dir to use the resources next to it and my structure looks like (because I use cmake):
 
 >
 
@@ -63,16 +77,16 @@ Wanna set `cwd` to the _source file_'s dir to use the resources next to it and m
 >
 > This will remove the `build/` from the beggining of the relative path of the executable.
 
-My tests are fine from command line but running fails using this extension.
+### My tests are fine from command line but running fails using this extension.
 
 > What are the values of `testMate.cpp.test.parallelExecutionLimit`, `testMate.cpp.test.parallelExecutionOfExecutableLimit` or `testMate.cpp.test.advancedExecutables`'s `parallelizationLimit`?
 > These values can make a mess if your excutable/executables depending on the same resource(s).
 
-Loading takes a lot of time:
+### Loading takes a lot of time:
 
 > Enable `testMate.cpp.discovery.testListCaching`.
 
-Can I run test disovery or all my tests at startup?
+### Can I run test disovery or all my tests at startup?
 
 > Sure you can. VSCode provides a fine way to do it:
 > Create a task (`.vscode/tasks.json`) which will be triggered at startup:
@@ -88,7 +102,7 @@ Can I run test disovery or all my tests at startup?
 > }
 > ```
 
-Can I run my tests at startup.
+### Can I run my tests at startup.
 
 > Well that is a bit triciker due to the activation event has to arrive before the run command.
 > Here is the workaround:

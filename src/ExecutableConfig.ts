@@ -18,6 +18,7 @@ import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
 import { TestGrouping } from './TestGroupingInterface';
 import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
+import { readJSONSync } from 'fs-extra';
 
 export interface RunTask {
   before?: string[];
@@ -43,6 +44,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _description: string | undefined,
     private readonly _cwd: string,
     private readonly _env: { [prop: string]: string } | undefined,
+    private readonly _envFile: string | undefined,
     private readonly _dependsOn: string[],
     private readonly _runTask: RunTask,
     private readonly _parallelizationLimit: number,
@@ -131,7 +133,7 @@ export class ExecutableConfig implements vscode.Disposable {
   private readonly _runnables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
 
   public async load(rootSuite: RootSuite): Promise<Error[]> {
-    const pattern = this._patternProcessor(this._pattern);
+    const pattern = this._pathProcessor(this._pattern);
 
     this._shared.log.info('pattern', this._pattern, this._shared.workspaceFolder.uri.fsPath, pattern);
 
@@ -148,7 +150,7 @@ export class ExecutableConfig implements vscode.Disposable {
       if (pattern.isPartOfWs) {
         execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.relativeToWsPosix);
       } else {
-        execWatcher = new GazeWrapper([pattern.absPattern]);
+        execWatcher = new GazeWrapper([pattern.absPath]);
       }
 
       filePaths = await execWatcher.watched();
@@ -240,7 +242,7 @@ export class ExecutableConfig implements vscode.Disposable {
         const absPatterns: string[] = [];
 
         for (const pattern of this._dependsOn) {
-          const p = this._patternProcessor(pattern);
+          const p = this._pathProcessor(pattern);
           if (p.isPartOfWs) {
             const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.relativeToWsPosix);
             this._disposables.push(w);
@@ -254,7 +256,7 @@ export class ExecutableConfig implements vscode.Disposable {
               this._shared.sendRetireEvent(tests);
             });
           } else {
-            absPatterns.push(p.absPattern);
+            absPatterns.push(p.absPath);
           }
         }
 
@@ -279,28 +281,28 @@ export class ExecutableConfig implements vscode.Disposable {
     return [];
   }
 
-  private _patternProcessor(
-    pattern: string,
+  private _pathProcessor(
+    path: string,
   ): {
     isAbsolute: boolean;
-    absPattern: string;
+    absPath: string;
     isPartOfWs: boolean;
     relativeToWsPosix: string;
   } {
-    pattern = resolveOSEnvironmentVariables(pattern, false);
-    pattern = resolveVariables(pattern, this._shared.varToValue);
+    path = resolveOSEnvironmentVariables(path, false);
+    path = resolveVariables(path, this._shared.varToValue);
 
-    const normPattern = pattern.replace(/\\/g, '/');
+    const normPattern = path.replace(/\\/g, '/');
     const isAbsolute = pathlib.isAbsolute(normPattern);
-    const absPattern = isAbsolute
-      ? vscode.Uri.file(pathlib.normalize(pattern)).fsPath
+    const absPath = isAbsolute
+      ? vscode.Uri.file(pathlib.normalize(path)).fsPath
       : vscode.Uri.file(pathlib.join(this._shared.workspaceFolder.uri.fsPath, normPattern)).fsPath;
-    const relativeToWs = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, absPattern);
+    const relativeToWs = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, absPath);
 
     return {
       isAbsolute,
-      absPattern,
-      isPartOfWs: !relativeToWs.startsWith('..') && relativeToWs !== absPattern, // pathlib.relative('B:\wp', 'C:\a\b') == 'C:\a\b'
+      absPath: absPath,
+      isPartOfWs: !relativeToWs.startsWith('..') && relativeToWs !== absPath, // pathlib.relative('B:\wp', 'C:\a\b') == 'C:\a\b'
       relativeToWsPosix: relativeToWs.replace(/\\/g, '/'),
     };
   }
@@ -359,6 +361,27 @@ export class ExecutableConfig implements vscode.Disposable {
       resolvedEnv = resolveOSEnvironmentVariables(resolvedEnv, true);
     } catch (e) {
       this._shared.log.error('resolvedEnv', e);
+    }
+
+    if (this._envFile) {
+      const resolvedEnvFile = resolveVariables(this._pathProcessor(this._envFile), varToValue);
+      try {
+        const envFromFile = readJSONSync(resolvedEnvFile.absPath);
+        if (typeof envFromFile !== 'object') throw Error('envFile is not a JSON object');
+
+        const props = Object.getOwnPropertyNames(envFromFile);
+        for (const p of props)
+          if (typeof envFromFile[p] !== 'string') throw Error('property of envFile is not a string: ' + p);
+
+        Object.assign(resolvedEnv, envFromFile);
+        this._shared.log.info(
+          'Extra environment variables has been added from file',
+          resolvedEnvFile.absPath,
+          envFromFile,
+        );
+      } catch (e) {
+        this._shared.log.warn('Unable to parse envFile', `"${resolvedEnvFile.absPath}"`, e);
+      }
     }
 
     return new RunnableFactory(
