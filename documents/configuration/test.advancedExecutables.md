@@ -79,7 +79,7 @@ If the pattern is too general like `out/**/*test*`, it could cause unexpected ex
 which would not just increase the test-loading duration but also could have other unexpected effects.
 I suggest to have a stricter file-name convention and a corresponding pattern like `out/**/*.test.*` or `out/**/Test.*`
 
-**Note** to `dependsOn`:
+### `dependsOn`
 
 - ℹ️Executables found by pattern are automatically watched, don't need to add them to `dependsOn`.
 - If "Enable autorun" is enabled in "**...**" menu (next to the play button), it will trigger the related test suites by detecting the recompilation of the executable.
@@ -91,6 +91,93 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
     but it seem there is an issue with _double star_ (`**`).
   - Paths on different drive in the same `dependsOn` array maybe won't work.
   - (If you find another corner case, feel free to open an issue. It could be handy once in the future.)
+
+### envFile
+
+Probably your best option if your executables need some initinalization of enviroment.
+Use it with `dependsOn` and then in case the `envFile` changes the tests will be retired.
+
+Example `envFile` content:
+
+```json
+{
+  "MYVAR": "my value"
+}
+```
+
+Simple example:
+
+```json
+  "testMate.test.advancedExecutables": [{
+    "pattern": "<default pattern>",
+    "envFile": "out/env.json",
+    "dependsOn": "out/env.json"
+  }]
+```
+
+Advanced example:
+
+```json
+  "testMate.test.advancedExecutables": [{
+    "pattern": "<default pattern>",
+    "envFile": "${relPath}.env.json",
+    "dependsOn": "${relPath}.env.json"
+  }]
+```
+
+## Scoping
+
+| Property | Description                                        |
+| -------- | -------------------------------------------------- |
+| `darwin` | Overrides the parent's properties on the given OS. |
+| `linux`  | Overrides the parent's properties on the given OS. |
+| `win32`  | Overrides the parent's properties on the given OS. |
+
+Example:
+
+```json
+  "testMate.test.advancedExecutables": [{
+    "pattern": "<default pattern>",
+    "darwin": { "pattern":"<value on mac>" },
+    "win32": { "pattern":"<value on win>" },
+    "linux": { "pattern":"<value on linux>" },
+    ....
+  }]
+```
+
+## Examples:
+
+```json
+"testMate.cpp.test.advancedExecutables": ["dir/test1.exe", "dir/test2.exe"]
+```
+
+```json
+"testMate.cpp.test.advancedExecutables": {
+  "name": "${filename}",
+  "description": "${relDirpath}/",
+  "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+  "cwd": "${absDirpath}",
+  "env": {
+    "ExampleENV1": "You can use variables here too, like ${absPath}",
+    "PATH": "${os_env:PATH}${osPathEnvSep}/adding/new/item/to/PATH/env"
+  }
+}
+```
+
+```json
+"testMate.cpp.test.advancedExecutables": [
+  {
+    "name": "Test1 suite",
+    "pattern": "dir/test.exe"
+  },
+  "canBeMixed.exe",
+  {
+    "pattern": "${os_env:HOME}/dir2/{t,T}est",
+    "cwd": "out/tmp",
+    "env": {}
+  }
+]
+```
 
 ## Variables
 
@@ -141,60 +228,6 @@ One should avoid that❗️
 
 **Note** `.*` matches `\n`
 
-## Scoping
-
-| Property | Description                                        |
-| -------- | -------------------------------------------------- |
-| `darwin` | Overrides the parent's properties on the given OS. |
-| `linux`  | Overrides the parent's properties on the given OS. |
-| `win32`  | Overrides the parent's properties on the given OS. |
-
-Example:
-
-```
-  "testMate.test.advancedExecutables": [{
-    "pattern": "<default pattern>",
-    "darwin": { "pattern":"<value on mac>" },
-    "win32": { "pattern":"<value on win>" },
-    "linux": { "pattern":"<value on linux>" },
-    ....
-  }]
-```
-
-## Examples:
-
-```json
-"testMate.cpp.test.advancedExecutables": ["dir/test1.exe", "dir/test2.exe"]
-```
-
-```json
-"testMate.cpp.test.advancedExecutables": {
-  "name": "${filename}",
-  "description": "${relDirpath}/",
-  "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
-  "cwd": "${absDirpath}",
-  "env": {
-    "ExampleENV1": "You can use variables here too, like ${absPath}",
-    "PATH": "${os_env:PATH}${osPathEnvSep}/adding/new/item/to/PATH/env"
-  }
-}
-```
-
-```json
-"testMate.cpp.test.advancedExecutables": [
-  {
-    "name": "Test1 suite",
-    "pattern": "dir/test.exe"
-  },
-  "canBeMixed.exe",
-  {
-    "pattern": "${os_env:HOME}/dir2/{t,T}est",
-    "cwd": "out/tmp",
-    "env": {}
-  }
-]
-```
-
 ### helpRegex
 
 In case of `gtest` the helpRegex' the first capture should be the value of [`GTEST_FLAG_PREFIX`](https://github.com/google/googletest/blob/master/googletest/include/gtest/internal/gtest-port.h#L282).
@@ -207,14 +240,14 @@ For example:
 
 - `Catch v2.11.1` + `/Catch v(\d+)\.(\d+)\.(\d+)\s?/` -> `[2, 11, 1]`
 
-## testGrouping
+### testGrouping
 
 It is undocumented. Contact me by opening an issue or read the code a bit.
 
 - [interface](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/TestGroupingInterface.ts)
 - [code](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/AbstractRunnable.ts#L129)
 
-```
+```json
 {
   "testMate.cpp.test.advancedExecutables": [
     {
@@ -235,11 +268,11 @@ It is undocumented. Contact me by opening an issue or read the code a bit.
 | `groupByRegex`      | Groups tests by the first match group of the first matching regex. (`${match}`) Example: `["(?:good|bad) (apple|peach)"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping) |
 | `groupUngroupedTo`  | If a test is not groupable it will be grouped by the given name. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                                                                                      |
 
-### TestGrouping examples
+#### TestGrouping examples
 
 Note: This example overused it.
 
-```
+```json
 {
   "testMate.cpp.test.advancedExecutables": [
     {
@@ -271,7 +304,7 @@ Note: This example overused it.
                 "label": "📝${sourceRelPath[2:]}",
                 "groupUngroupedTo": "📝unknown source file"
               }
-            },
+            }
           }
         }
       },
@@ -286,13 +319,13 @@ Note: This example overused it.
             }
           }
         }
-      },
+      }
     }
-   ]
+  ]
 }
 ```
 
-```
+```json
 "testMate.cpp.test.advancedExecutables": [
   {
     "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",

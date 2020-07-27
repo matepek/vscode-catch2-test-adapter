@@ -8,6 +8,7 @@ about: Create a report to help us improve
 - [ ] The issue is about this extension and NOT about a fork.
 - [ ] Check the [known issues](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/support.md#known-issues) list.
 - [ ] The latest version of the extension was used.
+- [ ] It is not related to remote-vscode or I checked the following [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/201)
 
 **Describe the bug**
 

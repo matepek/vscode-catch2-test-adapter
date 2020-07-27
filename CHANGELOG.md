@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.3.0]
+
+### Added
+
+- `testMate.advancedExecutables.envFile`: Probably your best option if your executables need some initinalization of enviroment.
+
 ## [3.2.12] - 2020-07-26
 
 ### Fixed

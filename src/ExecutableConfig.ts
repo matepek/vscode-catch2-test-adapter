@@ -460,29 +460,36 @@ export class ExecutableConfig implements vscode.Disposable {
       return;
     }
 
-    try {
-      const runnable = await this._createSuiteByUri(filePath, rootSuite).create(true);
+    const isExec = await c2fs.isNativeExecutableAsync(filePath).then(
+      () => true,
+      () => false,
+    );
 
-      return this._recursiveHandleRunnable(runnable).catch(reject => {
-        this._shared.log.errorS(`_recursiveHandleFile._recursiveHandleFile errors should be handled inside`, reject);
-      });
-    } catch (reason) {
-      const nextDelay = Math.min(delay + 1000, 5000);
+    if (isExec) {
+      try {
+        const runnable = await this._createSuiteByUri(filePath, rootSuite).create(true);
 
-      if (tryCount > 20) {
-        this._shared.log.info("couldn't add file", filePath, 'reson', reason, tryCount);
-        return;
+        return this._recursiveHandleRunnable(runnable).catch(reject => {
+          this._shared.log.errorS(`_recursiveHandleFile._recursiveHandleFile errors should be handled inside`, reject);
+        });
+      } catch (reason) {
+        const nextDelay = Math.min(delay + 1000, 5000);
+
+        if (tryCount > 20) {
+          this._shared.log.info("couldn't add file", filePath, 'reson', reason, tryCount);
+          return;
+        }
+
+        if (c2fs.isSpawnBusyError(reason)) {
+          this._shared.log.debug('_recursiveHandleFile: busy, retrying... ' + filePath, 'reson:', reason);
+        } else {
+          this._shared.log.debug('_recursiveHandleFile: other error... ' + filePath, 'reson:', reason);
+        }
+
+        await promisify(setTimeout)(delay);
+
+        return this._recursiveHandleFile(filePath, rootSuite, nextDelay, tryCount + 1);
       }
-
-      if (c2fs.isSpawnBusyError(reason)) {
-        this._shared.log.debug('_recursiveHandleFile: busy, retrying... ' + filePath, 'reson:', reason);
-      } else {
-        this._shared.log.debug('_recursiveHandleFile: other error... ' + filePath, 'reson:', reason);
-      }
-
-      await promisify(setTimeout)(delay);
-
-      return this._recursiveHandleFile(filePath, rootSuite, nextDelay, tryCount + 1);
     }
   }
 
