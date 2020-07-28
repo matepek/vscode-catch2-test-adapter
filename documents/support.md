@@ -20,6 +20,10 @@ Or one can set the `testMate.cpp.log.logfile: "<full path>"`. In this case a log
 
 For solving issues use: check [support](#Support).
 
+## Debugging the extension
+
+Check [CONTRIBUTING.md](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/CONTRIBUTING.md).
+
 ## F.A.Q
 
 ### Wanna see the test run results in the status bar too.

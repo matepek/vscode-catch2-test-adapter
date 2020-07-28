@@ -12,12 +12,7 @@ Any contribution is welcome.
 - Tell me about your desired features.
 - [![Buy Me A Coffee](https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png)](https://www.buymeacoffee.com/rtdmjYspB)
 
-## Install
-
-```bash
-npm install
-npm test
-```
+## Clone Repo
 
 It is recommended to create a push hook:
 
@@ -34,6 +29,38 @@ npm rum compile
 npx mocha ./out/test/Documentation.test.js ./out/test/ESLint.test.js
 ```
 
+## Install
+
+```bash
+npm install
+```
+
+## Test
+
+After installing:
+
+```bash
+npm test
+```
+
+## Debug
+
+After installing:
+
+- Open the folder in VSCode: `code .`
+- Run task: `npm watch`. Wait unitl it is compiled.
+- VSCode "Run" / Debug page: Select `Manual cpp`.
+- Start debugging
+- Add your folder to the newly opened VSCode's workspace.
+
+Or change [launch.json](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/.vscode/launch.json#L27)'s `Manual cpp` to the folder which is intended to be debugged and the start.
+
+Issues are tipically related to file operations:
+
+- [RunnableFActory.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/RunnableFactory.ts#L36)
+- [GoogleRunnable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/GoogleRunnable.ts#L159)
+- [Catch2Runnable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/Catch2Runnable.ts#L204)
+
 ## Publishing to market
 
 If you think your changes worth of a release, add a new version entry to `CHANGELOG.md` file without a date.
@@ -42,7 +69,7 @@ Then Travis will publish it automatically.
 ## Checklist
 
 - [ ] Are the tests are running? (`npm test`)
-- [ ] Is the `CHANGELOG.md` was updated?
+- [ ] Is the `CHANGELOG.md` was updated? (optional)
 
 ## TODOs
 
