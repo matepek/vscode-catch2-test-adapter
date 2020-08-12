@@ -9,7 +9,7 @@ import { ExecutableConfigFrameworkSpecific, RunTask } from './ExecutableConfig';
 import { Version } from './Util';
 import { ResolveRule } from './util/ResolveRule';
 import { RootSuite } from './RootSuite';
-import { Spawner, SpawnOptions, SpawnReturns } from './Spawner';
+import { Spawner, SpawnOptionsWithoutStdio, SpawnReturns } from './Spawner';
 
 export class RunnableFactory {
   public constructor(
@@ -18,7 +18,7 @@ export class RunnableFactory {
     private readonly _execDescription: string | undefined,
     private readonly _rootSuite: RootSuite,
     private readonly _execPath: string,
-    private readonly _execOptions: SpawnOptions,
+    private readonly _execOptions: SpawnOptionsWithoutStdio,
     private readonly _varToValue: ResolveRule[],
     private readonly _catch2: ExecutableConfigFrameworkSpecific,
     private readonly _gtest: ExecutableConfigFrameworkSpecific,

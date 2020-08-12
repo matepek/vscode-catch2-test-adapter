@@ -1,11 +1,11 @@
 import * as path from 'path';
-import * as cp from 'child_process';
 import { EOL } from 'os';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { SharedVariables, RootSuite, ChildProcessStub } from './Common';
 import { RunnableFactory } from '../src/RunnableFactory';
 import { DefaultSpawner } from '../src/Spawner';
+import * as fsw from '../src/FSWrapper';
 
 ///
 
@@ -15,10 +15,13 @@ describe(path.basename(__filename), function () {
 
   const sinonSandbox = sinon.createSandbox();
 
-  let spawnStub: sinon.SinonStub<[string, readonly string[], cp.SpawnOptions], cp.ChildProcess>;
+  let spawnStub: sinon.SinonStub<
+    [string, readonly string[], fsw.SpawnOptionsWithoutStdio],
+    fsw.ChildProcessWithoutNullStreams
+  >;
 
   before(function () {
-    spawnStub = sinonSandbox.stub(cp, 'spawn').named('spawnStub');
+    spawnStub = sinonSandbox.stub(fsw, 'spawn').named('spawnStub');
   });
 
   beforeEach(function () {

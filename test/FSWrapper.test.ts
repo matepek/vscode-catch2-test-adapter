@@ -4,7 +4,7 @@ import { EOL } from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { DefaultSpawner, SpawnOptions, SpawnReturns } from '../src/Spawner';
+import { DefaultSpawner, SpawnOptionsWithoutStdio, SpawnReturns } from '../src/Spawner';
 import { ChildProcessStub, isWin } from './Common';
 
 ///
@@ -16,7 +16,7 @@ const spawner = new DefaultSpawner();
 describe('FsWrapper.spawnAsync', function () {
   it('echoes', async function () {
     const isWin = process.platform === 'win32';
-    const opt: SpawnOptions = isWin ? { shell: true } : {};
+    const opt: SpawnOptionsWithoutStdio = isWin ? { shell: true } : {};
     const r = await spawner.spawnAsync('echo', ['apple'], opt);
     assert.equal(r.stdout, 'apple' + EOL);
     assert.equal(r.output.length, 3);

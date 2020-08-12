@@ -1,6 +1,25 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
+import * as cp from 'child_process';
+
+///
+
+export type SpawnOptionsWithoutStdio = cp.SpawnOptionsWithoutStdio;
+export type SpawnSyncReturns<T> = cp.SpawnSyncReturns<T>;
+export type ChildProcessWithoutNullStreams = cp.ChildProcessWithoutNullStreams;
+
+///
+
+export function spawn(
+  cmd: string,
+  args: ReadonlyArray<string>,
+  options: cp.SpawnOptionsWithoutStdio,
+): cp.ChildProcessWithoutNullStreams {
+  return cp.spawn(cmd, args, options);
+}
+
+///
 
 export function isSpawnBusyError(err: Error): boolean {
   const errEx = err as Error & { code: undefined | string };

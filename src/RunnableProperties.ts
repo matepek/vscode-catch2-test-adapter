@@ -2,7 +2,7 @@ import { ExecutableConfigFrameworkSpecific, RunTask } from './ExecutableConfig';
 import { TestGrouping } from './TestGroupingInterface';
 import { ResolveRule } from './util/ResolveRule';
 import { TaskPool } from './TaskPool';
-import { Spawner, SpawnOptions } from './Spawner';
+import { Spawner, SpawnOptionsWithoutStdio } from './Spawner';
 
 export class RunnableProperties {
   public constructor(
@@ -10,7 +10,7 @@ export class RunnableProperties {
     public readonly description: string | undefined,
     public readonly varToValue: readonly ResolveRule[],
     public readonly path: string,
-    public readonly options: SpawnOptions,
+    public readonly options: SpawnOptionsWithoutStdio,
     private readonly _frameworkSpecific: ExecutableConfigFrameworkSpecific,
     _parallelizationLimit: number,
     public readonly runTask: RunTask,

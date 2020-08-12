@@ -1,6 +1,5 @@
 import deepStrictEqual = require('deep-equal');
 import * as assert from 'assert';
-import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
@@ -9,11 +8,12 @@ import * as fse from 'fs-extra';
 import { inspect, promisify } from 'util';
 import { EventEmitter } from 'events';
 import { Readable, Writable } from 'stream';
-import { ChildProcess } from 'child_process';
+import { ChildProcessWithoutNullStreams } from 'child_process';
 import { RootSuite as OrigRootSuite } from '../src/RootSuite';
 
 import { TestLoadFinishedEvent, TestLoadStartedEvent, TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
 
+import * as fsw from '../src/FSWrapper';
 import * as my from '../src/TestAdapter';
 import * as my2 from '../src/SharedVariables';
 import { Config } from '../src/Configurations';
@@ -133,7 +133,7 @@ export class FileSystemWatcherStub implements vscode.FileSystemWatcher {
 export class Imitation {
   public readonly sinonSandbox = sinon.createSandbox();
 
-  public readonly spawnStub = this.sinonSandbox.stub(cp, 'spawn').named('spawnStub');
+  public readonly spawnStub = this.sinonSandbox.stub(fsw, 'spawn').named('spawnStub');
 
   public readonly vsfsWatchStub = this.sinonSandbox
     .stub(vscode.workspace, 'createFileSystemWatcher')
@@ -464,14 +464,14 @@ export class TestAdapter extends my.TestAdapter {
 
 ///
 
-export class ChildProcessStub extends EventEmitter implements ChildProcess {
-  public readonly stdin: Writable | null = undefined as any; // eslint-disable-line
+export class ChildProcessStub extends EventEmitter implements ChildProcessWithoutNullStreams {
+  public readonly stdin: Writable = undefined as any; // eslint-disable-line
   public readonly stdio: [
-    Writable | null, // stdin
-    Readable | null, // stdout
-    Readable | null, // stderr
-    Readable | Writable | null | undefined, // extra
-    Readable | Writable | null | undefined, // extra
+    Writable, // stdin
+    Readable, // stdout
+    Readable, // stderr
+    Readable | Writable, // extra
+    Readable | Writable, // extra
   ] = undefined as any; // eslint-disable-line
   public readonly pid: number = undefined as any; // eslint-disable-line
   public readonly connected: boolean = undefined as any; // eslint-disable-line

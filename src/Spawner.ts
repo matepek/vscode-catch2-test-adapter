@@ -1,25 +1,25 @@
-import * as cp from 'child_process';
+import * as fsw from './FSWrapper';
 
 ///
 
-export interface SpawnReturns extends cp.SpawnSyncReturns<string> {
+export interface SpawnReturns extends fsw.SpawnSyncReturns<string> {
   closed: boolean;
 }
 
-export type SpawnOptions = cp.SpawnOptions;
+export type SpawnOptionsWithoutStdio = fsw.SpawnOptionsWithoutStdio;
 
 ///
 
 export interface Spawner {
-  spawnAsync(cmd: string, args: string[], options: SpawnOptions, timeout?: number): Promise<SpawnReturns>;
+  spawnAsync(cmd: string, args: string[], options: SpawnOptionsWithoutStdio, timeout?: number): Promise<SpawnReturns>;
 
-  spawn(cmd: string, args: string[], options: SpawnOptions): cp.ChildProcess;
+  spawn(cmd: string, args: string[], options: SpawnOptionsWithoutStdio): fsw.ChildProcessWithoutNullStreams;
 }
 
 ///
 
 export class DefaultSpawner implements Spawner {
-  spawnAsync(cmd: string, args: string[], options: SpawnOptions, timeout?: number): Promise<SpawnReturns> {
+  spawnAsync(cmd: string, args: string[], options: SpawnOptionsWithoutStdio, timeout?: number): Promise<SpawnReturns> {
     return new Promise((resolve, reject) => {
       const ret: SpawnReturns = {
         pid: 0,
@@ -32,9 +32,9 @@ export class DefaultSpawner implements Spawner {
         closed: false,
       };
 
-      const optionsEx = Object.assign<SpawnOptions, SpawnOptions>({ timeout }, options || {});
+      const optionsEx = Object.assign<SpawnOptionsWithoutStdio, SpawnOptionsWithoutStdio>({ timeout }, options || {});
 
-      const command = cp.spawn(cmd, args || [], optionsEx);
+      const command = fsw.spawn(cmd, args || [], optionsEx);
 
       Object.assign(ret, { process: command }); // for debugging
 
@@ -69,8 +69,8 @@ export class DefaultSpawner implements Spawner {
     });
   }
 
-  spawn(cmd: string, args: string[], options: SpawnOptions): cp.ChildProcess {
-    return cp.spawn(cmd, args, options);
+  spawn(cmd: string, args: string[], options: SpawnOptionsWithoutStdio): fsw.ChildProcessWithoutNullStreams {
+    return fsw.spawn(cmd, args, options);
   }
 
   public toString(): string {
@@ -91,11 +91,11 @@ export class SpawnWithExecutor extends DefaultSpawner {
     if (_args && !_args.some(x => x === this._argsStr)) throw Error(`${this._argsStr} should be specified`);
   }
 
-  spawnAsync(cmd: string, args: string[], options: SpawnOptions, timeout?: number): Promise<SpawnReturns> {
+  spawnAsync(cmd: string, args: string[], options: SpawnOptionsWithoutStdio, timeout?: number): Promise<SpawnReturns> {
     return super.spawnAsync(this._executor, this.getArgs(cmd, args), options, timeout);
   }
 
-  spawn(cmd: string, args: string[], options: SpawnOptions): cp.ChildProcess {
+  spawn(cmd: string, args: string[], options: SpawnOptionsWithoutStdio): fsw.ChildProcessWithoutNullStreams {
     return super.spawn(this._executor, this.getArgs(cmd, args), options);
   }
 

@@ -1,6 +1,6 @@
 import * as os from 'os';
-import { ChildProcess } from 'child_process';
 
+import { ChildProcessWithoutNullStreams } from './FSWrapper';
 import { AbstractTest } from './AbstractTest';
 import { LoggerWrapper } from './LoggerWrapper';
 import { promisify } from 'util';
@@ -76,7 +76,7 @@ export class ProcessResult {
 
 export class RunningRunnable {
   public constructor(
-    public readonly process: ChildProcess,
+    public readonly process: ChildProcessWithoutNullStreams,
     public readonly childrenToRun: readonly AbstractTest[],
     private readonly _cancellationToken: CancellationToken,
   ) {

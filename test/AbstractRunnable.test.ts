@@ -8,8 +8,8 @@ import * as sinon from 'sinon';
 import { TestGrouping, GroupByExecutable } from '../src/TestGroupingInterface';
 import { Suite } from '../src/Suite';
 import { CancellationTokenSource } from 'vscode';
-import * as cp from 'child_process';
 import { DefaultSpawner } from '../src/Spawner';
+import * as fsw from '../src/FSWrapper';
 
 ///
 
@@ -297,10 +297,13 @@ describe(pathlib.basename(__filename), function () {
     const root = new RootSuite(shared);
     const runnable = new Runnable(shared, root, exec1Prop);
 
-    let spawnStub: sinon.SinonStub<[string, readonly string[], cp.SpawnOptions], cp.ChildProcess>;
+    let spawnStub: sinon.SinonStub<
+      [string, readonly string[], fsw.SpawnOptionsWithoutStdio],
+      fsw.ChildProcessWithoutNullStreams
+    >;
 
     before(async function () {
-      spawnStub = sinonSandbox.stub(cp, 'spawn');
+      spawnStub = sinonSandbox.stub(fsw, 'spawn');
 
       sinonSandbox.stub(runnable, '_reloadChildren').callsFake(
         async (): Promise<RunnableReloadResult> => {
