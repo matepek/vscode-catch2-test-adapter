@@ -5,7 +5,7 @@
 [![GitHub license](https://img.shields.io/github/license/matepek/vscode-catch2-test-adapter.svg?style=for-the-badge)](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/LICENSE)
 [![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=for-the-badge)](https://github.com/prettier/prettier)
 
-Any contribution is welcome.
+Contributions are welcome.
 
 - Create a pull request (against the development branch or master (if you sure your your PR is ready to be deployed)).
 - Report a bug.
@@ -48,7 +48,7 @@ npm test
 After installing:
 
 - Open the folder in VSCode: `code .`
-- Run task: `npm watch`. Wait unitl it is compiled.
+- Run task: `npm watch`. Wait until it is compiled.
 - VSCode "Run" / Debug page: Select `Manual cpp`.
 - Start debugging
 - Add your folder to the newly opened VSCode's workspace.
@@ -57,19 +57,18 @@ Or change [launch.json](https://github.com/matepek/vscode-catch2-test-adapter/bl
 
 Issues are tipically related to file operations:
 
-- [RunnableFActory.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/RunnableFactory.ts#L36)
+- [RunnableFactory.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/RunnableFactory.ts#L36)
 - [GoogleRunnable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/GoogleRunnable.ts#L159)
 - [Catch2Runnable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/Catch2Runnable.ts#L204)
 
 ## Publishing to market
 
-If you think your changes worth of a release, add a new version entry to `CHANGELOG.md` file without a date.
-Then Travis will publish it automatically.
+If you think your changes worth of a release add a new version entry to `CHANGELOG.md` file without a date. Travis will publish it automatically.
 
 ## Checklist
 
-- [ ] Are the tests are running? (`npm test`)
-- [ ] Is the `CHANGELOG.md` was updated? (optional)
+- [ ] Are the tests running? (`npm test`)
+- [ ] Was the `CHANGELOG.md` updated? (optional)
 
 ## TODOs
 

@@ -496,14 +496,14 @@ export class ExecutableConfig implements vscode.Disposable {
         const nextDelay = Math.min(delay + 1000, 5000);
 
         if (tryCount > 20) {
-          this._shared.log.info("couldn't add file", filePath, 'reson', reason, tryCount);
+          this._shared.log.info("couldn't add file", filePath, 'reason', reason, tryCount);
           return;
         }
 
         if (c2fs.isSpawnBusyError(reason)) {
-          this._shared.log.debug('_recursiveHandleFile: busy, retrying... ' + filePath, 'reson:', reason);
+          this._shared.log.debug('_recursiveHandleFile: busy, retrying... ' + filePath, 'reason:', reason);
         } else {
-          this._shared.log.debug('_recursiveHandleFile: other error... ' + filePath, 'reson:', reason);
+          this._shared.log.debug('_recursiveHandleFile: other error... ' + filePath, 'reason:', reason);
         }
 
         await promisify(setTimeout)(delay);
