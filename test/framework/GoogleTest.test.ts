@@ -88,6 +88,10 @@ describe(path.basename(__filename), function () {
       'gtest.cpp:50: Failure',
       'Value of: v',
       'Expected: has 3 elements where',
+      '  Actual: { 5, 10 }, which has 2 elements',
+      'gtest.cpp:51: Failure',
+      'Value of: v',
+      'Expected: has 3 elements where',
       'element #0 is equal to 5,',
       'element #1 is equal to 10,',
       'element #2 is equal to 15',
@@ -109,6 +113,14 @@ describe(path.basename(__filename), function () {
         {
           file: 'gtest.cpp',
           line: 49,
+          message: '⬅ Expected: has 3 elements where; Actual: { 5, 10 }, which has 2 elements',
+          hover: ['Value of: v', 'Expected: has 3 elements where', '  Actual: { 5, 10 }, which has 2 elements'].join(
+            '\n',
+          ),
+        },
+        {
+          file: 'gtest.cpp',
+          line: 50,
           message: '⬅ Expected: has 3 elements where; Actual: { 5, 10 }, which has 2 elements',
           hover: [
             'Value of: v',
