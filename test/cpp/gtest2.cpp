@@ -44,3 +44,8 @@ GTEST_TEST(TestCas3, test5) {
 
   printf("Is True");
 }
+
+GTEST_TEST(TestCas3, test6) {
+  std::vector<int> v({5, 10});
+  ASSERT_THAT(v, ::testing::ElementsAre(5, 10, 15));
+}

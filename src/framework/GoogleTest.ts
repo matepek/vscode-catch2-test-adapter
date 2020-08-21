@@ -130,6 +130,25 @@ export class GoogleTest extends AbstractTest {
                 i += 2;
               } else if (
                 i + 1 < lines.length &&
+                firstMsgLine.startsWith('Value of: ') &&
+                lines[i + 0].startsWith('Expected: ')
+              ) {
+                let end = i + 1;
+                while (end < lines.length && !lines[end].startsWith('  Actual: ')) ++end;
+
+                if (end === lines.length) {
+                  i = i + 1;
+                } else {
+                  eventBuilder.appendDecorator(
+                    filePath,
+                    lineNumber,
+                    [lines[i], lines[end]],
+                    [firstMsgLine, ...lines.slice(i, end + 1)],
+                  );
+                  i = end + 1;
+                }
+              } else if (
+                i + 1 < lines.length &&
                 firstMsgLine.startsWith('Actual function call') &&
                 lines[i + 0].startsWith('         Expected:') &&
                 lines[i + 1].startsWith('           Actual:')

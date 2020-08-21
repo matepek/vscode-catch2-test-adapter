@@ -82,6 +82,53 @@ describe(path.basename(__filename), function () {
     assert.deepStrictEqual(gtest.lastRunEvent, expected);
   });
 
+  it('parses ASSERT_THAT', function () {
+    const output = [
+      '[ RUN      ] TestCase.TestName',
+      'gtest.cpp:50: Failure',
+      'Value of: v',
+      'Expected: has 3 elements where',
+      'element #0 is equal to 5,',
+      'element #1 is equal to 10,',
+      'element #2 is equal to 15',
+      '  Actual: { 5, 10 }, which has 2 elements',
+      '[  FAILED  ] TestCase.TestName (0 ms)',
+    ].join(EOL);
+
+    const ev = gtest.parseAndProcessTestCase('runid', output, 42, null, '');
+
+    const expected: TestRunEvent = {
+      testRunId: 'runid',
+      type: 'test',
+      test: gtest.id,
+      message: output,
+      state: 'failed',
+      description: '(0ms)',
+      tooltip: 'Name: TestCase.TestName\n⏱Duration: 0ms',
+      decorations: [
+        {
+          file: 'gtest.cpp',
+          line: 49,
+          message: '⬅ Expected: has 3 elements where; Actual: { 5, 10 }, which has 2 elements',
+          hover: [
+            'Value of: v',
+            'Expected: has 3 elements where',
+            'element #0 is equal to 5,',
+            'element #1 is equal to 10,',
+            'element #2 is equal to 15',
+            '  Actual: { 5, 10 }, which has 2 elements',
+          ].join('\n'),
+        },
+      ],
+    };
+
+    assert.strictEqual(gtest.description, ev.description);
+    assert.strictEqual(gtest.tooltip, ev.tooltip);
+    assert.strictEqual(gtest.lastRunMilisec, 0);
+    assert.deepStrictEqual(ev, expected);
+    assert.deepStrictEqual(gtest.lastRunEvent, expected);
+  });
+
   it('parses Failure/error on unix', function () {
     const output = [
       '[ RUN      ] TestCase.TestName',

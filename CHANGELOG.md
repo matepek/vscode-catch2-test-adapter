@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.4.1]
+
+### Added
+
+- Handling more gtest cases
+
 ## [3.4.0] - 2020-07-27
 
 ### Added
