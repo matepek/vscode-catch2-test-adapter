@@ -1,4 +1,4 @@
-import { ExecutableConfigFrameworkSpecific, RunTask } from './ExecutableConfig';
+import { FrameworkSpecific, RunTask } from './AdvancedExecutableInterface';
 import { TestGrouping } from './TestGroupingInterface';
 import { ResolveRule } from './util/ResolveRule';
 import { TaskPool } from './TaskPool';
@@ -11,7 +11,7 @@ export class RunnableProperties {
     public readonly varToValue: readonly ResolveRule[],
     public readonly path: string,
     public readonly options: SpawnOptionsWithoutStdio,
-    private readonly _frameworkSpecific: ExecutableConfigFrameworkSpecific,
+    private readonly _frameworkSpecific: FrameworkSpecific,
     _parallelizationLimit: number,
     public readonly runTask: RunTask,
     public readonly spawner: Spawner,

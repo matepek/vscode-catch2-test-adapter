@@ -15,32 +15,13 @@ import {
 import { RunnableFactory } from './RunnableFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
-import { TestGrouping } from './TestGroupingInterface';
 import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
 import { readJSONSync } from 'fs-extra';
 import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
+import { RunTask, ExecutionWrapper, FrameworkSpecific } from './AdvancedExecutableInterface';
 
-export interface SpawnerConfig {
-  path: string;
-  args?: string[];
-}
-
-export interface RunTask {
-  before?: string[];
-  beforeEach?: string[];
-  after?: string[];
-  afterEach?: string[];
-}
-
-export interface ExecutableConfigFrameworkSpecific {
-  testGrouping?: TestGrouping;
-  helpRegex?: string;
-  prependTestRunningArgs?: string[];
-  prependTestListingArgs?: string[];
-  ignoreTestEnumerationStdErr?: boolean;
-  'debug.enableOutputColouring'?: boolean;
-}
+///
 
 export class ExecutableConfig implements vscode.Disposable {
   public constructor(
@@ -55,10 +36,10 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _runTask: RunTask,
     private readonly _parallelizationLimit: number,
     private readonly _strictPattern: boolean | undefined,
-    private readonly _executionWrapper: SpawnerConfig | undefined,
-    private readonly _catch2: ExecutableConfigFrameworkSpecific,
-    private readonly _gtest: ExecutableConfigFrameworkSpecific,
-    private readonly _doctest: ExecutableConfigFrameworkSpecific,
+    private readonly _executionWrapper: ExecutionWrapper | undefined,
+    private readonly _catch2: FrameworkSpecific,
+    private readonly _gtest: FrameworkSpecific,
+    private readonly _doctest: FrameworkSpecific,
   ) {
     if ([_catch2, _gtest, _doctest].some(f => Object.keys(f).length > 0)) {
       _shared.log.infoS('Using frameworks specific executable setting', _catch2, _gtest, _doctest);

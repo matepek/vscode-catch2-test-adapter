@@ -5,7 +5,7 @@ import { Catch2Runnable } from './framework/Catch2Runnable';
 import { GoogleRunnable } from './framework/GoogleRunnable';
 import { DOCRunnable } from './framework/DOCRunnable';
 import { SharedVariables } from './SharedVariables';
-import { ExecutableConfigFrameworkSpecific, RunTask } from './ExecutableConfig';
+import { FrameworkSpecific, RunTask } from './AdvancedExecutableInterface';
 import { Version } from './Util';
 import { ResolveRule } from './util/ResolveRule';
 import { RootSuite } from './RootSuite';
@@ -20,9 +20,9 @@ export class RunnableFactory {
     private readonly _execPath: string,
     private readonly _execOptions: SpawnOptionsWithoutStdio,
     private readonly _varToValue: ResolveRule[],
-    private readonly _catch2: ExecutableConfigFrameworkSpecific,
-    private readonly _gtest: ExecutableConfigFrameworkSpecific,
-    private readonly _doctest: ExecutableConfigFrameworkSpecific,
+    private readonly _catch2: FrameworkSpecific,
+    private readonly _gtest: FrameworkSpecific,
+    private readonly _doctest: FrameworkSpecific,
     private readonly _parallelizationLimit: number,
     private readonly _runTask: RunTask,
     private readonly _spawner: Spawner,

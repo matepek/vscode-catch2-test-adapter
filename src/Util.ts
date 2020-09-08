@@ -93,7 +93,7 @@ export function generateId(): string {
 
 import * as crypto from 'crypto';
 
-export function hashString<T>(str: string, algorithm = 'sha1'): string {
+export function hashString(str: string, algorithm = 'sha1'): string {
   const hash = crypto.createHash(algorithm);
   hash.update(str);
   return hash.digest('hex');

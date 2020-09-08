@@ -1,10 +1,16 @@
 import * as vscode from 'vscode';
 import { LoggerWrapper } from './LoggerWrapper';
-import { ExecutableConfig, ExecutableConfigFrameworkSpecific, RunTask, SpawnerConfig } from './ExecutableConfig';
+import { ExecutableConfig } from './ExecutableConfig';
 import { SharedVariables } from './SharedVariables';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
 import { TestGrouping } from './TestGroupingInterface';
+import {
+  AdvancedExecutableWithScope,
+  FrameworkSpecific,
+  RunTask,
+  ExecutionWrapper,
+} from './AdvancedExecutableInterface';
 //import * as crypto from 'crypto';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
@@ -48,29 +54,6 @@ class ConfigurationChangeEvent {
     return this.event.affectsConfiguration(`${ConfigSectionBase}.${config}`, resource);
   }
 }
-
-interface ExecutableObjBase {
-  comment?: string;
-  pattern?: string;
-  name?: string;
-  description?: string;
-  cwd?: string;
-  env?: { [key: string]: string };
-  envFile?: string;
-  dependsOn?: string[];
-  runTask?: RunTask;
-  parallelizationLimit?: number;
-  strictPattern?: boolean;
-  catch2?: ExecutableConfigFrameworkSpecific;
-  gtest?: ExecutableConfigFrameworkSpecific;
-  doctest?: ExecutableConfigFrameworkSpecific;
-  testGrouping?: TestGrouping; //undocumented
-  executionWrapper?: SpawnerConfig;
-}
-
-type Scopes = { [scope in NodeJS.Platform]?: ExecutableObjBase };
-
-interface ExecutableObj extends ExecutableObjBase, Scopes {}
 
 ///
 
@@ -384,8 +367,8 @@ export class Configurations {
       );
     };
 
-    const [advanced, simple] = ((): [ExecutableObj[] | undefined, string | undefined] => {
-      const advanced = this._new.inspect<ExecutableObj[]>('test.advancedExecutables');
+    const [advanced, simple] = ((): [AdvancedExecutableWithScope[] | undefined, string | undefined] => {
+      const advanced = this._new.inspect<AdvancedExecutableWithScope[]>('test.advancedExecutables');
       const simple = this._new.inspect<string>('test.executables');
 
       if (advanced === undefined || simple === undefined) {
@@ -427,8 +410,8 @@ export class Configurations {
 
       this._log.setContext('executables', advanced);
 
-      const createExecutableConfigFromObj = (origObj: ExecutableObj): ExecutableConfig => {
-        const obj: ExecutableObj = Object.assign({}, origObj);
+      const createExecutableConfigFromObj = (origObj: AdvancedExecutableWithScope): ExecutableConfig => {
+        const obj: AdvancedExecutableWithScope = Object.assign({}, origObj);
 
         if (typeof origObj[process.platform] === 'object') Object.assign(obj, origObj[process.platform]);
 
@@ -474,7 +457,7 @@ export class Configurations {
 
         const defaultTestGrouping = obj.testGrouping ? obj.testGrouping : undefined;
 
-        const spawnerConfig: SpawnerConfig | undefined =
+        const spawnerConfig: ExecutionWrapper | undefined =
           typeof obj.executionWrapper === 'object' &&
           typeof obj.executionWrapper.path === 'string' &&
           (obj.executionWrapper.args === undefined ||
@@ -519,9 +502,9 @@ export class Configurations {
 
   private _getFrameworkSpecificSettings(
     defaultTestGrouping: TestGrouping | undefined,
-    obj?: ExecutableConfigFrameworkSpecific,
-  ): ExecutableConfigFrameworkSpecific {
-    const r: ExecutableConfigFrameworkSpecific = {};
+    obj?: FrameworkSpecific,
+  ): FrameworkSpecific {
+    const r: FrameworkSpecific = {};
     if (typeof obj === 'object') {
       if (obj.testGrouping) r.testGrouping = obj.testGrouping;
       else r.testGrouping = defaultTestGrouping;
