@@ -6,7 +6,8 @@ import { hashString } from './Util';
 import { performance } from 'perf_hooks';
 import { TestGrouping } from './TestGroupingInterface';
 import {
-  AdvancedExecutableWithScope,
+  AdvancedExecutable,
+  AdvancedExecutableArray,
   FrameworkSpecific,
   RunTask,
   ExecutionWrapper,
@@ -367,8 +368,8 @@ export class Configurations {
       );
     };
 
-    const [advanced, simple] = ((): [AdvancedExecutableWithScope[] | undefined, string | undefined] => {
-      const advanced = this._new.inspect<AdvancedExecutableWithScope[]>('test.advancedExecutables');
+    const [advanced, simple] = ((): [AdvancedExecutableArray | undefined, string | undefined] => {
+      const advanced = this._new.inspect<AdvancedExecutableArray>('test.advancedExecutables');
       const simple = this._new.inspect<string>('test.executables');
 
       if (advanced === undefined || simple === undefined) {
@@ -410,10 +411,13 @@ export class Configurations {
 
       this._log.setContext('executables', advanced);
 
-      const createExecutableConfigFromObj = (origObj: AdvancedExecutableWithScope): ExecutableConfig => {
-        const obj: AdvancedExecutableWithScope = Object.assign({}, origObj);
+      const createExecutableConfigFromObj = (origObj: AdvancedExecutable): ExecutableConfig => {
+        const obj: AdvancedExecutable = Object.assign({}, origObj);
 
-        if (typeof origObj[process.platform] === 'object') Object.assign(obj, origObj[process.platform]);
+        // we are cheating here: it will work for other os but that is undocumented
+        const currentOS = process.platform as 'darwin' | 'linux' | 'win32';
+
+        if (typeof origObj[currentOS] === 'object') Object.assign(obj, origObj[currentOS]);
 
         const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 

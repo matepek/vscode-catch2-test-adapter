@@ -2,19 +2,17 @@ import { TestGrouping } from './TestGroupingInterface';
 
 ///
 
-export interface AdvancedExecutableWithScope extends AdvancedExecutable, OSScope {}
+export type AdvancedExecutableArray = Array<AdvancedExecutable>;
 
-///
-
-interface AdvancedExecutable {
+export interface AdvancedExecutable {
   comment?: string;
   pattern?: string;
   name?: string;
   description?: string;
   cwd?: string;
-  env?: { [key: string]: string };
+  env?: Record<string, string>;
   envFile?: string;
-  dependsOn?: string[];
+  dependsOn?: Array<string>;
   runTask?: RunTask;
   parallelizationLimit?: number;
   strictPattern?: boolean;
@@ -23,27 +21,28 @@ interface AdvancedExecutable {
   doctest?: FrameworkSpecific;
   testGrouping?: TestGrouping;
   executionWrapper?: ExecutionWrapper;
+  darwin: AdvancedExecutable;
+  linux: AdvancedExecutable;
+  win32: AdvancedExecutable;
 }
 
 export interface RunTask {
-  before?: string[];
-  beforeEach?: string[];
-  after?: string[];
-  afterEach?: string[];
+  before?: Array<string>;
+  beforeEach?: Array<string>;
+  after?: Array<string>;
+  afterEach?: Array<string>;
 }
 
 export interface ExecutionWrapper {
   path: string;
-  args?: string[];
+  args?: Array<string>;
 }
 
 export interface FrameworkSpecific {
   testGrouping?: TestGrouping;
   helpRegex?: string;
-  prependTestRunningArgs?: string[];
-  prependTestListingArgs?: string[];
+  prependTestRunningArgs?: Array<string>;
+  prependTestListingArgs?: Array<string>;
   ignoreTestEnumerationStdErr?: boolean;
   'debug.enableOutputColouring'?: boolean;
 }
-
-type OSScope = { [scope in NodeJS.Platform]?: AdvancedExecutable };

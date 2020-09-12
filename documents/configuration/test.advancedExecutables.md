@@ -6,6 +6,8 @@ testMate.cpp.test.advancedExecutables
 
 [[Jump to README.md](../../README)]
 
+([TypeScript interface](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/AdvancedExecutableInterface.ts))
+
 The location of your test executables (relative to the workspace folder or absolute path) and with a lot of other setting.
 
 he extension is \*_pre-configured_ and it should find executables inside the working directory which match the following [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options):

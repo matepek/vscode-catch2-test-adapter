@@ -11,7 +11,7 @@ export interface GroupBySource extends TestGrouping {
 }
 
 export interface GroupByTags extends TestGrouping {
-  tags?: string[][];
+  tags?: Array<Array<string>>;
 
   label?: string; // ${tags} will by substituted
   description?: string;
@@ -20,7 +20,7 @@ export interface GroupByTags extends TestGrouping {
 }
 
 export interface GroupByRegex extends TestGrouping {
-  regexes?: string[];
+  regexes?: Array<string>;
 
   label?: string; // ${match} will by substituted
   description?: string;

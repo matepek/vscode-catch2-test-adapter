@@ -832,7 +832,7 @@
           }
         },
         "testMate.cpp.test.workingDirectory": {
-          "markdownDescription": "Sets the working directory of the test executable (relative to the workspace folder or absolute path). Note: `testMate.cpp.executables` overwrites it locally. ([Variables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#variables))",
+          "markdownDescription": "Sets the working directory of the test executable (relative to the workspace folder or absolute path). Note: `testMate.cpp.advancedExecutables` overwrites it locally. ([Variables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#variables))",
           "scope": "resource",
           "type": "string",
           "default": "${absDirpath}",
@@ -867,14 +867,14 @@
           "minimum": -1
         },
         "testMate.cpp.test.parallelExecutionLimit": {
-          "markdownDescription": "Maximizes the number of the parallel test executions. (It applies instantly.) Note: If your executables depend on the **same resource** then this **could cause a problem**.",
+          "markdownDescription": "Maximizes the number of the parallel test executions. (It applies instantly.) Note: If your executables depend on the **same resource** exclusively then this **could cause a problem**.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
           "minimum": 1
         },
         "testMate.cpp.test.parallelExecutionOfExecutableLimit": {
-          "markdownDescription": "Maximizes the number of the parallel execution of executables. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. The `testMate.cpp.test.parallelExecutionLimit` is a global limit and this is a local one. Note: If your **test cases** depend on the same resource then this **could cause a problem**.",
+          "markdownDescription": "Maximizes the number of the parallel execution of executables. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. The `testMate.cpp.test.parallelExecutionLimit` is a global limit and this is a local one. Note: If your **test cases** depend on the **same resource** exclusively then this **could cause a problem**.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
