@@ -7,7 +7,7 @@ For that a public access token (PAT) was generated, encrypted and added to [.tra
 
 ### Generating PAT (for myself)
 
-- Goto [https://marketplace.visualstudio.com/manage]()
+- Goto [https://marketplace.visualstudio.com/manage]() or [https://dev.azure.com/matepek/\_usersSettings/tokens]()
 - Sign in
 - Click on your name at the upper-right corner
 - Change organisation to Microsoft Account
