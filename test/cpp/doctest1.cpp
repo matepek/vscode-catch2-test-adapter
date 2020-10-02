@@ -149,3 +149,5 @@ TEST_CASE(
 TEST_CASE("  starts with double space and ends with 2 more ") {}
 
 TEST_CASE("exception1") { throw std::runtime_error("exeception msg"); }
+
+TEST_CASE("testwith,char") { CHECK(false); }

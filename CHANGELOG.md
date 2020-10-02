@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.4.2]
+
+## Added
+
+- Workaround for `,` char in doctest's test-name.
+
 ## [3.4.1] - 2020-08-21
 
 ### Added

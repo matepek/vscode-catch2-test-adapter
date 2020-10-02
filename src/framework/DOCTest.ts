@@ -88,7 +88,7 @@ export class DOCTest extends AbstractTest {
 
   public getEscapedTestName(): string {
     /* ',' has special meaning */
-    return this.testNameAsId.replace(/,/g, '\\,');
+    return this.testNameAsId.replace(/,/g, '?');
   }
 
   public parseAndProcessTestCase(
