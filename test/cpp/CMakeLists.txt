@@ -26,6 +26,12 @@ add_gtest_with_main(gtest2 "gtest2.cpp")
 
 #
 
+include("GoogleBenchmark.cmake")
+
+add_googlebenchmark(gbenchmark "gbenchmark.cpp")
+
+#
+
 include("Catch2Test.cmake")
 
 add_catch2test_with_main(suite1 "suite1.cpp")
