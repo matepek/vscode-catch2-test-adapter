@@ -3,8 +3,7 @@ import { inspect, promisify } from 'util';
 
 import { Suite } from '../Suite';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
-import { GoogleTest } from './GoogleTest';
-import { Parser } from 'xml2js';
+import { GoogleBenchmarkTest } from './GoogleBenchmarkTest';
 import { RunnableProperties } from '../RunnableProperties';
 import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
@@ -13,17 +12,14 @@ import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { RootSuite } from '../RootSuite';
 
-export class GoogleRunnable extends AbstractRunnable {
-  public children: Suite[] = []; //TODO: can we remove this?
-
+export class GoogleBenchmarkRunnable extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
     rootSuite: RootSuite,
     execInfo: RunnableProperties,
-    private readonly _argumentPrefix: string,
     version: Promise<Version | undefined>,
   ) {
-    super(shared, rootSuite, execInfo, 'GoogleTest', version);
+    super(shared, rootSuite, execInfo, 'GoogleBenchmark', version);
   }
 
   private getTestGrouping(): TestGrouping {
@@ -36,121 +32,24 @@ export class GoogleRunnable extends AbstractRunnable {
     }
   }
 
-  private _reloadFromXml(xmlStr: string): RunnableReloadResult {
-    interface XmlObject {
-      [prop: string]: any; //eslint-disable-line
-    }
-
-    let xml: XmlObject = {};
-
-    new Parser({ explicitArray: true }).parseString(xmlStr, (err: Error, result: Record<string, unknown>) => {
-      if (err) {
-        throw err;
-      } else {
-        xml = result;
-      }
-    });
-
-    const reloadResult = new RunnableReloadResult();
-
-    for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
-      const suiteName = xml.testsuites.testsuite[i].$.name;
-
-      for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
-        const testCase = xml.testsuites.testsuite[i].testcase[j];
-        const testName = testCase.$.name.startsWith('DISABLED_') ? testCase.$.name.substr(9) : testCase.$.name;
-        const testNameAsId = suiteName + '.' + testCase.$.name;
-        const typeParam: string | undefined = testCase.$.type_param;
-        const valueParam: string | undefined = testCase.$.value_param;
-
-        const file = testCase.$.file ? this._findFilePath(testCase.$.file) : undefined;
-        const line = testCase.$.line ? testCase.$.line - 1 : undefined;
-
-        reloadResult.add(
-          ...this._createSubtreeAndAddTest(
-            this.getTestGrouping(),
-            testNameAsId,
-            testName,
-            file,
-            [suiteName],
-            (parent: Suite) =>
-              new GoogleTest(this._shared, this, parent, testNameAsId, testName, typeParam, valueParam, file, line),
-            (old: AbstractTest) => (old as GoogleTest).update(typeParam, valueParam, file, line),
-          ),
-        );
-      }
-    }
-
-    return reloadResult;
-  }
-
   private _reloadFromString(stdOutStr: string): RunnableReloadResult {
-    this.children = [];
-
     const lines = stdOutStr.split(/\r?\n/);
 
-    const testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.(?:\s+(#\s+TypeParam(?:\(\))?\s+=\s*(.+)))?$/;
-    const testRe = /^\s+([A-z0-9][\/A-z0-9_\-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
-
-    let lineCount = lines.length;
-
-    while (lineCount > 0 && lines[lineCount - 1].match(testRe) === null) lineCount--;
-
-    let lineNum = 0;
-
-    // gtest_main.cc
-    while (lineCount > lineNum && lines[lineNum].match(testGroupRe) === null) lineNum++;
-
-    if (lineCount - lineNum === 0) throw Error('Wrong test list.');
-
-    let testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
-
     const reloadResult = new RunnableReloadResult();
 
-    while (testGroupMatch) {
-      lineNum++;
-
-      const testGroupName = testGroupMatch[1];
-      const suiteName = testGroupMatch[1];
-      const typeParam: string | undefined = testGroupMatch[3];
-
-      let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
-
-      while (testMatch) {
-        lineNum++;
-
-        const testName = testMatch[1].startsWith('DISABLED_') ? testMatch[1].substr(9) : testMatch[1];
-        const valueParam: string | undefined = testMatch[3];
-        const testNameAsId = testGroupName + '.' + testMatch[1];
-
-        reloadResult.add(
-          ...this._createSubtreeAndAddTest(
-            this.getTestGrouping(),
-            testNameAsId,
-            testName,
-            undefined,
-            [suiteName],
-            (parent: Suite) =>
-              new GoogleTest(
-                this._shared,
-                this,
-                parent,
-                testNameAsId,
-                testName,
-                typeParam,
-                valueParam,
-                undefined,
-                undefined,
-              ),
-            (old: AbstractTest) => (old as GoogleTest).update(typeParam, valueParam, undefined, undefined),
-          ),
-        );
-
-        testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
-      }
-
-      testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
-    }
+    lines.forEach(line => {
+      reloadResult.add(
+        ...this._createSubtreeAndAddTest(
+          this.getTestGrouping(),
+          line,
+          line,
+          undefined,
+          [line],
+          (parent: Suite) => new GoogleBenchmarkTest(this._shared, this, parent, line),
+          (old: AbstractTest) => (old as GoogleBenchmarkTest).update(),
+        ),
+      );
+    });
 
     return reloadResult;
   }
@@ -165,59 +64,42 @@ export class GoogleRunnable extends AbstractRunnable {
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this._shared.log.info('loading from cache: ', cacheFile);
-          const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
+          const str = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          return await this._reloadFromXml(xmlStr);
+          return await this._reloadFromString(str);
         }
       } catch (e) {
         this._shared.log.info('coudnt use cache', e);
       }
     }
 
-    const args = this.properties.prependTestListingArgs.concat([
-      `--${this._argumentPrefix}list_tests`,
-      `--${this._argumentPrefix}output=xml:${cacheFile}`,
-    ]);
+    const args = this.properties.prependTestListingArgs.concat([`--benchmark_list_tests=true`]);
 
     this._shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
-    const googleTestListOutput = await this.properties.spawner.spawnAsync(
+    const listOutput = await this.properties.spawner.spawnAsync(
       this.properties.path,
       args,
       this.properties.options,
       30000,
     );
 
-    this.children = [];
-
-    if (googleTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
-      this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
-      return await this._createAndAddUnexpectedStdError(googleTestListOutput.stdout, googleTestListOutput.stderr);
+    if (listOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
+      this._shared.log.warn('reloadChildren -> googleBenchmarkTestListOutput.stderr: ', listOutput);
+      return await this._createAndAddUnexpectedStdError(listOutput.stdout, listOutput.stderr);
     } else {
-      const hasXmlFile = await promisify(fs.exists)(cacheFile);
+      try {
+        const result = await this._reloadFromString(listOutput.stdout);
 
-      if (hasXmlFile) {
-        const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
-
-        const result = await this._reloadFromXml(xmlStr);
-
-        if (!this._shared.enabledTestListCaching) {
-          fs.unlink(cacheFile, (err: Error | null) => {
-            err && this._shared.log.warn("Couldn't remove: ", cacheFile, err);
-          });
+        if (this._shared.enabledTestListCaching) {
+          promisify(fs.writeFile)(cacheFile, listOutput.stdout).catch(err =>
+            this._shared.log.warn('couldnt write cache file:', err),
+          );
         }
 
         return result;
-      } else {
-        this._shared.log.info(
-          "Couldn't parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output",
-        );
-
-        try {
-          return await this._reloadFromString(googleTestListOutput.stdout);
-        } catch (e) {
-          this._shared.log.info('GoogleTest._reloadFromStdOut error', e, googleTestListOutput);
-          throw e;
-        }
+      } catch (e) {
+        this._shared.log.info('GoogleBenchmark._reloadFromStdOut error', e, listOutput);
+        throw e;
       }
     }
   }
@@ -227,37 +109,27 @@ export class GoogleRunnable extends AbstractRunnable {
 
     const testNames = childrenToRun.map(c => c.testNameAsId);
 
-    execParams.push(`--${this._argumentPrefix}filter=` + testNames.join(':'));
-
-    execParams.push(`--${this._argumentPrefix}also_run_disabled_tests`);
-
-    if (this._shared.rngSeed !== null) {
-      execParams.push(`--${this._argumentPrefix}shuffle`);
-      execParams.push(
-        `--${this._argumentPrefix}random_seed=` +
-          (this._shared.rngSeed === 'time' ? '0' : this._shared.rngSeed.toString()),
-      );
-    }
-
-    if (this._shared.googleTestGMockVerbose !== 'default') {
-      execParams.push('--gmock_verbose=' + this._shared.googleTestGMockVerbose);
-    }
+    execParams.push(`--benchmark_filter=` + testNames.join('|'));
 
     return execParams;
   }
 
   protected _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
-    return [`--${this._argumentPrefix}color=no`, ...this._getRunParamsCommon(childrenToRun)];
+    return [`--benchmark_color=false`, '--benchmark_format=json', ...this._getRunParamsCommon(childrenToRun)];
   }
 
-  public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
-    const colouring = this.properties.enableDebugColouring ? 'yes' : 'no';
-    const debugParams = [`--${this._argumentPrefix}color=${colouring}`, ...this._getRunParamsCommon(childrenToRun)];
-    if (breakOnFailure) debugParams.push(`--${this._argumentPrefix}break_on_failure`);
+  public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+    const colouring = this.properties.enableDebugColouring ? 'true' : 'false';
+    const debugParams = [`--benchmark_color=${colouring}`, ...this._getRunParamsCommon(childrenToRun)];
     return debugParams;
   }
 
   protected _handleProcess(testRunId: string, runInfo: RunningRunnable): Promise<void> {
+    // at frist its good enough
+    runInfo.childrenToRun.forEach(test => {
+      this._shared.sendTestRunEvent(test.getStartEvent(testRunId));
+    });
+
     const data = new (class {
       public stdoutAndErrBuffer = ''; // no reason to separate
       public currentTestCaseNameFull: string | undefined = undefined;
