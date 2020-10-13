@@ -2,7 +2,7 @@ import * as c2fs from './FSWrapper';
 import { RunnableProperties } from './RunnableProperties';
 import { AbstractRunnable } from './AbstractRunnable';
 import { Catch2Runnable } from './framework/Catch2Runnable';
-import { GoogleRunnable } from './framework/GoogleRunnable';
+import { GoogleTestRunnable } from './framework/GoogleTestRunnable';
 import { DOCRunnable } from './framework/DOCRunnable';
 import { SharedVariables } from './SharedVariables';
 import { FrameworkSpecific, RunTask } from './AdvancedExecutableInterface';
@@ -74,7 +74,7 @@ export class RunnableFactory {
               : /This program contains tests written using .*--(\w+)list_tests.*List the names of all tests instead of running them/s,
           );
           if (gtest) {
-            return new GoogleRunnable(
+            return new GoogleTestRunnable(
               this._shared,
               this._rootSuite,
               new RunnableProperties(
@@ -98,7 +98,7 @@ export class RunnableFactory {
             // https://github.com/matepek/vscode-catch2-test-adapter/pull/191
             this._shared.log.info('Special - Google Co. related - gtest output is detected.', this._execPath);
 
-            return new GoogleRunnable(
+            return new GoogleTestRunnable(
               this._shared,
               this._rootSuite,
               new RunnableProperties(

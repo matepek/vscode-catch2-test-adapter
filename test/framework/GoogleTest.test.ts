@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as path from 'path';
-import { GoogleTest } from '../../src/framework/GoogleTest';
+import { GoogleTestTest } from '../../src/framework/GoogleTestTest';
 import { AbstractRunnable } from '../../src/AbstractRunnable';
 import { Suite } from '../../src/Suite';
 import { EOL } from 'os';
@@ -10,7 +10,7 @@ import { logger } from '../LogOutputContent.test';
 ///
 
 describe(path.basename(__filename), function () {
-  const gtest: GoogleTest = new GoogleTest(
+  const gtest: GoogleTestTest = new GoogleTestTest(
     {
       log: logger,
     },

@@ -3,7 +3,7 @@ import { Suite } from '../Suite';
 import { AbstractRunnable } from '../AbstractRunnable';
 import { TestEventBuilder } from '../TestEventBuilder';
 
-export class GoogleTest extends AbstractTest {
+export class GoogleTestTest extends AbstractTest {
   public constructor(
     shared: SharedWithTest,
     runnable: AbstractRunnable,
@@ -98,7 +98,7 @@ export class GoogleTest extends AbstractTest {
         const gMockWarningCount = 0;
 
         for (let i = 0; i < lines.length; ) {
-          const match = lines[i].match(GoogleTest.failureRe);
+          const match = lines[i].match(GoogleTestTest.failureRe);
           if (match !== null) {
             i += 1;
             const filePath = match[2];

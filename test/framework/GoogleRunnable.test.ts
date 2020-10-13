@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as pathlib from 'path';
 import { Imitation, SharedVariables } from '../Common';
-import { GoogleRunnable } from '../../src/framework/GoogleRunnable';
+import { GoogleTestRunnable } from '../../src/framework/GoogleTestRunnable';
 import { RootSuite } from '../../src/RootSuite';
 import { RunnableProperties } from '../../src/RunnableProperties';
 import { RunnableReloadResult } from '../../src/AbstractRunnable';
@@ -28,11 +28,11 @@ describe(pathlib.basename(__filename), function () {
     new DefaultSpawner(),
   );
 
-  const createGoogleRunnable = (): { runnable: GoogleRunnable; root: RootSuite } => {
+  const createGoogleRunnable = (): { runnable: GoogleTestRunnable; root: RootSuite } => {
     const root = new RootSuite(undefined, sharedVariables);
     return {
       root,
-      runnable: new GoogleRunnable(sharedVariables, root, runnableProperties, 'gtest_', Promise.resolve(undefined)),
+      runnable: new GoogleTestRunnable(sharedVariables, root, runnableProperties, 'gtest_', Promise.resolve(undefined)),
     };
   };
 
@@ -42,7 +42,7 @@ describe(pathlib.basename(__filename), function () {
     _reloadFromXml(testListOutput: string): RunnableReloadResult;
   };
 
-  const getPriv = (c: GoogleRunnable): GoogleRunnablePriv => (c as unknown) as GoogleRunnablePriv;
+  const getPriv = (c: GoogleTestRunnable): GoogleRunnablePriv => (c as unknown) as GoogleRunnablePriv;
 
   let imitation: Imitation;
 
