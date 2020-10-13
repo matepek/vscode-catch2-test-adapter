@@ -19,6 +19,7 @@ export interface AdvancedExecutable {
   catch2?: FrameworkSpecific;
   gtest?: FrameworkSpecific;
   doctest?: FrameworkSpecific;
+  gbenchmark?: FrameworkSpecific;
   testGrouping?: TestGrouping;
   executionWrapper?: ExecutionWrapper;
   darwin: AdvancedExecutable;

@@ -37,6 +37,7 @@ export class Catch2Runnable extends AbstractRunnable {
   }
 
   private _reloadFromString(testListOutput: string): RunnableReloadResult {
+    const testGrouping = this.getTestGrouping();
     const lines = testListOutput.split(/\r?\n/);
 
     const startRe = /Matching test cases:/;
@@ -128,7 +129,7 @@ export class Catch2Runnable extends AbstractRunnable {
 
       reloadResult.add(
         ...this._createSubtreeAndAddTest(
-          this.getTestGrouping(),
+          testGrouping,
           testName,
           testName,
           filePath,

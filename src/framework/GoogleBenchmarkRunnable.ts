@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { inspect, promisify } from 'util';
+import { promisify } from 'util';
 
 import { Suite } from '../Suite';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
@@ -7,7 +7,7 @@ import { GoogleBenchmarkTest } from './GoogleBenchmarkTest';
 import { RunnableProperties } from '../RunnableProperties';
 import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
-import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
+import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { RootSuite } from '../RootSuite';
@@ -27,29 +27,31 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
       return this.properties.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
-      grouping.groupByExecutable.groupByTags = { tags: [], tagFormat: '${tag}' };
       return grouping;
     }
   }
 
   private _reloadFromString(stdOutStr: string): RunnableReloadResult {
+    const testGrouping = this.getTestGrouping();
     const lines = stdOutStr.split(/\r?\n/);
 
     const reloadResult = new RunnableReloadResult();
 
-    lines.forEach(line => {
-      reloadResult.add(
-        ...this._createSubtreeAndAddTest(
-          this.getTestGrouping(),
-          line,
-          line,
-          undefined,
-          [line],
-          (parent: Suite) => new GoogleBenchmarkTest(this._shared, this, parent, line),
-          (old: AbstractTest) => (old as GoogleBenchmarkTest).update(),
-        ),
-      );
-    });
+    lines
+      .filter(x => x.length > 0)
+      .forEach(line => {
+        reloadResult.add(
+          ...this._createSubtreeAndAddTest(
+            testGrouping,
+            line,
+            line,
+            undefined,
+            [],
+            (parent: Suite) => new GoogleBenchmarkTest(this._shared, this, parent, line),
+            (old: AbstractTest) => (old as GoogleBenchmarkTest).update(),
+          ),
+        );
+      });
 
     return reloadResult;
   }
@@ -131,115 +133,147 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
     });
 
     const data = new (class {
-      public stdoutAndErrBuffer = ''; // no reason to separate
-      public currentTestCaseNameFull: string | undefined = undefined;
-      public currentChild: AbstractTest | undefined = undefined;
-      public route: Suite[] = [];
-      public unprocessedTestCases: string[] = [];
       public processedTestCases: AbstractTest[] = [];
+      public context: Record<string, unknown> | undefined = undefined;
+      public benchmarksJson = '';
+      public lastProcessedBenchmarkIndex = -1;
+      public route: Suite[] = [];
     })();
-
-    const testBeginRe = /^\[ RUN      \] ((.+)\.(.+))$/m;
-    const rngSeed: number | undefined = typeof this._shared.rngSeed === 'number' ? this._shared.rngSeed : undefined;
 
     return new Promise<ProcessResult>(resolve => {
       const chunks: string[] = [];
       const processChunk = (chunk: string): void => {
         chunks.push(chunk);
-        data.stdoutAndErrBuffer = data.stdoutAndErrBuffer + chunk;
-        let invariant = 99999;
-        do {
-          if (data.currentTestCaseNameFull === undefined) {
-            const m = data.stdoutAndErrBuffer.match(testBeginRe);
-            if (m == null) return;
+        data.benchmarksJson = data.benchmarksJson + chunk;
 
-            data.currentTestCaseNameFull = m[1];
+        if (data.context === undefined) {
+          const benchmarkStartIndex = data.benchmarksJson.indexOf('"benchmarks"');
+          if (benchmarkStartIndex !== -1) {
+            const contextJson = data.benchmarksJson.substring(0, benchmarkStartIndex) + '"colonfixer": null }';
+            try {
+              data.context = JSON.parse(contextJson)['context'];
+              data.benchmarksJson = '{' + data.benchmarksJson.substring(benchmarkStartIndex);
+            } catch (e) {
+              this._shared.log.errorS("couldn't parse context", e, data.benchmarksJson);
+              throw e;
+            }
+          } else {
+            return;
+          }
+        }
 
-            const test = this._findTest(v => v.testNameAsId == data.currentTestCaseNameFull);
+        const finished = data.benchmarksJson.match(/\]\s*\}\s*$/) !== null;
+        const benchmarksJson = data.benchmarksJson + (finished ? '' : ']}');
+        try {
+          const benchmarks = JSON.parse(benchmarksJson)['benchmarks'] as Record<string, unknown>[];
+
+          for (let i = data.lastProcessedBenchmarkIndex + 1; i < benchmarks.length; ++i) {
+            const benchmark = benchmarks[i];
+            const test = this._findTest(v => v.testNameAsId == benchmark['name']);
 
             if (test) {
               const route = [...test.route()];
               this.sendMinimalEventsIfNeeded(testRunId, data.route, route);
               data.route = route;
 
-              data.currentChild = test;
-              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
-              this._shared.sendTestRunEvent(data.currentChild.getStartEvent(testRunId));
+              const ev = test.parseAndProcessTestCase(testRunId, JSON.stringify(benchmark), undefined, null, undefined);
+              this._shared.sendTestRunEvent(ev);
+              data.processedTestCases.push(test);
             } else {
-              this._shared.log.info('TestCase not found in children', data.currentTestCaseNameFull);
+              this._shared.log.warnS('missing test for gbenchmark. binary might be changed');
             }
 
-            data.stdoutAndErrBuffer = data.stdoutAndErrBuffer.substr(m.index!);
-          } else {
-            const testEndRe = new RegExp(
-              '(?!\\[ RUN      \\])\\[..........\\] ' + data.currentTestCaseNameFull.replace('.', '\\.') + '.*$',
-              'm',
-            );
-
-            const m = data.stdoutAndErrBuffer.match(testEndRe);
-            if (m == null) return;
-
-            const testCase = data.stdoutAndErrBuffer.substring(0, m.index! + m[0].length);
-
-            if (data.currentChild !== undefined) {
-              this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
-              try {
-                const ev = data.currentChild.parseAndProcessTestCase(
-                  testRunId,
-                  testCase,
-                  rngSeed,
-                  runInfo.timeout,
-                  undefined,
-                );
-
-                this._shared.sendTestRunEvent(ev);
-
-                data.processedTestCases.push(data.currentChild);
-              } catch (e) {
-                this._shared.log.error('parsing and processing test', e, data);
-
-                data.currentChild.lastRunEvent = {
-                  testRunId,
-                  type: 'test',
-                  test: data.currentChild.id,
-                  state: 'errored',
-                  message: [
-                    '😱 Unexpected error under parsing output !! Error: ' + inspect(e),
-                    'Consider opening an issue: https://github.com/matepek/vscode-catch2-test-adapter/issues/new/choose',
-                    `Please attach the output of: "${runInfo.process.spawnfile} ${runInfo.process.spawnargs}"`,
-                    '=== Output ===',
-                    testCase,
-                    '==============',
-                    '⬇ stdoutAndErrBuffer:',
-                    data.stdoutAndErrBuffer,
-                    '⬆ stdoutAndErrBuffer',
-                    '⬇ std::cout:',
-                    runInfo.process.stdout,
-                    '⬆ std::cout',
-                    '⬇ std::cerr:',
-                    runInfo.process.stderr,
-                    '⬆ std::cerr',
-                  ].join('\n'),
-                };
-
-                this._shared.sendTestRunEvent(data.currentChild.lastRunEvent);
-              }
-            } else {
-              this._shared.log.info('Test case found without TestInfo: ', this, '; ' + testCase);
-              data.unprocessedTestCases.push(testCase);
-            }
-
-            data.currentTestCaseNameFull = undefined;
-            data.currentChild = undefined;
-            // do not clear data.route
-            data.stdoutAndErrBuffer = data.stdoutAndErrBuffer.substr(m.index! + m[0].length);
+            data.lastProcessedBenchmarkIndex = i;
           }
-        } while (data.stdoutAndErrBuffer.length > 0 && --invariant > 0);
-        if (invariant == 0) {
-          this._shared.log.error('invariant==0', this, runInfo, data, chunks);
-          resolve(ProcessResult.error('Possible infinite loop of this extension'));
-          runInfo.killProcess();
+        } catch (e) {
+          this._shared.log.errorS('parinsg error', e, benchmarksJson, finished);
         }
+
+        // if (data.currentTestCaseNameFull === undefined) {
+        //   const m = data.stdoutAndErrBuffer.match(testBeginRe);
+        //   if (m == null) return;
+
+        //   data.currentTestCaseNameFull = m[1];
+
+        //   const test = this._findTest(v => v.testNameAsId == data.currentTestCaseNameFull);
+
+        //   if (test) {
+        //     const route = [...test.route()];
+        //     this.sendMinimalEventsIfNeeded(testRunId, data.route, route);
+        //     data.route = route;
+
+        //     data.currentChild = test;
+        //     this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
+        //     this._shared.sendTestRunEvent(data.currentChild.getStartEvent(testRunId));
+        //   } else {
+        //     this._shared.log.info('TestCase not found in children', data.currentTestCaseNameFull);
+        //   }
+
+        //   data.stdoutAndErrBuffer = data.stdoutAndErrBuffer.substr(m.index!);
+        // } else {
+        //   const testEndRe = new RegExp(
+        //     '(?!\\[ RUN      \\])\\[..........\\] ' + data.currentTestCaseNameFull.replace('.', '\\.') + '.*$',
+        //     'm',
+        //   );
+
+        //   const m = data.stdoutAndErrBuffer.match(testEndRe);
+        //   if (m == null) return;
+
+        //   const testCase = data.stdoutAndErrBuffer.substring(0, m.index! + m[0].length);
+
+        //   if (data.currentChild !== undefined) {
+        //     this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
+        //     try {
+        //       const ev = data.currentChild.parseAndProcessTestCase(
+        //         testRunId,
+        //         testCase,
+        //         rngSeed,
+        //         runInfo.timeout,
+        //         undefined,
+        //       );
+
+        //       this._shared.sendTestRunEvent(ev);
+
+        //       data.processedTestCases.push(data.currentChild);
+        //     } catch (e) {
+        //       this._shared.log.error('parsing and processing test', e, data);
+
+        //       data.currentChild.lastRunEvent = {
+        //         testRunId,
+        //         type: 'test',
+        //         test: data.currentChild.id,
+        //         state: 'errored',
+        //         message: [
+        //           '😱 Unexpected error under parsing output !! Error: ' + inspect(e),
+        //           'Consider opening an issue: https://github.com/matepek/vscode-catch2-test-adapter/issues/new/choose',
+        //           `Please attach the output of: "${runInfo.process.spawnfile} ${runInfo.process.spawnargs}"`,
+        //           '=== Output ===',
+        //           testCase,
+        //           '==============',
+        //           '⬇ stdoutAndErrBuffer:',
+        //           data.stdoutAndErrBuffer,
+        //           '⬆ stdoutAndErrBuffer',
+        //           '⬇ std::cout:',
+        //           runInfo.process.stdout,
+        //           '⬆ std::cout',
+        //           '⬇ std::cerr:',
+        //           runInfo.process.stderr,
+        //           '⬆ std::cerr',
+        //         ].join('\n'),
+        //       };
+
+        //       this._shared.sendTestRunEvent(data.currentChild.lastRunEvent);
+        //     }
+        //   } else {
+        //     this._shared.log.info('Test case found without TestInfo: ', this, '; ' + testCase);
+        //     data.unprocessedTestCases.push(testCase);
+        //   }
+
+        //   data.currentTestCaseNameFull = undefined;
+        //   data.currentChild = undefined;
+        //   // do not clear data.route
+        //   data.stdoutAndErrBuffer = data.stdoutAndErrBuffer.substr(m.index! + m[0].length);
+        // }
       };
 
       runInfo.process.stdout!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
@@ -264,36 +298,6 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
       .then((result: ProcessResult) => {
         result.error && this._shared.log.info(result.error.toString(), result, runInfo, this, data);
 
-        if (data.currentTestCaseNameFull !== undefined) {
-          if (data.currentChild !== undefined) {
-            this._shared.log.info('data.currentChild !== undefined: ', data);
-
-            let ev: AbstractTestEvent;
-
-            if (runInfo.isCancelled) {
-              ev = data.currentChild.getCancelledEvent(testRunId, data.stdoutAndErrBuffer);
-            } else if (runInfo.timeout !== null) {
-              ev = data.currentChild.getTimeoutEvent(testRunId, runInfo.timeout);
-            } else {
-              ev = data.currentChild.getFailedEventBase(testRunId);
-
-              ev.message = '😱 Unexpected error !!';
-
-              if (result.error) {
-                ev.state = 'errored';
-                ev.message += '\n' + result.error.message;
-              }
-
-              ev.message += data.stdoutAndErrBuffer ? `\n\n>>>${data.stdoutAndErrBuffer}<<<` : '';
-            }
-
-            data.currentChild.lastRunEvent = ev;
-            this._shared.sendTestRunEvent(ev);
-          } else {
-            this._shared.log.warn('data.inTestCase: ', data);
-          }
-        }
-
         this.sendMinimalEventsIfNeeded(testRunId, data.route, []);
         data.route = [];
 
@@ -303,44 +307,8 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
           result.error === undefined &&
           data.processedTestCases.length < runInfo.childrenToRun.length;
 
-        if (data.unprocessedTestCases.length > 0 || isTestRemoved) {
-          this.reloadTests(this._shared.taskPool).then(
-            () => {
-              // we have test results for the newly detected tests
-              // after reload we can set the results
-              const events: AbstractTestEvent[] = [];
-
-              for (let i = 0; i < data.unprocessedTestCases.length; i++) {
-                const testCase = data.unprocessedTestCases[i];
-
-                const m = testCase.match(testBeginRe);
-                if (m == null) break;
-
-                const testNameAsId = m[1];
-
-                const currentChild = this._findTest(v => v.compare(testNameAsId));
-
-                if (currentChild === undefined) break;
-                try {
-                  const ev = currentChild.parseAndProcessTestCase(
-                    testRunId,
-                    testCase,
-                    rngSeed,
-                    runInfo.timeout,
-                    undefined,
-                  );
-                  events.push(ev);
-                } catch (e) {
-                  this._shared.log.error('parsing and processing test', e, testCase);
-                }
-              }
-              events.length && this._shared.sendTestEvents(events);
-            },
-            (reason: Error) => {
-              // Suite possibly deleted: It is a dead suite.
-              this._shared.log.error('reloading-error: ', reason);
-            },
-          );
+        if (isTestRemoved) {
+          this.reloadTests(this._shared.taskPool);
         }
       });
   }

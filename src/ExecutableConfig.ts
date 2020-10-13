@@ -40,6 +40,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _catch2: FrameworkSpecific,
     private readonly _gtest: FrameworkSpecific,
     private readonly _doctest: FrameworkSpecific,
+    private readonly _gbenchmark: FrameworkSpecific,
   ) {
     if ([_catch2, _gtest, _doctest].some(f => Object.keys(f).length > 0)) {
       _shared.log.infoS('Using frameworks specific executable setting', _catch2, _gtest, _doctest);
@@ -111,7 +112,7 @@ export class ExecutableConfig implements vscode.Disposable {
   }
 
   private _disposed = false;
-  private _disposables: vscode.Disposable[] = [];
+  private _disposables: vscode.Disposable[] = []; //TODO: add logit for cancellation of reload
 
   public dispose(): void {
     this._disposables.forEach(d => d.dispose());
@@ -398,6 +399,7 @@ export class ExecutableConfig implements vscode.Disposable {
       this._catch2,
       this._gtest,
       this._doctest,
+      this._gbenchmark,
       this._parallelizationLimit,
       this._runTask,
       spawner,

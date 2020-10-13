@@ -10,6 +10,7 @@ import { Version } from './Util';
 import { ResolveRule } from './util/ResolveRule';
 import { RootSuite } from './RootSuite';
 import { Spawner, SpawnOptionsWithoutStdio, SpawnReturns } from './Spawner';
+import { GoogleBenchmarkRunnable } from './framework/GoogleBenchmarkRunnable';
 
 export class RunnableFactory {
   public constructor(
@@ -23,6 +24,7 @@ export class RunnableFactory {
     private readonly _catch2: FrameworkSpecific,
     private readonly _gtest: FrameworkSpecific,
     private readonly _doctest: FrameworkSpecific,
+    private readonly _gbenchmark: FrameworkSpecific,
     private readonly _parallelizationLimit: number,
     private readonly _runTask: RunTask,
     private readonly _spawner: Spawner,
@@ -141,6 +143,36 @@ export class RunnableFactory {
                 this._spawner,
               ),
               this._parseVersion(doc),
+            );
+          }
+        }
+
+        {
+          if (this._gbenchmark.helpRegex)
+            this._shared.log.info('Custom regex', 'gbenchmark', this._gbenchmark.helpRegex);
+
+          const gbenchmark = runWithHelpRes.stdout.match(
+            this._gbenchmark.helpRegex
+              ? new RegExp(this._gbenchmark.helpRegex, regexFlags)
+              : /benchmark \[--benchmark_list_tests=\{true\|false\}\]/,
+          );
+
+          if (gbenchmark) {
+            return new GoogleBenchmarkRunnable(
+              this._shared,
+              this._rootSuite,
+              new RunnableProperties(
+                this._execName,
+                this._execDescription,
+                this._varToValue,
+                this._execPath,
+                this._execOptions,
+                this._gbenchmark,
+                this._parallelizationLimit,
+                this._runTask,
+                this._spawner,
+              ),
+              Promise.resolve(undefined),
             );
           }
         }

@@ -14,8 +14,6 @@ import { TestGrouping } from '../TestGroupingInterface';
 import { RootSuite } from '../RootSuite';
 
 export class GoogleTestRunnable extends AbstractRunnable {
-  public children: Suite[] = []; //TODO: can we remove this?
-
   public constructor(
     shared: SharedVariables,
     rootSuite: RootSuite,
@@ -37,6 +35,8 @@ export class GoogleTestRunnable extends AbstractRunnable {
   }
 
   private _reloadFromXml(xmlStr: string): RunnableReloadResult {
+    const testGrouping = this.getTestGrouping();
+
     interface XmlObject {
       [prop: string]: any; //eslint-disable-line
     }
@@ -68,7 +68,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
 
         reloadResult.add(
           ...this._createSubtreeAndAddTest(
-            this.getTestGrouping(),
+            testGrouping,
             testNameAsId,
             testName,
             file,
@@ -85,7 +85,6 @@ export class GoogleTestRunnable extends AbstractRunnable {
   }
 
   private _reloadFromString(stdOutStr: string): RunnableReloadResult {
-    this.children = [];
     const testGrouping = this.getTestGrouping();
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -187,8 +186,6 @@ export class GoogleTestRunnable extends AbstractRunnable {
       this.properties.options,
       30000,
     );
-
-    this.children = [];
 
     if (googleTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
