@@ -86,6 +86,7 @@ export class GoogleRunnable extends AbstractRunnable {
 
   private _reloadFromString(stdOutStr: string): RunnableReloadResult {
     this.children = [];
+    const testGrouping = this.getTestGrouping();
 
     const lines = stdOutStr.split(/\r?\n/);
 
@@ -125,7 +126,7 @@ export class GoogleRunnable extends AbstractRunnable {
 
         reloadResult.add(
           ...this._createSubtreeAndAddTest(
-            this.getTestGrouping(),
+            testGrouping,
             testNameAsId,
             testName,
             undefined,
