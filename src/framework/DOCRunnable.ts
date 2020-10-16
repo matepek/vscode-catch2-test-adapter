@@ -132,7 +132,7 @@ export class DOCRunnable extends AbstractRunnable {
     return result;
   }
 
-  protected _getRunParams(childrenToRun: readonly Readonly<DOCTest>[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<DOCTest>[]): string[] {
     const execParams: string[] = [];
 
     const testNames = childrenToRun.map(c => c.getEscapedTestName());
@@ -154,8 +154,8 @@ export class DOCRunnable extends AbstractRunnable {
   }
 
   // eslint-disable-next-line
-  public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
-    const params = this._getRunParams(childrenToRun as readonly Readonly<DOCTest>[]);
+  protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
+    const params = this._getRunParamsInner(childrenToRun as readonly Readonly<DOCTest>[]);
     return params;
   }
 

@@ -406,11 +406,22 @@ export abstract class AbstractRunnable {
 
   protected abstract _reloadChildren(): Promise<RunnableReloadResult>;
 
-  protected abstract _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
+  protected abstract _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
+
+  private _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+    return this.properties.prependTestRunningArgs.concat(this._getRunParamsInner(childrenToRun));
+  }
 
   protected abstract _handleProcess(testRunId: string, runInfo: RunningRunnable): Promise<void>;
 
-  public abstract getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[];
+  protected abstract _getDebugParamsInner(
+    childrenToRun: readonly Readonly<AbstractTest>[],
+    breakOnFailure: boolean,
+  ): string[];
+
+  public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
+    return this.properties.prependTestRunningArgs.concat(this._getDebugParamsInner(childrenToRun, breakOnFailure));
+  }
 
   public reloadTests(taskPool: TaskPool): Promise<void> {
     return taskPool.scheduleTask(async () => {
@@ -533,7 +544,7 @@ export abstract class AbstractRunnable {
     childrenToRun: readonly AbstractTest[],
     cancellationToken: CancellationToken,
   ): Promise<void> {
-    const execParams = this.properties.prependTestRunningArgs.concat(this._getRunParams(childrenToRun));
+    const execParams = this._getRunParams(childrenToRun);
 
     this._shared.log.info('proc starting', this.properties.path, execParams);
 

@@ -246,11 +246,11 @@ export class GoogleRunnable extends AbstractRunnable {
     return execParams;
   }
 
-  protected _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
     return [`--${this._argumentPrefix}color=no`, ...this._getRunParamsCommon(childrenToRun)];
   }
 
-  public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
+  protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
     const colouring = this.properties.enableDebugColouring ? 'yes' : 'no';
     const debugParams = [`--${this._argumentPrefix}color=${colouring}`, ...this._getRunParamsCommon(childrenToRun)];
     if (breakOnFailure) debugParams.push(`--${this._argumentPrefix}break_on_failure`);

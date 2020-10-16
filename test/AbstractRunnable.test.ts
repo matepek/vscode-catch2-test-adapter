@@ -23,7 +23,7 @@ class Runnable extends AbstractRunnable {
   }
 
   // eslint-disable-next-line
-  public _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  public _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
     throw Error('_getRunParams should be mocked');
   }
 
@@ -31,7 +31,7 @@ class Runnable extends AbstractRunnable {
     throw Error('_handleProcess should be mocked');
   }
 
-  public getDebugParams(): string[] {
+  protected _getDebugParamsInner(): string[] {
     throw Error('getDebugParams should be mocked');
   }
 }
@@ -420,9 +420,11 @@ describe(pathlib.basename(__filename), function () {
       assert.strictEqual(runnable.tests.size, 4);
       assert.strictEqual(root.children.length, 1);
 
-      sinon.stub(runnable, '_getRunParams').callsFake((childrenToRun: readonly Readonly<AbstractTest>[]): string[] => {
-        return childrenToRun.map(t => t.id).sort();
-      });
+      sinon
+        .stub(runnable, '_getRunParamsInner')
+        .callsFake((childrenToRun: readonly Readonly<AbstractTest>[]): string[] => {
+          return childrenToRun.map(t => t.id).sort();
+        });
 
       sinonSandbox.stub(runnable, '_handleProcess').resolves();
 
