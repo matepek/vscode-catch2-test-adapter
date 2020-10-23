@@ -492,7 +492,7 @@ export class ChildProcessStub extends EventEmitter implements ChildProcessWithou
   public get exitCode(): number | null {
     throw Error('methond not implemented');
   }
-  public get signalCode(): number | null {
+  public get signalCode(): NodeJS.Signals | null {
     throw Error('methond not implemented');
   }
   public get spawnargs(): string[] {
