@@ -108,8 +108,7 @@ export abstract class AbstractRunnable {
     createTest: (parent: Suite) => AbstractTest,
     updateTest: (old: AbstractTest) => boolean,
   ): [AbstractTest, boolean] {
-    this._shared.log.setNextInspectOptions({ depth: 10 });
-    this._shared.log.info('testGrouping', { testName, testNameAsId, file, tags }, testGrouping);
+    this._shared.log.info('testGrouping', { testName, testNameAsId, file, tags, testGrouping });
 
     let group = this._rootSuite as Suite;
 
@@ -148,8 +147,6 @@ export abstract class AbstractRunnable {
       const resolvedLabel = this._resolveText(label, ...vars);
       const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : '';
       const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : '';
-
-      //this._shared.log.debug('groupBy', { label, resolvedLabel, description, resolvedDescr });
 
       group = this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, group);
     };

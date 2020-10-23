@@ -37,6 +37,8 @@ export class DOCRunnable extends AbstractRunnable {
   }
 
   private _reloadFromString(testListOutput: string): RunnableReloadResult {
+    const testGrouping = this.getTestGrouping();
+
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
       if (err) {
@@ -62,7 +64,7 @@ export class DOCRunnable extends AbstractRunnable {
 
       reloadResult.add(
         ...this._createSubtreeAndAddTest(
-          this.getTestGrouping(),
+          testGrouping,
           testName,
           testName,
           filePath,
