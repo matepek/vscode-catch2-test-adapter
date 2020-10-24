@@ -364,6 +364,7 @@ export class Configurations {
         defaultParallelExecutionOfExecLimit,
         false,
         undefined,
+        undefined,
         {},
         {},
         {},
@@ -462,7 +463,9 @@ export class Configurations {
 
         const strictPattern: boolean | undefined = obj.strictPattern;
 
-        const defaultTestGrouping = obj.testGrouping ? obj.testGrouping : undefined;
+        const markAsSkipped: boolean | undefined = obj.markAsSkipped;
+
+        const defaultTestGrouping = obj.testGrouping;
 
         const spawnerConfig: ExecutionWrapper | undefined =
           typeof obj.executionWrapper === 'object' &&
@@ -484,6 +487,7 @@ export class Configurations {
           runTask,
           parallelizationLimit,
           strictPattern,
+          markAsSkipped,
           spawnerConfig,
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),

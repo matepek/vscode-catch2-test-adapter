@@ -318,6 +318,11 @@
                 "type": "boolean",
                 "default": false
               },
+              "markAsSkipped": {
+                "markdownDescription": "If true then all the tests related to the pattern are skipped. They can be run manually though.",
+                "type": "boolean",
+                "default": false
+              },
               "darwin": {
                 "markdownDescription": "Overrides the parent's properties on the given OS.",
                 "type": "object",

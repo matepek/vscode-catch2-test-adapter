@@ -36,6 +36,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _runTask: RunTask,
     private readonly _parallelizationLimit: number,
     private readonly _strictPattern: boolean | undefined,
+    private readonly _markAsSkipped: boolean | undefined,
     private readonly _executionWrapper: ExecutionWrapper | undefined,
     private readonly _catch2: FrameworkSpecific,
     private readonly _gtest: FrameworkSpecific,
@@ -401,6 +402,7 @@ export class ExecutableConfig implements vscode.Disposable {
       this._doctest,
       this._gbenchmark,
       this._parallelizationLimit,
+      this._markAsSkipped === true,
       this._runTask,
       spawner,
     );

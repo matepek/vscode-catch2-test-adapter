@@ -47,6 +47,7 @@ describe(path.basename(__filename), function () {
         {},
         {},
         1,
+        false,
         {},
         new DefaultSpawner(),
       );
@@ -89,6 +90,7 @@ describe(path.basename(__filename), function () {
         {},
         {},
         1,
+        false,
         {},
         new DefaultSpawner(),
       );

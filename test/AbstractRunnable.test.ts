@@ -116,6 +116,7 @@ describe(pathlib.basename(__filename), function () {
     {},
     {},
     1,
+    false,
     {},
     new DefaultSpawner(),
   );

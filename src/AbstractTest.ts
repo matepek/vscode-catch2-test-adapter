@@ -192,7 +192,7 @@ export abstract class AbstractTest implements TestInfo {
   }
 
   public get skipped(): boolean {
-    return this._skipped;
+    return this._skipped || this.runnable.properties.markAsSkipped;
   }
 
   public get errored(): boolean {

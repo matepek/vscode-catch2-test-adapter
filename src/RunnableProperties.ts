@@ -13,6 +13,7 @@ export class RunnableProperties {
     public readonly options: SpawnOptionsWithoutStdio,
     private readonly _frameworkSpecific: FrameworkSpecific,
     _parallelizationLimit: number,
+    public readonly markAsSkipped: boolean,
     public readonly runTask: RunTask,
     public readonly spawner: Spawner,
   ) {

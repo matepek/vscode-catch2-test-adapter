@@ -16,6 +16,7 @@ export interface AdvancedExecutable {
   runTask?: RunTask;
   parallelizationLimit?: number;
   strictPattern?: boolean;
+  markAsSkipped?: boolean;
   catch2?: FrameworkSpecific;
   gtest?: FrameworkSpecific;
   doctest?: FrameworkSpecific;

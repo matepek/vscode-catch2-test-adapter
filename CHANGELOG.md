@@ -6,10 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.5.0]
+
 ### Added
 
 - Support for [Google Benchmark](https://github.com/google/benchmark):
-  One can set a limit which will report a test/benchmark failure in case of the `cpu_time` exceeds it: `"testMate.cpp.test.advancedExecutables" -> "gbenchmark" -> "failIfExceedsLimitNs"`.
+  One can set a limit which will report a test/benchmark failure in case of the `cpu_time` exceeds it: `testMate.cpp.test.advancedExecutables` -> `gbenchmark` -> `failIfExceedsLimitNs`.
+- `testMate.cpp.test.advancedExecutables` -> `markAsSkipped`: It can be useful espacially in case of GoogleBenchmark.
 
 ### Removed
 

@@ -17,6 +17,7 @@ describe(path.basename(__filename), function () {
     (null as unknown) as AbstractRunnable,
     (null as unknown) as Suite,
     'TestName',
+    undefined,
   );
 
   it.only('parses example no.1', function () {

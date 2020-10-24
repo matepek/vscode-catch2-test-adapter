@@ -43,7 +43,7 @@ export class GoogleBenchmarkTest extends AbstractTest {
 
   public static readonly failureRe = /^((.+)[:\(]([0-9]+)\)?): ((Failure|EXPECT_CALL|error: )(.*))$/;
 
-  private _getCpuTime(metric: Record<string, any>): number | undefined {
+  private _getCpuTime(metric: Record<string, string | number>): number | undefined {
     if (typeof metric['cpu_time'] !== 'number') {
       this._shared.log.errorS('cpu_time is not a number', metric);
       return undefined;
@@ -92,7 +92,7 @@ export class GoogleBenchmarkTest extends AbstractTest {
         typeof cpuTimeNs === 'number' &&
         this._failIfExceedsLimitNs < cpuTimeNs
       ) {
-        eventBuilder.appendMessage(`❌ Failed: "cpu_time" exceeded limit: ${this._failIfExceedsLimitNs} ns`, null);
+        eventBuilder.appendMessage(`❌ Failed: "cpu_time" exceeded limit: ${this._failIfExceedsLimitNs} ns.`, null);
         eventBuilder.appendMessage(' ', null);
         eventBuilder.failed();
       } else {
