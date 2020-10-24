@@ -116,11 +116,13 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
     return execParams;
   }
 
-  protected _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
     return [`--benchmark_color=false`, '--benchmark_format=json', ...this._getRunParamsCommon(childrenToRun)];
   }
 
-  public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  protected _getDebugParamsInner(
+    childrenToRun: readonly Readonly<AbstractTest>[], // breakOnFailure:boolean
+  ): string[] {
     const colouring = this.properties.enableDebugColouring ? 'true' : 'false';
     const debugParams = [`--benchmark_color=${colouring}`, ...this._getRunParamsCommon(childrenToRun)];
     return debugParams;

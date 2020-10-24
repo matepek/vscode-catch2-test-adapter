@@ -38,6 +38,7 @@ export class DOCRunnable extends AbstractRunnable {
 
   private _reloadFromString(testListOutput: string): RunnableReloadResult {
     const testGrouping = this.getTestGrouping();
+
     let res: XmlObject = {};
     new xml2js.Parser({ explicitArray: true }).parseString(testListOutput, (err: Error, result: XmlObject) => {
       if (err) {
@@ -133,7 +134,7 @@ export class DOCRunnable extends AbstractRunnable {
     return result;
   }
 
-  protected _getRunParams(childrenToRun: readonly Readonly<DOCTest>[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<DOCTest>[]): string[] {
     const execParams: string[] = [];
 
     const testNames = childrenToRun.map(c => c.getEscapedTestName());
@@ -155,8 +156,8 @@ export class DOCRunnable extends AbstractRunnable {
   }
 
   // eslint-disable-next-line
-  public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
-    const params = this._getRunParams(childrenToRun as readonly Readonly<DOCTest>[]);
+  protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
+    const params = this._getRunParamsInner(childrenToRun as readonly Readonly<DOCTest>[]);
     return params;
   }
 

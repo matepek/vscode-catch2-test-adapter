@@ -82,6 +82,39 @@ export abstract class AbstractRunnable {
     }
   }
 
+  private _resolveAndGetOrCreateChildSuite(
+    vars: readonly ResolveRule[],
+    parentGroup: Suite,
+    label: string,
+    description: string | undefined,
+    tooltip: string | undefined,
+  ): Suite {
+    const resolvedLabel = this._resolveText(label, ...vars);
+    const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : '';
+    const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : '';
+
+    return this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, parentGroup);
+  }
+
+  private readonly _tagVar = '${tag}';
+  private readonly _tagsVar = '${tags}';
+
+  private _updateVarsWithTags(vars: ResolveRule[], tg: TestGrouping, tags: string[], overrideTags?: string[]): void {
+    if (tg.tagFormat !== undefined && tg.tagFormat.indexOf(this._tagVar) === -1)
+      this._shared.log.warn('tagFormat should contain "${tag}" substring', tg.tagFormat);
+
+    const tagFormat =
+      tg.tagFormat !== undefined && tg.tagFormat.indexOf(this._tagVar) !== -1 ? tg.tagFormat : '[${tag}]';
+    const formattedTags = (overrideTags ? overrideTags : tags).map(t => tagFormat.replace(this._tagVar, t)).join('');
+    const found = vars.find(v => v.resolve === this._tagsVar);
+
+    if (found) {
+      found.rule = formattedTags;
+    } else {
+      vars.push({ resolve: this._tagsVar, rule: formattedTags });
+    }
+  }
+
   private static readonly _variableRe = /\$\{[^ ]*\}/;
 
   private _resolveText(text: string, ...additionalVarToValue: readonly ResolveRule[]): string {
@@ -108,8 +141,7 @@ export abstract class AbstractRunnable {
     createTest: (parent: Suite) => AbstractTest,
     updateTest: (old: AbstractTest) => boolean,
   ): [AbstractTest, boolean] {
-    this._shared.log.setNextInspectOptions({ depth: 10 });
-    this._shared.log.info('testGrouping', { testName, testNameAsId, file, tags }, testGrouping);
+    this._shared.log.info('testGrouping', { testName, testNameAsId, file, tags, testGrouping });
 
     let group = this._rootSuite as Suite;
 
@@ -122,50 +154,20 @@ export abstract class AbstractRunnable {
       createPythonIndexerForPathVariable('sourceAbsPath', absPath),
     ];
 
-    const tagVar = '${tag}';
-    const tagsVar = '${tags}';
-
-    const updateVarsWithTags = (tg: TestGrouping, overrideTags?: string[]): void => {
-      if (tg.tagFormat !== undefined && tg.tagFormat.indexOf(tagVar) === -1)
-        this._shared.log.warn('tagFormat should contain "${tag}" substring', tg.tagFormat);
-
-      const tagFormat = tg.tagFormat !== undefined && tg.tagFormat.indexOf(tagVar) !== -1 ? tg.tagFormat : '[${tag}]';
-      const formattedTags = (overrideTags ? overrideTags : tags).map(t => tagFormat.replace(tagVar, t)).join('');
-      const found = vars.find(v => v.resolve === tagsVar);
-
-      if (found) {
-        found.rule = formattedTags;
-      } else {
-        vars.push({ resolve: tagsVar, rule: formattedTags });
-      }
-    };
-
-    const getOrCreateChildSuite = (
-      label: string,
-      description: string | undefined,
-      tooltip: string | undefined,
-    ): void => {
-      const resolvedLabel = this._resolveText(label, ...vars);
-      const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : '';
-      const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : '';
-
-      //this._shared.log.debug('groupBy', { label, resolvedLabel, description, resolvedDescr });
-
-      group = this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, group);
-    };
-
     let currentGrouping: TestGrouping = testGrouping;
 
     try {
       while (true) {
         if (currentGrouping.groupByExecutable) {
           const g = currentGrouping.groupByExecutable;
-          updateVarsWithTags(g);
+          this._updateVarsWithTags(vars, g, tags);
 
           const label = g.label !== undefined ? g.label : '${filename}';
           const description = g.description !== undefined ? g.description : '${relDirpath}${osPathSep}';
 
-          getOrCreateChildSuite(
+          group = this._resolveAndGetOrCreateChildSuite(
+            vars,
+            group,
             label,
             description,
             `Path: ${this.properties.path}\nCwd: ${this.properties.options.cwd}`,
@@ -174,21 +176,21 @@ export abstract class AbstractRunnable {
           currentGrouping = g;
         } else if (currentGrouping.groupBySource) {
           const g = currentGrouping.groupBySource;
-          updateVarsWithTags(g);
+          this._updateVarsWithTags(vars, g, tags);
 
           if (file) {
             const label = g.label ? g.label : relPath;
             const description = g.description;
 
-            getOrCreateChildSuite(label, description, undefined);
+            group = this._resolveAndGetOrCreateChildSuite(vars, group, label, description, undefined);
           } else if (g.groupUngroupedTo) {
-            getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
+            group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
           }
 
           currentGrouping = g;
         } else if (currentGrouping.groupByTags) {
           const g = currentGrouping.groupByTags;
-          updateVarsWithTags(g);
+          this._updateVarsWithTags(vars, g, tags);
 
           if (
             g.tags === undefined ||
@@ -197,19 +199,31 @@ export abstract class AbstractRunnable {
           ) {
             if (g.tags === undefined || g.tags.length === 0 || g.tags.every(t => t.length == 0)) {
               if (tags.length > 0) {
-                getOrCreateChildSuite(g.label ? g.label : tagsVar, g.description, undefined);
+                group = this._resolveAndGetOrCreateChildSuite(
+                  vars,
+                  group,
+                  g.label ? g.label : this._tagsVar,
+                  g.description,
+                  undefined,
+                );
               } else if (g.groupUngroupedTo) {
-                getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
+                group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
               }
             } else {
               const combos = g.tags.filter(arr => arr.length > 0);
               const foundCombo = combos.find(combo => combo.every(t => tags.indexOf(t) !== -1));
 
               if (foundCombo) {
-                updateVarsWithTags(g, foundCombo);
-                getOrCreateChildSuite(g.label ? g.label : tagsVar, g.description, undefined);
+                this._updateVarsWithTags(vars, g, tags, foundCombo);
+                group = this._resolveAndGetOrCreateChildSuite(
+                  vars,
+                  group,
+                  g.label ? g.label : this._tagsVar,
+                  g.description,
+                  undefined,
+                );
               } else if (g.groupUngroupedTo) {
-                getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
+                group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
               }
             }
           } else {
@@ -219,7 +233,7 @@ export abstract class AbstractRunnable {
           currentGrouping = g;
         } else if (currentGrouping.groupByRegex) {
           const g = currentGrouping.groupByRegex;
-          updateVarsWithTags(g);
+          this._updateVarsWithTags(vars, g, tags);
 
           if (g.regexes) {
             if (Array.isArray(g.regexes) && g.regexes.length > 0 && g.regexes.every(v => typeof v === 'string')) {
@@ -230,17 +244,17 @@ export abstract class AbstractRunnable {
 
               if (match) {
                 this._shared.log.info('groupByRegex matched on', testName, g.regexes[index - 1]);
-                const group = match[1] ? match[1] : match[0];
+                const matchGroup = match[1] ? match[1] : match[0];
 
-                const matchVar: ResolveRule[] = [{ resolve: '${match}', rule: group }];
+                const matchVar: ResolveRule[] = [{ resolve: '${match}', rule: matchGroup }];
 
-                const label = g.label ? this._resolveText(g.label, ...matchVar) : group;
+                const label = g.label ? this._resolveText(g.label, ...matchVar) : matchGroup;
                 const description =
                   g.description !== undefined ? this._resolveText(g.description, ...matchVar) : undefined;
 
-                getOrCreateChildSuite(label, description, undefined);
+                group = this._resolveAndGetOrCreateChildSuite(vars, group, label, description, undefined);
               } else if (g.groupUngroupedTo) {
-                getOrCreateChildSuite(g.groupUngroupedTo, undefined, undefined);
+                group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
               }
             } else {
               this._shared.log.warn('groupByTags.tags should be a non-empty array of strings.', g.regexes);
@@ -406,11 +420,22 @@ export abstract class AbstractRunnable {
 
   protected abstract _reloadChildren(): Promise<RunnableReloadResult>;
 
-  protected abstract _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
+  protected abstract _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
+
+  private _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+    return this.properties.prependTestRunningArgs.concat(this._getRunParamsInner(childrenToRun));
+  }
 
   protected abstract _handleProcess(testRunId: string, runInfo: RunningRunnable): Promise<void>;
 
-  public abstract getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[];
+  protected abstract _getDebugParamsInner(
+    childrenToRun: readonly Readonly<AbstractTest>[],
+    breakOnFailure: boolean,
+  ): string[];
+
+  public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
+    return this.properties.prependTestRunningArgs.concat(this._getDebugParamsInner(childrenToRun, breakOnFailure));
+  }
 
   public reloadTests(taskPool: TaskPool): Promise<void> {
     return taskPool.scheduleTask(async () => {
@@ -533,7 +558,7 @@ export abstract class AbstractRunnable {
     childrenToRun: readonly AbstractTest[],
     cancellationToken: CancellationToken,
   ): Promise<void> {
-    const execParams = this.properties.prependTestRunningArgs.concat(this._getRunParams(childrenToRun));
+    const execParams = this._getRunParams(childrenToRun);
 
     this._shared.log.info('proc starting', this.properties.path, execParams);
 

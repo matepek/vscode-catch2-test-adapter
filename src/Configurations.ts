@@ -59,20 +59,28 @@ class ConfigurationChangeEvent {
 ///
 
 export class Configurations {
-  private _new: vscode.WorkspaceConfiguration;
+  private _cfg: vscode.WorkspaceConfiguration;
 
   public constructor(public _log: LoggerWrapper, private _workspaceFolderUri: vscode.Uri) {
-    this._new = vscode.workspace.getConfiguration(ConfigSectionBase, _workspaceFolderUri);
+    this._cfg = vscode.workspace.getConfiguration(ConfigSectionBase, _workspaceFolderUri);
+  }
+
+  private _get<T>(section: Config): T | undefined {
+    return this._cfg.get<T>(section);
+  }
+
+  private _getD<T>(section: string, defaultValue: T): T {
+    return this._cfg.get<T>(section, defaultValue);
   }
 
   // eslint-disable-next-line
   public getValues(): { test: any; discovery: any; debug: any; log: any; gtest: any } {
     return {
-      test: this._new.get(Section.test),
-      discovery: this._new.get(Section.discovery),
-      debug: this._new.get(Section.debug),
-      log: this._new.get(Section.log),
-      gtest: this._new.get(Section.gtest),
+      test: this._cfg.get(Section.test),
+      discovery: this._cfg.get(Section.discovery),
+      debug: this._cfg.get(Section.debug),
+      log: this._cfg.get(Section.log),
+      gtest: this._cfg.get(Section.gtest),
     };
   }
 
@@ -83,7 +91,7 @@ export class Configurations {
   }
 
   public getDebugConfigurationTemplate(): [vscode.DebugConfiguration, string] {
-    const templateFromConfig = this._new.get<Record<string, unknown> | null | 'extensionOnly'>(
+    const templateFromConfig = this._getD<Record<string, unknown> | null | 'extensionOnly'>(
       'debug.configTemplate',
       null,
     );
@@ -192,7 +200,7 @@ export class Configurations {
   }
 
   public getOrCreateUserId(): string {
-    let userId = this._new.get<string>('log.userId');
+    let userId = this._get<string>('log.userId');
 
     if (userId) {
       return userId;
@@ -202,7 +210,7 @@ export class Configurations {
       newUserId += process.pid.toString();
       newUserId += Date.now().toString();
       userId = hashString(newUserId);
-      this._new.update('log.userId', userId, vscode.ConfigurationTarget.Global);
+      this._cfg.update('log.userId', userId, vscode.ConfigurationTarget.Global);
       return userId;
     }
   }
@@ -214,7 +222,7 @@ export class Configurations {
   // }
 
   public isSentryEnabled(): boolean {
-    const val = this._new.get('log.logSentry');
+    const val = this._get('log.logSentry');
     return val === 'enable' || val === 'enabled';
   }
 
@@ -228,7 +236,7 @@ export class Configurations {
 
     const logSentryConfig: Config = 'log.logSentry';
 
-    const logSentry = this._new.get<SentryValue>(logSentryConfig, 'question');
+    const logSentry = this._getD<SentryValue>(logSentryConfig, 'question');
 
     if (logSentry === 'question' || logSentry === 'disable' || logSentry === 'disable_1' || logSentry === 'disable_2') {
       const options = [
@@ -248,18 +256,18 @@ export class Configurations {
           this._log.info('Sentry consent', value);
 
           if (value === options[0]) {
-            this._new
+            this._cfg
               .update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global)
               .then(undefined, e => this._log.exceptionS(e));
           } else if (value === options[1]) {
-            this._new
+            this._cfg
               .update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global)
               .then(undefined, e => this._log.exceptionS(e));
-            this._new
+            this._cfg
               .update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.WorkspaceFolder)
               .then(undefined, e => this._log.exceptionS(e));
           } else if (value === options[2]) {
-            this._new
+            this._cfg
               .update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.Global)
               .then(undefined, e => this._log.exceptionS(e));
           }
@@ -268,20 +276,20 @@ export class Configurations {
   }
 
   public getDebugBreakOnFailure(): boolean {
-    return this._new.get<boolean>('debug.breakOnFailure', true);
+    return this._getD<boolean>('debug.breakOnFailure', true);
   }
 
   public getDefaultNoThrow(): boolean {
-    return this._new.get<boolean>('debug.noThrow', false);
+    return this._getD<boolean>('debug.noThrow', false);
   }
 
   public getDefaultCwd(): string {
     const dirname = this._workspaceFolderUri.fsPath;
-    return this._new.get<string>('test.workingDirectory', dirname);
+    return this._getD<string>('test.workingDirectory', dirname);
   }
 
   public getRandomGeneratorSeed(): 'time' | number | null {
-    const val = this._new.get<string>('test.randomGeneratorSeed', 'time');
+    const val = this._getD<string>('test.randomGeneratorSeed', 'time');
     if (val === 'time') return val;
     if (val === '') return null;
     const num = Number(val);
@@ -290,7 +298,7 @@ export class Configurations {
   }
 
   public getParallelExecutionLimit(): number {
-    const res = Math.max(1, this._new.get<number>('test.parallelExecutionLimit', 1));
+    const res = Math.max(1, this._getD<number>('test.parallelExecutionLimit', 1));
     if (typeof res != 'number') return 1;
     else {
       if (res > 1) this._log.infoS('Using test.parallelExecutionLimit');
@@ -300,7 +308,7 @@ export class Configurations {
 
   public getParallelExecutionOfExecutableLimit(): number {
     const cfgName: Config = 'test.parallelExecutionOfExecutableLimit';
-    const res = Math.max(1, this._new.get<number>(cfgName, 1));
+    const res = Math.max(1, this._getD<number>(cfgName, 1));
     if (typeof res != 'number' || Number.isNaN(res)) return 1;
     else {
       if (res > 1) this._log.infoS(cfgName, res);
@@ -309,39 +317,39 @@ export class Configurations {
   }
 
   public getExecWatchTimeout(): number {
-    const res = this._new.get<number>('discovery.gracePeriodForMissing', 10) * 1000;
+    const res = this._getD<number>('discovery.gracePeriodForMissing', 10) * 1000;
     return res;
   }
 
   public getRetireDebounceTime(): number {
-    const res = this._new.get<number>('discovery.retireDebounceLimit', 1000);
+    const res = this._getD<number>('discovery.retireDebounceLimit', 1000);
     return res;
   }
 
   public getExecRunningTimeout(): null | number {
-    const r = this._new.get<null | number>('test.runtimeLimit', null);
+    const r = this._getD<null | number>('test.runtimeLimit', null);
     return r !== null && r > 0 ? r * 1000 : null;
   }
 
   public getExecParsingTimeout(): number {
-    const r = this._new.get<number>('discovery.runtimeLimit', 5);
+    const r = this._getD<number>('discovery.runtimeLimit', 5);
     return r * 1000;
   }
 
   public getEnableTestListCaching(): boolean {
-    return this._new.get<boolean>('discovery.testListCaching', false);
+    return this._getD<boolean>('discovery.testListCaching', false);
   }
 
   public getEnableStrictPattern(): boolean {
-    return this._new.get<boolean>('discovery.strictPattern', false);
+    return this._getD<boolean>('discovery.strictPattern', false);
   }
 
   public getGoogleTestTreatGMockWarningAs(): 'nothing' | 'failure' {
-    return this._new.get<'nothing' | 'failure'>('gtest.treatGmockWarningAs', 'nothing');
+    return this._getD<'nothing' | 'failure'>('gtest.treatGmockWarningAs', 'nothing');
   }
 
   public getGoogleTestGMockVerbose(): 'default' | 'info' | 'warning' | 'error' {
-    return this._new.get<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
+    return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
   public async getExecutables(shared: SharedVariables): Promise<ExecutableConfig[]> {
@@ -370,8 +378,8 @@ export class Configurations {
     };
 
     const [advanced, simple] = ((): [AdvancedExecutableArray | undefined, string | undefined] => {
-      const advanced = this._new.inspect<AdvancedExecutableArray>('test.advancedExecutables');
-      const simple = this._new.inspect<string>('test.executables');
+      const advanced = this._cfg.inspect<AdvancedExecutableArray>('test.advancedExecutables');
+      const simple = this._cfg.inspect<string>('test.executables');
 
       if (advanced === undefined || simple === undefined) {
         this._log.errorS('advanced === undefined || simple === undefined', advanced, simple);
