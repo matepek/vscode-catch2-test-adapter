@@ -188,9 +188,9 @@ Logging improvmenets
 
 ## [3.0.0] - 2020-05-04
 
-It's a big day! the extension was finally renamed to `C++ TestMate`.
+It's a big day! The extension was finally renamed to `C++ TestMate`.
 (Finally, I mean I've been planning this since a long time ago in a galaxy far, far away....)
-Lots of small tweaks was added. (Please be patient and report issuess. ^^)
+Lots of small tweaks were added. (Please be patient and report issuess. ^^)
 
 May the 4th be with you 🖖
 (Yes, I know.. ^^)
@@ -1021,7 +1021,7 @@ Bugfix release
 
 ### Changed
 
-- Loads of bugs ave been fixed. (Typically platform related ones.).
+- Lots of bugs ave been fixed. (Typically platform related ones.)
 
 ## [1.0.0] - 2018-09-12
 
