@@ -35,7 +35,6 @@ export type Config =
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
   | 'discovery.gracePeriodForMissing'
-  | 'discovery.retireDebounceLimit'
   | 'discovery.runtimeLimit'
   | 'discovery.testListCaching'
   | 'discovery.strictPattern'
@@ -318,11 +317,6 @@ export class Configurations {
 
   public getExecWatchTimeout(): number {
     const res = this._getD<number>('discovery.gracePeriodForMissing', 10) * 1000;
-    return res;
-  }
-
-  public getRetireDebounceTime(): number {
-    const res = this._getD<number>('discovery.retireDebounceLimit', 1000);
     return res;
   }
 

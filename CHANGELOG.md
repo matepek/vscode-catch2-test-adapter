@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Removed
+
+- `testMate.cpp.discovery.retireDebounceLimit`
+
 ## [3.4.4] - 2020-10-23
 
 Performance improvements.

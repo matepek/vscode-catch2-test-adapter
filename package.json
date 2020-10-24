@@ -53,7 +53,6 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
-    "debounce-collect": "^1.0.2",
     "gaze": "^1.1.3",
     "ovsx": "0.1.0-next.dacd2fd",
     "tslib": "^2.0.1",
@@ -1051,13 +1050,6 @@
           "type": "integer",
           "default": 10,
           "minimum": 1
-        },
-        "testMate.cpp.discovery.retireDebounceLimit": {
-          "markdownDescription": "[milisec] Retire events will be held back for the given duration. (Reload is required)",
-          "scope": "resource",
-          "type": "integer",
-          "default": 1000,
-          "minimum": 200
         },
         "testMate.cpp.discovery.runtimeLimit": {
           "markdownDescription": "[seconds] The timeout of the test-executable used to identify it (Calls the exec with `--help`).",

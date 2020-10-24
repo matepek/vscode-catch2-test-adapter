@@ -610,7 +610,6 @@ export class SharedVariables extends my2.SharedVariables {
       [],
       null,
       1000,
-      1000,
       null,
       1000,
       false,
