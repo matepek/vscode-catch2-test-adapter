@@ -47,8 +47,9 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
             line,
             undefined,
             [],
-            (parent: Suite) => new GoogleBenchmarkTest(this._shared, this, parent, line),
-            (old: AbstractTest) => (old as GoogleBenchmarkTest).update(),
+            (parent: Suite) =>
+              new GoogleBenchmarkTest(this._shared, this, parent, line, this.properties.failIfExceedsLimitNs),
+            (old: AbstractTest) => (old as GoogleBenchmarkTest).update(this.properties.failIfExceedsLimitNs),
           ),
         );
       });

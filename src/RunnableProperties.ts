@@ -40,4 +40,8 @@ export class RunnableProperties {
   public get enableDebugColouring(): boolean {
     return this._frameworkSpecific['debug.enableOutputColouring'] === true;
   }
+
+  public get failIfExceedsLimitNs(): number | undefined {
+    return this._frameworkSpecific.failIfExceedsLimitNs;
+  }
 }

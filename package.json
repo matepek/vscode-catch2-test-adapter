@@ -308,7 +308,7 @@
                 }
               },
               "parallelizationLimit": {
-                "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `testMate.cpp.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "markdownDescription": "The variable maximize the number of the parallel execution of one executable instance. Note: `testMate.cpp.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "type": "integer",
                 "default": 1,
                 "minimum": 1
@@ -364,6 +364,10 @@
                   "debug.enableOutputColouring": {
                     "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
+                  },
+                  "failIfExceedsLimitNs": {
+                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
+                    "type": "number"
                   },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
@@ -529,6 +533,10 @@
                     "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
                   },
+                  "failIfExceedsLimitNs": {
+                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
+                    "type": "number"
+                  },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                     "additionalProperties": false,
@@ -693,6 +701,10 @@
                     "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
                   },
+                  "failIfExceedsLimitNs": {
+                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
+                    "type": "number"
+                  },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                     "additionalProperties": false,
@@ -856,6 +868,10 @@
                   "debug.enableOutputColouring": {
                     "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
+                  },
+                  "failIfExceedsLimitNs": {
+                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
+                    "type": "number"
                   },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",

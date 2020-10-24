@@ -517,7 +517,7 @@ export class Configurations {
       if (obj.testGrouping) r.testGrouping = obj.testGrouping;
       else r.testGrouping = defaultTestGrouping;
 
-      r.helpRegex = obj['helpRegex'];
+      if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
 
       if (Array.isArray(obj.prependTestRunningArgs) && obj.prependTestRunningArgs.every(x => typeof x === 'string'))
         r.prependTestRunningArgs = obj.prependTestRunningArgs;
@@ -525,9 +525,13 @@ export class Configurations {
       if (Array.isArray(obj.prependTestListingArgs) && obj.prependTestListingArgs.every(x => typeof x === 'string'))
         r.prependTestListingArgs = obj.prependTestListingArgs;
 
-      r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
+      if (typeof obj.ignoreTestEnumerationStdErr === 'boolean')
+        r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
 
-      r['debug.enableOutputColouring'] = obj['debug.enableOutputColouring'];
+      if (typeof obj['debug.enableOutputColouring'] === 'boolean')
+        r['debug.enableOutputColouring'] = obj['debug.enableOutputColouring'];
+
+      if (typeof obj.failIfExceedsLimitNs === 'number') r.failIfExceedsLimitNs = obj.failIfExceedsLimitNs;
     }
 
     return r;

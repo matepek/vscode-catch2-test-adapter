@@ -46,4 +46,5 @@ export interface FrameworkSpecific {
   prependTestListingArgs?: Array<string>;
   ignoreTestEnumerationStdErr?: boolean;
   'debug.enableOutputColouring'?: boolean;
+  failIfExceedsLimitNs?: number;
 }
