@@ -61,7 +61,7 @@
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "@sentry/node": "^5.27.0",
+    "@sentry/node": "^5.27.1",
     "@types/bent": "^7.3.1",
     "@types/chai": "^4.2.14",
     "@types/deep-equal": "^1.0.1",
@@ -78,7 +78,7 @@
     "@typescript-eslint/parser": "^4.5.0",
     "bent": "^7.3.12",
     "deep-equal": "^2.0.4",
-    "eslint": "^7.11.0",
+    "eslint": "^7.12.0",
     "eslint-config-prettier": "^6.14.0",
     "eslint-plugin-prettier": "3.1.4",
     "fs-extra": "^9.0.1",
@@ -89,7 +89,7 @@
     "raw-loader": "^4.0.2",
     "sinon": "^9.2.0",
     "source-map-support": "^0.5.19",
-    "ts-loader": "^8.0.6",
+    "ts-loader": "^8.0.7",
     "typescript": "^4.0.3",
     "vsce": "^1.81.1",
     "vscode-test": "^1.4.0",
