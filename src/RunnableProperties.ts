@@ -13,6 +13,7 @@ export class RunnableProperties {
     public readonly options: SpawnOptionsWithoutStdio,
     private readonly _frameworkSpecific: FrameworkSpecific,
     _parallelizationLimit: number,
+    public readonly markAsSkipped: boolean,
     public readonly runTask: RunTask,
     public readonly spawner: Spawner,
   ) {
@@ -39,5 +40,9 @@ export class RunnableProperties {
 
   public get enableDebugColouring(): boolean {
     return this._frameworkSpecific['debug.enableOutputColouring'] === true;
+  }
+
+  public get failIfExceedsLimitNs(): number | undefined {
+    return this._frameworkSpecific.failIfExceedsLimitNs;
   }
 }

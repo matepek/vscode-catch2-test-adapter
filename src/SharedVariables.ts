@@ -26,7 +26,6 @@ export class SharedVariables implements vscode.Disposable {
     public readonly varToValue: readonly Readonly<ResolveRule>[],
     public rngSeed: 'time' | number | null,
     public execWatchTimeout: number,
-    public retireDebounceTime: number,
     private _execRunningTimeout: null | number,
     public execParsingTimeout: number,
     public isNoThrow: boolean,

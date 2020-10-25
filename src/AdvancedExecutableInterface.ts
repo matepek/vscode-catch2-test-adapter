@@ -16,9 +16,11 @@ export interface AdvancedExecutable {
   runTask?: RunTask;
   parallelizationLimit?: number;
   strictPattern?: boolean;
+  markAsSkipped?: boolean;
   catch2?: FrameworkSpecific;
   gtest?: FrameworkSpecific;
   doctest?: FrameworkSpecific;
+  gbenchmark?: FrameworkSpecific;
   testGrouping?: TestGrouping;
   executionWrapper?: ExecutionWrapper;
   darwin: AdvancedExecutable;
@@ -45,4 +47,5 @@ export interface FrameworkSpecific {
   prependTestListingArgs?: Array<string>;
   ignoreTestEnumerationStdErr?: boolean;
   'debug.enableOutputColouring'?: boolean;
+  failIfExceedsLimitNs?: number;
 }

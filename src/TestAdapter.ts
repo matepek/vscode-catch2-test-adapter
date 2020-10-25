@@ -43,11 +43,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       vscode.version,
     );
 
-    // TODO:future feedback
-    // if (false) {
-    //   'https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter&ssr=false#review-details';
-    // }
-
     if (!this._isDebugExtension) configuration.askSentryConsent();
 
     try {
@@ -132,7 +127,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }
     };
 
-    // TODO remove debounce config and package
     const sendRetireEvent = (tests: Iterable<AbstractTest>): void => {
       const ids: string[] = [];
       for (const t of tests) ids.push(t.id);
@@ -169,7 +163,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
           if (test) {
             // we dont need to send events about ancestors: https://github.com/hbenl/vscode-test-explorer/issues/141
-            // TODO we might dont need the paretn events: dont forget to adjust RealCatch2 tests
             this._testStatesEmitter.fire(testEvents[i]);
           } else {
             log.error('sendTestEventEmitter.event', testEvents[i], this._rootSuite);
@@ -265,7 +258,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       variableToValue,
       configuration.getRandomGeneratorSeed(),
       configuration.getExecWatchTimeout(),
-      configuration.getRetireDebounceTime(),
       configuration.getExecRunningTimeout(),
       configuration.getExecParsingTimeout(),
       configuration.getDefaultNoThrow(),
@@ -295,9 +287,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           }
           if (affectsAny('discovery.gracePeriodForMissing')) {
             this._shared.execWatchTimeout = config.getExecWatchTimeout();
-          }
-          if (affectsAny('discovery.retireDebounceLimit')) {
-            this._shared.retireDebounceTime = config.getRetireDebounceTime();
           }
           if (affectsAny('test.runtimeLimit')) {
             this._shared.setExecRunningTimeout(config.getExecRunningTimeout());

@@ -35,7 +35,6 @@ export type Config =
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
   | 'discovery.gracePeriodForMissing'
-  | 'discovery.retireDebounceLimit'
   | 'discovery.runtimeLimit'
   | 'discovery.testListCaching'
   | 'discovery.strictPattern'
@@ -321,11 +320,6 @@ export class Configurations {
     return res;
   }
 
-  public getRetireDebounceTime(): number {
-    const res = this._getD<number>('discovery.retireDebounceLimit', 1000);
-    return res;
-  }
-
   public getExecRunningTimeout(): null | number {
     const r = this._getD<null | number>('test.runtimeLimit', null);
     return r !== null && r > 0 ? r * 1000 : null;
@@ -370,6 +364,8 @@ export class Configurations {
         defaultParallelExecutionOfExecLimit,
         false,
         undefined,
+        undefined,
+        {},
         {},
         {},
         {},
@@ -467,7 +463,9 @@ export class Configurations {
 
         const strictPattern: boolean | undefined = obj.strictPattern;
 
-        const defaultTestGrouping = obj.testGrouping ? obj.testGrouping : undefined;
+        const markAsSkipped: boolean | undefined = obj.markAsSkipped;
+
+        const defaultTestGrouping = obj.testGrouping;
 
         const spawnerConfig: ExecutionWrapper | undefined =
           typeof obj.executionWrapper === 'object' &&
@@ -489,10 +487,12 @@ export class Configurations {
           runTask,
           parallelizationLimit,
           strictPattern,
+          markAsSkipped,
           spawnerConfig,
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),
+          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gbenchmark']),
         );
       };
 
@@ -521,7 +521,7 @@ export class Configurations {
       if (obj.testGrouping) r.testGrouping = obj.testGrouping;
       else r.testGrouping = defaultTestGrouping;
 
-      r.helpRegex = obj['helpRegex'];
+      if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
 
       if (Array.isArray(obj.prependTestRunningArgs) && obj.prependTestRunningArgs.every(x => typeof x === 'string'))
         r.prependTestRunningArgs = obj.prependTestRunningArgs;
@@ -529,9 +529,13 @@ export class Configurations {
       if (Array.isArray(obj.prependTestListingArgs) && obj.prependTestListingArgs.every(x => typeof x === 'string'))
         r.prependTestListingArgs = obj.prependTestListingArgs;
 
-      r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
+      if (typeof obj.ignoreTestEnumerationStdErr === 'boolean')
+        r.ignoreTestEnumerationStdErr = obj.ignoreTestEnumerationStdErr;
 
-      r['debug.enableOutputColouring'] = obj['debug.enableOutputColouring'];
+      if (typeof obj['debug.enableOutputColouring'] === 'boolean')
+        r['debug.enableOutputColouring'] = obj['debug.enableOutputColouring'];
+
+      if (typeof obj.failIfExceedsLimitNs === 'number') r.failIfExceedsLimitNs = obj.failIfExceedsLimitNs;
     }
 
     return r;

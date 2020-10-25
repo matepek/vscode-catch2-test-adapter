@@ -2,7 +2,7 @@ import * as c2fs from './FSWrapper';
 import { RunnableProperties } from './RunnableProperties';
 import { AbstractRunnable } from './AbstractRunnable';
 import { Catch2Runnable } from './framework/Catch2Runnable';
-import { GoogleRunnable } from './framework/GoogleRunnable';
+import { GoogleTestRunnable } from './framework/GoogleTestRunnable';
 import { DOCRunnable } from './framework/DOCRunnable';
 import { SharedVariables } from './SharedVariables';
 import { FrameworkSpecific, RunTask } from './AdvancedExecutableInterface';
@@ -10,6 +10,7 @@ import { Version } from './Util';
 import { ResolveRule } from './util/ResolveRule';
 import { RootSuite } from './RootSuite';
 import { Spawner, SpawnOptionsWithoutStdio, SpawnReturns } from './Spawner';
+import { GoogleBenchmarkRunnable } from './framework/GoogleBenchmarkRunnable';
 
 export class RunnableFactory {
   public constructor(
@@ -23,7 +24,9 @@ export class RunnableFactory {
     private readonly _catch2: FrameworkSpecific,
     private readonly _gtest: FrameworkSpecific,
     private readonly _doctest: FrameworkSpecific,
+    private readonly _gbenchmark: FrameworkSpecific,
     private readonly _parallelizationLimit: number,
+    private readonly _markAsSkipped: boolean,
     private readonly _runTask: RunTask,
     private readonly _spawner: Spawner,
   ) {}
@@ -58,6 +61,7 @@ export class RunnableFactory {
                 this._execOptions,
                 this._catch2,
                 this._parallelizationLimit,
+                this._markAsSkipped,
                 this._runTask,
                 this._spawner,
               ),
@@ -74,7 +78,7 @@ export class RunnableFactory {
               : /This program contains tests written using .*--(\w+)list_tests.*List the names of all tests instead of running them/s,
           );
           if (gtest) {
-            return new GoogleRunnable(
+            return new GoogleTestRunnable(
               this._shared,
               this._rootSuite,
               new RunnableProperties(
@@ -85,6 +89,7 @@ export class RunnableFactory {
                 this._execOptions,
                 this._gtest,
                 this._parallelizationLimit,
+                this._markAsSkipped,
                 this._runTask,
                 this._spawner,
               ),
@@ -98,7 +103,7 @@ export class RunnableFactory {
             // https://github.com/matepek/vscode-catch2-test-adapter/pull/191
             this._shared.log.info('Special - Google Co. related - gtest output is detected.', this._execPath);
 
-            return new GoogleRunnable(
+            return new GoogleTestRunnable(
               this._shared,
               this._rootSuite,
               new RunnableProperties(
@@ -109,6 +114,7 @@ export class RunnableFactory {
                 this._execOptions,
                 this._gtest,
                 this._parallelizationLimit,
+                this._markAsSkipped,
                 this._runTask,
                 this._spawner,
               ),
@@ -137,10 +143,42 @@ export class RunnableFactory {
                 this._execOptions,
                 this._doctest,
                 this._parallelizationLimit,
+                this._markAsSkipped,
                 this._runTask,
                 this._spawner,
               ),
               this._parseVersion(doc),
+            );
+          }
+        }
+
+        {
+          if (this._gbenchmark.helpRegex)
+            this._shared.log.info('Custom regex', 'gbenchmark', this._gbenchmark.helpRegex);
+
+          const gbenchmark = runWithHelpRes.stdout.match(
+            this._gbenchmark.helpRegex
+              ? new RegExp(this._gbenchmark.helpRegex, regexFlags)
+              : /benchmark \[--benchmark_list_tests=\{true\|false\}\]/,
+          );
+
+          if (gbenchmark) {
+            return new GoogleBenchmarkRunnable(
+              this._shared,
+              this._rootSuite,
+              new RunnableProperties(
+                this._execName,
+                this._execDescription,
+                this._varToValue,
+                this._execPath,
+                this._execOptions,
+                this._gbenchmark,
+                this._parallelizationLimit,
+                this._markAsSkipped,
+                this._runTask,
+                this._spawner,
+              ),
+              Promise.resolve(undefined),
             );
           }
         }

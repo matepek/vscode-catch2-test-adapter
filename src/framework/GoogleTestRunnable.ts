@@ -3,7 +3,7 @@ import { inspect, promisify } from 'util';
 
 import { Suite } from '../Suite';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
-import { GoogleTest } from './GoogleTest';
+import { GoogleTestTest } from './GoogleTestTest';
 import { Parser } from 'xml2js';
 import { RunnableProperties } from '../RunnableProperties';
 import { SharedVariables } from '../SharedVariables';
@@ -13,7 +13,7 @@ import { Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { RootSuite } from '../RootSuite';
 
-export class GoogleRunnable extends AbstractRunnable {
+export class GoogleTestRunnable extends AbstractRunnable {
   public constructor(
     shared: SharedVariables,
     rootSuite: RootSuite,
@@ -74,8 +74,8 @@ export class GoogleRunnable extends AbstractRunnable {
             file,
             [suiteName],
             (parent: Suite) =>
-              new GoogleTest(this._shared, this, parent, testNameAsId, testName, typeParam, valueParam, file, line),
-            (old: AbstractTest) => (old as GoogleTest).update(typeParam, valueParam, file, line),
+              new GoogleTestTest(this._shared, this, parent, testNameAsId, testName, typeParam, valueParam, file, line),
+            (old: AbstractTest) => (old as GoogleTestTest).update(typeParam, valueParam, file, line),
           ),
         );
       }
@@ -131,7 +131,7 @@ export class GoogleRunnable extends AbstractRunnable {
             undefined,
             [suiteName],
             (parent: Suite) =>
-              new GoogleTest(
+              new GoogleTestTest(
                 this._shared,
                 this,
                 parent,
@@ -142,7 +142,7 @@ export class GoogleRunnable extends AbstractRunnable {
                 undefined,
                 undefined,
               ),
-            (old: AbstractTest) => (old as GoogleTest).update(typeParam, valueParam, undefined, undefined),
+            (old: AbstractTest) => (old as GoogleTestTest).update(typeParam, valueParam, undefined, undefined),
           ),
         );
 

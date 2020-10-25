@@ -33,7 +33,8 @@
     "googlemock",
     "google mock",
     "doctest",
-    "onqtam"
+    "onqtam",
+    "google benchmark"
   ],
   "main": "out/dist/main.js",
   "scripts": {
@@ -52,16 +53,15 @@
     "hbenl.vscode-test-explorer"
   ],
   "dependencies": {
-    "debounce-collect": "^1.0.2",
     "gaze": "^1.1.3",
     "ovsx": "0.1.0-next.dacd2fd",
-    "tslib": "^2.0.3",
+    "tslib": "^2.0.1",
     "vscode-test-adapter-api": "^1.9.0",
     "vscode-test-adapter-util": "^0.7.1",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "@sentry/node": "^5.27.0",
+    "@sentry/node": "^5.27.1",
     "@types/bent": "^7.3.1",
     "@types/chai": "^4.2.14",
     "@types/deep-equal": "^1.0.1",
@@ -78,7 +78,7 @@
     "@typescript-eslint/parser": "^4.5.0",
     "bent": "^7.3.12",
     "deep-equal": "^2.0.4",
-    "eslint": "^7.11.0",
+    "eslint": "^7.12.0",
     "eslint-config-prettier": "^6.14.0",
     "eslint-plugin-prettier": "3.1.4",
     "fs-extra": "^9.0.1",
@@ -89,7 +89,7 @@
     "raw-loader": "^4.0.2",
     "sinon": "^9.2.0",
     "source-map-support": "^0.5.19",
-    "ts-loader": "^8.0.6",
+    "ts-loader": "^8.0.7",
     "typescript": "^4.0.3",
     "vsce": "^1.81.1",
     "vscode-test": "^1.4.0",
@@ -308,13 +308,18 @@
                 }
               },
               "parallelizationLimit": {
-                "markdownDescription": "(Experimental) The variable maximize the number of the parallel execution of one executable instance. Note: `testMate.cpp.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "markdownDescription": "The variable maximize the number of the parallel execution of one executable instance. Note: `testMate.cpp.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "type": "integer",
                 "default": 1,
                 "minimum": 1
               },
               "strictPattern": {
                 "markdownDescription": "Test loading fails if one of the files matched by `pattern` is not a test executable. (Helps noticing unexpected crashes/problems under test loading.)",
+                "type": "boolean",
+                "default": false
+              },
+              "markAsSkipped": {
+                "markdownDescription": "If true then all the tests related to the pattern are skipped. They can be run manually though.",
                 "type": "boolean",
                 "default": false
               },
@@ -364,6 +369,10 @@
                   "debug.enableOutputColouring": {
                     "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
+                  },
+                  "failIfExceedsLimitNs": {
+                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
+                    "type": "number"
                   },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
@@ -529,6 +538,10 @@
                     "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
                   },
+                  "failIfExceedsLimitNs": {
+                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
+                    "type": "number"
+                  },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                     "additionalProperties": false,
@@ -692,6 +705,178 @@
                   "debug.enableOutputColouring": {
                     "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
+                  },
+                  "failIfExceedsLimitNs": {
+                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
+                    "type": "number"
+                  },
+                  "testGrouping": {
+                    "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                    "additionalProperties": false,
+                    "properties": {
+                      "groupByExecutable": {
+                        "markdownDescription": "Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "description": {
+                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "groupBySource": {
+                        "markdownDescription": "Groups the tests by the source file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "markdownDescription": "Label of the group. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "description": {
+                            "markdownDescription": "Less prominent text next to label. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "sourceIndex"
+                        ]
+                      },
+                      "groupByTags": {
+                        "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "tags": {
+                            "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            }
+                          },
+                          "tagFormat": {
+                            "type": "string",
+                            "pattern": "\\$\\{tag\\}"
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "groupByRegex": {
+                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "regexes": {
+                            "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "regexes"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "gbenchmark": {
+                "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "helpRegex": {
+                    "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "prependTestRunningArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "prependTestListingArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "ignoreTestEnumerationStdErr": {
+                    "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "boolean"
+                  },
+                  "debug.enableOutputColouring": {
+                    "markdownDescription": "Sets the colouring of the output for debug session.",
+                    "type": "boolean"
+                  },
+                  "failIfExceedsLimitNs": {
+                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
+                    "type": "number"
                   },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
@@ -886,13 +1071,6 @@
           "type": "integer",
           "default": 10,
           "minimum": 1
-        },
-        "testMate.cpp.discovery.retireDebounceLimit": {
-          "markdownDescription": "[milisec] Retire events will be held back for the given duration. (Reload is required)",
-          "scope": "resource",
-          "type": "integer",
-          "default": 1000,
-          "minimum": 200
         },
         "testMate.cpp.discovery.runtimeLimit": {
           "markdownDescription": "[seconds] The timeout of the test-executable used to identify it (Calls the exec with `--help`).",
