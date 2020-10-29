@@ -96,23 +96,17 @@ export abstract class AbstractRunnable {
     return this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, parentGroup);
   }
 
-  private readonly _tagVar = '${tag}';
-  private readonly _tagsVar = '${tags}';
+  private _updateVarsWithTags(tagsResolveRule: ResolveRule, tg: TestGrouping, tags: string[]): void {
+    const tagVar = '${tag}';
 
-  private _updateVarsWithTags(vars: ResolveRule[], tg: TestGrouping, tags: string[], overrideTags?: string[]): void {
-    if (tg.tagFormat !== undefined && tg.tagFormat.indexOf(this._tagVar) === -1)
-      this._shared.log.warn('tagFormat should contain "${tag}" substring', tg.tagFormat);
+    if (tg.tagFormat !== undefined && tg.tagFormat.indexOf(tagVar) === -1)
+      this._shared.log.warn(`tagFormat should contain "${tagVar}" substring`, tg.tagFormat);
 
-    const tagFormat =
-      tg.tagFormat !== undefined && tg.tagFormat.indexOf(this._tagVar) !== -1 ? tg.tagFormat : '[${tag}]';
-    const formattedTags = (overrideTags ? overrideTags : tags).map(t => tagFormat.replace(this._tagVar, t)).join('');
-    const found = vars.find(v => v.resolve === this._tagsVar);
+    const tagFormat = tg.tagFormat !== undefined && tg.tagFormat.indexOf(tagVar) !== -1 ? tg.tagFormat : `[${tagVar}]`;
 
-    if (found) {
-      found.rule = formattedTags;
-    } else {
-      vars.push({ resolve: this._tagsVar, rule: formattedTags });
-    }
+    const formattedTags = tags.map(t => tagFormat.replace(tagVar, t)).join('');
+
+    tagsResolveRule.rule = formattedTags;
   }
 
   private static readonly _variableRe = /\$\{[^ ]*\}/;
@@ -149,7 +143,11 @@ export abstract class AbstractRunnable {
     const absPath = file ? file : '';
     tags.sort();
 
+    const tagsVar = '${tags}';
+    const tagsResolveRule: ResolveRule = { resolve: tagsVar, rule: '<will be replaced soon enough>' };
+
     const vars: ResolveRule[] = [
+      tagsResolveRule,
       createPythonIndexerForPathVariable('sourceRelPath', relPath),
       createPythonIndexerForPathVariable('sourceAbsPath', absPath),
     ];
@@ -160,7 +158,7 @@ export abstract class AbstractRunnable {
       while (true) {
         if (currentGrouping.groupByExecutable) {
           const g = currentGrouping.groupByExecutable;
-          this._updateVarsWithTags(vars, g, tags);
+          this._updateVarsWithTags(tagsResolveRule, g, tags);
 
           const label = g.label !== undefined ? g.label : '${filename}';
           const description = g.description !== undefined ? g.description : '${relDirpath}${osPathSep}';
@@ -176,7 +174,7 @@ export abstract class AbstractRunnable {
           currentGrouping = g;
         } else if (currentGrouping.groupBySource) {
           const g = currentGrouping.groupBySource;
-          this._updateVarsWithTags(vars, g, tags);
+          this._updateVarsWithTags(tagsResolveRule, g, tags);
 
           if (file) {
             const label = g.label ? g.label : relPath;
@@ -190,7 +188,7 @@ export abstract class AbstractRunnable {
           currentGrouping = g;
         } else if (currentGrouping.groupByTags) {
           const g = currentGrouping.groupByTags;
-          this._updateVarsWithTags(vars, g, tags);
+          this._updateVarsWithTags(tagsResolveRule, g, tags);
 
           if (
             g.tags === undefined ||
@@ -202,7 +200,7 @@ export abstract class AbstractRunnable {
                 group = this._resolveAndGetOrCreateChildSuite(
                   vars,
                   group,
-                  g.label ? g.label : this._tagsVar,
+                  g.label ? g.label : tagsVar,
                   g.description,
                   undefined,
                 );
@@ -214,11 +212,11 @@ export abstract class AbstractRunnable {
               const foundCombo = combos.find(combo => combo.every(t => tags.indexOf(t) !== -1));
 
               if (foundCombo) {
-                this._updateVarsWithTags(vars, g, tags, foundCombo);
+                this._updateVarsWithTags(tagsResolveRule, g, foundCombo);
                 group = this._resolveAndGetOrCreateChildSuite(
                   vars,
                   group,
-                  g.label ? g.label : this._tagsVar,
+                  g.label ? g.label : tagsVar,
                   g.description,
                   undefined,
                 );
@@ -233,7 +231,7 @@ export abstract class AbstractRunnable {
           currentGrouping = g;
         } else if (currentGrouping.groupByRegex) {
           const g = currentGrouping.groupByRegex;
-          this._updateVarsWithTags(vars, g, tags);
+          this._updateVarsWithTags(tagsResolveRule, g, tags);
 
           if (g.regexes) {
             if (Array.isArray(g.regexes) && g.regexes.length > 0 && g.regexes.every(v => typeof v === 'string')) {
