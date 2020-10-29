@@ -229,6 +229,44 @@ export abstract class AbstractRunnable {
           }
 
           currentGrouping = g;
+        } else if (currentGrouping.groupByTagRegex) {
+          const g = currentGrouping.groupByTagRegex;
+          this._updateVarsWithTags(tagsResolveRule, g, tags);
+
+          if (g.regexes) {
+            if (Array.isArray(g.regexes) && g.regexes.length > 0 && g.regexes.every(v => typeof v === 'string')) {
+              let match: RegExpMatchArray | null = null;
+
+              let reIndex = 0;
+              while (reIndex < g.regexes.length && match == null) {
+                let tagIndex = 0;
+                while (tagIndex < tags.length && match == null) {
+                  match = tags[tagIndex++].match(g.regexes[reIndex]);
+                }
+                reIndex++;
+              }
+
+              if (match) {
+                this._shared.log.info('groupByTagRegex matched on', testName, g.regexes[reIndex - 1]);
+                const matchGroup = match[1] ? match[1] : match[0];
+
+                const matchVar: ResolveRule[] = [{ resolve: '${match}', rule: matchGroup }];
+
+                const label = g.label ? this._resolveText(g.label, ...matchVar) : matchGroup;
+                const description =
+                  g.description !== undefined ? this._resolveText(g.description, ...matchVar) : undefined;
+
+                group = this._resolveAndGetOrCreateChildSuite(vars, group, label, description, undefined);
+              } else if (g.groupUngroupedTo) {
+                group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
+              }
+            } else {
+              this._shared.log.warn('groupByTagRegex.regexes should be a non-empty array of strings.', g.regexes);
+            }
+          } else {
+            this._shared.log.warn('groupByTagRegex missing "regexes": skipping grouping level');
+          }
+          currentGrouping = g;
         } else if (currentGrouping.groupByRegex) {
           const g = currentGrouping.groupByRegex;
           this._updateVarsWithTags(tagsResolveRule, g, tags);
@@ -255,10 +293,10 @@ export abstract class AbstractRunnable {
                 group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
               }
             } else {
-              this._shared.log.warn('groupByTags.tags should be a non-empty array of strings.', g.regexes);
+              this._shared.log.warn('groupByRegex.regexes should be a non-empty array of strings.', g.regexes);
             }
           } else {
-            this._shared.log.warn('missing "regexes": skipping grouping level');
+            this._shared.log.warn('groupByRegex missing "regexes": skipping grouping level');
           }
           currentGrouping = g;
         } else {

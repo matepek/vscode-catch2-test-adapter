@@ -19,6 +19,15 @@ export interface GroupByTags extends TestGrouping {
   groupUngroupedTo?: string;
 }
 
+export interface GroupByTagRegex extends TestGrouping {
+  regexes?: string[];
+
+  label?: string; // ${match} will by substituted
+  description?: string;
+
+  groupUngroupedTo?: string;
+}
+
 export interface GroupByRegex extends TestGrouping {
   regexes?: string[];
 
@@ -36,6 +45,8 @@ export interface TestGrouping {
   groupBySource?: GroupBySource;
 
   groupByTags?: GroupByTags;
+
+  groupByTagRegex?: GroupByTagRegex;
 
   groupByRegex?: GroupByRegex;
 
