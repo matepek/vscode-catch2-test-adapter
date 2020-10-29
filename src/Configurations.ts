@@ -365,6 +365,7 @@ export class Configurations {
         false,
         undefined,
         undefined,
+        [],
         {},
         {},
         {},
@@ -475,6 +476,12 @@ export class Configurations {
             ? obj.executionWrapper
             : undefined;
 
+        const sourceFileMap: [string, string][] =
+          typeof obj.sourceFileMap === 'object' &&
+          Object.keys(obj.sourceFileMap).every(k => typeof k === 'string' && typeof obj.sourceFileMap![k] === 'string')
+            ? Object.keys(obj.sourceFileMap).map(k => [k, obj.sourceFileMap![k]])
+            : [];
+
         return new ExecutableConfig(
           shared,
           pattern,
@@ -489,6 +496,7 @@ export class Configurations {
           strictPattern,
           markAsSkipped,
           spawnerConfig,
+          sourceFileMap,
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),

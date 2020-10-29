@@ -23,6 +23,7 @@ export interface AdvancedExecutable {
   gbenchmark?: FrameworkSpecific;
   testGrouping?: TestGrouping;
   executionWrapper?: ExecutionWrapper;
+  sourceFileMap?: Record<string, string>;
   darwin: AdvancedExecutable;
   linux: AdvancedExecutable;
   win32: AdvancedExecutable;

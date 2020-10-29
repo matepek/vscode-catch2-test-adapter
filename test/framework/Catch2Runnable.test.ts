@@ -30,6 +30,7 @@ describe(pathlib.basename(__filename), function () {
     false,
     {},
     new DefaultSpawner(),
+    [],
   );
 
   const createCatch2Runnable = (): { runnable: Catch2Runnable; root: RootSuite } => {

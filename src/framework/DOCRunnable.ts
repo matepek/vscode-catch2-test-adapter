@@ -54,7 +54,7 @@ export class DOCRunnable extends AbstractRunnable {
       const testCase = res.doctest.TestCase[i].$;
 
       const testName = testCase.name;
-      const filePath: string | undefined = testCase.filename ? this._findFilePath(testCase.filename) : undefined;
+      const filePath: string | undefined = testCase.filename ? testCase.filename : undefined;
       const line: number | undefined = testCase.line !== undefined ? Number(testCase.line) - 1 : undefined;
       const skippedOpt: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;

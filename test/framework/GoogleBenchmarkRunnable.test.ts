@@ -27,6 +27,7 @@ describe(pathlib.basename(__filename), function () {
     false,
     {},
     new DefaultSpawner(),
+    [],
   );
 
   const createGoogleBenchmarkRunnable = (): { runnable: GoogleBenchmarkRunnable; root: RootSuite } => {

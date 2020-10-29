@@ -29,6 +29,7 @@ export class RunnableFactory {
     private readonly _markAsSkipped: boolean,
     private readonly _runTask: RunTask,
     private readonly _spawner: Spawner,
+    private readonly _sourceFileMap: [string, string][],
   ) {}
 
   public create(checkIsNativeExecutable: boolean): Promise<AbstractRunnable> {
@@ -64,6 +65,7 @@ export class RunnableFactory {
                 this._markAsSkipped,
                 this._runTask,
                 this._spawner,
+                this._sourceFileMap,
               ),
               this._parseVersion(catch2),
             );
@@ -92,6 +94,7 @@ export class RunnableFactory {
                 this._markAsSkipped,
                 this._runTask,
                 this._spawner,
+                this._sourceFileMap,
               ),
               gtest[1] ?? 'gtest_',
               Promise.resolve(undefined), //Util: GoogleTestVersionFinder
@@ -117,6 +120,7 @@ export class RunnableFactory {
                 this._markAsSkipped,
                 this._runTask,
                 this._spawner,
+                this._sourceFileMap,
               ),
               'gunit_',
               Promise.resolve(undefined),
@@ -146,6 +150,7 @@ export class RunnableFactory {
                 this._markAsSkipped,
                 this._runTask,
                 this._spawner,
+                this._sourceFileMap,
               ),
               this._parseVersion(doc),
             );
@@ -177,6 +182,7 @@ export class RunnableFactory {
                 this._markAsSkipped,
                 this._runTask,
                 this._spawner,
+                this._sourceFileMap,
               ),
               Promise.resolve(undefined),
             );

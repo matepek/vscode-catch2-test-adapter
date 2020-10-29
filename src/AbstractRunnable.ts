@@ -135,16 +135,26 @@ export abstract class AbstractRunnable {
     createTest: (parent: Suite) => AbstractTest,
     updateTest: (old: AbstractTest) => boolean,
   ): [AbstractTest, boolean] {
-    this._shared.log.info('testGrouping', { testName, testNameAsId, file, tags, testGrouping });
+    this._shared.log.info('testGrouping', { testName, testNameAsId, fileIn: file, tags, testGrouping });
 
     let group = this._rootSuite as Suite;
 
-    const relPath = file ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file) : '';
-    const absPath = file ? file : '';
-    tags.sort();
+    let resolvedFile = file;
+    if (typeof resolvedFile === 'string') {
+      this.properties.sourceFileMap.forEach(m => {
+        resolvedFile = resolvedFile!.replace(m[0], m[1]);
+      });
+
+      resolvedFile = this._resolveText(resolvedFile);
+      resolvedFile = this._findFilePath(resolvedFile);
+    }
 
     const tagsVar = '${tags}';
     const tagsResolveRule: ResolveRule = { resolve: tagsVar, rule: '<will be replaced soon enough>' };
+
+    const relPath = resolvedFile ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, resolvedFile) : '';
+    const absPath = resolvedFile ? resolvedFile : '';
+    tags.sort();
 
     const vars: ResolveRule[] = [
       tagsResolveRule,
@@ -176,7 +186,7 @@ export abstract class AbstractRunnable {
           const g = currentGrouping.groupBySource;
           this._updateVarsWithTags(tagsResolveRule, g, tags);
 
-          if (file) {
+          if (resolvedFile) {
             const label = g.label ? g.label : relPath;
             const description = g.description;
 
