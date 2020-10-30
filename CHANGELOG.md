@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.5.3]
+
+### Fixed
+
+- resolution of `foo ${match_lowercased}`
+
 ## [3.5.2] - 2020-10-30
 
 ### Added

@@ -268,10 +268,10 @@ export abstract class AbstractRunnable {
 
                 const matchVar: ResolveRule[] = [
                   { resolve: '${match}', rule: matchGroup },
-                  { resolve: '${match_lowercased}', rule: (): string => matchGroup.toLocaleLowerCase() },
+                  { resolve: '${match_lowercased}', rule: matchGroup.toLocaleLowerCase() },
                   {
                     resolve: '${match_upperfirst}',
-                    rule: (): string => matchGroup[0].toLocaleUpperCase() + matchGroup.substr(1),
+                    rule: matchGroup[0].toLocaleUpperCase() + matchGroup.substr(1),
                   },
                 ];
 
