@@ -3,6 +3,16 @@ name: Bug report
 about: Create a report to help us improve
 ---
 
+<!--
+  Welcome Reporter,
+    I really appreciate the bug-reports which give me a lot of info
+    to indentifiy the source of the issue.(Also makes it faster to resolve it.)
+    Please bare in mind that I'm developing this in my free time
+    as a gratitude for the work of other Open Source Community.
+    Your latest contribution is this bug report.
+  Thank You for your contribution. 🙏
+-->
+
 **Checklist**
 
 - [ ] The issue is about this extension and NOT about a fork.
@@ -46,6 +56,15 @@ about: Create a report to help us improve
 - Catch2 / Google Test / DOCTest Version:
 - OS Type and Version:
 - Using remote-ssh/docker/wsl?:
+
+**Regression bug?**
+
+<!--
+  Right click on the extension in the "Extensions" list -> "Install Another Version..."
+  Choose a pervious version and try to reproduce the issue.
+-->
+
+- Last extension version in which the feature were working:
 
 **Log** (optional but recommended)
 

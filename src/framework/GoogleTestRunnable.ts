@@ -34,7 +34,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
     }
   }
 
-  private _reloadFromXml(xmlStr: string): RunnableReloadResult {
+  private async _reloadFromXml(xmlStr: string): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
 
     interface XmlObject {
@@ -67,7 +67,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
         const line = testCase.$.line ? testCase.$.line - 1 : undefined;
 
         reloadResult.add(
-          ...this._createSubtreeAndAddTest(
+          ...(await this._createSubtreeAndAddTest(
             testGrouping,
             testNameAsId,
             testName,
@@ -76,7 +76,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
             (parent: Suite) =>
               new GoogleTestTest(this._shared, this, parent, testNameAsId, testName, typeParam, valueParam, file, line),
             (old: AbstractTest) => (old as GoogleTestTest).update(typeParam, valueParam, file, line),
-          ),
+          )),
         );
       }
     }
@@ -84,7 +84,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
     return reloadResult;
   }
 
-  private _reloadFromString(stdOutStr: string): RunnableReloadResult {
+  private async _reloadFromString(stdOutStr: string): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -124,7 +124,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
         const testNameAsId = testGroupName + '.' + testMatch[1];
 
         reloadResult.add(
-          ...this._createSubtreeAndAddTest(
+          ...(await this._createSubtreeAndAddTest(
             testGrouping,
             testNameAsId,
             testName,
@@ -143,7 +143,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
                 undefined,
               ),
             (old: AbstractTest) => (old as GoogleTestTest).update(typeParam, valueParam, undefined, undefined),
-          ),
+          )),
         );
 
         testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;

@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
 import { TaskPool } from './TaskPool';
 import { AbstractTest, AbstractTestEvent } from './AbstractTest';
-import { ResolveRule } from './util/ResolveRule';
+import { ResolveRuleAsync } from './util/ResolveRule';
 
 export type TestRunEvent = TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent;
 
@@ -20,10 +20,10 @@ export class SharedVariables implements vscode.Disposable {
     public readonly sendTestEvents: (testEvents: AbstractTestEvent[]) => void,
     public readonly executeTask: (
       taskName: string,
-      varsToResolve: readonly ResolveRule[],
+      varsToResolve: readonly ResolveRuleAsync[],
       cancellationToken: vscode.CancellationToken,
     ) => Promise<number | undefined>,
-    public readonly varToValue: readonly Readonly<ResolveRule>[],
+    public readonly varToValue: readonly Readonly<ResolveRuleAsync>[],
     public rngSeed: 'time' | number | null,
     public execWatchTimeout: number,
     private _execRunningTimeout: null | number,

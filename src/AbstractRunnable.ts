@@ -10,10 +10,10 @@ import { RunningRunnable } from './RunningRunnable';
 import { promisify, inspect } from 'util';
 import { Version, reverse, getAbsolutePath, CancellationToken } from './Util';
 import {
-  resolveVariables,
   resolveOSEnvironmentVariables,
-  ResolveRule,
   createPythonIndexerForPathVariable,
+  ResolveRuleAsync,
+  resolveVariablesAsync,
 } from './util/ResolveRule';
 import { TestGrouping, GroupByExecutable, GroupByTagRegex, GroupByRegex } from './TestGroupingInterface';
 import { TestEvent } from 'vscode-test-adapter-api';
@@ -82,21 +82,21 @@ export abstract class AbstractRunnable {
     }
   }
 
-  private _resolveAndGetOrCreateChildSuite(
-    vars: readonly ResolveRule[],
+  private async _resolveAndGetOrCreateChildSuite(
+    vars: readonly ResolveRuleAsync[],
     parentGroup: Suite,
     label: string,
     description: string | undefined,
     tooltip: string | undefined,
-  ): Suite {
-    const resolvedLabel = this._resolveText(label, ...vars);
-    const resolvedDescr = description !== undefined ? this._resolveText(description, ...vars) : '';
-    const resolvedToolt = tooltip !== undefined ? this._resolveText(tooltip, ...vars) : '';
+  ): Promise<Suite> {
+    const resolvedLabel = await this._resolveText(label, ...vars);
+    const resolvedDescr = description !== undefined ? await this._resolveText(description, ...vars) : '';
+    const resolvedToolt = tooltip !== undefined ? await this._resolveText(tooltip, ...vars) : '';
 
     return this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, parentGroup);
   }
 
-  private _updateVarsWithTags(tagsResolveRule: ResolveRule, tg: TestGrouping, tags: string[]): void {
+  private _updateVarsWithTags(tagsResolveRule: ResolveRuleAsync, tg: TestGrouping, tags: string[]): void {
     const tagVar = '${tag}';
 
     if (tg.tagFormat !== undefined && tg.tagFormat.indexOf(tagVar) === -1)
@@ -111,11 +111,11 @@ export abstract class AbstractRunnable {
 
   private static readonly _variableRe = /\$\{[^ ]*\}/;
 
-  private _resolveText(text: string, ...additionalVarToValue: readonly ResolveRule[]): string {
+  private async _resolveText(text: string, ...additionalVarToValue: readonly ResolveRuleAsync[]): Promise<string> {
     let resolvedText = text;
     try {
-      resolvedText = resolveVariables(resolvedText, this.properties.varToValue);
-      resolvedText = resolveVariables(resolvedText, additionalVarToValue);
+      resolvedText = await resolveVariablesAsync(resolvedText, this.properties.varToValue);
+      resolvedText = await resolveVariablesAsync(resolvedText, additionalVarToValue);
       resolvedText = resolveOSEnvironmentVariables(resolvedText, false);
 
       if (resolvedText.match(AbstractRunnable._variableRe))
@@ -126,7 +126,7 @@ export abstract class AbstractRunnable {
     return resolvedText;
   }
 
-  protected _createSubtreeAndAddTest(
+  protected async _createSubtreeAndAddTest(
     testGrouping: TestGrouping,
     testNameAsId: string,
     testName: string,
@@ -134,29 +134,20 @@ export abstract class AbstractRunnable {
     tags: string[], // in case of google test it is the TestCase
     createTest: (parent: Suite) => AbstractTest,
     updateTest: (old: AbstractTest) => boolean,
-  ): [AbstractTest, boolean] {
+  ): Promise<[AbstractTest, boolean]> {
     this._shared.log.info('testGrouping', { testName, testNameAsId, fileIn: file, tags, testGrouping });
 
     let group = this._rootSuite as Suite;
 
-    let resolvedFile = file;
-    if (typeof resolvedFile === 'string') {
-      this.properties.sourceFileMap.forEach(m => {
-        resolvedFile = resolvedFile!.replace(m[0], m[1]);
-      });
-
-      resolvedFile = this._resolveText(resolvedFile);
-      resolvedFile = this._findFilePath(resolvedFile);
-    }
-
     const tagsVar = '${tags}';
-    const tagsResolveRule: ResolveRule = { resolve: tagsVar, rule: '<will be replaced soon enough>' };
+    const tagsResolveRule: ResolveRuleAsync = { resolve: tagsVar, rule: '<will be replaced soon enough>' };
 
+    const resolvedFile = await this._resolveSourceFilePath(file); //TODO: resolve in case of test update too
     const relPath = resolvedFile ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, resolvedFile) : '';
     const absPath = resolvedFile ? resolvedFile : '';
     tags.sort();
 
-    const vars: ResolveRule[] = [
+    const vars: ResolveRuleAsync[] = [
       tagsResolveRule,
       createPythonIndexerForPathVariable('sourceRelPath', relPath),
       createPythonIndexerForPathVariable('sourceAbsPath', absPath),
@@ -173,7 +164,7 @@ export abstract class AbstractRunnable {
           const label = g.label !== undefined ? g.label : '${filename}';
           const description = g.description !== undefined ? g.description : '${relDirpath}${osPathSep}';
 
-          group = this._resolveAndGetOrCreateChildSuite(
+          group = await this._resolveAndGetOrCreateChildSuite(
             vars,
             group,
             label,
@@ -190,9 +181,9 @@ export abstract class AbstractRunnable {
             const label = g.label ? g.label : relPath;
             const description = g.description;
 
-            group = this._resolveAndGetOrCreateChildSuite(vars, group, label, description, undefined);
+            group = await this._resolveAndGetOrCreateChildSuite(vars, group, label, description, undefined);
           } else if (g.groupUngroupedTo) {
-            group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
+            group = await this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
           }
 
           currentGrouping = g;
@@ -207,7 +198,7 @@ export abstract class AbstractRunnable {
           ) {
             if (g.tags === undefined || g.tags.length === 0 || g.tags.every(t => t.length == 0)) {
               if (tags.length > 0) {
-                group = this._resolveAndGetOrCreateChildSuite(
+                group = await this._resolveAndGetOrCreateChildSuite(
                   vars,
                   group,
                   g.label ? g.label : tagsVar,
@@ -215,7 +206,13 @@ export abstract class AbstractRunnable {
                   undefined,
                 );
               } else if (g.groupUngroupedTo) {
-                group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
+                group = await this._resolveAndGetOrCreateChildSuite(
+                  vars,
+                  group,
+                  g.groupUngroupedTo,
+                  undefined,
+                  undefined,
+                );
               }
             } else {
               const combos = g.tags.filter(arr => arr.length > 0);
@@ -223,7 +220,7 @@ export abstract class AbstractRunnable {
 
               if (foundCombo) {
                 this._updateVarsWithTags(tagsResolveRule, g, foundCombo);
-                group = this._resolveAndGetOrCreateChildSuite(
+                group = await this._resolveAndGetOrCreateChildSuite(
                   vars,
                   group,
                   g.label ? g.label : tagsVar,
@@ -231,7 +228,13 @@ export abstract class AbstractRunnable {
                   undefined,
                 );
               } else if (g.groupUngroupedTo) {
-                group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
+                group = await this._resolveAndGetOrCreateChildSuite(
+                  vars,
+                  group,
+                  g.groupUngroupedTo,
+                  undefined,
+                  undefined,
+                );
               }
             }
           } else {
@@ -266,7 +269,7 @@ export abstract class AbstractRunnable {
                 this._shared.log.info(groupType + ' matched on', testName, g.regexes[reIndex - 1]);
                 const matchGroup = match[1] ? match[1] : match[0];
 
-                const matchVar: ResolveRule[] = [
+                const matchVar: ResolveRuleAsync[] = [
                   { resolve: '${match}', rule: matchGroup },
                   { resolve: '${match_lowercased}', rule: matchGroup.toLocaleLowerCase() },
                   {
@@ -275,13 +278,19 @@ export abstract class AbstractRunnable {
                   },
                 ];
 
-                const label = g.label ? this._resolveText(g.label, ...matchVar) : matchGroup;
+                const label = g.label ? await this._resolveText(g.label, ...matchVar) : matchGroup;
                 const description =
-                  g.description !== undefined ? this._resolveText(g.description, ...matchVar) : undefined;
+                  g.description !== undefined ? await this._resolveText(g.description, ...matchVar) : undefined;
 
-                group = this._resolveAndGetOrCreateChildSuite(vars, group, label, description, undefined);
+                group = await this._resolveAndGetOrCreateChildSuite(vars, group, label, description, undefined);
               } else if (g.groupUngroupedTo) {
-                group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
+                group = await this._resolveAndGetOrCreateChildSuite(
+                  vars,
+                  group,
+                  g.groupUngroupedTo,
+                  undefined,
+                  undefined,
+                );
               }
             } else {
               this._shared.log.warn(groupType + '.regexes should be a non-empty array of strings.', g.regexes);
@@ -359,9 +368,9 @@ export abstract class AbstractRunnable {
     };
   }
 
-  protected _createAndAddError(label: string, message: string): RunnableReloadResult {
+  protected async _createAndAddError(label: string, message: string): Promise<RunnableReloadResult> {
     return new RunnableReloadResult().add(
-      ...this._createSubtreeAndAddTest(
+      ...(await this._createSubtreeAndAddTest(
         { groupByExecutable: this._getGroupByExecutable() },
         label,
         label,
@@ -369,11 +378,11 @@ export abstract class AbstractRunnable {
         [],
         this._createError(label, message),
         () => false,
-      ),
+      )),
     );
   }
 
-  protected _createAndAddUnexpectedStdError(stdout: string, stderr: string): RunnableReloadResult {
+  protected _createAndAddUnexpectedStdError(stdout: string, stderr: string): Promise<RunnableReloadResult> {
     return this._createAndAddError(
       `⚡️ Unexpected ERROR while parsing`,
       [
@@ -680,6 +689,21 @@ export abstract class AbstractRunnable {
   protected _findTest(pred: (t: AbstractTest) => boolean): AbstractTest | undefined {
     for (const t of this._tests) if (pred(t)) return t;
     return undefined;
+  }
+
+  protected async _resolveSourceFilePath(file: string | undefined): Promise<string | undefined> {
+    if (!file) return undefined;
+
+    let resolved = file;
+
+    for (const m of this.properties.sourceFileMap) {
+      resolved = resolved!.replace(m[0], m[1]); // it just replaces the first occurence
+    }
+
+    resolved = await this._resolveText(resolved);
+    resolved = this._findFilePath(resolved);
+
+    return resolved;
   }
 
   protected _findFilePath(matchedPath: string): string {

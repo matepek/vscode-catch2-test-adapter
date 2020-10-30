@@ -4,7 +4,6 @@ import { Imitation, SharedVariables } from '../Common';
 import { GoogleBenchmarkRunnable } from '../../src/framework/GoogleBenchmarkRunnable';
 import { RootSuite } from '../../src/RootSuite';
 import { RunnableProperties } from '../../src/RunnableProperties';
-import { RunnableReloadResult } from '../../src/AbstractRunnable';
 import { EOL } from 'os';
 import { DefaultSpawner } from '../../src/Spawner';
 
@@ -38,15 +37,6 @@ describe(pathlib.basename(__filename), function () {
     };
   };
 
-  type GoogleBenchmarkRunnablePriv = {
-    _reloadChildren(): Promise<RunnableReloadResult>;
-    _reloadFromString(testListOutput: string): RunnableReloadResult;
-    _reloadFromXml(testListOutput: string): RunnableReloadResult;
-  };
-
-  const getPriv = (c: GoogleBenchmarkRunnable): GoogleBenchmarkRunnablePriv =>
-    (c as unknown) as GoogleBenchmarkRunnablePriv;
-
   let imitation: Imitation;
 
   before(function () {
@@ -67,7 +57,7 @@ describe(pathlib.basename(__filename), function () {
       assert.strictEqual(runnable.tests.size, 0);
 
       const testOutput: string[] = ['BM_StringCreation', 'BM_StringCopy'];
-      const res = getPriv(runnable)._reloadFromString(testOutput.join(EOL));
+      const res = await runnable['_reloadFromString'](testOutput.join(EOL));
 
       const tests = [...res.tests].sort((a, b) => a.testNameAsId.localeCompare(b.testNameAsId));
 

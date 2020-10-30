@@ -7,10 +7,10 @@ import { DOCRunnable } from './framework/DOCRunnable';
 import { SharedVariables } from './SharedVariables';
 import { FrameworkSpecific, RunTask } from './AdvancedExecutableInterface';
 import { Version } from './Util';
-import { ResolveRule } from './util/ResolveRule';
 import { RootSuite } from './RootSuite';
 import { Spawner, SpawnOptionsWithoutStdio, SpawnReturns } from './Spawner';
 import { GoogleBenchmarkRunnable } from './framework/GoogleBenchmarkRunnable';
+import { ResolveRuleAsync } from './util/ResolveRule';
 
 export class RunnableFactory {
   public constructor(
@@ -20,7 +20,7 @@ export class RunnableFactory {
     private readonly _rootSuite: RootSuite,
     private readonly _execPath: string,
     private readonly _execOptions: SpawnOptionsWithoutStdio,
-    private readonly _varToValue: ResolveRule[],
+    private readonly _varToValue: ResolveRuleAsync[],
     private readonly _catch2: FrameworkSpecific,
     private readonly _gtest: FrameworkSpecific,
     private readonly _doctest: FrameworkSpecific,

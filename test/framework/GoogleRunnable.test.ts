@@ -4,7 +4,6 @@ import { Imitation, SharedVariables } from '../Common';
 import { GoogleTestRunnable } from '../../src/framework/GoogleTestRunnable';
 import { RootSuite } from '../../src/RootSuite';
 import { RunnableProperties } from '../../src/RunnableProperties';
-import { RunnableReloadResult } from '../../src/AbstractRunnable';
 import { EOL } from 'os';
 import { DefaultSpawner } from '../../src/Spawner';
 
@@ -37,14 +36,6 @@ describe(pathlib.basename(__filename), function () {
       runnable: new GoogleTestRunnable(sharedVariables, root, runnableProperties, 'gtest_', Promise.resolve(undefined)),
     };
   };
-
-  type GoogleRunnablePriv = {
-    _reloadChildren(): Promise<RunnableReloadResult>;
-    _reloadFromString(testListOutput: string): RunnableReloadResult;
-    _reloadFromXml(testListOutput: string): RunnableReloadResult;
-  };
-
-  const getPriv = (c: GoogleTestRunnable): GoogleRunnablePriv => (c as unknown) as GoogleRunnablePriv;
 
   let imitation: Imitation;
 
@@ -90,7 +81,8 @@ describe(pathlib.basename(__filename), function () {
         '  MaximumTest',
         '',
       ];
-      const res = getPriv(runnable)._reloadFromString(testOutput.join(EOL));
+
+      const res = await runnable['_reloadFromString'](testOutput.join(EOL));
 
       const tests = [...res.tests].sort((a, b) => a.testNameAsId.localeCompare(b.testNameAsId));
 
@@ -229,7 +221,7 @@ describe(pathlib.basename(__filename), function () {
         '  </testsuite>',
         '</testsuites>',
       ];
-      const res = getPriv(runnable)._reloadFromXml(testOutput.join(EOL));
+      const res = await runnable['_reloadFromXml'](testOutput.join(EOL));
 
       const tests = [...res.tests].sort((a, b) => a.testNameAsId.localeCompare(b.testNameAsId));
 

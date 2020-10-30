@@ -6,11 +6,11 @@ import { AbstractRunnable } from './AbstractRunnable';
 import * as c2fs from './FSWrapper';
 import { getAbsolutePath, findURIs } from './Util';
 import {
-  resolveVariables,
   resolveOSEnvironmentVariables,
-  ResolveRule,
   createPythonIndexerForPathVariable,
   createPythonIndexerForStringVariable,
+  resolveVariablesAsync,
+  ResolveRuleAsync,
 } from './util/ResolveRule';
 import { RunnableFactory } from './RunnableFactory';
 import { SharedVariables } from './SharedVariables';
@@ -124,7 +124,7 @@ export class ExecutableConfig implements vscode.Disposable {
   private readonly _runnables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
 
   public async load(rootSuite: RootSuite): Promise<Error[]> {
-    const pattern = this._pathProcessor(this._pattern);
+    const pattern = await this._pathProcessor(this._pattern);
 
     this._shared.log.info('pattern', this._pattern, this._shared.workspaceFolder.uri.fsPath, pattern);
 
@@ -176,44 +176,39 @@ export class ExecutableConfig implements vscode.Disposable {
       if (this._isDuplicate(file)) continue;
 
       suiteCreationAndLoadingTasks.push(
-        c2fs.isNativeExecutableAsync(file).then(
-          () => {
-            return this._createSuiteByUri(file, rootSuite)
-              .create(false)
-              .then(
-                (suite: AbstractRunnable) => {
-                  return suite.reloadTests(this._shared.taskPool).then(
-                    () => {
-                      this._runnables.set(file, suite);
-                    },
-                    (reason: Error) => {
-                      this._shared.log.warn("Couldn't load executable", reason, suite);
-                      if (
-                        this._strictPattern === true ||
-                        (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
-                      )
-                        throw Error(
-                          `Coudn\'t load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
-                        );
-                    },
+        (async (): Promise<void> => {
+          try {
+            await c2fs.isNativeExecutableAsync(file);
+            try {
+              const factory = await this._createSuiteByUri(file, rootSuite);
+              const suite = await factory.create(false);
+              try {
+                await suite.reloadTests(this._shared.taskPool);
+                this._runnables.set(file, suite);
+              } catch (reason) {
+                this._shared.log.warn("Couldn't load executable", reason, suite);
+                if (
+                  this._strictPattern === true ||
+                  (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
+                )
+                  throw Error(
+                    `Coudn\'t load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
                   );
-                },
-                (reason: Error) => {
-                  this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
-                  if (
-                    this._strictPattern === true ||
-                    (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
-                  )
-                    throw Error(
-                      `Coudn\'t load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
-                    );
-                },
-              );
-          },
-          (reason: Error) => {
+              }
+            } catch (reason) {
+              this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
+              if (
+                this._strictPattern === true ||
+                (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
+              )
+                throw Error(
+                  `Coudn\'t load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
+                );
+            }
+          } catch (reason) {
             this._shared.log.debug('Not an executable:', file, reason);
-          },
-        ),
+          }
+        })(),
       );
     }
 
@@ -233,7 +228,7 @@ export class ExecutableConfig implements vscode.Disposable {
         const absPatterns: string[] = [];
 
         for (const pattern of this._dependsOn) {
-          const p = this._pathProcessor(pattern);
+          const p = await this._pathProcessor(pattern);
           if (p.isPartOfWs) {
             const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.relativeToWsPosix);
             this._disposables.push(w);
@@ -272,16 +267,16 @@ export class ExecutableConfig implements vscode.Disposable {
     return [];
   }
 
-  private _pathProcessor(
+  private async _pathProcessor(
     path: string,
-  ): {
+  ): Promise<{
     isAbsolute: boolean;
     absPath: string;
     isPartOfWs: boolean;
     relativeToWsPosix: string;
-  } {
+  }> {
     path = resolveOSEnvironmentVariables(path, false);
-    path = resolveVariables(path, this._shared.varToValue);
+    path = await resolveVariablesAsync(path, this._shared.varToValue);
 
     const normPattern = path.replace(/\\/g, '/');
     const isAbsolute = pathlib.isAbsolute(normPattern);
@@ -298,14 +293,14 @@ export class ExecutableConfig implements vscode.Disposable {
     };
   }
 
-  private _createSuiteByUri(filePath: string, rootSuite: RootSuite): RunnableFactory {
+  private async _createSuiteByUri(filePath: string, rootSuite: RootSuite): Promise<RunnableFactory> {
     const relPath = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
-    let varToValue: ResolveRule[] = [];
+    let varToValue: ResolveRuleAsync[] = [];
 
     const subPath = createPythonIndexerForPathVariable;
 
-    const subFilename = (valName: string, filename: string): ResolveRule =>
+    const subFilename = (valName: string, filename: string): ResolveRuleAsync =>
       createPythonIndexerForStringVariable(valName, filename, '.', '.');
 
     try {
@@ -331,7 +326,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
     let resolvedCwd = '.';
     try {
-      resolvedCwd = resolveVariables(this._cwd, varToValue);
+      resolvedCwd = await resolveVariablesAsync(this._cwd, varToValue);
 
       resolvedCwd = resolveOSEnvironmentVariables(resolvedCwd, false);
 
@@ -348,14 +343,14 @@ export class ExecutableConfig implements vscode.Disposable {
     try {
       if (this._env) Object.assign(resolvedEnv, this._env);
 
-      resolvedEnv = resolveVariables(resolvedEnv, varToValue);
+      resolvedEnv = await resolveVariablesAsync(resolvedEnv, varToValue);
       resolvedEnv = resolveOSEnvironmentVariables(resolvedEnv, true);
     } catch (e) {
       this._shared.log.error('resolvedEnv', e);
     }
 
     if (this._envFile) {
-      const resolvedEnvFile = resolveVariables(this._pathProcessor(this._envFile), varToValue);
+      const resolvedEnvFile = await resolveVariablesAsync(this._pathProcessor(this._envFile), varToValue);
       try {
         const envFromFile = readJSONSync(resolvedEnvFile.absPath);
         if (typeof envFromFile !== 'object') throw Error('envFile is not a JSON object');
@@ -378,8 +373,8 @@ export class ExecutableConfig implements vscode.Disposable {
     let spawner: Spawner = new DefaultSpawner();
     if (this._executionWrapper) {
       try {
-        const resolvedPath = resolveVariables(this._pathProcessor(this._executionWrapper.path), varToValue);
-        const resolvedArgs = resolveVariables(this._executionWrapper.args, varToValue);
+        const resolvedPath = await resolveVariablesAsync(this._pathProcessor(this._executionWrapper.path), varToValue);
+        const resolvedArgs = await resolveVariablesAsync(this._executionWrapper.args, varToValue);
         spawner = new SpawnWithExecutor(resolvedPath.absPath, resolvedArgs);
         this._shared.log.info('executionWrapper was specified', resolvedPath, resolvedArgs);
       } catch (e) {
@@ -474,7 +469,8 @@ export class ExecutableConfig implements vscode.Disposable {
 
     if (isExec) {
       try {
-        const runnable = await this._createSuiteByUri(filePath, rootSuite).create(true);
+        const factory = await this._createSuiteByUri(filePath, rootSuite);
+        const runnable = await factory.create(true);
 
         return this._recursiveHandleRunnable(runnable).catch(reject => {
           this._shared.log.errorS(`_recursiveHandleFile._recursiveHandleFile errors should be handled inside`, reject);

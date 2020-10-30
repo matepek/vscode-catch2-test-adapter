@@ -36,7 +36,7 @@ export class DOCRunnable extends AbstractRunnable {
     }
   }
 
-  private _reloadFromString(testListOutput: string): RunnableReloadResult {
+  private async _reloadFromString(testListOutput: string): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
 
     let res: XmlObject = {};
@@ -63,7 +63,7 @@ export class DOCRunnable extends AbstractRunnable {
       const skipped = skippedOpt !== undefined ? skippedOpt : false;
 
       reloadResult.add(
-        ...this._createSubtreeAndAddTest(
+        ...(await this._createSubtreeAndAddTest(
           testGrouping,
           testName,
           testName,
@@ -71,7 +71,7 @@ export class DOCRunnable extends AbstractRunnable {
           [],
           (parent: Suite) => new DOCTest(this._shared, this, parent, testName, skipped, filePath, line, tags),
           (old: AbstractTest): boolean => (old as DOCTest).update(filePath, line, tags, skipped),
-        ),
+        )),
       );
     }
 

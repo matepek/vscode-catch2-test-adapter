@@ -36,7 +36,7 @@ export class Catch2Runnable extends AbstractRunnable {
     }
   }
 
-  private _reloadFromString(testListOutput: string): RunnableReloadResult {
+  private async _reloadFromString(testListOutput: string): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
     const lines = testListOutput.split(/\r?\n/);
 
@@ -128,7 +128,7 @@ export class Catch2Runnable extends AbstractRunnable {
       }
 
       reloadResult.add(
-        ...this._createSubtreeAndAddTest(
+        ...(await this._createSubtreeAndAddTest(
           testGrouping,
           testName,
           testName,
@@ -147,7 +147,7 @@ export class Catch2Runnable extends AbstractRunnable {
               description,
             ),
           (old: AbstractTest): boolean => (old as Catch2Test).update(tags, filePath, line, description),
-        ),
+        )),
       );
     }
 
@@ -156,7 +156,7 @@ export class Catch2Runnable extends AbstractRunnable {
     return reloadResult;
   }
 
-  private _reloadFromXml(testListOutput: string): RunnableReloadResult {
+  private async _reloadFromXml(testListOutput: string): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
 
     let res: XmlObject = {};
@@ -187,7 +187,7 @@ export class Catch2Runnable extends AbstractRunnable {
       }
 
       reloadResult.add(
-        ...this._createSubtreeAndAddTest(
+        ...(await this._createSubtreeAndAddTest(
           testGrouping,
           testName,
           testName,
@@ -196,7 +196,7 @@ export class Catch2Runnable extends AbstractRunnable {
           (parent: Suite) =>
             new Catch2Test(this._shared, this, parent, this._catch2Version, testName, tags, filePath, line, className),
           (old: AbstractTest): boolean => (old as Catch2Test).update(tags, filePath, line, className),
-        ),
+        )),
       );
     }
 

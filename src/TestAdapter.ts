@@ -15,7 +15,7 @@ import { Configurations, Config } from './Configurations';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 import { AbstractTest, AbstractTestEvent } from './AbstractTest';
-import { ResolveRule, resolveVariables } from './util/ResolveRule';
+import { ResolveRuleAsync, resolveVariablesAsync } from './util/ResolveRule';
 import { inspect } from 'util';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
@@ -176,7 +176,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     const executeTaskQueue = new TaskQueue();
     const executeTask = (
       taskName: string,
-      varToValue: readonly ResolveRule[],
+      varToValue: readonly ResolveRuleAsync[],
       cancellationToken: vscode.CancellationToken,
     ): Promise<number | undefined> => {
       return executeTaskQueue.then(async () => {
@@ -188,7 +188,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           throw Error(msg);
         }
 
-        const resolvedTask = resolveVariables(found, varToValue);
+        const resolvedTask = await resolveVariablesAsync(found, varToValue);
         // Task.name setter needs to be triggered in order for the task to clear its __id field
         // (https://github.com/microsoft/vscode/blob/ba33738bb3db01e37e3addcdf776c5a68d64671c/src/vs/workbench/api/common/extHostTypes.ts#L1976),
         // otherwise task execution fails with "Task not found".
@@ -228,7 +228,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
     };
 
-    const variableToValue: ResolveRule[] = [
+    const variableToValue: ResolveRuleAsync[] = [
       { resolve: '${workspaceName}', rule: this.workspaceFolder.name }, // beware changing this line or the order
       { resolve: '${workspaceDirectory}', rule: this.workspaceFolder.uri.fsPath },
       { resolve: '${workspaceFolder}', rule: this.workspaceFolder.uri.fsPath },
@@ -237,7 +237,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       { resolve: '${osEnvSep}', rule: process.platform === 'win32' ? ';' : ':' }, // deprecated
       {
         resolve: /\$\{if\(isWin\)\}(.*?)\$\{else\}(.*?)\$\{endif\}/,
-        rule: (m: RegExpMatchArray): string => (process.platform === 'win32' ? m[1] : m[2]),
+        rule: (m: RegExpMatchArray): Promise<string> => Promise.resolve(process.platform === 'win32' ? m[1] : m[2]),
       },
     ];
 
@@ -562,20 +562,26 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         }
       }
 
-      const varToResolve: ResolveRule[] = [
+      const argsArrayFunc = async (): Promise<string[]> => argsArray;
+
+      const varToResolve: ResolveRuleAsync[] = [
         ...runnable.properties.varToValue,
         { resolve: '${suitelabel}', rule: suiteLabels }, // deprecated
         { resolve: '${suiteLabel}', rule: suiteLabels },
         { resolve: '${label}', rule: label },
         { resolve: '${exec}', rule: runnable.properties.path },
-        { resolve: '${args}', rule: argsArray }, // deprecated
-        { resolve: '${argsArray}', rule: argsArray },
+        { resolve: '${args}', rule: argsArrayFunc }, // deprecated
+        { resolve: '${argsArray}', rule: argsArrayFunc },
         { resolve: '${argsStr}', rule: '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"' },
         { resolve: '${cwd}', rule: runnable.properties.options.cwd! },
-        { resolve: '${envObj}', rule: Object.assign(Object.assign({}, process.env), runnable.properties.options.env!) },
+        {
+          resolve: '${envObj}',
+          rule: async (): Promise<NodeJS.ProcessEnv> =>
+            Object.assign(Object.assign({}, process.env), runnable.properties.options.env!),
+        },
       ];
 
-      const debugConfig = resolveVariables(debugConfigTemplate, varToResolve);
+      const debugConfig = await resolveVariablesAsync(debugConfigTemplate, varToResolve);
 
       // we dont know better :(
       // https://github.com/Microsoft/vscode/issues/70125

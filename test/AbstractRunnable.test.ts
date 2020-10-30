@@ -5,7 +5,7 @@ import { RunnableProperties } from '../src/RunnableProperties';
 import { RunnableReloadResult, AbstractRunnable } from '../src/AbstractRunnable';
 import { AbstractTest, StaticTestEventBase, AbstractTestEvent } from '../src/AbstractTest';
 import * as sinon from 'sinon';
-import { TestGrouping, GroupByExecutable } from '../src/TestGroupingInterface';
+import { TestGrouping } from '../src/TestGroupingInterface';
 import { Suite } from '../src/Suite';
 import { CancellationTokenSource } from 'vscode';
 import { DefaultSpawner } from '../src/Spawner';
@@ -75,24 +75,6 @@ class Test extends AbstractTest {
   }
 }
 
-type RunnablePriv = {
-  _createSubtreeAndAddTest(
-    testGrouping: TestGrouping,
-    testNameAsId: string,
-    testName: string,
-    file: string | undefined,
-    tags: string[], // in case of google test it is the TestCase
-    createTest: (parent: Suite) => AbstractTest,
-    updateTest: (old: AbstractTest) => boolean,
-  ): [AbstractTest, boolean];
-  _reloadChildren(): Promise<RunnableReloadResult>;
-  _reloadFromString(testListOutput: string): RunnableReloadResult;
-  _reloadFromXml(testListOutput: string): RunnableReloadResult;
-  _getGroupByExecutable(): GroupByExecutable;
-};
-
-const getPriv = (c: Runnable): RunnablePriv => (c as unknown) as RunnablePriv;
-
 const groupByExec: TestGrouping = { groupByExecutable: {} };
 
 ///
@@ -141,7 +123,7 @@ describe(pathlib.basename(__filename), function () {
     reloadStub.callsFake(
       async (): Promise<RunnableReloadResult> => {
         return new RunnableReloadResult().add(
-          ...getPriv(runnable)._createSubtreeAndAddTest(
+          ...(await runnable['_createSubtreeAndAddTest'](
             groupByExec,
             'test1nameid',
             'test1name',
@@ -164,7 +146,7 @@ describe(pathlib.basename(__filename), function () {
             () => {
               return false;
             },
-          ),
+          )),
         );
       },
     );
@@ -185,7 +167,7 @@ describe(pathlib.basename(__filename), function () {
       async (): Promise<RunnableReloadResult> => {
         return new RunnableReloadResult()
           .add(
-            ...getPriv(runnable)._createSubtreeAndAddTest(
+            ...(await runnable['_createSubtreeAndAddTest'](
               groupByExec,
               'test1nameid',
               'test1name',
@@ -208,10 +190,10 @@ describe(pathlib.basename(__filename), function () {
               () => {
                 return false;
               },
-            ),
+            )),
           )
           .add(
-            ...getPriv(runnable)._createSubtreeAndAddTest(
+            ...(await runnable['_createSubtreeAndAddTest'](
               groupByExec,
               'test2nameid',
               'test2name',
@@ -233,7 +215,7 @@ describe(pathlib.basename(__filename), function () {
               () => {
                 return true;
               },
-            ),
+            )),
           );
       },
     );
@@ -253,7 +235,7 @@ describe(pathlib.basename(__filename), function () {
     reloadStub.callsFake(
       async (): Promise<RunnableReloadResult> => {
         return new RunnableReloadResult().add(
-          ...getPriv(runnable)._createSubtreeAndAddTest(
+          ...(await runnable['_createSubtreeAndAddTest'](
             groupByExec,
             'test1nameid',
             'test1name',
@@ -276,7 +258,7 @@ describe(pathlib.basename(__filename), function () {
             () => {
               return false;
             },
-          ),
+          )),
         );
       },
     );
@@ -311,7 +293,7 @@ describe(pathlib.basename(__filename), function () {
         async (): Promise<RunnableReloadResult> => {
           return new RunnableReloadResult()
             .add(
-              ...getPriv(runnable)._createSubtreeAndAddTest(
+              ...(await runnable['_createSubtreeAndAddTest'](
                 groupByExec,
                 'test1nameid',
                 'test1name',
@@ -334,10 +316,10 @@ describe(pathlib.basename(__filename), function () {
                 () => {
                   return false;
                 },
-              ),
+              )),
             )
             .add(
-              ...getPriv(runnable)._createSubtreeAndAddTest(
+              ...(await runnable['_createSubtreeAndAddTest'](
                 groupByExec,
                 'test2nameid',
                 'test2name',
@@ -360,10 +342,10 @@ describe(pathlib.basename(__filename), function () {
                 () => {
                   return false;
                 },
-              ),
+              )),
             )
             .add(
-              ...getPriv(runnable)._createSubtreeAndAddTest(
+              ...(await runnable['_createSubtreeAndAddTest'](
                 groupByExec,
                 'test3nameid',
                 'test3name',
@@ -386,10 +368,10 @@ describe(pathlib.basename(__filename), function () {
                 () => {
                   return false;
                 },
-              ),
+              )),
             )
             .add(
-              ...getPriv(runnable)._createSubtreeAndAddTest(
+              ...(await runnable['_createSubtreeAndAddTest'](
                 groupByExec,
                 'test4nameid',
                 'test4name',
@@ -412,7 +394,7 @@ describe(pathlib.basename(__filename), function () {
                 () => {
                   return false;
                 },
-              ),
+              )),
             );
         },
       );

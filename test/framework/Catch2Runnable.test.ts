@@ -7,7 +7,6 @@ import { Catch2Runnable } from '../../src/framework/Catch2Runnable';
 import { RootSuite } from '../../src/RootSuite';
 import { RunnableProperties } from '../../src/RunnableProperties';
 import { expectedLoggedWarning } from '../LogOutputContent.test';
-import { RunnableReloadResult } from '../../src/AbstractRunnable';
 import { EOL } from 'os';
 import { DefaultSpawner } from '../../src/Spawner';
 
@@ -38,14 +37,6 @@ describe(pathlib.basename(__filename), function () {
     return { root, runnable: new Catch2Runnable(sharedVariables, root, runnableProperties, new Version(2, 11, 0)) };
   };
 
-  type Catch2RunnablePriv = {
-    _reloadChildren(): Promise<RunnableReloadResult>;
-    _reloadFromString(testListOutput: string): RunnableReloadResult;
-    _reloadFromXml(testListOutput: string): RunnableReloadResult;
-  };
-
-  const getPriv = (c: Catch2Runnable): Catch2RunnablePriv => (c as unknown) as Catch2RunnablePriv;
-
   let imitation: Imitation;
 
   before(function () {
@@ -73,7 +64,7 @@ describe(pathlib.basename(__filename), function () {
         '      [a]',
         '1 matching test case',
       ];
-      const res = getPriv(runnable)._reloadFromString(testOutput.join(EOL));
+      const res = await runnable['_reloadFromString'](testOutput.join(EOL));
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -113,7 +104,7 @@ describe(pathlib.basename(__filename), function () {
         '      [b]',
         '2 matching test cases',
       ];
-      const res = getPriv(runnable)._reloadFromString(testOutput.join(EOL));
+      const res = await runnable['_reloadFromString'](testOutput.join(EOL));
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -149,7 +140,7 @@ describe(pathlib.basename(__filename), function () {
         '1 matching test case',
         'bla bla bla',
       ];
-      const res = getPriv(runnable)._reloadFromString(testOutput.join(EOL));
+      const res = await runnable['_reloadFromString'](testOutput.join(EOL));
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -191,7 +182,7 @@ describe(pathlib.basename(__filename), function () {
         '    (NO DESCRIPTION)',
         '5 matching test cases',
       ];
-      const res = getPriv(runnable)._reloadFromString(testOutput.join(EOL));
+      const res = await runnable['_reloadFromString'](testOutput.join(EOL));
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -256,7 +247,7 @@ describe(pathlib.basename(__filename), function () {
         )
         .returns(new ChildProcessStub('Matching test cases:' + EOL, undefined, testListErrOutput.join(EOL)));
 
-      const res = await getPriv(runnable)._reloadChildren();
+      const res = await await runnable['_reloadChildren']();
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 

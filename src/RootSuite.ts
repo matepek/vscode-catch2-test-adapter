@@ -5,8 +5,8 @@ import { Suite } from './Suite';
 import { AbstractRunnable } from './AbstractRunnable';
 import { AbstractTest } from './AbstractTest';
 import { SharedVariables } from './SharedVariables';
-import { ResolveRule } from './util/ResolveRule';
 import { generateId } from './Util';
+import { ResolveRuleAsync } from './util/ResolveRule';
 
 export class RootSuite extends Suite implements vscode.Disposable {
   private _executables: ExecutableConfig[] = [];
@@ -150,9 +150,13 @@ export class RootSuite extends Suite implements vscode.Disposable {
 
     if (runTasks.size === 0) return;
 
-    const varToValue: ResolveRule[] = [
+    const varToValue: ResolveRuleAsync[] = [
       ...this._shared.varToValue,
-      { resolve: '${absPathArrayFlat}', rule: runnableExecArray, isFlat: true },
+      {
+        resolve: '${absPathArrayFlat}',
+        rule: (): Promise<string[]> => Promise.resolve(runnableExecArray),
+        isFlat: true,
+      },
       { resolve: '${absPathConcatWithSpace}', rule: runnableExecArray.map(r => `"${r}"`).join(' ') },
     ];
 

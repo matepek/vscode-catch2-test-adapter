@@ -31,28 +31,28 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
     }
   }
 
-  private _reloadFromString(stdOutStr: string): RunnableReloadResult {
+  private async _reloadFromString(stdOutStr: string): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
     const lines = stdOutStr.split(/\r?\n/);
 
     const reloadResult = new RunnableReloadResult();
 
-    lines
-      .filter(x => x.length > 0)
-      .forEach(line => {
-        reloadResult.add(
-          ...this._createSubtreeAndAddTest(
-            testGrouping,
-            line,
-            line,
-            undefined,
-            [],
-            (parent: Suite) =>
-              new GoogleBenchmarkTest(this._shared, this, parent, line, this.properties.failIfExceedsLimitNs),
-            (old: AbstractTest) => (old as GoogleBenchmarkTest).update(this.properties.failIfExceedsLimitNs),
-          ),
-        );
-      });
+    const filteredLines = lines.filter(x => x.length > 0);
+
+    for (const line of filteredLines) {
+      reloadResult.add(
+        ...(await this._createSubtreeAndAddTest(
+          testGrouping,
+          line,
+          line,
+          undefined,
+          [],
+          (parent: Suite) =>
+            new GoogleBenchmarkTest(this._shared, this, parent, line, this.properties.failIfExceedsLimitNs),
+          (old: AbstractTest) => (old as GoogleBenchmarkTest).update(this.properties.failIfExceedsLimitNs),
+        )),
+      );
+    }
 
     return reloadResult;
   }
