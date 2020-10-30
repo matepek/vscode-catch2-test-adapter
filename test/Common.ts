@@ -1,3 +1,6 @@
+import * as sms from 'source-map-support';
+sms.install(); // maps exception location js -> ts
+
 import deepStrictEqual = require('deep-equal');
 import * as assert from 'assert';
 import * as fs from 'fs';

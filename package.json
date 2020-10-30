@@ -34,7 +34,8 @@
     "google mock",
     "doctest",
     "onqtam",
-    "google benchmark"
+    "google benchmark",
+    "gbenchmark"
   ],
   "main": "out/dist/main.js",
   "scripts": {
@@ -69,6 +70,7 @@
     "@types/fs-extra": "^9.0.2",
     "@types/glob": "^7.1.3",
     "@types/mocha": "^8.0.3",
+    "@types/source-map-support": "^0.5.3",
     "@types/node": "^14.14.6",
     "@types/request-promise": "4.1.46",
     "@types/sinon": "^9.0.8",
