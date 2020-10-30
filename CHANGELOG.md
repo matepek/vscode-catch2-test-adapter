@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.5.2]
+
+### Added
+
+- for `testGrouping.groupByRegex` and `testGrouping.groupByTagRegex` added `${match_lowercased}` and `${match_upperfirst}` as alternative of `${match}`.
+  Note: regex can contain one grouping `(...)`.
+
 ## [3.5.1] - 2020-10-29
 
 ### Added

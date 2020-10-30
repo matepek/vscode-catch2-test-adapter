@@ -15,7 +15,7 @@ import {
   ResolveRule,
   createPythonIndexerForPathVariable,
 } from './util/ResolveRule';
-import { TestGrouping, GroupByExecutable } from './TestGroupingInterface';
+import { TestGrouping, GroupByExecutable, GroupByTagRegex, GroupByRegex } from './TestGroupingInterface';
 import { TestEvent } from 'vscode-test-adapter-api';
 import { RootSuite } from './RootSuite';
 import { EOL } from 'os';
@@ -239,28 +239,41 @@ export abstract class AbstractRunnable {
           }
 
           currentGrouping = g;
-        } else if (currentGrouping.groupByTagRegex) {
-          const g = currentGrouping.groupByTagRegex;
+        } else if (currentGrouping.groupByTagRegex || currentGrouping.groupByRegex) {
+          const groupType = currentGrouping.groupByTagRegex ? 'groupByTagRegex' : 'groupByRegex';
+          const g: GroupByTagRegex | GroupByRegex = currentGrouping.groupByTagRegex
+            ? currentGrouping.groupByTagRegex
+            : currentGrouping.groupByRegex!;
+
           this._updateVarsWithTags(tagsResolveRule, g, tags);
 
           if (g.regexes) {
             if (Array.isArray(g.regexes) && g.regexes.length > 0 && g.regexes.every(v => typeof v === 'string')) {
               let match: RegExpMatchArray | null = null;
 
+              const matchOn = groupType == 'groupByTagRegex' ? tags : [testName];
+
               let reIndex = 0;
               while (reIndex < g.regexes.length && match == null) {
                 let tagIndex = 0;
-                while (tagIndex < tags.length && match == null) {
-                  match = tags[tagIndex++].match(g.regexes[reIndex]);
+                while (tagIndex < matchOn.length && match == null) {
+                  match = matchOn[tagIndex++].match(g.regexes[reIndex]);
                 }
                 reIndex++;
               }
 
               if (match) {
-                this._shared.log.info('groupByTagRegex matched on', testName, g.regexes[reIndex - 1]);
+                this._shared.log.info(groupType + ' matched on', testName, g.regexes[reIndex - 1]);
                 const matchGroup = match[1] ? match[1] : match[0];
 
-                const matchVar: ResolveRule[] = [{ resolve: '${match}', rule: matchGroup }];
+                const matchVar: ResolveRule[] = [
+                  { resolve: '${match}', rule: matchGroup },
+                  { resolve: '${match_lowercased}', rule: (): string => matchGroup.toLocaleLowerCase() },
+                  {
+                    resolve: '${match_upperfirst}',
+                    rule: (): string => matchGroup[0].toLocaleUpperCase() + matchGroup.substr(1),
+                  },
+                ];
 
                 const label = g.label ? this._resolveText(g.label, ...matchVar) : matchGroup;
                 const description =
@@ -271,42 +284,10 @@ export abstract class AbstractRunnable {
                 group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
               }
             } else {
-              this._shared.log.warn('groupByTagRegex.regexes should be a non-empty array of strings.', g.regexes);
+              this._shared.log.warn(groupType + '.regexes should be a non-empty array of strings.', g.regexes);
             }
           } else {
-            this._shared.log.warn('groupByTagRegex missing "regexes": skipping grouping level');
-          }
-          currentGrouping = g;
-        } else if (currentGrouping.groupByRegex) {
-          const g = currentGrouping.groupByRegex;
-          this._updateVarsWithTags(tagsResolveRule, g, tags);
-
-          if (g.regexes) {
-            if (Array.isArray(g.regexes) && g.regexes.length > 0 && g.regexes.every(v => typeof v === 'string')) {
-              let match: RegExpMatchArray | null = null;
-
-              let index = 0;
-              while (index < g.regexes.length && match == null) match = testName.match(g.regexes[index++]);
-
-              if (match) {
-                this._shared.log.info('groupByRegex matched on', testName, g.regexes[index - 1]);
-                const matchGroup = match[1] ? match[1] : match[0];
-
-                const matchVar: ResolveRule[] = [{ resolve: '${match}', rule: matchGroup }];
-
-                const label = g.label ? this._resolveText(g.label, ...matchVar) : matchGroup;
-                const description =
-                  g.description !== undefined ? this._resolveText(g.description, ...matchVar) : undefined;
-
-                group = this._resolveAndGetOrCreateChildSuite(vars, group, label, description, undefined);
-              } else if (g.groupUngroupedTo) {
-                group = this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
-              }
-            } else {
-              this._shared.log.warn('groupByRegex.regexes should be a non-empty array of strings.', g.regexes);
-            }
-          } else {
-            this._shared.log.warn('groupByRegex missing "regexes": skipping grouping level');
+            this._shared.log.warn(groupType + ' missing "regexes": skipping grouping level');
           }
           currentGrouping = g;
         } else {

@@ -490,7 +490,7 @@
                         }
                       },
                       "groupByTagRegex": {
-                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
@@ -534,7 +534,7 @@
                         ]
                       },
                       "groupByRegex": {
-                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
@@ -732,7 +732,7 @@
                         }
                       },
                       "groupByTagRegex": {
-                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
@@ -776,7 +776,7 @@
                         ]
                       },
                       "groupByRegex": {
-                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
@@ -968,7 +968,7 @@
                         }
                       },
                       "groupByTagRegex": {
-                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
@@ -1012,7 +1012,7 @@
                         ]
                       },
                       "groupByRegex": {
-                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
@@ -1204,7 +1204,7 @@
                         }
                       },
                       "groupByTagRegex": {
-                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
@@ -1248,7 +1248,7 @@
                         ]
                       },
                       "groupByRegex": {
-                        "markdownDescription": "Groups tests by [regex](https://regex101.com/). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {

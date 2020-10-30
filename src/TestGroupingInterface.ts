@@ -22,20 +22,13 @@ export interface GroupByTags extends TestGrouping {
 export interface GroupByTagRegex extends TestGrouping {
   regexes?: string[];
 
-  label?: string; // ${match} will by substituted
+  label?: string; // ${match}, ${match_lowercased}, ${match_upperfirst} will by substituted
   description?: string;
 
   groupUngroupedTo?: string;
 }
 
-export interface GroupByRegex extends TestGrouping {
-  regexes?: string[];
-
-  label?: string; // ${match} will by substituted
-  description?: string;
-
-  groupUngroupedTo?: string;
-}
+export type GroupByRegex = GroupByTagRegex;
 
 ///
 
