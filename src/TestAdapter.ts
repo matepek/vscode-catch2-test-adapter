@@ -242,13 +242,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       { resolve: '${workspaceFolder}', rule: this.workspaceFolder.uri.fsPath },
       { resolve: '${osPathSep}', rule: osPathSeparator },
       { resolve: '${osPathEnvSep}', rule: process.platform === 'win32' ? ';' : ':' },
-      { resolve: '${osEnvSep}', rule: process.platform === 'win32' ? ';' : ':' }, // deprecated
       {
-        resolve: /\$\{if\(isWin\)\}(.*?)\$\{else\}(.*?)\$\{endif\}/,
-        rule: (m: RegExpMatchArray): Promise<string> => Promise.resolve(process.platform === 'win32' ? m[1] : m[2]),
-      },
-      {
-        resolve: /\${command:([^ ]+)}/,
+        resolve: /\$\{command:([^}]+)\}/,
         rule: async (m: RegExpMatchArray): Promise<string> => {
           try {
             const ruleV = await vscode.commands.executeCommand<string>(m[1]);

@@ -17,6 +17,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - source file resolution
 
+### Removed
+
+- `${if(isWin)...}`
+- `${osEnvSep}`. Use `${osPathEnvSep}` instead.
+
 ## [3.5.3] - 2020-10-30
 
 ### Fixed

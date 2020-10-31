@@ -253,14 +253,13 @@ export function createPythonIndexerForStringVariable(
   separator: string | RegExp,
   join: string,
 ): ResolveRegexRuleAsync {
-  const varRegex = new RegExp('\\${' + varName + PythonIndexerRegexStr + '?}');
-
+  const resolve = new RegExp('\\$\\{' + varName + PythonIndexerRegexStr + '?\\}');
   const array = value.split(separator);
-  const replacer = async (m: RegExpMatchArray): Promise<string> => {
-    return processArrayWithPythonIndexer(array, m).join(join);
-  };
 
-  return { resolve: varRegex, rule: replacer };
+  return {
+    resolve,
+    rule: async (m: RegExpMatchArray): Promise<string> => processArrayWithPythonIndexer(array, m).join(join),
+  };
 }
 
 export function createPythonIndexerForPathVariable(valName: string, pathStr: string): ResolveRegexRuleAsync {
@@ -270,5 +269,16 @@ export function createPythonIndexerForPathVariable(valName: string, pathStr: str
     /\/|\\/,
     pathlib.sep,
   );
-  return { resolve, rule: async (m: RegExpMatchArray): Promise<string> => pathlib.normalize(await rule(m)) };
+
+  return {
+    resolve,
+    rule: async (m: RegExpMatchArray): Promise<string> => {
+      try {
+        const ruleV = await rule(m);
+        return pathlib.normalize(ruleV);
+      } catch (e) {
+        return m[0];
+      }
+    },
+  };
 }
