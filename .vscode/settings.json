@@ -127,5 +127,6 @@
         "Xx": "xxxx"
       }
     }
-  ]
+  ],
+  "cmake.configureOnOpen": true
 }

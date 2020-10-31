@@ -228,8 +228,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       });
     };
 
+    const workspaceNameRes: ResolveRuleAsync = { resolve: '${workspaceName}', rule: this.workspaceFolder.name };
+
+    this._disposables.push(
+      vscode.workspace.onDidChangeWorkspaceFolders(() => {
+        workspaceNameRes.rule = this.workspaceFolder.name;
+      }),
+    );
+
     const variableToValue: ResolveRuleAsync[] = [
-      { resolve: '${workspaceName}', rule: this.workspaceFolder.name }, // beware changing this line or the order
+      workspaceNameRes,
       { resolve: '${workspaceDirectory}', rule: this.workspaceFolder.uri.fsPath },
       { resolve: '${workspaceFolder}', rule: this.workspaceFolder.uri.fsPath },
       { resolve: '${osPathSep}', rule: osPathSeparator },
@@ -239,13 +247,19 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         resolve: /\$\{if\(isWin\)\}(.*?)\$\{else\}(.*?)\$\{endif\}/,
         rule: (m: RegExpMatchArray): Promise<string> => Promise.resolve(process.platform === 'win32' ? m[1] : m[2]),
       },
+      {
+        resolve: /\${command:([^ ]+)}/,
+        rule: async (m: RegExpMatchArray): Promise<string> => {
+          try {
+            const ruleV = await vscode.commands.executeCommand<string>(m[1]);
+            if (ruleV !== undefined) return ruleV;
+          } catch (reason) {
+            log.warnS("couldn't resolve command", m[0]);
+          }
+          return m[0];
+        },
+      },
     ];
-
-    this._disposables.push(
-      vscode.workspace.onDidChangeWorkspaceFolders(() => {
-        variableToValue[0].rule = this.workspaceFolder.name;
-      }),
-    );
 
     this._shared = new SharedVariables(
       log,

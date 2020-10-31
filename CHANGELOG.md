@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- vscode command resolution `${command:<...>}`:
+  From now variables like `${command:cmake.buildDirectory}` will be resolved.
+
 ### Fixed
 
 - source file resolution
