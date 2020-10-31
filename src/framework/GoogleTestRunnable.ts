@@ -63,7 +63,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
         const typeParam: string | undefined = testCase.$.type_param;
         const valueParam: string | undefined = testCase.$.value_param;
 
-        const file = testCase.$.file ? testCase.$.file : undefined;
+        const file = testCase.$.file ? await this._resolveSourceFilePath(testCase.$.file) : undefined;
         const line = testCase.$.line ? testCase.$.line - 1 : undefined;
 
         reloadResult.add(

@@ -115,6 +115,8 @@ export class Catch2Runnable extends AbstractRunnable {
             this._shared.log.error('Could not find catch2 file info1', lines);
           }
         }
+
+        filePath = await this._resolveSourceFilePath(filePath);
       }
 
       let description = lines[i++].substr(4);
@@ -175,7 +177,9 @@ export class Catch2Runnable extends AbstractRunnable {
       const testCase = testCases[i];
 
       const testName = testCase.Name[0];
-      const filePath = testCase?.SourceInfo ? testCase?.SourceInfo[0].File[0] : undefined;
+      const filePath = testCase?.SourceInfo
+        ? await this._resolveSourceFilePath(testCase?.SourceInfo[0].File[0])
+        : undefined;
       const line = testCase?.SourceInfo ? Number(testCase?.SourceInfo[0].Line[0]) - 1 : undefined;
       const className = testCase.ClassName[0] ? testCase.ClassName[0] : undefined;
 

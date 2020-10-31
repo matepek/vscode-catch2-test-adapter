@@ -135,16 +135,15 @@ export abstract class AbstractRunnable {
     createTest: (parent: Suite) => AbstractTest,
     updateTest: (old: AbstractTest) => boolean,
   ): Promise<[AbstractTest, boolean]> {
-    this._shared.log.info('testGrouping', { testName, testNameAsId, fileIn: file, tags, testGrouping });
+    this._shared.log.info('testGrouping', { testName, testNameAsId, file, tags, testGrouping });
 
     let group = this._rootSuite as Suite;
 
     const tagsVar = '${tags}';
     const tagsResolveRule: ResolveRuleAsync = { resolve: tagsVar, rule: '<will be replaced soon enough>' };
 
-    const resolvedFile = await this._resolveSourceFilePath(file); //TODO: resolve in case of test update too
-    const relPath = resolvedFile ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, resolvedFile) : '';
-    const absPath = resolvedFile ? resolvedFile : '';
+    const relPath = file ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file) : '';
+    const absPath = file ? file : '';
     tags.sort();
 
     const vars: ResolveRuleAsync[] = [
@@ -177,7 +176,7 @@ export abstract class AbstractRunnable {
           const g = currentGrouping.groupBySource;
           this._updateVarsWithTags(tagsResolveRule, g, tags);
 
-          if (resolvedFile) {
+          if (file) {
             const label = g.label ? g.label : relPath;
             const description = g.description;
 
@@ -702,6 +701,8 @@ export abstract class AbstractRunnable {
 
     resolved = await this._resolveText(resolved);
     resolved = this._findFilePath(resolved);
+
+    this._shared.log.debug('_resolveSourceFilePath:', file, '=>', resolved);
 
     return resolved;
   }
