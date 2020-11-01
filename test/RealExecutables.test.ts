@@ -341,7 +341,7 @@ describe(path.basename(__filename), function () {
             finished++;
           });
 
-          p.stdout!.on('data', (chunk: Uint8Array) => {
+          p.stdout.on('data', (chunk: Uint8Array) => {
             const output = chunk.toString();
 
             if (output.indexOf('before') != -1 && output.indexOf('after') == -1) running++;

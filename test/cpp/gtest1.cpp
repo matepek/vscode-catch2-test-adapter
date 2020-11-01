@@ -12,12 +12,14 @@
 
 GTEST_TEST(TestCas1, test1) {
   //
+  std::cerr<<"hello"<<std::endl;
   ASSERT_TRUE(1 == 1);
 }
 
 GTEST_TEST(TestCas1, test2) {
   //
   ASSERT_TRUE(1 == 1);
+  std::cerr<<"hello"<<std::endl;
   ASSERT_TRUE(1 == 2);
 }
 

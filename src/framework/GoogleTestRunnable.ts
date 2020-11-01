@@ -368,8 +368,8 @@ export class GoogleTestRunnable extends AbstractRunnable {
         }
       };
 
-      runInfo.process.stdout!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
-      runInfo.process.stderr!.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
+      runInfo.process.stdout.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
+      runInfo.process.stderr.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
 
       runInfo.process.once('close', (code: number | null, signal: string | null) => {
         if (runInfo.isCancelled) {

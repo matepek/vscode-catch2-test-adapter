@@ -40,12 +40,12 @@ export class DefaultSpawner implements Spawner {
 
       ret.pid = command.pid;
 
-      command.stdout!.on('data', function (data) {
+      command.stdout.on('data', function (data) {
         ret.stdout += data;
         ret.output[1] = ret.stdout;
       });
 
-      command.stderr!.on('data', function (data) {
+      command.stderr.on('data', function (data) {
         ret.stderr += data;
         ret.output[2] = ret.stderr;
       });
