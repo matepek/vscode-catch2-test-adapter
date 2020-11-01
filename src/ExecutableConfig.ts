@@ -350,7 +350,7 @@ export class ExecutableConfig implements vscode.Disposable {
     }
 
     if (this._envFile) {
-      const resolvedEnvFile = await resolveVariablesAsync(this._pathProcessor(this._envFile), varToValue);
+      const resolvedEnvFile = await resolveVariablesAsync(await this._pathProcessor(this._envFile), varToValue);
       try {
         const envFromFile = readJSONSync(resolvedEnvFile.absPath);
         if (typeof envFromFile !== 'object') throw Error('envFile is not a JSON object');
@@ -373,7 +373,10 @@ export class ExecutableConfig implements vscode.Disposable {
     let spawner: Spawner = new DefaultSpawner();
     if (this._executionWrapper) {
       try {
-        const resolvedPath = await resolveVariablesAsync(this._pathProcessor(this._executionWrapper.path), varToValue);
+        const resolvedPath = await resolveVariablesAsync(
+          await this._pathProcessor(this._executionWrapper.path),
+          varToValue,
+        );
         const resolvedArgs = await resolveVariablesAsync(this._executionWrapper.args, varToValue);
         spawner = new SpawnWithExecutor(resolvedPath.absPath, resolvedArgs);
         this._shared.log.info('executionWrapper was specified', resolvedPath, resolvedArgs);

@@ -81,31 +81,55 @@ export class DefaultSpawner implements Spawner {
 ///
 
 export class SpawnWithExecutor extends DefaultSpawner {
-  private readonly _cmdStr = '${cmd}';
-  private readonly _argsStr = '${args}';
+  private readonly _cmdR = '${cmd}';
+  private readonly _argsR = '${args}';
+  private readonly _argsR2 = '${argsFlat}';
+  private readonly _argsStrR = '${argsStr}';
 
   public constructor(private readonly _executor: string, private readonly _args?: string[]) {
     super();
 
-    if (_args && !_args.some(x => x === this._cmdStr)) throw Error(`${this._cmdStr} should be specified`);
-    if (_args && !_args.some(x => x === this._argsStr)) throw Error(`${this._argsStr} should be specified`);
+    if (_args && !_args.some(x => x.indexOf(this._cmdR) != -1)) {
+      throw Error(`${this._cmdR} should be specified`);
+    }
+
+    if (
+      _args &&
+      !_args.some(x => x.indexOf(this._argsR) != -1 || x.indexOf(this._argsR2) != -1 || x.indexOf(this._argsStrR) != -1)
+    ) {
+      throw Error(`${this._argsR}, ${this._argsR2} or ${this._argsStrR} should be specified`);
+    }
   }
 
   spawnAsync(cmd: string, args: string[], options: SpawnOptionsWithoutStdio, timeout?: number): Promise<SpawnReturns> {
-    return super.spawnAsync(this._executor, this.getArgs(cmd, args), options, timeout);
+    const argsV = this.getArgs(cmd, args);
+    return super.spawnAsync(this._executor, argsV, options, timeout);
   }
 
   spawn(cmd: string, args: string[], options: SpawnOptionsWithoutStdio): fsw.ChildProcessWithoutNullStreams {
-    return super.spawn(this._executor, this.getArgs(cmd, args), options);
+    const argsV = this.getArgs(cmd, args);
+    return super.spawn(this._executor, argsV, options);
   }
 
   private getArgs(cmd: string, args: string[]): string[] {
     if (this._args && this._args.length > 0) {
       return this._args
         .map((x: string): string[] => {
-          if (x === this._cmdStr) return [cmd];
-          else if (x === this._argsStr) return args;
-          else return [x];
+          if (x === this._cmdR) {
+            return [cmd];
+          } else if (x === this._argsR || x === this._argsR2) {
+            return args;
+          } else {
+            return [
+              x.replace(this._cmdR, `"${cmd}"`).replace(
+                this._argsStrR,
+                args
+                  .map(a => a.replace(/"/g, '\\"'))
+                  .map(a => `"${a}"`)
+                  .join(' '),
+              ),
+            ];
+          }
         })
         .reduce((prev: string[], curr: string[]): string[] => prev.concat(curr));
     } else {

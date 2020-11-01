@@ -190,7 +190,13 @@ export class RunnableFactory {
         }
 
         throw new Error(
-          'Not a supported test executable: ' + this._spawner + this._execPath + '\n output: ' + runWithHelpRes.stdout,
+          'Not a supported test executable: ' +
+            this._spawner +
+            this._execPath +
+            '\n stdout: ' +
+            runWithHelpRes.stdout +
+            '\n stderr: ' +
+            runWithHelpRes.stderr,
         );
       });
   }

@@ -266,10 +266,23 @@
                     "type": "string"
                   },
                   "args": {
-                    "description": "An array wich specifies the arguments of the executor. It should contain '${cmd}' and '${args}' too. Default: ['${cmd}', '${args}']",
+                    "description": "An array wich specifies the arguments of the executor. It should contain '${cmd}', '${argsFlat}' and '${argsStr}' too. Default: ['${cmd}', '${argsFlat}'].",
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "${cmd}",
+                            "${argsFlat}",
+                            "${argsStr}"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "minLength": 0
+                        }
+                      ]
                     },
                     "minItems": 2
                   }

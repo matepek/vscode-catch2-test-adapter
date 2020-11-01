@@ -360,3 +360,23 @@ Note: This example overused it.
   }
 ]
 ```
+
+#### `executionWrapper`
+
+Examples:
+
+This is useful if stderr/std::cerr is missing:
+
+```json
+"executionWrapper": {
+  "path": "/bin/sh",
+  "args": [ "-c", "${cmd} ${argsStr} 2>&1" ]
+}
+```
+
+```json
+"executionWrapper": {
+  "path": "emulator.exe",
+  "args": [ "${cmd}", "${argsFlat}" ]
+}
+```
