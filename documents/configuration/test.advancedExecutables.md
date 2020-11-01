@@ -363,6 +363,10 @@ Note: This example overused it.
 
 #### `executionWrapper`
 
+- `${cmd}`
+- `${argsFlat}`: Exmaple: `["pre", "${argsFlat}", "post"]` -> `["pre", "$1", "$2", ..., "$x", "post"]`
+- `${argsStr}`: Exmaple: `["pre", "pre ${argsStr} post", "post"]` -> `["pre", " pre \"$1\" \"$2\" ... \"$x\" post", "post"]`
+
 Examples:
 
 This is useful if stderr/std::cerr is missing:
@@ -370,7 +374,7 @@ This is useful if stderr/std::cerr is missing:
 ```json
 "executionWrapper": {
   "path": "/bin/sh",
-  "args": [ "-c", "${cmd} ${argsStr} 2>&1" ]
+  "args": [ "-c", "\"${cmd}\" ${argsStr} 2>&1" ]
 }
 ```
 

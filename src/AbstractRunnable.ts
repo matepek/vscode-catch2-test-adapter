@@ -588,7 +588,7 @@ export abstract class AbstractRunnable {
     });
   }
 
-  private _runProcess(
+  private async _runProcess(
     testRunId: string,
     childrenToRun: readonly AbstractTest[],
     cancellationToken: CancellationToken,
@@ -598,7 +598,7 @@ export abstract class AbstractRunnable {
     this._shared.log.info('proc starting', this.properties.path, execParams);
 
     const runInfo = new RunningRunnable(
-      this.properties.spawner.spawn(this.properties.path, execParams, this.properties.options),
+      await this.properties.spawner.spawn(this.properties.path, execParams, this.properties.options),
       childrenToRun,
       cancellationToken,
     );

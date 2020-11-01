@@ -13,7 +13,7 @@ export type SpawnOptionsWithoutStdio = fsw.SpawnOptionsWithoutStdio;
 export interface Spawner {
   spawnAsync(cmd: string, args: string[], options: SpawnOptionsWithoutStdio, timeout?: number): Promise<SpawnReturns>;
 
-  spawn(cmd: string, args: string[], options: SpawnOptionsWithoutStdio): fsw.ChildProcessWithoutNullStreams;
+  spawn(cmd: string, args: string[], options: SpawnOptionsWithoutStdio): Promise<fsw.ChildProcessWithoutNullStreams>;
 }
 
 ///
@@ -69,8 +69,8 @@ export class DefaultSpawner implements Spawner {
     });
   }
 
-  spawn(cmd: string, args: string[], options: SpawnOptionsWithoutStdio): fsw.ChildProcessWithoutNullStreams {
-    return fsw.spawn(cmd, args, options);
+  spawn(cmd: string, args: string[], options: SpawnOptionsWithoutStdio): Promise<fsw.ChildProcessWithoutNullStreams> {
+    return Promise.resolve(fsw.spawn(cmd, args, options));
   }
 
   public toString(): string {
@@ -82,7 +82,7 @@ export class DefaultSpawner implements Spawner {
 
 export class SpawnWithExecutor extends DefaultSpawner {
   private readonly _cmdR = '${cmd}';
-  private readonly _argsR = '${args}';
+  private readonly _argsR = '${args}'; // deprecated
   private readonly _argsR2 = '${argsFlat}';
   private readonly _argsStrR = '${argsStr}';
 
@@ -97,21 +97,30 @@ export class SpawnWithExecutor extends DefaultSpawner {
       _args &&
       !_args.some(x => x.indexOf(this._argsR) != -1 || x.indexOf(this._argsR2) != -1 || x.indexOf(this._argsStrR) != -1)
     ) {
-      throw Error(`${this._argsR}, ${this._argsR2} or ${this._argsStrR} should be specified`);
+      throw Error(`${this._argsR2} or ${this._argsStrR} should be specified`);
     }
   }
 
-  spawnAsync(cmd: string, args: string[], options: SpawnOptionsWithoutStdio, timeout?: number): Promise<SpawnReturns> {
-    const argsV = this.getArgs(cmd, args);
+  async spawnAsync(
+    cmd: string,
+    args: string[],
+    options: SpawnOptionsWithoutStdio,
+    timeout?: number,
+  ): Promise<SpawnReturns> {
+    const argsV = await this.getArgs(cmd, args);
     return super.spawnAsync(this._executor, argsV, options, timeout);
   }
 
-  spawn(cmd: string, args: string[], options: SpawnOptionsWithoutStdio): fsw.ChildProcessWithoutNullStreams {
-    const argsV = this.getArgs(cmd, args);
+  async spawn(
+    cmd: string,
+    args: string[],
+    options: SpawnOptionsWithoutStdio,
+  ): Promise<fsw.ChildProcessWithoutNullStreams> {
+    const argsV = await this.getArgs(cmd, args);
     return super.spawn(this._executor, argsV, options);
   }
 
-  private getArgs(cmd: string, args: string[]): string[] {
+  private async getArgs(cmd: string, args: string[]): Promise<string[]> {
     if (this._args && this._args.length > 0) {
       return this._args
         .map((x: string): string[] => {
@@ -121,7 +130,7 @@ export class SpawnWithExecutor extends DefaultSpawner {
             return args;
           } else {
             return [
-              x.replace(this._cmdR, `"${cmd}"`).replace(
+              x.replace(this._cmdR, `${cmd}`).replace(
                 this._argsStrR,
                 args
                   .map(a => a.replace(/"/g, '\\"'))
