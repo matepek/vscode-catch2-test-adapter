@@ -1,4 +1,5 @@
 import * as fsw from './FSWrapper';
+import { resolveVariablesAsync } from './util/ResolveRule';
 
 ///
 
@@ -122,25 +123,36 @@ export class SpawnWithExecutor extends DefaultSpawner {
 
   private async getArgs(cmd: string, args: string[]): Promise<string[]> {
     if (this._args && this._args.length > 0) {
-      return this._args
-        .map((x: string): string[] => {
-          if (x === this._cmdR) {
-            return [cmd];
-          } else if (x === this._argsR || x === this._argsR2) {
-            return args;
-          } else {
-            return [
-              x.replace(this._cmdR, `${cmd}`).replace(
-                this._argsStrR,
-                args
-                  .map(a => a.replace(/"/g, '\\"'))
-                  .map(a => `"${a}"`)
-                  .join(' '),
-              ),
-            ];
-          }
-        })
-        .reduce((prev: string[], curr: string[]): string[] => prev.concat(curr));
+      const argsFlat = (): Promise<string[]> => Promise.resolve(args);
+
+      const argsResolved = await resolveVariablesAsync(this._args, [
+        {
+          resolve: this._cmdR,
+          rule: cmd,
+        },
+        {
+          resolve: this._argsR,
+          rule: argsFlat,
+          isFlat: true,
+        },
+        {
+          resolve: this._argsR2,
+          rule: argsFlat,
+          isFlat: true,
+        },
+        {
+          resolve: this._argsStrR,
+          rule: (): Promise<string> =>
+            Promise.resolve(
+              args
+                .map(a => a.replace(/"/g, '\\"'))
+                .map(a => `"${a}"`)
+                .join(' '),
+            ),
+        },
+      ]);
+
+      return argsResolved;
     } else {
       return [cmd, ...args];
     }
