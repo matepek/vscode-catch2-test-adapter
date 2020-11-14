@@ -1,5 +1,4 @@
 import * as pathlib from 'path';
-import { processors } from 'xml2js';
 
 ///
 

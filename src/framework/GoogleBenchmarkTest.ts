@@ -43,24 +43,24 @@ export class GoogleBenchmarkTest extends AbstractTest {
 
   public static readonly failureRe = /^((.+)[:\(]([0-9]+)\)?): ((Failure|EXPECT_CALL|error: )(.*))$/;
 
-  private _getTimeUnitMultiplier(metric: Record<string, string | number>): number {
+  private _getTimeUnitMultiplier(metric: Record<string, string | number>): [number, string] {
     if (metric['time_unit'] === 'ns') {
-      return 1;
+      return [1, 'ns'];
     } else if (metric['time_unit'] === 'ms') {
-      return 1000000;
+      return [1000000, 'ms'];
     } else if (metric['time_unit'] === 'us') {
-      return 1000;
+      return [1000, 'µs'];
     } else {
-      return 1;
+      return [1, '?'];
     }
   }
 
   public parseAndProcessTestCase(
     testRunId: string,
     output: string,
-    rngSeed: number | undefined,
+    _rngSeed: number | undefined,
     timeout: number | null,
-    stderr: string | undefined, //eslint-disable-line
+    _stderr: string | undefined, //eslint-disable-line
   ): AbstractTestEvent {
     if (timeout !== null) {
       const ev = this.getTimeoutEvent(testRunId, timeout);
@@ -77,33 +77,21 @@ export class GoogleBenchmarkTest extends AbstractTest {
         eventBuilder.errored();
       }
 
-      if (typeof this._failIfExceedsLimitNs === 'number') {
-        const timeUnitMultiplier = this._getTimeUnitMultiplier(metric);
-        if (
-          typeof metric['cpu_time'] === 'number' &&
-          this._failIfExceedsLimitNs < metric['cpu_time'] * timeUnitMultiplier
-        ) {
-          eventBuilder.appendMessage(`❌ Failed: "cpu_time" exceeded limit: ${this._failIfExceedsLimitNs} ns.`, null);
-          eventBuilder.appendMessage(' ', null);
-          eventBuilder.failed();
-        } else if (
-          typeof metric['cpu_coefficient'] === 'number' &&
-          this._failIfExceedsLimitNs < metric['cpu_coefficient'] * timeUnitMultiplier
-        ) {
-          eventBuilder.appendMessage(
-            `❌ Failed: "cpu_coefficient" exceeded limit: ${this._failIfExceedsLimitNs} ns.`,
-            null,
-          );
-          eventBuilder.appendMessage(' ', null);
-          eventBuilder.failed();
-        } else if (
-          typeof metric['rms'] === 'number' &&
-          this._failIfExceedsLimitNs < metric['rms'] * timeUnitMultiplier
-        ) {
-          eventBuilder.appendMessage(`❌ Failed: "rms" exceeded limit: ${this._failIfExceedsLimitNs} ns.`, null);
+      const metricType = ['cpu_time', 'cpu_coefficient', 'rms'];
+      const key = metricType.find(m => metric[m]);
+      const value: number | undefined = key ? metric[key] : undefined;
+
+      if (value !== undefined) {
+        const [timeUnitMultiplier, timeUnit] = this._getTimeUnitMultiplier(metric);
+
+        if (typeof this._failIfExceedsLimitNs === 'number' && this._failIfExceedsLimitNs < value * timeUnitMultiplier) {
+          eventBuilder.appendMessage(`❌ Failed: "${key}" exceeded limit: ${this._failIfExceedsLimitNs} ns.`, null);
           eventBuilder.appendMessage(' ', null);
           eventBuilder.failed();
         }
+
+        eventBuilder.appendDescription('(' + value.toFixed(2) + ' ' + timeUnit + ')');
+        eventBuilder.appendTooltip('⏱Duration: ' + value + ' ' + timeUnit);
       }
 
       Object.keys(metric).forEach(key => {
