@@ -99,14 +99,17 @@ export abstract class AbstractRunnable {
   private _updateVarsWithTags(tagsResolveRule: ResolveRuleAsync, tg: TestGrouping, tags: string[]): void {
     const tagVar = '${tag}';
 
-    if (tg.tagFormat !== undefined && tg.tagFormat.indexOf(tagVar) === -1)
-      this._shared.log.warn(`tagFormat should contain "${tagVar}" substring`, tg.tagFormat);
-
-    const tagFormat = tg.tagFormat !== undefined && tg.tagFormat.indexOf(tagVar) !== -1 ? tg.tagFormat : `[${tagVar}]`;
-
-    const formattedTags = tags.map(t => tagFormat.replace(tagVar, t)).join('');
-
-    tagsResolveRule.rule = formattedTags;
+    tagsResolveRule.rule = async (): Promise<string> => {
+      let tagFormat = `[${tagVar}]`;
+      if (tg.tagFormat !== undefined) {
+        if (tg.tagFormat.indexOf(tagVar) === -1) {
+          this._shared.log.warn(`tagFormat should contain "${tagVar}" substring`, tg.tagFormat);
+        } else {
+          tagFormat = tg.tagFormat;
+        }
+      }
+      return tags.map(t => tagFormat.replace(tagVar, t)).join('');
+    };
   }
 
   private static readonly _variableRe = /\$\{[^ ]*\}/;
@@ -115,7 +118,12 @@ export abstract class AbstractRunnable {
     let resolvedText = text;
     try {
       resolvedText = await resolveVariablesAsync(resolvedText, this.properties.varToValue);
-      resolvedText = await resolveVariablesAsync(resolvedText, additionalVarToValue);
+
+      resolvedText =
+        additionalVarToValue.length > 0
+          ? await resolveVariablesAsync(resolvedText, additionalVarToValue)
+          : resolvedText;
+
       resolvedText = resolveOSEnvironmentVariables(resolvedText, false);
 
       if (resolvedText.match(AbstractRunnable._variableRe))
@@ -268,18 +276,21 @@ export abstract class AbstractRunnable {
                 this._shared.log.info(groupType + ' matched on', testName, g.regexes[reIndex - 1]);
                 const matchGroup = match[1] ? match[1] : match[0];
 
+                const lowerMatchGroup = matchGroup.toLocaleLowerCase();
+
                 const matchVar: ResolveRuleAsync[] = [
                   { resolve: '${match}', rule: matchGroup },
-                  { resolve: '${match_lowercased}', rule: matchGroup.toLocaleLowerCase() },
+                  { resolve: '${match_lowercased}', rule: lowerMatchGroup },
                   {
                     resolve: '${match_upperfirst}',
-                    rule: matchGroup[0].toLocaleUpperCase() + matchGroup.substr(1).toLocaleLowerCase(),
+                    rule: async (): Promise<string> =>
+                      lowerMatchGroup[0].toLocaleUpperCase() + lowerMatchGroup.substr(1),
                   },
                 ];
 
-                const label = g.label ? await this._resolveText(g.label, ...matchVar) : matchGroup;
+                const label = g.label ? await resolveVariablesAsync(g.label, matchVar) : matchGroup;
                 const description =
-                  g.description !== undefined ? await this._resolveText(g.description, ...matchVar) : undefined;
+                  g.description !== undefined ? await resolveVariablesAsync(g.description, matchVar) : undefined;
 
                 group = await this._resolveAndGetOrCreateChildSuite(vars, group, label, description, undefined);
               } else if (g.groupUngroupedTo) {
@@ -691,12 +702,12 @@ export abstract class AbstractRunnable {
   }
 
   protected async _resolveSourceFilePath(file: string | undefined): Promise<string | undefined> {
-    if (!file) return undefined;
+    if (typeof file != 'string') return undefined;
 
     let resolved = file;
 
     for (const m of this.properties.sourceFileMap) {
-      resolved = resolved!.replace(m[0], m[1]); // it just replaces the first occurence
+      resolved = resolved.replace(m[0], m[1]); // Note: it just replaces the first occurence
     }
 
     resolved = await this._resolveText(resolved);

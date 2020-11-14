@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [3.6.3]
 
+Performance improvements related to test listing.
+
 ## [3.6.2] - 2020-11-11
 
 npm update

@@ -141,6 +141,10 @@ export function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRul
     // eslint-disable-next-line
     async (s: string, parent: any): Promise<any> => {
       for (let i = 0; i < varValue.length; ++i) {
+        // NOTE: this is an optimisation.
+        // It unnecessarily assumes that everything we want to resolve is starts with '${'
+        if (s.indexOf('${') === -1) return s;
+
         const { resolve, rule, isFlat } = varValue[i];
 
         if (typeof resolve == 'string') {

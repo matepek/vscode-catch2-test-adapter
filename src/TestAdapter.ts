@@ -237,10 +237,9 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     );
 
     const variableToValue: ResolveRuleAsync[] = [
-      workspaceNameRes,
-      { resolve: '${workspaceDirectory}', rule: this.workspaceFolder.uri.fsPath },
-      { resolve: '${workspaceFolder}', rule: this.workspaceFolder.uri.fsPath },
       { resolve: '${osPathSep}', rule: osPathSeparator },
+      { resolve: '${workspaceFolder}', rule: this.workspaceFolder.uri.fsPath },
+      { resolve: '${workspaceDirectory}', rule: this.workspaceFolder.uri.fsPath },
       { resolve: '${osPathEnvSep}', rule: process.platform === 'win32' ? ';' : ':' },
       {
         resolve: /\$\{command:([^}]+)\}/,
@@ -254,6 +253,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           return m[0];
         },
       },
+      workspaceNameRes,
     ];
 
     this._shared = new SharedVariables(

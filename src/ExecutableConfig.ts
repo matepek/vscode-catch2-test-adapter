@@ -307,16 +307,19 @@ export class ExecutableConfig implements vscode.Disposable {
       const filename = pathlib.basename(filePath);
       const extFilename = pathlib.extname(filename);
       const baseFilename = pathlib.basename(filename, extFilename);
+      const relDirpath = pathlib.dirname(relPath);
 
       varToValue = [
-        ...this._shared.varToValue,
-        subPath('absPath', filePath),
-        subPath('relPath', relPath),
-        subPath('absDirpath', pathlib.dirname(filePath)),
-        subPath('relDirpath', pathlib.dirname(relPath)),
+        { resolve: '${filename}', rule: filename }, // redundant but might faster
+        { resolve: '${relDirpath}', rule: relDirpath }, // redundant but might faster
         subFilename('filename', filename),
+        subPath('relPath', relPath),
+        subPath('absPath', filePath),
+        subPath('relDirpath', relDirpath),
+        subPath('absDirpath', pathlib.dirname(filePath)),
         { resolve: '${extFilename}', rule: extFilename },
         { resolve: '${baseFilename}', rule: baseFilename },
+        ...this._shared.varToValue,
       ];
     } catch (e) {
       this._shared.log.exceptionS(e);
