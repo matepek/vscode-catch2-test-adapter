@@ -96,15 +96,15 @@ describe(path.basename(__filename), function () {
     async function loadAdapterAndAssert(): Promise<void> {
       await loadAdapter();
       assert.deepStrictEqual(settings.getConfig().get<string>('test.executables'), 'execPath1.exe');
-      assert.equal(adapter.root.children.length, 1);
+      assert.strictEqual(adapter.root.children.length, 1);
 
       suite1 = adapter.group;
       example1.suite1.assert('execPath1.exe', ['s1t1', 's1t2'], suite1, uniqueIdC);
 
-      assert.equal(suite1.children.length, 2);
-      assert.equal(suite1.children[0].type, 'test');
+      assert.strictEqual(suite1.children.length, 2);
+      assert.strictEqual(suite1.children[0].type, 'test');
       s1t1 = suite1.children[0] as TestInfo;
-      assert.equal(suite1.children[1].type, 'test');
+      assert.strictEqual(suite1.children[1].type, 'test');
       s1t2 = suite1.children[1] as TestInfo;
     }
 
@@ -275,12 +275,12 @@ describe(path.basename(__filename), function () {
 
     async function loadAdapterAndAssert(): Promise<void> {
       await loadAdapter();
-      assert.equal(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
 
-      assert.equal(adapter.root.children[0].type, 'suite');
-      assert.equal(adapter.root.children[1].type, 'suite');
-      assert.equal(example1.suite1.outputs.length, 4 + 2 * 2 + 1 /* plus one extra because "s1t2,s1t1" */);
-      assert.equal(example1.suite2.outputs.length, 4 + 2 * 3);
+      assert.strictEqual(adapter.root.children[0].type, 'suite');
+      assert.strictEqual(adapter.root.children[1].type, 'suite');
+      assert.strictEqual(example1.suite1.outputs.length, 4 + 2 * 2 + 1 /* plus one extra because "s1t2,s1t1" */);
+      assert.strictEqual(example1.suite2.outputs.length, 4 + 2 * 3);
       suite1 = adapter.root.children[0] as TestSuiteInfo;
       suite2 = adapter.root.children[1] as TestSuiteInfo;
       if (suite2.children.length == 2) {
@@ -288,21 +288,21 @@ describe(path.basename(__filename), function () {
         suite2 = adapter.root.children[0] as TestSuiteInfo;
       }
 
-      assert.equal(suite1.children.length, 2);
-      assert.equal(suite1.children[0].type, 'test');
+      assert.strictEqual(suite1.children.length, 2);
+      assert.strictEqual(suite1.children[0].type, 'test');
       s1t1 = suite1.children[0] as TestInfo;
-      assert.equal(suite1.children[1].type, 'test');
+      assert.strictEqual(suite1.children[1].type, 'test');
       s1t2 = suite1.children[1] as TestInfo;
 
-      assert.equal(suite2.children.length, 3);
-      assert.equal(suite2.children[0].type, 'test');
+      assert.strictEqual(suite2.children.length, 3);
+      assert.strictEqual(suite2.children[0].type, 'test');
       s2t1 = suite2.children[0] as TestInfo;
-      assert.equal(suite2.children[1].type, 'test');
+      assert.strictEqual(suite2.children[1].type, 'test');
       s2t2 = suite2.children[1] as TestInfo;
-      assert.equal(suite2.children[2].type, 'test');
+      assert.strictEqual(suite2.children[2].type, 'test');
       s2t3 = suite2.children[2] as TestInfo;
 
-      assert.equal(watchers.size, 2);
+      assert.strictEqual(watchers.size, 2);
       assert.ok(watchers.has(example1.suite1.execPath));
       suite1Watcher = watchers.get(example1.suite1.execPath)!;
 
@@ -317,7 +317,7 @@ describe(path.basename(__filename), function () {
 
     it('test variables are fine, suite1 and suite1 are loaded', async function () {
       await loadAdapterAndAssert();
-      assert.equal(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
       assert.ok(suite1 != undefined);
       assert.ok(s1t1 != undefined);
       assert.ok(s1t2 != undefined);
@@ -329,7 +329,7 @@ describe(path.basename(__filename), function () {
 
     it('should run all', async function () {
       await loadAdapterAndAssert();
-      assert.equal(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
       await adapter.run([adapter.root.id]);
 
       const running: TestRunStartedEvent = { type: 'started', tests: [adapter.root.id] };
@@ -442,7 +442,7 @@ describe(path.basename(__filename), function () {
       adapter.stateEventSequence(s1finished, finished);
       adapter.stateEventSequence(s2finished, finished);
 
-      assert.equal(adapter.stateEvents.length, 14);
+      assert.strictEqual(adapter.stateEvents.length, 14);
     });
 
     it('should run s1t1', async function () {
@@ -939,7 +939,7 @@ describe(path.basename(__filename), function () {
       const finished: TestRunFinishedEvent = { type: 'finished' };
       adapter.stateEventSequence(running, finished);
 
-      assert.equal(adapter.stateEvents.length, 2, inspect(adapter.stateEvents));
+      assert.strictEqual(adapter.stateEvents.length, 2, inspect(adapter.stateEvents));
     });
 
     it('cancels after run finished', async function () {
@@ -968,8 +968,8 @@ describe(path.basename(__filename), function () {
       }
       await adapter.run([adapter.root.id]);
       adapter.cancel();
-      assert.equal(spyKill1.callCount, 0);
-      assert.equal(spyKill2.callCount, 0);
+      assert.strictEqual(spyKill1.callCount, 0);
+      assert.strictEqual(spyKill2.callCount, 0);
     });
 
     it('reloads because of fswatcher event: touch(changed)', async function () {
@@ -1039,7 +1039,7 @@ describe(path.basename(__filename), function () {
     it('reloads because of fswatcher event: test added', async function () {
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
-      assert.equal(testListOutput.length, 10);
+      assert.strictEqual(testListOutput.length, 10);
       testListOutput.splice(1, 0, '  s1t0', '    suite1.cpp:6', '    tag1');
       const withArgs = imitation.spawnStub.withArgs(
         example1.suite1.execPath,
@@ -1057,13 +1057,13 @@ describe(path.basename(__filename), function () {
         suite1Watcher.sendCreate();
       });
 
-      assert.equal(newRoot?.id, adapter.root.id);
-      assert.equal(adapter.root.children.length, oldRootChildren.length);
+      assert.strictEqual(newRoot?.id, adapter.root.id);
+      assert.strictEqual(adapter.root.children.length, oldRootChildren.length);
       for (let i = 0; i < oldRootChildren.length; i++) {
-        assert.equal(adapter.root.children[i], oldRootChildren[i]);
+        assert.strictEqual(adapter.root.children[i], oldRootChildren[i]);
       }
 
-      assert.equal(suite1.children.length, oldSuite1Children.length + 1);
+      assert.strictEqual(suite1.children.length, oldSuite1Children.length + 1);
       for (let i = 0; i < oldSuite1Children.length; i++) {
         const c1 = suite1.children[i] as TestInfo;
         const c2 = oldSuite1Children[i] as TestInfo;
@@ -1075,17 +1075,17 @@ describe(path.basename(__filename), function () {
       }
       const newTest = suite1.children[2];
       assert.ok(!uniqueIdC.has(newTest.id));
-      assert.equal(newTest.label, 's1t0');
+      assert.strictEqual(newTest.label, 's1t0');
 
-      assert.equal(suite2.children.length, oldSuite2Children.length);
+      assert.strictEqual(suite2.children.length, oldSuite2Children.length);
       for (let i = 0; i < suite2.children.length; i++) {
-        assert.equal(suite2.children[i], oldSuite2Children[i]);
+        assert.strictEqual(suite2.children[i], oldSuite2Children[i]);
       }
     });
 
     it('reload if new tests found under run (multirun)', async function () {
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
-      assert.equal(testListOutput.length, 10);
+      assert.strictEqual(testListOutput.length, 10);
       testListOutput.splice(1, 3);
       imitation.spawnStub
         .withArgs(example1.suite1.execPath, example1.suite1.outputs[1][0], sinon.match.any)
@@ -1095,8 +1095,8 @@ describe(path.basename(__filename), function () {
 
       await adapter.load();
 
-      assert.equal(adapter.loadEvents.length, 2);
-      assert.equal(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.loadEvents.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
       suite1 = adapter.group;
 
       assert.strictEqual(suite1.children.length, 1);
@@ -1129,7 +1129,7 @@ describe(path.basename(__filename), function () {
     it('reloads because of fswatcher event: test deleted', async function () {
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[1][1].split('\n');
-      assert.equal(testListOutput.length, 10);
+      assert.strictEqual(testListOutput.length, 10);
       testListOutput.splice(1, 3);
       const withArgs = imitation.spawnStub.withArgs(
         example1.suite1.execPath,
@@ -1147,13 +1147,13 @@ describe(path.basename(__filename), function () {
         suite1Watcher.sendCreate();
       });
 
-      assert.equal(newRoot?.id, adapter.root.id);
-      assert.equal(adapter.root.children.length, oldRootChildren.length);
+      assert.strictEqual(newRoot?.id, adapter.root.id);
+      assert.strictEqual(adapter.root.children.length, oldRootChildren.length);
       for (let i = 0; i < oldRootChildren.length; i++) {
-        assert.equal(adapter.root.children[i], oldRootChildren[i]);
+        assert.strictEqual(adapter.root.children[i], oldRootChildren[i]);
       }
 
-      assert.equal(suite1.children.length + 1, oldSuite1Children.length);
+      assert.strictEqual(suite1.children.length + 1, oldSuite1Children.length);
       for (let i = 0; i < suite1.children.length; i++) {
         const c1 = suite1.children[i] as TestInfo;
         const c2 = oldSuite1Children[i + 1] as TestInfo;
@@ -1164,9 +1164,9 @@ describe(path.basename(__filename), function () {
         );
       }
 
-      assert.equal(suite2.children.length, oldSuite2Children.length);
+      assert.strictEqual(suite2.children.length, oldSuite2Children.length);
       for (let i = 0; i < suite2.children.length; i++) {
-        assert.equal(suite2.children[i], oldSuite2Children[i]);
+        assert.strictEqual(suite2.children[i], oldSuite2Children[i]);
       }
     });
 
@@ -1230,7 +1230,7 @@ describe(path.basename(__filename), function () {
     it('data arrives in pieces', async function () {
       await loadAdapterAndAssert();
       const testListOutput = example1.suite1.outputs[2][1].split('\n');
-      assert.equal(testListOutput.length, 21);
+      assert.strictEqual(testListOutput.length, 21);
       const newOutput: string[] = [
         testListOutput[0] + EOL + testListOutput[1].substr(10) + EOL,
         testListOutput[2].substr(10) + EOL,
@@ -1306,17 +1306,17 @@ describe(path.basename(__filename), function () {
 
         assert.ok(withArgs.calledOnce, withArgs.args.toString());
         const cwd = path.join(settings.workspaceFolderUri.fsPath, 'cwd', 'execPath1');
-        assert.equal(withArgs.firstCall.args[2].cwd, cwd);
-        assert.equal(withArgs.firstCall.args[2].env!.C2LOCALCWD, cwd);
-        assert.equal(withArgs.firstCall.args[2].env!.C2LOCALTESTENV, 'c2localtestenv');
-        assert.equal(
+        assert.strictEqual(withArgs.firstCall.args[2].cwd, cwd);
+        assert.strictEqual(withArgs.firstCall.args[2].env!.C2LOCALCWD, cwd);
+        assert.strictEqual(withArgs.firstCall.args[2].env!.C2LOCALTESTENV, 'c2localtestenv');
+        assert.strictEqual(
           withArgs.firstCall.args[2].env!.C2WORKSPACENAME,
           path.basename(settings.workspaceFolderUri.fsPath),
         );
-        assert.equal(withArgs.firstCall.args[2].env!.C2ENVVARS1, 'X' + process.env['PATH'] + 'X');
+        assert.strictEqual(withArgs.firstCall.args[2].env!.C2ENVVARS1, 'X' + process.env['PATH'] + 'X');
 
-        if (isWin) assert.equal(withArgs.firstCall.args[2].env!.C2ENVVARS2, 'X' + process.env['PATH'] + 'X');
-        else assert.equal(withArgs.firstCall.args[2].env!.C2ENVVARS2, 'XX');
+        if (isWin) assert.strictEqual(withArgs.firstCall.args[2].env!.C2ENVVARS2, 'X' + process.env['PATH'] + 'X');
+        else assert.strictEqual(withArgs.firstCall.args[2].env!.C2ENVVARS2, 'XX');
 
         assert.strictEqual(withArgs.firstCall.args[2].env!.C2ENVVARS3, 'X${os_env_strict:NOT_EXISTING}X');
       }

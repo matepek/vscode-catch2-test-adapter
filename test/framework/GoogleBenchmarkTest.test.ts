@@ -45,8 +45,8 @@ describe(path.basename(__filename), function () {
       message:
         'name: "BM_StringCreation"\nrun_name: "BM_StringCreation"\nrun_type: "iteration"\nrepetitions: 0\nrepetition_index: 0\nthreads: 1\niterations: 30591330\nreal_time: 22.657936643709753\ncpu_time: 22.64602421666531\ntime_unit: "ns"',
       state: 'passed',
-      description: '',
-      tooltip: 'Name: TestName',
+      description: '(22.65 ns)',
+      tooltip: 'Name: TestName\n⏱Duration: 22.64602421666531 ns',
       decorations: [],
     };
 
