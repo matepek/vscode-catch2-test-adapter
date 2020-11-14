@@ -143,9 +143,6 @@ export function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRul
       for (let i = 0; i < varValue.length; ++i) {
         const { resolve, rule, isFlat } = varValue[i];
 
-        // NOTE: optimisation, the algorythhm would be perfect without it but with this e expect some performance improvement
-        if (s.indexOf('${') == -1) return s;
-
         if (typeof resolve == 'string') {
           if (s === resolve) {
             if (typeof rule == 'string') {
