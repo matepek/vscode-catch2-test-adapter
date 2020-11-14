@@ -1,4 +1,5 @@
 import * as pathlib from 'path';
+import { processors } from 'xml2js';
 
 ///
 
@@ -141,10 +142,6 @@ export function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRul
     // eslint-disable-next-line
     async (s: string, parent: any): Promise<any> => {
       for (let i = 0; i < varValue.length; ++i) {
-        // NOTE: this is an optimisation.
-        // It unnecessarily assumes that everything we want to resolve is starts with '${'
-        if (s.indexOf('${') === -1) return s;
-
         const { resolve, rule, isFlat } = varValue[i];
 
         if (typeof resolve == 'string') {
@@ -197,27 +194,22 @@ export function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRul
   );
 }
 
-// eslint-disable-next-line
+const _normalizedEnvCache: Record<string, string | undefined> =
+  process.platform === 'win32'
+    ? Object.keys(process.env).reduce((o, key) => Object.assign(o, { [key.toLowerCase()]: process.env[key] }), {})
+    : process.env;
+
 export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolean): T {
-  const getValueOfEnv = (prop: string): string | undefined => {
-    const normalize = (s: string): string => (process.platform === 'win32' ? s.toLowerCase() : s);
-    const normProp = normalize(prop);
-    for (const prop in process.env) {
-      if (normalize(prop) == normProp) {
-        return process.env[prop];
-      }
-    }
-    return undefined;
-  };
-  // eslint-disable-next-line
-  return _mapAllStrings(value, undefined, (s: string, parent: any): string | undefined => {
+  return _mapAllStrings(value, undefined, (s: string): string | undefined => {
     let replacedS = '';
     while (true) {
       const match = s.match(/\$\{(os_env|os_env_strict):([A-z_][A-z0-9_]*)\}/);
 
       if (!match) return replacedS + s;
 
-      const val = getValueOfEnv(match[2]);
+      const envName = match[2].toLowerCase();
+
+      const val = _normalizedEnvCache[envName];
 
       replacedS += s.substring(0, match.index!);
 
