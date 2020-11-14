@@ -10,6 +10,10 @@ file(WRITE "${PROJECT_BINARY_DIR}/.vscode/settings.json" "{\n  \"testMate.cpp.te
 
 #
 
+configure_file("manytest.sh" "manytest.sh" COPYONLY)
+
+#
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w")
 else()

@@ -273,7 +273,7 @@ export abstract class AbstractRunnable {
                   { resolve: '${match_lowercased}', rule: matchGroup.toLocaleLowerCase() },
                   {
                     resolve: '${match_upperfirst}',
-                    rule: matchGroup[0].toLocaleUpperCase() + matchGroup.substr(1),
+                    rule: matchGroup[0].toLocaleUpperCase() + matchGroup.substr(1).toLocaleLowerCase(),
                   },
                 ];
 
