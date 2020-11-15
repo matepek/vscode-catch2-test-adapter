@@ -119,7 +119,7 @@ export class Catch2Test extends AbstractTest {
 
   public compare(testNameAsId: string): boolean {
     // Catch2: xml output trimmes the name of the test
-    return this.testNameAsId.trim() === testNameAsId;
+    return this.testNameAsId.trim() === testNameAsId.trim();
   }
 
   private _sections: undefined | Catch2Section[];

@@ -49,7 +49,7 @@ export class GoogleBenchmarkTest extends AbstractTest {
     } else if (metric['time_unit'] === 'ms') {
       return [1000000, 'ms'];
     } else if (metric['time_unit'] === 'us') {
-      return [1000, 'µs'];
+      return [1000, 'μs'];
     } else {
       return [1, '?'];
     }
@@ -90,8 +90,8 @@ export class GoogleBenchmarkTest extends AbstractTest {
           eventBuilder.failed();
         }
 
-        eventBuilder.appendDescription('(' + value.toFixed(2) + ' ' + timeUnit + ')');
-        eventBuilder.appendTooltip('⏱Duration: ' + value + ' ' + timeUnit);
+        eventBuilder.appendDescription(`(${value.toFixed(2)}${timeUnit})`);
+        eventBuilder.appendTooltip(`⏱${key}: ${value} ${timeUnit}`);
       }
 
       Object.keys(metric).forEach(key => {

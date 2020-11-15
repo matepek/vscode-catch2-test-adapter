@@ -119,14 +119,5 @@
       "url": "/src/tmLanguage.schema.json"
     }
   ],
-  "testMate.cpp.test.executables": "{build,Build,BUILD,out,Out,OUT}/**/*{suite,test,Test,TEST}*",
-  "testMate.cpp.test.advancedExecutables": [
-    {
-      "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{suite,test,Test,TEST}*",
-      "env": {
-        "Xx": "xxxx"
-      }
-    }
-  ],
-  "cmake.configureOnOpen": true
+  "testMate.cpp.test.executables": "{build,Build,BUILD,out,Out,OUT}/**/*{suite,test,Test,TEST,benchmark}*"
 }

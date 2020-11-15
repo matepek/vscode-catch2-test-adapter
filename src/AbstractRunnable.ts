@@ -83,20 +83,20 @@ export abstract class AbstractRunnable {
   }
 
   private async _resolveAndGetOrCreateChildSuite(
-    vars: readonly ResolveRuleAsync[],
     parentGroup: Suite,
     label: string,
     description: string | undefined,
     tooltip: string | undefined,
+    varsToResolve: ResolveRuleAsync<string>[],
   ): Promise<Suite> {
-    const resolvedLabel = await this._resolveText(label, ...vars);
-    const resolvedDescr = description !== undefined ? await this._resolveText(description, ...vars) : '';
-    const resolvedToolt = tooltip !== undefined ? await this._resolveText(tooltip, ...vars) : '';
+    const resolvedLabel = await this._resolveText(label, ...varsToResolve);
+    const resolvedDescr = description !== undefined ? await this._resolveText(description, ...varsToResolve) : '';
+    const resolvedToolt = tooltip !== undefined ? await this._resolveText(tooltip, ...varsToResolve) : '';
 
     return this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, parentGroup);
   }
 
-  private _updateVarsWithTags(tagsResolveRule: ResolveRuleAsync, tg: TestGrouping, tags: string[]): void {
+  private _updateVarsWithTags(tg: TestGrouping, tags: string[], tagsResolveRule: ResolveRuleAsync<string>): void {
     const tagVar = '${tag}';
 
     tagsResolveRule.rule = async (): Promise<string> => {
@@ -134,6 +134,8 @@ export abstract class AbstractRunnable {
     return resolvedText;
   }
 
+  private static readonly _tagVar = '${tags}';
+
   protected async _createSubtreeAndAddTest(
     testGrouping: TestGrouping,
     testNameAsId: string,
@@ -145,58 +147,64 @@ export abstract class AbstractRunnable {
   ): Promise<[AbstractTest, boolean]> {
     this._shared.log.info('testGrouping', { testName, testNameAsId, file, tags, testGrouping });
 
-    let group = this._rootSuite as Suite;
-
-    const tagsVar = '${tags}';
-    const tagsResolveRule: ResolveRuleAsync = { resolve: tagsVar, rule: '<will be replaced soon enough>' };
-
-    const relPath = file ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file) : '';
-    const absPath = file ? file : '';
     tags.sort();
 
-    const vars: ResolveRuleAsync[] = [
+    const tagsResolveRule: ResolveRuleAsync<string> = {
+      resolve: AbstractRunnable._tagVar,
+      rule: '', // will be filled soon enough
+    };
+    const sourceRelPath = file ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file) : '';
+
+    const varsToResolve = [
       tagsResolveRule,
-      createPythonIndexerForPathVariable('sourceRelPath', relPath),
-      createPythonIndexerForPathVariable('sourceAbsPath', absPath),
+      createPythonIndexerForPathVariable('sourceRelPath', sourceRelPath),
+      createPythonIndexerForPathVariable('sourceAbsPath', file ? file : ''),
     ];
 
+    let group = this._rootSuite as Suite;
     let currentGrouping: TestGrouping = testGrouping;
 
     try {
       while (true) {
         if (currentGrouping.groupByExecutable) {
           const g = currentGrouping.groupByExecutable;
-          this._updateVarsWithTags(tagsResolveRule, g, tags);
+          this._updateVarsWithTags(g, tags, tagsResolveRule);
 
           const label = g.label !== undefined ? g.label : '${filename}';
           const description = g.description !== undefined ? g.description : '${relDirpath}${osPathSep}';
 
           group = await this._resolveAndGetOrCreateChildSuite(
-            vars,
             group,
             label,
             description,
             `Path: ${this.properties.path}\nCwd: ${this.properties.options.cwd}`,
+            varsToResolve,
           );
 
           currentGrouping = g;
         } else if (currentGrouping.groupBySource) {
           const g = currentGrouping.groupBySource;
-          this._updateVarsWithTags(tagsResolveRule, g, tags);
+          this._updateVarsWithTags(g, tags, tagsResolveRule);
 
           if (file) {
-            const label = g.label ? g.label : relPath;
+            const label = g.label ? g.label : sourceRelPath;
             const description = g.description;
 
-            group = await this._resolveAndGetOrCreateChildSuite(vars, group, label, description, undefined);
+            group = await this._resolveAndGetOrCreateChildSuite(group, label, description, undefined, varsToResolve);
           } else if (g.groupUngroupedTo) {
-            group = await this._resolveAndGetOrCreateChildSuite(vars, group, g.groupUngroupedTo, undefined, undefined);
+            group = await this._resolveAndGetOrCreateChildSuite(
+              group,
+              g.groupUngroupedTo,
+              undefined,
+              undefined,
+              varsToResolve,
+            );
           }
 
           currentGrouping = g;
         } else if (currentGrouping.groupByTags) {
           const g = currentGrouping.groupByTags;
-          this._updateVarsWithTags(tagsResolveRule, g, tags);
+          this._updateVarsWithTags(g, tags, tagsResolveRule);
 
           if (
             g.tags === undefined ||
@@ -206,19 +214,19 @@ export abstract class AbstractRunnable {
             if (g.tags === undefined || g.tags.length === 0 || g.tags.every(t => t.length == 0)) {
               if (tags.length > 0) {
                 group = await this._resolveAndGetOrCreateChildSuite(
-                  vars,
                   group,
-                  g.label ? g.label : tagsVar,
+                  g.label ? g.label : AbstractRunnable._tagVar,
                   g.description,
                   undefined,
+                  varsToResolve,
                 );
               } else if (g.groupUngroupedTo) {
                 group = await this._resolveAndGetOrCreateChildSuite(
-                  vars,
                   group,
                   g.groupUngroupedTo,
                   undefined,
                   undefined,
+                  varsToResolve,
                 );
               }
             } else {
@@ -226,21 +234,21 @@ export abstract class AbstractRunnable {
               const foundCombo = combos.find(combo => combo.every(t => tags.indexOf(t) !== -1));
 
               if (foundCombo) {
-                this._updateVarsWithTags(tagsResolveRule, g, foundCombo);
+                this._updateVarsWithTags(g, foundCombo, tagsResolveRule);
                 group = await this._resolveAndGetOrCreateChildSuite(
-                  vars,
                   group,
-                  g.label ? g.label : tagsVar,
+                  g.label ? g.label : AbstractRunnable._tagVar,
                   g.description,
                   undefined,
+                  varsToResolve,
                 );
               } else if (g.groupUngroupedTo) {
                 group = await this._resolveAndGetOrCreateChildSuite(
-                  vars,
                   group,
                   g.groupUngroupedTo,
                   undefined,
                   undefined,
+                  varsToResolve,
                 );
               }
             }
@@ -255,7 +263,7 @@ export abstract class AbstractRunnable {
             ? currentGrouping.groupByTagRegex
             : currentGrouping.groupByRegex!;
 
-          this._updateVarsWithTags(tagsResolveRule, g, tags);
+          this._updateVarsWithTags(g, tags, tagsResolveRule);
 
           if (g.regexes) {
             if (Array.isArray(g.regexes) && g.regexes.length > 0 && g.regexes.every(v => typeof v === 'string')) {
@@ -292,14 +300,20 @@ export abstract class AbstractRunnable {
                 const description =
                   g.description !== undefined ? await resolveVariablesAsync(g.description, matchVar) : undefined;
 
-                group = await this._resolveAndGetOrCreateChildSuite(vars, group, label, description, undefined);
+                group = await this._resolveAndGetOrCreateChildSuite(
+                  group,
+                  label,
+                  description,
+                  undefined,
+                  varsToResolve,
+                );
               } else if (g.groupUngroupedTo) {
                 group = await this._resolveAndGetOrCreateChildSuite(
-                  vars,
                   group,
                   g.groupUngroupedTo,
                   undefined,
                   undefined,
+                  varsToResolve,
                 );
               }
             } else {

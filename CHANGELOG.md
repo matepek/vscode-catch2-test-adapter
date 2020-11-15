@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.4]
+
+Small fixes. Nothing interesting.
+
 ## [3.6.3] - 2020-11-14
 
 Performance improvements related to test listing.
