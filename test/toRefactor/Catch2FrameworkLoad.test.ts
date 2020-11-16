@@ -1368,6 +1368,7 @@ describe(path.basename(__filename), function () {
           pattern: 'execPath1.exe',
           cwd: '${workspaceFolder}/cpp',
           env: { C2TESTVAR: 'c2testval' },
+          sourceFileMap: { '/cpp': '/cxx' },
         },
       ]);
 
@@ -1380,6 +1381,7 @@ describe(path.basename(__filename), function () {
         argsStr: '${argsStr}',
         cwd: '${cwd}',
         envObj: '${envObj}',
+        sourceFileMap: '${sourceFileMapObj}',
       });
 
       adapter = new TestAdapter();
@@ -1408,6 +1410,7 @@ describe(path.basename(__filename), function () {
       assert.deepStrictEqual(debugConfig.request, 'launch');
       assert.deepStrictEqual(debugConfig.suiteLabel, 'XexecPath1');
       assert.deepStrictEqual(debugConfig.envObj.C2TESTVAR, 'c2testval');
+      assert.deepStrictEqual(debugConfig.sourceFileMap, { '/cpp': '/cxx' });
     });
   });
 });

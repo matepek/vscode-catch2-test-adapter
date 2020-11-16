@@ -56,6 +56,6 @@ describe(path.basename(__filename), function () {
 
     await adapter.load();
 
-    assert.equal(adapter.root.children.length, 1);
+    assert.strictEqual(adapter.root.children.length, 1);
   });
 });

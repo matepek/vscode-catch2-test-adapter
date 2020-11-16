@@ -433,19 +433,25 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
   }
 
-  public load(): Promise<void> {
+  public async load(): Promise<void> {
     this._shared.log.info('load called');
 
-    this.cancel();
-    this._rootSuite.dispose();
+    try {
+      this.cancel();
+      this._rootSuite.dispose();
 
-    const configuration = this._getConfiguration(this._shared.log);
+      const configuration = this._getConfiguration(this._shared.log);
 
-    this._rootSuite = new RootSuite(this._rootSuite.id, this._shared);
+      this._rootSuite = new RootSuite(this._rootSuite.id, this._shared);
 
-    return this._shared.loadWithTask(() =>
-      configuration.getExecutables(this._shared).then(exec => this._rootSuite.load(exec)),
-    );
+      const exec = configuration.getExecutables(this._shared);
+
+      return await this._shared.loadWithTask(() => {
+        return this._rootSuite.load(exec);
+      });
+    } catch (reason) {
+      vscode.window.showErrorMessage('Unable to load tests: ' + reason);
+    }
   }
 
   public cancel(): void {
@@ -587,6 +593,10 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           resolve: '${envObj}',
           rule: async (): Promise<NodeJS.ProcessEnv> =>
             Object.assign(Object.assign({}, process.env), runnable.properties.options.env!),
+        },
+        {
+          resolve: '${sourceFileMapObj}',
+          rule: async (): Promise<Record<string, string>> => Promise.resolve(runnable.properties.sourceFileMap),
         },
       ];
 

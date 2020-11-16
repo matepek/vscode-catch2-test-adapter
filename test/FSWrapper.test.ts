@@ -18,11 +18,11 @@ describe('FsWrapper.spawnAsync', function () {
     const isWin = process.platform === 'win32';
     const opt: SpawnOptionsWithoutStdio = isWin ? { shell: true } : {};
     const r = await spawner.spawnAsync('echo', ['apple'], opt);
-    assert.equal(r.stdout, 'apple' + EOL);
-    assert.equal(r.output.length, 3);
-    assert.equal(r.output[1], 'apple' + EOL);
-    assert.equal(r.output[2], '');
-    assert.equal(r.status, 0);
+    assert.strictEqual(r.stdout, 'apple' + EOL);
+    assert.strictEqual(r.output.length, 3);
+    assert.strictEqual(r.output[1], 'apple' + EOL);
+    assert.strictEqual(r.output[2], '');
+    assert.strictEqual(r.status, 0);
   });
 
   it('not existing', function () {
@@ -112,54 +112,54 @@ describe('path', function () {
     it('sould resolve', function () {
       const a = vscode.Uri.file('/a/b/c');
       const b = vscode.Uri.file('/a/b/c/d/e');
-      assert.equal(path.relative(a.fsPath, b.fsPath), path.normalize('d/e'));
+      assert.strictEqual(path.relative(a.fsPath, b.fsPath), path.normalize('d/e'));
     });
   });
   describe('extname', function () {
     it('extname', function () {
       const filename = path.basename('bar/foo/base.ext2.ext1');
-      assert.equal(filename, 'base.ext2.ext1');
+      assert.strictEqual(filename, 'base.ext2.ext1');
 
       const extFilename = path.extname(filename);
-      assert.equal(extFilename, '.ext1');
+      assert.strictEqual(extFilename, '.ext1');
 
       const baseFilename = path.basename(filename, extFilename);
-      assert.equal(baseFilename, 'base.ext2');
+      assert.strictEqual(baseFilename, 'base.ext2');
 
       const ext2Filename = path.extname(baseFilename);
-      assert.equal(ext2Filename, '.ext2');
+      assert.strictEqual(ext2Filename, '.ext2');
 
       const base2Filename = path.basename(baseFilename, ext2Filename);
-      assert.equal(base2Filename, 'base');
+      assert.strictEqual(base2Filename, 'base');
 
       const ext3Filename = path.extname(base2Filename);
-      assert.equal(ext3Filename, '');
+      assert.strictEqual(ext3Filename, '');
 
       const base3Filename = path.basename(base2Filename, ext3Filename);
-      assert.equal(base3Filename, 'base');
+      assert.strictEqual(base3Filename, 'base');
     });
 
     it('.extname', function () {
       const filename = path.basename('bar/foo/.base.ext2.ext1');
-      assert.equal(filename, '.base.ext2.ext1');
+      assert.strictEqual(filename, '.base.ext2.ext1');
 
       const extFilename = path.extname(filename);
-      assert.equal(extFilename, '.ext1');
+      assert.strictEqual(extFilename, '.ext1');
 
       const baseFilename = path.basename(filename, extFilename);
-      assert.equal(baseFilename, '.base.ext2');
+      assert.strictEqual(baseFilename, '.base.ext2');
 
       const ext2Filename = path.extname(baseFilename);
-      assert.equal(ext2Filename, '.ext2');
+      assert.strictEqual(ext2Filename, '.ext2');
 
       const base2Filename = path.basename(baseFilename, ext2Filename);
-      assert.equal(base2Filename, '.base');
+      assert.strictEqual(base2Filename, '.base');
 
       const ext3Filename = path.extname(base2Filename);
-      assert.equal(ext3Filename, '');
+      assert.strictEqual(ext3Filename, '');
 
       const base3Filename = path.basename(base2Filename, ext3Filename);
-      assert.equal(base3Filename, '.base');
+      assert.strictEqual(base3Filename, '.base');
     });
   });
 });

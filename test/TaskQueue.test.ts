@@ -105,7 +105,7 @@ describe(path.basename(__filename), function () {
           hasRunDatOnce = true;
         });
       });
-      assert.equal(nodeD.size, 1);
+      assert.strictEqual(nodeD.size, 1);
 
       let start1: Function;
       let hasRun1atOnce = false;
@@ -116,11 +116,11 @@ describe(path.basename(__filename), function () {
           hasRun1atOnce = true;
         });
       });
-      assert.equal(node1.size, 1);
+      assert.strictEqual(node1.size, 1);
       node1.then(() => {
         hasRun1afterStart = true;
       });
-      assert.equal(node1.size, 2);
+      assert.strictEqual(node1.size, 2);
 
       let start2: Function;
       let hasRun2atOnce = false;
@@ -131,11 +131,11 @@ describe(path.basename(__filename), function () {
           hasRun2atOnce = true;
         });
       });
-      assert.equal(node2.size, 1);
+      assert.strictEqual(node2.size, 1);
       node2.then(() => {
         hasRun2afterStart = true;
       });
-      assert.equal(node2.size, 2);
+      assert.strictEqual(node2.size, 2);
 
       assert.ok(!hasRunDatOnce);
       assert.ok(!hasRun1atOnce);
@@ -148,19 +148,19 @@ describe(path.basename(__filename), function () {
           return hasRunDatOnce;
         }),
       );
-      assert.equal(nodeD.size, 1);
+      assert.strictEqual(nodeD.size, 1);
       assert.ok(
         await waitFor(this, async () => {
           return hasRun1atOnce;
         }),
       );
-      assert.equal(node1.size, 2);
+      assert.strictEqual(node1.size, 2);
       assert.ok(
         await waitFor(this, async () => {
           return hasRun2atOnce;
         }),
       );
-      assert.equal(node2.size, 2);
+      assert.strictEqual(node2.size, 2);
 
       let hasRunD2second = false;
       nodeD.then(() => {
@@ -168,7 +168,7 @@ describe(path.basename(__filename), function () {
         assert.ok(hasRun2afterStart);
         hasRunD2second = true;
       });
-      assert.equal(nodeD.size, 2);
+      assert.strictEqual(nodeD.size, 2);
 
       startD!();
       await promisify(setTimeout)(20);
@@ -184,9 +184,9 @@ describe(path.basename(__filename), function () {
           return hasRun1afterStart;
         }),
       );
-      assert.equal(node1.size, 0);
-      assert.equal(node2.size, 2);
-      assert.equal(nodeD.size, 1);
+      assert.strictEqual(node1.size, 0);
+      assert.strictEqual(node2.size, 2);
+      assert.strictEqual(nodeD.size, 1);
       assert.ok(!hasRun2afterStart);
       assert.ok(!hasRunD2second);
 
@@ -197,14 +197,14 @@ describe(path.basename(__filename), function () {
           return hasRun2afterStart;
         }),
       );
-      assert.equal(node2.size, 0);
+      assert.strictEqual(node2.size, 0);
 
       assert.ok(
         await waitFor(this, async () => {
           return hasRunD2second;
         }),
       );
-      assert.equal(nodeD.size, 0);
+      assert.strictEqual(nodeD.size, 0);
     });
   });
 });

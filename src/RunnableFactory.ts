@@ -29,7 +29,7 @@ export class RunnableFactory {
     private readonly _markAsSkipped: boolean,
     private readonly _runTask: RunTask,
     private readonly _spawner: Spawner,
-    private readonly _sourceFileMap: [string, string][],
+    private readonly _sourceFileMap: Record<string, string>,
   ) {}
 
   public create(checkIsNativeExecutable: boolean): Promise<AbstractRunnable> {

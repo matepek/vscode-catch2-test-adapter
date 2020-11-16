@@ -131,6 +131,7 @@ export class Configurations {
               args: '${args}',
               cwd: '${cwd}',
               env: '${envObj}',
+              sourceFileMap: '${sourceFileMapObj}',
             });
             this._log.info(
               "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
@@ -158,6 +159,7 @@ export class Configurations {
         args: '${args}',
         cwd: '${cwd}',
         env: '${envObj}',
+        sourceMap: '${sourceFileMapObj}',
       });
     } else if (vscode.extensions.getExtension('webfreak.debug')) {
       source = 'webfreak.debug';
@@ -168,6 +170,7 @@ export class Configurations {
         cwd: '${cwd}',
         env: '${envObj}',
         valuesFormatting: 'prettyPrinters',
+        pathSubstitutions: '${sourceFileMapObj}',
       });
 
       if (process.platform === 'darwin') {
@@ -188,6 +191,7 @@ export class Configurations {
         args: '${args}',
         cwd: '${cwd}',
         env: '${envObj}',
+        sourceFileMap: '${sourceFileMapObj}',
       });
     } else {
       this._log.info('no debug config');
@@ -346,7 +350,7 @@ export class Configurations {
     return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  public async getExecutables(shared: SharedVariables): Promise<ExecutableConfig[]> {
+  public getExecutables(shared: SharedVariables): ExecutableConfig[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultParallelExecutionOfExecLimit = this.getParallelExecutionOfExecutableLimit() || 1;
 
@@ -365,7 +369,7 @@ export class Configurations {
         false,
         undefined,
         undefined,
-        [],
+        {},
         {},
         {},
         {},
@@ -433,7 +437,7 @@ export class Configurations {
           if (typeof obj.pattern == 'string') pattern = obj.pattern;
           else {
             this._log.warn('pattern property is required', obj);
-            throw Error('pattern property is required.');
+            throw Error('"pattern" property is required in advancedExecutables.');
           }
         }
 
@@ -476,11 +480,11 @@ export class Configurations {
             ? obj.executionWrapper
             : undefined;
 
-        const sourceFileMap: [string, string][] =
+        const sourceFileMap: Record<string, string> =
           typeof obj.sourceFileMap === 'object' &&
           Object.keys(obj.sourceFileMap).every(k => typeof k === 'string' && typeof obj.sourceFileMap![k] === 'string')
-            ? Object.keys(obj.sourceFileMap).map(k => [k, obj.sourceFileMap![k]])
-            : [];
+            ? obj.sourceFileMap
+            : {};
 
         return new ExecutableConfig(
           shared,

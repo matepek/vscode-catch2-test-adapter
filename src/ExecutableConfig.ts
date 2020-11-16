@@ -38,7 +38,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _strictPattern: boolean | undefined,
     private readonly _markAsSkipped: boolean | undefined,
     private readonly _executionWrapper: ExecutionWrapper | undefined,
-    private readonly _sourceFileMap: [string, string][],
+    private readonly _sourceFileMap: Record<string, string>,
     private readonly _catch2: FrameworkSpecific,
     private readonly _gtest: FrameworkSpecific,
     private readonly _doctest: FrameworkSpecific,

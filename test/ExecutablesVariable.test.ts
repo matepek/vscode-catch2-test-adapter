@@ -54,7 +54,7 @@ describe(path.basename(__filename), function () {
 
     specify('empty config', async function () {
       await adapter.load();
-      assert.equal(adapter.root.children.length, 0);
+      assert.strictEqual(adapter.root.children.length, 0);
     });
 
     specify('../a/first', async function () {
@@ -178,9 +178,9 @@ describe(path.basename(__filename), function () {
       await settings.updateConfig('test.advancedExecutables', ['execPath1.exe', 'execPath2Copy.exe']);
       adapter = new TestAdapter();
 
-      assert.equal(adapter.loadEvents.length, 0);
+      assert.strictEqual(adapter.loadEvents.length, 0);
       await adapter.load();
-      assert.equal(adapter.loadEvents.length, 2);
+      assert.strictEqual(adapter.loadEvents.length, 2);
       assert.strictEqual(adapter.root.children.length, 2);
 
       assert.ok(watchers.has(execPath2CopyPath));
@@ -195,7 +195,7 @@ describe(path.basename(__filename), function () {
       watcher.sendDelete();
 
       await waitForMilisec(this, 1000);
-      assert.equal(adapter.loadEvents.length, 2);
+      assert.strictEqual(adapter.loadEvents.length, 2);
       assert.strictEqual(adapter.root.children.length, 2);
 
       imitation.fsAccessStub
@@ -208,9 +208,9 @@ describe(path.basename(__filename), function () {
       await waitForMilisec(this, 1000);
 
       // no reload event because there was no change
-      assert.equal(adapter.loadEvents.length, 2);
+      assert.strictEqual(adapter.loadEvents.length, 2);
 
-      assert.equal(adapter.root.children.length, 2);
+      assert.strictEqual(adapter.root.children.length, 2);
       assert.ok(900 < elapsed, inspect(elapsed));
       assert.ok(elapsed < watchTimeout * 1000 + 2400, inspect(elapsed));
     });
@@ -244,7 +244,7 @@ describe(path.basename(__filename), function () {
     });
     const elapsed = Date.now() - start;
 
-    assert.equal(adapter.root.children.length, 1);
+    assert.strictEqual(adapter.root.children.length, 1);
     assert.ok(watchTimeoutSec * 1000 < elapsed, inspect(elapsed));
     assert.ok(elapsed < watchTimeoutSec * 1000 + 2400, inspect(elapsed));
   });
@@ -334,20 +334,20 @@ describe(path.basename(__filename), function () {
 
     await adapter.load();
 
-    assert.equal(adapter.root.children.length, 1);
-    assert.equal(adapter.root.children[0].type, 'suite');
+    assert.strictEqual(adapter.root.children.length, 1);
+    assert.strictEqual(adapter.root.children[0].type, 'suite');
 
     const actual = adapter.group.label.split(' | ');
     const expected = toResolveAndExpectedResolvedValue.map(v => v[1]);
     assert.deepStrictEqual(actual, expected);
-    assert.equal(adapter.group.children.length, 3);
+    assert.strictEqual(adapter.group.children.length, 3);
 
     await adapter.run([adapter.group.children[0].id]);
 
     assert.ok(spawnWithArgs.calledOnce, spawnWithArgs.args.toString());
-    assert.equal(spawnWithArgs.firstCall.args[2].cwd, expectStr);
+    assert.strictEqual(spawnWithArgs.firstCall.args[2].cwd, expectStr);
     assert.ok(spawnWithArgs.firstCall.args[2].env && spawnWithArgs.firstCall.args[2].env.C2TESTVARS);
-    assert.equal(spawnWithArgs.firstCall.args[2].env!.C2TESTVARS!, expectStr);
+    assert.strictEqual(spawnWithArgs.firstCall.args[2].env!.C2TESTVARS!, expectStr);
   });
 
   context('from different pattern', function () {

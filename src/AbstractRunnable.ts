@@ -720,8 +720,8 @@ export abstract class AbstractRunnable {
 
     let resolved = file;
 
-    for (const m of this.properties.sourceFileMap) {
-      resolved = resolved.replace(m[0], m[1]); // Note: it just replaces the first occurence
+    for (const m in this.properties.sourceFileMap) {
+      resolved = resolved.replace(m, this.properties.sourceFileMap[m]); // Note: it just replaces the first occurence
     }
 
     resolved = await this._resolveText(resolved);

@@ -43,21 +43,23 @@ For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) 
   "args": "${args}",
   "cwd": "${cwd}",
   "env": "${envObj}",
+  "sourceFileMap": "${sourceFileMapObj}",
   "externalConsole": false
 }
 ```
 
 #### Usable variables:
 
-| Variable name   | Value meaning                                                        | Type                       |
-| --------------- | -------------------------------------------------------------------- | -------------------------- |
-| `${label}`      | The name of the test. Same as in the Test Explorer.                  | string                     |
-| `${suiteLabel}` | The name of parent suites of the test. Same as in the Test Explorer. | string                     |
-| `${exec}`       | The path of the executable.                                          | string                     |
-| `${argsArray}`  | The arguments for the executable.                                    | string[]                   |
-| `${argsStr}`    | Concatenated arguments for the executable.                           | string                     |
-| `${cwd}`        | The current working directory for execution.                         | string                     |
-| `${envObj}`     | The environment variables as object properties.                      | { [prop: string]: string } |
+| Variable name         | Value meaning                                                             | Type                       |
+| --------------------- | ------------------------------------------------------------------------- | -------------------------- |
+| `${label}`            | The name of the test. Same as in the Test Explorer.                       | string                     |
+| `${suiteLabel}`       | The name of parent suites of the test. Same as in the Test Explorer.      | string                     |
+| `${exec}`             | The path of the executable.                                               | string                     |
+| `${argsArray}`        | The arguments for the executable.                                         | string[]                   |
+| `${argsStr}`          | Concatenated arguments for the executable.                                | string                     |
+| `${cwd}`              | The current working directory for execution.                              | string                     |
+| `${envObj}`           | The environment variables as object properties.                           | { [prop: string]: string } |
+| `${sourceFileMapObj}` | The file path mapping object added to `advancedExecutables.sourceFileMap` | { [prop: string]: string } |
 
 These variables will be substituted when a DebugConfiguration is created.
 

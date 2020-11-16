@@ -101,7 +101,7 @@ describe(pathlib.basename(__filename), function () {
     false,
     {},
     new DefaultSpawner(),
-    [],
+    {},
   );
 
   it('should reloadTests only if changed', async function () {

@@ -16,7 +16,7 @@ export class RunnableProperties {
     public readonly markAsSkipped: boolean,
     public readonly runTask: RunTask,
     public readonly spawner: Spawner,
-    public readonly sourceFileMap: [string, string][],
+    public readonly sourceFileMap: Record<string, string>,
   ) {
     this.parallelizationPool = new TaskPool(_parallelizationLimit);
   }

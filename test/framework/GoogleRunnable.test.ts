@@ -26,7 +26,7 @@ describe(pathlib.basename(__filename), function () {
     false,
     {},
     new DefaultSpawner(),
-    [],
+    {},
   );
 
   const createGoogleRunnable = (): { runnable: GoogleTestRunnable; root: RootSuite } => {

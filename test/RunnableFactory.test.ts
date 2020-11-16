@@ -50,7 +50,7 @@ describe(path.basename(__filename), function () {
         false,
         {},
         new DefaultSpawner(),
-        [],
+        {},
       );
 
       spawnStub
@@ -94,7 +94,7 @@ describe(path.basename(__filename), function () {
         false,
         {},
         new DefaultSpawner(),
-        [],
+        {},
       );
 
       spawnStub

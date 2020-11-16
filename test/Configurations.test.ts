@@ -38,7 +38,7 @@ describe(path.basename(__filename), function () {
     it('test.randomGeneratorSeed', function () {
       adapter = new TestAdapter();
       return settings.updateConfig('test.randomGeneratorSeed', 987).then(function () {
-        assert.equal((adapter as any) /* eslint-disable-line */._shared.rngSeed, 987);
+        assert.strictEqual((adapter as any) /* eslint-disable-line */._shared.rngSeed, 987);
       });
     });
 
@@ -47,21 +47,21 @@ describe(path.basename(__filename), function () {
 
       adapter = new TestAdapter();
       return settings.updateConfig('discovery.gracePeriodForMissing', 9876).then(function () {
-        assert.equal((adapter as any) /* eslint-disable-line */._shared.execWatchTimeout, 9876000);
+        assert.strictEqual((adapter as any) /* eslint-disable-line */._shared.execWatchTimeout, 9876000);
       });
     });
 
     it('test.runtimeLimit', function () {
       adapter = new TestAdapter();
       return settings.updateConfig('test.runtimeLimit', 8765).then(function () {
-        assert.equal((adapter as any) /* eslint-disable-line */._shared.execRunningTimeout, 8765000);
+        assert.strictEqual((adapter as any) /* eslint-disable-line */._shared.execRunningTimeout, 8765000);
       });
     });
 
     it('debug.noThrow', function () {
       adapter = new TestAdapter();
       return settings.updateConfig('debug.noThrow', true).then(function () {
-        assert.equal((adapter as any) /* eslint-disable-line */._shared.isNoThrow, true);
+        assert.strictEqual((adapter as any) /* eslint-disable-line */._shared.isNoThrow, true);
       });
     });
 

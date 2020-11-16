@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.5]
+
+### Added
+
+- populate `sourceFileMap` to `debug.ConfigTemplate` with variable `${sourceFileMapObj}`.
+- improved error feedback
+
 ## [3.6.4] - 2020-11-15
 
 Small fixes. Nothing interesting.
