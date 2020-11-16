@@ -596,10 +596,10 @@ export class SharedVariables extends my2.SharedVariables {
   public loadCount = 0;
   public readonly stateEvents: my2.TestRunEvent[] = [];
 
-  public constructor() {
+  public constructor(workspaceFolder: vscode.WorkspaceFolder = settings.workspaceFolder) {
     super(
       logger,
-      settings.workspaceFolder,
+      workspaceFolder,
       async () => {
         ++this.loadCount;
         return undefined;

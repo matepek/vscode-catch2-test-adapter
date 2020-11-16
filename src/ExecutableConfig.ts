@@ -279,7 +279,7 @@ export class ExecutableConfig implements vscode.Disposable {
     path = await resolveVariablesAsync(path, this._shared.varToValue);
 
     const normPattern = path.replace(/\\/g, '/');
-    const isAbsolute = pathlib.isAbsolute(normPattern);
+    const isAbsolute = pathlib.posix.isAbsolute(normPattern) || pathlib.win32.isAbsolute(normPattern);
     const absPath = isAbsolute
       ? vscode.Uri.file(pathlib.normalize(path)).fsPath
       : vscode.Uri.file(pathlib.join(this._shared.workspaceFolder.uri.fsPath, normPattern)).fsPath;

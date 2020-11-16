@@ -280,11 +280,11 @@ export abstract class AbstractRunnable {
                 reIndex++;
               }
 
-              if (match) {
+              if (match !== null) {
                 this._shared.log.info(groupType + ' matched on', testName, g.regexes[reIndex - 1]);
                 const matchGroup = match[1] ? match[1] : match[0];
 
-                const lowerMatchGroup = matchGroup.toLocaleLowerCase();
+                const lowerMatchGroup = matchGroup.toLowerCase();
 
                 const matchVar: ResolveRuleAsync[] = [
                   { resolve: '${match}', rule: matchGroup },
@@ -292,7 +292,7 @@ export abstract class AbstractRunnable {
                   {
                     resolve: '${match_upperfirst}',
                     rule: async (): Promise<string> =>
-                      lowerMatchGroup[0].toLocaleUpperCase() + lowerMatchGroup.substr(1),
+                      lowerMatchGroup.substr(0, 1).toUpperCase() + lowerMatchGroup.substr(1),
                   },
                 ];
 
