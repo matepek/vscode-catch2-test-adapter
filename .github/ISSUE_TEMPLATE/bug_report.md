@@ -8,7 +8,7 @@ about: Create a report to help us improve
     I really appreciate the bug-reports which give me a lot of info
     to indentifiy the source of the issue.(Also makes it faster to resolve it.)
     Please bare in mind that I'm developing this in my free time
-    as a gratitude for the work of other Open Source Community.
+    as a gratitude for the work of the Open Source Community.
     Your latest contribution is this bug report.
   Thank You for your contribution. 🙏
 -->
@@ -79,5 +79,5 @@ about: Create a report to help us improve
   _Warning_: Log probably contains file and test names too.
 
   PLEASE attach an extensive log. A lot of times reportes just select what they think it is important and those logs sometime not sufficient.
-  Even igf you allowed sentry.
+    (Even if you allowed sentry because that just reports important log messages but far from everything.)
 -->

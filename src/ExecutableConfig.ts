@@ -520,6 +520,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
     if (isFileExistsAndExecutable) {
       try {
+        // we might have to add soem delay here: https://github.com/matepek/vscode-catch2-test-adapter/issues/235
         await runnable.reloadTests(this._shared.taskPool);
         this._runnables.set(filePath, runnable); // it might be set already but we don't care
         this._shared.sendRetireEvent(runnable.tests);
