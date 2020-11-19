@@ -16,6 +16,11 @@ describe(path.basename(__filename), function () {
       { resolve: 'number1', rule: (): Promise<number> => Promise.resolve(1) },
       { resolve: 'double1', rule: (): Promise<number> => Promise.resolve(1.0) },
       { resolve: 'object1', rule: (): Promise<Record<string, string>> => Promise.resolve({ name: 'one' }) },
+      {
+        resolve: 'object2',
+        rule: (): Promise<Record<string, string>> => Promise.resolve({ name2: 'two' }),
+        isFlat: true,
+      },
       { resolve: 'array1', rule: (): Promise<string[]> => Promise.resolve(['item1']) },
       { resolve: 'array2', rule: (): Promise<string[]> => Promise.resolve(['item2', 'item3']), isFlat: true },
       { resolve: 'func1', rule: func1 },
@@ -50,7 +55,7 @@ describe(path.basename(__filename), function () {
     );
 
     assert.deepStrictEqual(await resolveVariablesAsync([null], varsToResolve), [null]);
-    assert.deepStrictEqual(await resolveVariablesAsync([undefined], varsToResolve), []);
+    assert.deepStrictEqual(await resolveVariablesAsync([undefined], varsToResolve), [undefined]);
     assert.deepStrictEqual(await resolveVariablesAsync([''], varsToResolve), ['']);
     assert.deepStrictEqual(await resolveVariablesAsync([1], varsToResolve), [1]);
     assert.deepStrictEqual(await resolveVariablesAsync([1.0], varsToResolve), [1.0]);
@@ -61,11 +66,22 @@ describe(path.basename(__filename), function () {
       'notresolve',
       ['item1'],
     ]);
-    assert.deepStrictEqual(await resolveVariablesAsync(['notresolve', 'array2'], varsToResolve), [
-      'notresolve',
-      'item2',
-      'item3',
-    ]);
+    {
+      const toResolve = ['notresolve', 'array2'];
+      const copyOfToResolve = toResolve.map(x => x);
+      assert.deepStrictEqual(await resolveVariablesAsync(toResolve, varsToResolve), ['notresolve', 'item2', 'item3']);
+      assert.deepStrictEqual(toResolve, copyOfToResolve);
+    }
+    {
+      const toResolve = { x: 'object1', y: 'object2' };
+      const copyOfToResolve = Object.assign({}, toResolve);
+      const resolved = await resolveVariablesAsync(toResolve, varsToResolve);
+      assert.deepStrictEqual(resolved, {
+        x: { name: 'one' },
+        name2: 'two',
+      });
+      assert.deepStrictEqual(toResolve, copyOfToResolve);
+    }
     assert.deepStrictEqual(await resolveVariablesAsync(['func1'], varsToResolve), ['resolvedFunc1']);
 
     assert.deepStrictEqual(await resolveVariablesAsync({ x: null }, varsToResolve), { x: null });
@@ -101,7 +117,7 @@ describe(path.basename(__filename), function () {
       a: null,
       b: null,
       c: undefined,
-      d: 'undefined1',
+      d: undefined,
       e: '',
       f: 'resolvedString1',
       g: 1,

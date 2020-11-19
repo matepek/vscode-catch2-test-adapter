@@ -87,7 +87,7 @@ export class SpawnWithExecutor extends DefaultSpawner {
   private readonly _argsR2 = '${argsFlat}';
   private readonly _argsStrR = '${argsStr}';
 
-  public constructor(private readonly _executor: string, private readonly _args?: string[]) {
+  public constructor(private readonly _executor: string, private readonly _args?: ReadonlyArray<string>) {
     super();
 
     if (_args && !_args.some(x => x.indexOf(this._cmdR) != -1)) {
@@ -121,11 +121,11 @@ export class SpawnWithExecutor extends DefaultSpawner {
     return super.spawn(this._executor, argsV, options);
   }
 
-  private async getArgs(cmd: string, args: string[]): Promise<string[]> {
+  private async getArgs(cmd: string, args: readonly string[]): Promise<string[]> {
     if (this._args && this._args.length > 0) {
-      const argsFlat = (): Promise<string[]> => Promise.resolve(args);
+      const argsFlat = (): Promise<readonly string[]> => Promise.resolve(args);
 
-      const argsResolved = await resolveVariablesAsync(this._args, [
+      const argsResolved = await resolveVariablesAsync(this._args as string[], [
         {
           resolve: this._cmdR,
           rule: cmd,

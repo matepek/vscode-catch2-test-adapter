@@ -40,8 +40,10 @@ function _mapAllStrings(
   }
 }
 
+const _flatResolved = Symbol('special value which means that the veriable was flat resolved');
+
 async function _mapAllStringsAsync(
-  value: any /*eslint-disable-line*/,
+  value: Readonly<any> /*eslint-disable-line*/,
   parent: any /*eslint-disable-line*/,
   mapperFunc: (s: string, parent: any) => Promise<any> /*eslint-disable-line*/,
 ): Promise<any> /*eslint-disable-line*/ {
@@ -61,16 +63,17 @@ async function _mapAllStringsAsync(
       if (Array.isArray(value)) {
         const newValue: any[] = []; /*eslint-disable-line*/
         for (const v of value) {
-          const res = await _mapAllStringsAsync(v, value, mapperFunc);
-          if (res !== undefined) newValue.push(res);
+          const res = await _mapAllStringsAsync(v, newValue, mapperFunc);
+          if (res !== _flatResolved) newValue.push(res);
         }
         return newValue;
       } else {
         const newValue = Object.create(Object.getPrototypeOf(value));
         Object.defineProperties(newValue, Object.getOwnPropertyDescriptors(value));
         for (const prop in value) {
-          const res = await _mapAllStringsAsync(value[prop], value, mapperFunc);
-          if (res !== undefined) newValue[prop] = res;
+          const res = await _mapAllStringsAsync(value[prop], newValue, mapperFunc);
+          if (res !== _flatResolved) newValue[prop] = res;
+          else delete newValue[prop];
         }
         return newValue;
       }
@@ -149,13 +152,21 @@ export function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRul
               return rule;
             } else {
               const ruleV = await (rule as () => Promise<any>)(); // eslint-disable-line
-              if (isFlat && Array.isArray(parent)) {
-                if (Array.isArray(ruleV)) {
-                  parent.push(...ruleV);
-                } else {
-                  parent.push(ruleV);
+              if (isFlat) {
+                if (Array.isArray(parent)) {
+                  if (Array.isArray(ruleV)) {
+                    parent.push(...ruleV);
+                    return _flatResolved;
+                  }
+                } else if (typeof parent === 'object') {
+                  if (typeof ruleV === 'object') {
+                    Object.assign(parent, ruleV);
+                    return _flatResolved;
+                  }
                 }
-                return undefined;
+                throw Error(
+                  `resolveVariablesAsync: coudn't flat-resolve because ${typeof parent} != ${typeof ruleV} for ${s}`,
+                );
               } else {
                 return ruleV;
               }
