@@ -150,7 +150,8 @@ export abstract class AbstractRunnable {
     createTest: (parent: Suite) => AbstractTest,
     updateTest: (old: AbstractTest) => boolean,
   ): Promise<[AbstractTest, boolean]> {
-    this._shared.log.info('testGrouping', { testName, testNameAsId, file, tags, testGrouping });
+    this._shared.log.info('testGrouping', testNameAsId);
+    this._shared.log.debug('testGrouping', { testName, testNameAsId, file, tags, testGrouping });
 
     tags.sort();
 

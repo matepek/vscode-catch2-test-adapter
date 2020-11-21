@@ -20,6 +20,7 @@ import { AbstractTest } from './AbstractTest';
 import { readJSONSync } from 'fs-extra';
 import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
 import { RunTask, ExecutionWrapper, FrameworkSpecific } from './AdvancedExecutableInterface';
+import { BuildProcessChecker } from './util/BuildProcessChecker';
 
 ///
 
@@ -47,6 +48,8 @@ export class ExecutableConfig implements vscode.Disposable {
     if ([_catch2, _gtest, _doctest].some(f => Object.keys(f).length > 0)) {
       _shared.log.infoS('Using frameworks specific executable setting', _catch2, _gtest, _doctest);
     }
+
+    this._buildProcessChecker = new BuildProcessChecker(this._shared.log);
 
     const createUriSymbol: unique symbol = Symbol('createUri');
     type CreateUri = { [createUriSymbol]: () => vscode.Uri };
@@ -119,6 +122,7 @@ export class ExecutableConfig implements vscode.Disposable {
   public dispose(): void {
     this._cancellationFlag.isCancellationRequested = true;
     this._disposables.forEach(d => d.dispose());
+    this._buildProcessChecker.dispose();
   }
 
   private readonly _runnables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
@@ -504,6 +508,8 @@ export class ExecutableConfig implements vscode.Disposable {
     }
   }
 
+  private readonly _buildProcessChecker: BuildProcessChecker;
+
   private async _recursiveHandleRunnable(
     runnable: AbstractRunnable,
     isFileExistsAndExecutable = false,
@@ -521,7 +527,7 @@ export class ExecutableConfig implements vscode.Disposable {
     }
 
     if (isFileExistsAndExecutable) {
-      // we might have to do something here: https://github.com/matepek/vscode-catch2-test-adapter/issues/235
+      await this._buildProcessChecker.resolveAtFinish();
 
       try {
         await runnable.reloadTests(this._shared.taskPool, this._cancellationFlag);
