@@ -202,7 +202,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
             if (e.execution.task.name === resolvedTask.name) {
               log.info('Task execution has finished', resolvedTask.name);
               disp1.dispose();
-              resolve();
+              resolve(undefined);
             }
           });
 

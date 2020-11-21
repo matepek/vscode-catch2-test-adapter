@@ -282,6 +282,8 @@ export class GoogleTestRunnable extends AbstractRunnable {
         data.stdoutAndErrBuffer = data.stdoutAndErrBuffer + chunk;
         let invariant = 99999;
         do {
+          if (runInfo.cancellationToken.isCancellationRequested) return;
+
           if (data.currentTestCaseNameFull === undefined) {
             const m = data.stdoutAndErrBuffer.match(testBeginRe);
             if (m == null) return;

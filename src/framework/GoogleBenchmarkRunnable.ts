@@ -176,6 +176,8 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
           const benchmarks = JSON.parse(benchmarksJson)['benchmarks'] as Record<string, unknown>[];
 
           for (let i = data.lastProcessedBenchmarkIndex + 1; i < benchmarks.length; ++i) {
+            if (runInfo.cancellationToken.isCancellationRequested) return;
+
             const benchmark = benchmarks[i];
             const test = this._findTest(v => v.testNameAsId == benchmark['name']);
 

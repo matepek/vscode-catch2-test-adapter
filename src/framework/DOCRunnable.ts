@@ -190,6 +190,8 @@ export class DOCRunnable extends AbstractRunnable {
         data.stdoutBuffer = data.stdoutBuffer + chunk;
         let invariant = 99999;
         do {
+          if (runInfo.cancellationToken.isCancellationRequested) return;
+
           if (!data.inTestCase) {
             if (data.beforeFirstTestCase && data.rngSeed === undefined) {
               const ri = data.stdoutBuffer.match(/<Options\s+[^>\n]*rand_seed="([0-9]+)"/);

@@ -521,8 +521,7 @@ export class ExecutableConfig implements vscode.Disposable {
     }
 
     if (isFileExistsAndExecutable) {
-      // we might have to add some delay here: https://github.com/matepek/vscode-catch2-test-adapter/issues/235
-      //const runnableLastReloadTime = runnable.lastReloadTime;
+      // we might have to do something here: https://github.com/matepek/vscode-catch2-test-adapter/issues/235
 
       try {
         await runnable.reloadTests(this._shared.taskPool, this._cancellationFlag);

@@ -356,6 +356,8 @@ export class Catch2Runnable extends AbstractRunnable {
         data.stdoutBuffer = data.stdoutBuffer + chunk;
         let invariant = 99999;
         do {
+          if (runInfo.cancellationToken.isCancellationRequested) return;
+
           if (!data.inTestCase) {
             const b = data.stdoutBuffer.indexOf('<TestCase');
             if (b == -1) return;
