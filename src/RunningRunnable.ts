@@ -78,9 +78,9 @@ export class RunningRunnable {
   public constructor(
     public readonly process: ChildProcessWithoutNullStreams,
     public readonly childrenToRun: readonly AbstractTest[],
-    private readonly _cancellationToken: CancellationToken,
+    public readonly cancellationToken: CancellationToken,
   ) {
-    const disp = _cancellationToken.onCancellationRequested(() => this.killProcess());
+    const disp = cancellationToken.onCancellationRequested(() => this.killProcess());
 
     process.once('close', () => {
       this._closed = true;
@@ -88,10 +88,6 @@ export class RunningRunnable {
     });
 
     process.stderr && process.stderr.on('data', (chunk: Uint8Array) => (this._stderr += chunk.toString()));
-  }
-
-  public get isCancelled(): boolean {
-    return this._cancellationToken.isCancellationRequested;
   }
 
   public killProcess(timeout: number | null = null): void {

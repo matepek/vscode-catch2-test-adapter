@@ -8,7 +8,7 @@ import { TaskPool } from './TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningRunnable } from './RunningRunnable';
 import { promisify, inspect } from 'util';
-import { Version, reverse, getAbsolutePath, CancellationToken } from './Util';
+import { Version, reverse, getAbsolutePath, CancellationToken, CancellationFlag } from './Util';
 import {
   resolveOSEnvironmentVariables,
   createPythonIndexerForPathVariable,
@@ -33,11 +33,6 @@ export class RunnableReloadResult {
 }
 
 export abstract class AbstractRunnable {
-  private static _reportedFrameworks: string[] = [];
-
-  private _lastReloadTime: number | undefined = undefined;
-  private _tests = new Set<AbstractTest>();
-
   public constructor(
     protected readonly _shared: SharedVariables,
     protected readonly _rootSuite: RootSuite,
@@ -60,12 +55,22 @@ export abstract class AbstractRunnable {
       .catch(e => this._shared.log.exceptionS(e));
   }
 
+  private static _reportedFrameworks: string[] = [];
+
   protected _getGroupByExecutable(): GroupByExecutable {
     return {
       label: this.properties.name,
       description: this.properties.description,
     };
   }
+
+  private _lastReloadTime: number | undefined = undefined;
+
+  public get lastReloadTime(): number | undefined {
+    return this._lastReloadTime;
+  }
+
+  private _tests = new Set<AbstractTest>();
 
   public get tests(): Set<AbstractTest> {
     return this._tests;
@@ -478,7 +483,7 @@ export abstract class AbstractRunnable {
     return subsets;
   }
 
-  protected abstract _reloadChildren(): Promise<RunnableReloadResult>;
+  protected abstract _reloadChildren(cancellationFlag: CancellationFlag): Promise<RunnableReloadResult>;
 
   protected abstract _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
 
@@ -497,7 +502,9 @@ export abstract class AbstractRunnable {
     return this.properties.prependTestRunningArgs.concat(this._getDebugParamsInner(childrenToRun, breakOnFailure));
   }
 
-  public reloadTests(taskPool: TaskPool): Promise<void> {
+  public reloadTests(taskPool: TaskPool, cancellationFlag: CancellationFlag): Promise<void> {
+    if (cancellationFlag.isCancellationRequested) return Promise.resolve();
+
     return taskPool.scheduleTask(async () => {
       this._shared.log.info('reloadTests', this.frameworkName, this.frameworkVersion, this.properties.path);
 
@@ -506,7 +513,7 @@ export abstract class AbstractRunnable {
       if (this._lastReloadTime === undefined || lastModiTime === undefined || this._lastReloadTime !== lastModiTime) {
         this._lastReloadTime = lastModiTime;
 
-        const reloadResult = await this._reloadChildren();
+        const reloadResult = await this._reloadChildren(cancellationFlag);
 
         const toRemove: AbstractTest[] = [];
         for (const t of this._tests) if (!reloadResult.tests.has(t)) toRemove.push(t);
@@ -545,7 +552,7 @@ export abstract class AbstractRunnable {
       return;
     }
 
-    await this.reloadTests(taskPool); // this might relod the test list if the file timestam has changed
+    await this.reloadTests(taskPool, cancellationToken); // this might relod the test list if the file timestamp has changed
 
     const childrenToRun = collectChildrenToRun();
 

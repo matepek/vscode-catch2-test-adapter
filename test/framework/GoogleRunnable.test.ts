@@ -82,7 +82,7 @@ describe(pathlib.basename(__filename), function () {
         '',
       ];
 
-      const res = await runnable['_reloadFromString'](testOutput.join(EOL));
+      const res = await runnable['_reloadFromString'](testOutput.join(EOL), { isCancellationRequested: false });
 
       const tests = [...res.tests].sort((a, b) => a.testNameAsId.localeCompare(b.testNameAsId));
 
@@ -221,7 +221,7 @@ describe(pathlib.basename(__filename), function () {
         '  </testsuite>',
         '</testsuites>',
       ];
-      const res = await runnable['_reloadFromXml'](testOutput.join(EOL));
+      const res = await runnable['_reloadFromXml'](testOutput.join(EOL), { isCancellationRequested: false });
 
       const tests = [...res.tests].sort((a, b) => a.testNameAsId.localeCompare(b.testNameAsId));
 

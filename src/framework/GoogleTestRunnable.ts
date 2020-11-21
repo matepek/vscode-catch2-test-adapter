@@ -9,7 +9,7 @@ import { RunnableProperties } from '../RunnableProperties';
 import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
-import { Version } from '../Util';
+import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { RootSuite } from '../RootSuite';
 
@@ -34,7 +34,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
     }
   }
 
-  private async _reloadFromXml(xmlStr: string): Promise<RunnableReloadResult> {
+  private async _reloadFromXml(xmlStr: string, cancellationFlag: CancellationFlag): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
 
     interface XmlObject {
@@ -57,6 +57,8 @@ export class GoogleTestRunnable extends AbstractRunnable {
       const suiteName = xml.testsuites.testsuite[i].$.name;
 
       for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
+        if (cancellationFlag.isCancellationRequested) return reloadResult;
+
         const testCase = xml.testsuites.testsuite[i].testcase[j];
         const testName = testCase.$.name.startsWith('DISABLED_') ? testCase.$.name.substr(9) : testCase.$.name;
         const testNameAsId = suiteName + '.' + testCase.$.name;
@@ -84,7 +86,10 @@ export class GoogleTestRunnable extends AbstractRunnable {
     return reloadResult;
   }
 
-  private async _reloadFromString(stdOutStr: string): Promise<RunnableReloadResult> {
+  private async _reloadFromString(
+    stdOutStr: string,
+    cancellationFlag: CancellationFlag,
+  ): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
 
     const lines = stdOutStr.split(/\r?\n/);
@@ -117,6 +122,8 @@ export class GoogleTestRunnable extends AbstractRunnable {
       let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
 
       while (testMatch) {
+        if (cancellationFlag.isCancellationRequested) return reloadResult;
+
         lineNum++;
 
         const testName = testMatch[1].startsWith('DISABLED_') ? testMatch[1].substr(9) : testMatch[1];
@@ -155,7 +162,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
     return reloadResult;
   }
 
-  protected async _reloadChildren(): Promise<RunnableReloadResult> {
+  protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<RunnableReloadResult> {
     const cacheFile = this.properties.path + '.TestMate.testListCache.xml';
 
     if (this._shared.enabledTestListCaching) {
@@ -167,7 +174,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
           this._shared.log.info('loading from cache: ', cacheFile);
           const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          return await this._reloadFromXml(xmlStr);
+          return await this._reloadFromXml(xmlStr, cancellationFlag);
         }
       } catch (e) {
         this._shared.log.info('coudnt use cache', e);
@@ -196,7 +203,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
       if (hasXmlFile) {
         const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-        const result = await this._reloadFromXml(xmlStr);
+        const result = await this._reloadFromXml(xmlStr, cancellationFlag);
 
         if (!this._shared.enabledTestListCaching) {
           fs.unlink(cacheFile, (err: Error | null) => {
@@ -211,7 +218,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
         );
 
         try {
-          return await this._reloadFromString(googleTestListOutput.stdout);
+          return await this._reloadFromString(googleTestListOutput.stdout, cancellationFlag);
         } catch (e) {
           this._shared.log.info('GoogleTest._reloadFromStdOut error', e, googleTestListOutput);
           throw e;
@@ -372,7 +379,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
       runInfo.process.stderr.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
 
       runInfo.process.once('close', (code: number | null, signal: string | null) => {
-        if (runInfo.isCancelled) {
+        if (runInfo.cancellationToken.isCancellationRequested) {
           resolve(ProcessResult.ok());
         } else {
           if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
@@ -396,7 +403,7 @@ export class GoogleTestRunnable extends AbstractRunnable {
 
             let ev: AbstractTestEvent;
 
-            if (runInfo.isCancelled) {
+            if (runInfo.cancellationToken.isCancellationRequested) {
               ev = data.currentChild.getCancelledEvent(testRunId, data.stdoutAndErrBuffer);
             } else if (runInfo.timeout !== null) {
               ev = data.currentChild.getTimeoutEvent(testRunId, runInfo.timeout);
@@ -425,12 +432,12 @@ export class GoogleTestRunnable extends AbstractRunnable {
 
         const isTestRemoved =
           runInfo.timeout === null &&
-          !runInfo.isCancelled &&
+          !runInfo.cancellationToken.isCancellationRequested &&
           result.error === undefined &&
           data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedTestCases.length > 0 || isTestRemoved) {
-          this.reloadTests(this._shared.taskPool).then(
+          this.reloadTests(this._shared.taskPool, runInfo.cancellationToken).then(
             () => {
               // we have test results for the newly detected tests
               // after reload we can set the results

@@ -28,16 +28,23 @@ export interface Event<T> {
   (listener: (e: T) => any, thisArgs?: any, disposables?: Disposable[]): Disposable; // eslint-disable-line
 }
 
+export interface CancellationFlag {
+  /**
+   * Is `true` when the token has been cancelled, `false` otherwise.
+   */
+  readonly isCancellationRequested: boolean;
+}
+
 export interface CancellationToken {
   /**
    * Is `true` when the token has been cancelled, `false` otherwise.
    */
-  isCancellationRequested: boolean;
+  readonly isCancellationRequested: boolean;
 
   /**
    * An [event](#Event) which fires upon cancellation.
    */
-  onCancellationRequested: Event<void>; // eslint-disable-line
+  readonly onCancellationRequested: Event<void>; // eslint-disable-line
 }
 
 ///

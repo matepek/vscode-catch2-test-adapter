@@ -18,7 +18,7 @@ class Runnable extends AbstractRunnable {
     super(shared, rootSuite, properties, 'for test', Promise.resolve(undefined));
   }
 
-  public _reloadChildren(): Promise<RunnableReloadResult> {
+  public _reloadChildren(/*_cancellationFlag: CancellationFlag*/): Promise<RunnableReloadResult> {
     throw Error('_reloadChildren should be mocked');
   }
 
@@ -114,7 +114,7 @@ describe(pathlib.basename(__filename), function () {
 
     reloadStub.callsFake(async (): Promise<RunnableReloadResult> => new RunnableReloadResult());
 
-    await runnable.reloadTests(shared.taskPool);
+    await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
 
     assert.strictEqual(runnable.tests.size, 0);
     assert.strictEqual(root.children.length, 0);
@@ -151,13 +151,13 @@ describe(pathlib.basename(__filename), function () {
       },
     );
 
-    await runnable.reloadTests(shared.taskPool);
+    await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
 
     assert.strictEqual(runnable.tests.size, 1);
     assert.strictEqual(root.children.length, 1);
     assert.strictEqual(shared.loadCount, ++loadCount);
 
-    await runnable.reloadTests(shared.taskPool);
+    await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
 
     assert.strictEqual(runnable.tests.size, 1);
     assert.strictEqual(root.children.length, 1);
@@ -220,13 +220,13 @@ describe(pathlib.basename(__filename), function () {
       },
     );
 
-    await runnable.reloadTests(shared.taskPool);
+    await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
 
     assert.strictEqual(runnable.tests.size, 2);
     assert.strictEqual(root.children.length, 1);
     assert.strictEqual(shared.loadCount, ++loadCount);
 
-    await runnable.reloadTests(shared.taskPool);
+    await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
 
     assert.strictEqual(runnable.tests.size, 2);
     assert.strictEqual(root.children.length, 1);
@@ -263,13 +263,13 @@ describe(pathlib.basename(__filename), function () {
       },
     );
 
-    await runnable.reloadTests(shared.taskPool);
+    await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
 
     assert.strictEqual(runnable.tests.size, 2);
     assert.strictEqual(root.children.length, 1);
     assert.strictEqual(shared.loadCount, ++loadCount, 'reloads because test was deleted');
 
-    await runnable.reloadTests(shared.taskPool);
+    await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
 
     assert.strictEqual(runnable.tests.size, 2);
     assert.strictEqual(root.children.length, 1);
@@ -399,7 +399,7 @@ describe(pathlib.basename(__filename), function () {
         },
       );
 
-      await runnable.reloadTests(shared.taskPool);
+      await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
 
       assert.strictEqual(runnable.tests.size, 4);
       assert.strictEqual(root.children.length, 1);

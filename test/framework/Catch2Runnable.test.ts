@@ -64,7 +64,7 @@ describe(pathlib.basename(__filename), function () {
         '      [a]',
         '1 matching test case',
       ];
-      const res = await runnable['_reloadFromString'](testOutput.join(EOL));
+      const res = await runnable['_reloadFromString'](testOutput.join(EOL), { isCancellationRequested: false });
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -104,7 +104,7 @@ describe(pathlib.basename(__filename), function () {
         '      [b]',
         '2 matching test cases',
       ];
-      const res = await runnable['_reloadFromString'](testOutput.join(EOL));
+      const res = await runnable['_reloadFromString'](testOutput.join(EOL), { isCancellationRequested: false });
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -140,7 +140,7 @@ describe(pathlib.basename(__filename), function () {
         '1 matching test case',
         'bla bla bla',
       ];
-      const res = await runnable['_reloadFromString'](testOutput.join(EOL));
+      const res = await runnable['_reloadFromString'](testOutput.join(EOL), { isCancellationRequested: false });
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -182,7 +182,7 @@ describe(pathlib.basename(__filename), function () {
         '    (NO DESCRIPTION)',
         '5 matching test cases',
       ];
-      const res = await runnable['_reloadFromString'](testOutput.join(EOL));
+      const res = await runnable['_reloadFromString'](testOutput.join(EOL), { isCancellationRequested: false });
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 
@@ -247,7 +247,7 @@ describe(pathlib.basename(__filename), function () {
         )
         .returns(new ChildProcessStub('Matching test cases:' + EOL, undefined, testListErrOutput.join(EOL)));
 
-      const res = await await runnable['_reloadChildren']();
+      const res = await runnable['_reloadChildren']({ isCancellationRequested: false });
 
       const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
 

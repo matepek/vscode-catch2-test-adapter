@@ -9,7 +9,7 @@ import { DOCTest } from './DOCTest';
 import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { RunnableProperties } from '../RunnableProperties';
-import { Version } from '../Util';
+import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { RootSuite } from '../RootSuite';
 
@@ -36,7 +36,10 @@ export class DOCRunnable extends AbstractRunnable {
     }
   }
 
-  private async _reloadFromString(testListOutput: string): Promise<RunnableReloadResult> {
+  private async _reloadFromString(
+    testListOutput: string,
+    cancellationFlag: CancellationFlag,
+  ): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
 
     let res: XmlObject = {};
@@ -51,6 +54,8 @@ export class DOCRunnable extends AbstractRunnable {
     const reloadResult = new RunnableReloadResult();
 
     for (let i = 0; i < res.doctest.TestCase.length; ++i) {
+      if (cancellationFlag.isCancellationRequested) return reloadResult;
+
       const testCase = res.doctest.TestCase[i].$;
 
       const testName = testCase.name;
@@ -80,7 +85,7 @@ export class DOCRunnable extends AbstractRunnable {
     return reloadResult;
   }
 
-  protected async _reloadChildren(): Promise<RunnableReloadResult> {
+  protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<RunnableReloadResult> {
     const cacheFile = this.properties.path + '.TestMate.testListCache.txt';
 
     if (this._shared.enabledTestListCaching) {
@@ -92,7 +97,7 @@ export class DOCRunnable extends AbstractRunnable {
           this._shared.log.info('loading from cache: ', cacheFile);
           const content = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          return await this._reloadFromString(content);
+          return await this._reloadFromString(content, cancellationFlag);
         }
       } catch (e) {
         this._shared.log.warn('coudnt use cache', e);
@@ -125,7 +130,7 @@ export class DOCRunnable extends AbstractRunnable {
       return await this._createAndAddUnexpectedStdError(docTestListOutput.stdout, docTestListOutput.stderr);
     }
 
-    const result = await this._reloadFromString(docTestListOutput.stdout);
+    const result = await this._reloadFromString(docTestListOutput.stdout, cancellationFlag);
 
     if (this._shared.enabledTestListCaching) {
       promisify(fs.writeFile)(cacheFile, docTestListOutput.stdout).catch(err =>
@@ -336,7 +341,7 @@ export class DOCRunnable extends AbstractRunnable {
       runInfo.process.stderr.on('data', (chunk: Uint8Array) => (data.stderrBuffer += chunk.toLocaleString()));
 
       runInfo.process.once('close', (code: number | null, signal: string | null) => {
-        if (runInfo.isCancelled) {
+        if (runInfo.cancellationToken.isCancellationRequested) {
           resolve(ProcessResult.ok());
         } else {
           if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
@@ -359,7 +364,7 @@ export class DOCRunnable extends AbstractRunnable {
             this._shared.log.info('data.currentChild !== undefined: ', data);
             let ev: AbstractTestEvent;
 
-            if (runInfo.isCancelled) {
+            if (runInfo.cancellationToken.isCancellationRequested) {
               ev = data.currentChild.getCancelledEvent(testRunId, data.stdoutBuffer);
             } else if (runInfo.timeout !== null) {
               ev = data.currentChild.getTimeoutEvent(testRunId, runInfo.timeout);
@@ -396,12 +401,12 @@ export class DOCRunnable extends AbstractRunnable {
 
         const isTestRemoved =
           runInfo.timeout === null &&
-          !runInfo.isCancelled &&
+          !runInfo.cancellationToken.isCancellationRequested &&
           result.error === undefined &&
           data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
-          this.reloadTests(this._shared.taskPool).then(
+          this.reloadTests(this._shared.taskPool, runInfo.cancellationToken).then(
             () => {
               // we have test results for the newly detected tests
               // after reload we can set the results

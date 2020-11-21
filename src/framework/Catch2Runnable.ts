@@ -9,7 +9,7 @@ import { Catch2Test } from './Catch2Test';
 import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
-import { Version } from '../Util';
+import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { RootSuite } from '../RootSuite';
 
@@ -36,7 +36,10 @@ export class Catch2Runnable extends AbstractRunnable {
     }
   }
 
-  private async _reloadFromString(testListOutput: string): Promise<RunnableReloadResult> {
+  private async _reloadFromString(
+    testListOutput: string,
+    cancellationFlag: CancellationFlag,
+  ): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
     const lines = testListOutput.split(/\r?\n/);
 
@@ -58,6 +61,8 @@ export class Catch2Runnable extends AbstractRunnable {
     const reloadResult = new RunnableReloadResult();
 
     while (i < lines.length) {
+      if (cancellationFlag.isCancellationRequested) return reloadResult;
+
       const m = lines[i].match(endRe);
       if (m !== null) break;
 
@@ -158,7 +163,10 @@ export class Catch2Runnable extends AbstractRunnable {
     return reloadResult;
   }
 
-  private async _reloadFromXml(testListOutput: string): Promise<RunnableReloadResult> {
+  private async _reloadFromXml(
+    testListOutput: string,
+    cancellationFlag: CancellationFlag,
+  ): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
 
     let res: XmlObject = {};
@@ -174,6 +182,8 @@ export class Catch2Runnable extends AbstractRunnable {
 
     const testCases = res.MatchingTests.TestCase;
     for (let i = 0; i < testCases.length; ++i) {
+      if (cancellationFlag.isCancellationRequested) return reloadResult;
+
       const testCase = testCases[i];
 
       const testName = testCase.Name[0];
@@ -207,7 +217,7 @@ export class Catch2Runnable extends AbstractRunnable {
     return reloadResult;
   }
 
-  protected async _reloadChildren(): Promise<RunnableReloadResult> {
+  protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<RunnableReloadResult> {
     const cacheFile = this.properties.path + '.TestMate.testListCache.txt';
 
     if (this._shared.enabledTestListCaching) {
@@ -223,8 +233,8 @@ export class Catch2Runnable extends AbstractRunnable {
             this._shared.log.debug('loading from cache failed because file is empty');
           } else {
             return this._catch2Version && this._catch2Version.major >= 3
-              ? await this._reloadFromXml(content)
-              : await this._reloadFromString(content);
+              ? await this._reloadFromXml(content, cancellationFlag)
+              : await this._reloadFromString(content, cancellationFlag);
           }
         }
       } catch (e) {
@@ -263,8 +273,8 @@ export class Catch2Runnable extends AbstractRunnable {
 
     const result =
       this._catch2Version && this._catch2Version.major >= 3
-        ? await this._reloadFromXml(catch2TestListOutput.stdout)
-        : await this._reloadFromString(catch2TestListOutput.stdout);
+        ? await this._reloadFromXml(catch2TestListOutput.stdout, cancellationFlag)
+        : await this._reloadFromString(catch2TestListOutput.stdout, cancellationFlag);
 
     if (this._shared.enabledTestListCaching) {
       promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>
@@ -462,7 +472,7 @@ export class Catch2Runnable extends AbstractRunnable {
       runInfo.process.stderr.on('data', (chunk: Uint8Array) => (data.stderrBuffer += chunk.toLocaleString()));
 
       runInfo.process.once('close', (code: number | null, signal: string | null) => {
-        if (runInfo.isCancelled) {
+        if (runInfo.cancellationToken.isCancellationRequested) {
           resolve(ProcessResult.ok());
         } else {
           if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
@@ -485,7 +495,7 @@ export class Catch2Runnable extends AbstractRunnable {
             this._shared.log.info('data.currentChild !== undefined', data);
             let ev: AbstractTestEvent;
 
-            if (runInfo.isCancelled) {
+            if (runInfo.cancellationToken.isCancellationRequested) {
               ev = data.currentChild.getCancelledEvent(testRunId, data.stdoutBuffer);
             } else if (runInfo.timeout !== null) {
               ev = data.currentChild.getTimeoutEvent(testRunId, runInfo.timeout);
@@ -522,12 +532,12 @@ export class Catch2Runnable extends AbstractRunnable {
 
         const isTestRemoved =
           runInfo.timeout === null &&
-          !runInfo.isCancelled &&
+          !runInfo.cancellationToken.isCancellationRequested &&
           result.error === undefined &&
           data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
-          this.reloadTests(this._shared.taskPool).then(
+          this.reloadTests(this._shared.taskPool, runInfo.cancellationToken).then(
             () => {
               // we have test results for the newly detected tests
               // after reload we can set the results

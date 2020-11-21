@@ -8,7 +8,7 @@ import { RunnableProperties } from '../RunnableProperties';
 import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { AbstractTest } from '../AbstractTest';
-import { Version } from '../Util';
+import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { RootSuite } from '../RootSuite';
 
@@ -31,7 +31,10 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
     }
   }
 
-  private async _reloadFromString(stdOutStr: string): Promise<RunnableReloadResult> {
+  private async _reloadFromString(
+    stdOutStr: string,
+    cancellationFlag: CancellationFlag,
+  ): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
     const lines = stdOutStr.split(/\r?\n/);
 
@@ -40,6 +43,8 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
     const filteredLines = lines.filter(x => x.length > 0);
 
     for (const line of filteredLines) {
+      if (cancellationFlag.isCancellationRequested) return reloadResult;
+
       reloadResult.add(
         ...(await this._createSubtreeAndAddTest(
           testGrouping,
@@ -57,7 +62,7 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
     return reloadResult;
   }
 
-  protected async _reloadChildren(): Promise<RunnableReloadResult> {
+  protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<RunnableReloadResult> {
     const cacheFile = this.properties.path + '.TestMate.testListCache.xml';
 
     if (this._shared.enabledTestListCaching) {
@@ -69,7 +74,7 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
           this._shared.log.info('loading from cache: ', cacheFile);
           const str = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          return await this._reloadFromString(str);
+          return await this._reloadFromString(str, cancellationFlag);
         }
       } catch (e) {
         this._shared.log.info('coudnt use cache', e);
@@ -91,7 +96,7 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
       return await this._createAndAddUnexpectedStdError(listOutput.stdout, listOutput.stderr);
     } else {
       try {
-        const result = await this._reloadFromString(listOutput.stdout);
+        const result = await this._reloadFromString(listOutput.stdout, cancellationFlag);
 
         if (this._shared.enabledTestListCaching) {
           promisify(fs.writeFile)(cacheFile, listOutput.stdout).catch(err =>
@@ -197,7 +202,7 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
       runInfo.process.stderr.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
 
       runInfo.process.once('close', (code: number | null, signal: string | null) => {
-        if (runInfo.isCancelled) {
+        if (runInfo.cancellationToken.isCancellationRequested) {
           resolve(ProcessResult.ok());
         } else {
           if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
@@ -220,12 +225,12 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
 
         const isTestRemoved =
           runInfo.timeout === null &&
-          !runInfo.isCancelled &&
+          !runInfo.cancellationToken.isCancellationRequested &&
           result.error === undefined &&
           data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (isTestRemoved) {
-          this.reloadTests(this._shared.taskPool);
+          this.reloadTests(this._shared.taskPool, runInfo.cancellationToken);
         }
       });
   }

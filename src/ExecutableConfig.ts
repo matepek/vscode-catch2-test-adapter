@@ -113,12 +113,12 @@ export class ExecutableConfig implements vscode.Disposable {
     );
   }
 
-  private _disposed = false;
-  private _disposables: vscode.Disposable[] = []; //TODO: add logit for cancellation of reload
+  private _cancellationFlag = { isCancellationRequested: false };
+  private _disposables: vscode.Disposable[] = [];
 
   public dispose(): void {
+    this._cancellationFlag.isCancellationRequested = true;
     this._disposables.forEach(d => d.dispose());
-    this._disposed = true;
   }
 
   private readonly _runnables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
@@ -183,7 +183,7 @@ export class ExecutableConfig implements vscode.Disposable {
               const factory = await this._createSuiteByUri(file, rootSuite);
               const suite = await factory.create(false);
               try {
-                await suite.reloadTests(this._shared.taskPool);
+                await suite.reloadTests(this._shared.taskPool, this._cancellationFlag);
                 this._runnables.set(file, suite);
               } catch (reason) {
                 this._shared.log.warn("Couldn't load executable", reason, suite);
@@ -413,14 +413,16 @@ export class ExecutableConfig implements vscode.Disposable {
 
   private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
-  private _handleEverything(filePath: string, rootSuite: RootSuite): void {
-    if (this._disposed) return;
+  private async _handleEverything(filePath: string, rootSuite: RootSuite): Promise<void> {
+    if (this._cancellationFlag.isCancellationRequested) return;
 
     const isHandlerRunningForFile = this._lastEventArrivedAt.get(filePath) !== undefined;
 
     this._lastEventArrivedAt.set(filePath, Date.now());
 
     if (isHandlerRunningForFile) return;
+
+    await promisify(setTimeout)(1000); // just not to be hasty. no other reason for this
 
     const runnable = this._runnables.get(filePath);
 
@@ -453,7 +455,7 @@ export class ExecutableConfig implements vscode.Disposable {
     delay = 1024,
     tryCount = 1,
   ): Promise<void> {
-    if (this._disposed) return;
+    if (this._cancellationFlag.isCancellationRequested) return;
 
     const lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
 
@@ -507,7 +509,7 @@ export class ExecutableConfig implements vscode.Disposable {
     isFileExistsAndExecutable = false,
     delay = 128,
   ): Promise<void> {
-    if (this._disposed) return;
+    if (this._cancellationFlag.isCancellationRequested) return;
 
     const filePath = runnable.properties.path;
     const lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
@@ -519,9 +521,11 @@ export class ExecutableConfig implements vscode.Disposable {
     }
 
     if (isFileExistsAndExecutable) {
+      // we might have to add some delay here: https://github.com/matepek/vscode-catch2-test-adapter/issues/235
+      //const runnableLastReloadTime = runnable.lastReloadTime;
+
       try {
-        // we might have to add soem delay here: https://github.com/matepek/vscode-catch2-test-adapter/issues/235
-        await runnable.reloadTests(this._shared.taskPool);
+        await runnable.reloadTests(this._shared.taskPool, this._cancellationFlag);
         this._runnables.set(filePath, runnable); // it might be set already but we don't care
         this._shared.sendRetireEvent(runnable.tests);
       } catch (reason) {
