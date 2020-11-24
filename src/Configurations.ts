@@ -191,6 +191,7 @@ export class Configurations {
         args: '${args}',
         cwd: '${cwd}',
         env: '${envObj}',
+        environment: '${envObjArray}',
         sourceFileMap: '${sourceFileMapObj}',
       });
     } else {

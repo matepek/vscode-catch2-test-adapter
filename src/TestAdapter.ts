@@ -579,6 +579,8 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const argsArrayFunc = async (): Promise<string[]> => argsArray;
 
+      const envVars = Object.assign(Object.assign({}, process.env), runnable.properties.options.env!);
+
       const varToResolve: ResolveRuleAsync[] = [
         ...runnable.properties.varToValue,
         { resolve: '${suitelabel}', rule: suiteLabels }, // deprecated
@@ -591,12 +593,18 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         { resolve: '${cwd}', rule: runnable.properties.options.cwd! },
         {
           resolve: '${envObj}',
-          rule: async (): Promise<NodeJS.ProcessEnv> =>
-            Object.assign(Object.assign({}, process.env), runnable.properties.options.env!),
+          rule: async (): Promise<NodeJS.ProcessEnv> => envVars,
+        },
+        {
+          resolve: '${envObjArray}',
+          rule: async (): Promise<{ name: string; value: string }[]> =>
+            Object.keys(envVars).map(name => {
+              return { name, value: envVars[name] || '' };
+            }),
         },
         {
           resolve: '${sourceFileMapObj}',
-          rule: async (): Promise<Record<string, string>> => Promise.resolve(runnable.properties.sourceFileMap),
+          rule: async (): Promise<Record<string, string>> => runnable.properties.sourceFileMap,
         },
       ];
 
