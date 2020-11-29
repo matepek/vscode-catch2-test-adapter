@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.8]
+
+### Fixed
+
+- env variable passing to `ms-vscode.cpptools`
+
 ## [3.6.7] - 2020-11-21
 
 Improved stability and performance.
