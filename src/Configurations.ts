@@ -108,7 +108,62 @@ export class Configurations {
       return [debugConfig, 'userDefined'];
     }
 
-    if (templateFromConfig === null) {
+    const template: vscode.DebugConfiguration = {
+      name: '${label} (${suiteLabel})',
+      request: 'launch',
+      type: 'cppdbg',
+    };
+
+    if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
+      Object.assign(template, {
+        type: 'cppdbg',
+        MIMode: 'lldb',
+        program: '${exec}',
+        args: '${args}',
+        cwd: '${cwd}',
+        env: '${envObj}',
+        sourceMap: '${sourceFileMapObj}',
+      });
+
+      return [template, 'vadimcn.vscode-lldb'];
+    } else if (vscode.extensions.getExtension('webfreak.debug')) {
+      Object.assign(template, {
+        type: 'gdb',
+        target: '${exec}',
+        arguments: '${argsStr}',
+        cwd: '${cwd}',
+        env: '${envObj}',
+        valuesFormatting: 'prettyPrinters',
+        pathSubstitutions: '${sourceFileMapObj}',
+      });
+
+      if (process.platform === 'darwin') {
+        template.type = 'lldb-mi';
+        // Note: for LLDB you need to have lldb-mi in your PATH
+        // If you are on OS X you can add lldb-mi to your path using ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi /usr/local/bin/lldb-mi if you have Xcode.
+        template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
+      }
+
+      return [template, 'webfreak.debug'];
+    } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
+      // documentation says debug"environment" = [{...}] but that doesn't work
+      Object.assign(template, {
+        type: 'cppvsdbg',
+        linux: { type: 'cppdbg', MIMode: 'gdb' },
+        osx: { type: 'cppdbg', MIMode: 'lldb' },
+        windows: { type: 'cppvsdbg' },
+        program: '${exec}',
+        args: '${args}',
+        cwd: '${cwd}',
+        env: '${envObj}',
+        environment: '${envObjArray}',
+        sourceFileMap: '${sourceFileMapObj}',
+      });
+
+      return [template, 'ms-vscode.cpptools'];
+    }
+
+    {
       const wpLaunchConfigs = vscode.workspace
         .getConfiguration('launch', this._workspaceFolderUri)
         .get('configurations');
@@ -160,64 +215,10 @@ export class Configurations {
       }
     }
 
-    const template: vscode.DebugConfiguration = {
-      name: '${label} (${suiteLabel})',
-      request: 'launch',
-      type: 'cppdbg',
-    };
-    let source = 'unknown';
-
-    if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
-      source = 'vadimcn.vscode-lldb';
-      Object.assign(template, {
-        type: 'cppdbg',
-        MIMode: 'lldb',
-        program: '${exec}',
-        args: '${args}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-        sourceMap: '${sourceFileMapObj}',
-      });
-    } else if (vscode.extensions.getExtension('webfreak.debug')) {
-      source = 'webfreak.debug';
-      Object.assign(template, {
-        type: 'gdb',
-        target: '${exec}',
-        arguments: '${argsStr}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-        valuesFormatting: 'prettyPrinters',
-        pathSubstitutions: '${sourceFileMapObj}',
-      });
-
-      if (process.platform === 'darwin') {
-        template.type = 'lldb-mi';
-        // Note: for LLDB you need to have lldb-mi in your PATH
-        // If you are on OS X you can add lldb-mi to your path using ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi /usr/local/bin/lldb-mi if you have Xcode.
-        template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
-      }
-    } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
-      source = 'ms-vscode.cpptools';
-      // documentation says debug"environment" = [{...}] but that doesn't work
-      Object.assign(template, {
-        type: 'cppvsdbg',
-        linux: { type: 'cppdbg', MIMode: 'gdb' },
-        osx: { type: 'cppdbg', MIMode: 'lldb' },
-        windows: { type: 'cppvsdbg' },
-        program: '${exec}',
-        args: '${args}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-        environment: '${envObjArray}',
-        sourceFileMap: '${sourceFileMapObj}',
-      });
-    } else {
-      this._log.info('no debug config');
-      throw Error(
-        "For debugging 'testMate.cpp.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
-      );
-    }
-    return [template, source];
+    this._log.info('no debug config');
+    throw Error(
+      "For debugging 'testMate.cpp.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+    );
   }
 
   public getOrCreateUserId(): string {
