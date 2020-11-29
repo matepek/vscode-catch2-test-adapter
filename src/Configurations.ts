@@ -115,31 +115,47 @@ export class Configurations {
 
       if (wpLaunchConfigs && Array.isArray(wpLaunchConfigs) && wpLaunchConfigs.length > 0) {
         for (let i = 0; i < wpLaunchConfigs.length; ++i) {
-          if (
-            wpLaunchConfigs[i].request == 'launch' &&
-            typeof wpLaunchConfigs[i].type == 'string' &&
-            (wpLaunchConfigs[i].type.startsWith('cpp') ||
+          if (wpLaunchConfigs[i].request !== 'launch') continue;
+
+          if (typeof wpLaunchConfigs[i][process.platform]?.type == 'string') {
+            if (
+              wpLaunchConfigs[i][process.platform].type.startsWith('cpp') ||
+              wpLaunchConfigs[i][process.platform].type.startsWith('lldb') ||
+              wpLaunchConfigs[i][process.platform].type.startsWith('gdb')
+            ) {
+              // skip
+            } else {
+              continue;
+            }
+          } else if (typeof wpLaunchConfigs[i].type == 'string') {
+            if (
+              wpLaunchConfigs[i].type.startsWith('cpp') ||
               wpLaunchConfigs[i].type.startsWith('lldb') ||
-              wpLaunchConfigs[i].type.startsWith('gdb'))
-          ) {
-            // putting as much known properties as much we can and hoping for the best 🤞
-            const debugConfig: vscode.DebugConfiguration = Object.assign({}, wpLaunchConfigs[i], {
-              name: '${label} (${suiteLabel})',
-              program: '${exec}',
-              target: '${exec}',
-              arguments: '${argsStr}',
-              args: '${args}',
-              cwd: '${cwd}',
-              env: '${envObj}',
-              environment: '${envObjArray}',
-              sourceFileMap: '${sourceFileMapObj}',
-            });
-            this._log.info(
-              "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
-              debugConfig,
-            );
-            return [debugConfig, 'fromLaunchJson'];
+              wpLaunchConfigs[i].type.startsWith('gdb')
+            ) {
+              // skip
+            } else {
+              continue;
+            }
           }
+
+          // putting as much known properties as much we can and hoping for the best 🤞
+          const debugConfig: vscode.DebugConfiguration = Object.assign({}, wpLaunchConfigs[i], {
+            name: '${label} (${suiteLabel})',
+            program: '${exec}',
+            target: '${exec}',
+            arguments: '${argsStr}',
+            args: '${args}',
+            cwd: '${cwd}',
+            env: '${envObj}',
+            environment: '${envObjArray}',
+            sourceFileMap: '${sourceFileMapObj}',
+          });
+          this._log.info(
+            "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+            debugConfig,
+          );
+          return [debugConfig, 'fromLaunchJson'];
         }
       }
     }

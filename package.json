@@ -1395,7 +1395,7 @@
         "testMate.cpp.debug.configTemplate": {
           "markdownDescription": "Sets the necessary debug configurations and the debug button will work.",
           "scope": "resource",
-          "default": null,
+          "default": "extensionOnly",
           "oneOf": [
             {
               "type": "object",
