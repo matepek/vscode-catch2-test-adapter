@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [3.6.10]
+## [3.6.10] - 2020-12-02
 
 Logging related changes and NPM update.
 
