@@ -62,7 +62,7 @@
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "@sentry/node": "^5.27.6",
+    "@sentry/node": "^5.28.0",
     "@types/bent": "^7.3.2",
     "@types/chai": "^4.2.14",
     "@types/deep-equal": "^1.0.1",
@@ -76,10 +76,10 @@
     "@types/source-map-support": "^0.5.3",
     "@types/vscode": "1.38.0",
     "@types/xml2js": "^0.4.7",
-    "@typescript-eslint/eslint-plugin": "^4.8.2",
-    "@typescript-eslint/parser": "^4.8.2",
+    "@typescript-eslint/eslint-plugin": "^4.9.0",
+    "@typescript-eslint/parser": "^4.9.0",
     "bent": "^7.3.12",
-    "deep-equal": "^2.0.4",
+    "deep-equal": "^2.0.5",
     "eslint": "^7.14.0",
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-prettier": "3.1.4",
@@ -96,7 +96,7 @@
     "vsce": "^1.81.1",
     "vscode-test": "^1.4.1",
     "webpack": "^5.9.0",
-    "webpack-bundle-analyzer": "^4.1.0",
+    "webpack-bundle-analyzer": "^4.2.0",
     "webpack-cli": "^4.2.0"
   },
   "engines": {
