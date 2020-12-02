@@ -319,11 +319,16 @@ export class Configurations {
     else return null;
   }
 
+  private static _parallelExecutionLimitMetricSent = false;
+
   public getParallelExecutionLimit(): number {
     const res = Math.max(1, this._getD<number>('test.parallelExecutionLimit', 1));
     if (typeof res != 'number') return 1;
     else {
-      if (res > 1) this._log.infoS('Using test.parallelExecutionLimit');
+      if (res > 1 && !Configurations._parallelExecutionLimitMetricSent) {
+        this._log.infoS('Using test.parallelExecutionLimit');
+        Configurations._parallelExecutionLimitMetricSent = true;
+      }
       return res;
     }
   }

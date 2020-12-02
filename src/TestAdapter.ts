@@ -471,6 +471,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return this._rootSuite.run(tests);
   }
 
+  private static _debugMetricSent = false;
   private _isDebugging = false;
 
   public async debug(tests: string[]): Promise<void> {
@@ -512,8 +513,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const [debugConfigTemplate, debugConfigTemplateSource] = configuration.getDebugConfigurationTemplate();
 
-      this._shared.log.debugS('debugConfigTemplate', debugConfigTemplate);
-      this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
+      this._shared.log.debug('debugConfigTemplate', { debugConfigTemplateSource, debugConfigTemplate });
+
+      if (!TestAdapter._debugMetricSent) {
+        this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
+        TestAdapter._debugMetricSent = true;
+      }
 
       const label = runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
 

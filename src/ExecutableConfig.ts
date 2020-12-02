@@ -44,10 +44,6 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _doctest: FrameworkSpecific,
     private readonly _gbenchmark: FrameworkSpecific,
   ) {
-    if ([_catch2, _gtest, _doctest].some(f => Object.keys(f).length > 0)) {
-      _shared.log.infoS('Using frameworks specific executable setting', _catch2, _gtest, _doctest);
-    }
-
     const createUriSymbol: unique symbol = Symbol('createUri');
     type CreateUri = { [createUriSymbol]: () => vscode.Uri };
 
