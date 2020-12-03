@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.11]
+
+### Fixed
+
+- vscode [tries to install](https://github.com/matepek/vscode-catch2-test-adapter/issues/239) extension at `getExtension` so it is replaced.
+
 ## [3.6.10] - 2020-12-02
 
 Logging related changes and NPM update.

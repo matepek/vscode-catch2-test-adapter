@@ -38,7 +38,7 @@ export class RootSuite extends Suite implements vscode.Disposable {
 
   private _cancellationTokenSource = new vscode.CancellationTokenSource();
   private _runningPromise: Promise<void> = Promise.resolve();
-  private _runningPromiseResolver = (): void => {}; //eslint-disable-line
+  private _runningPromiseResolver = (_: void | PromiseLike<void>): void => {}; //eslint-disable-line
 
   public get isRunning(): boolean {
     return this._runningCounter > 0;

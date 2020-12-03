@@ -89,6 +89,10 @@ export class Configurations {
     );
   }
 
+  private _hasExtension(id: string): boolean {
+    return vscode.extensions.all.find(e => e.id === id) !== undefined;
+  }
+
   public getDebugConfigurationTemplate(): [vscode.DebugConfiguration, string] {
     const templateFromConfig = this._getD<Record<string, unknown> | null | 'extensionOnly'>(
       'debug.configTemplate',
@@ -114,7 +118,7 @@ export class Configurations {
       type: 'cppdbg',
     };
 
-    if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
+    if (this._hasExtension('vadimcn.vscode-lldb')) {
       Object.assign(template, {
         type: 'cppdbg',
         MIMode: 'lldb',
@@ -126,7 +130,7 @@ export class Configurations {
       });
 
       return [template, 'vadimcn.vscode-lldb'];
-    } else if (vscode.extensions.getExtension('webfreak.debug')) {
+    } else if (this._hasExtension('webfreak.debug')) {
       Object.assign(template, {
         type: 'gdb',
         target: '${exec}',
@@ -145,7 +149,7 @@ export class Configurations {
       }
 
       return [template, 'webfreak.debug'];
-    } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
+    } else if (this._hasExtension('ms-vscode.cpptools')) {
       // documentation says debug"environment" = [{...}] but that doesn't work
       Object.assign(template, {
         type: 'cppvsdbg',
