@@ -1399,24 +1399,33 @@
           "oneOf": [
             {
               "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type"
+              ],
               "additionalProperties": {
                 "anyOf": [
                   {
                     "type": "string",
                     "enum": [
-                      "${label}",
-                      "${suiteLabel}",
                       "${exec}",
                       "${argsArray}",
+                      "${argsArrayFlat}",
                       "${argsStr}",
                       "${cwd}",
                       "${envObj}",
-                      "${sourceFileMapObj}"
+                      "${envObjArray}",
+                      "${sourceFileMapObj}",
+                      "${label}",
+                      "${suiteLabel}"
                     ]
                   },
                   {
-                    "type": "string",
-                    "minLength": 1
+                    "type": "string"
                   },
                   {
                     "type": "array"
@@ -1438,6 +1447,12 @@
             },
             {
               "type": "null"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "extensionOnly"
+              ]
             }
           ]
         },

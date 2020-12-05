@@ -588,13 +588,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const varToResolve: ResolveRuleAsync[] = [
         ...runnable.properties.varToValue,
-        { resolve: '${suitelabel}', rule: suiteLabels }, // deprecated
         { resolve: '${suiteLabel}', rule: suiteLabels },
         { resolve: '${label}', rule: label },
         { resolve: '${exec}', rule: runnable.properties.path },
         { resolve: '${args}', rule: argsArrayFunc }, // deprecated
         { resolve: '${argsArray}', rule: argsArrayFunc },
-        { resolve: '${argsStr}', rule: '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"' },
+        { resolve: '${argsArrayFlat}', rule: argsArrayFunc, isFlat: true },
+        {
+          resolve: '${argsStr}',
+          rule: async (): Promise<string> => '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"',
+        },
         { resolve: '${cwd}', rule: runnable.properties.options.cwd! },
         {
           resolve: '${envObj}',
@@ -615,8 +618,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const debugConfig = await resolveVariablesAsync(debugConfigTemplate, varToResolve);
 
-      // we dont know better :(
-      // https://github.com/Microsoft/vscode/issues/70125
+      // we dont know better: https://github.com/Microsoft/vscode/issues/70125
       const magicValueKey = 'magic variable  🤦🏼‍';
       const magicValue = generateId();
       debugConfig[magicValueKey] = magicValue;

@@ -99,75 +99,18 @@ export class Configurations {
       null,
     );
 
-    if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
-      const debugConfig = Object.assign(
-        {
-          name: '${label} (${suiteLabel})',
-          request: 'launch',
-          type: 'cppdbg',
-        },
-        templateFromConfig,
-      );
-      this._log.debug('debugConfig', debugConfig);
-      return [debugConfig, 'userDefined'];
-    }
-
-    const template: vscode.DebugConfiguration = {
+    const templateBase: vscode.DebugConfiguration = {
       name: '${label} (${suiteLabel})',
       request: 'launch',
       type: 'cppdbg',
     };
 
-    if (this._hasExtension('vadimcn.vscode-lldb')) {
-      Object.assign(template, {
-        type: 'cppdbg',
-        MIMode: 'lldb',
-        program: '${exec}',
-        args: '${args}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-        sourceMap: '${sourceFileMapObj}',
-      });
+    if (typeof templateFromConfig === 'object') {
+      const debugConfig = Object.assign({}, templateBase, templateFromConfig);
+      this._log.debug('debugConfig', debugConfig);
 
-      return [template, 'vadimcn.vscode-lldb'];
-    } else if (this._hasExtension('webfreak.debug')) {
-      Object.assign(template, {
-        type: 'gdb',
-        target: '${exec}',
-        arguments: '${argsStr}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-        valuesFormatting: 'prettyPrinters',
-        pathSubstitutions: '${sourceFileMapObj}',
-      });
-
-      if (process.platform === 'darwin') {
-        template.type = 'lldb-mi';
-        // Note: for LLDB you need to have lldb-mi in your PATH
-        // If you are on OS X you can add lldb-mi to your path using ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi /usr/local/bin/lldb-mi if you have Xcode.
-        template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
-      }
-
-      return [template, 'webfreak.debug'];
-    } else if (this._hasExtension('ms-vscode.cpptools')) {
-      // documentation says debug"environment" = [{...}] but that doesn't work
-      Object.assign(template, {
-        type: 'cppvsdbg',
-        linux: { type: 'cppdbg', MIMode: 'gdb' },
-        osx: { type: 'cppdbg', MIMode: 'lldb' },
-        windows: { type: 'cppvsdbg' },
-        program: '${exec}',
-        args: '${args}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-        environment: '${envObjArray}',
-        sourceFileMap: '${sourceFileMapObj}',
-      });
-
-      return [template, 'ms-vscode.cpptools'];
-    }
-
-    {
+      return [debugConfig, 'userDefined'];
+    } else if (templateFromConfig === null) {
       const wpLaunchConfigs = vscode.workspace
         .getConfiguration('launch', this._workspaceFolderUri)
         .get('configurations');
@@ -196,27 +139,77 @@ export class Configurations {
             } else {
               continue;
             }
+          } else {
+            continue;
           }
 
           // putting as much known properties as much we can and hoping for the best 🤞
-          const debugConfig: vscode.DebugConfiguration = Object.assign({}, wpLaunchConfigs[i], {
-            name: '${label} (${suiteLabel})',
+          const template: vscode.DebugConfiguration = Object.assign({}, templateBase, wpLaunchConfigs[i], {
             program: '${exec}',
             target: '${exec}',
             arguments: '${argsStr}',
-            args: '${args}',
+            args: '${argsArray}',
             cwd: '${cwd}',
             env: '${envObj}',
             environment: '${envObjArray}',
             sourceFileMap: '${sourceFileMapObj}',
           });
+
           this._log.info(
             "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
-            debugConfig,
+            template,
           );
-          return [debugConfig, 'fromLaunchJson'];
+
+          return [template, 'fromLaunchJson'];
         }
       }
+    } else if (this._hasExtension('vadimcn.vscode-lldb')) {
+      const template = Object.assign({}, templateBase, {
+        type: 'cppdbg',
+        MIMode: 'lldb',
+        program: '${exec}',
+        args: '${argsArray}',
+        cwd: '${cwd}',
+        env: '${envObj}',
+        sourceMap: '${sourceFileMapObj}',
+      });
+
+      return [template, 'vadimcn.vscode-lldb'];
+    } else if (this._hasExtension('webfreak.debug')) {
+      const template = Object.assign({}, templateBase, {
+        type: 'gdb',
+        target: '${exec}',
+        arguments: '${argsStr}',
+        cwd: '${cwd}',
+        env: '${envObj}',
+        valuesFormatting: 'prettyPrinters',
+        pathSubstitutions: '${sourceFileMapObj}',
+      });
+
+      if (process.platform === 'darwin') {
+        template.type = 'lldb-mi';
+        // Note: for LLDB you need to have lldb-mi in your PATH
+        // If you are on OS X you can add lldb-mi to your path using ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi /usr/local/bin/lldb-mi if you have Xcode.
+        template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
+      }
+
+      return [template, 'webfreak.debug'];
+    } else if (this._hasExtension('ms-vscode.cpptools')) {
+      // documentation says debug"environment" = [{...}] but that doesn't work
+      const template = Object.assign({}, templateBase, {
+        type: 'cppvsdbg',
+        linux: { type: 'cppdbg', MIMode: 'gdb' },
+        osx: { type: 'cppdbg', MIMode: 'lldb' },
+        windows: { type: 'cppvsdbg' },
+        program: '${exec}',
+        args: '${argsArray}',
+        cwd: '${cwd}',
+        env: '${envObj}',
+        environment: '${envObjArray}',
+        sourceFileMap: '${sourceFileMapObj}',
+      });
+
+      return [template, 'ms-vscode.cpptools'];
     }
 
     this._log.info('no debug config');

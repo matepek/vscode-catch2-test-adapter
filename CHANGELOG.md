@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.12]
+
+Changed BACK the way how the `testMate.cpp.debug.configTemplate` is resolved.
+
 ## [3.6.11] - 2020-12-03
 
 ### Fixed
