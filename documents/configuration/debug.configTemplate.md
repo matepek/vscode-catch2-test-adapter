@@ -37,9 +37,8 @@ For [`ms-vscode.cpptools`](https://code.visualstudio.com/docs/cpp/launch-json-re
 
 ```json
 "testMate.cpp.debug.configTemplate": {
-  "name": "${label} (${suiteLabel})",
   "program": "${exec}",
-  "args": "${args}",
+  "args": "${argsArray}",
   "cwd": "${cwd}",
   "environment": "${envObjArray}",
   "sourceFileMap": "${sourceFileMapObj}"
@@ -53,7 +52,7 @@ For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) 
   "type": "cppdbg",
   "MIMode": "lldb",
   "program": "${exec}",
-  "args": "${args}",
+  "args": "${argsArray}",
   "cwd": "${cwd}",
   "env": "${envObj}",
   "sourceFileMap": "${sourceFileMapObj}",
