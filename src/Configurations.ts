@@ -390,6 +390,7 @@ export class Configurations {
         false,
         undefined,
         undefined,
+        undefined,
         {},
         {},
         {},
@@ -491,6 +492,8 @@ export class Configurations {
 
         const markAsSkipped: boolean | undefined = obj.markAsSkipped;
 
+        const waitForBuildProcess: boolean | undefined = obj.waitForBuildProcess;
+
         const defaultTestGrouping = obj.testGrouping;
 
         const spawnerConfig: ExecutionWrapper | undefined =
@@ -520,6 +523,7 @@ export class Configurations {
           parallelizationLimit,
           strictPattern,
           markAsSkipped,
+          waitForBuildProcess,
           spawnerConfig,
           sourceFileMap,
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),

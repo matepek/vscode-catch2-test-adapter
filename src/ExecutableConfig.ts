@@ -20,7 +20,6 @@ import { AbstractTest } from './AbstractTest';
 import { readJSONSync } from 'fs-extra';
 import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
 import { RunTask, ExecutionWrapper, FrameworkSpecific } from './AdvancedExecutableInterface';
-import { BuildProcessChecker } from './util/BuildProcessChecker';
 
 ///
 
@@ -38,6 +37,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _parallelizationLimit: number,
     private readonly _strictPattern: boolean | undefined,
     private readonly _markAsSkipped: boolean | undefined,
+    private readonly _waitForBuildProcess: boolean | undefined,
     private readonly _executionWrapper: ExecutionWrapper | undefined,
     private readonly _sourceFileMap: Record<string, string>,
     private readonly _catch2: FrameworkSpecific,
@@ -45,7 +45,6 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _doctest: FrameworkSpecific,
     private readonly _gbenchmark: FrameworkSpecific,
   ) {
-    this._buildProcessChecker = new BuildProcessChecker(this._shared.log);
     const createUriSymbol: unique symbol = Symbol('createUri');
     type CreateUri = { [createUriSymbol]: () => vscode.Uri };
 
@@ -117,7 +116,6 @@ export class ExecutableConfig implements vscode.Disposable {
   public dispose(): void {
     this._cancellationFlag.isCancellationRequested = true;
     this._disposables.forEach(d => d.dispose());
-    this._buildProcessChecker.dispose();
   }
 
   private readonly _runnables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
@@ -503,8 +501,6 @@ export class ExecutableConfig implements vscode.Disposable {
     }
   }
 
-  private readonly _buildProcessChecker: BuildProcessChecker;
-
   private async _recursiveHandleRunnable(
     runnable: AbstractRunnable,
     isFileExistsAndExecutable = false,
@@ -522,7 +518,7 @@ export class ExecutableConfig implements vscode.Disposable {
     }
 
     if (isFileExistsAndExecutable) {
-      await this._buildProcessChecker.resolveAtFinish();
+      if (this._waitForBuildProcess) await this._shared.buildProcessChecker.resolveAtFinish();
 
       try {
         await runnable.reloadTests(this._shared.taskPool, this._cancellationFlag);

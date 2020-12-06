@@ -4,12 +4,14 @@ import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } 
 import { TaskPool } from './TaskPool';
 import { AbstractTest, AbstractTestEvent } from './AbstractTest';
 import { ResolveRuleAsync } from './util/ResolveRule';
+import { BuildProcessChecker } from './util/BuildProcessChecker';
 
 export type TestRunEvent = TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent;
 
 export class SharedVariables implements vscode.Disposable {
   private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
   public readonly taskPool: TaskPool;
+  public readonly buildProcessChecker: BuildProcessChecker;
 
   public constructor(
     public readonly log: LoggerWrapper,
@@ -36,9 +38,11 @@ export class SharedVariables implements vscode.Disposable {
     public googleTestGMockVerbose: 'default' | 'info' | 'warning' | 'error',
   ) {
     this.taskPool = new TaskPool(workerMaxNumber);
+    this.buildProcessChecker = new BuildProcessChecker(log);
   }
 
   public dispose(): void {
+    this.buildProcessChecker.dispose();
     this._execRunningTimeoutChangeEmitter.dispose();
     this.log.dispose();
   }

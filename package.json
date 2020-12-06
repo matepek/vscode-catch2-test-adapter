@@ -347,6 +347,11 @@
                 "type": "boolean",
                 "default": false
               },
+              "waitForBuildProcess": {
+                "markdownDescription": "(experimental) Prevents the extension of auto-reloading. With this linking failure might can be avoided.",
+                "type": "boolean",
+                "default": false
+              },
               "darwin": {
                 "markdownDescription": "Overrides the parent's properties on the given OS.",
                 "type": "object",

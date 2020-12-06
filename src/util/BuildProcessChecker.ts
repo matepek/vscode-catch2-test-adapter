@@ -9,6 +9,7 @@ export class BuildProcessChecker {
   public constructor(private readonly _log: LoggerWrapper) {}
 
   private readonly _checkIntervalMillis = 2000;
+  // https://en.wikipedia.org/wiki/List_of_compilers#C++_compilers
   private readonly _pattern = /[/\\](cmake|make|ninja|cl|c\+\+|ld|clang|gcc|g\+\+|link|icc|armcc|armclang)(-[^/\\]+)?(\.exe)?$/;
   private _lastChecked = 0;
   private _finishedP = Promise.resolve();
@@ -45,7 +46,7 @@ export class BuildProcessChecker {
   private async _refresh(): Promise<void> {
     try {
       const processes = await promisify(psnode.lookup)({
-        command: this._pattern, // https://en.wikipedia.org/wiki/List_of_compilers#C++_compilers
+        command: this._pattern,
       });
 
       this._lastChecked = Date.now();

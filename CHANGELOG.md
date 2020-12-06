@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.13]
+
+### Added
+
+- `testMate.cpp.test.advancedExecutables` -> `waitForBuildProcess`: (experimental) Prevents the extension of auto-reloading. With this linking failure might can be avoided.
+  Regex: `(cmake|make|ninja|cl|c++|ld|clang|gcc|g++|link|icc|armcc|armclang)`
+
 ## [3.6.12] - 2020-12-05
 
 Changed BACK the way how the `testMate.cpp.debug.configTemplate` is resolved.
