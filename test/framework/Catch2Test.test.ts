@@ -6,6 +6,7 @@ import { Suite } from '../../src/Suite';
 import { Version } from '../../src/Util';
 import { TestRunEvent } from '../../src/SharedVariables';
 import { logger } from '../LogOutputContent.test';
+import { EOL } from 'os';
 
 ///
 
@@ -93,6 +94,39 @@ describe(path.basename(__filename), function () {
       '</OverallResult>\n    </TestCase>';
 
     const ev = catch2.parseAndProcessTestCase('runid', output, 42, null, '');
+
+    const expected: TestRunEvent = {
+      testRunId: 'runid',
+      type: 'test',
+      state: 'passed',
+      test: catch2.id,
+    };
+
+    assert.deepStrictEqual(ev.type, expected.type);
+    assert.deepStrictEqual(ev.state, expected.state);
+    assert.deepStrictEqual(ev.test, expected.test);
+  });
+
+  // fails due to Catch2 parsing issuej
+  it.skip('should parse custom2', function () {
+    // https://github.com/matepek/vscode-catch2-test-adapter/issues/238
+    const output = [
+      '<TestCase name="LightSensor: can Construct." filename="/home/home/Documents/Cpp-Things/Microfabricator-Embedded/test/unit-tests/light_sensor_test.cpp" line="7">',
+      '[132357μs] 12  D FakeLightSensor.hpp          Constructed <Pin:10>',
+      '      <OverallResult success="true" durationInSeconds="4.3e-05"/>',
+      '    </TestCase>',
+      '    <TestCase name="LightSensor: can set Pin." filename="/home/home/Documents/Cpp-Things/Microfabricator-Embedded/test/unit-tests/light_sensor_test.cpp" line="13">',
+      '[132401μs] 12  D FakeLightSensor.hpp          Constructed <Pin:10>',
+      '      <OverallResult success="true" durationInSeconds="1.6e-05"/>',
+      '    </TestCase>',
+      '    <TestCase name="LightSensor: can read Value." filename="/home/home/Documents/Cpp-Things/Microfabricator-Embedded/test/unit-tests/light_sensor_test.cpp" line="19">',
+      '[132427μs] 12  D FakeLightSensor.hpp          Constructed <Pin:10>',
+      '      <OverallResult success="true" durationInSeconds="9.7e-05"/>',
+      '    </TestCase>',
+      '    <TestCase name="LightSensor: transmits correctly." filename="/home/home/Documents/Cpp-Things/Microfabricator-Embedded/test/unit-tests/light_sensor_test.cpp" line="29">',
+      '[132538μs] 12  D FakeLightSensor.hpp          Constructed <Pin:10>',
+    ];
+    const ev = catch2.parseAndProcessTestCase('runid', output.join(EOL), 42, null, '');
 
     const expected: TestRunEvent = {
       testRunId: 'runid',

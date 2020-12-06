@@ -33,6 +33,18 @@ Value `"extensionOnly"` will cause to skip the search of local launch configurat
 
 #### or user can manually fill it
 
+For [`ms-vscode.cpptools`](https://code.visualstudio.com/docs/cpp/launch-json-reference) add something like this to settings.json:
+
+```json
+"testMate.cpp.debug.configTemplate": {
+  "program": "${exec}",
+  "args": "${argsArray}",
+  "cwd": "${cwd}",
+  "environment": "${envObjArray}",
+  "sourceFileMap": "${sourceFileMapObj}"
+}
+```
+
 For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) add something like this to settings.json:
 
 ```json
@@ -40,7 +52,7 @@ For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) 
   "type": "cppdbg",
   "MIMode": "lldb",
   "program": "${exec}",
-  "args": "${args}",
+  "args": "${argsArray}",
   "cwd": "${cwd}",
   "env": "${envObj}",
   "sourceFileMap": "${sourceFileMapObj}",
@@ -50,16 +62,18 @@ For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) 
 
 #### Usable variables:
 
-| Variable name         | Value meaning                                                             | Type                       |
-| --------------------- | ------------------------------------------------------------------------- | -------------------------- |
-| `${label}`            | The name of the test. Same as in the Test Explorer.                       | string                     |
-| `${suiteLabel}`       | The name of parent suites of the test. Same as in the Test Explorer.      | string                     |
-| `${exec}`             | The path of the executable.                                               | string                     |
-| `${argsArray}`        | The arguments for the executable.                                         | string[]                   |
-| `${argsStr}`          | Concatenated arguments for the executable.                                | string                     |
-| `${cwd}`              | The current working directory for execution.                              | string                     |
-| `${envObj}`           | The environment variables as object properties.                           | { [prop: string]: string } |
-| `${sourceFileMapObj}` | The file path mapping object added to `advancedExecutables.sourceFileMap` | { [prop: string]: string } |
+| Variable name         | Value meaning                                                             | Type                            |
+| --------------------- | ------------------------------------------------------------------------- | ------------------------------- |
+| `${label}`            | The name of the test. Same as in the Test Explorer.                       | string                          |
+| `${suiteLabel}`       | The name of parent suites of the test. Same as in the Test Explorer.      | string                          |
+| `${exec}`             | The path of the executable.                                               | string                          |
+| `${argsArray}`        | The arguments for the executable.                                         | string[]                        |
+| `${argsArrayFlat}`    | The arguments for the executable.                                         | string[]                        |
+| `${argsStr}`          | Concatenated arguments for the executable.                                | string                          |
+| `${cwd}`              | The current working directory for execution.                              | string                          |
+| `${envObj}`           | The environment variables as object properties.                           | { [prop: string]: string }      |
+| `${envObjArray}`      | The environment variables as array of objects. (for `ms-vscode.cpptools`) | { name:string, value:string }[] |
+| `${sourceFileMapObj}` | The file path mapping object added to `advancedExecutables.sourceFileMap` | { [prop: string]: string }      |
 
 These variables will be substituted when a DebugConfiguration is created.
 

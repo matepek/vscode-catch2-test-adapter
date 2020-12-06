@@ -471,6 +471,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     return this._rootSuite.run(tests);
   }
 
+  private static _debugMetricSent = false;
   private _isDebugging = false;
 
   public async debug(tests: string[]): Promise<void> {
@@ -512,8 +513,12 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const [debugConfigTemplate, debugConfigTemplateSource] = configuration.getDebugConfigurationTemplate();
 
-      this._shared.log.debugS('debugConfigTemplate', debugConfigTemplate);
-      this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
+      this._shared.log.debug('debugConfigTemplate', { debugConfigTemplateSource, debugConfigTemplate });
+
+      if (!TestAdapter._debugMetricSent) {
+        this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
+        TestAdapter._debugMetricSent = true;
+      }
 
       const label = runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
 
@@ -583,13 +588,16 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const varToResolve: ResolveRuleAsync[] = [
         ...runnable.properties.varToValue,
-        { resolve: '${suitelabel}', rule: suiteLabels }, // deprecated
         { resolve: '${suiteLabel}', rule: suiteLabels },
         { resolve: '${label}', rule: label },
         { resolve: '${exec}', rule: runnable.properties.path },
         { resolve: '${args}', rule: argsArrayFunc }, // deprecated
         { resolve: '${argsArray}', rule: argsArrayFunc },
-        { resolve: '${argsStr}', rule: '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"' },
+        { resolve: '${argsArrayFlat}', rule: argsArrayFunc, isFlat: true },
+        {
+          resolve: '${argsStr}',
+          rule: async (): Promise<string> => '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"',
+        },
         { resolve: '${cwd}', rule: runnable.properties.options.cwd! },
         {
           resolve: '${envObj}',
@@ -610,8 +618,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const debugConfig = await resolveVariablesAsync(debugConfigTemplate, varToResolve);
 
-      // we dont know better :(
-      // https://github.com/Microsoft/vscode/issues/70125
+      // we dont know better: https://github.com/Microsoft/vscode/issues/70125
       const magicValueKey = 'magic variable  🤦🏼‍';
       const magicValue = generateId();
       debugConfig[magicValueKey] = magicValue;

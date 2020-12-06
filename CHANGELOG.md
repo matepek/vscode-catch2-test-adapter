@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.12] - 2020-12-05
+
+Changed BACK the way how the `testMate.cpp.debug.configTemplate` is resolved.
+
+## [3.6.11] - 2020-12-03
+
+### Fixed
+
+- vscode [tries to install](https://github.com/matepek/vscode-catch2-test-adapter/issues/239) extension at `getExtension` so it is replaced.
+
+## [3.6.10] - 2020-12-02
+
+Logging related changes and NPM update.
+
+## [3.6.9] - 2020-11-29
+
+Changed the way how the `testMate.cpp.debug.configTemplate` is resolved. Hopefully better than it was.
+
+## [3.6.8] - 2020-11-29
+
+### Fixed
+
+- env variable passing to `ms-vscode.cpptools`
+
 ## [3.6.7] - 2020-11-21
 
 Improved stability and performance.

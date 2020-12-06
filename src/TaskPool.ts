@@ -32,7 +32,7 @@ export class TaskPool {
   }
 
   private _runningTaskCount = 0;
-  private readonly _waitingTasks: (() => void)[] = [];
+  private readonly _waitingTasks: ((_: void | PromiseLike<void>) => void)[] = [];
 
   private _acquire(): boolean {
     if (this._runningTaskCount < this._maxTaskCount) {

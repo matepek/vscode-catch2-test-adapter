@@ -89,81 +89,94 @@ export class Configurations {
     );
   }
 
+  private _hasExtension(id: string): boolean {
+    return vscode.extensions.all.find(e => e.id === id) !== undefined;
+  }
+
   public getDebugConfigurationTemplate(): [vscode.DebugConfiguration, string] {
     const templateFromConfig = this._getD<Record<string, unknown> | null | 'extensionOnly'>(
       'debug.configTemplate',
       null,
     );
 
-    if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
-      const debugConfig = Object.assign(
-        {
-          name: '${label} (${suiteLabel})',
-          request: 'launch',
-          type: 'cppdbg',
-        },
-        templateFromConfig,
-      );
-      this._log.debug('debugConfig', debugConfig);
-      return [debugConfig, 'userDefined'];
-    }
+    const templateBase: vscode.DebugConfiguration = {
+      name: '${label} (${suiteLabel})',
+      request: 'launch',
+      type: 'cppdbg',
+    };
 
-    if (templateFromConfig === null) {
+    if (typeof templateFromConfig === 'object') {
+      const debugConfig = Object.assign({}, templateBase, templateFromConfig);
+      this._log.debug('debugConfig', debugConfig);
+
+      return [debugConfig, 'userDefined'];
+    } else if (templateFromConfig === null) {
       const wpLaunchConfigs = vscode.workspace
         .getConfiguration('launch', this._workspaceFolderUri)
         .get('configurations');
 
       if (wpLaunchConfigs && Array.isArray(wpLaunchConfigs) && wpLaunchConfigs.length > 0) {
         for (let i = 0; i < wpLaunchConfigs.length; ++i) {
-          if (
-            wpLaunchConfigs[i].request == 'launch' &&
-            typeof wpLaunchConfigs[i].type == 'string' &&
-            (wpLaunchConfigs[i].type.startsWith('cpp') ||
+          if (wpLaunchConfigs[i].request !== 'launch') continue;
+
+          if (typeof wpLaunchConfigs[i][process.platform]?.type == 'string') {
+            if (
+              wpLaunchConfigs[i][process.platform].type.startsWith('cpp') ||
+              wpLaunchConfigs[i][process.platform].type.startsWith('lldb') ||
+              wpLaunchConfigs[i][process.platform].type.startsWith('gdb')
+            ) {
+              // skip
+            } else {
+              continue;
+            }
+          } else if (typeof wpLaunchConfigs[i].type == 'string') {
+            if (
+              wpLaunchConfigs[i].type.startsWith('cpp') ||
               wpLaunchConfigs[i].type.startsWith('lldb') ||
-              wpLaunchConfigs[i].type.startsWith('gdb'))
-          ) {
-            // putting as much known properties as much we can and hoping for the best 🤞
-            const debugConfig: vscode.DebugConfiguration = Object.assign({}, wpLaunchConfigs[i], {
-              name: '${label} (${suiteLabel})',
-              program: '${exec}',
-              target: '${exec}',
-              arguments: '${argsStr}',
-              args: '${args}',
-              cwd: '${cwd}',
-              env: '${envObj}',
-              sourceFileMap: '${sourceFileMapObj}',
-            });
-            this._log.info(
-              "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
-              debugConfig,
-            );
-            return [debugConfig, 'fromLaunchJson'];
+              wpLaunchConfigs[i].type.startsWith('gdb')
+            ) {
+              // skip
+            } else {
+              continue;
+            }
+          } else {
+            continue;
           }
+
+          // putting as much known properties as much we can and hoping for the best 🤞
+          const template: vscode.DebugConfiguration = Object.assign({}, templateBase, wpLaunchConfigs[i], {
+            program: '${exec}',
+            target: '${exec}',
+            arguments: '${argsStr}',
+            args: '${argsArray}',
+            cwd: '${cwd}',
+            env: '${envObj}',
+            environment: '${envObjArray}',
+            sourceFileMap: '${sourceFileMapObj}',
+          });
+
+          this._log.info(
+            "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+            template,
+          );
+
+          return [template, 'fromLaunchJson'];
         }
       }
-    }
-
-    const template: vscode.DebugConfiguration = {
-      name: '${label} (${suiteLabel})',
-      request: 'launch',
-      type: 'cppdbg',
-    };
-    let source = 'unknown';
-
-    if (vscode.extensions.getExtension('vadimcn.vscode-lldb')) {
-      source = 'vadimcn.vscode-lldb';
-      Object.assign(template, {
+    } else if (this._hasExtension('vadimcn.vscode-lldb')) {
+      const template = Object.assign({}, templateBase, {
         type: 'cppdbg',
         MIMode: 'lldb',
         program: '${exec}',
-        args: '${args}',
+        args: '${argsArray}',
         cwd: '${cwd}',
         env: '${envObj}',
         sourceMap: '${sourceFileMapObj}',
       });
-    } else if (vscode.extensions.getExtension('webfreak.debug')) {
-      source = 'webfreak.debug';
-      Object.assign(template, {
+
+      return [template, 'vadimcn.vscode-lldb'];
+    } else if (this._hasExtension('webfreak.debug')) {
+      const template = Object.assign({}, templateBase, {
         type: 'gdb',
         target: '${exec}',
         arguments: '${argsStr}',
@@ -179,28 +192,30 @@ export class Configurations {
         // If you are on OS X you can add lldb-mi to your path using ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi /usr/local/bin/lldb-mi if you have Xcode.
         template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
       }
-    } else if (vscode.extensions.getExtension('ms-vscode.cpptools')) {
-      source = 'ms-vscode.cpptools';
+
+      return [template, 'webfreak.debug'];
+    } else if (this._hasExtension('ms-vscode.cpptools')) {
       // documentation says debug"environment" = [{...}] but that doesn't work
-      Object.assign(template, {
+      const template = Object.assign({}, templateBase, {
         type: 'cppvsdbg',
         linux: { type: 'cppdbg', MIMode: 'gdb' },
         osx: { type: 'cppdbg', MIMode: 'lldb' },
         windows: { type: 'cppvsdbg' },
         program: '${exec}',
-        args: '${args}',
+        args: '${argsArray}',
         cwd: '${cwd}',
         env: '${envObj}',
         environment: '${envObjArray}',
         sourceFileMap: '${sourceFileMapObj}',
       });
-    } else {
-      this._log.info('no debug config');
-      throw Error(
-        "For debugging 'testMate.cpp.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
-      );
+
+      return [template, 'ms-vscode.cpptools'];
     }
-    return [template, source];
+
+    this._log.info('no debug config');
+    throw Error(
+      "For debugging 'testMate.cpp.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+    );
   }
 
   public getOrCreateUserId(): string {
@@ -301,11 +316,16 @@ export class Configurations {
     else return null;
   }
 
+  private static _parallelExecutionLimitMetricSent = false;
+
   public getParallelExecutionLimit(): number {
     const res = Math.max(1, this._getD<number>('test.parallelExecutionLimit', 1));
     if (typeof res != 'number') return 1;
     else {
-      if (res > 1) this._log.infoS('Using test.parallelExecutionLimit');
+      if (res > 1 && !Configurations._parallelExecutionLimitMetricSent) {
+        this._log.infoS('Using test.parallelExecutionLimit');
+        Configurations._parallelExecutionLimitMetricSent = true;
+      }
       return res;
     }
   }

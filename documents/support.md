@@ -1,6 +1,6 @@
 # Support
 
-For support open an issue with detailed description and please attach logs.
+For support open an issue with **detailed** description and please attach logs.
 
 ## Getting logs
 
@@ -16,15 +16,18 @@ Or one can set the `testMate.cpp.log.logfile: "<full path>"`. In this case a log
 - (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures.
   Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300` and it has to be defined before every `#include "catch.hpp"` lines.
 - (2019-12-27) doctest 2.3.6 is support file and line informations. Previous version will recognise the tests but navigation will be disabled.
-- (202004-19) Catch2 version < 2.11.4 have a parameter parsing problem issue which makes soem test name restrictions. The extension will notify if you are affected.
+- (2020-04-19) Catch2 version < 2.11.4 have a parameter parsing problem issue which makes some test name restrictions. The extension will notify if you are affected.
+- (2020-12-05) Catch2 test result parsing can fail if the test outputs unescaped "xml-like" text: `<Pin:10>`.
 
-For solving issues use: check [support](#Support).
-
-## Debugging the extension
+## For self-service
 
 Check [CONTRIBUTING.md](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/CONTRIBUTING.md).
 
 ## F.A.Q
+
+### Debug button doesn't work / stopped working
+
+> Please check the documentation of [debug.configTemplate](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/debug.configTemplate.md).
 
 ### Wanna see the test run results in the status bar too.
 
@@ -39,13 +42,13 @@ Check
 - [`advancedExecutables.runTask`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)
 - [`advancedExecutables.executionWrapper`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)
 
-#### I want to add custom environment variables
+### I want to add custom environment variables
 
 Easiest: `advancedExecutables.env`
 
 If you want dynamically set enviranment variables generate a file which contains those variables in a JSON format and set `envFile` and `dependsOn`.
 
-#### I want to run some **custom script** before the tests (for example to set some environment variables and do some init), how should I do that?
+### I want to run some **custom script** before the tests (for example to set some environment variables and do some init), how should I do that?
 
 > Create command line wrapper (.sh/.bat) or a python script wrapper. The most convenient way is to generate one.
 >
