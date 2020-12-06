@@ -17,6 +17,7 @@ export interface AdvancedExecutable {
   parallelizationLimit?: number;
   strictPattern?: boolean;
   markAsSkipped?: boolean;
+  waitForBuildProcess?: boolean;
   catch2?: FrameworkSpecific;
   gtest?: FrameworkSpecific;
   doctest?: FrameworkSpecific;

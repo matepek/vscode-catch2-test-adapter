@@ -25,6 +25,10 @@ Check [CONTRIBUTING.md](https://github.com/matepek/vscode-catch2-test-adapter/bl
 
 ## F.A.Q
 
+### Link / Build process fails because the executable is locked by this extension.
+
+> Check `testMate.cpp.test.advancedExecutables` -> `waitForBuildProcess`.
+
 ### Debug button doesn't work / stopped working
 
 > Please check the documentation of [debug.configTemplate](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/debug.configTemplate.md).

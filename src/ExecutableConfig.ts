@@ -37,6 +37,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _parallelizationLimit: number,
     private readonly _strictPattern: boolean | undefined,
     private readonly _markAsSkipped: boolean | undefined,
+    private readonly _waitForBuildProcess: boolean | undefined,
     private readonly _executionWrapper: ExecutionWrapper | undefined,
     private readonly _sourceFileMap: Record<string, string>,
     private readonly _catch2: FrameworkSpecific,
@@ -517,7 +518,7 @@ export class ExecutableConfig implements vscode.Disposable {
     }
 
     if (isFileExistsAndExecutable) {
-      // we might have to do something here: https://github.com/matepek/vscode-catch2-test-adapter/issues/235
+      if (this._waitForBuildProcess) await this._shared.buildProcessChecker.resolveAtFinish();
 
       try {
         await runnable.reloadTests(this._shared.taskPool, this._cancellationFlag);
