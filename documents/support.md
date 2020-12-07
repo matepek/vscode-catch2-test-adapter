@@ -138,3 +138,7 @@ If you want dynamically set enviranment variables generate a file which contains
 >  }
 > ]
 > ```
+
+### Test parsing fails because my executable writes some stuff to the error channel / `std::cerr`.
+
+> Check `test.advancedExecutables` -> [ignoreTestEnumerationStdErr](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#ignoreTestEnumerationStdErr)

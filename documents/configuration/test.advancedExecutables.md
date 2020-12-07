@@ -147,8 +147,7 @@ Example:
     "pattern": "<default pattern>",
     "darwin": { "pattern":"<value on mac>" },
     "win32": { "pattern":"<value on win>" },
-    "linux": { "pattern":"<value on linux>" },
-    ....
+    "linux": { "pattern":"<value on linux>" }
   }]
 ```
 
@@ -248,6 +247,27 @@ For example:
 
 - `Catch v2.11.1` + `/Catch v(\d+)\.(\d+)\.(\d+)\s?/` -> `[2, 11, 1]`
 
+### ignoreTestEnumerationStdErr
+
+As the name says test enumeraton will ignore std::err output.
+Having content from std::err in when the tests are enumerated is usually indicates some error
+but sometimes just some basic output from one of the components.
+The usage of this feature is **discouraged** because it can hide some real issue.
+(Usually logging libraries allows custom sinks and with a custom main this can be solved.)
+
+Ex.:
+
+```
+{
+  "testMate.cpp.test.advancedExecutables": [
+    {
+      "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+      "gtest":   { "ignoreTestEnumerationStdErr": true }
+    }
+   ]
+}
+```
+
 ### testGrouping
 
 It is undocumented. Contact me by opening an issue or read the code a bit.
@@ -260,22 +280,26 @@ It is undocumented. Contact me by opening an issue or read the code a bit.
   "testMate.cpp.test.advancedExecutables": [
     {
       "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
-      "catch2":  { "testGrouping": { ... } },
-      "gtest":   { "testGrouping": { ... } },
-      "doctest": { "testGrouping": { ... } },
+      "catch2": {
+        "testGrouping": {
+          "groupByExecutable": {
+            /*...*/
+          }
+        }
+      }
     }
-   ]
+  ]
 }
 ```
 
-| Property            | Description                                                                                                                                                                                                                                                                         |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `groupByExecutable` | Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                   |
-| `groupBySource`     | It sorts the tests by the related source file group. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                         |
-| `groupByTags`       | True to group by every exiting combination of the tags. (`{$tag}`) Or it can be an array of tags: `["[tag1]["tag2"]", "tag2", "tag3"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping) |
-| `groupByTagRegex`   | Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `["(?:good                                                                                                                                   | bad) (apple | peach)"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping) |
-| `groupByRegex`      | Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `["(?:good                                                                                                                                   | bad) (apple | peach)"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping) |
-| `groupUngroupedTo`  | If a test is not groupable it will be grouped by the given name. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                       |
+| Property            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `groupByExecutable` | Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                                                                                                                                                                  |
+| `groupBySource`     | It sorts the tests by the related source file group. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                                                                                                        |
+| `groupByTags`       | True to group by every exiting combination of the tags. (`{$tag}`) Or it can be an array of tags: `["[tag1]["tag2"]", "tag2", "tag3"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                                                                |
+| `groupByTagRegex`   | Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `["(?:good\|bad) (apple\|peach)"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping) |
+| `groupByRegex`      | Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `["(?:good\|bad) (apple\|peach)"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping) |
+| `groupUngroupedTo`  | If a test is not groupable it will be grouped by the given name. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                                                                                                                                      |
 
 #### TestGrouping examples
 
