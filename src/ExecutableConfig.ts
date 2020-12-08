@@ -266,14 +266,14 @@ export class ExecutableConfig implements vscode.Disposable {
 
   private async _pathProcessor(
     path: string,
+    moreVarsToResolve?: readonly ResolveRuleAsync[],
   ): Promise<{
     isAbsolute: boolean;
     absPath: string;
     isPartOfWs: boolean;
     relativeToWsPosix: string;
   }> {
-    path = resolveOSEnvironmentVariables(path, false);
-    path = await resolveVariablesAsync(path, this._shared.varToValue);
+    path = await this._resolveVariables(path, false, moreVarsToResolve);
 
     const normPattern = path.replace(/\\/g, '/');
     const isAbsolute = pathlib.posix.isAbsolute(normPattern) || pathlib.win32.isAbsolute(normPattern);
@@ -326,9 +326,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
     let resolvedCwd = '.';
     try {
-      resolvedCwd = await resolveVariablesAsync(this._cwd, varToValue);
-
-      resolvedCwd = resolveOSEnvironmentVariables(resolvedCwd, false);
+      resolvedCwd = await this._resolveVariables(this._cwd, false, varToValue);
 
       if (resolvedCwd.match(variableRe)) this._shared.log.warn('Possibly unresolved variable', resolvedCwd);
 
@@ -343,14 +341,13 @@ export class ExecutableConfig implements vscode.Disposable {
     try {
       if (this._env) Object.assign(resolvedEnv, this._env);
 
-      resolvedEnv = await resolveVariablesAsync(resolvedEnv, varToValue);
-      resolvedEnv = resolveOSEnvironmentVariables(resolvedEnv, true);
+      resolvedEnv = await this._resolveVariables(resolvedEnv, true, varToValue);
     } catch (e) {
       this._shared.log.error('resolvedEnv', e);
     }
 
     if (this._envFile) {
-      const resolvedEnvFile = await resolveVariablesAsync(await this._pathProcessor(this._envFile), varToValue);
+      const resolvedEnvFile = await this._pathProcessor(this._envFile, varToValue);
       try {
         const envFromFile = readJSONSync(resolvedEnvFile.absPath);
         if (typeof envFromFile !== 'object') throw Error('envFile is not a JSON object');
@@ -373,11 +370,8 @@ export class ExecutableConfig implements vscode.Disposable {
     let spawner: Spawner = new DefaultSpawner();
     if (this._executionWrapper) {
       try {
-        const resolvedPath = await resolveVariablesAsync(
-          await this._pathProcessor(this._executionWrapper.path),
-          varToValue,
-        );
-        const resolvedArgs = await resolveVariablesAsync(this._executionWrapper.args, varToValue);
+        const resolvedPath = await this._pathProcessor(this._executionWrapper.path, varToValue);
+        const resolvedArgs = await this._resolveVariables(this._executionWrapper.args, false, varToValue);
         spawner = new SpawnWithExecutor(resolvedPath.absPath, resolvedArgs);
         this._shared.log.info('executionWrapper was specified', resolvedPath, resolvedArgs);
       } catch (e) {
@@ -568,5 +562,17 @@ export class ExecutableConfig implements vscode.Disposable {
 
   private _isDuplicate(filePath: string): boolean {
     return this._runnables.has(filePath);
+  }
+
+  private async _resolveVariables<T>(
+    value: T,
+    strictAllowed: boolean,
+    moreVarsToResolve?: readonly ResolveRuleAsync[],
+  ): Promise<T> {
+    let resolved = resolveOSEnvironmentVariables(value, strictAllowed);
+    resolved = await resolveVariablesAsync(resolved, this._shared.varToValue);
+    if (moreVarsToResolve) resolved = await resolveVariablesAsync(resolved, moreVarsToResolve);
+    this._shared.log.debug('ExecutableConfig.resolveVariable: ', { value, resolved, strictAllowed });
+    return resolved;
   }
 }
