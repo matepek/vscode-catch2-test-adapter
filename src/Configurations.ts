@@ -105,7 +105,7 @@ export class Configurations {
       type: 'cppdbg',
     };
 
-    if (typeof templateFromConfig === 'object') {
+    if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
       const debugConfig = Object.assign({}, templateBase, templateFromConfig);
       this._log.debug('debugConfig', debugConfig);
 
