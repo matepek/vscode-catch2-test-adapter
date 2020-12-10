@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.15]
+
+### Fixed
+
+- an issue which stopped the debut button working
+
 ## [3.6.14] - 2020-12-08
 
 Improved logging.
