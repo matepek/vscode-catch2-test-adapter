@@ -227,6 +227,75 @@ describe(pathlib.basename(__filename), function () {
     });
   });
 
+  context('_reloadFromXml', function () {
+    it('should reload ex.1', async function () {
+      const { root, runnable } = createCatch2Runnable();
+      assert.strictEqual(runnable.tests.size, 0);
+
+      const testOutput: string[] = [
+        `
+        <?xml version="1.0" encoding="UTF-8"?>
+        <MatchingTests>
+          <TestCase>
+            <Name>Scenario: a</Name>
+            <ClassName/>
+            <Tags>[.][a]</Tags>
+            <SourceInfo>
+              <File>../catch2_bdd_tests/a.test.cpp</File>
+              <Line>3</Line>
+            </SourceInfo>
+          </TestCase>
+          <TestCase>
+            <Name>Scenario: b</Name>
+            <ClassName/>
+            <Tags>[.][b]</Tags>
+            <SourceInfo>
+              <File>../catch2_bdd_tests/b.test.cpp</File>
+              <Line>3</Line>
+            </SourceInfo>
+          </TestCase>
+          <TestCase>
+            <Name>Scenario: c</Name>
+            <ClassName/>
+            <Tags>[.][c]</Tags>
+            <SourceInfo>
+              <File>../catch2_bdd_tests/c.test.cpp</File>
+              <Line>3</Line>
+            </SourceInfo>
+          </TestCase>
+        </MatchingTests>
+        `
+      ];
+      const res = await runnable['_reloadFromXml'](testOutput.join(EOL), { isCancellationRequested: false });
+
+      const tests = [...res.tests].sort((a, b) => a.label.localeCompare(b.label));
+
+      assert.strictEqual(tests.length, 3);
+
+      let scenarios = ['a', 'b', 'c'];
+      for (let i=0; i < 3; ++i) {
+        assert.strictEqual(tests[i].testNameAsId, `Scenario: ${scenarios[i]}`);
+        assert.strictEqual(tests[i].label, `Scenario: ${scenarios[i]}`);
+        assert.strictEqual(tests[i].description, `[.][${scenarios[i]}]`);
+        assert.strictEqual(tests[i].file, pathlib.normalize(`../catch2_bdd_tests/${scenarios[i]}.test.cpp`));
+        assert.strictEqual(tests[i].line, 3 - 1);
+        assert.strictEqual(tests[i].skipped, true);
+        assert.strictEqual(tests[i].getStaticEvent('1'), undefined);
+      }
+      
+
+      assert.strictEqual(root.children.length, 1);
+      const suite1 = root.children[0];
+      assert.strictEqual(suite1.label, 'name');
+      if (suite1.type === 'suite') {
+        assert.strictEqual(suite1.children.length, 3);
+        assert.strictEqual(suite1.children[0], tests[0]);
+      } else {
+        assert.strictEqual(suite1.type, 'suite');
+      }
+    });
+  });
+
   context('reloadText', function () {
     it('should handle duplicated test name', async function () {
       expectedLoggedWarning('reloadChildren -> catch2TestListOutput.stderr');

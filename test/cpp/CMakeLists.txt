@@ -48,7 +48,8 @@ add_catch2test_with_main(suite5 "suite5.cpp")
 
 include("Catch2v3Test.cmake")
 
-add_catch2v3test_with_main(catch2v3_test1 "catch2v3_test1.cpp")
+add_catch2v3test_with_main(catch2v3_test1 "catch2v3_test1.cpp;catch2_bdd_tests/a.test.cpp;catch2_bdd_tests/b.test.cpp;catch2_bdd_tests/c.test.cpp")
+
 
 #
 
