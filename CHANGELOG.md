@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- an issue where Catch2 v3 tests with tags were parsed incorrectly
+
 ## [3.6.15] - 2020-12-10
 
 ### Fixed
