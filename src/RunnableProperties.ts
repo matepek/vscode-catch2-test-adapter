@@ -1,7 +1,7 @@
 import { FrameworkSpecific, RunTask } from './AdvancedExecutableInterface';
 import { TestGrouping } from './TestGroupingInterface';
 import { ResolveRuleAsync } from './util/ResolveRule';
-import { TaskPool } from './TaskPool';
+import { TaskPool } from './util/TaskPool';
 import { Spawner, SpawnOptionsWithoutStdio } from './Spawner';
 
 export class RunnableProperties {

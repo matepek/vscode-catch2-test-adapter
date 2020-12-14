@@ -16,7 +16,7 @@ import { RootSuite as OrigRootSuite } from '../src/RootSuite';
 
 import { TestLoadFinishedEvent, TestLoadStartedEvent, TestSuiteInfo, TestInfo } from 'vscode-test-adapter-api';
 
-import * as fsw from '../src/FSWrapper';
+import * as fsw from '../src/util/FSWrapper';
 import * as my from '../src/TestAdapter';
 import * as my2 from '../src/SharedVariables';
 import { Config } from '../src/Configurations';

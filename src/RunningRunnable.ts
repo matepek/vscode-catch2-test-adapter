@@ -1,6 +1,6 @@
 import * as os from 'os';
 
-import { ChildProcessWithoutNullStreams } from './FSWrapper';
+import { ChildProcessWithoutNullStreams } from './util/FSWrapper';
 import { AbstractTest } from './AbstractTest';
 import { LoggerWrapper } from './LoggerWrapper';
 import { promisify } from 'util';

@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { RunnableProperties } from './RunnableProperties';
 import { AbstractTest, AbstractTestEvent } from './AbstractTest';
 import { Suite } from './Suite';
-import { TaskPool } from './TaskPool';
+import { TaskPool } from './util/TaskPool';
 import { SharedVariables } from './SharedVariables';
 import { RunningRunnable } from './RunningRunnable';
 import { promisify, inspect } from 'util';
@@ -19,7 +19,7 @@ import { TestGrouping, GroupByExecutable, GroupByTagRegex, GroupByRegex } from '
 import { TestEvent } from 'vscode-test-adapter-api';
 import { RootSuite } from './RootSuite';
 import { EOL } from 'os';
-import { isSpawnBusyError } from './FSWrapper';
+import { isSpawnBusyError } from './util/FSWrapper';
 
 export class RunnableReloadResult {
   public tests = new Set<AbstractTest>();

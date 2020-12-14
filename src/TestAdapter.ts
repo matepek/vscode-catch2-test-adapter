@@ -7,7 +7,7 @@ import * as Sentry from '@sentry/node';
 import { LoggerWrapper } from './LoggerWrapper';
 import { RootSuite } from './RootSuite';
 import { generateId } from './Util';
-import { TaskQueue } from './TaskQueue';
+import { TaskQueue } from './util/TaskQueue';
 import { SharedVariables, TestRunEvent } from './SharedVariables';
 import { Catch2Section, Catch2Test } from './framework/Catch2Test';
 import { AbstractRunnable } from './AbstractRunnable';

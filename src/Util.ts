@@ -1,5 +1,5 @@
 import * as pathlib from 'path';
-import * as c2fs from './FSWrapper';
+import * as c2fs from './util/FSWrapper';
 
 ///
 

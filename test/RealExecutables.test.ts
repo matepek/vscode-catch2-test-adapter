@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 
 import { TestAdapter, settings, isWin, waitFor } from './Common';
 import { DefaultSpawner } from '../src/Spawner';
-import * as c2fs from '../src/FSWrapper';
+import * as c2fs from '../src/util/FSWrapper';
 
 ///
 
@@ -139,12 +139,12 @@ describe(path.basename(__filename), function () {
       assert.strictEqual(
         adapter.stateEvents.length - eventCount,
         2 + // start,fin
-        2 + //suite1 start,fin
-        5 * 2 + // suite1 tests
-        2 + //suite2 start,fin
-        2 * 2 + // suite2 tests
-        2 + //suite3 start,fin
-        29 * 2 + // suite3 tests
+          2 + //suite1 start,fin
+          5 * 2 + // suite1 tests
+          2 + //suite2 start,fin
+          2 * 2 + // suite2 tests
+          2 + //suite3 start,fin
+          29 * 2 + // suite3 tests
           6 * 1, // because old catch2 is buggy and we send staticEvent for 6 tests with parent
         inspect(
           adapter.stateEvents.map((v, i) => {

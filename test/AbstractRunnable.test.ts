@@ -9,7 +9,7 @@ import { TestGrouping } from '../src/TestGroupingInterface';
 import { Suite } from '../src/Suite';
 import { CancellationTokenSource } from 'vscode';
 import { DefaultSpawner } from '../src/Spawner';
-import * as fsw from '../src/FSWrapper';
+import * as fsw from '../src/util/FSWrapper';
 
 ///
 

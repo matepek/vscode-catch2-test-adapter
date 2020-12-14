@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import * as vscode from 'vscode';
 
 import { AbstractRunnable } from './AbstractRunnable';
-import * as c2fs from './FSWrapper';
+import * as c2fs from './util/FSWrapper';
 import { getAbsolutePath, findURIs } from './Util';
 import {
   resolveOSEnvironmentVariables,
@@ -14,7 +14,7 @@ import {
 } from './util/ResolveRule';
 import { RunnableFactory } from './RunnableFactory';
 import { SharedVariables } from './SharedVariables';
-import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './FSWatcher';
+import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
 import { RootSuite } from './RootSuite';
 import { AbstractTest } from './AbstractTest';
 import { readJSONSync } from 'fs-extra';

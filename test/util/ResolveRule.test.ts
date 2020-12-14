@@ -1,8 +1,8 @@
 import * as assert from 'assert';
 import * as path from 'path';
 
-import { resolveVariablesAsync, ResolveRuleAsync } from '../src/util/ResolveRule';
-import { findURIs } from '../src/Util';
+import { resolveVariablesAsync, ResolveRuleAsync } from '../../src/util/ResolveRule';
+import { findURIs } from '../../src/Util';
 
 describe(path.basename(__filename), function () {
   it('resolveVariablesAsync', async function () {

@@ -1,4 +1,4 @@
-import * as fsw from './FSWrapper';
+import * as fsw from './util/FSWrapper';
 import { resolveVariablesAsync } from './util/ResolveRule';
 
 ///

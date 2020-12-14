@@ -1,7 +1,7 @@
 import { LoggerWrapper } from './LoggerWrapper';
 import * as vscode from 'vscode';
 import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
-import { TaskPool } from './TaskPool';
+import { TaskPool } from './util/TaskPool';
 import { AbstractTest, AbstractTestEvent } from './AbstractTest';
 import { ResolveRuleAsync } from './util/ResolveRule';
 import { BuildProcessChecker } from './util/BuildProcessChecker';

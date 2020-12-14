@@ -1,4 +1,4 @@
-import * as c2fs from './FSWrapper';
+import * as c2fs from './util/FSWrapper';
 import { RunnableProperties } from './RunnableProperties';
 import { AbstractRunnable } from './AbstractRunnable';
 import { Catch2Runnable } from './framework/Catch2Runnable';

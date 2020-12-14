@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import { promisify } from 'util';
 import * as path from 'path';
 
-import { TaskQueue } from '../src/TaskQueue';
+import { TaskQueue } from '../src/util/TaskQueue';
 
 describe(path.basename(__filename), function () {
   async function waitFor(test: Mocha.Context, condition: Function, timeout = 1000): Promise<void> {

@@ -264,7 +264,7 @@ describe(pathlib.basename(__filename), function () {
             </SourceInfo>
           </TestCase>
         </MatchingTests>
-        `
+        `,
       ];
       const res = await runnable['_reloadFromXml'](testOutput.join(EOL), { isCancellationRequested: false });
 
@@ -272,8 +272,8 @@ describe(pathlib.basename(__filename), function () {
 
       assert.strictEqual(tests.length, 3);
 
-      let scenarios = ['a', 'b', 'c'];
-      for (let i=0; i < 3; ++i) {
+      const scenarios = ['a', 'b', 'c'];
+      for (let i = 0; i < 3; ++i) {
         assert.strictEqual(tests[i].testNameAsId, `Scenario: ${scenarios[i]}`);
         assert.strictEqual(tests[i].label, `Scenario: ${scenarios[i]}`);
         assert.strictEqual(tests[i].description, `[.][${scenarios[i]}]`);
@@ -282,7 +282,6 @@ describe(pathlib.basename(__filename), function () {
         assert.strictEqual(tests[i].skipped, true);
         assert.strictEqual(tests[i].getStaticEvent('1'), undefined);
       }
-      
 
       assert.strictEqual(root.children.length, 1);
       const suite1 = root.children[0];

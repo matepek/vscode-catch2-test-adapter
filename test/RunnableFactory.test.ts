@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 import { SharedVariables, RootSuite, ChildProcessStub } from './Common';
 import { RunnableFactory } from '../src/RunnableFactory';
 import { DefaultSpawner } from '../src/Spawner';
-import * as fsw from '../src/FSWrapper';
+import * as fsw from '../src/util/FSWrapper';
 
 ///
 
