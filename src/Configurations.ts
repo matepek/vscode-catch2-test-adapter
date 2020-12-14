@@ -163,7 +163,9 @@ export class Configurations {
           return [template, 'fromLaunchJson'];
         }
       }
-    } else if (this._hasExtension('vadimcn.vscode-lldb')) {
+    }
+
+    if (this._hasExtension('vadimcn.vscode-lldb')) {
       const template = Object.assign({}, templateBase, {
         type: 'cppdbg',
         MIMode: 'lldb',
