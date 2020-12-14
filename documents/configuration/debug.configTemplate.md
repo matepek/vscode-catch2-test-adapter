@@ -33,15 +33,22 @@ Value `"extensionOnly"` will cause to skip the search of local launch configurat
 
 #### or user can manually fill it
 
+> Note that `name` and `request` are filled, if they are undefined, so it is not necessary to set them. `type` is necessary.
+
 For [`ms-vscode.cpptools`](https://code.visualstudio.com/docs/cpp/launch-json-reference) add something like this to settings.json:
 
 ```json
 "testMate.cpp.debug.configTemplate": {
+  "type": "cppvsdbg",
+  "linux": { "type": "cppdbg", "MIMode": "gdb" },
+  "osx": { "type": "cppdbg", "MIMode": "lldb" },
+  "windows": { "type": "cppvsdbg" },
   "program": "${exec}",
   "args": "${argsArray}",
   "cwd": "${cwd}",
+  "env": "${envObj}",
   "environment": "${envObjArray}",
-  "sourceFileMap": "${sourceFileMapObj}"
+  "sourceFileMap": "${sourceFileMapObj}",
 }
 ```
 
@@ -76,6 +83,3 @@ For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) 
 | `${sourceFileMapObj}` | The file path mapping object added to `advancedExecutables.sourceFileMap` | { [prop: string]: string }      |
 
 These variables will be substituted when a DebugConfiguration is created.
-
-Note that `name` and `request` are filled, if they are undefined, so it is not necessary to set them.
-`type` is necessary.
