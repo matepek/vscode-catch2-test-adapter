@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - indexing option for `${workspaceFolder}`: For the last part of the variable try `${workspaceFolder[-1]}`
 
+### Changed
+
+- skipped tests will not be run when "Enable autorun" is used.
+
 ### Deprecated
 
 - `${workspaceDirectory}`. Use `${workspaceFolder}` instead.

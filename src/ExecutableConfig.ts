@@ -16,7 +16,6 @@ import { RunnableFactory } from './RunnableFactory';
 import { SharedVariables } from './SharedVariables';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
 import { RootSuite } from './RootSuite';
-import { AbstractTest } from './AbstractTest';
 import { readJSONSync } from 'fs-extra';
 import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
 import { RunTask, ExecutionWrapper, FrameworkSpecific } from './AdvancedExecutableInterface';
@@ -234,9 +233,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
             w.onAll((fsPath: string): void => {
               this._shared.log.info('dependsOn watcher event:', fsPath);
-              const tests: AbstractTest[] = [];
-              for (const runnable of this._runnables) tests.push(...runnable[1].tests);
-              this._shared.sendRetireEvent(tests);
+              this._shared.sendRetireEvent(this._runnables.values());
             });
           } else {
             absPatterns.push(p.absPath);
@@ -251,9 +248,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
           w.onAll((fsPath: string): void => {
             this._shared.log.info('dependsOn watcher event:', fsPath);
-            const tests: AbstractTest[] = [];
-            for (const runnable of this._runnables) tests.push(...runnable[1].tests);
-            this._shared.sendRetireEvent(tests);
+            this._shared.sendRetireEvent(this._runnables.values());
           });
         }
       } catch (e) {
@@ -517,7 +512,7 @@ export class ExecutableConfig implements vscode.Disposable {
       try {
         await runnable.reloadTests(this._shared.taskPool, this._cancellationFlag);
         this._runnables.set(filePath, runnable); // it might be set already but we don't care
-        this._shared.sendRetireEvent(runnable.tests);
+        this._shared.sendRetireEvent([runnable]);
       } catch (reason) {
         if (reason.code === undefined)
           this._shared.log.debug('problem under reloading', { reason, filePath, runnable });

@@ -127,9 +127,11 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
       }
     };
 
-    const sendRetireEvent = (tests: Iterable<AbstractTest>): void => {
+    const sendRetireEvent = (runnables: Iterable<AbstractRunnable>): void => {
       const ids: string[] = [];
-      for (const t of tests) ids.push(t.id);
+
+      for (const r of runnables) for (const test of r.tests) if (!test.skipped) ids.push(test.id);
+
       this._retireEmitter.fire({ tests: ids });
     };
 
