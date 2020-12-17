@@ -15,7 +15,7 @@ import { Configurations, Config } from './Configurations';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 import { AbstractTest, AbstractTestEvent } from './AbstractTest';
-import { ResolveRuleAsync, resolveVariablesAsync } from './util/ResolveRule';
+import { createPythonIndexerForPathVariable, ResolveRuleAsync, resolveVariablesAsync } from './util/ResolveRule';
 import { inspect } from 'util';
 
 export class TestAdapter implements api.TestAdapter, vscode.Disposable {
@@ -238,7 +238,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
     const variableToValue: ResolveRuleAsync[] = [
       { resolve: '${osPathSep}', rule: osPathSeparator },
-      { resolve: '${workspaceFolder}', rule: this.workspaceFolder.uri.fsPath },
+      createPythonIndexerForPathVariable('workspaceFolder', this.workspaceFolder.uri.fsPath),
       { resolve: '${workspaceDirectory}', rule: this.workspaceFolder.uri.fsPath },
       { resolve: '${osPathEnvSep}', rule: process.platform === 'win32' ? ';' : ':' },
       {

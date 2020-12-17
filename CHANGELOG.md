@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.18]
+
+### Added
+
+- indexing option for `${workspaceFolder}`: For the last part of the variable try `${workspaceFolder[-1]}`
+
+### Deprecated
+
+- `${workspaceDirectory}`. Use `${workspaceFolder}` instead.
+
 ## [3.6.17] - 2020-12-14
 
 ### Fixed
