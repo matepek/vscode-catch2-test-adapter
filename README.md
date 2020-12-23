@@ -1,6 +1,6 @@
 # C++ TestMate
 
-## A **Catch2**, **GoogleTest**, **DOCtest**and **GoogleBenchmark** Explorer for VSCode
+## A **Catch2**, **GoogleTest**, **doctest** and **GoogleBenchmark** Explorer for VSCode
 
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 [![GitHub issues](https://img.shields.io/github/issues/matepek/vscode-catch2-test-adapter?color=green)](https://github.com/matepek/vscode-catch2-test-adapter/issues)

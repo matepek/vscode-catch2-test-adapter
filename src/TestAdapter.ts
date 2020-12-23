@@ -509,6 +509,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const [runnable, runnableTests] = [...runnableToTestMap][0];
 
+      this._shared.log.setNextInspectOptions({ depth: 5 });
       this._shared.log.info('test', runnable, runnableTests);
 
       const configuration = this._getConfiguration(this._shared.log);
