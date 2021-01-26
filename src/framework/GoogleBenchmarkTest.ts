@@ -60,7 +60,7 @@ export class GoogleBenchmarkTest extends AbstractTest {
     output: string,
     _rngSeed: number | undefined,
     timeout: number | null,
-    _stderr: string | undefined, //eslint-disable-line
+    stderr: string | undefined,
   ): AbstractTestEvent {
     if (timeout !== null) {
       const ev = this.getTimeoutEvent(testRunId, timeout);
@@ -99,6 +99,10 @@ export class GoogleBenchmarkTest extends AbstractTest {
         const value2 = typeof value === 'string' ? '"' + value + '"' : value;
         eventBuilder.appendMessage(key + ': ' + value2, null);
       });
+
+      if (stderr && stderr.length > 0) {
+        eventBuilder.appendMessage('stderr >>>\n' + stderr + '\n<<<', null);
+      }
 
       eventBuilder.passed();
 

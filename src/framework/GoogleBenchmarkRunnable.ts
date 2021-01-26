@@ -149,9 +149,15 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
     })();
 
     return new Promise<ProcessResult>(resolve => {
-      const chunks: string[] = [];
-      const processChunk = (chunk: string): void => {
-        chunks.push(chunk);
+      const stdout: string[] = [];
+      const stderr: string[] = [];
+      const processChunk = (chunk: string, type: 'stdout' | 'stderr'): void => {
+        if (type === 'stderr') {
+          stderr.push(chunk);
+          return;
+        }
+
+        stdout.push(chunk);
         data.benchmarksJson = data.benchmarksJson + chunk;
 
         if (data.context === undefined) {
@@ -186,7 +192,13 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
               this.sendMinimalEventsIfNeeded(testRunId, data.route, route);
               data.route = route;
 
-              const ev = test.parseAndProcessTestCase(testRunId, JSON.stringify(benchmark), undefined, null, undefined);
+              const ev = test.parseAndProcessTestCase(
+                testRunId,
+                JSON.stringify(benchmark),
+                undefined,
+                null,
+                stderr.join(''),
+              );
               this._shared.sendTestRunEvent(ev);
               data.processedTestCases.push(test);
             } else {
@@ -200,8 +212,8 @@ export class GoogleBenchmarkRunnable extends AbstractRunnable {
         }
       };
 
-      runInfo.process.stdout.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
-      runInfo.process.stderr.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString()));
+      runInfo.process.stdout.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString(), 'stdout'));
+      runInfo.process.stderr.on('data', (chunk: Uint8Array) => processChunk(chunk.toLocaleString(), 'stderr'));
 
       runInfo.process.once('close', (code: number | null, signal: string | null) => {
         if (runInfo.cancellationToken.isCancellationRequested) {
