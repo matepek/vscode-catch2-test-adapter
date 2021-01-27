@@ -43,26 +43,26 @@ script:
 
 jobs:
   include:
-    - os: linux
-      env: VSCODE_VERSION=latest
+    #- os: linux
+    #  env: VSCODE_VERSION=latest
     - os: osx
       env: VSCODE_VERSION=latest
 
-    - os: linux
-      env: VSCODE_VERSION=1.41.1
-      if: branch = master
+    #- os: linux
+    #  env: VSCODE_VERSION=1.41.1
+    #  if: branch = master
     - os: osx
       env: VSCODE_VERSION=1.41.1
       if: branch = master
 
-    - os: linux
-      env: VSCODE_VERSION=insiders
-      if: branch != master
+    #- os: linux
+    #  env: VSCODE_VERSION=insiders
+    #  if: branch != master
     - os: osx
       env: VSCODE_VERSION=insiders
       if: branch != master
 
-    - os: linux
+    - os: osx
       env: VSCODE_VERSION=latest
       stage: deploy
       script: npm run deploy
