@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-describe.only(path.basename(__filename), function () {
+describe(path.basename(__filename), function () {
   if (process.env['C2_INTEGRATIONFROMVSCODE'] === undefined) {
     // eslint-disable-next-line
     require('mocha-eslint')('src/**/*.ts', {
