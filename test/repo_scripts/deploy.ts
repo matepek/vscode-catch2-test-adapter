@@ -319,8 +319,6 @@ async function main(argv: string[]): Promise<void> {
 
   if (process.env['TRAVIS_PULL_REQUEST'] !== 'false') throw new Error("Shouldn't be a PR, skipping..");
 
-  if (process.env['TRAVIS_OS_NAME'] !== 'linux') throw new Error('Not osx, skipping..');
-
   if (process.env['VSCODE_VERSION'] !== 'latest') throw new Error('Not the latest vscode version, skipping..');
 
   const info = await updateChangelog();
