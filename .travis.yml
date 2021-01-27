@@ -49,10 +49,10 @@ jobs:
       env: VSCODE_VERSION=latest
 
     - os: linux
-      env: VSCODE_VERSION=1.38.0
+      env: VSCODE_VERSION=1.39.2
       if: branch = master
     - os: osx
-      env: VSCODE_VERSION=1.38.0
+      env: VSCODE_VERSION=1.42.1
       if: branch = master
 
     - os: linux
