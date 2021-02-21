@@ -141,7 +141,7 @@ export class DOCRunnable extends AbstractRunnable {
     return result;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly Readonly<DOCTest>[]): string[] {
+  private _getRunParamsCommon(childrenToRun: readonly Readonly<DOCTest>[]): string[] {
     const execParams: string[] = [];
 
     const testNames = childrenToRun.map(c => c.getEscapedTestName());
@@ -149,7 +149,6 @@ export class DOCRunnable extends AbstractRunnable {
     execParams.push('--no-skip=true');
 
     execParams.push('--case-sensitive=true');
-    execParams.push('--reporters=xml');
     execParams.push('--duration=true');
 
     if (this._shared.isNoThrow) execParams.push('--no-throw=true');
@@ -162,10 +161,17 @@ export class DOCRunnable extends AbstractRunnable {
     return execParams;
   }
 
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<DOCTest>[]): string[] {
+    const execParams: string[] = this._getRunParamsCommon(childrenToRun);
+    execParams.push('--reporters=xml');
+    return execParams;
+  }
+
   // eslint-disable-next-line
-  protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
-    const params = this._getRunParamsInner(childrenToRun as readonly Readonly<DOCTest>[]);
-    return params;
+  protected _getDebugParamsInner(childrenToRun: readonly Readonly<DOCTest>[], breakOnFailure: boolean): string[] {
+    const execParams: string[] = this._getRunParamsCommon(childrenToRun);
+    execParams.push('--reporters=console');
+    return execParams;
   }
 
   protected _handleProcess(testRunId: string, runInfo: RunningRunnable): Promise<void> {

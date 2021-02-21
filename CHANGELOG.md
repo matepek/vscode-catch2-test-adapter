@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.21]
+
+### Changed
+
+- DOCTest output reporter in case of debugging has changed `xml` -> `console`
+
 ## [3.6.20] - 2021-01-27
 
 ## [3.6.19] - 2020-12-23
