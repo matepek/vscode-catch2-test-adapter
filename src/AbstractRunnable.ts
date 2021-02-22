@@ -476,6 +476,7 @@ export abstract class AbstractRunnable {
       if (charCount + test.testNameAsId.length >= limit) {
         lastSet = [];
         subsets.push(lastSet);
+        charCount = 0;
       }
       lastSet.push(test);
       charCount += test.testNameAsId.length;
