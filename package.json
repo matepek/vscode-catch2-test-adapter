@@ -315,7 +315,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "before": {
-                    "markdownDescription": "Name of the tasks to execute before running/debugging tests. Test names are accessible using: - `${absPathArrayFlat}: add this to 'args' array; - ${absPathConcatWithSpace}`",
+                    "markdownDescription": "Name of the tasks to execute before running/debugging test-set. Test executable names are accessible using: - `${absPathArrayFlat}: add this to 'args' array; - ${absPathConcatWithSpace}`",
                     "type": "array",
                     "items": {
                       "type": "string",
@@ -323,7 +323,23 @@
                     }
                   },
                   "beforeEach": {
-                    "markdownDescription": "Name of the tasks to execute before running/debugging tests. Variables like `${absPath}` will be substituted before running the task.`",
+                    "markdownDescription": "Name of the tasks to execute before running/debugging each executables. Variables like `${absPath}` will be substituted before running the task.`",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "after": {
+                    "markdownDescription": "Name of the tasks to execute after running/debugging test-set. Test executable names are accessible using: - `${absPathArrayFlat}: add this to 'args' array; - ${absPathConcatWithSpace}``",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "afterEach": {
+                    "markdownDescription": "Name of the tasks to execute after running/debugging each executables. Variables like `${absPath}` will be substituted before running the task.`",
                     "type": "array",
                     "items": {
                       "type": "string",

@@ -196,7 +196,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
         // otherwise task execution fails with "Task not found".
         resolvedTask.name += '';
 
-        //TODO timeout
         if (cancellationToken.isCancellationRequested) return;
 
         const result = new Promise<number | undefined>(resolve => {

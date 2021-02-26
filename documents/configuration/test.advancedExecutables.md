@@ -86,7 +86,7 @@ If the pattern is too general like `out/**/*test*`, it could cause unexpected ex
 which would not just increase the test-loading duration but also could have other unexpected effects.
 I suggest to have a stricter file-name convention and a corresponding pattern like `out/**/*.test.*` or `out/**/Test.*`
 
-### `dependsOn`
+## `dependsOn`
 
 - ℹ️Executables found by pattern are automatically watched, don't need to add them to `dependsOn`.
 - If "Enable autorun" is enabled in "**...**" menu (next to the play button), it will trigger the related test suites by detecting the recompilation of the executable.
@@ -99,7 +99,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
   - Paths on different drive in the same `dependsOn` array maybe won't work.
   - (If you find another corner case, feel free to open an issue. It could be handy once in the future.)
 
-### envFile
+## envFile
 
 Probably your best option if your executables need some initinalization of enviroment.
 Use it with `dependsOn` and then in case the `envFile` changes the tests will be retired.
@@ -385,7 +385,7 @@ Note: This example overused it.
 ]
 ```
 
-#### `executionWrapper`
+## `executionWrapper`
 
 - `${cmd}`
 - `${argsFlat}`: Exmaple: `["pre", "${argsFlat}", "post"]` -> `["pre", "$1", "$2", ..., "$x", "post"]`
@@ -407,4 +407,22 @@ This is useful if stderr/std::cerr is missing:
   "path": "emulator.exe",
   "args": [ "${cmd}", "${argsFlat}" ]
 }
+```
+
+## `runTask`
+
+- `before`
+- `beforeEach`
+- `after`
+- `afterEach`
+
+```json
+"testMate.cpp.test.advancedExecutables": [
+  {
+    "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+    "runTask": {
+      "before": [ "taskName in tasks.json" ]
+    }
+  }
+]
 ```
