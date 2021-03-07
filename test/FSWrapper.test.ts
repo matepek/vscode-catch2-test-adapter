@@ -26,6 +26,7 @@ describe('FsWrapper.spawnAsync', function () {
   });
 
   it('not existing', function () {
+    if (process.env['TRAVIS'] == 'true') this.skip();
     let hasErr = false;
     return spawner
       .spawnAsync('notexisting.exe', [], {})
@@ -88,6 +89,7 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function () {
   }
 
   it('<not existing>', async function () {
+    if (process.env['TRAVIS'] == 'true') this.skip();
     const fsRes = cp.spawnSync('fnksdlfnlskfdn', [], { encoding: 'utf8' });
     assert.strictEqual(fsRes.signal, null);
     assert.strictEqual(fsRes.status, null);
