@@ -75,7 +75,7 @@ export class DOCRunnable extends AbstractRunnable {
           testName,
           testName,
           filePath,
-          [],
+          tags,
           (parent: Suite) => new DOCTest(this._shared, this, parent, testName, skipped, filePath, line, tags),
           (old: AbstractTest): boolean => (old as DOCTest).update(filePath, line, tags, skipped),
         )),

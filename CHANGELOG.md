@@ -9,6 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [3.6.23]
 
 Improved documentation
+NPM update
+
+### Fixed
+
+- an issue related to doctest test-grouping
 
 ## [3.6.22] - 2021-02-22
 
