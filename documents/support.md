@@ -82,7 +82,7 @@ If you want dynamically set enviranment variables generate a file which contains
 > "testMate.cpp.test.advancedExecutables": [
 >   {
 >     "pattern": "build/**/test*.exe",
->     "cwd": "${relDirpath[1:]}/resources"
+>     "cwd": "/src/${relDirpath[1:]}/resources"
 >   }
 > ]
 > ```
