@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.24]
+
+Improved documentation
+NPM update
+
 ## [3.6.23] - 2021-03-07
 
 Improved documentation
