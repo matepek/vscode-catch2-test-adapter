@@ -1,8 +1,11 @@
 ---
 name: Feature request
 about: Suggest an idea for this project
-
 ---
+
+**Checklist**
+
+- [ ] Checked [Support page](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/support.md)
 
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]

@@ -277,7 +277,7 @@ describe(path.basename(__filename), function () {
 
       const eventCount = adapter.stateEvents.length;
       await adapter.run([adapter.root.id]);
-      assert.strictEqual(adapter.stateEvents.length - eventCount, 32);
+      assert.strictEqual(adapter.stateEvents.length - eventCount, 36);
     });
   });
 
