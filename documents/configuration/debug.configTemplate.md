@@ -1,4 +1,4 @@
-[[Jump to README.md](../../README)]
+[[Jump to README](../../README.md)]
 
 # Debugger Configuration Template
 
@@ -41,8 +41,8 @@ For [`ms-vscode.cpptools`](https://code.visualstudio.com/docs/cpp/launch-json-re
 "testMate.cpp.debug.configTemplate": {
   "type": "cppvsdbg",
   "linux": { "type": "cppdbg", "MIMode": "gdb" },
-  "osx": { "type": "cppdbg", "MIMode": "lldb" },
-  "windows": { "type": "cppvsdbg" },
+  "darwin": { "type": "cppdbg", "MIMode": "lldb" },
+  "win32": { "type": "cppvsdbg" },
   "program": "${exec}",
   "args": "${argsArray}",
   "cwd": "${cwd}",
@@ -83,3 +83,19 @@ For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) 
 | `${sourceFileMapObj}` | The file path mapping object added to `advancedExecutables.sourceFileMap` | { [prop: string]: string }      |
 
 These variables will be substituted when a DebugConfiguration is created.
+
+#### Remarks
+
+The lack of `type` property raise a warning but seems unnecessary to be field but hard to implement. One can put an assertion there: `"type": "${assert}"`
+
+```
+"testMate.cpp.debug.configTemplate": {
+  "type": "${assert}",
+  "linux": { "type": "cppdbg", "MIMode": "gdb" },
+  "darwin": { "type": "cppdbg", "MIMode": "lldb" },
+  "windows": { "type": "cppvsdbg" },
+  ...
+}
+```
+
+it seems unnecessary to be set

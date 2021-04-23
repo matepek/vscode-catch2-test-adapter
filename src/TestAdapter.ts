@@ -238,6 +238,13 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     );
 
     const variableToValue: ResolveRuleAsync[] = [
+      {
+        resolve: /\$\{assert(?::([^}]+))?\}/,
+        rule: async (m: RegExpMatchArray): Promise<never> => {
+          const msg = m[1] ? ': ' + m[1] : '';
+          throw Error('Assertion while resolving variable' + msg);
+        },
+      },
       { resolve: '${osPathSep}', rule: osPathSeparator },
       createPythonIndexerForPathVariable('workspaceFolder', this.workspaceFolder.uri.fsPath),
       { resolve: '${workspaceDirectory}', rule: this.workspaceFolder.uri.fsPath },

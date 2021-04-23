@@ -4,7 +4,7 @@
 testMate.cpp.test.advancedExecutables
 ```
 
-[[Jump to README.md](../../README)]
+[[Jump to README](../../README.md)]
 
 ([TypeScript interface](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/AdvancedExecutableInterface.ts))
 

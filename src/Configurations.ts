@@ -12,7 +12,7 @@ import {
   RunTask,
   ExecutionWrapper,
 } from './AdvancedExecutableInterface';
-//import * as crypto from 'crypto';
+import { platformUtil } from './util/Platform';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
 
@@ -94,130 +94,138 @@ export class Configurations {
   }
 
   public getDebugConfigurationTemplate(): [vscode.DebugConfiguration, string] {
-    const templateFromConfig = this._getD<Record<string, unknown> | null | 'extensionOnly'>(
-      'debug.configTemplate',
-      null,
-    );
+    const [template, source] = ((): [vscode.DebugConfiguration, string] => {
+      const templateFromConfig = this._getD<vscode.DebugConfiguration | null | 'extensionOnly'>(
+        'debug.configTemplate',
+        null,
+      );
 
-    const templateBase: vscode.DebugConfiguration = {
-      name: '${label} (${suiteLabel})',
-      request: 'launch',
-      type: 'cppdbg',
-    };
+      const template: vscode.DebugConfiguration = {
+        name: '${label} (${suiteLabel})',
+        request: 'launch',
+        type: 'cppdbg',
+      };
 
-    if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
-      const debugConfig = Object.assign({}, templateBase, templateFromConfig);
-      this._log.debug('debugConfig', debugConfig);
+      if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
+        Object.assign(template, templateFromConfig);
+        this._log.debug('template', template);
 
-      return [debugConfig, 'userDefined'];
-    } else if (templateFromConfig === null) {
-      const wpLaunchConfigs = vscode.workspace
-        .getConfiguration('launch', this._workspaceFolderUri)
-        .get('configurations');
+        return [template, 'userDefined'];
+      } else if (templateFromConfig === null) {
+        const wpLaunchConfigs = vscode.workspace
+          .getConfiguration('launch', this._workspaceFolderUri)
+          .get('configurations');
 
-      if (wpLaunchConfigs && Array.isArray(wpLaunchConfigs) && wpLaunchConfigs.length > 0) {
-        for (let i = 0; i < wpLaunchConfigs.length; ++i) {
-          if (wpLaunchConfigs[i].request !== 'launch') continue;
+        if (wpLaunchConfigs && Array.isArray(wpLaunchConfigs) && wpLaunchConfigs.length > 0) {
+          for (let i = 0; i < wpLaunchConfigs.length; ++i) {
+            if (wpLaunchConfigs[i].request !== 'launch') continue;
 
-          if (typeof wpLaunchConfigs[i][process.platform]?.type == 'string') {
-            if (
-              wpLaunchConfigs[i][process.platform].type.startsWith('cpp') ||
-              wpLaunchConfigs[i][process.platform].type.startsWith('lldb') ||
-              wpLaunchConfigs[i][process.platform].type.startsWith('gdb')
-            ) {
-              // skip
+            const platformProp = platformUtil.getPlatformProperty(wpLaunchConfigs[i]);
+            if (typeof platformProp.type == 'string') {
+              if (
+                platformProp.type.startsWith('cpp') ||
+                platformProp.type.startsWith('lldb') ||
+                platformProp.type.startsWith('gdb')
+              ) {
+                // skip
+              } else {
+                continue;
+              }
+            } else if (typeof wpLaunchConfigs[i].type == 'string') {
+              if (
+                wpLaunchConfigs[i].type.startsWith('cpp') ||
+                wpLaunchConfigs[i].type.startsWith('lldb') ||
+                wpLaunchConfigs[i].type.startsWith('gdb')
+              ) {
+                // skip
+              } else {
+                continue;
+              }
             } else {
               continue;
             }
-          } else if (typeof wpLaunchConfigs[i].type == 'string') {
-            if (
-              wpLaunchConfigs[i].type.startsWith('cpp') ||
-              wpLaunchConfigs[i].type.startsWith('lldb') ||
-              wpLaunchConfigs[i].type.startsWith('gdb')
-            ) {
-              // skip
-            } else {
-              continue;
-            }
-          } else {
-            continue;
+
+            // putting as much known properties as much we can and hoping for the best 🤞
+            Object.assign(template, wpLaunchConfigs[i], {
+              program: '${exec}',
+              target: '${exec}',
+              arguments: '${argsStr}',
+              args: '${argsArray}',
+              cwd: '${cwd}',
+              env: '${envObj}',
+              environment: '${envObjArray}',
+              sourceFileMap: '${sourceFileMapObj}',
+            });
+
+            this._log.info(
+              "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+              template,
+            );
+
+            return [template, 'fromLaunchJson'];
           }
-
-          // putting as much known properties as much we can and hoping for the best 🤞
-          const template: vscode.DebugConfiguration = Object.assign({}, templateBase, wpLaunchConfigs[i], {
-            program: '${exec}',
-            target: '${exec}',
-            arguments: '${argsStr}',
-            args: '${argsArray}',
-            cwd: '${cwd}',
-            env: '${envObj}',
-            environment: '${envObjArray}',
-            sourceFileMap: '${sourceFileMapObj}',
-          });
-
-          this._log.info(
-            "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
-            template,
-          );
-
-          return [template, 'fromLaunchJson'];
         }
       }
-    }
 
-    if (this._hasExtension('vadimcn.vscode-lldb')) {
-      const template = Object.assign({}, templateBase, {
-        type: 'cppdbg',
-        MIMode: 'lldb',
-        program: '${exec}',
-        args: '${argsArray}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-        sourceMap: '${sourceFileMapObj}',
-      });
+      if (this._hasExtension('vadimcn.vscode-lldb')) {
+        Object.assign(template, {
+          type: 'cppdbg',
+          MIMode: 'lldb',
+          program: '${exec}',
+          args: '${argsArray}',
+          cwd: '${cwd}',
+          env: '${envObj}',
+          sourceMap: '${sourceFileMapObj}',
+        });
 
-      return [template, 'vadimcn.vscode-lldb'];
-    } else if (this._hasExtension('webfreak.debug')) {
-      const template = Object.assign({}, templateBase, {
-        type: 'gdb',
-        target: '${exec}',
-        arguments: '${argsStr}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-        valuesFormatting: 'prettyPrinters',
-        pathSubstitutions: '${sourceFileMapObj}',
-      });
+        return [template, 'vadimcn.vscode-lldb'];
+      } else if (this._hasExtension('webfreak.debug')) {
+        Object.assign(template, {
+          type: 'gdb',
+          target: '${exec}',
+          arguments: '${argsStr}',
+          cwd: '${cwd}',
+          env: '${envObj}',
+          valuesFormatting: 'prettyPrinters',
+          pathSubstitutions: '${sourceFileMapObj}',
+        });
 
-      if (process.platform === 'darwin') {
-        template.type = 'lldb-mi';
-        // Note: for LLDB you need to have lldb-mi in your PATH
-        // If you are on OS X you can add lldb-mi to your path using ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi /usr/local/bin/lldb-mi if you have Xcode.
-        template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
+        if (platformUtil.is('darwin')) {
+          template.type = 'lldb-mi';
+          // Note: for LLDB you need to have lldb-mi in your PATH
+          // If you are on OS X you can add lldb-mi to your path using ln -s /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi /usr/local/bin/lldb-mi if you have Xcode.
+          template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
+        }
+
+        return [template, 'webfreak.debug'];
+      } else if (this._hasExtension('ms-vscode.cpptools')) {
+        // documentation says debug"environment" = [{...}] but that doesn't work
+        Object.assign(template, {
+          type: 'cppvsdbg',
+          linux: { type: 'cppdbg', MIMode: 'gdb' },
+          darwin: { type: 'cppdbg', MIMode: 'lldb' },
+          windows: { type: 'cppvsdbg' },
+          program: '${exec}',
+          args: '${argsArray}',
+          cwd: '${cwd}',
+          env: '${envObj}',
+          environment: '${envObjArray}',
+          sourceFileMap: '${sourceFileMapObj}',
+        });
+
+        return [template, 'ms-vscode.cpptools'];
       }
 
-      return [template, 'webfreak.debug'];
-    } else if (this._hasExtension('ms-vscode.cpptools')) {
-      // documentation says debug"environment" = [{...}] but that doesn't work
-      const template = Object.assign({}, templateBase, {
-        type: 'cppvsdbg',
-        linux: { type: 'cppdbg', MIMode: 'gdb' },
-        osx: { type: 'cppdbg', MIMode: 'lldb' },
-        windows: { type: 'cppvsdbg' },
-        program: '${exec}',
-        args: '${argsArray}',
-        cwd: '${cwd}',
-        env: '${envObj}',
-        environment: '${envObjArray}',
-        sourceFileMap: '${sourceFileMapObj}',
-      });
+      this._log.info('no debug config');
+      throw Error(
+        "For debugging 'testMate.cpp.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+      );
+    })();
 
-      return [template, 'ms-vscode.cpptools'];
-    }
+    const platfromProp = platformUtil.getPlatformProperty(template);
+    if (typeof platfromProp === 'object') Object.assign(template, platfromProp);
 
-    this._log.info('no debug config');
-    throw Error(
-      "For debugging 'testMate.cpp.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
-    );
+    return [template, source];
   }
 
   public getOrCreateUserId(): string {
@@ -448,9 +456,8 @@ export class Configurations {
         const obj: AdvancedExecutable = Object.assign({}, origObj);
 
         // we are cheating here: it will work for other os but that is undocumented
-        const currentOS = process.platform as 'darwin' | 'linux' | 'win32';
-
-        if (typeof origObj[currentOS] === 'object') Object.assign(obj, origObj[currentOS]);
+        const platformSpecificProperty = platformUtil.getPlatformProperty(obj);
+        if (platformSpecificProperty !== undefined) Object.assign(obj, platformSpecificProperty);
 
         const name: string | undefined = typeof obj.name === 'string' ? obj.name : undefined;
 
