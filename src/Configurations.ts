@@ -121,7 +121,7 @@ export class Configurations {
             if (wpLaunchConfigs[i].request !== 'launch') continue;
 
             const platformProp = platformUtil.getPlatformProperty(wpLaunchConfigs[i]);
-            if (typeof platformProp.type == 'string') {
+            if (typeof platformProp?.type == 'string') {
               if (
                 platformProp.type.startsWith('cpp') ||
                 platformProp.type.startsWith('lldb') ||

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.26]
+
+### Fixed
+
+- regression issue related to `debug.configTemplate`
+
 ## [3.6.25] - 2021-04-23
 
 ### Fixed

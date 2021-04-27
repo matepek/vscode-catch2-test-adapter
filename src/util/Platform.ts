@@ -15,8 +15,12 @@ class Platform {
   }
 
   public getPlatformProperty<T>(obj: T): T | undefined {
-    // eslint-disable-next-line
-    if (process.platform in obj) return (obj as any)[process.platform] as T;
+    if (typeof obj !== 'object') throw Error('assert');
+
+    if (process.platform in obj) {
+      // eslint-disable-next-line
+      return (obj as any)[process.platform] as T;
+    }
 
     if (Array.isArray(alternativePlatformIds[process.platform]))
       for (const id of alternativePlatformIds[process.platform]!)
