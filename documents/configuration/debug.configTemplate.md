@@ -33,7 +33,7 @@ Value `"extensionOnly"` will cause to skip the search of local launch configurat
 
 #### or user can manually fill it
 
-> Note that `name` and `request` are filled, if they are undefined, so it is not necessary to set them. `type` is necessary.
+> Note that `name` and `request` are filled, if they are undefined, so it is not necessary to set them. `type` is required.
 
 For [`ms-vscode.cpptools`](https://code.visualstudio.com/docs/cpp/launch-json-reference) add something like this to settings.json:
 
@@ -86,11 +86,11 @@ These variables will be substituted when a DebugConfiguration is created.
 
 #### Remarks
 
-The lack of `type` property raise a warning but seems unnecessary to be field but hard to implement. One can put an assertion there: `"type": "${assert}"`
+The lack of `type` property in the root object raises a warning but actually it is not required if the platform specific version will overwrite it. See example bellow.
 
 ```
 "testMate.cpp.debug.configTemplate": {
-  "type": "${assert}",
+  "type": "${assert:testMate.cpp.debug.configTemplate doesn't support this platform.}",
   "linux": { "type": "cppdbg", "MIMode": "gdb" },
   "darwin": { "type": "cppdbg", "MIMode": "lldb" },
   "windows": { "type": "cppvsdbg" },
@@ -98,4 +98,4 @@ The lack of `type` property raise a warning but seems unnecessary to be field bu
 }
 ```
 
-it seems unnecessary to be set
+One can put an assertion there: `"type": "${assert}"` or `"type": "${assert:<custom message>}"`.
