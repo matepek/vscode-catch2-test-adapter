@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [3.6.27]
 
+NPM update
+Moving to travis-ci.com
+
 ## [3.6.26] - 2021-04-27
 
 ### Fixed
