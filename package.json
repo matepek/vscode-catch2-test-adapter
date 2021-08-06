@@ -61,7 +61,8 @@
     "tslib": "^2.2.0",
     "vscode-test-adapter-api": "^1.9.0",
     "vscode-test-adapter-util": "^0.7.1",
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.4.23",
+    "junit-report-merger": "^2.2.3"
   },
   "devDependencies": {
     "@sentry/node": "^6.5.0",

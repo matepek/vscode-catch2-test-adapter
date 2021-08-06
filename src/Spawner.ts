@@ -39,7 +39,7 @@ export class DefaultSpawner implements Spawner {
 
       Object.assign(ret, { process: command }); // for debugging
 
-      ret.pid = command.pid;
+      if (command.pid !== undefined) ret.pid = command.pid;
 
       command.stdout.on('data', function (data) {
         ret.stdout += data;

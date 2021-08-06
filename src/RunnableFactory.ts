@@ -4,6 +4,7 @@ import { AbstractRunnable } from './AbstractRunnable';
 import { Catch2Runnable } from './framework/Catch2Runnable';
 import { GoogleTestRunnable } from './framework/GoogleTestRunnable';
 import { DOCRunnable } from './framework/DOCRunnable';
+import { CppUTestRunnable } from './framework/CppUTestRunnable';
 import { SharedVariables } from './SharedVariables';
 import { FrameworkSpecific, RunTask } from './AdvancedExecutableInterface';
 import { Version } from './Util';
@@ -24,6 +25,7 @@ export class RunnableFactory {
     private readonly _catch2: FrameworkSpecific,
     private readonly _gtest: FrameworkSpecific,
     private readonly _doctest: FrameworkSpecific,
+    private readonly _cpputest: FrameworkSpecific,
     private readonly _gbenchmark: FrameworkSpecific,
     private readonly _parallelizationLimit: number,
     private readonly _markAsSkipped: boolean,
@@ -153,6 +155,33 @@ export class RunnableFactory {
                 this._sourceFileMap,
               ),
               this._parseVersion(doc),
+            );
+          }
+        }
+        {
+          if (this._cpputest.helpRegex) this._shared.log.info('Custom regex', 'cpputest', this._cpputest.helpRegex);
+
+          const cpputest = runWithHelpRes.stdout.match(
+            this._cpputest.helpRegex ? new RegExp(this._cpputest.helpRegex, regexFlags) : /Thanks for using CppUTest/,
+          );
+          if (cpputest) {
+            return new CppUTestRunnable(
+              this._shared,
+              this._rootSuite,
+              new RunnableProperties(
+                this._execName,
+                this._execDescription,
+                this._varToValue,
+                this._execPath,
+                this._execOptions,
+                this._cpputest,
+                this._parallelizationLimit,
+                this._markAsSkipped,
+                this._runTask,
+                this._spawner,
+                this._sourceFileMap,
+              ),
+              Promise.resolve(undefined),
             );
           }
         }
