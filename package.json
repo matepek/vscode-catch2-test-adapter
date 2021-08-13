@@ -1334,6 +1334,240 @@
                     }
                   }
                 }
+              },
+              "cpputest": {
+                "markdownDescription": "Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "helpRegex": {
+                    "markdownDescription": "A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "prependTestRunningArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "prependTestListingArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "debug.enableOutputColouring": {
+                    "markdownDescription": "Sets the colouring of the output for debug session.",
+                    "type": "boolean"
+                  },
+                  "testGrouping": {
+                    "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                    "additionalProperties": false,
+                    "properties": {
+                      "groupByExecutable": {
+                        "markdownDescription": "Groups tests by the executable file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "description": {
+                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "groupByExecutable": {
+                            "type": "object"
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByTagRegex": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "groupBySource": {
+                        "markdownDescription": "Groups the tests by the source file. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "markdownDescription": "Label of the group. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "description": {
+                            "markdownDescription": "Less prominent text next to label. Can be indexed. (`${sourceRelPath}`, `${sourceAbsPath}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string"
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupByExecutable": {
+                            "type": "object"
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByTagRegex": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "sourceIndex"
+                        ]
+                      },
+                      "groupByTags": {
+                        "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "tags": {
+                            "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            }
+                          },
+                          "tagFormat": {
+                            "type": "string",
+                            "pattern": "\\$\\{tag\\}"
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupByExecutable": {
+                            "type": "object"
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByTagRegex": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "groupByTagRegex": {
+                        "markdownDescription": "Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "regexes": {
+                            "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupByExecutable": {
+                            "type": "object"
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByTagRegex": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "regexes"
+                        ]
+                      },
+                      "groupByRegex": {
+                        "markdownDescription": "Groups tests by the first match group of the first matching regex. (`${match}`, `${match_lowercased}`, `${match_upperfirst}`) Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "regexes": {
+                            "markdownDescription": "Groups by the first match group (enclosed by parentheses like this). of the first matching [regex](https://regex101.com/). Example: `[\"(?:good|bad) (apple|peach)\"]` will create 2 groups and put the matched tests inside it. Hint: Grouping starting with \"?:\" won't count as a match group. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "groupUngroupedTo": {
+                            "markdownDescription": "Ungroupable elements will be grouped under the given value. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "groupByExecutable": {
+                            "type": "object"
+                          },
+                          "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByTagRegex": {
+                            "type": "object"
+                          },
+                          "groupByRegex": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "regexes"
+                        ]
+                      }
+                    }
+                  }
+                }
               }
             },
             "required": [
