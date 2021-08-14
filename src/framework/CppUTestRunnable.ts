@@ -1,7 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as glob from 'glob';
-import { inspect, promisify } from 'util';
+import * as fs from 'fs-extra';
+import { inspect } from 'util';
 import { mergeFiles } from 'junit-report-merger';
 import { Suite } from '../Suite';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
@@ -119,12 +117,12 @@ export class CppUTestRunnable extends AbstractRunnable {
 
     if (this._shared.enabledTestListCaching) {
       try {
-        const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.properties.path);
+        const cacheStat = await fs.stat(cacheFile);
+        const execStat = await fs.stat(this.properties.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this._shared.log.info('loading from cache: ', cacheFile);
-          const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
+          const xmlStr = await fs.readFile(cacheFile, 'utf8');
 
           return await this._reloadFromXml(xmlStr, cancellationFlag);
         }
@@ -156,31 +154,29 @@ export class CppUTestRunnable extends AbstractRunnable {
     const result = this._reloadFromString(cppUTestListOutput.stdout, cancellationFlag);
 
     if (this._shared.enabledTestListCaching) {
-      // TODO: Generate xml files in seperate folder such as xml_outputs
       //Generate xml files
-      const args = this.properties.prependTestListingArgs.concat(['-ojunit']);
-      this._shared.log.info('create cpputest xmls', this.properties.path, args, this.properties.options.cwd);
-      await this.properties.spawner.spawnAsync(this.properties.path, args, this.properties.options, 30000);
-      try {
-        await mergeFiles(cacheFile, [path.dirname(this.properties.path) + '/*.xml']);
-        this._shared.log.info('cache xml written: ', cacheFile);
-        //Delete xml files
-        const currentFolder = path.dirname(this.properties.path);
-        glob(currentFolder + '/cpputest_*.xml', { cwd: currentFolder }, (err, files) => {
-          if (err) {
-            this._shared.log.debug('error finding xml files: ', currentFolder, err);
-          }
-
-          for (const file of files) {
-            try {
-              fs.unlinkSync(file);
-            } catch (err) {
-              this._shared.log.warn('cache file could not delete: ', file, err);
-            }
-          }
+      const junitXmlsFolderPath = this.properties.path + '_junit_xmls';
+      if (!fs.existsSync(junitXmlsFolderPath)) {
+        fs.mkdir(junitXmlsFolderPath, err => {
+          if (err) this._shared.log.error('error creating xmls folder: ', junitXmlsFolderPath, err);
         });
+      }
+      const args = this.properties.prependTestListingArgs.concat(['-ojunit']);
+      const options = this.properties.options;
+      options.cwd = junitXmlsFolderPath;
+      this._shared.log.info('create cpputest xmls', this.properties.path, args, options.cwd);
+      await this.properties.spawner.spawnAsync(this.properties.path, args, options, 30000);
+      try {
+        await mergeFiles(cacheFile, [junitXmlsFolderPath + '/*.xml']);
+        this._shared.log.info('cache xml written: ', cacheFile);
       } catch (err) {
         this._shared.log.warn('combine xml cache file could not create: ', cacheFile, err);
+      }
+      //Delete xmls folder
+      if (fs.existsSync(junitXmlsFolderPath)) {
+        fs.remove(junitXmlsFolderPath, err => {
+          if (err) this._shared.log.error('error deleting xmls folder: ', junitXmlsFolderPath, err);
+        });
       }
     }
     return result;
