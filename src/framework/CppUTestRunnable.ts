@@ -20,18 +20,17 @@ export class CppUTestRunnable extends AbstractRunnable {
     shared: SharedVariables,
     rootSuite: RootSuite,
     execInfo: RunnableProperties,
-    // private readonly _argumentPrefix: string,
     version: Promise<Version | undefined>,
   ) {
     super(shared, rootSuite, execInfo, 'CppUTest', version);
   }
 
   private getTestGrouping(): TestGrouping {
+    // TODO: Reconsider grouping
     if (this.properties.testGrouping) {
       return this.properties.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
-      // grouping.groupByExecutable.groupByTags = { tags: [], tagFormat: '${tag}' };
       return grouping;
     }
   }
@@ -91,7 +90,6 @@ export class CppUTestRunnable extends AbstractRunnable {
   ): Promise<RunnableReloadResult> {
     const testGrouping = this.getTestGrouping();
     const lines = stdOutStr.split(' ');
-    // const testGroupList = [...new Set(lines.map(gs => gs.split(".")[0]))];
 
     const reloadResult = new RunnableReloadResult();
 
@@ -158,6 +156,7 @@ export class CppUTestRunnable extends AbstractRunnable {
     const result = this._reloadFromString(cppUTestListOutput.stdout, cancellationFlag);
 
     if (this._shared.enabledTestListCaching) {
+      // TODO: Generate xml files in seperate folder such as xml_outputs
       //Generate xml files
       const args = this.properties.prependTestListingArgs.concat(['-ojunit']);
       this._shared.log.info('create cpputest xmls', this.properties.path, args, this.properties.options.cwd);
@@ -188,33 +187,24 @@ export class CppUTestRunnable extends AbstractRunnable {
   }
 
   protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
-    // TODO Add multiple options
-    // return ['-c', '-v'];
-
+    // TODO: Add multiple options
     const execParams: string[] = [];
-
     childrenToRun.forEach(t => {
       execParams.push(`TEST(${t.testNameAsId.split('.')[0]}, ${t.testNameAsId.split('.')[1]})`);
     });
-
-    // execParams.push(testNames.join(' '));
     execParams.push('-c');
     execParams.push('-v');
-
     return execParams;
   }
 
   protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
-    // TODO colouring 'debug.enableOutputColouring'
-    // TODO Add multiple options
-    // return ['-c', '-v'];
+    // TODO: Proper debug options
+    // TODO: colouring 'debug.enableOutputColouring'
+    // TODO: Add multiple options
     const execParams: string[] = [];
-
     childrenToRun.forEach(t => {
       execParams.push(`TEST(${t.testNameAsId.split('.')[0]}, ${t.testNameAsId.split('.')[1]})`);
     });
-
-    // execParams.push(testNames.join(' '));
     execParams.push('-c');
     execParams.push('-v');
 
@@ -223,7 +213,7 @@ export class CppUTestRunnable extends AbstractRunnable {
 
   protected _handleProcess(testRunId: string, runInfo: RunningRunnable): Promise<void> {
     const data = new (class {
-      public stdoutAndErrBuffer = ''; // no reason to separate
+      public stdoutAndErrBuffer = '';
       public currentTestCaseNameFull: string | undefined = undefined;
       public currentChild: AbstractTest | undefined = undefined;
       public route: Suite[] = [];
@@ -266,12 +256,8 @@ export class CppUTestRunnable extends AbstractRunnable {
             data.stdoutAndErrBuffer = data.stdoutAndErrBuffer.substr(m.index!);
           } else {
             const testEndRe = / - \d+ ms$/m;
-            // const testEndRe = new RegExp(
-            //   '(?!\\[ RUN      \\])\\[..........\\] ' + data.currentTestCaseNameFull.replace('.', '\\.') + '.*$',
-            //   'm',
-            // );
-
             const m = data.stdoutAndErrBuffer.match(testEndRe);
+
             if (m == null) return;
 
             const testCase = data.stdoutAndErrBuffer.substring(0, m.index! + m[0].length);
@@ -286,9 +272,7 @@ export class CppUTestRunnable extends AbstractRunnable {
                   runInfo.timeout,
                   undefined,
                 );
-
                 this._shared.sendTestRunEvent(ev);
-
                 data.processedTestCases.push(data.currentChild);
               } catch (e) {
                 this._shared.log.error('parsing and processing test', e, data);
@@ -326,7 +310,6 @@ export class CppUTestRunnable extends AbstractRunnable {
 
             data.currentTestCaseNameFull = undefined;
             data.currentChild = undefined;
-            // do not clear data.route
             data.stdoutAndErrBuffer = data.stdoutAndErrBuffer.substr(m.index! + m[0].length);
           }
         } while (data.stdoutAndErrBuffer.length > 0 && --invariant > 0);
@@ -426,7 +409,7 @@ export class CppUTestRunnable extends AbstractRunnable {
                   );
                   events.push(ev);
                 } catch (e) {
-                  this._shared.log.error('parsing and processing test', e, testCase);
+                  this._shared.log.error('parsing and processing test failed', e, testCase);
                 }
               }
               events.length && this._shared.sendTestEvents(events);

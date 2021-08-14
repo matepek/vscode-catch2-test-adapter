@@ -4,7 +4,6 @@ import { Imitation, SharedVariables } from '../Common';
 import { CppUTestRunnable } from '../../src/framework/CppUTestRunnable';
 import { RootSuite } from '../../src/RootSuite';
 import { RunnableProperties } from '../../src/RunnableProperties';
-// import { EOL } from 'os';
 import { DefaultSpawner } from '../../src/Spawner';
 
 ///
@@ -78,7 +77,7 @@ describe(pathlib.basename(__filename), function () {
       const res = await runnable['_reloadFromString'](testListOutput.join(' '), { isCancellationRequested: false });
 
       const tests = [...res.tests].sort((a, b) => a.testNameAsId.localeCompare(b.testNameAsId));
-     
+
       assert.strictEqual(tests.length, 11);
       assert.strictEqual(tests[0].testNameAsId, 'SimpleMutexTest.CreateAndDestroy');
       assert.strictEqual(tests[0].label, 'CreateAndDestroy');
@@ -122,19 +121,28 @@ describe(pathlib.basename(__filename), function () {
       assert.strictEqual(tests[6].line, undefined);
       assert.strictEqual(tests[6].skipped, false);
       assert.strictEqual(tests[6].getStaticEvent('1'), undefined);
-      assert.strictEqual(tests[7].testNameAsId, 'UTestPlatformsTest_PlatformSpecificRunTestInASeperateProcess.CallToWaitPidFailedInSeparateProcessWorks');
+      assert.strictEqual(
+        tests[7].testNameAsId,
+        'UTestPlatformsTest_PlatformSpecificRunTestInASeperateProcess.CallToWaitPidFailedInSeparateProcessWorks',
+      );
       assert.strictEqual(tests[7].label, 'CallToWaitPidFailedInSeparateProcessWorks');
       assert.strictEqual(tests[7].file, undefined);
       assert.strictEqual(tests[7].line, undefined);
       assert.strictEqual(tests[7].skipped, false);
       assert.strictEqual(tests[7].getStaticEvent('1'), undefined);
-      assert.strictEqual(tests[8].testNameAsId, 'UTestPlatformsTest_PlatformSpecificRunTestInASeperateProcess.CallToWaitPidStopsAndReportsAnErrorAfter20TimesRetry');
+      assert.strictEqual(
+        tests[8].testNameAsId,
+        'UTestPlatformsTest_PlatformSpecificRunTestInASeperateProcess.CallToWaitPidStopsAndReportsAnErrorAfter20TimesRetry',
+      );
       assert.strictEqual(tests[8].label, 'CallToWaitPidStopsAndReportsAnErrorAfter20TimesRetry');
       assert.strictEqual(tests[8].file, undefined);
       assert.strictEqual(tests[8].line, undefined);
       assert.strictEqual(tests[8].skipped, false);
       assert.strictEqual(tests[8].getStaticEvent('1'), undefined);
-      assert.strictEqual(tests[9].testNameAsId, 'UTestPlatformsTest_PlatformSpecificRunTestInASeperateProcess.MultipleTestsInSeparateProcessAreCountedProperly');
+      assert.strictEqual(
+        tests[9].testNameAsId,
+        'UTestPlatformsTest_PlatformSpecificRunTestInASeperateProcess.MultipleTestsInSeparateProcessAreCountedProperly',
+      );
       assert.strictEqual(tests[9].label, 'MultipleTestsInSeparateProcessAreCountedProperly');
       assert.strictEqual(tests[9].file, undefined);
       assert.strictEqual(tests[9].line, undefined);

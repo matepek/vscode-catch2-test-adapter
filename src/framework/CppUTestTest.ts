@@ -71,16 +71,10 @@ export class CppUTestTest extends AbstractTest {
     try {
       const lines = output.split(/\r?\n/);
 
-      // if (lines.length < 1) throw new Error('unexpected');
-      // const testName = lines[i].match(/\((.*)\)/)[1].split(',')[1].trim();
-
       const eventBuilder = new TestEventBuilder(this, testRunId);
 
       const runDuration = lines[lines.length - 1].match(/([0-9]+) ms/);
       eventBuilder.setDurationMilisec(runDuration ? Number(runDuration[1]) : undefined);
-
-      // const m = lines[i].match(endRe);
-      // if (m !== null) break;
 
       const isSkipped = lines[0].indexOf('IGNORE_TEST') != -1;
       if (isSkipped) eventBuilder.skipped();
