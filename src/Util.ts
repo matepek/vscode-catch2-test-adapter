@@ -274,7 +274,8 @@ export function findURIs(
   line: string,
   regexType: 'gtest' | 'catch2' | 'general',
 ): { index: number; full: string; file: string; line?: string; column?: string }[] {
-  let regex = /\s?(((?:[A-z]:\\|\.\.?[\\\/]|\/)(?:[^\\\/\n]+[\\\/])*[\w,-.]+(?:[\w,\s-.]*?\.\w{3})?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)?)\b/;
+  let regex =
+    /\s?(((?:[A-z]:\\|\.\.?[\\\/]|\/)(?:[^\\\/\n]+[\\\/])*[\w,-.]+(?:[\w,\s-.]*?\.\w{3})?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)?)\b/;
   let indexShift = 0;
   switch (regexType) {
     case 'gtest':

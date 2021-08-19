@@ -76,7 +76,7 @@ export class ExecutableConfig implements vscode.Disposable {
                   );
 
                   if (resolvePath) {
-                    ((link as unknown) as CreateUri)[createUriSymbol] = (): vscode.Uri => {
+                    (link as unknown as CreateUri)[createUriSymbol] = (): vscode.Uri => {
                       const dirs = new Set([...this._runnables.keys()].map(k => pathlib.dirname(k)));
                       const resolvedFile = getAbsolutePath(file, dirs);
                       return vscode.Uri.file(resolvedFile).with({ fragment });
@@ -101,7 +101,7 @@ export class ExecutableConfig implements vscode.Disposable {
             return result;
           },
           resolveDocumentLink: (link: vscode.DocumentLink): vscode.ProviderResult<vscode.DocumentLink> => {
-            link.target = ((link as unknown) as CreateUri)[createUriSymbol]();
+            link.target = (link as unknown as CreateUri)[createUriSymbol]();
             return link;
           },
         },
@@ -522,12 +522,10 @@ export class ExecutableConfig implements vscode.Disposable {
       this._shared.log.info('refresh timeout:', filePath);
       const foundRunnable = this._runnables.get(filePath);
       if (foundRunnable) {
-        return this._shared.loadWithTask(
-          async (): Promise<void> => {
-            foundRunnable.removeTests();
-            this._runnables.delete(filePath);
-          },
-        );
+        return this._shared.loadWithTask(async (): Promise<void> => {
+          foundRunnable.removeTests();
+          this._runnables.delete(filePath);
+        });
       }
     } else {
       await promisify(setTimeout)(delay);
