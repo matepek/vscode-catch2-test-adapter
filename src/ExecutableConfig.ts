@@ -19,6 +19,8 @@ import { RootSuite } from './RootSuite';
 import { readJSONSync } from 'fs-extra';
 import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
 import { RunTask, ExecutionWrapper, FrameworkSpecific } from './AdvancedExecutableInterface';
+import { isWin } from '../test/Common';
+import { LoggerWrapper } from './LoggerWrapper';
 
 ///
 
@@ -158,7 +160,7 @@ export class ExecutableConfig implements vscode.Disposable {
       execWatcher && execWatcher.dispose();
       filePaths.push(this._pattern);
 
-      this._shared.log.exceptionS(e, "Coudn't watch pattern");
+      this._shared.log.exceptionS(e, "Couldn't watch pattern");
     }
 
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];
@@ -332,7 +334,7 @@ export class ExecutableConfig implements vscode.Disposable {
       this._shared.log.error('resolvedCwd', e);
     }
 
-    let resolvedEnv: { [prop: string]: string } = {};
+    let resolvedEnv: Record<string, string> = {};
     try {
       if (this._env) Object.assign(resolvedEnv, this._env);
 
@@ -361,6 +363,8 @@ export class ExecutableConfig implements vscode.Disposable {
         this._shared.log.warn('Unable to parse envFile', `"${resolvedEnvFile.absPath}"`, e);
       }
     }
+
+    checkEnvForPath(resolvedEnv, this._shared.log);
 
     let spawner: Spawner = new DefaultSpawner();
     if (this._executionWrapper) {
@@ -567,5 +571,20 @@ export class ExecutableConfig implements vscode.Disposable {
     if (moreVarsToResolve) resolved = await resolveVariablesAsync(resolved, moreVarsToResolve);
     this._shared.log.debug('ExecutableConfig.resolveVariable: ', { value, resolved, strictAllowed });
     return resolved;
+  }
+}
+
+function checkEnvForPath(env: Record<string, string>, log: LoggerWrapper): void {
+  if (isWin) {
+    checkPathVariance('PATH', env, log);
+    checkPathVariance('Path', env, log);
+    checkPathVariance('path', env, log);
+  }
+}
+
+function checkPathVariance(variance: string, env: Record<string, string>, log: LoggerWrapper): void {
+  if (variance in env) {
+    if (env[variance].indexOf('/') != -1)
+      log.warn(`Env variable ${variance} contains slash on Windows: "${env[variance]}". That won't really work.`);
   }
 }
