@@ -154,30 +154,26 @@ export class CppUTestRunnable extends AbstractRunnable {
     const result = this._reloadFromString(cppUTestListOutput.stdout, cancellationFlag);
 
     if (this._shared.enabledTestListCaching) {
-      //Generate xml files
+      //Generate xmls folder
       const junitXmlsFolderPath = this.properties.path + '_junit_xmls';
-      if (!fs.existsSync(junitXmlsFolderPath)) {
-        fs.mkdir(junitXmlsFolderPath, err => {
-          if (err) this._shared.log.error('error creating xmls folder: ', junitXmlsFolderPath, err);
-        });
-      }
+      fs.mkdir(junitXmlsFolderPath)
+        .then(() => this._shared.log.info('junit-xmls folder created', junitXmlsFolderPath))
+        .catch(err => this._shared.log.error('error creating xmls folder: ', junitXmlsFolderPath, err));
+      //Generate xml files
       const args = this.properties.prependTestListingArgs.concat(['-ojunit']);
       const options = this.properties.options;
       options.cwd = junitXmlsFolderPath;
-      this._shared.log.info('create cpputest xmls', this.properties.path, args, options.cwd);
-      await this.properties.spawner.spawnAsync(this.properties.path, args, options, 30000);
-      try {
-        await mergeFiles(cacheFile, [junitXmlsFolderPath + '/*.xml']);
-        this._shared.log.info('cache xml written: ', cacheFile);
-      } catch (err) {
-        this._shared.log.warn('combine xml cache file could not create: ', cacheFile, err);
-      }
+      await this.properties.spawner
+        .spawnAsync(this.properties.path, args, options, 30000)
+        .then(() => this._shared.log.info('create cpputest xmls', this.properties.path, args, options.cwd));
+      //Merge xmls into single xml
+      await mergeFiles(cacheFile, [junitXmlsFolderPath + '/*.xml'])
+        .then(() => this._shared.log.info('cache xml written', cacheFile))
+        .catch(err => this._shared.log.warn('combine xml cache file could not create: ', cacheFile, err));
       //Delete xmls folder
-      if (fs.existsSync(junitXmlsFolderPath)) {
-        fs.remove(junitXmlsFolderPath, err => {
-          if (err) this._shared.log.error('error deleting xmls folder: ', junitXmlsFolderPath, err);
-        });
-      }
+      fs.remove(junitXmlsFolderPath)
+        .then(() => this._shared.log.info('junit-xmls folder deleted', junitXmlsFolderPath))
+        .catch(err => this._shared.log.error('error deleting xmls folder: ', junitXmlsFolderPath, err));
     }
     return result;
   }
