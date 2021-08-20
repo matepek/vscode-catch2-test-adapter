@@ -67,7 +67,7 @@ export class CppUTestTest extends AbstractTest {
       this.lastRunEvent = ev;
       return ev;
     }
-
+    //TODO: Refactor following codes
     try {
       const lines = output.split(/\r?\n/);
 
@@ -76,18 +76,20 @@ export class CppUTestTest extends AbstractTest {
       const runDuration = lines[lines.length - 1].match(/([0-9]+) ms/);
       eventBuilder.setDurationMilisec(runDuration ? Number(runDuration[1]) : undefined);
 
-      const isSkipped = lines[0].indexOf('IGNORE_TEST') != -1;
+      let failedTest: RegExpMatchArray | null = null;
+      //Ignored tests will be never gets here because tests were run individually
+      const isSkipped = lines[0].match(/^IGNORE_TEST/);
       if (isSkipped) eventBuilder.skipped();
-      if (lines.length === 1) eventBuilder.passed();
+      if (lines.length > 1) {
+        failedTest = lines[1].match(CppUTestTest.failureRe);
+      }
+      if (failedTest === null) eventBuilder.passed();
       else eventBuilder.failed();
 
-      if (!isSkipped && lines.length > 1) {
-        const match = lines[1].match(CppUTestTest.failureRe);
-        if (match !== null) {
-          const filePath = match[2].split('/').pop();
-          const lineNumber = Number(match[3]) - 1;
-          eventBuilder.appendDecorator(filePath, lineNumber, [lines[3], lines[4]]);
-        }
+      if (lines.length > 1 && failedTest !== null) {
+        const filePath = failedTest[2].split('/').pop();
+        const lineNumber = Number(failedTest[3]) - 1;
+        eventBuilder.appendDecorator(filePath, lineNumber, [lines[3], lines[4]]);
       }
 
       const event = eventBuilder.build(output.replace(/\): error: /g, '): error: \n'));

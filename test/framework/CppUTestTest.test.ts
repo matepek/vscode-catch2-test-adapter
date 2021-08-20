@@ -58,9 +58,7 @@ describe(path.basename(__filename), function () {
   });
 
   it('parses passed test', function () {
-    const output = [
-      'TEST(UtestShell, compareDoubles) - 30 ms',
-    ].join(EOL);
+    const output = ['TEST(UtestShell, compareDoubles) - 30 ms'].join(EOL);
 
     const ev = cpputest.parseAndProcessTestCase('runid', output, 42, null, '');
 
@@ -82,10 +80,57 @@ describe(path.basename(__filename), function () {
     assert.deepStrictEqual(cpputest.lastRunEvent, expected);
   });
 
-  it('parses ignored test', function () {
+  it('parses passed test with multilines', function () {
+    const output = ['TEST(UtestShell, compareDoubles)', ' - 30 ms'].join(EOL);
+
+    const ev = cpputest.parseAndProcessTestCase('runid', output, 42, null, '');
+
+    const expected: TestRunEvent = {
+      testRunId: 'runid',
+      type: 'test',
+      test: cpputest.id,
+      message: output,
+      state: 'passed',
+      description: '(30ms)',
+      tooltip: 'Name: TestCase.TestName\n⏱Duration: 30ms',
+      decorations: [],
+    };
+
+    assert.strictEqual(cpputest.description, ev.description);
+    assert.strictEqual(cpputest.tooltip, ev.tooltip);
+    assert.strictEqual(cpputest.lastRunMilisec, 30);
+    assert.deepStrictEqual(ev, expected);
+    assert.deepStrictEqual(cpputest.lastRunEvent, expected);
+  });
+
+  it('parses passed multilines test with extra texts', function () {
     const output = [
-      'IGNORE_TEST(UtestShell, IgnoreTestAccessingFixture) - 0 ms',
+      'TEST(UtestShell, compareDoubles) Assertion fail /workspaces/user/app/base/system/workqueue.c:34',
+      ' - 10 ms',
     ].join(EOL);
+
+    const ev = cpputest.parseAndProcessTestCase('runid', output, 42, null, '');
+
+    const expected: TestRunEvent = {
+      testRunId: 'runid',
+      type: 'test',
+      test: cpputest.id,
+      message: output,
+      state: 'passed',
+      description: '(10ms)',
+      tooltip: 'Name: TestCase.TestName\n⏱Duration: 10ms',
+      decorations: [],
+    };
+
+    assert.strictEqual(cpputest.description, ev.description);
+    assert.strictEqual(cpputest.tooltip, ev.tooltip);
+    assert.strictEqual(cpputest.lastRunMilisec, 10);
+    assert.deepStrictEqual(ev, expected);
+    assert.deepStrictEqual(cpputest.lastRunEvent, expected);
+  });
+
+  it('parses ignored test', function () {
+    const output = ['IGNORE_TEST(UtestShell, IgnoreTestAccessingFixture) - 0 ms'].join(EOL);
 
     const ev = cpputest.parseAndProcessTestCase('runid', output, 0, null, '');
 
