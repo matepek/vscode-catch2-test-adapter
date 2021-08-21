@@ -64,6 +64,7 @@ If it is an object it can contains the following properties:
 | `gtest`                | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
 | `doctest`              | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
 | `gbenchmark`           | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
+| `cpputest`             | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
 
 The `pattern` (or the `executables` used as string or an array of strings)
 can contain [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
@@ -245,6 +246,10 @@ In case if `catch2` and `doctest` the first, second and third captures are the v
 For example:
 
 - `Catch v2.11.1` + `/Catch v(\d+)\.(\d+)\.(\d+)\s?/` -> `[2, 11, 1]`
+
+In case of `cpputest` the helpRegex can be as following.
+
+- `[-g|sg|xg|xsg groupName]... [-n|sn|xn|xsn testName]...`
 
 ### ignoreTestEnumerationStdErr
 
