@@ -24,7 +24,7 @@ export class DefaultSpawner implements Spawner {
     return new Promise((resolve, reject) => {
       const ret: SpawnReturns = {
         pid: 0,
-        output: [(null as unknown) as string, '', ''],
+        output: [null as unknown as string, '', ''],
         stdout: '',
         stderr: '',
         status: 0,
@@ -39,7 +39,7 @@ export class DefaultSpawner implements Spawner {
 
       Object.assign(ret, { process: command }); // for debugging
 
-      if (command.pid !== undefined) ret.pid = command.pid;
+      ret.pid = command.pid || -42;
 
       command.stdout.on('data', function (data) {
         ret.stdout += data;

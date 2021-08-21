@@ -521,14 +521,12 @@ export abstract class AbstractRunnable {
         for (const t of this._tests) if (!reloadResult.tests.has(t)) toRemove.push(t);
 
         if (toRemove.length > 0 || reloadResult.changedAny) {
-          await this._shared.loadWithTask(
-            async (): Promise<void> => {
-              toRemove.forEach(t => {
-                t.removeWithLeafAscendants();
-                this._tests.delete(t);
-              });
-            },
-          );
+          await this._shared.loadWithTask(async (): Promise<void> => {
+            toRemove.forEach(t => {
+              t.removeWithLeafAscendants();
+              this._tests.delete(t);
+            });
+          });
         }
       } else {
         this._shared.log.debug('reloadTests was skipped due to mtime', this.properties.path);
@@ -746,12 +744,13 @@ export abstract class AbstractRunnable {
 
     const directoriesToCheck: string[] = [pathlib.dirname(this.properties.path)];
 
-    if (this.properties.options.cwd && !this.properties.path.startsWith(this.properties.options.cwd))
-      directoriesToCheck.push(this.properties.options.cwd);
+    const cwd = this.properties.options.cwd?.toString();
+
+    if (cwd && !this.properties.path.startsWith(cwd)) directoriesToCheck.push(cwd);
 
     if (
       !this.properties.path.startsWith(this._shared.workspaceFolder.uri.fsPath) &&
-      (!this.properties.options.cwd || !this.properties.options.cwd.startsWith(this._shared.workspaceFolder.uri.fsPath))
+      (!cwd || !cwd.startsWith(this._shared.workspaceFolder.uri.fsPath))
     )
       directoriesToCheck.push(this._shared.workspaceFolder.uri.fsPath);
 

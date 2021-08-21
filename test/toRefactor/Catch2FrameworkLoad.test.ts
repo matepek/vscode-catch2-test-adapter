@@ -77,13 +77,13 @@ describe(path.basename(__filename), function () {
     adapter.loadEvents.pop();
     adapter.loadEvents.pop();
 
-    suite1 = (undefined as unknown) as TestSuiteInfo;
-    s1t1 = (undefined as unknown) as TestInfo;
-    s1t2 = (undefined as unknown) as TestInfo;
-    suite2 = (undefined as unknown) as TestSuiteInfo;
-    s2t1 = (undefined as unknown) as TestInfo;
-    s2t2 = (undefined as unknown) as TestInfo;
-    s2t3 = (undefined as unknown) as TestInfo;
+    suite1 = undefined as unknown as TestSuiteInfo;
+    s1t1 = undefined as unknown as TestInfo;
+    s1t2 = undefined as unknown as TestInfo;
+    suite2 = undefined as unknown as TestSuiteInfo;
+    s2t1 = undefined as unknown as TestInfo;
+    s2t2 = undefined as unknown as TestInfo;
+    s2t3 = undefined as unknown as TestInfo;
 
     example1.assertWithoutChildren(adapter.root, uniqueIdC);
   }
@@ -1345,7 +1345,11 @@ describe(path.basename(__filename), function () {
 
   context('vscode.debug', function () {
     let startDebuggingStub: sinon.SinonStub<
-      [vscode.WorkspaceFolder | undefined, string | vscode.DebugConfiguration, (vscode.DebugSession | undefined)?],
+      [
+        folder: vscode.WorkspaceFolder | undefined,
+        nameOrConfiguration: string | vscode.DebugConfiguration,
+        parentSessionOrOptions?: vscode.DebugSession | vscode.DebugSessionOptions | undefined,
+      ],
       Thenable<boolean>
     >;
 

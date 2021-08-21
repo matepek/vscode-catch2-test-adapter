@@ -607,7 +607,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
           resolve: '${argsStr}',
           rule: async (): Promise<string> => '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"',
         },
-        { resolve: '${cwd}', rule: runnable.properties.options.cwd! },
+        { resolve: '${cwd}', rule: runnable.properties.options.cwd!.toString() },
         {
           resolve: '${envObj}',
           rule: async (): Promise<NodeJS.ProcessEnv> => envVars,
@@ -643,7 +643,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const terminated = new Promise<void>(resolve => {
         terminateConn = vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
-          const session2 = (session as unknown) as { configuration: { [prop: string]: string } };
+          const session2 = session as unknown as { configuration: { [prop: string]: string } };
           if (session2.configuration && session2.configuration[magicValueKey] === magicValue) {
             cancellationTokenSource.cancel();
             resolve();
