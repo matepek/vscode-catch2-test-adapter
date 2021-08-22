@@ -89,7 +89,9 @@ export class CppUTestTest extends AbstractTest {
       if (lines.length > 1 && failedTest !== null) {
         const filePath = failedTest[2].split('/').pop();
         const lineNumber = Number(failedTest[3]) - 1;
-        eventBuilder.appendDecorator(filePath, lineNumber, [lines[3], lines[4]]);
+        const expected = lines.find(value => /^\texpected/.test(value));
+        const actual = lines.find(value => /^\tbut was/.test(value));
+        eventBuilder.appendDecorator(filePath, lineNumber, [expected ? expected : '', actual ? actual : '']);
       }
 
       const event = eventBuilder.build(output.replace(/\): error: /g, '): error: \n'));
