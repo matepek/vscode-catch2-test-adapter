@@ -24,7 +24,6 @@ export class CppUTestRunnable extends AbstractRunnable {
   }
 
   private getTestGrouping(): TestGrouping {
-    // TODO: Consider grouping based on passed/failed
     if (this.properties.testGrouping) {
       return this.properties.testGrouping;
     } else {
