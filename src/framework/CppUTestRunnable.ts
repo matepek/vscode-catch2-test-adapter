@@ -51,13 +51,12 @@ export class CppUTestRunnable extends AbstractRunnable {
 
     const reloadResult = new RunnableReloadResult();
 
-    for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
-      const suiteName = xml.testsuites.testsuite[i].$.name;
+    const processTestcases = async (testsuite: any, reloadResult: RunnableReloadResult) => {
+      const suiteName = testsuite.$.name;
+      for (let i = 0; i < testsuite.testcase.length; i++) {
+        if (cancellationFlag.isCancellationRequested) return;
 
-      for (let j = 0; j < xml.testsuites.testsuite[i].testcase.length; j++) {
-        if (cancellationFlag.isCancellationRequested) return reloadResult;
-
-        const testCase = xml.testsuites.testsuite[i].testcase[j];
+        const testCase = testsuite.testcase[i];
         const testName = testCase.$.name.startsWith('DISABLED_') ? testCase.$.name.substr(9) : testCase.$.name;
         const testNameAsId = suiteName + '.' + testCase.$.name;
 
@@ -76,6 +75,15 @@ export class CppUTestRunnable extends AbstractRunnable {
           )),
         );
       }
+    };
+
+    if (xml.testsuites !== undefined) {
+      for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
+        await processTestcases(xml.testsuites.testsuite[i], reloadResult)
+          .catch((err) => this._shared.log.info('Error', err));
+      }
+    } else {
+      await processTestcases(xml.testsuite, reloadResult);
     }
 
     return reloadResult;
@@ -160,15 +168,20 @@ export class CppUTestRunnable extends AbstractRunnable {
         .catch(err => this._shared.log.error('error creating xmls folder: ', junitXmlsFolderPath, err));
       //Generate xml files
       const args = this.properties.prependTestListingArgs.concat(['-ojunit']);
-      const options = this.properties.options;
-      options.cwd = junitXmlsFolderPath;
+      const options = { cwd: junitXmlsFolderPath };
       await this.properties.spawner
         .spawnAsync(this.properties.path, args, options, 30000)
         .then(() => this._shared.log.info('create cpputest xmls', this.properties.path, args, options.cwd));
       //Merge xmls into single xml
-      await mergeFiles(cacheFile, [junitXmlsFolderPath + '/*.xml'])
-        .then(() => this._shared.log.info('cache xml written', cacheFile))
-        .catch(err => this._shared.log.warn('combine xml cache file could not create: ', cacheFile, err));
+      fs.readdir(junitXmlsFolderPath, (err, files) => {
+        if (files.length > 1) {
+          mergeFiles(cacheFile, [junitXmlsFolderPath + '/*.xml'])
+            .then(() => this._shared.log.info('cache xml written', cacheFile))
+            .catch(err => this._shared.log.warn('combine xml cache file could not create: ', cacheFile, err));
+        } else {
+          fs.copyFile(junitXmlsFolderPath + '/' + files[0], cacheFile);
+        }
+      });
       //Delete xmls folder
       fs.remove(junitXmlsFolderPath)
         .then(() => this._shared.log.info('junit-xmls folder deleted', junitXmlsFolderPath))
