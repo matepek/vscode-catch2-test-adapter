@@ -162,7 +162,9 @@ export class RunnableFactory {
           if (this._cpputest.helpRegex) this._shared.log.info('Custom regex', 'cpputest', this._cpputest.helpRegex);
 
           const cpputest = runWithHelpRes.stdout.match(
-            this._cpputest.helpRegex ? new RegExp(this._cpputest.helpRegex, regexFlags) : /Thanks for using CppUTest/,
+            this._cpputest.helpRegex
+              ? new RegExp(this._cpputest.helpRegex, regexFlags)
+              : /[-g|sg|xg|xsg groupName]... [-n|sn|xn|xsn testName].../,
           );
           if (cpputest) {
             return new CppUTestRunnable(
