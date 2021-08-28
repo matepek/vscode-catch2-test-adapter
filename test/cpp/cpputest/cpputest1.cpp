@@ -20,6 +20,12 @@ TEST(FirstTestGroup, FirstTest)
 TEST(FirstTestGroup, SecondTest)
 {
    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+   CHECK(false);
+}
+
+TEST(FirstTestGroup, ThirdTest)
+{
+   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
    //FAIL("Fail me!");
 }
 

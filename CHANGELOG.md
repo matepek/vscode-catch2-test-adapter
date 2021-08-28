@@ -6,9 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [3.7.0]
+## [3.6.28]
 
-Feature Added: CppUTest Framework Support with tests
+### Added
+
+- (experimental) CppUTest Framework Support
 
 ## [3.6.27] - 2021-08-09
 
