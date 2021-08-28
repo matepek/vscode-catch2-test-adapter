@@ -14,18 +14,40 @@ TEST_GROUP(FirstTestGroup)
 
 TEST(FirstTestGroup, FirstTest)
 {
-   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+   //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 }
 
 TEST(FirstTestGroup, SecondTest)
 {
-   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+   //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
    CHECK(false);
 }
 
 TEST(FirstTestGroup, ThirdTest)
 {
-   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+   //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+   //FAIL("Fail me!");
+}
+
+
+TEST_GROUP(SecondTestGroupt)
+{
+};
+
+TEST(SecondTestGroupt, FirstTest)
+{
+   //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+}
+
+TEST(SecondTestGroupt, SecondTest)
+{
+   //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+   CHECK(false);
+}
+
+TEST(SecondTestGroupt, ThirdTest)
+{
+   //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
    //FAIL("Fail me!");
 }
 

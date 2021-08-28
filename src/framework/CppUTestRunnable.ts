@@ -1,10 +1,8 @@
-import * as fs from 'fs-extra';
-import { inspect } from 'util';
-import { mergeFiles } from 'junit-report-merger';
+import * as fs from 'fs';
+import { inspect, promisify } from 'util';
 import { Suite } from '../Suite';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { CppUTestTest } from './CppUTestTest';
-import { Parser } from 'xml2js';
 import { RunnableProperties } from '../RunnableProperties';
 import { SharedVariables } from '../SharedVariables';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
@@ -28,65 +26,9 @@ export class CppUTestRunnable extends AbstractRunnable {
       return this.properties.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
+      grouping.groupByExecutable.groupByTags = { tags: [], tagFormat: '${tag}' };
       return grouping;
     }
-  }
-
-  private async _reloadFromXml(xmlStr: string, cancellationFlag: CancellationFlag): Promise<RunnableReloadResult> {
-    const testGrouping = this.getTestGrouping();
-
-    interface XmlObject {
-      [prop: string]: any; //eslint-disable-line
-    }
-
-    let xml: XmlObject = {};
-
-    new Parser({ explicitArray: true }).parseString(xmlStr, (err: Error, result: Record<string, unknown>) => {
-      if (err) {
-        throw err;
-      } else {
-        xml = result;
-      }
-    });
-
-    const reloadResult = new RunnableReloadResult();
-
-    const processTestcases = async (testsuite: any, reloadResult: RunnableReloadResult) => {
-      const suiteName = testsuite.$.name;
-      for (let i = 0; i < testsuite.testcase.length; i++) {
-        if (cancellationFlag.isCancellationRequested) return;
-
-        const testCase = testsuite.testcase[i];
-        const testName = testCase.$.name.startsWith('DISABLED_') ? testCase.$.name.substr(9) : testCase.$.name;
-        const testNameAsId = suiteName + '.' + testCase.$.name;
-
-        const file = testCase.$.file ? await this._resolveSourceFilePath(testCase.$.file) : undefined;
-        const line = testCase.$.line ? testCase.$.line - 1 : undefined;
-
-        reloadResult.add(
-          ...(await this._createSubtreeAndAddTest(
-            testGrouping,
-            testNameAsId,
-            testName,
-            file,
-            [suiteName],
-            (parent: Suite) => new CppUTestTest(this._shared, this, parent, testNameAsId, testName, file, line),
-            (old: AbstractTest) => (old as CppUTestTest).update(testNameAsId, file, line),
-          )),
-        );
-      }
-    };
-
-    if (xml.testsuites !== undefined) {
-      for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
-        await processTestcases(xml.testsuites.testsuite[i], reloadResult)
-          .catch((err) => this._shared.log.info('Error', err));
-      }
-    } else {
-      await processTestcases(xml.testsuite, reloadResult);
-    }
-
-    return reloadResult;
   }
 
   private async _reloadFromString(
@@ -120,18 +62,18 @@ export class CppUTestRunnable extends AbstractRunnable {
   }
 
   protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<RunnableReloadResult> {
-    const cacheFile = this.properties.path + '.TestMate.testListCache.xml';
+    const cacheFile = this.properties.path + '.TestMate.testListCache.txt';
 
     if (this._shared.enabledTestListCaching) {
       try {
-        const cacheStat = await fs.stat(cacheFile);
-        const execStat = await fs.stat(this.properties.path);
+        const cacheStat = await promisify(fs.stat)(cacheFile);
+        const execStat = await promisify(fs.stat)(this.properties.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this._shared.log.info('loading from cache: ', cacheFile);
-          const xmlStr = await fs.readFile(cacheFile, 'utf8');
+          const str = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          return await this._reloadFromXml(xmlStr, cancellationFlag);
+          return await this._reloadFromString(str, cancellationFlag);
         }
       } catch (e) {
         this._shared.log.info('coudnt use cache', e);
@@ -149,46 +91,22 @@ export class CppUTestRunnable extends AbstractRunnable {
     );
 
     if (cppUTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
-      this._shared.log.warn('reloadChildren -> cppUTestListOutput.stderr: ', cppUTestListOutput);
+      this._shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', cppUTestListOutput);
       return await this._createAndAddUnexpectedStdError(cppUTestListOutput.stdout, cppUTestListOutput.stderr);
     }
 
-    if (cppUTestListOutput.stdout.length === 0) {
-      this._shared.log.debug(cppUTestListOutput);
-      throw Error('stoud is empty');
-    }
-
-    const result = this._reloadFromString(cppUTestListOutput.stdout, cancellationFlag);
+    const result = await this._reloadFromString(cppUTestListOutput.stdout, cancellationFlag);
 
     if (this._shared.enabledTestListCaching) {
-      //Generate xmls folder
-      const junitXmlsFolderPath = this.properties.path + '_junit_xmls';
-      fs.mkdir(junitXmlsFolderPath)
-        .then(() => this._shared.log.info('junit-xmls folder created', junitXmlsFolderPath))
-        .catch(err => this._shared.log.error('error creating xmls folder: ', junitXmlsFolderPath, err));
-      //Generate xml files
-      const args = this.properties.prependTestListingArgs.concat(['-ojunit']);
-      const options = { cwd: junitXmlsFolderPath };
-      await this.properties.spawner
-        .spawnAsync(this.properties.path, args, options, 30000)
-        .then(() => this._shared.log.info('create cpputest xmls', this.properties.path, args, options.cwd));
-      //Merge xmls into single xml
-      fs.readdir(junitXmlsFolderPath, (err, files) => {
-        if (files.length > 1) {
-          mergeFiles(cacheFile, [junitXmlsFolderPath + '/*.xml'])
-            .then(() => this._shared.log.info('cache xml written', cacheFile))
-            .catch(err => this._shared.log.warn('combine xml cache file could not create: ', cacheFile, err));
-        } else {
-          fs.copyFile(junitXmlsFolderPath + '/' + files[0], cacheFile);
-        }
-      });
-      //Delete xmls folder
-      fs.remove(junitXmlsFolderPath)
-        .then(() => this._shared.log.info('junit-xmls folder deleted', junitXmlsFolderPath))
-        .catch(err => this._shared.log.error('error deleting xmls folder: ', junitXmlsFolderPath, err));
+      promisify(fs.writeFile)(cacheFile, cppUTestListOutput.stdout).catch(err =>
+        this._shared.log.warn('couldnt write cache file:', err),
+      );
     }
+
     return result;
   }
+
+  //TODO:matepek: reviewed until this
 
   protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
     // TODO: Add multiple options
@@ -201,7 +119,7 @@ export class CppUTestRunnable extends AbstractRunnable {
     return execParams;
   }
 
-  protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
+  protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], _breakOnFailure: boolean): string[] {
     // TODO: Proper debug options
     // TODO: colouring 'debug.enableOutputColouring'
     // TODO: Add multiple options
@@ -333,7 +251,7 @@ export class CppUTestRunnable extends AbstractRunnable {
         } else {
           if (code !== null && code !== undefined) resolve(ProcessResult.createFromErrorCode(code));
           else if (signal !== null && signal !== undefined) resolve(ProcessResult.createFromSignal(signal));
-          else resolve(ProcessResult.error('unknown sfngvdlfkxdvgn'));
+          else resolve(ProcessResult.error('unknown sgrstbdfg'));
         }
       });
     })

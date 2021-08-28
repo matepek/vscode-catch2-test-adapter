@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "3.7.0",
+  "version": "3.6.28",
   "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -61,8 +61,7 @@
     "tslib": "^2.3.1",
     "vscode-test-adapter-api": "^1.9.0",
     "vscode-test-adapter-util": "^0.7.1",
-    "xml2js": "^0.4.23",
-    "junit-report-merger": "^2.2.3"
+    "xml2js": "^0.4.23"
   },
   "devDependencies": {
     "@sentry/node": "^6.11.0",

@@ -164,7 +164,7 @@ export class RunnableFactory {
           const cpputest = runWithHelpRes.stdout.match(
             this._cpputest.helpRegex
               ? new RegExp(this._cpputest.helpRegex, regexFlags)
-              : /[-g|sg|xg|xsg groupName]... [-n|sn|xn|xsn testName].../,
+              : /\[-g\|sg\|xg\|xsg groupName\]\.\.\. \[-n\|sn\|xn\|xsn testName\]\.\.\. \[-t groupName\.testName\]\.\.\./,
           );
           if (cpputest) {
             return new CppUTestRunnable(
