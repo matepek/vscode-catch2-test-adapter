@@ -56,7 +56,6 @@
   "dependencies": {
     "@types/ps-node": "^0.1.1",
     "gaze": "^1.1.3",
-    "ovsx": "^0.2.0",
     "ps-node": "^0.1.6",
     "tslib": "^2.3.1",
     "vscode-test-adapter-api": "^1.9.0",

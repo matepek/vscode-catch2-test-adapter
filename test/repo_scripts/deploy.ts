@@ -5,7 +5,6 @@ import * as path from 'path';
 import * as bent from 'bent';
 import { promisify } from 'util';
 import * as vsce from 'vsce';
-//import * as ovsx from 'ovsx';
 
 ///
 
@@ -161,13 +160,9 @@ async function createPackage(info: Info): Promise<string> {
 async function publishPackage(packagePath: string): Promise<void> {
   console.log('Publishing vsce package');
   assert.ok(process.env['VSCE_PAT'] != undefined);
-  //assert.ok(process.env['OVSX_PAT'] != undefined);
   assert.ok(packagePath);
 
   await vsce.publishVSIX(packagePath, { pat: process.env['VSCE_PAT']! });
-
-  // TODO: disabled currently: lincese
-  //await ovsx.publish({ extensionFile: packagePath, pat: process.env['OVSX_PAT'] });
 }
 
 async function createGithubRelease(info: Info, packagePath: string): Promise<void> {
