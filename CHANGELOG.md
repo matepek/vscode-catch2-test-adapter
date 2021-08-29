@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.29]
+
+### Fixed
+
+- some GoogleTest and GoogleBenchmark related error handling issue
+
 ## [3.6.28] - 2021-08-29
 
 Using GitHub actions for releases instead of TravisCI and AppVeyor
