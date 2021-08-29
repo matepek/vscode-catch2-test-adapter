@@ -159,7 +159,7 @@ describe(pathlib.basename(__filename), function () {
       const suite1 = root.children[0];
       assert.strictEqual(suite1.label, 'name');
       if (suite1.type === 'suite') {
-        assert.strictEqual(suite1.children.length, 11);
+        assert.strictEqual(suite1.children.length, 4);
       } else {
         assert.strictEqual(suite1.type, 'suite');
       }
