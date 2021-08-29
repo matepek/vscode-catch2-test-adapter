@@ -19,7 +19,6 @@ import { RootSuite } from './RootSuite';
 import { readJSONSync } from 'fs-extra';
 import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
 import { RunTask, ExecutionWrapper, FrameworkSpecific } from './AdvancedExecutableInterface';
-import { isWin } from '../test/Common';
 import { LoggerWrapper } from './LoggerWrapper';
 
 ///
@@ -577,7 +576,7 @@ export class ExecutableConfig implements vscode.Disposable {
 }
 
 function checkEnvForPath(env: Record<string, string>, log: LoggerWrapper): void {
-  if (isWin) {
+  if (process.platform === 'win32') {
     checkPathVariance('PATH', env, log);
     checkPathVariance('Path', env, log);
     checkPathVariance('path', env, log);
