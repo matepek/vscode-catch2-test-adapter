@@ -120,7 +120,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
   private readonly _runnables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
 
-  public async load(rootSuite: RootSuite): Promise<Error[]> {
+  public async load(rootSuite: RootSuite): Promise<unknown[]> {
     const pattern = await this._pathProcessor(this._pattern);
 
     this._shared.log.info('pattern', this._pattern, this._shared.workspaceFolder.uri.fsPath, pattern);
@@ -209,7 +209,7 @@ export class ExecutableConfig implements vscode.Disposable {
       );
     }
 
-    const errors: Error[] = [];
+    const errors: unknown[] = [];
     for (const task of suiteCreationAndLoadingTasks) {
       try {
         await task;
@@ -516,8 +516,8 @@ export class ExecutableConfig implements vscode.Disposable {
         await runnable.reloadTests(this._shared.taskPool, this._cancellationFlag);
         this._runnables.set(filePath, runnable); // it might be set already but we don't care
         this._shared.sendRetireEvent([runnable]);
-      } catch (reason) {
-        if (reason.code === undefined)
+      } catch (reason: any /*eslint-disable-line*/) {
+        if (reason?.code === undefined)
           this._shared.log.debug('problem under reloading', { reason, filePath, runnable });
         return this._recursiveHandleRunnable(runnable, false, Math.min(delay * 2, 2000));
       }

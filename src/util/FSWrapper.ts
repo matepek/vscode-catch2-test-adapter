@@ -21,9 +21,8 @@ export function spawn(
 
 ///
 
-export function isSpawnBusyError(err: Error): boolean {
-  const errEx = err as Error & { code: undefined | string };
-  if (errEx.code === 'EBUSY' || errEx.code === 'ETXTBSY') {
+export function isSpawnBusyError(err: any /*eslint-disable-line*/): boolean {
+  if (err?.code === 'EBUSY' || err?.code === 'ETXTBSY') {
     return true;
   } else {
     return false;

@@ -144,7 +144,7 @@ export class Imitation {
 
   public readonly fsStat = this.sinonSandbox.stub(fs, 'stat').named('stat');
 
-  public readonly fsAccessStub = (this.sinonSandbox.stub(fs, 'access').named('access') as unknown) as sinon.SinonStub<
+  public readonly fsAccessStub = this.sinonSandbox.stub(fs, 'access').named('access') as unknown as sinon.SinonStub<
     [fs.PathLike, string, (err: NodeJS.ErrnoException | null) => void],
     void
   >;
@@ -444,14 +444,14 @@ export class TestAdapter extends my.TestAdapter {
     try {
       await action();
     } catch (e) {
-      throw Error('action: "' + action.toString() + '" errored: ' + e.toString());
+      throw Error('action: "' + action.toString() + '" errored: ' + e);
     }
     try {
       await waitFor(context, () => {
         return this.loadEvents.length >= origCount + 2;
       });
     } catch (e) {
-      throw Error('waiting after action: "' + action.toString() + '" errored: ' + e.toString());
+      throw Error('waiting after action: "' + action.toString() + '" errored: ' + e);
     }
     assert.equal(this.loadEvents.length, origCount + 2, action.toString());
     assert.equal(this.loadEvents[this.loadEvents.length - 1].type, 'finished');

@@ -81,7 +81,7 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public exceptionS(e: Error, ...msg: any[]): void {
+  public exceptionS(e: unknown, ...msg: unknown[]): void {
     super.error(e, ...msg);
     try {
       Sentry.captureException(e);
