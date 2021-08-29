@@ -124,11 +124,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: Release
     needs: [build-linux, build-mac, build-windows]
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' && github.repository_owner == 'matepek'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          persist-credentials: false
 
       - name: Use Node.js
         uses: actions/setup-node@v2
