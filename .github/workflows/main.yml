@@ -9,8 +9,17 @@ on:
 
 jobs:
   build-linux:
-    name: Build and Test on Linux
+    name: Test on Linux
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        VSCODE_VERSION: ['latest', '1.41.1']
+        experimental: [false]
+        include:
+          - VSCODE_VERSION: 'insiders'
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
 
     steps:
       - name: Checkout code
@@ -47,9 +56,19 @@ jobs:
           DISPLAY: ':99.0'
 
   build-windows:
-    name: Build and Test on Windows
+    name: Test on Windows
     runs-on: windows-latest
     #TODO: needs: build-linux # just to save some github minutes
+    strategy:
+      fail-fast: true
+      matrix:
+        VSCODE_VERSION: ['latest', '1.41.1']
+        experimental: [false]
+        include:
+          - VSCODE_VERSION: 'insiders'
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -72,9 +91,19 @@ jobs:
           C2_DEBUG: true
 
   build-mac:
-    name: Build and Test on MacOS
+    name: Test on MacOS
     runs-on: macos-latest
     #TODO: needs: build-linux # just to save some github minutes
+    strategy:
+      fail-fast: true
+      matrix:
+        VSCODE_VERSION: ['latest', '1.41.1']
+        experimental: [false]
+        include:
+          - VSCODE_VERSION: 'insiders'
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
