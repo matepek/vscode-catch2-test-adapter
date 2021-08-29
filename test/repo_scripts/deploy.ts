@@ -1,6 +1,3 @@
-// https://stackoverflow.com/questions/51925941/travis-ci-how-to-push-to-master-branch
-// https://stackoverflow.com/questions/23277391/how-to-publish-to-github-pages-from-travis-ci
-
 import * as assert from 'assert';
 import * as cp from 'child_process';
 import * as fs from 'fs';
@@ -8,7 +5,6 @@ import * as path from 'path';
 import * as bent from 'bent';
 import { promisify } from 'util';
 import * as vsce from 'vsce';
-//import * as ovsx from 'ovsx';
 
 ///
 
@@ -30,8 +26,8 @@ interface Info {
   full: string;
 }
 
-async function spawn(command: string, ...args: string[]): Promise<void> {
-  console.log('$ ' + command + ' "' + args.join('" "') + '"');
+async function spawn(command: string, maskArgs: boolean, ...args: string[]): Promise<void> {
+  console.log('$ ' + command + ' "' + (maskArgs ? '<masked>' : args.join('" "')) + '"');
   return new Promise((resolve, reject) => {
     const c = cp.spawn(command, args, { stdio: 'inherit' });
     c.on('exit', (code: number) => {
@@ -95,81 +91,6 @@ async function updateChangelog(): Promise<Info | undefined> {
   };
 }
 
-async function waitForAppveyorTestsToBeFinished(): Promise<void> {
-  assert.ok(process.env['APPVEYOR_TOKEN']);
-  assert.ok(process.env['TRAVIS_COMMIT']);
-  assert.ok(process.env['TRAVIS_COMMIT_MESSAGE']);
-
-  if (process.env['TRAVIS_COMMIT_MESSAGE'].indexOf('[skip-appveyor-check]') !== -1) {
-    console.log('Skipping  Appveyor because commit message includes the magic word');
-    return;
-  }
-
-  console.log('Checking Appveyor job with commit:', process.env['TRAVIS_COMMIT']);
-
-  const appveyor = bent('https://ci.appveyor.com', 'json', 'GET');
-
-  const response: JsonResp = await appveyor(`/api/projects/${githubRepoFullId}/history?recordsNumber=50`, undefined, {
-    Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'],
-    'Content-Type': 'application/json',
-  });
-
-  assert.ok(typeof response === 'object', JSON.stringify(response));
-  assert.ok(typeof response.builds === 'object' && response.builds.length > 0, JSON.stringify(response));
-
-  let build;
-  for (const b of response.builds) {
-    if (b.commitId === process.env['TRAVIS_COMMIT']) {
-      build = b;
-      break;
-    }
-  }
-  assert.notStrictEqual(build, undefined);
-
-  const timeout = 40 * 60 * 1000;
-  const version = build.version;
-  let status = build.status;
-
-  console.log(version);
-
-  const queuedOrRunning = (status: string): boolean => status === 'running' || status === 'queued';
-
-  const start = Date.now();
-  while (queuedOrRunning(status) && Date.now() - start < timeout) {
-    console.log('Waiting for Appveyor:', version, status);
-
-    await promisify(setTimeout)(20000);
-
-    const response: JsonResp = await appveyor(`/api/projects/${githubRepoFullId}/build/${version}`, undefined, {
-      Authorization: 'Bearer ' + process.env['APPVEYOR_TOKEN'],
-      'Content-Type': 'application/json',
-    });
-
-    assert.ok(typeof response === 'object', JSON.stringify(response));
-    assert.ok(typeof response.build === 'object', JSON.stringify(response));
-    assert.ok(typeof response.build.status === 'string', JSON.stringify(response));
-
-    status = response.build.status;
-
-    if (status === 'running') {
-      const filteredJobs = response.build.jobs.filter(
-        (j: { status: string }) => !queuedOrRunning(j.status) && j.status !== 'success',
-      );
-      if (filteredJobs.length > 0) {
-        throw new Error('Appveyor job status: ' + filteredJobs[0].status);
-      }
-    }
-  }
-
-  if (status === 'success') {
-    return Promise.resolve();
-  } else if (Date.now() - start > timeout) {
-    throw new Error('Appveyor timeout has been reached: ' + timeout);
-  } else {
-    throw new Error('Appveyor status: ' + status);
-  }
-}
-
 async function updatePackageJson(info: Info): Promise<void> {
   console.log('Parsing package.json');
 
@@ -201,31 +122,30 @@ async function updatePackageJson(info: Info): Promise<void> {
 async function gitCommitAndTag(info: Info): Promise<void> {
   console.log('Creating commit and tag');
 
-  assert.ok(process.env['TRAVIS_BRANCH']);
-
-  await spawn('git', 'checkout', process.env['TRAVIS_BRANCH']!);
-  await spawn('git', 'config', '--local', 'user.name', 'deploy.js script');
+  await spawn('git', false, 'config', '--local', 'user.name', 'deploy.js');
 
   const deployerMail = process.env['DEPLOYER_MAIL'] || 'deployer@deployer.de';
-  await spawn('git', 'config', '--local', 'user.email', deployerMail);
+  await spawn('git', false, 'config', '--local', 'user.email', deployerMail);
 
-  await spawn('git', 'status');
-  await spawn('git', 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
-  await spawn('git', 'status');
-  await spawn('git', 'commit', '-m', '[Updated] Release info in CHANGELOG.md: ' + info.full!);
-  await spawn('git', 'tag', '-a', info.vver!, '-m', 'Version ' + info.vver!);
+  await spawn('git', false, 'status');
+  await spawn('git', false, 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
+  await spawn('git', false, 'status');
+  await spawn('git', false, 'commit', '-m', '[Updated] Date in CHANGELOG.md: ' + info.full!);
+  await spawn('git', false, 'tag', '-a', info.vver!, '-m', 'Version ' + info.vver!);
 }
 
 async function gitPush(): Promise<void> {
   console.log('Pushing to origin');
 
-  assert.ok(process.env['GITHUB_API_KEY'] != undefined);
+  assert.ok(process.env['GITHUBM_API_KEY'] != undefined);
 
   await spawn(
     'git',
+    true,
     'push',
+    '--force',
     '--follow-tags',
-    'https://' + githubOwnerId + ':' + process.env['GITHUB_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+    'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
   );
 }
 
@@ -242,19 +162,15 @@ async function createPackage(info: Info): Promise<string> {
 async function publishPackage(packagePath: string): Promise<void> {
   console.log('Publishing vsce package');
   assert.ok(process.env['VSCE_PAT'] != undefined);
-  assert.ok(process.env['OVSX_PAT'] != undefined);
   assert.ok(packagePath);
 
   await vsce.publishVSIX(packagePath, { pat: process.env['VSCE_PAT']! });
-
-  // TODO: disabled currently: lincese
-  //await ovsx.publish({ extensionFile: packagePath, pat: process.env['OVSX_PAT'] });
 }
 
 async function createGithubRelease(info: Info, packagePath: string): Promise<void> {
   console.log('Publishing to github releases');
-  assert.ok(typeof process.env['GITHUB_API_KEY'] === 'string');
-  const apiKey = process.env['GITHUB_API_KEY']!;
+  assert.ok(typeof process.env['GITHUBM_API_KEY'] === 'string');
+  const apiKey = process.env['GITHUBM_API_KEY']!;
   const keyBase64 = Buffer.from(`${githubOwnerId}:${apiKey}`, 'utf-8').toString('base64');
   const headerBase = {
     'User-Agent': `${githubOwnerId}-deploy.js`,
@@ -311,15 +227,8 @@ async function main(argv: string[]): Promise<void> {
 
   // pre-checks
   assert.strictEqual(path.basename(process.cwd()), githubRepoId);
-  assert.ok(process.env['GITHUB_API_KEY']);
   assert.ok(process.env['VSCE_PAT']);
-  assert.ok(process.env['APPVEYOR_TOKEN']);
-
-  if (!process.env['TRAVIS_BRANCH']) throw new Error('Not a branch, skipping..');
-
-  if (process.env['TRAVIS_PULL_REQUEST'] !== 'false') throw new Error("Shouldn't be a PR, skipping..");
-
-  if (process.env['VSCODE_VERSION'] !== 'latest') throw new Error('Not the latest vscode version, skipping..');
+  assert.ok(process.env['GITHUBM_API_KEY']);
 
   const info = await updateChangelog();
 
@@ -330,11 +239,9 @@ async function main(argv: string[]): Promise<void> {
 
     const packagePath = await createPackage(info);
 
-    await waitForAppveyorTestsToBeFinished(); // now we should wait
-
     await gitPush();
 
-    await createGithubRelease(info, packagePath);
+    await createGithubRelease(info!, packagePath);
 
     await publishPackage(packagePath);
 
@@ -351,7 +258,7 @@ main(process.argv.slice(2)).then(
     process.exit(0);
   },
   (err: Error) => {
-    console.error('Unhandled error under deployment!', err);
+    console.error('Unhandled error during deployment!', err);
     process.exit(-1);
   },
 );

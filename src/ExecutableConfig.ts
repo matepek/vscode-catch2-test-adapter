@@ -576,7 +576,7 @@ export class ExecutableConfig implements vscode.Disposable {
 }
 
 function checkEnvForPath(env: Record<string, string>, log: LoggerWrapper): void {
-  if (process.platform == 'win32') {
+  if (process.platform === 'win32') {
     checkPathVariance('PATH', env, log);
     checkPathVariance('Path', env, log);
     checkPathVariance('path', env, log);

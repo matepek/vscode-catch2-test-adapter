@@ -1,0 +1,150 @@
+# https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions
+name: Main
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build-linux:
+    name: Test on Linux
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        VSCODE_VERSION: ['latest', '1.41.1']
+        experimental: [false]
+        include:
+          - VSCODE_VERSION: 'insiders'
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+
+      - name: Install
+        run: npm install
+
+      - name: Audit
+        run: npm audit --production
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Webpack
+        # test does not use it, but we are testing the webpack creation
+        run: |
+          npm run webpack
+          ls -all out/dist
+
+      - name: Test
+        run: |
+          /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          sleep 3
+          npm test
+        env:
+          VSCODE_VERSION: latest
+          C2_DEBUG: true
+          DISPLAY: ':99.0'
+
+  build-windows:
+    name: Test on Windows
+    runs-on: windows-latest
+    #TODO: needs: build-linux # just to save some github minutes
+    strategy:
+      fail-fast: true
+      matrix:
+        VSCODE_VERSION: ['latest', '1.41.1']
+        experimental: [false]
+        include:
+          - VSCODE_VERSION: 'insiders'
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+
+      - name: Install
+        run: npm install
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.3
+
+      - name: Test
+        run: npm test
+        env:
+          VSCODE_VERSION: latest
+          C2_DEBUG: true
+
+  build-mac:
+    name: Test on MacOS
+    runs-on: macos-latest
+    #TODO: needs: build-linux # just to save some github minutes
+    strategy:
+      fail-fast: true
+      matrix:
+        VSCODE_VERSION: ['latest', '1.41.1']
+        experimental: [false]
+        include:
+          - VSCODE_VERSION: 'insiders'
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+
+      - name: Install
+        run: npm install
+
+      - name: Test
+        run: npm test
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    environment: Release
+    needs: [build-linux, build-mac, build-windows]
+    if: github.ref == 'refs/heads/master' && github.repository_owner == 'matepek'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+
+      - name: Install
+        run: npm install
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Deploy
+        run: npm run deploy
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          GITHUBM_API_KEY: ${{ secrets.GITHUBM_API_KEY }}

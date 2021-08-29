@@ -76,3 +76,8 @@ If you think your changes worth of a release add a new version entry to `CHANGEL
 - doctest: supporting test suites
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip, gmock_verbose
 - gaze is not good enough: detects change and delete, but not creation
+
+## VSCE_PAT
+
+- https://code.visualstudio.com/api/working-with-extensions/publishing-extension
+- https://matepek.visualstudio.com/_usersSettings/tokens
