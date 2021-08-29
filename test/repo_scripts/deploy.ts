@@ -122,7 +122,7 @@ async function updatePackageJson(info: Info): Promise<void> {
 async function gitCommitAndTag(info: Info): Promise<void> {
   console.log('Creating commit and tag');
 
-  await spawn('git', false, 'config', '--local', 'user.name', 'deploy.js script');
+  await spawn('git', false, 'config', '--local', 'user.name', 'deploy.js');
 
   const deployerMail = process.env['DEPLOYER_MAIL'] || 'deployer@deployer.de';
   await spawn('git', false, 'config', '--local', 'user.email', deployerMail);
@@ -130,7 +130,7 @@ async function gitCommitAndTag(info: Info): Promise<void> {
   await spawn('git', false, 'status');
   await spawn('git', false, 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
   await spawn('git', false, 'status');
-  await spawn('git', false, 'commit', '-m', '[Updated] Release info in CHANGELOG.md: ' + info.full!);
+  await spawn('git', false, 'commit', '-m', '[Updated] Date in CHANGELOG.md: ' + info.full!);
   await spawn('git', false, 'tag', '-a', info.vver!, '-m', 'Version ' + info.vver!);
 }
 
@@ -258,7 +258,7 @@ main(process.argv.slice(2)).then(
     process.exit(0);
   },
   (err: Error) => {
-    console.error('Unhandled error under deployment!', err);
+    console.error('Unhandled error during deployment!', err);
     process.exit(-1);
   },
 );
