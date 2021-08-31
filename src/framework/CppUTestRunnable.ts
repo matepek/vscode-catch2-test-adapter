@@ -51,7 +51,7 @@ export class CppUTestRunnable extends AbstractRunnable {
 
     const reloadResult = new RunnableReloadResult();
 
-    const processTestcases = async (testsuite: any, reloadResult: RunnableReloadResult) => {
+    const processTestcases = async (testsuite: XmlObject, reloadResult: RunnableReloadResult): Promise<void> => {
       const suiteName = testsuite.$.name;
       for (let i = 0; i < testsuite.testcase.length; i++) {
         if (cancellationFlag.isCancellationRequested) return;
@@ -79,8 +79,9 @@ export class CppUTestRunnable extends AbstractRunnable {
 
     if (xml.testsuites !== undefined) {
       for (let i = 0; i < xml.testsuites.testsuite.length; ++i) {
-        await processTestcases(xml.testsuites.testsuite[i], reloadResult)
-          .catch((err) => this._shared.log.info('Error', err));
+        await processTestcases(xml.testsuites.testsuite[i], reloadResult).catch(err =>
+          this._shared.log.info('Error', err),
+        );
       }
     } else {
       await processTestcases(xml.testsuite, reloadResult);
@@ -201,7 +202,7 @@ export class CppUTestRunnable extends AbstractRunnable {
     return execParams;
   }
 
-  protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
+  protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
     // TODO: Proper debug options
     // TODO: colouring 'debug.enableOutputColouring'
     // TODO: Add multiple options
