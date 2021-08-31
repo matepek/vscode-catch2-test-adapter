@@ -113,9 +113,9 @@ export class GoogleBenchmarkTest extends AbstractTest {
       this._shared.log.exceptionS(e, output);
 
       const ev = this.getFailedEventBase(testRunId);
-      ev.message = 'Unexpected error: ' + e.toString();
+      ev.message = 'Unexpected error: ' + e;
 
-      return e;
+      return ev;
     }
   }
 }

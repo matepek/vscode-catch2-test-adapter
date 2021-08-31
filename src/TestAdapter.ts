@@ -115,7 +115,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     this._disposables.push(this._testsEmitter);
     this._disposables.push(this._testStatesEmitter);
 
-    const loadWithTask = async (task: () => Promise<void | Error[]>): Promise<void> => {
+    const loadWithTask = async (task: () => Promise<void | unknown[]>): Promise<void> => {
       this._sendLoadingEventIfNeeded();
 
       try {
@@ -391,7 +391,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
   }
 
   private _testLoadingCounter = 0;
-  private _testLoadingErrors: Error[] = [];
+  private _testLoadingErrors: unknown[] = [];
 
   private _sendLoadingEventIfNeeded(): void {
     if (this._testLoadingCounter++ === 0) {
@@ -401,7 +401,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
     }
   }
 
-  private _sendLoadingFinishedEventIfNeeded(errors?: void | Error[]): void {
+  private _sendLoadingFinishedEventIfNeeded(errors: void | unknown[]): void {
     if (errors && errors.length) {
       try {
         this._testLoadingErrors.push(...errors);

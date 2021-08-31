@@ -59,7 +59,7 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function () {
     const fsRes = cp.spawnSync('echo', ['apple'], { encoding: 'utf8' });
     assert.strictEqual(fsRes.signal, null);
     assert.strictEqual(fsRes.status, 0);
-    assert.strictEqual(fsRes.output[1].trim(), 'apple');
+    assert.strictEqual(fsRes.output[1]?.trim(), 'apple');
     assert.strictEqual(fsRes.stdout.trim(), 'apple');
     assert.strictEqual(fsRes.output[2], '');
     assert.strictEqual(fsRes.stderr, '');

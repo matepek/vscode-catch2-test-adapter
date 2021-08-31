@@ -6,11 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [3.6.28]
+## [3.6.31]
 
 ### Added
 
-- (experimental) CppUTest Framework Support
+(experimental) CppUTest Framework Support
+
+## [3.6.30] - 2021-08-31
+
+### Added
+
+- activation event for `testing.__` vscode commands and view `workbench.view.testing`
+  With this `"testExplorer.useNativeTesting": true` has some support.
+
+## [3.6.29] - 2021-08-29
+
+### Fixed
+
+- some GoogleTest and GoogleBenchmark related error handling issue
+
+## [3.6.28] - 2021-08-29
+
+Using GitHub actions for releases instead of TravisCI and AppVeyor
 
 ## [3.6.27] - 2021-08-09
 
