@@ -6,6 +6,26 @@ on:
   pull_request:
 
 jobs:
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+          cache: 'npm'
+
+      - name: Install
+        run: npm install
+
+      - name: Audit
+        run: npm audit --production
+
   build-linux:
     name: Linux
     runs-on: ubuntu-latest
@@ -13,7 +33,7 @@ jobs:
       fail-fast: true
       matrix:
         VSCODE_VERSION: ['latest', '1.41.1']
-        experimental: [true] #TODO
+        experimental: [false]
         include:
           - VSCODE_VERSION: 'insiders'
             experimental: true
@@ -27,30 +47,27 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '16.x'
+          cache: 'npm'
 
       - name: Install
-        run: test a = b && npm install
-
-      - name: Audit
-        run: npm audit --production
+        run: npm install
 
       - name: Compile
         run: npm run compile
 
-      - name: Webpack
-        # test does not use it, but we are testing the webpack creation
+      - name: Webpack # test does not use it, but we are testing the webpack creation
         run: |
           npm run webpack
           ls -all out/dist
 
-      #- name: Test
-      #  run: |
-      #    /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-      #    sleep 3
-      #    npm test
-      #  env:
-      #    C2_DEBUG: true
-      #    DISPLAY: ':99.0'
+      - name: Test
+        run: |
+          /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          sleep 3
+          npm test
+        env:
+          C2_DEBUG: true
+          DISPLAY: ':99.0'
 
   build-windows:
     name: Windows
@@ -73,17 +90,21 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '16.x'
+          cache: 'npm'
 
       - name: Install
         run: npm install
 
+      - name: Compile
+        run: npm run compile
+
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.3
 
-      #- name: Test
-      #  run: npm test
-      #  env:
-      #    C2_DEBUG: true
+      - name: Test
+        run: npm test
+        env:
+          C2_DEBUG: true
 
   build-mac:
     name: MacOS
@@ -106,9 +127,13 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '16.x'
+          cache: 'npm'
 
       - name: Install
         run: npm install
 
-      #- name: Test
-      #  run: npm test
+      - name: Compile
+        run: npm run compile
+
+      - name: Test
+        run: npm test
