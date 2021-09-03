@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['latest', '1.41.1']
+        VSCODE_VERSION: ['latest', 'minimum']
         experimental: [false]
         include:
           - VSCODE_VERSION: 'insiders'
@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['latest', '1.41.1']
+        VSCODE_VERSION: ['latest', 'minimum']
         experimental: [false]
         include:
           - VSCODE_VERSION: 'insiders'
@@ -92,7 +92,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['latest', '1.41.1']
+        VSCODE_VERSION: ['latest', 'minimum']
         experimental: [false]
         include:
           - VSCODE_VERSION: 'insiders'

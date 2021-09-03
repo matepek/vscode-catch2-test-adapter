@@ -1,7 +1,10 @@
 import * as path from 'path';
 
 describe(path.basename(__filename), function () {
-  if (process.env['C2_INTEGRATIONFROMVSCODE'] === undefined) {
+  // because eslint dropped support: https://stackoverflow.com/questions/62903921/how-do-i-fix-eslint-createrequire-is-not-a-function-in-atom-editor
+  const nodeVersion = parseInt(process.version.match(/v(\d+)/)![1]);
+
+  if (process.env['C2_INTEGRATIONFROMVSCODE'] === undefined && nodeVersion > 10) {
     // eslint-disable-next-line
     require('mocha-eslint')('src/**/*.ts', {
       // Specify style of output
