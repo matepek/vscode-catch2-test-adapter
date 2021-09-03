@@ -81,3 +81,9 @@ If you think your changes worth of a release add a new version entry to `CHANGEL
 
 - https://code.visualstudio.com/api/working-with-extensions/publishing-extension
 - https://matepek.visualstudio.com/_usersSettings/tokens
+
+## VSCODE TESTING API
+
+### TODOs
+
+- more unique ide for frameworks

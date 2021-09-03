@@ -10,7 +10,7 @@
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false, //TODO
     "removeComments": true,
     "skipLibCheck": true,
     "experimentalDecorators": true,

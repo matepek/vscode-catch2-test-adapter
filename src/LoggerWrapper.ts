@@ -1,12 +1,11 @@
 import * as util from 'vscode-test-adapter-util';
-import { WorkspaceFolder } from 'vscode';
 import * as Sentry from '@sentry/node';
 
 ///
 
 export class LoggerWrapper extends util.Log {
-  public constructor(configSection: string, workspaceFolder: WorkspaceFolder | undefined, outputChannelName: string) {
-    super(configSection, workspaceFolder, outputChannelName, { depth: 3 }, false);
+  public constructor(configSection: string, outputChannelName: string) {
+    super(configSection, undefined, outputChannelName, { depth: 3 }, false);
   }
 
   //eslint-disable-next-line

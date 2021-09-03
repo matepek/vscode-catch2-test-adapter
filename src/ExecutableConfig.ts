@@ -13,7 +13,7 @@ import {
   ResolveRuleAsync,
 } from './util/ResolveRule';
 import { RunnableFactory } from './RunnableFactory';
-import { SharedVariables } from './SharedVariables';
+import { WorkspaceShared } from './WorkspaceShared';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
 import { RootSuite } from './RootSuite';
 import { readJSONSync } from 'fs-extra';
@@ -25,7 +25,7 @@ import { LoggerWrapper } from './LoggerWrapper';
 
 export class ExecutableConfig implements vscode.Disposable {
   public constructor(
-    private readonly _shared: SharedVariables,
+    private readonly _shared: WorkspaceShared,
     private readonly _pattern: string,
     private readonly _name: string | undefined,
     private readonly _description: string | undefined,
@@ -120,7 +120,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
   private readonly _runnables: Map<string /*fsPath*/, AbstractRunnable> = new Map();
 
-  public async load(rootSuite: RootSuite): Promise<unknown[]> {
+  public async load(): Promise<unknown[]> {
     const pattern = await this._pathProcessor(this._pattern);
 
     this._shared.log.info('pattern', this._pattern, this._shared.workspaceFolder.uri.fsPath, pattern);

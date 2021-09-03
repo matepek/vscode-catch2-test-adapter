@@ -24,7 +24,9 @@ module.exports = {
     // e.g. "@typescript-eslint/explicit-function-return-type": "off",
 
     '@typescript-eslint/camelcase': 'off',
-    '@typescript-eslint/explicit-function-return-type': 'error',
+    //TODO:'@typescript-eslint/explicit-function-return-type': 'error',
+    '@typescript-eslint/no-empty-function': 'off', //TODO
+    '@typescript-eslint/no-unused-vars': 'off', //TODO
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/no-parameter-properties': 'off',

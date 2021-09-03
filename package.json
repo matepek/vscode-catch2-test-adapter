@@ -100,7 +100,7 @@
     "webpack-cli": "^4.8.0"
   },
   "engines": {
-    "vscode": "^1.38.0"
+    "vscode": "^1.59.0"
   },
   "activationEvents": [
     "onStartupFinished"

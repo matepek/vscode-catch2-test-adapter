@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { LoggerWrapper } from './LoggerWrapper';
 import { ExecutableConfig } from './ExecutableConfig';
-import { SharedVariables } from './SharedVariables';
+import { WorkspaceShared } from './WorkspaceShared';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
 import { TestGrouping } from './TestGroupingInterface';
@@ -381,7 +381,7 @@ export class Configurations {
     return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  public getExecutables(shared: SharedVariables): ExecutableConfig[] {
+  public getExecutables(shared: WorkspaceShared): ExecutableConfig[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultParallelExecutionOfExecLimit = this.getParallelExecutionOfExecutableLimit() || 1;
 
