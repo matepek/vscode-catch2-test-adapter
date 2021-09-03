@@ -6,27 +6,7 @@ on:
   pull_request:
 
 jobs:
-  audit:
-    name: Audit
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Use Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16.x'
-          cache: 'npm'
-
-      - name: Install
-        run: npm install
-
-      - name: Audit
-        run: npm audit --production
-
-  build-linux:
+  test-linux:
     name: Linux
     runs-on: ubuntu-latest
     strategy:
@@ -69,7 +49,7 @@ jobs:
           C2_DEBUG: true
           DISPLAY: ':99.0'
 
-  build-windows:
+  test-windows:
     name: Windows
     runs-on: windows-latest
     strategy:
@@ -106,7 +86,7 @@ jobs:
         env:
           C2_DEBUG: true
 
-  build-mac:
+  test-mac:
     name: MacOS
     runs-on: macos-latest
     strategy:
