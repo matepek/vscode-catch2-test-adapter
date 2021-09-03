@@ -67,7 +67,6 @@
     "@types/bent": "^7.3.2",
     "@types/chai": "^4.2.21",
     "@types/deep-equal": "^1.0.1",
-    "@types/entities": "^2.0.0",
     "@types/fs-extra": "^9.0.12",
     "@types/glob": "^7.1.4",
     "@types/mocha": "^9.0.0",
