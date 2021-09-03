@@ -192,7 +192,6 @@ export class CppUTestRunnable extends AbstractRunnable {
   }
 
   protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
-    // TODO: Add multiple options
     const execParams: string[] = [];
     childrenToRun.forEach(t => {
       execParams.push(`TEST(${t.testNameAsId.split('.')[0]}, ${t.testNameAsId.split('.')[1]})`);
@@ -203,9 +202,6 @@ export class CppUTestRunnable extends AbstractRunnable {
   }
 
   protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
-    // TODO: Proper debug options
-    // TODO: colouring 'debug.enableOutputColouring'
-    // TODO: Add multiple options
     const execParams: string[] = [];
     childrenToRun.forEach(t => {
       execParams.push(`TEST(${t.testNameAsId.split('.')[0]}, ${t.testNameAsId.split('.')[1]})`);

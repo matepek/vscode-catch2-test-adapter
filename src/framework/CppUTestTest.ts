@@ -67,7 +67,7 @@ export class CppUTestTest extends AbstractTest {
       this.lastRunEvent = ev;
       return ev;
     }
-    //TODO: Refactor following codes
+
     try {
       const lines = output.split(/\r?\n/);
 
