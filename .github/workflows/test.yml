@@ -13,7 +13,7 @@ jobs:
       fail-fast: true
       matrix:
         VSCODE_VERSION: ['latest', '1.41.1']
-        experimental: [false]
+        experimental: [true] #TODO
         include:
           - VSCODE_VERSION: 'insiders'
             experimental: true
@@ -29,7 +29,7 @@ jobs:
           node-version: '16.x'
 
       - name: Install
-        run: npm install
+        run: test a = b && npm install
 
       - name: Audit
         run: npm audit --production

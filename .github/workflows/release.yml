@@ -3,21 +3,21 @@ name: Release
 on:
   workflow_run:
     workflows: ['Test']
-    #branches: [master]
+    branches: [master]
     types: [completed]
 
 jobs:
   release:
-    name: Release
+    name: Release and Deploy
     runs-on: ubuntu-latest
     environment: Release
-    if: github.event.workflow_run.conclusion == 'success' #&& github.ref == 'refs/heads/master' && github.repository_owner == 'matepek'
+    if: github.event.workflow_run.conclusion == 'success' && github.ref == 'refs/heads/master' && github.repository_owner == 'matepek'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          persist-credentials: false
+          persist-credentials: false # to drop github token and used GITHUBM_API_KEY
 
       - name: Use Node.js
         uses: actions/setup-node@v2
