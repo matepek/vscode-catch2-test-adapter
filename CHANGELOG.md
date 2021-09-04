@@ -6,11 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [3.6.31]
-
 ### Added
 
 (experimental) CppUTest Framework Support
+
+### Changed
+
+- activation event is `onStartupFinished` from now. This mean stat the extension will be activated every timethe vscode is opened.
+  Hopefully it wont affect the users and the reasoning behind it is that after migrationg to the vscode native testing api it would happen anyway.
 
 ## [3.6.30] - 2021-08-31
 

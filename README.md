@@ -14,6 +14,7 @@ It also have basic support for [Google Benchmark](https://github.com/google/benc
 
 ## Features / Show-Off
 
+- New testing API integration will happen, meanwhile one can use `"testExplorer.useNativeTesting": true`.
 - Reloads test list of an executable if it is recompiled. (_Hint: Right click -> Enable Autorun_)
 - Runs executables parallel (_testMate.cpp.test.parallelExecutionLimit_).
 - Sorts tests and suites (_testExplorer.sort_).
