@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+(experimental) CppUTest Framework Support
+
 ### Changed
 
 - activation event is `onStartupFinished` from now. This mean stat the extension will be activated every timethe vscode is opened.

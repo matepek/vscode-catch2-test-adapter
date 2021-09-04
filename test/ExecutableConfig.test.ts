@@ -30,6 +30,7 @@ describe(path.basename(__filename), function () {
     {},
     {},
     {},
+    {},
   );
 
   specify('_pathProcessor with posix name', async function () {

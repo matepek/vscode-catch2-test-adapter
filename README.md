@@ -1,6 +1,6 @@
 # C++ TestMate
 
-## A **Catch2**, **GoogleTest**, **doctest** and **GoogleBenchmark** Explorer for VSCode
+## A **Catch2**, **GoogleTest**, **CppUTest**, **doctest** and **GoogleBenchmark** Explorer for VSCode
 
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 [![GitHub issues](https://img.shields.io/github/issues/matepek/vscode-catch2-test-adapter?color=green)](https://github.com/matepek/vscode-catch2-test-adapter/issues)
@@ -8,8 +8,7 @@
 [![Gitter](https://badges.gitter.im/CppTestMate/community.svg)](https://gitter.im/CppTestMate/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 This extension allows you to run your [Catch2](https://github.com/catchorg/Catch2),
-[Google Test](https://github.com/google/googletest)
-and [DOCtest](https://github.com/onqtam/doctest)
+[Google Test](https://github.com/google/googletest), [CppUTest](https://github.com/cpputest/cpputest) and [DOCtest](https://github.com/onqtam/doctest)
 tests using the [Test Explorer for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer).
 It also have basic support for [Google Benchmark](https://github.com/google/benchmark).
 

@@ -161,6 +161,11 @@ export class Suite implements TestSuiteInfo {
         .map(state => '  - ' + state + ': ' + stateStat[state])
         .join('\n');
 
+    const skipOrNotRun = testCount - Object.values(stateStat).reduce((a, b) => a + b, 0);
+    if (skipOrNotRun !== 0) {
+      this._additionalTooltip += '\n  - NotRan: ' + skipOrNotRun;
+    }
+
     if (durationSum !== undefined) {
       const durationStr = milisecToStr(durationSum);
 

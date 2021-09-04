@@ -43,6 +43,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _catch2: FrameworkSpecific,
     private readonly _gtest: FrameworkSpecific,
     private readonly _doctest: FrameworkSpecific,
+    private readonly _cpputest: FrameworkSpecific,
     private readonly _gbenchmark: FrameworkSpecific,
   ) {
     const createUriSymbol: unique symbol = Symbol('createUri');
@@ -391,6 +392,7 @@ export class ExecutableConfig implements vscode.Disposable {
       this._catch2,
       this._gtest,
       this._doctest,
+      this._cpputest,
       this._gbenchmark,
       this._parallelizationLimit,
       this._markAsSkipped === true,

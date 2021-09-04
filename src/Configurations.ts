@@ -406,6 +406,7 @@ export class Configurations {
         {},
         {},
         {},
+        {},
       );
     };
 
@@ -538,6 +539,7 @@ export class Configurations {
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),
+          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['cpputest']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gbenchmark']),
         );
       };
