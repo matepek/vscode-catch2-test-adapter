@@ -308,12 +308,12 @@ describe(path.basename(__filename), function () {
 
       const eventCount = adapter.stateEvents.length;
       await adapter.run([adapter.root.id]);
-      assert.strictEqual(adapter.stateEvents.length - eventCount, 68);
+      assert.strictEqual(adapter.stateEvents.length - eventCount, 72);
       const states = adapter.stateEvents.reduceRight<Record<string, number>>(...runStateSummer());
       assert.deepStrictEqual(states, {
         failed: 10,
-        passed: 22,
-        running: 32,
+        passed: 24,
+        running: 34,
       });
     });
   });

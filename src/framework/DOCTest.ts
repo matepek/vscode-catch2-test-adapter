@@ -42,6 +42,7 @@ export class DOCTest extends AbstractTest {
     file: string | undefined,
     line: number | undefined,
     tags: string[],
+    description: string | undefined,
   ) {
     super(
       shared,
@@ -54,7 +55,7 @@ export class DOCTest extends AbstractTest {
       skipped,
       undefined,
       tags,
-      undefined,
+      description,
       undefined,
       undefined,
     );
@@ -132,8 +133,11 @@ export class DOCTest extends AbstractTest {
   }
 
   private _processXmlTagTestCaseInner(testCase: XmlObject, testEventBuilder: TestEventBuilder): void {
-    if (testCase.OverallResultsAsserts[0].$.duration)
-      testEventBuilder.setDurationMilisec(Number(testCase.OverallResultsAsserts[0].$.duration) * 1000);
+    const durationSec = parseInt(testCase.OverallResultsAsserts[0].$.duration) || undefined;
+
+    if (durationSec === undefined)
+      this._shared.log.errorS('doctest: duration is NaN: ' + testCase.OverallResultsAsserts[0].$.duration);
+    else testEventBuilder.setDurationMilisec(durationSec * 1000);
 
     testEventBuilder.appendMessage(testCase._, 0);
 
@@ -143,18 +147,18 @@ export class DOCTest extends AbstractTest {
     const shouldFail = testCase.$.should_fail === 'true';
     const failures = parseInt(testCase.OverallResultsAsserts[0].$.failures) || 0;
     const expectedFailures = parseInt(testCase.OverallResultsAsserts[0].$.expected_failures) || 0;
-    const hadException = testCase.Exception !== undefined;
+    const hasException = testCase.Exception !== undefined;
+    const timeoutSec = parseInt(testCase.$.timeout) || undefined;
+    const hasTimedOut = timeoutSec !== undefined && durationSec !== undefined ? durationSec > timeoutSec : false;
 
+    // The logic is coming from the console output of ./doctest1.exe
     if (shouldFail) {
-      if (failures || hadException) testEventBuilder.passed();
+      if (failures > 0 || hasException || hasTimedOut) testEventBuilder.passed();
       else testEventBuilder.failed();
     } else if (mayFail) {
       testEventBuilder.passed();
-    } else if (expectedFailures) {
-      if (hadException || expectedFailures !== failures) testEventBuilder.failed();
-      else testEventBuilder.passed();
     } else {
-      if (failures || hadException) testEventBuilder.failed();
+      if (expectedFailures !== failures || hasException || hasTimedOut) testEventBuilder.failed();
       else testEventBuilder.passed();
     }
 
