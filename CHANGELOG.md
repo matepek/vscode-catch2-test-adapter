@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.31]
+
+### Added / Fixed
+
+- doctest: supporting `may_fail`, `should_fail` and `expected_failures` modifiers.
+
 ### Changed
 
 - activation event is `onStartupFinished` from now. This mean stat the extension will be activated every timethe vscode is opened.

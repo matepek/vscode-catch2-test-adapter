@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import { TestAdapter, settings, isWin, waitFor } from './Common';
 import { DefaultSpawner } from '../src/Spawner';
 import * as c2fs from '../src/util/FSWrapper';
+import { TestRunEvent } from '../src/SharedVariables';
 
 ///
 
@@ -47,6 +48,22 @@ async function spawn(command: string, cwd: string, ...args: string[]): Promise<v
     c.stderr.on('data', x => (proc.output += x.toString()));
   });
 }
+
+const runStateSummer: () => [
+  (stat: Record<string, number>, curr: TestRunEvent) => Record<string, number>,
+  Record<string, number>,
+] = () => {
+  return [
+    (stat: Record<string, number>, curr: TestRunEvent): Record<string, number> => {
+      if (curr.type === 'test') {
+        if (curr.state in stat) stat[curr.state]++;
+        else stat[curr.state] = 1;
+      }
+      return stat;
+    },
+    {},
+  ];
+};
 
 ///
 
@@ -156,6 +173,14 @@ describe(path.basename(__filename), function () {
           }),
         ),
       );
+
+      const states = adapter.stateEvents.reduceRight<Record<string, number>>(...runStateSummer());
+      assert.deepStrictEqual(states, {
+        errored: 6,
+        failed: 5,
+        passed: 31,
+        running: 36,
+      });
     });
 
     it.skip('should be notified by watcher', async function () {
@@ -248,6 +273,12 @@ describe(path.basename(__filename), function () {
       const eventCount = adapter.stateEvents.length;
       await adapter.run([adapter.root.id]);
       assert.strictEqual(adapter.stateEvents.length - eventCount, 52, inspect(adapter.stateEvents));
+      const states = adapter.stateEvents.reduceRight<Record<string, number>>(...runStateSummer());
+      assert.deepStrictEqual(states, {
+        failed: 14,
+        passed: 3,
+        running: 17,
+      });
     });
   });
 
@@ -277,7 +308,13 @@ describe(path.basename(__filename), function () {
 
       const eventCount = adapter.stateEvents.length;
       await adapter.run([adapter.root.id]);
-      assert.strictEqual(adapter.stateEvents.length - eventCount, 32);
+      assert.strictEqual(adapter.stateEvents.length - eventCount, 68);
+      const states = adapter.stateEvents.reduceRight<Record<string, number>>(...runStateSummer());
+      assert.deepStrictEqual(states, {
+        failed: 10,
+        passed: 22,
+        running: 32,
+      });
     });
   });
 

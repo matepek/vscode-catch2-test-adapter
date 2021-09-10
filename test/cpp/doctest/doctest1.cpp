@@ -151,3 +151,29 @@ TEST_CASE("  starts with double space and ends with 2 more ") {}
 TEST_CASE("exception1") { throw std::runtime_error("exeception msg"); }
 
 TEST_CASE("testwith,char") { CHECK(false); }
+
+TEST_CASE("test may_fail:true" * doctest::may_fail()) { CHECK(true); }
+TEST_CASE("test may_fail:false" * doctest::may_fail()) { CHECK(false); }
+TEST_CASE("test may_fail:exception" * doctest::may_fail()) { throw std::runtime_error("exeception msg"); }
+TEST_CASE("test may_fail:sub exception" * doctest::may_fail()) { DOCTEST_SUBCASE("sub") { throw std::runtime_error("exeception msg"); } }
+
+TEST_CASE("test should_fail:true" * doctest::should_fail()) { CHECK(true); }
+TEST_CASE("test should_fail:false" * doctest::should_fail()) { CHECK(false); }
+TEST_CASE("test should_fail:exception" * doctest::should_fail()) { throw std::runtime_error("exeception msg"); }
+
+
+TEST_CASE("test expected_failures:true" * doctest::expected_failures(1)) { CHECK(true); }
+TEST_CASE("test expected_failures:false" * doctest::expected_failures(1)) { CHECK(false); }
+TEST_CASE("test expected_failures:exception" * doctest::expected_failures(1)) { throw std::runtime_error("exeception msg"); }
+
+TEST_CASE("test mix: may_fail & should_fail:exception" * doctest::may_fail() * doctest::should_fail() ) { throw std::runtime_error("exeception msg"); }
+
+TEST_CASE("test mix: may_fail & expected_failures: false" * doctest::may_fail() * doctest::expected_failures(1)) { CHECK(false); }
+TEST_CASE("test mix: may_fail & expected_failures: false false" * doctest::may_fail() * doctest::expected_failures(1)) { CHECK(false); CHECK(false); }
+
+TEST_CASE("test mix: should_fail & expected_failures: false" * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); }
+TEST_CASE("test mix: should_fail & expected_failures: false false" * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); CHECK(false); }
+
+TEST_CASE("test mix: may_fail & should_fail & expected_failures: true" * doctest::may_fail() * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(true); }
+TEST_CASE("test mix: may_fail & should_fail & expected_failures: false" * doctest::may_fail() * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); }
+TEST_CASE("test mix: may_fail & should_fail & expected_failures: false false" * doctest::may_fail() * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); CHECK(false); }

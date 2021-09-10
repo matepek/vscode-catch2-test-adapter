@@ -139,10 +139,23 @@ export class DOCTest extends AbstractTest {
 
     const title: DOCSection = new DOCSection(testCase.$.name, testCase.$.filename, testCase.$.line);
 
-    if (testCase.OverallResultsAsserts[0].$.failures === '0' && testCase.Exception === undefined) {
+    const mayFail = testCase.$.may_fail === 'true';
+    const shouldFail = testCase.$.should_fail === 'true';
+    const failures = parseInt(testCase.OverallResultsAsserts[0].$.failures) || 0;
+    const expectedFailures = parseInt(testCase.OverallResultsAsserts[0].$.expected_failures) || 0;
+    const hadException = testCase.Exception !== undefined;
+
+    if (shouldFail) {
+      if (failures || hadException) testEventBuilder.passed();
+      else testEventBuilder.failed();
+    } else if (mayFail) {
       testEventBuilder.passed();
+    } else if (expectedFailures) {
+      if (hadException || expectedFailures !== failures) testEventBuilder.failed();
+      else testEventBuilder.passed();
     } else {
-      testEventBuilder.failed();
+      if (failures || hadException) testEventBuilder.failed();
+      else testEventBuilder.passed();
     }
 
     this._processTags(testCase, title, [], testEventBuilder);
@@ -225,9 +238,6 @@ export class DOCTest extends AbstractTest {
       if (xml.Exception) {
         for (let j = 0; j < xml.Exception.length; ++j) {
           const e = xml.Exception[j];
-
-          testEventBuilder.failed();
-
           testEventBuilder.appendMessage('Exception was thrown: ' + e._.trim(), 0);
         }
       }
