@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added / Fixed
 
-- doctest: supporting `may_fail`, `should_fail` and `expected_failures` modifiers.
+- doctest: supporting `may_fail`, `should_fail`, `timeout` and `expected_failures` modifiers.
 
 ### Changed
 
