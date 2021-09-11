@@ -65,6 +65,7 @@ export class DOCRunnable extends AbstractRunnable {
       const line: number | undefined = testCase.line !== undefined ? Number(testCase.line) - 1 : undefined;
       const skippedOpt: boolean | undefined = testCase.skipped !== undefined ? testCase.skipped === 'true' : undefined;
       const suite: string | undefined = testCase.testsuite !== undefined ? testCase.testsuite : undefined;
+      const description: string | undefined = testCase.description;
 
       const tags = suite !== undefined ? [`${suite}`] : [];
       const skipped = skippedOpt !== undefined ? skippedOpt : false;
@@ -76,7 +77,8 @@ export class DOCRunnable extends AbstractRunnable {
           testName,
           filePath,
           tags,
-          (parent: Suite) => new DOCTest(this._shared, this, parent, testName, skipped, filePath, line, tags),
+          (parent: Suite) =>
+            new DOCTest(this._shared, this, parent, testName, skipped, filePath, line, tags, description),
           (old: AbstractTest): boolean => (old as DOCTest).update(filePath, line, tags, skipped),
         )),
       );

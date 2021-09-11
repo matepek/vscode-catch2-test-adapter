@@ -1348,7 +1348,7 @@ describe(path.basename(__filename), function () {
       [
         folder: vscode.WorkspaceFolder | undefined,
         nameOrConfiguration: string | vscode.DebugConfiguration,
-        parentSessionOrOptions?: vscode.DebugSession | vscode.DebugSessionOptions | undefined,
+        parentSessionOrOptions?: vscode.DebugSession | undefined,
       ],
       Thenable<boolean>
     >;
