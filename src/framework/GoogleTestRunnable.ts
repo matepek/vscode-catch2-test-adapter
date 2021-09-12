@@ -6,7 +6,7 @@ import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { GoogleTestTest } from './GoogleTestTest';
 import { Parser } from 'xml2js';
 import { RunnableProperties } from '../RunnableProperties';
-import { SharedVariables } from '../SharedVariables';
+import { WorkspaceShared } from '../WorkspaceShared';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
@@ -15,13 +15,12 @@ import { RootSuite } from '../RootSuite';
 
 export class GoogleTestRunnable extends AbstractRunnable {
   public constructor(
-    shared: SharedVariables,
-    rootSuite: RootSuite,
+    shared: WorkspaceShared,
     execInfo: RunnableProperties,
     private readonly _argumentPrefix: string,
     version: Promise<Version | undefined>,
   ) {
-    super(shared, rootSuite, execInfo, 'GoogleTest', version);
+    super(shared, execInfo, 'GoogleTest', version);
   }
 
   private getTestGrouping(): TestGrouping {

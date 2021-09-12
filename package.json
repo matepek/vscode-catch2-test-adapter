@@ -50,9 +50,7 @@
     "vscode:prepublish": "webpack --config webpack.config.js --mode production",
     "webpack": "webpack --config webpack.config.js --mode development"
   },
-  "extensionDependencies": [
-    "hbenl.vscode-test-explorer"
-  ],
+  "extensionDependencies": [],
   "dependencies": {
     "@types/ps-node": "^0.1.1",
     "gaze": "^1.1.3",
@@ -74,7 +72,7 @@
     "@types/request-promise": "4.1.48",
     "@types/sinon": "^10.0.2",
     "@types/source-map-support": "^0.5.4",
-    "@types/vscode": "1.38.0",
+    "@types/vscode": "1.60.0",
     "@types/xml2js": "^0.4.9",
     "@typescript-eslint/eslint-plugin": "^4.31.0",
     "@typescript-eslint/parser": "^4.31.0",

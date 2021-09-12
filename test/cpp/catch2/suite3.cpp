@@ -25,7 +25,7 @@ TEST_CASE("SECTION tree") {
     }
     SECTION("2-2") {
       SECTION("3") {
-        SECTION("4") { REQUIRE(std::false_type::value); }
+        SECTION("4") { REQUIRE(std::true_type::value); }
       }
     }
   }

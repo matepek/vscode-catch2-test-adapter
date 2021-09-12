@@ -14,7 +14,7 @@ import { AbstractRunnable } from './AbstractRunnable';
 import { Configurations, Config } from './Configurations';
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
-import { AbstractTest, AbstractTestEvent } from './AbstractTest';
+import { AbstractTest } from './AbstractTest';
 import { createPythonIndexerForPathVariable, ResolveRuleAsync, resolveVariablesAsync } from './util/ResolveRule';
 import { inspect } from 'util';
 
@@ -452,7 +452,7 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       this._rootSuite = new RootSuite(this._rootSuite.id, this._shared);
 
-      const exec = configuration.getExecutables(this._shared);
+      const exec = configuration.getExecutableConfigs(this._shared);
 
       return await this._shared.loadWithTask(() => {
         return this._rootSuite.load(exec);

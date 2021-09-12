@@ -1,10 +1,10 @@
+import * as vscode from 'vscode';
 import * as xml2js from 'xml2js';
-import { AbstractTest, StaticTestEventBase, AbstractTestEvent, SharedWithTest } from '../AbstractTest';
+import { AbstractTest, SharedWithTest } from '../AbstractTest';
 import { inspect } from 'util';
 import { TestEventBuilder } from '../TestEventBuilder';
 import * as pathlib from 'path';
-import { Version } from '../Util';
-import { Suite } from '../Suite';
+import { generateId, Version } from '../Util';
 import { AbstractRunnable } from '../AbstractRunnable';
 
 interface XmlObject {
@@ -37,7 +37,6 @@ export class Catch2Test extends AbstractTest {
   public constructor(
     shared: SharedWithTest,
     runnable: AbstractRunnable,
-    parent: Suite,
     frameworkVersion: Version | undefined,
     testNameAsId: string,
     tags: string[],
@@ -54,39 +53,27 @@ export class Catch2Test extends AbstractTest {
       '±',
       '§',
     ];
-    const forceIgnoreEvent: StaticTestEventBase | undefined =
+    const forceIgnoreError: string[] | undefined =
       frameworkVersion &&
       frameworkVersion.smaller(EscapeCharParserFix) &&
       badChars.some(b => testNameAsId.indexOf(b) != -1)
-        ? ({
-            state: 'errored',
-            message: [
-              '⚡️ This extension is unable to run this test.',
-              '',
-              `Current Catch2 framework version ${frameworkVersion} has a bug (https://github.com/catchorg/Catch2/issues/1905).`,
-              `Update your framework to at least ${EscapeCharParserFix}.`,
-              'Avoid test names with the following characters: ' + badChars.map(b => `'${b}'`).join(', ') + '.',
-            ].join('\n'),
-            description: '⚡️ Run me for details ⚡️',
-            decorations: [
-              {
-                line: line,
-                message: 'Invalid character in test name. Check the output.',
-              },
-            ],
-          } as StaticTestEventBase)
+        ? [
+            '⚡️ This extension is unable to run this test.',
+            `Current Catch2 framework version ${frameworkVersion} has a bug (https://github.com/catchorg/Catch2/issues/1905).`,
+            `Update your framework to at least ${EscapeCharParserFix}.`,
+            'Avoid test names with the following characters: ' + badChars.map(b => `'${b}'`).join(', ') + '.',
+          ]
         : undefined;
 
     super(
       shared,
       runnable,
-      parent,
       testNameAsId,
       testNameAsId,
       file,
       line,
       Catch2Test._isSkipped(tags, testNameAsId),
-      forceIgnoreEvent,
+      forceIgnoreError,
       tags,
       description,
       undefined,
@@ -134,16 +121,22 @@ export class Catch2Test extends AbstractTest {
   }
 
   public parseAndProcessTestCase(
-    testRunId: string,
+    testRun: vscode.TestRun,
     output: string,
     rngSeed: number | undefined,
     timeout: number | null,
     stderr: string | undefined,
-  ): AbstractTestEvent {
+  ): void {
+    const resultBuilder = new TestEventBuilder(this, testRun);
+
     if (timeout !== null) {
-      const ev = this.getTimeoutEvent(testRunId, timeout);
-      this.lastRunEvent = ev;
-      return ev;
+      resultBuilder.appendOutput(
+        '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + timeout / 1000 + ' second(s).',
+        undefined,
+        undefined,
+      );
+      resultBuilder.build();
+      return;
     }
 
     let res: XmlObject = {};
@@ -155,60 +148,58 @@ export class Catch2Test extends AbstractTest {
       }
     });
 
-    const testEventBuilder = new TestEventBuilder(this, testRunId);
+    if (rngSeed) resultBuilder.appendOutput(`🔀 Randomness seeded to: ${rngSeed.toString()}`, 0);
 
-    if (rngSeed) testEventBuilder.appendMessage(`🔀 Randomness seeded to: ${rngSeed.toString()}`, 0);
-
-    this._processXmlTagTestCaseInner(res.TestCase, testEventBuilder);
+    this._processXmlTagTestCaseInner(res.TestCase, resultBuilder);
 
     if (stderr) {
-      testEventBuilder.appendMessage('stderr arrived during running this test', null);
-      testEventBuilder.appendMessage('⬇ std::cerr:', null);
-      testEventBuilder.appendMessage(stderr, 1);
-      testEventBuilder.appendMessage('⬆ std::cerr', null);
+      resultBuilder.appendOutput('stderr arrived during running this test', undefined);
+      resultBuilder.appendOutput('⬇ std::cerr:', undefined);
+      resultBuilder.appendOutput(stderr, 1);
+      resultBuilder.appendOutput('⬆ std::cerr', undefined);
     }
 
-    const testEvent = testEventBuilder.build();
+    const testEvent = resultBuilder.build();
 
     return testEvent;
   }
 
-  private _processXmlTagTestCaseInner(testCase: XmlObject, testEventBuilder: TestEventBuilder): void {
+  private _processXmlTagTestCaseInner(testCase: XmlObject, resultBuilder: TestEventBuilder): void {
     if (testCase.OverallResult[0].$.hasOwnProperty('durationInSeconds'))
-      testEventBuilder.setDurationMilisec(Number(testCase.OverallResult[0].$.durationInSeconds) * 1000);
+      resultBuilder.setDurationMilisec(Number(testCase.OverallResult[0].$.durationInSeconds) * 1000);
 
     if (testCase._) {
-      testEventBuilder.appendMessage('⬇ std::cout:', 1);
-      testEventBuilder.appendMessage(testCase._.trim(), 2);
-      testEventBuilder.appendMessage('⬆ std::cout', 1);
+      resultBuilder.appendOutput('⬇ std::cout:', 1);
+      resultBuilder.appendOutput(testCase._.trim(), 2);
+      resultBuilder.appendOutput('⬆ std::cout', 1);
     }
 
     const main: Catch2Section = new Catch2Section(testCase.$.name, testCase.$.filename, testCase.$.line);
 
-    this._processTags(testCase, main, [], testEventBuilder);
+    this._processTags(testCase, main, [], resultBuilder);
 
-    this._processXmlTagSections(testCase, main, [], testEventBuilder, main);
+    this._processXmlTagSections(testCase, main, [], resultBuilder, main);
 
     this._sections = main.children;
 
     if (testCase.OverallResult[0].StdOut) {
-      testEventBuilder.appendMessage('⬇ std::cout:', 1);
+      resultBuilder.appendOutput('⬇ std::cout:', 1);
       for (let i = 0; i < testCase.OverallResult[0].StdOut.length; i++)
-        testEventBuilder.appendMessage(testCase.OverallResult[0].StdOut[i].trim(), 2);
-      testEventBuilder.appendMessage('⬆ std::cout', 1);
+        resultBuilder.appendOutput(testCase.OverallResult[0].StdOut[i].trim(), 2);
+      resultBuilder.appendOutput('⬆ std::cout', 1);
     }
 
     if (testCase.OverallResult[0].StdErr) {
-      testEventBuilder.appendMessage('⬇ std::cerr:', 1);
+      resultBuilder.appendOutput('⬇ std::cerr:', 1);
       for (let i = 0; i < testCase.OverallResult[0].StdErr.length; i++)
-        testEventBuilder.appendMessage(testCase.OverallResult[0].StdErr[i].trim(), 2);
-      testEventBuilder.appendMessage('⬆ std::cerr', 1);
+        resultBuilder.appendOutput(testCase.OverallResult[0].StdErr[i].trim(), 2);
+      resultBuilder.appendOutput('⬆ std::cerr', 1);
     }
 
     if (testCase.OverallResult[0].$.success === 'true') {
-      testEventBuilder.passed();
+      resultBuilder.passed();
     } else {
-      testEventBuilder.failed();
+      resultBuilder.failed();
     }
 
     if (this._sections.length) {
@@ -229,8 +220,27 @@ export class Catch2Test extends AbstractTest {
 
       const branchMsg = (failedBranch ? '✘' + failedBranch + '|' : '') + '✔︎' + succBranch;
 
-      testEventBuilder.appendDescription(`ᛦ${branchMsg}ᛦ`);
-      testEventBuilder.appendTooltip(`ᛦ ${branchMsg} branches`);
+      resultBuilder.appendOutput(`ᛦ ${branchMsg} branches`, 1);
+      //this.item.children.replace([]);
+      this.item.canResolveChildren = true;
+    }
+  }
+
+  public expandSections(testRun: vscode.TestRun): void {
+    if (this._sections?.length) {
+      const generateBranchItems = (sections: Catch2Section[], itemCollection: vscode.TestItemCollection): void => {
+        for (const s of sections) {
+          const item = this._shared.testItemCreator(generateId(), s.name, s.filename, s.line, undefined);
+          itemCollection.add(item);
+
+          if (s.failed) testRun.failed(item, []);
+          else testRun.passed(item);
+
+          generateBranchItems(s.children, item.children);
+        }
+      };
+
+      generateBranchItems(this._sections, this.item.children);
     }
   }
 
@@ -253,22 +263,22 @@ export class Catch2Test extends AbstractTest {
     xml: XmlObject,
     main: Catch2Section,
     stack: Catch2Section[],
-    testEventBuilder: TestEventBuilder,
+    resultBuilder: TestEventBuilder,
   ): void {
     {
       Object.getOwnPropertyNames(xml).forEach(n => {
         if (!Catch2Test._expectedPropertyNames.has(n)) {
           this._shared.log.error('unexpected Catch2 tag: ' + n);
-          testEventBuilder.appendMessage('unexpected Catch2 tag:' + n, 0);
-          testEventBuilder.errored();
+          resultBuilder.appendOutput('unexpected Catch2 tag:' + n, 0);
+          resultBuilder.errored();
         }
       });
     }
 
     if (xml._) {
-      testEventBuilder.appendMessage('⬇ std::cout:', 1);
-      testEventBuilder.appendMessage(xml._.trim(), 2);
-      testEventBuilder.appendMessage('⬆ std::cout', 1);
+      resultBuilder.appendOutput('⬇ std::cout:', 1);
+      resultBuilder.appendOutput(xml._.trim(), 2);
+      resultBuilder.appendOutput('⬆ std::cout', 1);
     }
 
     if (xml.Info) {
@@ -277,12 +287,12 @@ export class Catch2Test extends AbstractTest {
           const piece = xml.Info[i];
           const location =
             piece.$ && piece.$.filename && piece.$.line ? ` (at ${piece.$.filename}:${piece.$.line})` : '';
-          testEventBuilder.appendMessage(`⬇ Info:${location}`, 1);
-          testEventBuilder.appendMessage(piece, 2);
-          testEventBuilder.appendMessage('⬆ Info', 1);
+          resultBuilder.appendOutput(`⬇ Info:${location}`, 1);
+          resultBuilder.appendOutput(piece, 2);
+          resultBuilder.appendOutput('⬆ Info', 1);
         } catch (e) {
           this._shared.log.exceptionS(e);
-          testEventBuilder.appendMessage('Error during processing output', 2);
+          resultBuilder.appendOutput('Error during processing output', 2);
         }
       }
     }
@@ -291,14 +301,11 @@ export class Catch2Test extends AbstractTest {
       for (let i = 0; i < xml.Warning.length; i++) {
         try {
           const piece = xml.Warning[i];
-          const location =
-            piece.$ && piece.$.filename && piece.$.line ? ` (at ${piece.$.filename}:${piece.$.line})` : '';
-          testEventBuilder.appendMessage(`⬇ Warning${location}:`, 1);
-          testEventBuilder.appendMessageWithDecorator(piece.$.filename, Number(piece.$.line) - 1, piece, 2);
-          testEventBuilder.appendMessage('⬆ Warning', 1);
+
+          resultBuilder.addMessage(undefined, undefined, 'Warning', piece.trim());
         } catch (e) {
           this._shared.log.exceptionS(e);
-          testEventBuilder.appendMessage('Error during processing output', 2);
+          resultBuilder.appendOutput('Error during processing output', 2);
         }
       }
     }
@@ -307,18 +314,12 @@ export class Catch2Test extends AbstractTest {
       for (let i = 0; i < xml.Failure.length; i++) {
         try {
           const piece = xml.Failure[i];
-          const location =
-            piece.$ && piece.$.filename && piece.$.line ? ` (at ${piece.$.filename}:${piece.$.line})` : '';
-          testEventBuilder.appendMessage(`⬇ Failure${location}:`, 1);
-          if (typeof piece._ !== 'string') this._shared.log.warn('No _ under failure', piece);
-
           const msg = typeof piece._ === 'string' ? piece._.trim() : piece.toString();
 
-          testEventBuilder.appendMessageWithDecorator(piece.$.filename, Number(piece.$.line) - 1, msg, 2);
-          testEventBuilder.appendMessage('⬆ Failure', 1);
+          resultBuilder.addMessage(piece.$?.filename, piece.$?.line, 'Failure', msg);
         } catch (e) {
           this._shared.log.exceptionS(e);
-          testEventBuilder.appendMessage('Error during processing output', 2);
+          resultBuilder.appendOutput('Error during processing output', 2);
         }
       }
     }
@@ -326,7 +327,7 @@ export class Catch2Test extends AbstractTest {
     try {
       if (xml.BenchmarkResults) {
         for (let i = 0; i < xml.BenchmarkResults.length; i++) {
-          this._processBenchmark(xml.BenchmarkResults[i], stack, testEventBuilder);
+          this._processBenchmark(xml.BenchmarkResults[i], stack, resultBuilder);
         }
       }
     } catch (e) {
@@ -338,23 +339,12 @@ export class Catch2Test extends AbstractTest {
         try {
           const expr = xml.Expression[i];
           const file = expr.$.filename;
-          const line = Number(expr.$.line);
+          const line = expr.$.line;
+          const type = expr.$.type;
+          const original = expr.Original[0].trim();
+          const expanded = expr.Expanded[0].trim();
 
-          const message =
-            '❕Original:  ' +
-            expr.Original.map((x: string) => x.trim()).join('; ') +
-            '\n' +
-            '❗️Expanded:  ' +
-            expr.Expanded.map((x: string) => x.trim()).join('; ');
-
-          testEventBuilder.appendMessage(`Expression failed (at ${file}:${line}):`, 1);
-          testEventBuilder.appendMessage(message, 2);
-          testEventBuilder.appendDecorator(
-            file,
-            line - 1,
-            expr.Expanded.map((x: string) => x.trim()).join(' | '),
-            message,
-          );
+          resultBuilder.addExpression(file, line, original, expanded, type);
         } catch (e) {
           this._shared.log.exceptionS(e);
         }
@@ -366,10 +356,11 @@ export class Catch2Test extends AbstractTest {
         const piece = xml.Exception[i];
         if (typeof piece._ !== 'string') this._shared.log.warn('No _ under exception', piece);
 
+        const file = piece.$.filename;
+        const line = piece.$.line;
         const msg = typeof piece._ === 'string' ? piece._.trim() : piece.toString();
 
-        testEventBuilder.appendMessage(`${msg} (at ${piece.$.filename}:${piece.$.line})`, 1);
-        testEventBuilder.appendDecorator(piece.$.filename, Number(piece.$.line) - 1, `Exception was thrown: ${msg}`);
+        resultBuilder.addMessage(file, line, 'Exception: `' + msg + '`');
       } catch (e) {
         this._shared.log.exceptionS(e);
       }
@@ -379,14 +370,11 @@ export class Catch2Test extends AbstractTest {
       for (let i = 0; i < xml.FatalErrorCondition.length; ++i) {
         try {
           const piece = xml.FatalErrorCondition[i];
-          const location = piece.$.filename && piece.$.line ? ` (at ${piece.$.filename}:${piece.$.line})` : '';
-          testEventBuilder.appendMessage(`⬇ FatalErrorCondition${location}:`, 1);
-          testEventBuilder.appendMessage(piece._, 2);
-          testEventBuilder.appendDecorator(piece.$.filename, Number(piece.$.line) - 1, piece._);
-          testEventBuilder.appendMessage('⬆ FatalErrorCondition', 1);
+          resultBuilder.addMessage(piece.$.filename, piece.$.line, 'FatalErrorCondition', piece._);
         } catch (error) {
           this._shared.log.exceptionS(error);
-          testEventBuilder.appendMessage('Unknown fatal error: ' + inspect(error), 1);
+          resultBuilder.appendOutput('Unknown fatal error: ' + inspect(error), 1);
+          resultBuilder.errored();
         }
       }
     }
@@ -396,7 +384,7 @@ export class Catch2Test extends AbstractTest {
     xml: XmlObject,
     main: Catch2Section,
     stack: Catch2Section[],
-    testEventBuilder: TestEventBuilder,
+    resultBuilder: TestEventBuilder,
     parentSection: Catch2Section,
   ): void {
     for (let j = 0; xml.Section && j < xml.Section.length; ++j) {
@@ -427,26 +415,26 @@ export class Catch2Test extends AbstractTest {
 
         const msg = `⮑ ${isLeaf ? (currSection.failed ? '❌' : '✅') : ''}"${currSection.name}"`;
 
-        testEventBuilder.appendMessage(msg, stack.length, 3);
+        resultBuilder.appendOutput(msg, stack.length, 3);
 
         const currStack = stack.concat(currSection);
 
-        this._processTags(section, main, currStack, testEventBuilder);
+        this._processTags(section, main, currStack, resultBuilder);
 
-        this._processXmlTagSections(section, main, currStack, testEventBuilder, currSection);
+        this._processXmlTagSections(section, main, currStack, resultBuilder, currSection);
       } catch (error) {
-        testEventBuilder.appendMessage('Fatal error processing section', 0);
+        resultBuilder.appendOutput('Fatal error processing section', 0);
         this._shared.log.exceptionS(error);
       }
     }
   }
 
-  private _processBenchmark(benchmark: XmlObject, stack: Catch2Section[], testEventBuilder: TestEventBuilder): void {
+  private _processBenchmark(benchmark: XmlObject, stack: Catch2Section[], resultBuilder: TestEventBuilder): void {
     const currSection = new Catch2Section(benchmark.$.name, undefined, 0);
 
     const msg = `⮑ benchmark of "${currSection.name}"`;
 
-    testEventBuilder.appendMessage(msg, stack.length, 3);
+    resultBuilder.appendOutput(msg, stack.length, 3);
 
     for (let j = 0; benchmark.mean && j < benchmark.mean.length; ++j) {
       const mean = benchmark.mean[j].$;
@@ -454,7 +442,7 @@ export class Catch2Test extends AbstractTest {
         .filter(n => n !== 'value')
         .map(key => `${key}: ${mean[key]} ns`)
         .join(', ');
-      testEventBuilder.appendMessage(`Mean: ${mean.value} ns  (${params})`, 2);
+      resultBuilder.appendOutput(`Mean: ${mean.value} ns  (${params})`, 2);
     }
 
     for (let j = 0; benchmark.standardDeviation && j < benchmark.standardDeviation.length; ++j) {
@@ -463,7 +451,7 @@ export class Catch2Test extends AbstractTest {
         .filter(n => n !== 'value')
         .map(key => `${key}: ${standardDeviation[key]} ns`)
         .join(', ');
-      testEventBuilder.appendMessage(`Standard Deviation: ${standardDeviation.value} ns  (${params})`, 2);
+      resultBuilder.appendOutput(`Standard Deviation: ${standardDeviation.value} ns  (${params})`, 2);
     }
 
     for (let j = 0; benchmark.outliers && j < benchmark.outliers.length; ++j) {
@@ -471,10 +459,10 @@ export class Catch2Test extends AbstractTest {
       const params = Object.keys(outliers)
         .map(key => `${key}: ${outliers[key]} ns`)
         .join(', ');
-      testEventBuilder.appendMessage(`Outliers: ${params}`, 2);
+      resultBuilder.appendOutput(`Outliers: ${params}`, 2);
     }
 
-    testEventBuilder.appendMessage(
+    resultBuilder.appendOutput(
       'Parameters: ' +
         Object.keys(benchmark.$)
           .filter(n => n !== 'name')

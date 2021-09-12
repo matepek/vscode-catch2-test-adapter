@@ -5,7 +5,7 @@ import { Suite } from '../Suite';
 import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { GoogleBenchmarkTest } from './GoogleBenchmarkTest';
 import { RunnableProperties } from '../RunnableProperties';
-import { SharedVariables } from '../SharedVariables';
+import { WorkspaceShared } from '../WorkspaceShared';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { AbstractTest } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
@@ -13,13 +13,8 @@ import { TestGrouping } from '../TestGroupingInterface';
 import { RootSuite } from '../RootSuite';
 
 export class GoogleBenchmarkRunnable extends AbstractRunnable {
-  public constructor(
-    shared: SharedVariables,
-    rootSuite: RootSuite,
-    execInfo: RunnableProperties,
-    version: Promise<Version | undefined>,
-  ) {
-    super(shared, rootSuite, execInfo, 'GoogleBenchmark', version);
+  public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, version: Promise<Version | undefined>) {
+    super(shared, execInfo, 'GoogleBenchmark', version);
   }
 
   private getTestGrouping(): TestGrouping {

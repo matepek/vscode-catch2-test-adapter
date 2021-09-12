@@ -1,17 +1,16 @@
+import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 import * as xml2js from 'xml2js';
 
 import { RunnableProperties } from '../RunnableProperties';
-import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
-import { Suite } from '../Suite';
+import { AbstractRunnable } from '../AbstractRunnable';
 import { Catch2Test } from './Catch2Test';
-import { SharedVariables } from '../SharedVariables';
+import { WorkspaceShared } from '../WorkspaceShared';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
-import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
+import { AbstractTest } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
-import { RootSuite } from '../RootSuite';
 
 interface XmlObject {
   [prop: string]: any; //eslint-disable-line
@@ -19,12 +18,11 @@ interface XmlObject {
 
 export class Catch2Runnable extends AbstractRunnable {
   public constructor(
-    shared: SharedVariables,
-    rootSuite: RootSuite,
+    shared: WorkspaceShared,
     execInfo: RunnableProperties,
     private readonly _catch2Version: Version | undefined,
   ) {
-    super(shared, rootSuite, execInfo, 'Catch2', Promise.resolve(_catch2Version));
+    super(shared, execInfo, 'Catch2', Promise.resolve(_catch2Version));
   }
 
   private getTestGrouping(): TestGrouping {
@@ -36,10 +34,7 @@ export class Catch2Runnable extends AbstractRunnable {
     }
   }
 
-  private async _reloadFromString(
-    testListOutput: string,
-    cancellationFlag: CancellationFlag,
-  ): Promise<RunnableReloadResult> {
+  private async _reloadFromString(testListOutput: string, cancellationFlag: CancellationFlag): Promise<void> {
     const testGrouping = this.getTestGrouping();
     const lines = testListOutput.split(/\r?\n/);
 
@@ -58,10 +53,8 @@ export class Catch2Runnable extends AbstractRunnable {
       throw Error('Wrong test list output format');
     }
 
-    const reloadResult = new RunnableReloadResult();
-
     while (i < lines.length) {
-      if (cancellationFlag.isCancellationRequested) return reloadResult;
+      if (cancellationFlag.isCancellationRequested) return;
 
       const m = lines[i].match(endRe);
       if (m !== null) break;
@@ -71,7 +64,7 @@ export class Catch2Runnable extends AbstractRunnable {
       if (lines[i].startsWith('    ')) {
         this._shared.log.warn('Probably too long test name', i, lines);
 
-        return this._createAndAddError(
+        this._createAndAddError(
           `⚡️ Too long test name`,
           [
             '⚠️ Probably too long test name or the test name starts with space characters!',
@@ -79,6 +72,8 @@ export class Catch2Runnable extends AbstractRunnable {
             '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
           ].join('\n'),
         );
+
+        return;
       }
       const testName = lines[i++].substr(2);
 
@@ -92,14 +87,14 @@ export class Catch2Runnable extends AbstractRunnable {
         if (match && match.length == 5) {
           const matchedPath = match[1] ? match[1] : match[3];
           filePath = matchedPath;
-          line = Number(match[2] ? match[2] : match[4]) - 1;
+          line = Number(match[2] ? match[2] : match[4]);
         } else {
           if (i < lines.length) {
             const match = (fileLine + lines[i].substr(4)).match(fileLineRe);
             if (match && match.length == 5) {
               const matchedPath = match[1] ? match[1] : match[3];
               filePath = matchedPath;
-              line = Number(match[2] ? match[2] : match[4]) - 1;
+              line = Number(match[2] ? match[2] : match[4]);
               i += 1;
             } else {
               if (i + 1 < lines.length) {
@@ -107,7 +102,7 @@ export class Catch2Runnable extends AbstractRunnable {
                 if (match && match.length == 5) {
                   const matchedPath = match[1] ? match[1] : match[3];
                   filePath = matchedPath;
-                  line = Number(match[2] ? match[2] : match[4]) - 1;
+                  line = Number(match[2] ? match[2] : match[4]);
                   i += 2;
                 } else {
                   this._shared.log.error('Could not find catch2 file info3', lines);
@@ -134,39 +129,23 @@ export class Catch2Runnable extends AbstractRunnable {
         ++i;
       }
 
-      reloadResult.add(
-        ...(await this._createSubtreeAndAddTest(
-          testGrouping,
-          testName,
-          testName,
-          filePath,
-          tags,
-          (parent: Suite) =>
-            new Catch2Test(
-              this._shared,
-              this,
-              parent,
-              this._catch2Version,
-              testName,
-              tags,
-              filePath,
-              line,
-              description,
-            ),
-          (old: AbstractTest): boolean => (old as Catch2Test).update(tags, filePath, line, description),
-        )),
+      await this._createSubtreeAndAddTest(
+        testGrouping,
+        testName,
+        testName,
+        filePath,
+        line,
+        tags,
+        description || undefined,
+        () => new Catch2Test(this._shared, this, this._catch2Version, testName, tags, filePath, line, description),
+        (test: AbstractTest) => (test as Catch2Test).update(tags, filePath, line, description),
       );
     }
 
     if (i >= lines.length) this._shared.log.error('Wrong test list output format #2', lines);
-
-    return reloadResult;
   }
 
-  private async _reloadFromXml(
-    testListOutput: string,
-    cancellationFlag: CancellationFlag,
-  ): Promise<RunnableReloadResult> {
+  private async _reloadFromXml(testListOutput: string, cancellationFlag: CancellationFlag): Promise<void> {
     const testGrouping = this.getTestGrouping();
 
     let res: XmlObject = {};
@@ -178,11 +157,9 @@ export class Catch2Runnable extends AbstractRunnable {
       }
     });
 
-    const reloadResult = new RunnableReloadResult();
-
     const testCases = res.MatchingTests.TestCase;
     for (let i = 0; i < testCases.length; ++i) {
-      if (cancellationFlag.isCancellationRequested) return reloadResult;
+      if (cancellationFlag.isCancellationRequested) return;
 
       const testCase = testCases[i];
 
@@ -190,8 +167,8 @@ export class Catch2Runnable extends AbstractRunnable {
       const filePath = testCase?.SourceInfo
         ? await this._resolveSourceFilePath(testCase?.SourceInfo[0].File[0])
         : undefined;
-      const line = testCase?.SourceInfo ? Number(testCase?.SourceInfo[0].Line[0]) - 1 : undefined;
-      const className = testCase.ClassName[0] ? testCase.ClassName[0] : undefined;
+      const line = testCase?.SourceInfo ? Number(testCase?.SourceInfo[0].Line[0]) : undefined;
+      const className = testCase.ClassName[0] || undefined;
 
       const tags: string[] = [];
       if (testCase.Tags[0]) {
@@ -199,24 +176,21 @@ export class Catch2Runnable extends AbstractRunnable {
         if (matches) matches.forEach((t: string) => tags.push(t.substring(1, t.length - 1)));
       }
 
-      reloadResult.add(
-        ...(await this._createSubtreeAndAddTest(
-          testGrouping,
-          testName,
-          testName,
-          filePath,
-          tags,
-          (parent: Suite) =>
-            new Catch2Test(this._shared, this, parent, this._catch2Version, testName, tags, filePath, line, className),
-          (old: AbstractTest): boolean => (old as Catch2Test).update(tags, filePath, line, className),
-        )),
+      await this._createSubtreeAndAddTest(
+        testGrouping,
+        testName,
+        testName,
+        filePath,
+        line,
+        tags,
+        className,
+        () => new Catch2Test(this._shared, this, this._catch2Version, testName, tags, filePath, line, className),
+        (test: AbstractTest) => (test as Catch2Test).update(tags, filePath, line, className),
       );
     }
-
-    return reloadResult;
   }
 
-  protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<RunnableReloadResult> {
+  protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<void> {
     const cacheFile = this.properties.path + '.TestMate.testListCache.txt';
 
     if (this._shared.enabledTestListCaching) {
@@ -231,9 +205,9 @@ export class Catch2Runnable extends AbstractRunnable {
           if (content === '') {
             this._shared.log.debug('loading from cache failed because file is empty');
           } else {
-            return this._catch2Version && this._catch2Version.major >= 3
-              ? await this._reloadFromXml(content, cancellationFlag)
-              : await this._reloadFromString(content, cancellationFlag);
+            if (this._catch2Version && this._catch2Version.major >= 3)
+              await this._reloadFromXml(content, cancellationFlag);
+            else await this._reloadFromString(content, cancellationFlag);
           }
         }
       } catch (e) {
@@ -262,7 +236,8 @@ export class Catch2Runnable extends AbstractRunnable {
 
     if (catch2TestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
       this._shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
-      return await this._createAndAddUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
+      await this._createAndAddUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
+      return;
     }
 
     if (catch2TestListOutput.stdout.length === 0) {
@@ -333,13 +308,12 @@ export class Catch2Runnable extends AbstractRunnable {
     return debugParams;
   }
 
-  protected _handleProcess(testRunId: string, runInfo: RunningRunnable): Promise<void> {
+  protected _handleProcess(testRun: vscode.TestRun, runInfo: RunningRunnable): Promise<void> {
     const data = new (class {
       public stdoutBuffer = '';
       public stderrBuffer = '';
       public inTestCase = false;
       public currentChild: AbstractTest | undefined = undefined;
-      public route: Suite[] = [];
       public beforeFirstTestCase = true;
       public rngSeed: number | undefined = undefined;
       public unprocessedXmlTestCases: [string, string][] = [];
@@ -391,13 +365,8 @@ export class Catch2Runnable extends AbstractRunnable {
             const test = this._findTest(v => v.compare(name));
 
             if (test) {
-              const route = [...test.route()];
-              this.sendMinimalEventsIfNeeded(testRunId, data.route, route);
-              data.route = route;
-
               data.currentChild = test;
-              this._shared.log.info('Test', data.currentChild.testNameAsId, 'has started.');
-              this._shared.sendTestRunEvent(data.currentChild.getStartEvent(testRunId));
+              test.started(testRun);
             } else {
               this._shared.log.info('TestCase not found in children', name);
             }
@@ -413,42 +382,36 @@ export class Catch2Runnable extends AbstractRunnable {
             if (data.currentChild !== undefined) {
               this._shared.log.info('Test ', data.currentChild.testNameAsId, 'has finished.');
               try {
-                const ev = data.currentChild.parseAndProcessTestCase(
-                  testRunId,
+                data.currentChild.parseAndProcessTestCase(
+                  testRun,
                   testCaseXml,
                   data.rngSeed,
                   runInfo.timeout,
                   data.stderrBuffer,
                 );
 
-                this._shared.sendTestRunEvent(ev);
-
                 data.processedTestCases.push(data.currentChild);
               } catch (e) {
                 this._shared.log.error('parsing and processing test', e, data, chunks, testCaseXml);
-                this._shared.sendTestRunEvent({
-                  type: 'test',
-                  test: data.currentChild,
-                  state: 'errored',
-                  message: [
-                    '😱 Unexpected error under parsing output !! Error: ' + inspect(e),
-                    'Consider opening an issue: https://github.com/matepek/vscode-catch2-test-adapter/issues/new/choose',
-                    `Please attach the output of: "${runInfo.process.spawnfile} ${runInfo.process.spawnargs}"`,
-                    '',
-                    '⬇ std::cout:',
-                    runInfo.process.stdout,
-                    '⬆ std::cout',
-                    '⬇ stdoutBuffer:',
-                    data.stdoutBuffer,
-                    '⬆ stdoutBuffer',
-                    '⬇ std::cerr:',
-                    runInfo.process.stderr,
-                    '⬆ std::cerr',
-                    '⬇ stderrBuffer:',
-                    data.stderrBuffer,
-                    '⬆ stderrBuffer',
-                  ].join('\n'),
-                });
+                data.currentChild.reportError(
+                  testRun,
+                  '😱 Unexpected error under parsing output !! Error: ' + inspect(e),
+                  'Consider opening an issue: https://github.com/matepek/vscode-catch2-test-adapter/issues/new/choose',
+                  `Please attach the output of: "${runInfo.process.spawnfile} ${runInfo.process.spawnargs}"`,
+                  '',
+                  '⬇ std::cout:',
+                  runInfo.process.stdout.toString(),
+                  '⬆ std::cout',
+                  '⬇ stdoutBuffer:',
+                  data.stdoutBuffer,
+                  '⬆ stdoutBuffer',
+                  '⬇ std::cerr:',
+                  runInfo.process.stderr.toString(),
+                  '⬆ std::cerr',
+                  '⬇ stderrBuffer:',
+                  data.stderrBuffer,
+                  '⬆ stderrBuffer',
+                );
               }
             } else {
               this._shared.log.info('<TestCase> found without TestInfo', this, testCaseXml);
@@ -494,42 +457,28 @@ export class Catch2Runnable extends AbstractRunnable {
         if (data.inTestCase) {
           if (data.currentChild !== undefined) {
             this._shared.log.info('data.currentChild !== undefined', data);
-            let ev: AbstractTestEvent;
 
             if (runInfo.cancellationToken.isCancellationRequested) {
-              ev = data.currentChild.getCancelledEvent(testRunId, data.stdoutBuffer);
+              data.currentChild.reportCancelled(testRun, data.stdoutBuffer);
             } else if (runInfo.timeout !== null) {
-              ev = data.currentChild.getTimeoutEvent(testRunId, runInfo.timeout);
+              data.currentChild.reportTimeout(testRun, runInfo.timeout); //TODO:failure
             } else {
-              ev = data.currentChild.getFailedEventBase(testRunId);
-
-              ev.message = '😱 Unexpected error !!';
-
-              if (result.error) {
-                ev.state = 'errored';
-                ev.message += '\n' + result.error.message;
-              }
-
-              ev.message += [
-                '',
+              data.currentChild.reportError(
+                testRun,
+                '😱 Unexpected error !!',
+                result.error?.message ?? '',
                 '⬇ std::cout:',
                 data.stdoutBuffer,
                 '⬆ std::cout',
                 '⬇ std::cerr:',
                 data.stderrBuffer,
                 '⬆ std::cerr',
-              ].join('\n');
+              );
             }
-
-            data.currentChild.lastRunEvent = ev;
-            this._shared.sendTestRunEvent(ev);
           } else {
             this._shared.log.warn('data.inTestCase: ', data);
           }
         }
-
-        this.sendMinimalEventsIfNeeded(testRunId, data.route, []);
-        data.route = [];
 
         const isTestRemoved =
           runInfo.timeout === null &&
@@ -538,18 +487,15 @@ export class Catch2Runnable extends AbstractRunnable {
           data.processedTestCases.length < runInfo.childrenToRun.length;
 
         if (data.unprocessedXmlTestCases.length > 0 || isTestRemoved) {
+          // TODO: we dont have to necesarily reload here
           this.reloadTests(this._shared.taskPool, runInfo.cancellationToken).then(
             () => {
               // we have test results for the newly detected tests
               // after reload we can set the results
-              const events: AbstractTestEvent[] = [];
-
               for (let i = 0; i < data.unprocessedXmlTestCases.length; i++) {
                 const [testCaseXml, stderr] = data.unprocessedXmlTestCases[i];
-
                 const m = testCaseXml.match(testCaseTagRe);
                 if (m == null || m.length != 1) break;
-
                 let name: string | undefined = undefined;
                 new xml2js.Parser({ explicitArray: true }).parseString(
                   m[0] + '</TestCase>',
@@ -562,25 +508,14 @@ export class Catch2Runnable extends AbstractRunnable {
                   },
                 );
                 if (name === undefined) break;
-
                 const currentChild = this._findTest(v => v.compare(name!));
-
                 if (currentChild === undefined) break;
-
                 try {
-                  const ev = currentChild.parseAndProcessTestCase(
-                    testRunId,
-                    testCaseXml,
-                    data.rngSeed,
-                    runInfo.timeout,
-                    stderr,
-                  );
-                  events.push(ev);
+                  currentChild.parseAndProcessTestCase(testRun, testCaseXml, data.rngSeed, runInfo.timeout, stderr);
                 } catch (e) {
                   this._shared.log.error('parsing and processing test', e, testCaseXml);
                 }
               }
-              events.length && this._shared.sendTestEvents(events);
             },
             (reason: Error) => {
               // Suite possibly deleted: It is a dead suite.

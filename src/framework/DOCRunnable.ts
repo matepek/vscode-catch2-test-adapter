@@ -6,7 +6,7 @@ import { AbstractRunnable, RunnableReloadResult } from '../AbstractRunnable';
 import { AbstractTest, AbstractTestEvent } from '../AbstractTest';
 import { Suite } from '../Suite';
 import { DOCTest } from './DOCTest';
-import { SharedVariables } from '../SharedVariables';
+import { WorkspaceShared } from '../WorkspaceShared';
 import { RunningRunnable, ProcessResult } from '../RunningRunnable';
 import { RunnableProperties } from '../RunnableProperties';
 import { CancellationFlag, Version } from '../Util';
@@ -18,13 +18,8 @@ interface XmlObject {
 }
 
 export class DOCRunnable extends AbstractRunnable {
-  public constructor(
-    shared: SharedVariables,
-    rootSuite: RootSuite,
-    execInfo: RunnableProperties,
-    docVersion: Version | undefined,
-  ) {
-    super(shared, rootSuite, execInfo, 'doctest', Promise.resolve(docVersion));
+  public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, docVersion: Version | undefined) {
+    super(shared, execInfo, 'doctest', Promise.resolve(docVersion));
   }
 
   private getTestGrouping(): TestGrouping {

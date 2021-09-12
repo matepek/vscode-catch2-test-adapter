@@ -43,3 +43,11 @@ TEST_CASE("throws an unexpected exception") {
   REQUIRE(true);
   //
 }
+
+TEST_CASE("warning") {
+  //
+  WARN("x warning x");
+
+  CHECK(2*2 == 5);
+  //
+}

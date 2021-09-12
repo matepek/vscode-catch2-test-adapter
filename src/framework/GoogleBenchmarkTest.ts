@@ -85,8 +85,8 @@ export class GoogleBenchmarkTest extends AbstractTest {
         const [timeUnitMultiplier, timeUnit] = this._getTimeUnitMultiplier(metric);
 
         if (typeof this._failIfExceedsLimitNs === 'number' && this._failIfExceedsLimitNs < value * timeUnitMultiplier) {
-          eventBuilder.appendMessage(`❌ Failed: "${key}" exceeded limit: ${this._failIfExceedsLimitNs} ns.`, null);
-          eventBuilder.appendMessage(' ', null);
+          eventBuilder.appendOutput(`❌ Failed: "${key}" exceeded limit: ${this._failIfExceedsLimitNs} ns.`, null);
+          eventBuilder.appendOutput(' ', null);
           eventBuilder.failed();
         }
 
@@ -97,11 +97,11 @@ export class GoogleBenchmarkTest extends AbstractTest {
       Object.keys(metric).forEach(key => {
         const value = metric[key];
         const value2 = typeof value === 'string' ? '"' + value + '"' : value;
-        eventBuilder.appendMessage(key + ': ' + value2, null);
+        eventBuilder.appendOutput(key + ': ' + value2, null);
       });
 
       if (stderr && stderr.length > 0) {
-        eventBuilder.appendMessage('stderr >>>\n' + stderr + '\n<<<', null);
+        eventBuilder.appendOutput('stderr >>>\n' + stderr + '\n<<<', null);
       }
 
       eventBuilder.passed();

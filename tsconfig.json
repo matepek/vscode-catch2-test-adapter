@@ -16,5 +16,5 @@
     "experimentalDecorators": true,
     "typeRoots": ["node_modules/@types", "src/@types"]
   },
-  "include": ["src/main.ts", "test/**/*.ts"]
+  "include": ["src/main.ts", "test/util/*.ts"] //TODO: test/**/*.ts
 }

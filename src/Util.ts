@@ -145,7 +145,7 @@ export function milisecToStr(durationInMilisec: number): string {
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { promisify } from 'util';
-import { SharedVariables } from './SharedVariables';
+import { LoggerWrapper } from './LoggerWrapper';
 type VersionT = [number, number, number];
 export class GoogleTestVersionFinder {
   private static readonly _versions: [number, VersionT][] = [
@@ -166,7 +166,7 @@ export class GoogleTestVersionFinder {
 
   private static _version: Promise<VersionT | undefined> | undefined = undefined;
 
-  public static Get(shared: SharedVariables): Promise<VersionT | undefined> {
+  public static Get(log: LoggerWrapper): Promise<VersionT | undefined> {
     if (this._version === undefined) {
       const cancellation = new vscode.CancellationTokenSource();
 
@@ -180,12 +180,12 @@ export class GoogleTestVersionFinder {
         .finally(() => cancellation.dispose())
         .then(async gtests => {
           if (gtests.length === 0) {
-            shared.log.warn('Google Test version not found');
+            log.warn('Google Test version not found');
             return undefined;
           }
 
           if (gtests.length > 1) {
-            shared.log.warn(
+            log.warn(
               'Google Test version: more than 1 has found',
               gtests.map(x => x.fsPath),
             );
@@ -214,16 +214,16 @@ export class GoogleTestVersionFinder {
             const resDistance = distance(res);
 
             if (resDistance < 50) {
-              shared.log.warn('Google Test version is not an exact match', fileSizeInBytes, resDistance, gtestPath);
+              log.warn('Google Test version is not an exact match', fileSizeInBytes, resDistance, gtestPath);
               return res[1];
             } else {
-              shared.log.warn('Google Test version size is not a match', fileSizeInBytes, resDistance, gtestPath);
+              log.warn('Google Test version size is not a match', fileSizeInBytes, resDistance, gtestPath);
               return undefined;
             }
           }
         })
         .catch(e => {
-          shared.log.exceptionS(e);
+          log.exceptionS(e);
           return undefined;
         });
     }

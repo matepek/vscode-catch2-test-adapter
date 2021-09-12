@@ -1,28 +1,17 @@
+import * as vscode from 'vscode';
 import * as path from 'path';
-import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
-import { generateId, concat } from './Util';
-import { Suite } from './Suite';
+import { concat } from './Util';
 import { AbstractRunnable } from './AbstractRunnable';
 import { LoggerWrapper } from './LoggerWrapper';
+import { TestCreator } from './WorkspaceShared';
 
 export interface SharedWithTest {
   log: LoggerWrapper;
+  testItemCreator: TestCreator;
 }
 
-export interface StaticTestEventBase {
-  state: 'errored' | 'passed' | 'failed';
-  message: string;
-}
-
-export interface AbstractTestEvent extends TestEvent {
-  testRunId: string;
-  type: 'test';
-  test: string;
-}
-
-export abstract class AbstractTest implements TestInfo {
-  public readonly type: 'test' = 'test';
-  public readonly id: string;
+export abstract class AbstractTest {
+  public readonly item: vscode.TestItem;
   public readonly testNameAsId: string;
   public readonly debuggable = true;
 
@@ -36,30 +25,29 @@ export abstract class AbstractTest implements TestInfo {
   protected _valueParam: string | undefined = undefined; // gtest specific
   protected _file: string | undefined = undefined;
   protected _line: number | undefined = undefined;
-  protected _staticEvent: StaticTestEventBase | undefined;
-
-  public lastRunEvent: AbstractTestEvent | undefined;
-  public lastRunMilisec: number | undefined;
+  protected _staticError: string[] | undefined;
 
   protected constructor(
     protected readonly _shared: SharedWithTest,
     public readonly runnable: AbstractRunnable,
-    public readonly parent: Suite, // ascending
     testNameAsId: string,
     label: string,
     file: string | undefined,
     line: number | undefined,
     skipped: boolean,
-    staticEvent: StaticTestEventBase | undefined,
+    staticError: string[] | undefined,
     pureTags: string[], // without brackets
     testDescription: string | undefined,
     typeParam: string | undefined, // gtest specific
     valueParam: string | undefined, // gtest specific
   ) {
-    this.id = generateId();
     this.testNameAsId = testNameAsId;
 
-    this._updateBase(label, file, line, skipped, pureTags, testDescription, typeParam, valueParam, staticEvent);
+    this._updateBase(label, file, line, skipped, pureTags, testDescription, typeParam, valueParam, staticError);
+
+    this.item = this._shared.testItemCreator(testNameAsId, this.label, file, line, this);
+
+    this.item.description = this.description;
   }
 
   protected _updateBase(
@@ -71,9 +59,13 @@ export abstract class AbstractTest implements TestInfo {
     testDescription: string | undefined,
     typeParam: string | undefined, // gtest specific
     valueParam: string | undefined, // gtest specific
-    staticEvent: StaticTestEventBase | undefined,
+    staticError: string[] | undefined,
   ): boolean {
     if (line && line < 0) throw Error('line smaller than zero');
+
+    //TODO: move these to abstract test
+    // if (description !== found.description) found.description = description;
+    // if (range?.start.line !== found.range?.start.line) found.range = range;
 
     let changed = false;
 
@@ -118,9 +110,11 @@ export abstract class AbstractTest implements TestInfo {
       this._valueParam = valueParam;
     }
 
-    if (this._staticEvent !== staticEvent) {
+    if (this._staticError?.toString() !== staticError?.toString()) {
       changed = true;
-      this._staticEvent = staticEvent;
+      this._staticError = staticError;
+
+      this.item.error = staticError?.join('\n');
     }
 
     return changed;
@@ -132,22 +126,6 @@ export abstract class AbstractTest implements TestInfo {
   public _updateDescriptionAndTooltip(description: string, tooltip: string): void {
     this._additionalDesciption = description;
     this._additionalTooltip = tooltip;
-  }
-
-  public getInterfaceObj(): TestInfo {
-    return {
-      type: 'test',
-      id: this.id,
-      label: this.label,
-      description: this.description,
-      tooltip: this.tooltip,
-      file: this.file,
-      line: this.line,
-      skipped: this.skipped,
-      debuggable: this.debuggable,
-      errored: this.errored,
-      message: this.message,
-    };
   }
 
   public get label(): string {
@@ -195,118 +173,52 @@ export abstract class AbstractTest implements TestInfo {
     return this._skipped || this.runnable.properties.markAsSkipped;
   }
 
-  public get errored(): boolean {
-    return this._staticEvent !== undefined && this._staticEvent!.state === 'errored';
-  }
-
-  public get message(): string | undefined {
-    return this._staticEvent?.message;
-  }
-
-  public getStaticEvent(testRunId: string): AbstractTestEvent | undefined {
-    if (this._staticEvent)
-      return {
-        testRunId,
-        type: 'test',
-        test: this.id,
-        state: this._staticEvent.state,
-        message: this._staticEvent?.message,
-      };
-    else return undefined;
-  }
-
-  public *route(): IterableIterator<Suite> {
-    let parent: Suite | undefined = this.parent;
-    do {
-      yield parent;
-      parent = parent.parent;
-    } while (parent);
-  }
-
-  private _reverseRoute: Suite[] | undefined = undefined;
-
-  public reverseRoute(): Suite[] {
-    if (this._reverseRoute === undefined) this._reverseRoute = [...this.route()].reverse();
-    return this._reverseRoute;
-  }
-
-  public removeWithLeafAscendants(): void {
-    const index = this.parent.children.indexOf(this);
-    if (index == -1) {
-      this._shared.log.info(
-        'Removing an already removed one.',
-        'Probably it was deleted and recompiled but there was no fs-change event and no reload has happened',
-        this,
-      );
-      return;
-    } else {
-      this.parent.children.splice(index, 1);
-
-      this.parent.removeIfLeaf();
-    }
-  }
-
-  public getStartEvent(testRunId: string): AbstractTestEvent {
-    return { testRunId, type: 'test', test: this.id, state: 'running' };
-  }
-
-  public getSkippedEvent(testRunId: string): AbstractTestEvent {
-    return { testRunId, type: 'test', test: this.id, state: 'skipped' };
-  }
-
   public abstract parseAndProcessTestCase(
-    testRunId: string,
+    testRun: vscode.TestRun,
     output: string,
     rngSeed: number | undefined,
     timeout: number | null,
     stderr: string | undefined,
-  ): AbstractTestEvent;
+  ): void;
 
-  public getCancelledEvent(testRunId: string, testOutput: string): AbstractTestEvent {
-    const ev = this.getFailedEventBase(testRunId);
-    ev.message += '⏹ Run is stopped by user. ✋';
-    ev.message += '\n\nTest Output : R"""';
-    ev.message += testOutput;
-    ev.message += '"""';
-    return ev;
+  public started(testRun: vscode.TestRun): void {
+    this._shared.log.info('Test', this.testNameAsId, 'has started.');
+    testRun.started(this.item);
+    testRun.appendOutput(`### Started "${this.item.label}": >>>\r\n`);
   }
 
-  public getTimeoutEvent(testRunId: string, milisec: number): AbstractTestEvent {
-    const ev = this.getFailedEventBase(testRunId);
-    ev.message += '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + milisec / 1000 + ' second(s).';
-    ev.state = 'errored';
-    return ev;
+  public stopped(testRun: vscode.TestRun, durationMilis: number | undefined): void {
+    this._shared.log.info('Test', this.testNameAsId, 'has stopped.');
+    const d = durationMilis ? ` in ${Math.round(durationMilis * 1000) / 1000000} second(s)` : '';
+    testRun.appendOutput(`<<< Finished "${this.item.label}"${d} ###\r\n`);
   }
 
-  public getFailedEventBase(testRunId: string): AbstractTestEvent {
-    return {
-      testRunId,
-      type: 'test',
-      test: this.id,
-      state: 'failed',
-      message: '',
-      decorations: [],
-    };
+  public createTestMessage(message: string): vscode.TestMessage {
+    const m = new vscode.TestMessage(message);
+    if (this.item.uri && this.item.range) m.location = new vscode.Location(this.item.uri, this.item.range);
+    return m;
   }
 
-  public enumerateTestInfos(fn: (v: AbstractTest) => void): void {
-    fn(this);
+  public reportError(testRun: vscode.TestRun, ...message: string[]): void {
+    this.started(testRun);
+    testRun.appendOutput(message.join('\r\n') + '\r\n');
+    this.stopped(testRun, undefined);
+    const m = this.createTestMessage(message.join('\n'));
+    testRun.errored(this.item, m);
   }
 
-  public findTest(pred: (v: AbstractTest) => boolean): Readonly<AbstractTest> | undefined {
-    return pred(this) ? this : undefined;
+  public reportStaticErrorIfHave(testRun: vscode.TestRun): boolean {
+    if (this._staticError != undefined) {
+      this.reportError(testRun, ...this._staticError);
+      return true;
+    } else return false;
   }
 
-  public collectTestToRun(
-    tests: readonly string[],
-    isParentIn: boolean,
-    filter: (test: AbstractTest) => boolean = (): boolean => true,
-  ): AbstractTest[] {
-    if ((isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1) {
-      if (filter(this)) return [this];
-      else return [];
-    } else {
-      return [];
-    }
+  public reportCancelled(testRun: vscode.TestRun, testOutput: string): void {
+    this.reportError(testRun, '⏹ Run is stopped by user. ✋', '\n\nTest Output : R"""', testOutput, '"""');
+  }
+
+  public reportTimeout(testRun: vscode.TestRun, milisec: number): void {
+    this.reportError(testRun, '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + milisec / 1000 + ' second(s).');
   }
 }

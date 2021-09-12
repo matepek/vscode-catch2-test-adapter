@@ -381,7 +381,7 @@ export class Configurations {
     return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  public getExecutables(shared: WorkspaceShared): ExecutableConfig[] {
+  public getExecutableConfigs(shared: WorkspaceShared): ExecutableConfig[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultParallelExecutionOfExecLimit = this.getParallelExecutionOfExecutableLimit() || 1;
 

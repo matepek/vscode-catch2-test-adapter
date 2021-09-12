@@ -1,149 +1,141 @@
-import * as path from 'path';
-import * as api from 'vscode-test-adapter-api';
-import { reindentStr, reindentLines, milisecToStr, concatU } from './Util';
-import { AbstractTest, AbstractTestEvent } from './AbstractTest';
+import * as vscode from 'vscode';
 
-export type TestEventState = 'running' | 'passed' | 'failed' | 'skipped' | 'errored';
+import { reindentStr } from './Util';
+import { AbstractTest } from './AbstractTest';
+
+type TestResult = 'skipped' | 'failed' | 'errored' | 'passed';
 
 export class TestEventBuilder {
-  public constructor(public test: AbstractTest, private readonly _testRunId: string) {}
+  public constructor(private readonly test: AbstractTest, public readonly testRun: vscode.TestRun) {}
 
-  private _message: string[] = [];
-  private _decorations: api.TestDecoration[] = [];
-  private _description: string[] = [];
-  private _tooltip: string[] = [];
-  private _state: TestEventState | undefined = undefined;
+  private _output: string[] = [];
+  private _testMessage: vscode.TestMessage[] = [];
+  private _result: TestResult | undefined = undefined;
 
   public passed(): void {
-    if (this._state === undefined) this._state = 'passed';
+    if (this._result === undefined) this._result = 'passed';
   }
 
   public failed(): void {
-    if (this._state !== 'errored') this._state = 'failed';
+    if (this._result !== 'errored') this._result = 'failed';
   }
 
   public errored(): void {
-    this._state = 'errored';
+    this._result = 'errored';
   }
 
   public skipped(): void {
-    this._state = 'skipped';
+    this._result = 'skipped';
   }
 
-  public appendDescription(str: string): void {
-    this._description.push(str);
-  }
+  private _duration: number | undefined = undefined;
 
   public setDurationMilisec(duration: number | undefined): void {
-    this.test.lastRunMilisec = duration;
+    this._duration = duration;
   }
 
-  public appendTooltip(str: string): void {
-    this._tooltip.push(str);
-  }
-
-  public appendMessage(str: string | undefined, reindent: number | null, indentWidth?: number): void {
-    if (reindent !== null) {
-      this._message.push(...reindentStr(reindent, str, indentWidth));
+  public appendOutput(str: string | undefined, reindent: number | undefined, indentWidth?: number): void {
+    if (reindent) {
+      this._output.push(...reindentStr(reindent, str, indentWidth));
     } else if (str) {
-      this._message.push(str);
+      this._output.push(str);
     }
   }
 
-  public appendDecorator(
+  ///
+
+  private _getLocation(file: string | undefined, line: string | undefined): vscode.Location | undefined {
+    const lineP = parseInt(line ?? '') - 1;
+    if (file && line) return new vscode.Location(vscode.Uri.file(file), new vscode.Range(lineP, 0, lineP, 999));
+    else return undefined;
+  }
+
+  private getLocationAtStr(file: string | undefined, line: string | undefined): string {
+    const lineP = parseInt(line ?? '') - 1;
+    if (file && line) return ` (at ${file}:${lineP})`;
+    else return '';
+  }
+
+  private getMarkdownLocationLink(title: string, file: string | undefined, line: string | undefined): string {
+    const lineP = parseInt(line ?? '') - 1;
+    if (file && line) return `[${title}](${file}:${lineP})`;
+    else return title;
+  }
+
+  public addDiffMessage(
     file: string | undefined,
-    line: number,
-    msg: string | string[] | undefined,
-    hover?: string | string[],
+    line: string | undefined,
+    message: string,
+    expected: string,
+    actual: string,
   ): void {
-    const normalizedFile = file ? path.normalize(file) : undefined;
-    let decoration = this._decorations.find(d => d.file === normalizedFile && d.line === line);
+    const msg = vscode.TestMessage.diff(message, expected, actual);
+    msg.location = this._getLocation(file, line);
+    this._testMessage.push(msg);
+  }
 
-    const reindentedMsg =
-      typeof msg === 'string' ? reindentStr(0, msg) : Array.isArray(msg) ? reindentLines(0, msg) : [];
+  public addExpression(
+    file: string | undefined,
+    line: string | undefined,
+    original: string,
+    expanded: string,
+    type: string | undefined,
+  ): void {
+    const msg = new vscode.TestMessage((type ? `${type} e` : 'E') + 'xpanded: `' + expanded + '`');
+    msg.location = this._getLocation(file, line);
+    this._testMessage.push(msg);
 
-    const reindentedHov =
-      typeof hover === 'string' ? reindentStr(0, hover) : Array.isArray(hover) ? reindentLines(0, hover) : [];
+    this.appendOutput(`Expression failed${this.getLocationAtStr(file, line)}:`, 1);
+    this.appendOutput('❕Original:  ' + original + '\n' + '❗️Expanded:  ' + expanded, 2);
+  }
 
-    const hoverStr = reindentedHov.length
-      ? reindentedHov.join('\n')
-      : reindentedMsg.length
-      ? reindentedMsg.join('\n')
+  public addMessage(file: string | undefined, line: string | undefined, title: string, ...message: string[]): void {
+    const msg = new vscode.TestMessage([`${title}`, ...message].join('\n'));
+    msg.location = this._getLocation(file, line);
+    this._testMessage.push(msg);
+
+    this.appendOutput(`${title}${this.getLocationAtStr(file, line)}`, 1);
+    this.appendOutput(message.join('\n'), 2);
+  }
+
+  public addMarkdown(file: string | undefined, line: string | undefined, title: string, ...message: string[]): void {
+    const msg = new vscode.TestMessage(new vscode.MarkdownString([`${title}`, ...message].join('\n\n')));
+    msg.location = this._getLocation(file, line);
+    this._testMessage.push(msg);
+
+    this.appendOutput(`${title}${this.getLocationAtStr(file, line)}`, 1);
+    this.appendOutput(message.join('\n'), 2);
+  }
+
+  ///
+
+  public build(overwriteMessage?: string): void {
+    if (this._result === undefined) throw Error('TestEventBuilder state was not set');
+
+    const finalMessage = overwriteMessage
+      ? overwriteMessage.replace('\n', '\r\n')
+      : this._output.length
+      ? this._output.map(l => l + '\r\n').join('')
       : undefined;
+    if (finalMessage) this.testRun.appendOutput(finalMessage);
 
-    if (decoration === undefined) {
-      decoration = {
-        file: normalizedFile,
-        line,
-        message:
-          '⬅ ' +
-          (reindentedMsg.length
-            ? reindentedMsg
-                .map((x: string) => x.trim())
-                .join('; ')
-                .substr(0, 200)
-            : 'failed'),
-        hover: hoverStr,
-      };
-      this._decorations.push(decoration);
-    } else {
-      decoration.message = '⬅ multiple failures';
-      decoration.hover = concatU(
-        decoration.hover,
-        hoverStr,
-        '\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n',
-      );
+    this.test.stopped(this.testRun, this._duration);
+
+    switch (this._result) {
+      case undefined:
+        throw Error('result is not finalized');
+      case 'errored':
+        this.testRun.errored(this.test.item, this._testMessage, this._duration);
+        break;
+      case 'failed':
+        this.testRun.failed(this.test.item, this._testMessage, this._duration);
+        break;
+      case 'skipped':
+        this.testRun.skipped(this.test.item);
+        break;
+      case 'passed':
+        this.testRun.passed(this.test.item, this._duration);
+        break;
     }
-  }
-
-  public appendMessageWithDecorator(
-    file: string | undefined,
-    line: number,
-    str: string | undefined,
-    reindent: number | null,
-  ): void {
-    this.appendMessage(str, reindent);
-    this.appendDecorator(file, line, str);
-  }
-
-  public build(overwriteMessage?: string): AbstractTestEvent {
-    const duration = this.test.lastRunMilisec !== undefined ? milisecToStr(this.test.lastRunMilisec) : undefined;
-
-    const description: string[] = [];
-    const message: string[] = [];
-    const tooltip: string[] = [];
-
-    if (duration !== undefined && this.test.lastRunMilisec !== undefined) {
-      description.push(`(${duration})`);
-      message.push(`⏱Duration: ${Math.round(this.test.lastRunMilisec * 1000) / 1000000} second(s).`);
-    }
-
-    description.push(...this._description);
-    tooltip.push(...this._tooltip);
-    message.push(...this._message);
-
-    if (duration) tooltip.push(`⏱Duration: ${duration}`);
-
-    if (this._state === undefined) throw Error('TestEventBuilder state was not set');
-
-    const descriptionStr = description.join(' ');
-    const tooltipStr = tooltip.join('\n');
-
-    this.test._updateDescriptionAndTooltip(descriptionStr, tooltipStr);
-
-    const ev: AbstractTestEvent = {
-      testRunId: this._testRunId,
-      type: 'test',
-      test: this.test.id,
-      state: this._state,
-      message: overwriteMessage ? overwriteMessage : message.length ? message.join('\n') : undefined,
-      decorations: this._decorations.length ? this._decorations : [],
-      description: this.test.description,
-      tooltip: this.test.tooltip,
-    };
-
-    this.test.lastRunEvent = ev;
-
-    return ev;
   }
 }

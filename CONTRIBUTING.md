@@ -87,3 +87,4 @@ If you think your changes worth of a release add a new version entry to `CHANGEL
 ### TODOs
 
 - more unique ide for frameworks
+- replace PRomise.all where suited

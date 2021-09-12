@@ -1,7 +1,7 @@
 import { TestSuiteInfo, TestSuiteEvent } from 'vscode-test-adapter-api';
 
 import { generateId, milisecToStr } from './Util';
-import { SharedVariables } from './SharedVariables';
+import { WorkspaceShared } from './WorkspaceShared';
 import { AbstractTest } from './AbstractTest';
 
 ///
@@ -14,7 +14,7 @@ export class Suite implements TestSuiteInfo {
   protected _runningCounter = 0;
 
   public constructor(
-    protected readonly _shared: SharedVariables,
+    protected readonly _shared: WorkspaceShared,
     public readonly parent: Suite | undefined,
     private readonly _label: string,
     private readonly _descriptionBase: string,
@@ -125,7 +125,7 @@ export class Suite implements TestSuiteInfo {
 
   public sendRunningEventIfNeeded(testRunId: string): void {
     if (this._runningCounter++ === 0) {
-      this._shared.sendTestRunEvent(this._getRunningEvent(testRunId));
+      //this._shared.sendTestRunEvent(this._getRunningEvent(testRunId));
     }
   }
 
@@ -193,7 +193,7 @@ export class Suite implements TestSuiteInfo {
       return;
     }
     if (this._runningCounter-- === 1) {
-      this._shared.sendTestRunEvent(this._getCompletedEvent(testRunId));
+      //this._shared.sendTestRunEvent(this._getCompletedEvent(testRunId));
     }
   }
 
