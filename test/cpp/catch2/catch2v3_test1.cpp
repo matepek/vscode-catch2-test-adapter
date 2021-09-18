@@ -2,13 +2,13 @@
 
 #include "catch2/catch_all.hpp"
 
-TEST_CASE("s1t1", "tag1") {
+TEST_CASE("s1t1", "desc") {
   //
   REQUIRE(std::true_type::value);
   //
 }
 
-TEST_CASE("s1t2", "tag1") {
+TEST_CASE("s1t2", "desc") {
   //
   REQUIRE(std::false_type::value);
   //

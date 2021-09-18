@@ -6,18 +6,67 @@
     {
       "label": "createTmpWorkingFolder",
       "type": "shell",
-      "command": "mkdir -p out/tmp/workspaceFolder",
+      "command": "mkdir",
+      "args": ["-p", "out/tmp/workspaceFolder", "out/cpp"],
       "windows": {
-        "command": "mkdir out\\tmp\\workspaceFolder"
-      }
+        "args": ["out\\tmp\\workspaceFolder"]
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "never",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
     },
     {
+      "label": "preDebug",
+      "type": "shell",
+      "command": "sed",
+      "args": ["-i", "''", "s/\"main\": \"out\\/dist\\/main.js\"/\"main\": \"out\\/src\\/main.js\"/", "package.json"],
+      "linux": {
+        "args": ["-i", "s/\"main\": \"out\\/dist\\/main.js\"/\"main\": \"out\\/src\\/main.js\"/", "package.json"]
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "never",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": [],
+      "dependsOn": ["createTmpWorkingFolder"]
+    },
+    {
+      "label": "postDebug",
+      "type": "shell",
+      "command": "sed",
+      "args": ["-i", "''", "s/\"main\": \"out\\/src\\/main.js\"/\"main\": \"out\\/dist\\/main.js\"/", "package.json"],
+      "linux": {
+        "args": ["-i", "s/\"main\": \"out\\/src\\/main.js\"/\"main\": \"out\\/dist\\/main.js\"/", "package.json"]
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "never",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "npm watcher on the wall",
       "type": "npm",
       "script": "watch",
       "problemMatcher": "$tsc-watch",
       "isBackground": true,
       "presentation": {
-        "reveal": "never"
+        "reveal": "never",
+        "panel": "shared"
       },
       "group": {
         "kind": "build",
@@ -25,46 +74,6 @@
       },
       "runOptions": {
         "runOn": "folderOpen"
-      },
-      "dependsOn": ["createTmpWorkingFolder"]
-    },
-    {
-      "label": "preDebug",
-      "type": "shell",
-      "command": "sed -i '' 's/\"main\": \"out\\/dist\\/main.js\"/\"main\": \"out\\/src\\/main.js\"/' package.json",
-      "presentation": {
-        "echo": true,
-        "reveal": "never",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "clear": false
-      }
-    },
-    {
-      "label": "postDebug",
-      "type": "shell",
-      "command": "sed -i '' 's/\"main\": \"out\\/src\\/main.js\"/\"main\": \"out\\/dist\\/main.js\"/' package.json",
-      "presentation": {
-        "echo": true,
-        "reveal": "never",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "clear": false
-      }
-    },
-    {
-      "type": "npm",
-      "script": "webpack",
-      "problemMatcher": "$tsc-watch",
-      "isBackground": true,
-      "presentation": {
-        "reveal": "never"
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": true
       },
       "dependsOn": ["createTmpWorkingFolder"]
     }

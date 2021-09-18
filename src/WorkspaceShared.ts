@@ -3,7 +3,8 @@ import * as vscode from 'vscode';
 import { TaskPool } from './util/TaskPool';
 import { ResolveRuleAsync } from './util/ResolveRule';
 import { BuildProcessChecker } from './util/BuildProcessChecker';
-import { AbstractTest } from './AbstractTest';
+import { AbstractTest, SharedWithTest } from './AbstractTest';
+import { CancellationFlag } from './Util';
 
 export type TestCreator = (
   id: string,
@@ -15,7 +16,7 @@ export type TestCreator = (
 
 export type TestItemMapper = (item: vscode.TestItem) => AbstractTest | undefined;
 
-export class WorkspaceShared {
+export class WorkspaceShared implements SharedWithTest {
   public constructor(
     public readonly workspaceFolder: vscode.WorkspaceFolder,
     public readonly rootItems: vscode.TestItemCollection,
@@ -43,14 +44,20 @@ export class WorkspaceShared {
     this.buildProcessChecker = new BuildProcessChecker(log);
   }
 
-  private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
   public readonly taskPool: TaskPool;
   public readonly buildProcessChecker: BuildProcessChecker;
+  private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
+  private readonly _cancellationFlag = { isCancellationRequested: false };
 
   public dispose(): void {
+    this._cancellationFlag.isCancellationRequested = true;
     this.buildProcessChecker.dispose();
     this._execRunningTimeoutChangeEmitter.dispose();
     this.log.dispose();
+  }
+
+  public get cancellationFlag(): CancellationFlag {
+    return this._cancellationFlag;
   }
 
   public get execRunningTimeout(): number | null {

@@ -6,9 +6,9 @@ import { inspect, promisify } from 'util';
 import * as vscode from 'vscode';
 
 import { TestAdapter, settings, isWin, waitFor } from './Common';
-import { DefaultSpawner } from '../src/Spawner';
-import * as c2fs from '../src/util/FSWrapper';
-import { TestRunEvent } from '../src/SharedVariables';
+import { DefaultSpawner } from '../../src/Spawner';
+import * as c2fs from '../../src/util/FSWrapper';
+import { TestRunEvent } from '../../src/SharedVariables';
 
 ///
 

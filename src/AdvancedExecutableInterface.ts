@@ -1,10 +1,11 @@
 import { TestGrouping } from './TestGroupingInterface';
+import { FrameworkType } from './framework/Framework';
 
 ///
 
 export type AdvancedExecutableArray = Array<AdvancedExecutable>;
 
-export interface AdvancedExecutable {
+export type AdvancedExecutable = {
   comment?: string;
   pattern?: string;
   name?: string;
@@ -25,10 +26,10 @@ export interface AdvancedExecutable {
   testGrouping?: TestGrouping;
   executionWrapper?: ExecutionWrapper;
   sourceFileMap?: Record<string, string>;
-  darwin: AdvancedExecutable;
-  linux: AdvancedExecutable;
-  win32: AdvancedExecutable;
-}
+  darwin?: AdvancedExecutable;
+  linux?: AdvancedExecutable;
+  win32?: AdvancedExecutable;
+} & Record<FrameworkType, FrameworkSpecific>;
 
 export interface RunTask {
   before?: Array<string>;

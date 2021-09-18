@@ -40,20 +40,16 @@ export class GazeWrapper implements FSWatcher {
     return this._watcherReady;
   }
 
-  public watched(): Promise<string[]> {
-    return this.ready().then(() => {
-      const filePaths: string[] = [];
-
-      const watched = this._gaze.watched();
-
-      for (const dir in watched) {
-        for (const file of watched[dir]) {
-          filePaths.push(file);
-        }
+  public async watched(): Promise<string[]> {
+    await this.ready();
+    const filePaths: string[] = [];
+    const watched = this._gaze.watched();
+    for (const dir in watched) {
+      for (const file of watched[dir]) {
+        filePaths.push(file);
       }
-
-      return filePaths;
-    });
+    }
+    return filePaths;
   }
 
   public dispose(): void {

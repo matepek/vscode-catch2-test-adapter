@@ -1,5 +1,8 @@
 #include "catch2/catch.hpp"
 
+#include <chrono>
+#include <thread>
+
 SCENARIO("vectors can be sized and resized", "[vector]") {
   GIVEN("A vector with some items") {
     std::vector<int> v(5);
@@ -28,6 +31,9 @@ SCENARIO("vectors can be sized and resized", "[vector]") {
 
       THEN("the capacity changes but not the size") {
         REQUIRE(v.size() == 5);
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+
         REQUIRE(v.capacity() < 10);  // err
       }
     }
@@ -42,7 +48,7 @@ SCENARIO("vectors can be sized and resized", "[vector]") {
     AND_GIVEN("something else") {
       THEN("neither size nor capacity are changed") {
         REQUIRE(v.size() == 5);
-        REQUIRE(v.capacity() < 5);  // err
+        REQUIRE(v.capacity() < 5);  // errg
       }
     }
   }
@@ -65,6 +71,8 @@ TEST_CASE("Benchmark Fibonacci", "[!benchmark]") {
   CHECK(Fibonacci(5) == 8);
   // some more asserts..
 
+  BENCHMARK("Fibonacci throw") { throw 42; };
+  
   BENCHMARK("Fibonacci 30") { return Fibonacci(30); };
 
   BENCHMARK("Fibonacci 35") { return Fibonacci(35); };

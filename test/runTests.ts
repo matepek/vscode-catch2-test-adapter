@@ -34,7 +34,7 @@ async function main(): Promise<void> {
       extensionDevelopmentPath,
       extensionTestsPath,
       launchArgs: [testWorkspace, '--disable-extensions'],
-      extensionTestsEnv: { C2_DEBUG: 'true' },
+      extensionTestsEnv: { TESTMATE_DEBUG: 'true' },
     });
 
     process.exit(0);

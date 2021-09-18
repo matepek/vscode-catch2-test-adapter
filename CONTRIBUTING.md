@@ -1,5 +1,3 @@
-[![Travis build status](https://img.shields.io/travis/matepek/vscode-catch2-test-adapter/master.svg?logo=Travis&style=for-the-badge)](https://travis-ci.org/matepek/vscode-catch2-test-adapter)
-[![Appveyor build status](https://img.shields.io/appveyor/ci/matepek/vscode-catch2-test-adapter?style=for-the-badge)](https://ci.appveyor.com/project/matepek/vscode-catch2-test-adapter/branch/master)
 [![GitHub license](https://img.shields.io/github/license/matepek/vscode-catch2-test-adapter.svg?style=for-the-badge)](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/LICENSE)
 [![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=for-the-badge)](https://github.com/prettier/prettier)
 
@@ -52,13 +50,13 @@ npm test
 
 ### Debug
 
-After installing:
+After test:
 
-1. Open the folder in VSCode: `code .`
-2. Run task: `npm watch`. Wait until it is compiled.
+1. Open the folder in VSCode: `code .`.
+2. Let task `npm watch` run in the background.
 3. VSCode "Run" / Debug page: Select `Manual cpp`.
-4. Start debugging
-5. Add your folder to the newly opened VSCode's workspace (Or change [launch.json](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/.vscode/launch.json#L27)'s `Manual cpp` to the folder which is intended to be debugged and the start.)
+4. Start debugging.
+5. Add your folder to the newly opened VSCode's workspace. (Or change [launch.json](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/.vscode/launch.json#L27)'s `Manual cpp` to the folder which is intended to be debugged and the start.)
 
 Issues are tipically related to file operations:
 
@@ -70,12 +68,13 @@ Issues are tipically related to file operations:
 
 If you think your changes worth of a release add a new version entry to `CHANGELOG.md` file without a date. Travis will publish it automatically.
 
-## TODOs
+## TODO:future
 
-- https://www.npmjs.com/package/fast-xml-parser
 - doctest: supporting test suites
 - Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip, gmock_verbose
 - gaze is not good enough: detects change and delete, but not creation
+- Use https://github.com/assistunion/xml-stream/blob/master/tests/test-readable-stream.js
+- https://www.npmjs.com/package/ansi-colors
 
 ## VSCE_PAT
 
@@ -86,5 +85,6 @@ If you think your changes worth of a release add a new version entry to `CHANGEL
 
 ### TODOs
 
-- more unique ide for frameworks
-- replace PRomise.all where suited
+- 1. run skipped directly; 2. run skipped by parent; see status: not resetted, shouldn't be
+- merge changes from legacy `git difftool -d v3.6.31 v3.6.33`
+- if parallel exec limit > 1 then prefix PID

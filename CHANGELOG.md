@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+Replaced [Test Explorer](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer) with native API.
+
+### Added
+
+- doctest: supporting `testMate.cpp.debug.breakOnFailure`.
+- `testMate.cpp.debug.configTemplate` -> `testMate.cpp.debug.setEnv` (`Record<string,string>`)
+
 ## [3.6.31] - 2021-09-10
 
 ### Added / Fixed

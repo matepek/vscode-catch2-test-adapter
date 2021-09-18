@@ -1,3 +1,6 @@
+#include <chrono>
+#include <thread>
+
 #include "catch2/catch.hpp"
 
 // clang-format off
@@ -20,7 +23,10 @@ TEST_CASE("SECTION tree") {
   SECTION("1") {
     SECTION("2") {
       SECTION("3") {
-        SECTION("4") { REQUIRE(std::false_type::value); }
+        SECTION("4") { 
+          CHECK(std::false_type::value); 
+          std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        }
       }
     }
     SECTION("2-2") {
@@ -30,10 +36,6 @@ TEST_CASE("SECTION tree") {
     }
   }
 }
-
-#include <chrono>
-#include <thread>
-
 
 TEST_CASE("name with * character") {}
 TEST_CASE("spec ! char") { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }

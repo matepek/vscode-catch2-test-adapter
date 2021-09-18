@@ -98,6 +98,21 @@ export function generateId(): string {
   return (++uidCounter).toString();
 }
 
+export function parseLine(line: number | string | undefined, func?: (line: number) => void): number | undefined {
+  if (typeof line == 'number') {
+    func && func(line);
+    return line;
+  } else if (typeof line == 'string') {
+    const p = parseInt(line);
+    if (Number.isNaN(p)) {
+      return undefined;
+    } else {
+      func && func(p);
+      return p;
+    }
+  } else return undefined;
+}
+
 import * as crypto from 'crypto';
 
 export function hashString(str: string, algorithm = 'sha1'): string {
@@ -117,10 +132,8 @@ export function reindentLines(indentLevel: number, lines: string[], indentWidth 
   return reindented;
 }
 
-export function reindentStr(indentLevel: number, str: string | undefined, indentWidth = 2): string[] {
-  if (typeof str !== 'string') return [];
-
-  const lines = str.split(/\r?\n/);
+export function reindentStr(indentLevel: number, indentWidth = 2, ...strs: string[]): string[] {
+  const lines = strs.flatMap(x => x.split(/\r?\n/));
   return reindentLines(indentLevel, lines, indentWidth);
 }
 
@@ -261,41 +274,4 @@ export function getAbsolutePath(filePath: string, directories: Iterable<string>)
   }
 
   return filePath;
-}
-
-// TODO handle multiple links in same line
-/**
- * - 1: full
- * - 2: file
- * - 3: line
- * - 4: column
- */
-export function findURIs(
-  line: string,
-  regexType: 'gtest' | 'catch2' | 'general',
-): { index: number; full: string; file: string; line?: string; column?: string }[] {
-  let regex =
-    /\s?(((?:[A-z]:\\|\.\.?[\\\/]|\/)(?:[^\\\/\n]+[\\\/])*[\w,-.]+(?:[\w,\s-.]*?\.\w{3})?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)?)\b/;
-  let indexShift = 0;
-  switch (regexType) {
-    case 'gtest':
-      regex = /^(([./\w].*[\\/].*[.].*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?)):?\s/;
-      break;
-    case 'catch2':
-      regex = /\(at ((\S.*?)(?:[:\(](\d+)(?:\)|[:,](\d+)\)?)?))\)/;
-      indexShift = 4;
-      break;
-    case 'general':
-    default:
-      break;
-  }
-
-  const m = line.match(regex);
-
-  if (m) {
-    const index = m.index ? m.index + indexShift : indexShift;
-    return [{ index, full: m[1], file: m[2], line: m[3] ?? '', column: m[4] ?? '' }];
-  } else {
-    return [];
-  }
 }

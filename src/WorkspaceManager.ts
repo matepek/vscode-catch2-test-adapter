@@ -5,12 +5,12 @@ import { createPythonIndexerForPathVariable, ResolveRuleAsync, resolveVariablesA
 import { TestCreator, TestItemMapper, WorkspaceShared } from './WorkspaceShared';
 import { sep as osPathSeparator } from 'path';
 import { TaskQueue } from './util/TaskQueue';
-import { AbstractRunnable, TestsToRun } from './AbstractRunnable';
+import { AbstractExecutable, TestsToRun } from './AbstractExecutable';
 import { ExecutableConfig } from './ExecutableConfig';
 import { generateId } from './Util';
 import { AbstractTest } from './AbstractTest';
 
-//TODO if workspace contains ".vscode/testMate.cpp.json" we have to start loading the tests
+//TODO:release if workspace contains ".vscode/testMate.cpp.json" we have to start loading the tests
 export class WorkspaceManager implements vscode.Disposable {
   public constructor(
     private readonly workspaceFolder: vscode.WorkspaceFolder,
@@ -177,7 +177,7 @@ export class WorkspaceManager implements vscode.Disposable {
           }
 
           if (affectsAny('test.randomGeneratorSeed', 'gtest.treatGmockWarningAs', 'gtest.gmockVerbose')) {
-            //TODO this.executables. ...; invalidate states
+            //TODO:release sendRetireEvent -> this.executables. ...;
           }
 
           if (
@@ -214,14 +214,7 @@ export class WorkspaceManager implements vscode.Disposable {
     const configuration = this._getConfiguration(this.log);
     const executableConfig = configuration.getExecutableConfigs(this._shared);
     this._executableConfig = executableConfig;
-    return Promise.allSettled(
-      executableConfig.map(x =>
-        x.load().catch(e => {
-          this.log.errorS(e);
-          debugger; //TODO:remove later
-        }),
-      ),
-    ).then();
+    return Promise.allSettled(executableConfig.map(x => x.load().catch(e => this.log.errorS(e)))).then();
   }
 
   private _getConfiguration(log: LoggerWrapper): Configurations {
@@ -229,7 +222,7 @@ export class WorkspaceManager implements vscode.Disposable {
   }
 
   public run(
-    executables: Map<AbstractRunnable, TestsToRun>,
+    executables: Map<AbstractExecutable, TestsToRun>,
     cancellation: vscode.CancellationToken,
     run: vscode.TestRun,
   ): Thenable<void> {
@@ -242,20 +235,20 @@ export class WorkspaceManager implements vscode.Disposable {
   }
 
   private async _runInner(
-    executables: Map<AbstractRunnable, TestsToRun>,
+    executables: Map<AbstractExecutable, TestsToRun>,
     cancellation: vscode.CancellationToken,
     testRun: vscode.TestRun,
   ): Promise<void> {
-    try {
-      await this._runTasks('before', executables.keys(), cancellation);
-      //runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
-    } catch (e) {
-      //for (const [runnable, tests] of executables.values()) {
-      //TODO:runnable.sentStaticErrorEvent(testRunId, tests, e);
-      //}
+    // try {
+    //   await this._runTasks('before', executables.keys(), cancellation);
+    //   //runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
+    // } catch (e) {
+    //   //for (const [runnable, tests] of executables.values()) {
+    //   //TODO:release runnable.sentStaticErrorEvent(testRunId, tests, e);
+    //   //}
 
-      return;
-    }
+    //   return;
+    // }
 
     const ps: Promise<void>[] = [];
 
@@ -269,18 +262,18 @@ export class WorkspaceManager implements vscode.Disposable {
 
     await Promise.allSettled(ps);
 
-    try {
-      await this._runTasks('after', executables.keys(), cancellation);
-    } catch (e) {
-      for (const [runnable, tests] of executables.values()) {
-        //TODO:runnable.sentStaticErrorEvent(testRunId, tests, e);
-      }
-    }
+    // try {
+    //   await this._runTasks('after', executables.keys(), cancellation);
+    // } catch (e) {
+    //   for (const [runnable, tests] of executables.values()) {
+    //     //TODO:release:runnable.sentStaticErrorEvent(testRunId, tests, e);
+    //   }
+    // }
   }
 
   private async _runTasks(
     type: 'before' | 'after',
-    runnables: Iterable<AbstractRunnable>,
+    runnables: Iterable<AbstractExecutable>,
     cancellationToken: vscode.CancellationToken,
   ): Promise<void> {
     const runTasks = new Set<string>();
@@ -320,6 +313,196 @@ export class WorkspaceManager implements vscode.Disposable {
       throw Error(
         `One of the tasks of the \`testMate.test.advancedExecutables:runTask.${type}\` array has failed: ` + e,
       );
+    }
+  }
+
+  public debug(test: AbstractTest, cancellation: vscode.CancellationToken, run: vscode.TestRun): Thenable<void> {
+    run.enqueued(test.item);
+
+    return this._debugInner(test, cancellation, run).catch(e => {
+      this.log.errorS('error during debug', e);
+      debugger;
+    });
+  }
+
+  public async _debugInner(
+    test: AbstractTest,
+    cancellation: vscode.CancellationToken,
+    run: vscode.TestRun,
+  ): Promise<void> {
+    try {
+      this._shared.log.info('Using debug');
+
+      const executable = test.executable;
+
+      this._shared.log.setNextInspectOptions({ depth: 5 });
+      this._shared.log.info('test', executable, test);
+
+      const configuration = this._getConfiguration(this._shared.log);
+
+      const label = `${test.label} (${test.executable.properties.path})`;
+
+      const argsArray = executable.getDebugParams([test], configuration.getDebugBreakOnFailure());
+
+      // if (test instanceof Catch2Test) {
+      //   const sections = (test as Catch2Test).sections;
+      //   if (sections && sections.length > 0) {
+      //     interface QuickPickItem extends vscode.QuickPickItem {
+      //       sectionStack: Catch2Section[];
+      //     }
+
+      //     const items: QuickPickItem[] = [
+      //       {
+      //         label: label,
+      //         sectionStack: [],
+      //         description: 'Select the section combo you wish to debug or choose this to debug all of it.',
+      //       },
+      //     ];
+
+      //     const traverse = (
+      //       stack: Catch2Section[],
+      //       section: Catch2Section,
+      //       hasNextStack: boolean[],
+      //       hasNext: boolean,
+      //     ): void => {
+      //       const currStack = stack.concat(section);
+      //       const space = '\u3000';
+      //       let label = hasNextStack.map(h => (h ? '┃' : space)).join('');
+      //       label += hasNext ? '┣' : '┗';
+      //       label += section.name;
+
+      //       items.push({
+      //         label: label,
+      //         description: section.failed ? '❌' : '✅',
+      //         sectionStack: currStack,
+      //       });
+
+      //       for (let i = 0; i < section.children.length; ++i)
+      //         traverse(currStack, section.children[i], hasNextStack.concat(hasNext), i < section.children.length - 1);
+      //     };
+
+      //     for (let i = 0; i < sections.length; ++i) traverse([], sections[i], [], i < sections.length - 1);
+
+      //     const pick = await vscode.window.showQuickPick(items);
+
+      //     if (pick === undefined) return Promise.resolve();
+
+      //     pick.sectionStack.forEach(s => {
+      //       argsArray.push('-c');
+      //       argsArray.push(s.escapedName);
+      //     });
+      //   }
+      // }
+
+      const argsArrayFunc = async (): Promise<string[]> => argsArray;
+
+      const [debugConfigTemplate, debugConfigTemplateSource] = configuration.getDebugConfigurationTemplate();
+
+      this._shared.log.debug('debugConfigTemplate', { debugConfigTemplateSource, debugConfigTemplate });
+
+      // if (!TestAdapter._debugMetricSent) {
+      //   this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
+      //   TestAdapter._debugMetricSent = true;
+      // }
+
+      const envVars = Object.assign({}, process.env, executable.properties.options.env);
+
+      {
+        const setEnvKey = 'testMate.cpp.debug.setEnv';
+        if (typeof debugConfigTemplate[setEnvKey] === 'object') {
+          for (const envName in debugConfigTemplate[setEnvKey]) {
+            const envValue = debugConfigTemplate[setEnvKey][envName];
+            if (typeof envValue !== 'string')
+              this._shared.log.warn(
+                'Wrong value. testMate.cpp.debug.setEnv should contains only string values',
+                envName,
+                setEnvKey,
+              );
+            else if (envValue === null) delete envVars[envName];
+            else envVars[envName] = envValue;
+          }
+        }
+      }
+
+      const varToResolve: ResolveRuleAsync[] = [
+        ...executable.properties.varToValue,
+        { resolve: '${label}', rule: label },
+        { resolve: '${exec}', rule: executable.properties.path },
+        { resolve: '${args}', rule: argsArrayFunc }, // deprecated
+        { resolve: '${argsArray}', rule: argsArrayFunc },
+        { resolve: '${argsArrayFlat}', rule: argsArrayFunc, isFlat: true },
+        {
+          resolve: '${argsStr}',
+          rule: async (): Promise<string> => '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"',
+        },
+        { resolve: '${cwd}', rule: executable.properties.options.cwd!.toString() },
+        {
+          resolve: '${envObj}',
+          rule: async (): Promise<NodeJS.ProcessEnv> => envVars,
+        },
+        {
+          resolve: '${envObjArray}',
+          rule: async (): Promise<{ name: string; value: string }[]> =>
+            Object.keys(envVars).map(name => {
+              return { name, value: envVars[name] || '' };
+            }),
+        },
+        {
+          resolve: '${sourceFileMapObj}',
+          rule: async (): Promise<Record<string, string>> => executable.properties.sourceFileMap,
+        },
+      ];
+
+      const debugConfig = await resolveVariablesAsync(debugConfigTemplate, varToResolve);
+
+      // we dont know better: https://github.com/Microsoft/vscode/issues/70125
+      const magicValueKey = 'magic variable  🤦🏼‍';
+      const magicValue = generateId();
+      debugConfig[magicValueKey] = magicValue;
+
+      this._shared.log.info('Debug: resolved debugConfig:', debugConfig);
+
+      const cancellationTokenSource = new vscode.CancellationTokenSource();
+
+      await this._runTasks('before', [executable], cancellationTokenSource.token);
+      await executable.runTasks('beforeEach', this._shared.taskPool, cancellationTokenSource.token);
+
+      let terminateConn: vscode.Disposable | undefined;
+
+      const terminated = new Promise<void>(resolve => {
+        terminateConn = vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
+          const session2 = session as unknown as { configuration: { [prop: string]: string } };
+          if (session2.configuration && session2.configuration[magicValueKey] === magicValue) {
+            cancellationTokenSource.cancel();
+            resolve();
+            terminateConn && terminateConn.dispose();
+          }
+        });
+      }).finally(() => {
+        this._shared.log.info('debugSessionTerminated');
+      });
+
+      this._shared.log.info('startDebugging');
+
+      run.started(test.item);
+
+      const debugSessionStarted = await vscode.debug.startDebugging(this.workspaceFolder, debugConfig);
+
+      if (debugSessionStarted) {
+        this._shared.log.info('debugSessionStarted');
+        await terminated;
+      } else {
+        terminateConn && terminateConn.dispose();
+        throw Error(
+          'Failed starting the debug session. Maybe something wrong with "testMate.cpp.debug.configTemplate".',
+        );
+      }
+
+      await executable.runTasks('afterEach', this._shared.taskPool, cancellationTokenSource.token);
+      await this._runTasks('after', [executable], cancellationTokenSource.token);
+    } catch (err) {
+      this._shared.log.warn(err);
+      throw err;
     }
   }
 }

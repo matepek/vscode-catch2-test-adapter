@@ -3,9 +3,9 @@ import { EOL } from 'os';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { SharedVariables, RootSuite, ChildProcessStub } from './Common';
-import { RunnableFactory } from '../src/RunnableFactory';
-import { DefaultSpawner } from '../src/Spawner';
-import * as fsw from '../src/util/FSWrapper';
+import { ExecutableFactory } from '../../src/ExecutableFactory';
+import { DefaultSpawner } from '../../src/Spawner';
+import * as fsw from '../../src/util/FSWrapper';
 
 ///
 
@@ -34,7 +34,7 @@ describe(path.basename(__filename), function () {
 
   describe('gtest', function () {
     it('recognises', async function () {
-      const factory = new RunnableFactory(
+      const factory = new ExecutableFactory(
         sharedVariables,
         'execname',
         'execdesc',
@@ -78,7 +78,7 @@ describe(path.basename(__filename), function () {
     });
 
     it('recognises different prefix', async function () {
-      const factory = new RunnableFactory(
+      const factory = new ExecutableFactory(
         sharedVariables,
         'execname',
         'execdesc',

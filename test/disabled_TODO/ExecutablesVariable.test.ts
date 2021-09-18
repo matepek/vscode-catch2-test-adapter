@@ -11,9 +11,9 @@ import {
   isWin,
   waitForMilisec,
 } from './Common';
-import { example1 } from './example1';
+import { example1 } from '../example1';
 import { inspect } from 'util';
-import { expectedLoggedWarning } from './LogOutputContent.test';
+import { expectedLoggedWarning } from '../LogOutputContent.test';
 
 ///
 
@@ -38,7 +38,7 @@ describe(path.basename(__filename), function () {
     imitation.resetToCallThrough();
     if (adapter) {
       await adapter.waitAndDispose(this);
-      adapter = (undefined as unknown) as TestAdapter;
+      adapter = undefined as unknown as TestAdapter;
     }
     return settings.resetConfig();
   });
@@ -416,7 +416,7 @@ describe(path.basename(__filename), function () {
 
       await adapter.load();
 
-      assert.strictEqual(adapter.root.children.length, 2); //TODO make  eq 1 one day
+      assert.strictEqual(adapter.root.children.length, 2); //TODO:future make  eq 1 one day
       assert.strictEqual(adapter.group.label, 'name1 execPath1.exe');
       assert.strictEqual(adapter.group1.label, 'name2');
 

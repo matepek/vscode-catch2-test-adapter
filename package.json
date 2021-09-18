@@ -1,11 +1,11 @@
 {
   "name": "vscode-catch2-test-adapter",
   "displayName": "C++ TestMate",
-  "description": "Run GoogleTest, Catch2 and DOCtest tests from VSCode and VSCodium",
+  "description": "Run GoogleTest, Catch2 and DOCtest tests from VSCode",
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "3.6.31",
+  "version": "4.0.0",
   "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -52,13 +52,12 @@
   },
   "extensionDependencies": [],
   "dependencies": {
+    "@types/htmlparser2": "^3.10.3",
     "@types/ps-node": "^0.1.1",
     "gaze": "^1.1.3",
     "ps-node": "^0.1.6",
     "tslib": "^2.3.1",
-    "vscode-test-adapter-api": "^1.9.0",
-    "vscode-test-adapter-util": "^0.7.1",
-    "xml2js": "^0.4.23"
+    "vscode-test-adapter-util": "^0.7.1"
   },
   "devDependencies": {
     "@sentry/node": "^6.12.0",
@@ -72,8 +71,7 @@
     "@types/request-promise": "4.1.48",
     "@types/sinon": "^10.0.2",
     "@types/source-map-support": "^0.5.4",
-    "@types/vscode": "1.60.0",
-    "@types/xml2js": "^0.4.9",
+    "@types/vscode": "1.62.0",
     "@typescript-eslint/eslint-plugin": "^4.31.0",
     "@typescript-eslint/parser": "^4.31.0",
     "bent": "^7.3.12",
@@ -98,27 +96,22 @@
     "webpack-cli": "^4.8.0"
   },
   "engines": {
-    "vscode": "^1.59.0"
+    "vscode": "^1.62.0"
   },
   "activationEvents": [
     "onStartupFinished"
   ],
   "contributes": {
-    "languages": [
+    "commands": [
       {
-        "id": "testMate.cpp.testOutput",
-        "mimetypes": [
-          "text/x-code-output",
-          "x-code-output"
-        ],
-        "firstLine": "(\\[ RUN      \\]|⏱Duration:)"
-      }
-    ],
-    "grammars": [
+        "command": "testMate.cmd.reload-tests",
+        "title": "Reload tests",
+        "category": "C++ TestMate"
+      },
       {
-        "language": "testMate.cpp.testOutput",
-        "scopeName": "text.testMate.cpp.testOutput",
-        "path": "./syntaxes/cpp.testOutput.tmLanguage.json"
+        "command": "testMate.cmd.reload-workspaces",
+        "title": "Reload workspaces (in case of an issue)",
+        "category": "C++ TestMate"
       }
     ],
     "configuration": {
@@ -1468,7 +1461,7 @@
           ]
         },
         "testMate.cpp.debug.breakOnFailure": {
-          "markdownDescription": "Debugger breaks on failure while debugging the test. Catch2: [--break](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#breaking-into-the-debugger); Google Test: [--gtest_break_on_failure](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#turning-assertion-failures-into-break-points);",
+          "markdownDescription": "Debugger breaks on failure while debugging the test. Catch2: [--break](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#breaking-into-the-debugger); Google Test: [--gtest_break_on_failure](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#turning-assertion-failures-into-break-points); Doctest: [--no-breaks](https://github.com/onqtam/doctest/blob/master/doc/markdown/commandline.md)",
           "scope": "resource",
           "type": "boolean",
           "default": true
@@ -1512,7 +1505,7 @@
             "nothing",
             "failure"
           ],
-          "enumDescriptions": [
+          "markdownEnumDescriptions": [
             "",
             "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`."
           ]
@@ -1529,7 +1522,7 @@
             "warning",
             "error"
           ],
-          "enumDescriptions": [
+          "markdownEnumDescriptions": [
             "--gmock_verbose=... parameter won't be added",
             "Google Mock will print all informational messages, warnings, and errors (most verbose). At this setting, Google Mock will also log any calls to the ON_CALL/EXPECT_CALL macros.",
             "Google Mock will print both warnings and errors (less verbose). This is the default.",

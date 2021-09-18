@@ -1,11 +1,17 @@
 import * as util from 'vscode-test-adapter-util';
 import * as Sentry from '@sentry/node';
+import { debugBreak } from './util/DevelopmentHelper';
 
 ///
 
 export class LoggerWrapper extends util.Log {
   public constructor(configSection: string, outputChannelName: string) {
     super(configSection, undefined, outputChannelName, { depth: 3 }, false);
+  }
+
+  //eslint-disable-next-line
+  public trace(msg: any, ...msgs: any[]): void {
+    process.env['TESTMATE_DEBUG'] && super.debug(msg, ...msgs);
   }
 
   //eslint-disable-next-line
@@ -70,8 +76,14 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public errorS(m: string, ...msg: any[]): void {
+  public error(m: string, ...msg: any[]): void {
+    if (!m.startsWith('TODO')) debugBreak();
     super.error(m, ...msg);
+  }
+
+  //eslint-disable-next-line
+  public errorS(m: string, ...msg: any[]): void {
+    this.error(m, ...msg);
     try {
       Sentry.captureMessage(m, Sentry.Severity.Error);
     } catch (e) {
@@ -81,6 +93,7 @@ export class LoggerWrapper extends util.Log {
 
   //eslint-disable-next-line
   public exceptionS(e: unknown, ...msg: unknown[]): void {
+    debugBreak();
     super.error(e, ...msg);
     try {
       Sentry.captureException(e);

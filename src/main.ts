@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
-import { AbstractRunnable, TestsToRun } from './AbstractRunnable';
+import { AbstractExecutable, TestsToRun } from './AbstractExecutable';
 import { AbstractTest } from './AbstractTest';
 import { LoggerWrapper } from './LoggerWrapper';
+import { parseLine } from './Util';
 import { WorkspaceManager } from './WorkspaceManager';
+import { SharedTestTags } from './SharedTestTags';
 
 ///
 
@@ -17,14 +19,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   controller.resolveHandler = (item: vscode.TestItem | undefined): Thenable<void> => {
     if (item) {
-      // const testData = testItem2testData.get(item);
-      // if (testData?.executable) {
-      //   return testData.executable.resolve(testData, item);
-      // } else {
-      //   log.errorS('Missing TestData for item', item.id, item.label);
-      //   return Promise.resolve();
-      // }
-      return Promise.resolve();
+      const testData = testItem2test.get(item);
+      if (testData) {
+        return testData.resolve();
+      } else {
+        log.errorS('Missing TestData for item', item.id, item.label);
+        return Promise.resolve();
+      }
     } else {
       return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then();
     }
@@ -39,12 +40,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     line: string | number | undefined,
     testData: AbstractTest | undefined,
   ) => {
-    const uri = file ? vscode.Uri.file(file) : undefined;
+    const uri: vscode.Uri | undefined = file ? vscode.Uri.file(file) : undefined;
     const item = controller.createTestItem(id, label, uri);
-    if (file) {
-      const lineP = typeof line == 'number' ? line : typeof line == 'string' ? parseInt(line) : undefined;
-      if (lineP) item.range = new vscode.Range(lineP - 1, 0, lineP - 1, 0);
-    }
+    if (uri) parseLine(line, l => (item.range = new vscode.Range(l - 1, 0, l - 1, 0)));
     if (testData) testItem2test.set(item, testData);
     return item;
   };
@@ -66,11 +64,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
   };
 
-  if (vscode.workspace.workspaceFolders) {
-    for (const workspaceFolder of vscode.workspace.workspaceFolders) {
-      addWorkspaceManager(workspaceFolder);
+  const addOpenedWorkspaces = () => {
+    if (vscode.workspace.workspaceFolders) {
+      for (const workspaceFolder of vscode.workspace.workspaceFolders) {
+        addWorkspaceManager(workspaceFolder);
+      }
     }
-  }
+  };
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(event => {
@@ -85,7 +85,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   const collectExecutablesForRun = (request: vscode.TestRunRequest) => {
-    const managers = new Map<WorkspaceManager, Map<AbstractRunnable, TestsToRun>>();
+    const managers = new Map<WorkspaceManager, Map<AbstractExecutable, TestsToRun>>();
 
     const enumerator = (type: 'direct' | 'parent') => (item: vscode.TestItem) => {
       if (request.exclude?.includes(item)) return;
@@ -93,11 +93,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       const test = testItem2test.get(item);
 
       if (test) {
-        const executable = test.runnable;
-        const manager = workspace2manager.get(executable._shared.workspaceFolder)!;
+        const executable = test.executable;
+        const manager = workspace2manager.get(executable.shared.workspaceFolder)!;
         let executables = managers.get(manager);
         if (!executables) {
-          executables = new Map<AbstractRunnable, TestsToRun>();
+          executables = new Map<AbstractExecutable, TestsToRun>();
           managers.set(manager, executables);
         }
         let tests = executables.get(executable);
@@ -117,27 +117,94 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     return managers;
   };
 
+  let runCount = 0;
+  let debugCount = 0;
+
   const runProfile = controller.createRunProfile(
-    'run profile name',
+    'Run Test',
     vscode.TestRunProfileKind.Run,
     async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken): Promise<void> => {
-      const run = controller.createTestRun(request);
+      if (debugCount) {
+        vscode.window.showWarningMessage('Cannot run new tests while debugging.');
+        return;
+      }
+
+      const testRun = controller.createTestRun(request);
+      ++runCount;
+
       try {
         const managers = collectExecutablesForRun(request);
 
-        const managerRuns: Thenable<void>[] = [];
+        const runQueue: Thenable<void>[] = [];
+
         for (const [manager, executables] of managers) {
-          managerRuns.push(manager.run(executables, cancellation, run));
+          runQueue.push(manager.run(executables, cancellation, testRun));
         }
 
-        await Promise.allSettled(managerRuns);
+        await Promise.allSettled(runQueue);
       } catch (e) {
-        log.errorS('runHandler errored', e);
+        log.errorS('runHandler errored. never should be here', e);
       } finally {
-        run.end();
+        testRun.end();
+        --runCount;
       }
     },
     true,
+    SharedTestTags.runnable,
+  );
+
+  const debugProfile = controller.createRunProfile(
+    'Debug Test',
+    vscode.TestRunProfileKind.Debug,
+    async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken): Promise<void> => {
+      if (runCount) {
+        vscode.window.showWarningMessage('Cannot debug test while running test(s).');
+        return;
+      }
+      if (debugCount) {
+        vscode.window.showWarningMessage('Cannot debug test while debugging.');
+        return;
+      }
+
+      const testRun = controller.createTestRun(request);
+      ++debugCount;
+
+      try {
+        const managers = collectExecutablesForRun(request);
+
+        if (managers.size != 1) {
+          vscode.window.showWarningMessage('You should only run 1 test case, no group.');
+          return;
+        }
+
+        const runQueue: Thenable<void>[] = [];
+
+        for (const [manager, executables] of managers) {
+          if (executables.size != 1) {
+            vscode.window.showWarningMessage('You should only run 1 test case, no group.');
+            return;
+          }
+
+          const testsToRun = [...executables.values()][0];
+
+          if (testsToRun.direct.length != 1) {
+            vscode.window.showWarningMessage('You should only run 1 test case, no group.');
+            return;
+          }
+          const test = testsToRun.direct[0];
+          runQueue.push(manager.debug(test, cancellation, testRun));
+        }
+
+        await Promise.allSettled(runQueue);
+      } catch (e) {
+        log.errorS('debugHandler errored. never should be here', e);
+      } finally {
+        testRun.end();
+        --debugCount;
+      }
+    },
+    false,
+    SharedTestTags.debuggable,
   );
 
   context.subscriptions.push({
@@ -148,10 +215,32 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
       log.info('Disposing controller');
       runProfile.dispose();
+      debugProfile.dispose();
       controller.dispose();
       log.info('Deactivating finished');
     },
   });
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('testMate.cmd.reload-tests', async () => {
+      for (const ws of workspace2manager.values()) {
+        await ws.load();
+      }
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('testMate.cmd.reload-workspaces', () => {
+      for (const ws of workspace2manager.keys()) {
+        removeWorkspaceManager(ws);
+      }
+
+      addOpenedWorkspaces();
+      Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then();
+    }),
+  );
+
+  addOpenedWorkspaces();
 
   log.info('Activation finished');
 }

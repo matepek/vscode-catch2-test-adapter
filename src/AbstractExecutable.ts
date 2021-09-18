@@ -1,13 +1,15 @@
 import * as pathlib from 'path';
 import * as fs from 'fs';
+import * as vscode from 'vscode';
+import { EOL } from 'os';
 
 import { RunnableProperties } from './RunnableProperties';
 import { AbstractTest } from './AbstractTest';
 import { TaskPool } from './util/TaskPool';
 import { WorkspaceShared } from './WorkspaceShared';
-import { RunningRunnable } from './RunningRunnable';
+import { ExecutableRunResultValue, RunningExecutable } from './RunningExecutable';
 import { promisify, inspect } from 'util';
-import { Version, reverse, getAbsolutePath, CancellationToken, CancellationFlag, generateId } from './Util';
+import { Version, getAbsolutePath, CancellationToken, CancellationFlag } from './Util';
 import {
   resolveOSEnvironmentVariables,
   createPythonIndexerForPathVariable,
@@ -15,9 +17,13 @@ import {
   resolveVariablesAsync,
 } from './util/ResolveRule';
 import { TestGrouping, GroupByExecutable, GroupByTagRegex, GroupByRegex } from './TestGroupingInterface';
-import { EOL } from 'os';
 import { isSpawnBusyError } from './util/FSWrapper';
-import * as vscode from 'vscode';
+import { TestResultBuilder } from './TestResultBuilder';
+import { debugAssert, debugBreak } from './util/DevelopmentHelper';
+import { SpawnBuilder } from './Spawner';
+import { SharedTestTags } from './SharedTestTags';
+import { LoggerWrapper } from './LoggerWrapper';
+import { Disposable } from './Util';
 
 export class TestsToRun {
   public readonly direct: AbstractTest[] = []; // test is drectly included, should be run even if it is skipped
@@ -29,26 +35,27 @@ export class TestsToRun {
   }
 }
 
-export abstract class AbstractRunnable {
+export abstract class AbstractExecutable implements Disposable {
   public constructor(
-    public readonly _shared: WorkspaceShared,
+    public readonly shared: WorkspaceShared,
     public readonly properties: RunnableProperties,
     public readonly frameworkName: string,
-    public readonly frameworkVersion: Promise<Version | undefined>,
+    public readonly frameworkVersion: Version | undefined,
   ) {
-    frameworkVersion
-      .then(version => {
-        if (AbstractRunnable._reportedFrameworks.findIndex(x => x === frameworkName) === -1) {
-          const versionStr = version ? version.toString() : 'unknown';
+    this._execItem = new ExecutableGroup(this);
+    const versionStr = frameworkVersion ? frameworkVersion.toString() : 'unknown';
 
-          const tags: Record<string, string> = {};
-          tags[this.frameworkName] = `${this.frameworkName}@${versionStr}`;
-          _shared.log.setTags(tags);
+    const tags: Record<string, string> = {};
+    tags[this.frameworkName] = `${this.frameworkName}@${versionStr}`;
+    shared.log.setTags(tags);
 
-          AbstractRunnable._reportedFrameworks.push(frameworkName);
-        }
-      })
-      .catch(e => this._shared.log.exceptionS(e));
+    AbstractExecutable._reportedFrameworks.push(frameworkName);
+  }
+
+  public dispose(): void {
+    for (const test of this._tests.values()) {
+      this.removeTest(test);
+    }
   }
 
   private static _reportedFrameworks: string[] = [];
@@ -62,41 +69,53 @@ export abstract class AbstractRunnable {
 
   private _lastReloadTime: number | undefined = undefined;
 
-  public get lastReloadTime(): number | undefined {
-    return this._lastReloadTime;
+  //TODO:future  special group to be expandable: private _execGroup: vscode.TestItem | undefined = undefined;
+
+  // don't use this directly because _addTest and _getTest can be overwritten
+  private _tests = new Map<string /*id*/, AbstractTest>();
+
+  protected _addTest(testId: string, test: AbstractTest): void {
+    this._tests.set(testId, test);
   }
 
-  private _tests = new Set<AbstractTest>();
+  protected _getTest<T extends AbstractTest>(testId: string): T | undefined {
+    return this._tests.get(testId) as T;
+  }
 
-  private _getOrCreateChildSuite(
+  private _getOrCreateChildGroup(
+    idIn: string | undefined,
     label: string,
     description: string,
-    tooltip: string,
-    childrenOfLevel: vscode.TestItemCollection,
-  ): vscode.TestItemCollection {
-    const found = childrenOfLevel.get(label);
+    _tooltip: string, // tooltip currently is not supported
+    itemOfLevel: vscode.TestItem | undefined,
+  ): vscode.TestItem {
+    const childrenOfLevel = itemOfLevel?.children ?? this.shared.rootItems;
+    const id = idIn ?? label;
+    const found = childrenOfLevel.get(id);
     if (found) {
-      return found.children;
+      return found;
     } else {
-      const testItem = this._shared.testItemCreator(label, label, undefined, undefined, undefined);
+      const testItem = this.shared.testItemCreator(id, label, undefined, undefined, undefined);
       testItem.description = description;
+      testItem.tags = SharedTestTags.groupArray;
       childrenOfLevel.add(testItem);
-      return testItem.children;
+      return testItem;
     }
   }
 
-  private async _resolveAndGetOrCreateChildSuite(
-    childrenOfLevel: vscode.TestItemCollection,
+  private async _resolveAndGetOrCreateChildGroup(
+    itemOfLevel: vscode.TestItem | undefined,
+    id: string | undefined,
     label: string,
     description: string | undefined,
     tooltip: string | undefined,
     varsToResolve: ResolveRuleAsync<string>[],
-  ): Promise<vscode.TestItemCollection> {
-    const resolvedLabel = await this._resolveText(label, ...varsToResolve);
-    const resolvedDescr = description !== undefined ? await this._resolveText(description, ...varsToResolve) : '';
-    const resolvedToolt = tooltip !== undefined ? await this._resolveText(tooltip, ...varsToResolve) : '';
+  ): Promise<vscode.TestItem> {
+    const resolvedLabel = await this.resolveText(label, ...varsToResolve);
+    const resolvedDescr = description !== undefined ? await this.resolveText(description, ...varsToResolve) : '';
+    const resolvedToolt = tooltip !== undefined ? await this.resolveText(tooltip, ...varsToResolve) : '';
 
-    return this._getOrCreateChildSuite(resolvedLabel, resolvedDescr, resolvedToolt, childrenOfLevel);
+    return this._getOrCreateChildGroup(id, resolvedLabel, resolvedDescr, resolvedToolt, itemOfLevel);
   }
 
   private _updateVarsWithTags(tg: TestGrouping, tags: string[], tagsResolveRule: ResolveRuleAsync<string>): void {
@@ -106,7 +125,7 @@ export abstract class AbstractRunnable {
       let tagFormat = `[${tagVar}]`;
       if (tg.tagFormat !== undefined) {
         if (tg.tagFormat.indexOf(tagVar) === -1) {
-          this._shared.log.warn(`tagFormat should contain "${tagVar}" substring`, tg.tagFormat);
+          this.shared.log.warn(`tagFormat should contain "${tagVar}" substring`, tg.tagFormat);
         } else {
           tagFormat = tg.tagFormat;
         }
@@ -117,7 +136,7 @@ export abstract class AbstractRunnable {
 
   private static readonly _variableRe = /\$\{[^ ]*\}/;
 
-  private async _resolveText(text: string, ...additionalVarToValue: readonly ResolveRuleAsync[]): Promise<string> {
+  public async resolveText(text: string, ...additionalVarToValue: readonly ResolveRuleAsync[]): Promise<string> {
     let resolvedText = text;
     try {
       resolvedText = await resolveVariablesAsync(resolvedText, this.properties.varToValue);
@@ -129,37 +148,42 @@ export abstract class AbstractRunnable {
 
       resolvedText = resolveOSEnvironmentVariables(resolvedText, false);
 
-      if (resolvedText.match(AbstractRunnable._variableRe))
-        this._shared.log.warn('Possibly unresolved variable', resolvedText, text, this);
+      if (resolvedText.match(AbstractExecutable._variableRe))
+        this.shared.log.warn('Possibly unresolved variable', resolvedText, text, this);
     } catch (e) {
-      this._shared.log.error('resolveText', text, e, this);
+      this.shared.log.error('resolveText', text, e, this);
     }
     return resolvedText;
   }
 
   private static readonly _tagVar = '${tags}';
 
-  protected async _createSubtreeAndAddTest(
+  /**
+   * If there is a special group called 'groupByExecutable' then we will store
+   * the corresponding TestItem for error reporting and other features.
+   * It can be nested, in this case the shallowest/first will be stored.
+   */
+  private readonly _execItem: ExecutableGroup;
+
+  protected async _createTreeAndAddTest<T extends AbstractTest>(
     testGrouping: TestGrouping,
-    testNameAsId: string,
-    testName: string,
+    testId: string,
     file: string | undefined,
-    line: number | undefined,
     tags: string[], // in case of google test it is the TestCase
-    description: string | undefined,
-    createTest: () => AbstractTest,
-    updateTest: (test: AbstractTest) => void,
-  ): Promise<void> {
-    this._shared.log.info('testGrouping', testNameAsId);
-    this._shared.log.debug('testGrouping', { testName, testNameAsId, file, tags, testGrouping });
+    _description: string | undefined, // currently we don't use it for subtree creation
+    createTest: (container: vscode.TestItemCollection) => T,
+    updateTest: (test: T) => void,
+  ): Promise<T> {
+    this.shared.log.info('testGrouping', testId);
+    this.shared.log.debug('testGrouping', { testId, file, tags, testGrouping });
 
     tags.sort();
 
     const tagsResolveRule: ResolveRuleAsync<string> = {
-      resolve: AbstractRunnable._tagVar,
+      resolve: AbstractExecutable._tagVar,
       rule: '', // will be filled soon enough
     };
-    const sourceRelPath = file ? pathlib.relative(this._shared.workspaceFolder.uri.fsPath, file) : '';
+    const sourceRelPath = file ? pathlib.relative(this.shared.workspaceFolder.uri.fsPath, file) : '';
 
     const varsToResolve = [
       tagsResolveRule,
@@ -167,7 +191,8 @@ export abstract class AbstractRunnable {
       createPythonIndexerForPathVariable('sourceAbsPath', file ? file : ''),
     ];
 
-    let childrenOfLevel = this._shared.rootItems;
+    // undefined means root
+    let itemOfLevel: vscode.TestItem | undefined = undefined;
     let currentGrouping: TestGrouping = testGrouping;
 
     try {
@@ -176,16 +201,20 @@ export abstract class AbstractRunnable {
           const g = currentGrouping.groupByExecutable;
           this._updateVarsWithTags(g, tags, tagsResolveRule);
 
+          const id = this.properties.path;
           const label = g.label !== undefined ? g.label : '${filename}';
           const description = g.description !== undefined ? g.description : '${relDirpath}${osPathSep}';
 
-          childrenOfLevel = await this._resolveAndGetOrCreateChildSuite(
-            childrenOfLevel,
+          itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+            itemOfLevel,
+            id,
             label,
             description,
             `Path: ${this.properties.path}\nCwd: ${this.properties.options.cwd}`,
             varsToResolve,
           );
+
+          this._execItem.item = itemOfLevel;
 
           currentGrouping = g;
         } else if (currentGrouping.groupBySource) {
@@ -196,16 +225,18 @@ export abstract class AbstractRunnable {
             const label = g.label ? g.label : sourceRelPath;
             const description = g.description;
 
-            childrenOfLevel = await this._resolveAndGetOrCreateChildSuite(
-              childrenOfLevel,
+            itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+              itemOfLevel,
+              undefined,
               label,
               description,
               undefined,
               varsToResolve,
             );
           } else if (g.groupUngroupedTo) {
-            childrenOfLevel = await this._resolveAndGetOrCreateChildSuite(
-              childrenOfLevel,
+            itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+              itemOfLevel,
+              undefined,
               g.groupUngroupedTo,
               undefined,
               undefined,
@@ -225,16 +256,18 @@ export abstract class AbstractRunnable {
           ) {
             if (g.tags === undefined || g.tags.length === 0 || g.tags.every(t => t.length == 0)) {
               if (tags.length > 0) {
-                childrenOfLevel = await this._resolveAndGetOrCreateChildSuite(
-                  childrenOfLevel,
-                  g.label ? g.label : AbstractRunnable._tagVar,
+                itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+                  itemOfLevel,
+                  undefined,
+                  g.label ? g.label : AbstractExecutable._tagVar,
                   g.description,
                   undefined,
                   varsToResolve,
                 );
               } else if (g.groupUngroupedTo) {
-                childrenOfLevel = await this._resolveAndGetOrCreateChildSuite(
-                  childrenOfLevel,
+                itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+                  itemOfLevel,
+                  undefined,
                   g.groupUngroupedTo,
                   undefined,
                   undefined,
@@ -247,16 +280,18 @@ export abstract class AbstractRunnable {
 
               if (foundCombo) {
                 this._updateVarsWithTags(g, foundCombo, tagsResolveRule);
-                childrenOfLevel = await this._resolveAndGetOrCreateChildSuite(
-                  childrenOfLevel,
-                  g.label ? g.label : AbstractRunnable._tagVar,
+                itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+                  itemOfLevel,
+                  undefined,
+                  g.label ? g.label : AbstractExecutable._tagVar,
                   g.description,
                   undefined,
                   varsToResolve,
                 );
               } else if (g.groupUngroupedTo) {
-                childrenOfLevel = await this._resolveAndGetOrCreateChildSuite(
-                  childrenOfLevel,
+                itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+                  itemOfLevel,
+                  undefined,
                   g.groupUngroupedTo,
                   undefined,
                   undefined,
@@ -265,7 +300,7 @@ export abstract class AbstractRunnable {
               }
             }
           } else {
-            this._shared.log.warn('groupByTags.tags should be an array of strings. Empty array is OK.', g.tags);
+            this.shared.log.warn('groupByTags.tags should be an array of strings. Empty array is OK.', g.tags);
           }
 
           currentGrouping = g;
@@ -281,7 +316,7 @@ export abstract class AbstractRunnable {
             if (Array.isArray(g.regexes) && g.regexes.length > 0 && g.regexes.every(v => typeof v === 'string')) {
               let match: RegExpMatchArray | null = null;
 
-              const matchOn = groupType == 'groupByTagRegex' ? tags : [testName];
+              const matchOn = groupType == 'groupByTagRegex' ? tags : [testId];
 
               let reIndex = 0;
               while (reIndex < g.regexes.length && match == null) {
@@ -293,7 +328,7 @@ export abstract class AbstractRunnable {
               }
 
               if (match !== null) {
-                this._shared.log.info(groupType + ' matched on', testName, g.regexes[reIndex - 1]);
+                this.shared.log.info(groupType + ' matched on', testId, g.regexes[reIndex - 1]);
                 const matchGroup = match[1] ? match[1] : match[0];
 
                 const lowerMatchGroup = matchGroup.toLowerCase();
@@ -312,16 +347,18 @@ export abstract class AbstractRunnable {
                 const description =
                   g.description !== undefined ? await resolveVariablesAsync(g.description, matchVar) : undefined;
 
-                childrenOfLevel = await this._resolveAndGetOrCreateChildSuite(
-                  childrenOfLevel,
+                itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+                  itemOfLevel,
+                  undefined,
                   label,
                   description,
                   undefined,
                   varsToResolve,
                 );
               } else if (g.groupUngroupedTo) {
-                childrenOfLevel = await this._resolveAndGetOrCreateChildSuite(
-                  childrenOfLevel,
+                itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+                  itemOfLevel,
+                  undefined,
                   g.groupUngroupedTo,
                   undefined,
                   undefined,
@@ -329,10 +366,10 @@ export abstract class AbstractRunnable {
                 );
               }
             } else {
-              this._shared.log.warn(groupType + '.regexes should be a non-empty array of strings.', g.regexes);
+              this.shared.log.warn(groupType + '.regexes should be a non-empty array of strings.', g.regexes);
             }
           } else {
-            this._shared.log.warn(groupType + ' missing "regexes": skipping grouping level');
+            this.shared.log.warn(groupType + ' missing "regexes": skipping grouping level');
           }
           currentGrouping = g;
         } else {
@@ -340,108 +377,43 @@ export abstract class AbstractRunnable {
         }
       }
     } catch (e) {
-      this._shared.log.exceptionS(e);
+      this.shared.log.exceptionS(e);
     }
 
-    const uri = file ? vscode.Uri.file(file) : undefined;
-
-    const createAndAddItem = () => {
-      const test = createTest();
-      childrenOfLevel.add(test.item);
-      this._tests.add(test);
-    };
-
-    const found = childrenOfLevel.get(testNameAsId);
+    const childrenOfLevel = itemOfLevel?.children ?? this.shared.rootItems;
+    const found = childrenOfLevel.get(testId);
 
     if (found) {
-      if (found.uri?.toString() !== uri?.toString()) {
-        childrenOfLevel.delete(testNameAsId);
-        createAndAddItem();
-      } else {
-        const test = this._shared.testItemMapper(found);
-        if (!test) throw Error('missing test for item');
-
-        this._tests.add(test);
-        updateTest(test);
-      }
+      const test = this.shared.testItemMapper(found) as T;
+      if (!test) throw Error('missing test for item');
+      updateTest(test);
+      this._addTest(test.id, test);
+      return test;
     } else {
-      createAndAddItem();
+      const test = createTest(childrenOfLevel);
+      this._addTest(test.id, test);
+      return test;
     }
   }
 
-  private removeWithLeafAscendants(testItem: vscode.TestItem): void {
-    if (testItem.children.size > 0) return;
+  private removeWithLeafAscendants(testItem: vscode.TestItem, evenIfHasChildren = false): void {
+    if (!evenIfHasChildren && testItem.children.size > 0) return;
 
     if (testItem.parent) {
       const parent = testItem.parent;
       parent.children.delete(testItem.id);
       this.removeWithLeafAscendants(parent);
     } else {
-      this._shared.rootItems.delete(testItem.id);
+      this.shared.rootItems.delete(testItem.id);
     }
   }
 
-  public removeTests(): void {
-    this._tests.forEach(t => this.removeWithLeafAscendants(t.item));
-    this._tests = new Set();
+  private removeTest(test: AbstractTest): void {
+    this.removeWithLeafAscendants(test.item, true);
   }
 
-  // protected _createError(title: string, message: string): (parent: Suite) => AbstractTest {
-  //   return (parent: Suite): AbstractTest => {
-  //     const shared = this._shared;
-  //     const runnable = this as AbstractRunnable;
-  //     const test = new (class extends AbstractTest {
-  //       public constructor() {
-  //         super(
-  //           shared,
-  //           runnable,
-  //           parent,
-  //           title,
-  //           title,
-  //           undefined,
-  //           undefined,
-  //           true,
-  //           {
-  //             state: 'errored',
-  //             message,
-  //           },
-  //           [],
-  //           '⚡️ Run me for details ⚡️',
-  //           undefined,
-  //           undefined,
-  //         );
-  //       }
-
-  //       public compare(testNameAsId: string): boolean {
-  //         return testNameAsId === testNameAsId;
-  //       }
-
-  //       public getDebugParams(): string[] {
-  //         throw Error('assert');
-  //       }
-
-  //       public parseAndProcessTestCase(): AbstractTestEvent {
-  //         throw Error('assert');
-  //       }
-  //     })();
-
-  //     return test;
-  //   };
-  // }
-
   protected _createAndAddError(label: string, message: string): void {
-    //TODO: create special node store and add error
-    // return new RunnableReloadResult().add(
-    //   ...(await this._createSubtreeAndAddTest(
-    //     { groupByExecutable: this._getGroupByExecutable() },
-    //     label,
-    //     label,
-    //     undefined,
-    //     [],
-    //     this._createError(label, message),
-    //     () => false,
-    //   )),
-    // );
+    this._execItem.setError(label, message);
   }
 
   protected _createAndAddUnexpectedStdError(stdout: string, stderr: string): void {
@@ -486,7 +458,7 @@ export abstract class AbstractRunnable {
       }
 
       if (buckets.length > 1) {
-        this._shared.log.info(
+        this.shared.log.info(
           "Parallel execution of the same executable is enabled. Note: This can cause problems if the executable's test cases depend on the same resource.",
           buckets.length,
         );
@@ -505,13 +477,13 @@ export abstract class AbstractRunnable {
     const limit = 30000;
 
     for (const test of tests) {
-      if (charCount + test.testNameAsId.length >= limit) {
+      if (charCount + test.id.length >= limit) {
         lastSet = [];
         subsets.push(lastSet);
         charCount = 0;
       }
       lastSet.push(test);
-      charCount += test.testNameAsId.length;
+      charCount += test.id.length;
     }
 
     return subsets;
@@ -525,7 +497,7 @@ export abstract class AbstractRunnable {
     return this.properties.prependTestRunningArgs.concat(this._getRunParamsInner(childrenToRun));
   }
 
-  protected abstract _handleProcess(testRun: vscode.TestRun, runInfo: RunningRunnable): Promise<void>;
+  protected abstract _handleProcess(testRun: vscode.TestRun, runInfo: RunningExecutable): Promise<HandleProcessResult>;
 
   protected abstract _getDebugParamsInner(
     childrenToRun: readonly Readonly<AbstractTest>[],
@@ -539,25 +511,30 @@ export abstract class AbstractRunnable {
   public reloadTests(taskPool: TaskPool, cancellationFlag: CancellationFlag): Promise<void> {
     if (cancellationFlag.isCancellationRequested) return Promise.resolve();
 
-    return taskPool.scheduleTask(async () => {
-      this._shared.log.info('reloadTests', this.frameworkName, this.frameworkVersion, this.properties.path);
+    return this._execItem.busy(async () => {
+      return taskPool.scheduleTask(async () => {
+        if (cancellationFlag.isCancellationRequested) return Promise.resolve();
 
-      const lastModiTime = await this._getModiTime();
+        this.shared.log.info('reloadTests', this.frameworkName, this.frameworkVersion, this.properties.path);
 
-      if (this._lastReloadTime === undefined || lastModiTime === undefined || this._lastReloadTime !== lastModiTime) {
-        this._lastReloadTime = lastModiTime;
+        const lastModiTime = await this._getModiTime();
 
-        const prevTests = this._tests;
-        this._tests = new Set();
+        if (this._lastReloadTime === undefined || lastModiTime === undefined || this._lastReloadTime !== lastModiTime) {
+          this._lastReloadTime = lastModiTime;
 
-        await this._reloadChildren(cancellationFlag);
+          const prevTests = this._tests;
+          this._tests = new Map();
+          this._execItem.clearError();
 
-        prevTests.forEach(test => {
-          this._tests.has(test) || this.removeWithLeafAscendants(test.item);
-        });
-      } else {
-        this._shared.log.debug('reloadTests was skipped due to mtime', this.properties.path);
-      }
+          await this._reloadChildren(cancellationFlag);
+
+          for (const test of prevTests.values()) {
+            if (!this._getTest(test.id)) this.removeTest(test);
+          }
+        } else {
+          this.shared.log.debug('reloadTests was skipped due to mtime', this.properties.path);
+        }
+      });
     });
   }
 
@@ -567,24 +544,23 @@ export abstract class AbstractRunnable {
     taskPool: TaskPool,
     cancellationToken: CancellationToken,
   ): Promise<void> {
-    try {
-      await this.runTasks('beforeEach', taskPool, cancellationToken);
-    } catch (e) {
-      //this.sentStaticErrorEvent(testRunId, collectChildrenToRun(), e);
-      return;
-    }
-    //await this.reloadTests(taskPool, cancellationToken); // this might relod the test list if the file timestamp has changed
+    // DISABLED for now
+    // try {
+    //   await this.runTasks('beforeEach', taskPool, cancellationToken);
+    //   //await this.reloadTests(taskPool, cancellationToken); // this might relod the test list if the file timestamp has changed
+    // } catch (e) {
+    //   //this.sentStaticErrorEvent(testRunId, collectChildrenToRun(), e);
+    //   return;
+    // }
 
     const testsToRunFinal: AbstractTest[] = [];
 
     for (const t of testsToRun.direct) {
-      if (t.reportStaticErrorIfHave(testRun)) {
-      } else testsToRunFinal.push(t);
+      if (!t.hasStaticError) testsToRunFinal.push(t);
     }
     for (const t of testsToRun.parent) {
-      if (t.reportStaticErrorIfHave(testRun)) {
-      } else if (t.skipped) {
-        /* dont have to mark it as skipped testRun.skipped(t.item);*/
+      if (t.hasStaticError || t.reportIfSkippedFirstOnly(testRun)) {
+        /* skip */
       } else testsToRunFinal.push(t);
     }
 
@@ -593,7 +569,7 @@ export abstract class AbstractRunnable {
     const buckets = this._splitTestSetForMultirunIfEnabled(testsToRunFinal);
     await Promise.allSettled(
       buckets.map(async (bucket: readonly AbstractTest[]) => {
-        const smallerTestSet = this._splitTestsToSmallEnoughSubsets(bucket); //TODO: merge with _splitTestSetForMultirunIfEnabled
+        const smallerTestSet = this._splitTestsToSmallEnoughSubsets(bucket); //TODO:future merge with _splitTestSetForMultirunIfEnabled
         for (const testSet of smallerTestSet) await this._runInner(testRun, testSet, taskPool, cancellationToken);
       }),
     );
@@ -610,18 +586,20 @@ export abstract class AbstractRunnable {
     taskPool: TaskPool,
     cancellation: CancellationToken,
   ): Promise<void> {
-    return this.properties.parallelizationPool.scheduleTask(() => {
+    return this.properties.parallelizationPool.scheduleTask(async () => {
       const runIfNotCancelled = (): Promise<void> => {
         if (cancellation.isCancellationRequested) {
-          this._shared.log.info('test was canceled:', this);
+          this.shared.log.info('test was canceled:', this);
           return Promise.resolve();
         }
         return this._runProcess(testRun, testsToRun, cancellation);
       };
 
-      return taskPool.scheduleTask(runIfNotCancelled).catch((err: Error) => {
+      try {
+        return taskPool.scheduleTask(runIfNotCancelled);
+      } catch (err) {
         if (isSpawnBusyError(err)) {
-          this._shared.log.info('executable is busy, rescheduled: 2sec', err);
+          this.shared.log.info('executable is busy, rescheduled: 2sec', err);
 
           return promisify(setTimeout)(2000).then(() => {
             taskPool.scheduleTask(runIfNotCancelled);
@@ -629,7 +607,7 @@ export abstract class AbstractRunnable {
         } else {
           throw err;
         }
-      });
+      }
     });
   }
 
@@ -640,55 +618,54 @@ export abstract class AbstractRunnable {
   ): Promise<void> {
     const execParams = this._getRunParams(childrenToRun);
 
-    this._shared.log.info('proc starting', this.properties.path, execParams);
+    this.shared.log.info('proc starting', this.properties.path, execParams);
 
-    const runInfo = new RunningRunnable(
-      await this.properties.spawner.spawn(this.properties.path, execParams, this.properties.options),
+    const runInfo = await RunningExecutable.create(
+      new SpawnBuilder(this.properties.spawner, this.properties.path, execParams, this.properties.options, undefined),
       childrenToRun,
       cancellationToken,
     );
 
-    this._shared.log.info('proc started', runInfo.process.pid, this.properties.path, this.properties, execParams);
+    this.shared.log.info('proc started', runInfo.process.pid, this.properties.path, this.properties, execParams);
 
-    runInfo.setPriorityAsync(this._shared.log);
+    runInfo.setPriorityAsync(this.shared.log);
 
     runInfo.process.on('error', (err: Error) => {
-      this._shared.log.error('process error event:', err, this);
+      this.shared.log.error('process error event:', err, this);
     });
 
     {
       let trigger: (cause: 'reschedule' | 'closed' | 'timeout') => void;
 
-      const changeConn = this._shared.onDidChangeExecRunningTimeout(() => {
+      const changeConn = this.shared.onDidChangeExecRunningTimeout(() => {
         trigger('reschedule');
       });
 
       runInfo.process.once('close', (...args) => {
-        this._shared.log.info('proc close:', this.properties.path, args);
+        this.shared.log.info('proc close:', this.properties.path, args);
         trigger('closed');
       });
 
-      const shedule = (): Promise<void> => {
-        return new Promise<'reschedule' | 'closed' | 'timeout'>(resolve => {
+      const shedule = async (): Promise<void> => {
+        const cause_1 = await new Promise<'reschedule' | 'closed' | 'timeout'>(resolve => {
           trigger = resolve;
 
-          if (this._shared.execRunningTimeout !== null) {
+          if (this.shared.execRunningTimeout !== null) {
             const elapsed = Date.now() - runInfo.startTime;
-            const left = Math.max(0, this._shared.execRunningTimeout - elapsed);
+            const left = Math.max(0, this.shared.execRunningTimeout - elapsed);
             setTimeout(resolve, left, 'timeout');
           }
-        }).then(cause => {
-          if (cause === 'closed') {
-            return Promise.resolve();
-          } else if (cause === 'timeout') {
-            runInfo.killProcess(this._shared.execRunningTimeout);
-            return Promise.resolve();
-          } else if (cause === 'reschedule') {
-            return shedule();
-          } else {
-            throw new Error('unknown case: ' + cause);
-          }
         });
+        if (cause_1 === 'closed') {
+          return Promise.resolve();
+        } else if (cause_1 === 'timeout') {
+          runInfo.killProcess(this.shared.execRunningTimeout);
+          return Promise.resolve();
+        } else if (cause_1 === 'reschedule') {
+          return shedule();
+        } else {
+          throw new Error('unknown case: ' + cause_1);
+        }
       };
 
       shedule().finally(() => {
@@ -696,9 +673,70 @@ export abstract class AbstractRunnable {
       });
     }
 
-    return this._handleProcess(testRun, runInfo)
-      .catch((reason: Error) => this._shared.log.exceptionS(reason))
-      .finally(() => this._shared.log.info('proc finished:', this.properties.path));
+    try {
+      const { unexpectedTests, expectedToRunAndFoundTests, leftBehindBuilder } = await this._handleProcess(
+        testRun,
+        runInfo,
+      );
+      const result = await runInfo.result;
+
+      if (result.value === ExecutableRunResultValue.Errored) {
+        this.shared.log.warn(result.toString(), result, runInfo, this);
+        testRun.appendOutput('❌ Executable run is finished with error.');
+        testRun.appendOutput([runInfo.spawnBuilder.cmd, ...runInfo.spawnBuilder.args].map(x => `"${x}""`).join(' '));
+      }
+
+      if (leftBehindBuilder) {
+        debugAssert(!leftBehindBuilder.built, "if it is built it shouldn't be passed");
+        switch (result.value) {
+          case ExecutableRunResultValue.Ok:
+            {
+              this.shared.log.errorS('builder should not left behind if no problem', this, leftBehindBuilder);
+              leftBehindBuilder.addOutputLine(0, '❗️ Test run has been cancelled by user.');
+              leftBehindBuilder.errored();
+            }
+            break;
+          case ExecutableRunResultValue.CancelledByUser:
+            {
+              this.shared.log.info('Test run has been cancelled by user. ✋', leftBehindBuilder);
+              leftBehindBuilder.addOutputLine(0, '❓ Test run has been cancelled by user.');
+              leftBehindBuilder.errored();
+            }
+            break;
+          case ExecutableRunResultValue.TimeoutByUser:
+            {
+              this.shared.log.info('Test has timed out. See `test.runtimeLimit` for details.', leftBehindBuilder);
+              leftBehindBuilder.addOutputLine(0, '❗️ Test has timed out. See `test.runtimeLimit` for details.');
+              leftBehindBuilder.errored();
+            }
+            break;
+          case ExecutableRunResultValue.Errored:
+            {
+              this.shared.log.warn('Test has ended unexpectedly.', result, leftBehindBuilder);
+              leftBehindBuilder.addOutputLine(0, '❗️ Test has ended unexpectedly: ' + result.toString());
+              leftBehindBuilder.errored();
+            }
+            break;
+        }
+        leftBehindBuilder.build();
+      }
+
+      const hasMissingTest = expectedToRunAndFoundTests.length < runInfo.childrenToRun.length && result.Ok;
+      const hasNewTest = unexpectedTests.length > 0;
+
+      if (hasMissingTest || hasNewTest) {
+        // exec probably has changed
+        this.reloadTests(this.shared.taskPool, this.shared.cancellationFlag).catch((reason: Error) => {
+          // Suite possibly deleted: It is a dead suite but this should have been handled elsewhere
+          this.shared.log.error('reloading-error: ', reason);
+        });
+      }
+    } catch (e) {
+      debugBreak(); // we really shouldnt be here
+      this.shared.log.exceptionS(e);
+    } finally {
+      this.shared.log.info('proc finished:', this.properties.path);
+    }
   }
 
   public async runTasks(
@@ -711,7 +749,7 @@ export abstract class AbstractRunnable {
         try {
           // sequential execution of tasks
           for (const taskName of this.properties.runTask[type] || []) {
-            const exitCode = await this._shared.executeTask(taskName, this.properties.varToValue, cancellationToken);
+            const exitCode = await this.shared.executeTask(taskName, this.properties.varToValue, cancellationToken);
 
             if (exitCode !== undefined) {
               if (exitCode !== 0) {
@@ -730,12 +768,7 @@ export abstract class AbstractRunnable {
     }
   }
 
-  protected _findTest(pred: (t: AbstractTest) => boolean): AbstractTest | undefined {
-    for (const t of this._tests) if (pred(t)) return t;
-    return undefined;
-  }
-
-  protected async _resolveSourceFilePath(file: string | undefined): Promise<string | undefined> {
+  protected async _resolveAndFindSourceFilePath(file: string | undefined): Promise<string | undefined> {
     if (typeof file != 'string') return undefined;
 
     let resolved = file;
@@ -744,10 +777,10 @@ export abstract class AbstractRunnable {
       resolved = resolved.replace(m, this.properties.sourceFileMap[m]); // Note: it just replaces the first occurence
     }
 
-    resolved = await this._resolveText(resolved);
+    resolved = await this.resolveText(resolved);
     resolved = this._findFilePath(resolved);
 
-    this._shared.log.debug('_resolveSourceFilePath:', file, '=>', resolved);
+    this.shared.log.debug('_resolveSourceFilePath:', file, '=>', resolved);
 
     return resolved;
   }
@@ -762,10 +795,10 @@ export abstract class AbstractRunnable {
     if (cwd && !this.properties.path.startsWith(cwd)) directoriesToCheck.push(cwd);
 
     if (
-      !this.properties.path.startsWith(this._shared.workspaceFolder.uri.fsPath) &&
-      (!cwd || !cwd.startsWith(this._shared.workspaceFolder.uri.fsPath))
+      !this.properties.path.startsWith(this.shared.workspaceFolder.uri.fsPath) &&
+      (!cwd || !cwd.startsWith(this.shared.workspaceFolder.uri.fsPath))
     )
-      directoriesToCheck.push(this._shared.workspaceFolder.uri.fsPath);
+      directoriesToCheck.push(this.shared.workspaceFolder.uri.fsPath);
 
     const found = getAbsolutePath(matchedPath, directoriesToCheck);
 
@@ -798,5 +831,78 @@ export abstract class AbstractRunnable {
       state: 'errored',
       message: err instanceof Error ? `⚡️ ${err.name}: ${err.message}` : inspect(err),
     });
+  }
+
+  protected processStdErr(testRun: vscode.TestRun, str: string): void {
+    testRun.appendOutput('⬇ std::cerr:\r\n');
+    testRun.appendOutput(str);
+    if (!str.endsWith('\r\n'))
+      if (str.endsWith('\n')) testRun.appendOutput('\r');
+      else testRun.appendOutput('\r\n');
+    testRun.appendOutput('⬆ std::cerr\r\n');
+  }
+}
+
+export interface HandleProcessResult {
+  unexpectedTests: readonly Readonly<AbstractTest>[];
+  expectedToRunAndFoundTests: readonly Readonly<AbstractTest>[];
+  leftBehindBuilder?: Readonly<TestResultBuilder<AbstractTest>>;
+}
+
+class ExecutableGroup {
+  public constructor(private readonly executable: AbstractExecutable) {}
+
+  private _item: vscode.TestItem | undefined = undefined;
+  private _itemForStaticError: vscode.TestItem | undefined = undefined;
+
+  public set item(item: vscode.TestItem) {
+    if (this.item && this.item !== item) {
+      this.executable.shared.log.errorS('why do we have different executableItem');
+      debugBreak('why are we here?');
+    } else if (!this._item) {
+      this._item = item;
+    }
+  }
+
+  // eslint-disable-next-line
+  public busy<TResult>(func: () => TResult | PromiseLike<TResult>): Promise<TResult> {
+    if (this._item) this._item.busy = true;
+    return Promise.resolve()
+      .then(func)
+      .finally(() => {
+        if (this._item) this._item.busy = false;
+      });
+  }
+
+  public setError(label: string, message: string): void {
+    const l = label + ': ' + message;
+    if (this._item) {
+      this._item.error = l;
+      this.removeSpecialItem();
+    } else {
+      if (!this._itemForStaticError) {
+        this._itemForStaticError = this.executable.shared.testItemCreator(
+          this.executable.properties.path,
+          this.executable.properties.path,
+          undefined,
+          undefined,
+          undefined,
+        );
+        this.executable.shared.rootItems.add(this._itemForStaticError);
+      }
+      this._itemForStaticError.error = l;
+    }
+  }
+
+  public clearError(): void {
+    if (this._item) this._item.error = undefined;
+    this.removeSpecialItem();
+  }
+
+  private removeSpecialItem(): void {
+    if (this._itemForStaticError) {
+      this.executable.shared.rootItems.delete(this._itemForStaticError.id);
+      this._itemForStaticError = undefined;
+    }
   }
 }

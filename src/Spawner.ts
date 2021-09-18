@@ -19,6 +19,26 @@ export interface Spawner {
 
 ///
 
+export class SpawnBuilder {
+  public constructor(
+    private readonly spawner: Spawner,
+    public readonly cmd: string,
+    public readonly args: string[],
+    public readonly options: SpawnOptionsWithoutStdio,
+    public readonly timeout: number | undefined,
+  ) {}
+
+  public spawnAsync(): Promise<SpawnReturns> {
+    return this.spawner.spawnAsync(this.cmd, this.args, this.options, this.timeout);
+  }
+
+  public spawn(): Promise<fsw.ChildProcessWithoutNullStreams> {
+    return this.spawner.spawn(this.cmd, this.args, this.options);
+  }
+}
+
+///
+
 export class DefaultSpawner implements Spawner {
   spawnAsync(cmd: string, args: string[], options: SpawnOptionsWithoutStdio, timeout?: number): Promise<SpawnReturns> {
     return new Promise((resolve, reject) => {

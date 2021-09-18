@@ -322,7 +322,7 @@ describe(pathlib.basename(__filename), function () {
       assert.strictEqual(tests.length, 1);
 
       assert.strictEqual(tests[0].label, '⚡️ Unexpected ERROR while parsing');
-      // TODO: assert.strictEqual(tests[0].description, '⚡️ Run me for details ⚡️');
+      // TODO:future assert.strictEqual(tests[0].description, '⚡️ Run me for details ⚡️');
       assert.strictEqual(tests[0].file, undefined);
       assert.strictEqual(tests[0].line, undefined);
       assert.strictEqual(tests[0].skipped, true);

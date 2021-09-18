@@ -2,7 +2,6 @@ import * as assert from 'assert';
 import * as path from 'path';
 
 import { resolveVariablesAsync, ResolveRuleAsync } from '../../src/util/ResolveRule';
-import { findURIs } from '../../src/Util';
 
 describe(path.basename(__filename), function () {
   it('resolveVariablesAsync', async function () {
@@ -158,108 +157,31 @@ describe(path.basename(__filename), function () {
 
       public map<U>(func: (t: T) => U): AdvancedII<U> {
         const nextFunc = this.next;
-        let next: IteratorResult<T> = (undefined as unknown) as IteratorResult<T>;
+        let next: IteratorResult<T> = undefined as unknown as IteratorResult<T>;
 
-        return new AdvancedII<U>(
-          (): IteratorResult<U> => {
-            next = nextFunc();
+        return new AdvancedII<U>((): IteratorResult<U> => {
+          next = nextFunc();
 
-            return next.done ? { value: undefined, done: true } : { value: func(next.value), done: false };
-          },
-        );
+          return next.done ? { value: undefined, done: true } : { value: func(next.value), done: false };
+        });
       }
 
       public filter(func: (t: T) => boolean): AdvancedII<T> {
         const nextFunc = this.next;
-        let next: IteratorResult<T> = (undefined as unknown) as IteratorResult<T>;
+        let next: IteratorResult<T> = undefined as unknown as IteratorResult<T>;
 
-        return new AdvancedII<T>(
-          (): IteratorResult<T> => {
-            next = nextFunc();
-            while (!next.done && !func(next.value)) next = nextFunc();
+        return new AdvancedII<T>((): IteratorResult<T> => {
+          next = nextFunc();
+          while (!next.done && !func(next.value)) next = nextFunc();
 
-            return next.done ? { value: undefined, done: true } : { value: next.value, done: false };
-          },
-        );
+          return next.done ? { value: undefined, done: true } : { value: next.value, done: false };
+        });
       }
     }
 
     it('test', function () {
       const x = AdvancedII.from([1, 2, 3]);
       assert.deepStrictEqual(x.toArray(), [1, 2, 3]);
-    });
-  });
-
-  context('findURIs', function () {
-    describe('gtest', function () {
-      it('recognises files', function () {
-        assert.deepStrictEqual(findURIs('', 'gtest'), []);
-
-        assert.deepStrictEqual(findURIs('/repo/example.cpp:11: Failure', 'gtest'), [
-          { index: 0, full: '/repo/example.cpp:11', file: '/repo/example.cpp', line: '11', column: '' },
-        ]);
-        assert.deepStrictEqual(findURIs('/repo/example.cpp:11:22: Failure', 'gtest'), [
-          { index: 0, full: '/repo/example.cpp:11:22', file: '/repo/example.cpp', line: '11', column: '22' },
-        ]);
-
-        assert.deepStrictEqual(findURIs('C:\\repo\\example.cpp(11): error', 'gtest'), [
-          { index: 0, full: 'C:\\repo\\example.cpp(11)', file: 'C:\\repo\\example.cpp', line: '11', column: '' },
-        ]);
-        assert.deepStrictEqual(findURIs('C:\\repo\\example.cpp(11,22): error', 'gtest'), [
-          { index: 0, full: 'C:\\repo\\example.cpp(11,22)', file: 'C:\\repo\\example.cpp', line: '11', column: '22' },
-        ]);
-      });
-    });
-    describe('catch2', function () {
-      it('recognises files', function () {
-        assert.deepStrictEqual(findURIs('', 'catch2'), []);
-
-        assert.deepStrictEqual(findURIs('Expression failed (at /repo/example.cpp:11):', 'catch2'), [
-          { index: 22, full: '/repo/example.cpp:11', file: '/repo/example.cpp', line: '11', column: '' },
-        ]);
-        assert.deepStrictEqual(findURIs('Expression failed (at /repo/example.cpp:11:22):', 'catch2'), [
-          { index: 22, full: '/repo/example.cpp:11:22', file: '/repo/example.cpp', line: '11', column: '22' },
-        ]);
-
-        assert.deepStrictEqual(findURIs('Expression failed (at C:\\repo\\example.cpp:11):', 'catch2'), [
-          { index: 22, full: 'C:\\repo\\example.cpp:11', file: 'C:\\repo\\example.cpp', line: '11', column: '' },
-        ]);
-        assert.deepStrictEqual(findURIs('Expression failed (at C:\\repo\\example.cpp:11:22):', 'catch2'), [
-          { index: 22, full: 'C:\\repo\\example.cpp:11:22', file: 'C:\\repo\\example.cpp', line: '11', column: '22' },
-        ]);
-      });
-    });
-    describe('general', function () {
-      it('recognises files', function () {
-        assert.deepStrictEqual(findURIs('', 'general'), []);
-
-        assert.deepStrictEqual(findURIs('/repo/example.cpp', 'general'), [
-          { index: 0, full: '/repo/example.cpp', file: '/repo/example.cpp', line: '', column: '' },
-        ]);
-        assert.deepStrictEqual(findURIs('C:\\repo\\example.cpp', 'general'), [
-          { index: 0, full: 'C:\\repo\\example.cpp', file: 'C:\\repo\\example.cpp', line: '', column: '' },
-        ]);
-
-        assert.deepStrictEqual(findURIs('[build] /repo/example.cpp something', 'general'), [
-          { index: 7, full: '/repo/example.cpp', file: '/repo/example.cpp', line: '', column: '' },
-        ]);
-        assert.deepStrictEqual(findURIs('[build] /repo/example.cpp:11 something', 'general'), [
-          { index: 7, full: '/repo/example.cpp:11', file: '/repo/example.cpp', line: '11', column: '' },
-        ]);
-        assert.deepStrictEqual(findURIs('[build] /repo/example.cpp:11:22 something', 'general'), [
-          { index: 7, full: '/repo/example.cpp:11:22', file: '/repo/example.cpp', line: '11', column: '22' },
-        ]);
-        assert.deepStrictEqual(findURIs('[build] C:\\repo\\example.cpp:11 something', 'general'), [
-          { index: 7, full: 'C:\\repo\\example.cpp:11', file: 'C:\\repo\\example.cpp', line: '11', column: '' },
-        ]);
-        assert.deepStrictEqual(findURIs('[build] C:\\repo\\example.cpp:11:22 something', 'general'), [
-          { index: 7, full: 'C:\\repo\\example.cpp:11:22', file: 'C:\\repo\\example.cpp', line: '11', column: '22' },
-        ]);
-        // this is not perfect because full is missing "")" but I don't care.
-        assert.deepStrictEqual(findURIs('[build] C:\\repo\\example.cpp(11,22) something', 'general'), [
-          { index: 7, full: 'C:\\repo\\example.cpp(11,22', file: 'C:\\repo\\example.cpp', line: '11', column: '22' },
-        ]);
-      });
     });
   });
 

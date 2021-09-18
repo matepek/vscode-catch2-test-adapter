@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es2018",
-    "lib": ["es2018"],
+    "target": "es2021",
+    "lib": ["es2021"],
     "module": "commonjs",
     "outDir": "out",
     "importHelpers": true,
@@ -10,11 +10,11 @@
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "noUnusedLocals": false, //TODO
+    "noUnusedLocals": false, //TODO:release
     "removeComments": true,
     "skipLibCheck": true,
     "experimentalDecorators": true,
     "typeRoots": ["node_modules/@types", "src/@types"]
   },
-  "include": ["src/main.ts", "test/util/*.ts"] //TODO: test/**/*.ts
+  "include": ["src/main.ts", "test/*", "test/util/*", "test/repo_script/*"] //TODO:future test/**/*.ts
 }

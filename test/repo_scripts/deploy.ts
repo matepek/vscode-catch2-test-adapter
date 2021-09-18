@@ -26,10 +26,16 @@ interface Info {
   full: string;
 }
 
-async function spawn(command: string, maskArgs: boolean, ...args: string[]): Promise<void> {
-  console.log('$ ' + command + ' "' + (maskArgs ? '<masked>' : args.join('" "')) + '"');
+async function spawn(command: string, ...args: (string | { arg: string; mask?: string })[]): Promise<void> {
+  console.log(
+    '$ ' + command + ' ' + args.map(a => (typeof a === 'string' ? `"${a}"` : a.mask ?? '<masked>')).join(' '),
+  );
   return new Promise((resolve, reject) => {
-    const c = cp.spawn(command, args, { stdio: 'inherit' });
+    const c = cp.spawn(
+      command,
+      args.map(a => (typeof a === 'string' ? a : a.arg)),
+      { stdio: 'inherit' },
+    );
     c.on('exit', (code: number) => {
       code == 0 ? resolve() : reject(new Error('Process exited with: ' + code));
     });
@@ -122,30 +128,62 @@ async function updatePackageJson(info: Info): Promise<void> {
 async function gitCommitAndTag(info: Info): Promise<void> {
   console.log('Creating commit and tag');
 
-  await spawn('git', false, 'config', '--local', 'user.name', 'deploy.js');
+  await spawn('git', 'config', '--local', 'user.name', 'deploy.js');
 
   const deployerMail = process.env['DEPLOYER_MAIL'] || 'deployer@deployer.de';
-  await spawn('git', false, 'config', '--local', 'user.email', deployerMail);
+  await spawn('git', 'config', '--local', 'user.email', deployerMail);
 
-  await spawn('git', false, 'status');
-  await spawn('git', false, 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
-  await spawn('git', false, 'status');
-  await spawn('git', false, 'commit', '-m', '[Updated] Date in CHANGELOG.md: ' + info.full!);
-  await spawn('git', false, 'tag', '-a', info.vver!, '-m', 'Version ' + info.vver!);
+  await spawn('git', 'status');
+  await spawn('git', 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
+  await spawn('git', 'status');
+  await spawn('git', 'commit', '-m', '[Updated] Date in CHANGELOG.md: ' + info.full);
+  await spawn('git', 'tag', '-a', info.vver, '-m', 'Version ' + info.vver);
 }
 
-async function gitPush(): Promise<void> {
-  console.log('Pushing to origin');
+async function gitPushBranch(): Promise<void> {
+  console.log('Pushing current branch to origin');
+
+  assert.ok(process.env['GITHUBM_API_KEY'] != undefined);
+
+  await spawn('git', 'push', {
+    mask: '<http_repo>',
+    arg:
+      'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+  });
+}
+
+async function gitPushTag(info: Info): Promise<void> {
+  console.log('Pushing tag to origin');
 
   assert.ok(process.env['GITHUBM_API_KEY'] != undefined);
 
   await spawn(
     'git',
-    true,
+    'push',
+    {
+      mask: '<http_repo>',
+      arg:
+        'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+    },
+    `refs/tags/${info.vver}:refs/tags/${info.vver}`,
+  );
+}
+
+async function gitDeleteTag(info: Info): Promise<void> {
+  console.log('Pushing delete tag from origin');
+
+  assert.ok(process.env['GITHUBM_API_KEY'] != undefined);
+
+  await spawn(
+    'git',
     'push',
     '--force',
-    '--follow-tags',
-    'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+    {
+      mask: '<http_repo>',
+      arg:
+        'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+    },
+    `:refs/tags/${info.vver}`,
   );
 }
 
@@ -239,11 +277,18 @@ async function main(argv: string[]): Promise<void> {
 
     const packagePath = await createPackage(info);
 
-    await gitPush();
+    await gitPushTag(info);
 
-    await createGithubRelease(info!, packagePath);
+    try {
+      await publishPackage(packagePath);
+    } catch (e) {
+      await gitDeleteTag(info);
+      throw e;
+    }
 
-    await publishPackage(packagePath);
+    await gitPushBranch();
+
+    await createGithubRelease(info, packagePath);
 
     console.log('Deployment has finished.');
   } else {

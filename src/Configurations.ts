@@ -402,10 +402,12 @@ export class Configurations {
         undefined,
         undefined,
         {},
-        {},
-        {},
-        {},
-        {},
+        {
+          catch2: {},
+          gtest: {},
+          doctest: {},
+          gbenchmark: {},
+        },
       );
     };
 
@@ -535,10 +537,12 @@ export class Configurations {
           waitForBuildProcess,
           spawnerConfig,
           sourceFileMap,
-          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
-          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
-          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),
-          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gbenchmark']),
+          {
+            catch2: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
+            gtest: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
+            doctest: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),
+            gbenchmark: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gbenchmark']),
+          },
         );
       };
 
