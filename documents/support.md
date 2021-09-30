@@ -114,7 +114,7 @@ If you want dynamically set enviranment variables generate a file which contains
 > }
 > ```
 
-### Can I run my tests at startup.
+### Can I run my tests at startup?
 
 > Well that is a bit triciker due to the activation event has to arrive before the run command.
 > Here is the workaround:
@@ -142,3 +142,10 @@ If you want dynamically set enviranment variables generate a file which contains
 ### Test parsing fails because my executable writes some stuff to the error channel / `std::cerr`.
 
 > Check `test.advancedExecutables` -> [ignoreTestEnumerationStdErr](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#ignoreTestEnumerationStdErr)
+
+### The extension doesn't notice if an executable has changed.
+
+> By default the extension watches the workspaceFolder for changes by using the `vscode.workspace.createFileSystemWatcher` API endpoint.
+> This is good because we are using the same resources but the `files.watcherExclude` setting affects this.
+> So for example one would like to save some resources and adds `**/build/**` to `files.watcherExclude` then vscode won't notify the extension about the changes and this will limit the functionality of the extension.
+> One can set `testMate.cpp.test.advancedExecutables[].fsWatcher` to workaround it.

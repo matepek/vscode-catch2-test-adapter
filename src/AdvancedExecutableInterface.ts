@@ -25,6 +25,7 @@ export interface AdvancedExecutable {
   testGrouping?: TestGrouping;
   executionWrapper?: ExecutionWrapper;
   sourceFileMap?: Record<string, string>;
+  fsWatcher?: string;
   darwin: AdvancedExecutable;
   linux: AdvancedExecutable;
   win32: AdvancedExecutable;

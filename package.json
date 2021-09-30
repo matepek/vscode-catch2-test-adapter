@@ -290,6 +290,20 @@
                   "type": "string"
                 }
               },
+              "fsWatcher": {
+                "markdownDescription": "By default the extension uses the built-in filesystem watcher to discover changes of the executables inside the workspaceFolder. This is fine until the user sets `files.watcherExclude` to exlude more. If the build directory is exluded but still would like to be notified by the changes this should solve it.",
+                "type": "string",
+                "enum": [
+                  "vscode",
+                  "custom",
+                  "disable"
+                ],
+                "markdownEnumDescriptions": [
+                  "Force use the vscode built-in file system watcher.",
+                  "Force use the custom file system watcher. This might helps in case of `files.watcherExclude`",
+                  "Disables it and the extension's functionality will be limited but still should work the most of it."
+                ]
+              },
               "dependsOn": {
                 "markdownDescription": "Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in \"...\" menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "type": "array",
@@ -1514,7 +1528,7 @@
             "nothing",
             "failure"
           ],
-          "enumDescriptions": [
+          "markdownEnumDescriptions": [
             "",
             "Forces the test to be failed even it is passed if it contains the string `GMOCK_WARNING:`."
           ]
@@ -1531,7 +1545,7 @@
             "warning",
             "error"
           ],
-          "enumDescriptions": [
+          "markdownEnumDescriptions": [
             "--gmock_verbose=... parameter won't be added",
             "Google Mock will print all informational messages, warnings, and errors (most verbose). At this setting, Google Mock will also log any calls to the ON_CALL/EXPECT_CALL macros.",
             "Google Mock will print both warnings and errors (less verbose). This is the default.",

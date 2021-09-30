@@ -40,6 +40,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _waitForBuildProcess: boolean | undefined,
     private readonly _executionWrapper: ExecutionWrapper | undefined,
     private readonly _sourceFileMap: Record<string, string>,
+    private readonly _fsWatcher: string | undefined,
     private readonly _catch2: FrameworkSpecific,
     private readonly _gtest: FrameworkSpecific,
     private readonly _doctest: FrameworkSpecific,
@@ -131,17 +132,47 @@ export class ExecutableConfig implements vscode.Disposable {
     if (this._pattern.indexOf('\\') != -1)
       this._shared.log.info('Pattern contains backslash character. Try to avoid that.');
 
-    let filePaths: string[] = [];
-
+    const filePaths: string[] = [];
     let execWatcher: FSWatcher | undefined = undefined;
-    try {
-      if (pattern.isPartOfWs) {
-        execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.relativeToWsPosix);
-      } else {
-        execWatcher = new GazeWrapper([pattern.absPath]);
-      }
 
-      filePaths = await execWatcher.watched();
+    try {
+      switch (this._fsWatcher) {
+        case 'disable':
+        case 'disabled':
+          this._shared.log.info('fswatcher: disabled', this._fsWatcher);
+          break;
+
+        default:
+          this._shared.log.warn('fswatcher: unknown config value. falling back to default', this._fsWatcher);
+        case undefined:
+          if (pattern.isPartOfWs) {
+            this._shared.log.info('fswatcher: using vscode', this._fsWatcher);
+            execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.relativeToWsPosix);
+          } else {
+            this._shared.log.info('fswatcher: using gaze', this._fsWatcher);
+            execWatcher = new GazeWrapper([pattern.absPath]);
+          }
+          break;
+
+        case 'vscode':
+          this._shared.log.info('fswatcher: using vscode', this._fsWatcher);
+          execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.relativeToWsPosix);
+          break;
+
+        case 'custom':
+          this._shared.log.info('fswatcher: using gaze', this._fsWatcher);
+          execWatcher = new GazeWrapper([pattern.absPath]);
+          break;
+      }
+    } catch (e) {
+      execWatcher && execWatcher.dispose();
+      filePaths.push(this._pattern);
+
+      this._shared.log.exceptionS(e, "Couldn't watch pattern");
+    }
+
+    if (execWatcher) {
+      filePaths.push(...(await execWatcher.watched()));
 
       execWatcher.onError((err: Error) => {
         // eslint-disable-next-line
@@ -155,11 +186,6 @@ export class ExecutableConfig implements vscode.Disposable {
       });
 
       this._disposables.push(execWatcher);
-    } catch (e) {
-      execWatcher && execWatcher.dispose();
-      filePaths.push(this._pattern);
-
-      this._shared.log.exceptionS(e, "Couldn't watch pattern");
     }
 
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];

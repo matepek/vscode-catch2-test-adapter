@@ -402,6 +402,7 @@ export class Configurations {
         undefined,
         undefined,
         {},
+        undefined,
         {},
         {},
         {},
@@ -519,6 +520,8 @@ export class Configurations {
             ? obj.sourceFileMap
             : {};
 
+        const fsWatcher: string | undefined = obj.fsWatcher === 'string' ? obj.fsWatcher : undefined;
+
         return new ExecutableConfig(
           shared,
           pattern,
@@ -535,6 +538,7 @@ export class Configurations {
           waitForBuildProcess,
           spawnerConfig,
           sourceFileMap,
+          fsWatcher,
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
           this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),
