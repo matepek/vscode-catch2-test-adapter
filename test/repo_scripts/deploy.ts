@@ -156,7 +156,6 @@ async function gitPushTag(info: Info): Promise<void> {
     'git',
     true,
     'push',
-    info.vver,
     '--repo=https://' +
       githubOwnerId +
       ':' +
@@ -164,6 +163,7 @@ async function gitPushTag(info: Info): Promise<void> {
       '@github.com/' +
       githubRepoFullId +
       '.git',
+    info.vver,
   );
 }
 
@@ -176,7 +176,6 @@ async function gitDeleteTag(info: Info): Promise<void> {
     'git',
     true,
     'push',
-    `:${info.vver}`,
     '--force',
     '--repo=https://' +
       githubOwnerId +
@@ -185,6 +184,7 @@ async function gitDeleteTag(info: Info): Promise<void> {
       '@github.com/' +
       githubRepoFullId +
       '.git',
+    `:${info.vver}`,
   );
 }
 
