@@ -157,7 +157,13 @@ async function gitPushTag(info: Info): Promise<void> {
     true,
     'push',
     info.vver,
-    'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+    '--repo=https://' +
+      githubOwnerId +
+      ':' +
+      process.env['GITHUBM_API_KEY']! +
+      '@github.com/' +
+      githubRepoFullId +
+      '.git',
   );
 }
 
@@ -172,7 +178,13 @@ async function gitDeleteTag(info: Info): Promise<void> {
     'push',
     `:${info.vver}`,
     '--force',
-    'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+    '--repo=https://' +
+      githubOwnerId +
+      ':' +
+      process.env['GITHUBM_API_KEY']! +
+      '@github.com/' +
+      githubRepoFullId +
+      '.git',
   );
 }
 
