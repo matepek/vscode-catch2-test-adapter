@@ -26,10 +26,16 @@ interface Info {
   full: string;
 }
 
-async function spawn(command: string, maskArgs: boolean, ...args: string[]): Promise<void> {
-  console.log('$ ' + command + ' "' + (maskArgs ? '<masked>' : args.join('" "')) + '"');
+async function spawn(command: string, ...args: (string | { arg: string; mask?: string })[]): Promise<void> {
+  console.log(
+    '$ ' + command + ' ' + args.map(a => (typeof a === 'string' ? `"${a}"` : a.mask ?? '<masked>')).join(' '),
+  );
   return new Promise((resolve, reject) => {
-    const c = cp.spawn(command, args, { stdio: 'inherit' });
+    const c = cp.spawn(
+      command,
+      args.map(a => (typeof a === 'string' ? a : a.arg)),
+      { stdio: 'inherit' },
+    );
     c.on('exit', (code: number) => {
       code == 0 ? resolve() : reject(new Error('Process exited with: ' + code));
     });
@@ -122,16 +128,16 @@ async function updatePackageJson(info: Info): Promise<void> {
 async function gitCommitAndTag(info: Info): Promise<void> {
   console.log('Creating commit and tag');
 
-  await spawn('git', false, 'config', '--local', 'user.name', 'deploy.js');
+  await spawn('git', 'config', '--local', 'user.name', 'deploy.js');
 
   const deployerMail = process.env['DEPLOYER_MAIL'] || 'deployer@deployer.de';
-  await spawn('git', false, 'config', '--local', 'user.email', deployerMail);
+  await spawn('git', 'config', '--local', 'user.email', deployerMail);
 
-  await spawn('git', false, 'status');
-  await spawn('git', false, 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
-  await spawn('git', false, 'status');
-  await spawn('git', false, 'commit', '-m', '[Updated] Date in CHANGELOG.md: ' + info.full);
-  await spawn('git', false, 'tag', '-a', info.vver, '-m', 'Version ' + info.vver);
+  await spawn('git', 'status');
+  await spawn('git', 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
+  await spawn('git', 'status');
+  await spawn('git', 'commit', '-m', '[Updated] Date in CHANGELOG.md: ' + info.full);
+  await spawn('git', 'tag', '-a', info.vver, '-m', 'Version ' + info.vver);
 }
 
 async function gitPushBranch(): Promise<void> {
@@ -139,12 +145,11 @@ async function gitPushBranch(): Promise<void> {
 
   assert.ok(process.env['GITHUBM_API_KEY'] != undefined);
 
-  await spawn(
-    'git',
-    true,
-    'push',
-    'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
-  );
+  await spawn('git', 'push', {
+    mask: '<http_repo>',
+    arg:
+      'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+  });
 }
 
 async function gitPushTag(info: Info): Promise<void> {
@@ -154,15 +159,12 @@ async function gitPushTag(info: Info): Promise<void> {
 
   await spawn(
     'git',
-    true,
     'push',
-    '--repo=https://' +
-      githubOwnerId +
-      ':' +
-      process.env['GITHUBM_API_KEY']! +
-      '@github.com/' +
-      githubRepoFullId +
-      '.git',
+    {
+      mask: '<http_repo>',
+      arg:
+        'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+    },
     `${info.vver}:${info.vver}`,
   );
 }
@@ -174,16 +176,13 @@ async function gitDeleteTag(info: Info): Promise<void> {
 
   await spawn(
     'git',
-    true,
     'push',
     '--force',
-    '--repo=https://' +
-      githubOwnerId +
-      ':' +
-      process.env['GITHUBM_API_KEY']! +
-      '@github.com/' +
-      githubRepoFullId +
-      '.git',
+    {
+      mask: '<http_repo>',
+      arg:
+        'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+    },
     `:${info.vver}`,
   );
 }
