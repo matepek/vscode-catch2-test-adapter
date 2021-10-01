@@ -84,6 +84,34 @@ For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) 
 
 These variables will be substituted when a DebugConfiguration is created.
 
+#### Special fields
+
+##### `testMate.cpp.debug.setEnv` (Record<string,string>)
+
+Key-Value map to overwrite the given environment variables for in case of debugging.
+
+Usage example:
+
+```json
+"testMate.cpp.debug.configTemplate": {
+  "type": "cppvsdbg",
+  "linux": { "type": "cppdbg", "MIMode": "gdb" },
+  "darwin": { "type": "cppdbg", "MIMode": "lldb" },
+  "win32": { "type": "cppvsdbg" },
+  "program": "${exec}",
+  "args": "${argsArray}",
+  "cwd": "${cwd}",
+  "env": "${envObj}",
+  "environment": "${envObjArray}",
+  "sourceFileMap": "${sourceFileMapObj}",
+  "testMate.cpp.debug.setEnv": {
+    "GTEST_CATCH_EXCEPTIONS": "0",
+    "OVERWRITE_ME": "this env will be added or overwritten with this value",
+    "UNSET_ME": null
+  }
+}
+```
+
 #### Remarks
 
 The lack of `type` property in the root object raises a warning but actually it is not required if the platform specific version will overwrite it. See example bellow.

@@ -520,15 +520,6 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const configuration = this._getConfiguration(this._shared.log);
 
-      const [debugConfigTemplate, debugConfigTemplateSource] = configuration.getDebugConfigurationTemplate();
-
-      this._shared.log.debug('debugConfigTemplate', { debugConfigTemplateSource, debugConfigTemplate });
-
-      if (!TestAdapter._debugMetricSent) {
-        this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
-        TestAdapter._debugMetricSent = true;
-      }
-
       const label = runnableTests.length > 1 ? `(${runnableTests.length} tests)` : runnableTests[0].label;
 
       const suiteLabels =
@@ -593,7 +584,33 @@ export class TestAdapter implements api.TestAdapter, vscode.Disposable {
 
       const argsArrayFunc = async (): Promise<string[]> => argsArray;
 
-      const envVars = Object.assign(Object.assign({}, process.env), runnable.properties.options.env!);
+      const [debugConfigTemplate, debugConfigTemplateSource] = configuration.getDebugConfigurationTemplate();
+
+      this._shared.log.debug('debugConfigTemplate', { debugConfigTemplateSource, debugConfigTemplate });
+
+      if (!TestAdapter._debugMetricSent) {
+        this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
+        TestAdapter._debugMetricSent = true;
+      }
+
+      const envVars = Object.assign({}, process.env, runnable.properties.options.env);
+
+      {
+        const setEnvKey = 'testMate.cpp.debug.setEnv';
+        if (typeof debugConfigTemplate[setEnvKey] === 'object') {
+          for (const envName in debugConfigTemplate[setEnvKey]) {
+            const envValue = debugConfigTemplate[setEnvKey][envName];
+            if (typeof envValue !== 'string')
+              this._shared.log.warn(
+                'Wrong value. testMate.cpp.debug.setEnv should contains only string values',
+                envName,
+                setEnvKey,
+              );
+            else if (envValue === null) delete envVars[envName];
+            else envVars[envName] = envValue;
+          }
+        }
+      }
 
       const varToResolve: ResolveRuleAsync[] = [
         ...runnable.properties.varToValue,

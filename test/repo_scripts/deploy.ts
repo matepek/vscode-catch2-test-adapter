@@ -130,12 +130,12 @@ async function gitCommitAndTag(info: Info): Promise<void> {
   await spawn('git', false, 'status');
   await spawn('git', false, 'add', '--', 'CHANGELOG.md', 'package.json', 'package-lock.json');
   await spawn('git', false, 'status');
-  await spawn('git', false, 'commit', '-m', '[Updated] Date in CHANGELOG.md: ' + info.full!);
-  await spawn('git', false, 'tag', '-a', info.vver!, '-m', 'Version ' + info.vver!);
+  await spawn('git', false, 'commit', '-m', '[Updated] Date in CHANGELOG.md: ' + info.full);
+  await spawn('git', false, 'tag', '-a', info.vver, '-m', 'Version ' + info.vver);
 }
 
-async function gitPush(): Promise<void> {
-  console.log('Pushing to origin');
+async function gitPushBranch(): Promise<void> {
+  console.log('Pushing current branch to origin');
 
   assert.ok(process.env['GITHUBM_API_KEY'] != undefined);
 
@@ -143,8 +143,35 @@ async function gitPush(): Promise<void> {
     'git',
     true,
     'push',
+    'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+  );
+}
+
+async function gitPushTag(info: Info): Promise<void> {
+  console.log('Pushing tag to origin');
+
+  assert.ok(process.env['GITHUBM_API_KEY'] != undefined);
+
+  await spawn(
+    'git',
+    true,
+    'push',
+    info.vver,
+    'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
+  );
+}
+
+async function gitDeleteTag(info: Info): Promise<void> {
+  console.log('Pushing tag to origin');
+
+  assert.ok(process.env['GITHUBM_API_KEY'] != undefined);
+
+  await spawn(
+    'git',
+    true,
+    'push',
+    `:${info.vver}`,
     '--force',
-    '--follow-tags',
     'https://' + githubOwnerId + ':' + process.env['GITHUBM_API_KEY']! + '@github.com/' + githubRepoFullId + '.git',
   );
 }
@@ -239,11 +266,18 @@ async function main(argv: string[]): Promise<void> {
 
     const packagePath = await createPackage(info);
 
-    await gitPush();
+    await gitPushTag(info);
 
-    await createGithubRelease(info!, packagePath);
+    try {
+      await publishPackage(packagePath);
+    } catch (e) {
+      await gitDeleteTag(info);
+      throw e;
+    }
 
-    await publishPackage(packagePath);
+    await gitPushBranch();
+
+    await createGithubRelease(info, packagePath);
 
     console.log('Deployment has finished.');
   } else {
