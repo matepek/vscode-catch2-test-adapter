@@ -163,7 +163,7 @@ async function gitPushTag(info: Info): Promise<void> {
       '@github.com/' +
       githubRepoFullId +
       '.git',
-    info.vver,
+    `${info.vver}:${info.vver}`,
   );
 }
 
