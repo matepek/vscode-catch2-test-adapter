@@ -170,7 +170,7 @@ async function gitPushTag(info: Info): Promise<void> {
 }
 
 async function gitDeleteTag(info: Info): Promise<void> {
-  console.log('Pushing tag to origin');
+  console.log('Pushing delete tag from origin');
 
   assert.ok(process.env['GITHUBM_API_KEY'] != undefined);
 
