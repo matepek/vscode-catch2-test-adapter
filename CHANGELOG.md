@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- doctest: supporting `testMate.cpp.debug.breakOnFailure`.
+
 ## [3.6.32] - 2021-10-01
 
 ### Added
