@@ -55,8 +55,7 @@ npm test
 After test:
 
 1. Open the folder in VSCode: `code .`.
-2. Run task: `npm webpack`. Wait until it has finished.
-3. Let task `npm watch` run in the background.
+2. Let task `npm watch` run in the background.
 3. VSCode "Run" / Debug page: Select `Manual cpp`.
 4. Start debugging.
 5. Add your folder to the newly opened VSCode's workspace. (Or change [launch.json](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/.vscode/launch.json#L27)'s `Manual cpp` to the folder which is intended to be debugged and the start.)
