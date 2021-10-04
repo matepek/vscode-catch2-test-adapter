@@ -31,7 +31,8 @@
     {
       "label": "preDebug",
       "type": "shell",
-      "command": "sed -i '' 's/\"main\": \"out\\/dist\\/main.js\"/\"main\": \"out\\/src\\/main.js\"/' package.json",
+      "command": "sed",
+      "args": ["-i", "s/\"main\": \"out\\/dist\\/main.js\"/\"main\": \"out\\/src\\/main.js\"/", "package.json"],
       "presentation": {
         "echo": true,
         "reveal": "never",
@@ -44,7 +45,8 @@
     {
       "label": "postDebug",
       "type": "shell",
-      "command": "sed -i '' 's/\"main\": \"out\\/src\\/main.js\"/\"main\": \"out\\/dist\\/main.js\"/' package.json",
+      "command": "sed",
+      "args": ["-i", "s/\"main\": \"out\\/src\\/main.js\"/\"main\": \"out\\/dist\\/main.js\"/", "package.json"],
       "presentation": {
         "echo": true,
         "reveal": "never",

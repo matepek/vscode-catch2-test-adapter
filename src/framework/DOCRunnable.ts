@@ -173,6 +173,7 @@ export class DOCRunnable extends AbstractRunnable {
   protected _getDebugParamsInner(childrenToRun: readonly Readonly<DOCTest>[], breakOnFailure: boolean): string[] {
     const execParams: string[] = this._getRunParamsCommon(childrenToRun);
     execParams.push('--reporters=console');
+    execParams.push('--no-breaks=' + (breakOnFailure ? 'false' : 'true'));
     return execParams;
   }
 
