@@ -136,7 +136,7 @@ export class DOCTest extends AbstractTest {
     const durationSec = Number(testCase.OverallResultsAsserts[0].$.duration) || undefined;
 
     if (durationSec === undefined)
-      this._shared.log.error('doctest: duration is NaN', testCase.OverallResultsAsserts[0].$.duration);
+      this._shared.log.errorS('doctest: duration is NaN', testCase.OverallResultsAsserts[0].$.duration);
     else testEventBuilder.setDurationMilisec(durationSec * 1000);
 
     testEventBuilder.appendMessage(testCase._, 0);
