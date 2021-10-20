@@ -133,10 +133,10 @@ export class DOCTest extends AbstractTest {
   }
 
   private _processXmlTagTestCaseInner(testCase: XmlObject, testEventBuilder: TestEventBuilder): void {
-    const durationSec = parseInt(testCase.OverallResultsAsserts[0].$.duration) || undefined;
+    const durationSec = Number(testCase.OverallResultsAsserts[0].$.duration) || undefined;
 
     if (durationSec === undefined)
-      this._shared.log.errorS('doctest: duration is NaN: ' + testCase.OverallResultsAsserts[0].$.duration);
+      this._shared.log.error('doctest: duration is NaN', testCase.OverallResultsAsserts[0].$.duration);
     else testEventBuilder.setDurationMilisec(durationSec * 1000);
 
     testEventBuilder.appendMessage(testCase._, 0);
@@ -148,7 +148,7 @@ export class DOCTest extends AbstractTest {
     const failures = parseInt(testCase.OverallResultsAsserts[0].$.failures) || 0;
     const expectedFailures = parseInt(testCase.OverallResultsAsserts[0].$.expected_failures) || 0;
     const hasException = testCase.Exception !== undefined;
-    const timeoutSec = parseInt(testCase.$.timeout) || undefined;
+    const timeoutSec = Number(testCase.$.timeout) || undefined;
     const hasTimedOut = timeoutSec !== undefined && durationSec !== undefined ? durationSec > timeoutSec : false;
 
     // The logic is coming from the console output of ./doctest1.exe
