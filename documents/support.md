@@ -21,7 +21,7 @@ Or one can set the `testMate.cpp.log.logfile: "<full path>"`. In this case a log
 
 ## For self-service
 
-Check [CONTRIBUTING.md](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/CONTRIBUTING.md).
+Check [CONTRIBUTING.md](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/CONTRIBUTING.md).
 
 ## F.A.Q
 
@@ -31,7 +31,7 @@ Check [CONTRIBUTING.md](https://github.com/matepek/vscode-catch2-test-adapter/bl
 
 ### Debug button doesn't work / stopped working
 
-> Please check the documentation of [debug.configTemplate](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/debug.configTemplate.md).
+> Please check the documentation of [debug.configTemplate](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/documents/configuration/debug.configTemplate.md).
 
 ### Wanna see the test run results in the status bar too.
 
@@ -41,10 +41,10 @@ Check [CONTRIBUTING.md](https://github.com/matepek/vscode-catch2-test-adapter/bl
 
 Check
 
-- [`advancedExecutables.dependsOn`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)
-- [`advancedExecutables.envFile`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) (usually used togheter with `dependsOn`)
-- [`advancedExecutables.runTask`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)
-- [`advancedExecutables.executionWrapper`](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)
+- [`advancedExecutables.dependsOn`](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/documents/configuration/test.advancedExecutables.md)
+- [`advancedExecutables.envFile`](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/documents/configuration/test.advancedExecutables.md) (usually used togheter with `dependsOn`)
+- [`advancedExecutables.runTask`](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/documents/configuration/test.advancedExecutables.md)
+- [`advancedExecutables.executionWrapper`](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/documents/configuration/test.advancedExecutables.md)
 
 ### I want to add custom environment variables
 
@@ -58,13 +58,13 @@ If you want dynamically set enviranment variables generate a file which contains
 >
 > Would you show me an example?
 >
-> Sure! For example in case of CMake: [check this](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/examples/test_wrapper/cmake_test_wrapper_example/CMakeLists.txt).
+> Sure! For example in case of CMake: [check this](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/documents/examples/test_wrapper/cmake_test_wrapper_example/CMakeLists.txt).
 > Note: However this is the easiest, not the best solution.
 > There is a drawback: Debugging button won't work, since the debuger will attach to the script not to the executable started by the script.
 >
 > Is there a solution for that?
 >
-> Yes. One can enhance their test executable from c++. The example is [here](https://github.com/matepek/vscode-catch2-test-adapter/tree/master/documents/examples/test_wrapper/cppmain_test_wrapper_example)
+> Yes. One can enhance their test executable from c++. The example is [here](https://github.com/matepek/vscode-catch2-test-adapter/tree/legacy/documents/examples/test_wrapper/cppmain_test_wrapper_example)
 
 ### Wanna set `cwd` to the _source file_'s dir to use the resources next to it and my structure looks like (because I use cmake):
 
@@ -141,7 +141,7 @@ If you want dynamically set enviranment variables generate a file which contains
 
 ### Test parsing fails because my executable writes some stuff to the error channel / `std::cerr`.
 
-> Check `test.advancedExecutables` -> [ignoreTestEnumerationStdErr](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#ignoreTestEnumerationStdErr)
+> Check `test.advancedExecutables` -> [ignoreTestEnumerationStdErr](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/documents/configuration/test.advancedExecutables.md#ignoreTestEnumerationStdErr)
 
 ### The extension doesn't notice if an executable has changed.
 

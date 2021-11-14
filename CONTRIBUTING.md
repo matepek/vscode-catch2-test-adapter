@@ -1,7 +1,10 @@
-[![Travis build status](https://img.shields.io/travis/matepek/vscode-catch2-test-adapter/master.svg?logo=Travis&style=for-the-badge)](https://travis-ci.org/matepek/vscode-catch2-test-adapter)
-[![Appveyor build status](https://img.shields.io/appveyor/ci/matepek/vscode-catch2-test-adapter?style=for-the-badge)](https://ci.appveyor.com/project/matepek/vscode-catch2-test-adapter/branch/master)
-[![GitHub license](https://img.shields.io/github/license/matepek/vscode-catch2-test-adapter.svg?style=for-the-badge)](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/LICENSE)
+[![GitHub license](https://img.shields.io/github/license/matepek/vscode-catch2-test-adapter.svg?style=for-the-badge)](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/LICENSE)
 [![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=for-the-badge)](https://github.com/prettier/prettier)
+
+REMARK:
+-------
+
+The extension is obsoleted. See [README.md](./README.md)
 
 # Contribution
 
@@ -10,7 +13,7 @@ Author's note:
 > This extension is my way of giving back / saying thanks to the open-source community. If you are an open-source contributor then I take it as you already thanked. :)
 >
 > Otherwise if you wanna express yourself you can buy me a [coffee](https://www.buymeacoffee.com/rtdmjYspB).
-> Or you can just [rate](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter&ssr=false#review-details) the extension.
+> Or you can just [rate](https://marketplace.visualstudio.com/items?itemName=matepek.testmate-cpp-legacy&ssr=false#review-details) the extension.
 > Whatever fits your budget.
 
 ## Contributing to the source
@@ -58,13 +61,13 @@ After test:
 2. Let task `npm watch` run in the background.
 3. VSCode "Run" / Debug page: Select `Manual cpp`.
 4. Start debugging.
-5. Add your folder to the newly opened VSCode's workspace. (Or change [launch.json](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/.vscode/launch.json#L27)'s `Manual cpp` to the folder which is intended to be debugged and the start.)
+5. Add your folder to the newly opened VSCode's workspace. (Or change [launch.json](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/.vscode/launch.json#L27)'s `Manual cpp` to the folder which is intended to be debugged and the start.)
 
 Issues are tipically related to file operations:
 
-- [RunnableFactory.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/RunnableFactory.ts#L36)
-- [GoogleRunnable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/GoogleTestRunnable.ts)
-- [Catch2Runnable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/Catch2Runnable.ts#L204)
+- [RunnableFactory.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/src/RunnableFactory.ts#L36)
+- [GoogleRunnable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/src/framework/GoogleTestRunnable.ts)
+- [Catch2Runnable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/src/framework/Catch2Runnable.ts#L204)
 
 ### Publishing to market
 

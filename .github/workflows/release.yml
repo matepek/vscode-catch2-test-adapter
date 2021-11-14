@@ -3,7 +3,7 @@ name: Release
 on:
   workflow_run:
     workflows: ['Test']
-    branches: [master]
+    branches: [legacy]
     types: [completed]
 
 jobs:
@@ -11,7 +11,7 @@ jobs:
     name: Conditionally Release and Deploy # depends on the content of CHANGELOG.md
     runs-on: ubuntu-latest
     environment: Release
-    if: github.event.workflow_run.conclusion == 'success' && github.ref == 'refs/heads/master' && github.repository_owner == 'matepek'
+    if: github.event.workflow_run.conclusion == 'success' && github.ref == 'refs/heads/legacy' && github.repository_owner == 'matepek'
 
     steps:
       - name: Checkout code

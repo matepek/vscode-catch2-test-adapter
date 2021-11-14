@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Restored old activation events. (It was changed to support the new API bridege but since there is a version which natively supports it and some user complainded about this it is reverted).
+
 ## [3.6.33] - 2021-10-20
 
 ### Added

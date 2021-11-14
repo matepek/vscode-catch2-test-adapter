@@ -1,6 +1,6 @@
 <!--
   Thanks for sending a pull request!  Here are some tips for you:
-  Please read: https://github.com/matepek/vscode-catch2-test-adapter/blob/master/CONTRIBUTING.md
+  Please read: https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/CONTRIBUTING.md
 
   Checklist:
   - Are the tests are running? (`npm test`)

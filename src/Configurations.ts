@@ -158,7 +158,7 @@ export class Configurations {
             });
 
             this._log.info(
-              "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+              "using debug config from launch.json. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/README.md#or-user-can-manually-fill-it",
               template,
             );
 
@@ -218,7 +218,7 @@ export class Configurations {
 
       this._log.info('no debug config');
       throw Error(
-        "For debugging 'testMate.cpp.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+        "For debugging 'testMate.cpp.debug.configTemplate' should be set: https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/README.md#or-user-can-manually-fill-it",
       );
     })();
 
@@ -275,7 +275,7 @@ export class Configurations {
       ];
       vscode.window
         .showInformationMessage(
-          'Hey there! C++ TestMate has [sentry.io](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md) integration to ' +
+          'Hey there! C++ TestMate has [sentry.io](https://github.com/matepek/vscode-catch2-test-adapter/blob/legacy/documents/configuration/log.logSentry.md) integration to ' +
             'improve the stability and the development. 🤩 For this I want to send logs and errors ' +
             'but I would NEVER do it without your consent. ' +
             'Please be understandable and allow it. 🙏',
