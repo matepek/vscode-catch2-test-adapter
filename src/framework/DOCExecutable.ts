@@ -13,7 +13,6 @@ import { TestGrouping } from '../TestGroupingInterface';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { assert, debugAssert, debugBreak } from '../util/DevelopmentHelper';
 import { TestResultBuilder } from '../TestResultBuilder';
-import { AbstractTest } from '../AbstractTest';
 
 export class DOCExecutable extends AbstractExecutable {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, docVersion: Version | undefined) {
@@ -29,7 +28,7 @@ export class DOCExecutable extends AbstractExecutable {
     }
   }
 
-  private async _reloadFromXml(testListOutput: string, cancellationFlag: CancellationFlag): Promise<void> {
+  private async _reloadFromXml(testListOutput: string, _cancellationFlag: CancellationFlag): Promise<void> {
     const createAndAddTest = this._createAndAddTest;
 
     const parser = new XmlParser(
@@ -318,7 +317,7 @@ type CaseData = { hasException?: true; hasFailedExpression?: true };
 
 abstract class TagProcessorBase implements XmlTagProcessor {
   constructor(
-    protected readonly builder: TestResultBuilder,
+    public readonly builder: TestResultBuilder,
     protected readonly shared: WorkspaceShared,
     protected readonly caseData: CaseData,
   ) {}
@@ -357,7 +356,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     }
   }
 
-  public onstderr(data: string, parentTag: XmlTag | undefined): void {
+  public onstderr(data: string, _parentTag: XmlTag | undefined): void {
     this.builder.addQuoteWithLocation(
       undefined,
       undefined,
@@ -431,7 +430,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
 class TestCaseTagProcessor extends TagProcessorBase {
   constructor(
     shared: WorkspaceShared,
-    public readonly builder: TestResultBuilder,
+    builder: TestResultBuilder,
     test: DOCTest,
     private readonly attribs: Record<string, string>,
     _option: Option,
@@ -453,7 +452,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
     test.line = attribs.line;
   }
 
-  public onopentag(tag: XmlTag): XmlTagProcessor | void {
+  public override onopentag(tag: XmlTag): XmlTagProcessor | void {
     if (tag.name === 'OverallResultsAsserts') {
       const durationSec = parseFloat(tag.attribs.duration) || undefined;
       if (durationSec === undefined) this.shared.log.errorS('doctest: duration is NaN: ' + tag.attribs.duration);

@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
 import { AbstractTest, SharedWithTest } from '../AbstractTest';
-import { TestResultBuilder } from '../TestResultBuilder';
-import * as pathlib from 'path';
 import { Version } from '../Util';
 import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';

@@ -133,7 +133,7 @@ export class XmlParser extends htmlparser2.Parser {
     return p;
   }
 
-  async end(): Promise<void> {
+  override async end(): Promise<void> {
     super.end();
     await this.sequentialP;
   }

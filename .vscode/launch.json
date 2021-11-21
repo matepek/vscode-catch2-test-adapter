@@ -24,7 +24,7 @@
       "request": "launch",
       "name": "Manual cpp",
       "runtimeExecutable": "${execPath}",
-      "args": ["${workspaceFolder}/out/cpp", "--extensionDevelopmentPath=${workspaceFolder}", "--disable-extensions"],
+      "args": ["${workspaceFolder}/out/cpp", "--extensionDevelopmentPath=${workspaceFolder}"], //"--disable-extensions"
       "env": {
         "TESTMATE_DEBUG": "true"
       },

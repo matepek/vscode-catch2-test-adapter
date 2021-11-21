@@ -1,21 +1,19 @@
 import * as sms from 'source-map-support';
 sms.install(); // maps exception location js -> ts
 
-import deepStrictEqual = require('deep-equal');
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
 import * as path from 'path';
 import * as fse from 'fs-extra';
-import { inspect, promisify } from 'util';
+import { promisify } from 'util';
 import { EventEmitter } from 'events';
 import { Readable, Writable } from 'stream';
 import { ChildProcessWithoutNullStreams } from 'child_process';
 
 import * as fsw from '../src/util/FSWrapper';
 import { Config } from '../src/Configurations';
-import { logger } from './LogOutputContent.test';
 
 ///
 
@@ -36,7 +34,7 @@ export class ChildProcessStub extends EventEmitter implements ChildProcessWithou
   public readonly connected: boolean = undefined as any; // eslint-disable-line
 
   // eslint-disable-next-line
-  public send(...args: any[]): boolean {
+  public send(..._args: any[]): boolean {
     throw Error('methond not implemented');
   }
   public disconnect(): void {
@@ -305,8 +303,8 @@ export class Imitation {
   }
 
   public handleAccessFileExists(
-    path: fse.PathLike,
-    flag: string,
+    _path: fse.PathLike,
+    _flag: string,
     cb: (err: NodeJS.ErrnoException | null) => void,
   ): void {
     cb(null);
@@ -314,7 +312,7 @@ export class Imitation {
 
   public handleAccessFileNotExists(
     path: fse.PathLike,
-    flag: string,
+    _flag: string,
     cb: (err: NodeJS.ErrnoException | null) => void,
   ): void {
     cb({

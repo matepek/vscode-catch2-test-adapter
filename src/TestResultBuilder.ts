@@ -20,7 +20,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     this._runId = TestResultBuilder.calcRunId(runInfo);
   }
 
-  public static calcRunId(runInfo: RunningExecutable): string {
+  public static calcRunId(_runInfo: RunningExecutable): string {
     //return `[#${runInfo.pid}] `;
     return `[#${generateId()}] `;
   }

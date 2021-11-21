@@ -76,7 +76,7 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public error(m: string, ...msg: any[]): void {
+  public override error(m: string, ...msg: any[]): void {
     if (!m.startsWith('TODO')) debugBreak();
     super.error(m, ...msg);
   }

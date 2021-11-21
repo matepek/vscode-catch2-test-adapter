@@ -6,14 +6,19 @@
     "outDir": "out",
     "importHelpers": true,
     "sourceMap": true,
+    "alwaysStrict": true,
     "strict": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "noUnusedLocals": false, //TODO:release
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
     "removeComments": true,
     "skipLibCheck": true,
     "experimentalDecorators": true,
+    "useUnknownInCatchVariables": false,
     "typeRoots": ["node_modules/@types", "src/@types"]
   },
   "include": ["src/main.ts", "test/*", "test/util/*", "test/repo_script/*"] //TODO:future test/**/*.ts

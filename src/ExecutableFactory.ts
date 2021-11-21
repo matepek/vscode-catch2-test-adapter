@@ -6,7 +6,7 @@ import { GoogleTestExecutable } from './framework/GoogleTestExecutable';
 import { DOCExecutable } from './framework/DOCExecutable';
 import { FrameworkSpecific, RunTask } from './AdvancedExecutableInterface';
 import { Version } from './Util';
-import { Spawner, SpawnOptionsWithoutStdio, SpawnReturns } from './Spawner';
+import { Spawner, SpawnOptionsWithoutStdio } from './Spawner';
 import { GoogleBenchmarkExecutable } from './framework/GoogleBenchmarkExecutable';
 import { ResolveRuleAsync } from './util/ResolveRule';
 import { WorkspaceShared } from './WorkspaceShared';

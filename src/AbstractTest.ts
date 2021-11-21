@@ -252,7 +252,7 @@ export class SubTest extends AbstractTest {
     );
   }
 
-  public get label(): string {
+  public override get label(): string {
     return this.item.description!;
   }
 

@@ -22,7 +22,6 @@ import { TestResultBuilder } from './TestResultBuilder';
 import { debugAssert, debugBreak } from './util/DevelopmentHelper';
 import { SpawnBuilder } from './Spawner';
 import { SharedTestTags } from './SharedTestTags';
-import { LoggerWrapper } from './LoggerWrapper';
 import { Disposable } from './Util';
 
 export class TestsToRun {
@@ -806,9 +805,9 @@ export abstract class AbstractExecutable implements Disposable {
   }
 
   public sendStaticEvents(
-    testRunId: string,
-    childrenToRun: readonly AbstractTest[],
-    staticEvent: unknown | undefined,
+    _testRunId: string,
+    _childrenToRun: readonly AbstractTest[],
+    _staticEvent: unknown | undefined,
   ): void {
     // childrenToRun.forEach(test => {
     //   const testStaticEvent = test.getStaticEvent(testRunId);

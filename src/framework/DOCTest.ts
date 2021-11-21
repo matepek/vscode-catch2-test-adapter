@@ -53,7 +53,6 @@ export class DOCTest extends AbstractTest {
       tags,
       SharedTestTags.doctest,
     );
-    this._isScenario = testNameAsId.startsWith('  Scenario:');
   }
 
   public update2(
@@ -65,13 +64,6 @@ export class DOCTest extends AbstractTest {
   ): void {
     const calcDescription = AbstractTest.calcDescription(tags, undefined, undefined, description);
     super.update(this.label, file, line, skipped, calcDescription, tags);
-  }
-
-  private _sections: undefined | DOCSection[];
-  private _isScenario: boolean;
-
-  public get sections(): undefined | DOCSection[] {
-    return this._sections;
   }
 
   public getEscapedTestName(): string {

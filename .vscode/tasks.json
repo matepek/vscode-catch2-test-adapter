@@ -9,7 +9,7 @@
       "command": "mkdir",
       "args": ["-p", "out/tmp/workspaceFolder", "out/cpp"],
       "windows": {
-        "args": ["out\\tmp\\workspaceFolder"]
+        "args": ["out\\tmp\\workspaceFolder", , "out\\cpp"]
       },
       "presentation": {
         "echo": false,

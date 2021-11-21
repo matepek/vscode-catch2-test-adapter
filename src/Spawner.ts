@@ -122,7 +122,7 @@ export class SpawnWithExecutor extends DefaultSpawner {
     }
   }
 
-  async spawnAsync(
+  override async spawnAsync(
     cmd: string,
     args: string[],
     options: SpawnOptionsWithoutStdio,
@@ -132,7 +132,7 @@ export class SpawnWithExecutor extends DefaultSpawner {
     return super.spawnAsync(this._executor, argsV, options, timeout);
   }
 
-  async spawn(
+  override async spawn(
     cmd: string,
     args: string[],
     options: SpawnOptionsWithoutStdio,
@@ -178,7 +178,7 @@ export class SpawnWithExecutor extends DefaultSpawner {
     }
   }
 
-  public toString(): string {
+  public override toString(): string {
     return `SpawnWithExecutor(${this._executor}, [${this._args}])`;
   }
 }

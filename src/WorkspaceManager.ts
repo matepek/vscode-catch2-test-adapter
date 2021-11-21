@@ -462,20 +462,26 @@ export class WorkspaceManager implements vscode.Disposable {
 
       this._shared.log.info('Debug: resolved debugConfig:', debugConfig);
 
-      const cancellationTokenSource = new vscode.CancellationTokenSource();
+      await this._runTasks('before', [executable], cancellation);
+      await executable.runTasks('beforeEach', this._shared.taskPool, cancellation);
 
-      await this._runTasks('before', [executable], cancellationTokenSource.token);
-      await executable.runTasks('beforeEach', this._shared.taskPool, cancellationTokenSource.token);
+      let currentSession: vscode.DebugSession | undefined = undefined;
 
-      let terminateConn: vscode.Disposable | undefined;
-
-      const terminated = new Promise<void>(resolve => {
-        terminateConn = vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
+      const started = new Promise<void>(resolve => {
+        vscode.debug.onDidStartDebugSession((session: vscode.DebugSession) => {
           const session2 = session as unknown as { configuration: { [prop: string]: string } };
           if (session2.configuration && session2.configuration[magicValueKey] === magicValue) {
-            cancellationTokenSource.cancel();
+            currentSession = session;
             resolve();
-            terminateConn && terminateConn.dispose();
+          }
+        });
+      });
+
+      const terminated = new Promise<void>(resolve => {
+        vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
+          const session2 = session as unknown as { configuration: { [prop: string]: string } };
+          if (session2.configuration && session2.configuration[magicValueKey] === magicValue) {
+            resolve();
           }
         });
       }).finally(() => {
@@ -490,16 +496,21 @@ export class WorkspaceManager implements vscode.Disposable {
 
       if (debugSessionStarted) {
         this._shared.log.info('debugSessionStarted');
+        await started;
+        if (currentSession) {
+          cancellation.onCancellationRequested(() => {
+            vscode.debug.stopDebugging(currentSession);
+          });
+        }
         await terminated;
       } else {
-        terminateConn && terminateConn.dispose();
         throw Error(
           'Failed starting the debug session. Maybe something wrong with "testMate.cpp.debug.configTemplate".',
         );
       }
 
-      await executable.runTasks('afterEach', this._shared.taskPool, cancellationTokenSource.token);
-      await this._runTasks('after', [executable], cancellationTokenSource.token);
+      await executable.runTasks('afterEach', this._shared.taskPool, cancellation);
+      await this._runTasks('after', [executable], cancellation);
     } catch (err) {
       this._shared.log.warn(err);
       throw err;

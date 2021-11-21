@@ -31,7 +31,7 @@ export class GoogleTestExecutable extends AbstractExecutable {
   }
 
   //TODO:release streaming would be more efficient
-  private async _reloadFromXml(xmlStr: string, cancellationFlag: CancellationFlag): Promise<void> {
+  private async _reloadFromXml(xmlStr: string, _cancellationFlag: CancellationFlag): Promise<void> {
     const createAndAddTest = this._createAndAddTest;
 
     const parser = new XmlParser(
@@ -406,6 +406,7 @@ class FailureProcessor implements LineProcessor {
     private readonly file: string | undefined,
     private readonly line: string | undefined,
     private readonly fullMsg: string,
+    // @ts-expect-error fullMsg contains message
     private readonly message: string,
   ) {}
 
@@ -486,7 +487,9 @@ class ExpectCallProcessor implements LineProcessor {
     private readonly testCaseShared: TestCaseSharedData,
     private readonly file: string | undefined,
     private readonly line: string | undefined,
+    // @ts-expect-error don't need it here, could be removed
     private readonly fullMsg: string,
+    // @ts-expect-error don't need it here, could be removed
     private readonly message: string,
   ) {}
 

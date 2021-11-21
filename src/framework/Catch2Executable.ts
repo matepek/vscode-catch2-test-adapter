@@ -8,7 +8,7 @@ import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { Catch2Test } from './Catch2Test';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { RunningExecutable } from '../RunningExecutable';
-import { AbstractTest, SubTest } from '../AbstractTest';
+import { AbstractTest } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
@@ -142,7 +142,7 @@ export class Catch2Executable extends AbstractExecutable {
     if (i >= lines.length) this.shared.log.error('Wrong test list output format #2', lines);
   }
 
-  private async _reloadFromXml(testListOutput: string, cancellationFlag: CancellationFlag): Promise<void> {
+  private async _reloadFromXml(testListOutput: string, _cancellationFlag: CancellationFlag): Promise<void> {
     const createAndAddTest = this._createAndAddTest;
 
     const parser = new XmlParser(
@@ -442,7 +442,7 @@ class TestCaseListingProcessor implements XmlTagProcessor {
 ///
 
 abstract class TagProcessorBase implements XmlTagProcessor {
-  constructor(protected readonly builder: TestResultBuilder, protected readonly shared: WorkspaceShared) {}
+  constructor(public readonly builder: TestResultBuilder, protected readonly shared: WorkspaceShared) {}
 
   public onopentag(tag: XmlTag): XmlTagProcessor | void {
     const procCreator = TagProcessorBase.openTagProcessorMap.get(tag.name);
@@ -484,7 +484,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     }
   }
 
-  public onstderr(data: string, parentTag: XmlTag | undefined): void {
+  public onstderr(data: string, _parentTag: XmlTag | undefined): void {
     this.builder.addQuoteWithLocation(
       undefined,
       undefined,
@@ -499,7 +499,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
   > = new Map([
     [
       'OverallResult',
-      (tag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared) => {
+      (tag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
         builder.setDurationMilisec(parseFloat(tag.attribs.durationInSeconds) * 1000);
         if (tag.attribs.success === 'true') {
           builder.passed();
@@ -510,7 +510,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'OverallResults',
-      (tag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared) => {
+      (tag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
         builder.setDurationMilisec(parseFloat(tag.attribs.durationInSeconds) * 1000);
         if (
           (!tag.attribs.expectedFailures && tag.attribs.failures !== '0') ||
@@ -549,19 +549,19 @@ abstract class TagProcessorBase implements XmlTagProcessor {
   > = new Map([
     [
       'StdOut',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
         builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'std::cout', dataTrimmed);
       },
     ],
     [
       'StdErr',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
         builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'std::cerr', dataTrimmed);
       },
     ],
     [
       'Exception',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
         builder.addMessageWithOutput(
           parentTag.attribs.filename,
           parentTag.attribs.line,
@@ -571,7 +571,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'FatalErrorCondition',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
         builder.addMessageWithOutput(
           parentTag.attribs.filename,
           parentTag.attribs.line,
@@ -582,19 +582,19 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'Failure',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
         builder.addMessageWithOutput(parentTag.attribs.filename, parentTag.attribs.line, 'Failure', dataTrimmed);
       },
     ],
     [
       'Warning',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
         builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Warning', dataTrimmed);
       },
     ],
     [
       'Info',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
         builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Info', dataTrimmed);
       },
     ],
@@ -606,7 +606,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
 class TestCaseTagProcessor extends TagProcessorBase {
   public constructor(
     shared: WorkspaceShared,
-    public readonly builder: TestResultBuilder,
+    builder: TestResultBuilder,
     test: Catch2Test,
     attribs: Record<string, string>,
   ) {
