@@ -172,7 +172,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
             w.onAll((fsPath: string): void => {
               this._shared.log.info('dependsOn watcher event:', fsPath);
-              //TODO:release this._shared.sendRetireEvent(this._executables.values());
+              //TODO:future this._shared.sendRetireEvent(this._executables.values());
             });
           } else {
             absPatterns.push(p.absPath);
@@ -187,7 +187,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
           w.onAll((fsPath: string): void => {
             this._shared.log.info('dependsOn watcher event:', fsPath);
-            //TODO:release this._shared.sendRetireEvent(this._executables.values());
+            //TODO:future this._shared.sendRetireEvent(this._executables.values());
           });
         }
       } catch (e) {
