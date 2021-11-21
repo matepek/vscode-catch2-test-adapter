@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as ansi from 'ansi-colors';
 
 import { generateId, parseLine } from './Util';
 import { LoggerWrapper } from './LoggerWrapper';
@@ -7,6 +8,9 @@ import { debugBreak } from './util/DevelopmentHelper';
 import { RunningExecutable } from './RunningExecutable';
 
 type TestResult = 'skipped' | 'failed' | 'errored' | 'passed';
+
+// TODO:shared variable to control and colorization  vscode.window.activeColorTheme.kind;
+// also gtest could be colorized if we change the processor
 
 export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   public constructor(
@@ -37,9 +41,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (this.addBeginEndMsg) {
       const locStr = TestResultBuilder.getLocationAtStr(this.test.file, this.test.line);
       if (this.level === 0) {
-        this.addOutputLine(`# Started \`${this.test.label}\`${locStr}:`);
+        this.addOutputLine(ansi.underline(ansi.bold(`# Started \`${this.test.label}\``) + `${locStr}:`));
       } else {
-        this.addOutputLine(-1, prefixForNewSubCase(this.level) + '`' + this.test.label + '`' + locStr);
+        this.addOutputLine(-1, prefixForNewSubCase(this.level) + '`' + ansi.italic(this.test.label) + '`' + locStr);
       }
     }
   }
@@ -180,7 +184,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   public endMessage(): void {
     if (this.addBeginEndMsg && this.level === 0) {
       const d = this._duration ? ` in ${Math.round(this._duration * 1000) / 1000000} second(s)` : '';
-      this.addOutputLine(`# Stopped \`${this.test.item.label}\`${d}`, '');
+      this.addOutputLine(ansi.bold(`# Stopped \`${this.test.item.label}\``) + `${d}`, '');
     }
   }
 

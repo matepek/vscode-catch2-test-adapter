@@ -13,7 +13,6 @@
         "${workspaceFolder}/out/tmp/workspaceFolder"
       ],
       "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
-      "preLaunchTask": "npm: watch",
       "env": {
         "TESTMATE_DEBUG": "true",
         "C2_INTEGRATIONFROMVSCODE": "true"
@@ -24,7 +23,7 @@
       "request": "launch",
       "name": "Manual cpp",
       "runtimeExecutable": "${execPath}",
-      "args": ["${workspaceFolder}/out/cpp", "--extensionDevelopmentPath=${workspaceFolder}"], //"--disable-extensions"
+      "args": ["${workspaceFolder}/out/cpp", "--extensionDevelopmentPath=${workspaceFolder}", "--disable-extensions"],
       "env": {
         "TESTMATE_DEBUG": "true"
       },

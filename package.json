@@ -37,7 +37,7 @@
     "google benchmark",
     "gbenchmark"
   ],
-  "main": "out/dist/main.js",
+  "main": "out/src/main.js",
   "scripts": {
     "reinstall": "rimraf node_modules package-lock.json && npm install",
     "clean": "rimraf out node_modules vscode-catch2-test-adapter-*.vsix",
@@ -54,6 +54,7 @@
   "dependencies": {
     "@types/htmlparser2": "^3.10.3",
     "@types/ps-node": "^0.1.1",
+    "ansi-colors": "^4.1.1",
     "gaze": "^1.1.3",
     "ps-node": "^0.1.6",
     "tslib": "^2.3.1",
