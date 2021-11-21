@@ -311,8 +311,8 @@ describe(path.basename(__filename), function () {
       assert.strictEqual(adapter.stateEvents.length - eventCount, 72);
       const states = adapter.stateEvents.reduceRight<Record<string, number>>(...runStateSummer());
       assert.deepStrictEqual(states, {
-        failed: 10,
-        passed: 24,
+        failed: 11,
+        passed: 23,
         running: 34,
       });
     });

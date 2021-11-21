@@ -124,7 +124,7 @@ If you want dynamically set enviranment variables generate a file which contains
 > }
 > ```
 
-### Can I run my tests at startup.
+### Can I run my tests at startup?
 
 > Well that is a bit triciker due to the activation event has to arrive before the run command.
 > Here is the workaround:

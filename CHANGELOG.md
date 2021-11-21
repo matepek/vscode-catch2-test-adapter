@@ -8,16 +8,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Replaced [Test Explorer](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer) with native API.
 
+## [3.6.33] - 2021-10-20
+
 ### Added
 
 - doctest: supporting `testMate.cpp.debug.breakOnFailure`.
+
+### Fixed
+
+- issue regarding to doctest's test duration parsing
+
+## [3.6.32] - 2021-10-01
+
+### Added
+
+- `testMate.cpp.test.advancedExecutables` -> `fsWatcher` option to circumvent [limitations](https://github.com/matepek/vscode-catch2-test-adapter/issues/286) caused by `files.watcherExclude`.
 - `testMate.cpp.debug.configTemplate` -> `testMate.cpp.debug.setEnv` (`Record<string,string>`)
 
 ## [3.6.31] - 2021-09-10
 
 ### Added / Fixed
 
-- doctest: supporting `may_fail`, `should_fail` and `expected_failures` modifiers.
+- doctest: supporting `may_fail`, `should_fail`, `timeout` and `expected_failures` modifiers.
 
 ### Changed
 
