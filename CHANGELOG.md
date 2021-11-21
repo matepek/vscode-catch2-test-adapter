@@ -6,9 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.6.34]
+
+Moved to `legacy` branch and under new extension name `testmate-cpp-legacy` because master will support the new native VSCode API.
+
 ### Changed
 
 - Restored old activation events. (It was changed to support the new API bridege but since there is a version which natively supports it and some user complainded about this it is reverted).
+- npm update
 
 ## [3.6.33] - 2021-10-20
 
