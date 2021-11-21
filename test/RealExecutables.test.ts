@@ -122,7 +122,7 @@ describe(path.basename(__filename), function () {
     it('should be found and run withouth error', async function () {
       if (process.env['TRAVIS'] == 'true') this.skip();
 
-      this.timeout(8000);
+      this.timeout(16000);
       this.slow(2000);
       await settings.updateConfig('test.advancedExecutables', [
         {
