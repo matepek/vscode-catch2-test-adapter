@@ -392,7 +392,7 @@ export class Configurations {
         undefined,
         undefined,
         defaultCwd,
-        undefined,
+        this.getTerminalIntegratedEnv(),
         undefined,
         [],
         { before: [], beforeEach: [], after: [], afterEach: [] },
@@ -527,7 +527,7 @@ export class Configurations {
           name,
           description,
           cwd,
-          env,
+          Object.assign(this.getTerminalIntegratedEnv(), env),
           envFile,
           dependsOn,
           runTask,
@@ -591,5 +591,16 @@ export class Configurations {
     return r;
   }
 
-  //public static readonly PublicKey: string = '';
+  private getTerminalIntegratedEnv(): Record<string, string> {
+    const config = vscode.workspace.getConfiguration('terminal.integrated.env');
+    switch (process.platform) {
+      case 'darwin':
+        return config.get('osx') ?? {};
+      case 'win32':
+        return config.get('windows') ?? {};
+      case 'linux':
+        return config.get('linux') ?? {};
+    }
+    return {};
+  }
 }

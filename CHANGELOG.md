@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- basic support of `terminal.integrated.env.*`. Limitation: changes of the config are not detected.
+
 ## [4.0.1] - 2021-11-22
 
 ### Changed
