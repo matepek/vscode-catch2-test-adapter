@@ -510,6 +510,7 @@ export abstract class AbstractExecutable implements Disposable {
   public reloadTests(taskPool: TaskPool, cancellationFlag: CancellationFlag): Promise<void> {
     if (cancellationFlag.isCancellationRequested) return Promise.resolve();
 
+    // mutually exclusive lock
     return this._execItem.busy(async () => {
       return taskPool.scheduleTask(async () => {
         if (cancellationFlag.isCancellationRequested) return Promise.resolve();
@@ -853,8 +854,11 @@ export interface HandleProcessResult {
 class ExecutableGroup {
   public constructor(private readonly executable: AbstractExecutable) {}
 
+  private _count = 0;
   private _item: vscode.TestItem | undefined = undefined;
   private _itemForStaticError: vscode.TestItem | undefined = undefined;
+  // we need to be exclusive because we save prevTests
+  private _lock = Promise.resolve();
 
   public set item(item: vscode.TestItem) {
     if (this.item && this.item !== item) {
@@ -862,17 +866,21 @@ class ExecutableGroup {
       debugBreak('why are we here?');
     } else if (!this._item) {
       this._item = item;
+      if (this._count > 0) this._item.busy = true;
     }
   }
 
-  // eslint-disable-next-line
-  public busy<TResult>(func: () => TResult | PromiseLike<TResult>): Promise<TResult> {
-    if (this._item) this._item.busy = true;
-    return Promise.resolve()
-      .then(func)
-      .finally(() => {
-        if (this._item) this._item.busy = false;
-      });
+  // makes the item spinning
+  public busy(func: () => Promise<void>): Promise<void> {
+    if (this._count++ === 0 && this._item) this._item.busy = true;
+
+    return (this._lock = this._lock.then(func).finally(() => {
+      if (--this._count === 0) {
+        if (this._item) {
+          this._item.busy = false;
+        }
+      }
+    }));
   }
 
   public setError(label: string, message: string): void {
