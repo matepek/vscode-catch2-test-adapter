@@ -16,9 +16,11 @@ export class TextStreamParser {
   private readonly alwaysonlineCb: ((line: string) => void) | undefined = undefined;
 
   public async end(): Promise<void> {
-    if (this.alwaysonlineCb) this.alwaysonlineCb!(this.lastLine);
+    if (this.lastLine) {
+      if (this.alwaysonlineCb) this.alwaysonlineCb(this.lastLine);
 
-    if (this.lastLine) this.lines.push(this.lastLine);
+      this.lines.push(this.lastLine);
+    }
     this.lastLine = '';
 
     this._process();

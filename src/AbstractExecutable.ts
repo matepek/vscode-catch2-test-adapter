@@ -9,7 +9,7 @@ import { TaskPool } from './util/TaskPool';
 import { WorkspaceShared } from './WorkspaceShared';
 import { ExecutableRunResultValue, RunningExecutable } from './RunningExecutable';
 import { promisify, inspect } from 'util';
-import { Version, getAbsolutePath, CancellationToken, CancellationFlag } from './Util';
+import { Version, getAbsolutePath, CancellationToken, CancellationFlag, reindentStr } from './Util';
 import {
   resolveOSEnvironmentVariables,
   createPythonIndexerForPathVariable,
@@ -832,13 +832,11 @@ export abstract class AbstractExecutable implements Disposable {
     });
   }
 
-  protected processStdErr(testRun: vscode.TestRun, str: string): void {
-    testRun.appendOutput('⬇ std::cerr:\r\n');
-    testRun.appendOutput(str);
-    if (!str.endsWith('\r\n'))
-      if (str.endsWith('\n')) testRun.appendOutput('\r');
-      else testRun.appendOutput('\r\n');
-    testRun.appendOutput('⬆ std::cerr\r\n');
+  protected processStdErr(testRun: vscode.TestRun, runPrefix: string, str: string): void {
+    testRun.appendOutput(runPrefix + '⬇ std::cerr:\r\n');
+    const indented = reindentStr(0, 2, str);
+    testRun.appendOutput(indented.map(x => runPrefix + '|' + x + '\r\n').join(''));
+    testRun.appendOutput(runPrefix + '⬆ std::cerr\r\n');
   }
 }
 

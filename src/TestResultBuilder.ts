@@ -16,20 +16,18 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   public constructor(
     public readonly test: T,
     public readonly testRun: vscode.TestRun,
-    private readonly runInfo: RunningExecutable,
+    private readonly runPrefix: string,
     private readonly addBeginEndMsg: boolean,
     public readonly level = 0,
   ) {
     this._log = test.shared.log;
-    this._runId = TestResultBuilder.calcRunId(runInfo);
   }
 
-  public static calcRunId(_runInfo: RunningExecutable): string {
+  public static calcRunPrefix(_runInfo: RunningExecutable): string {
     //return `[#${runInfo.pid}] `;
     return `[#${generateId()}] `;
   }
 
-  private readonly _runId: string;
   private readonly _log: LoggerWrapper;
   private readonly _message: vscode.TestMessage[] = [];
   private _result: TestResult | undefined = undefined;
@@ -85,8 +83,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     } else {
       lines = msgs;
     }
-    //TODO:future const prefix = '[' + this.testNameAsId + '] ';
-    this.testRun.appendOutput(lines.map(x => this._runId + x + '\r\n').join(''));
+    this.testRun.appendOutput(lines.map(x => this.runPrefix + x + '\r\n').join(''));
   }
 
   ///
@@ -108,9 +105,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (file) {
       const lineP = parseLine(line);
       if (typeof lineP == 'number') {
-        return ` (at ${file}:${lineP})`;
+        return ansi.grey(` (at ${file}:${lineP})`);
       } else {
-        return ` (at ${file})`;
+        return ansi.grey(` (at ${file})`);
       }
     }
     return '';
@@ -183,7 +180,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
   public endMessage(): void {
     if (this.addBeginEndMsg && this.level === 0) {
-      const d = this._duration ? ` in ${Math.round(this._duration * 1000) / 1000000} second(s)` : '';
+      const d = this._duration ? ansi.grey(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
       this.addOutputLine(ansi.bold(`# Stopped \`${this.test.item.label}\``) + `${d}`, '');
     }
   }
@@ -238,7 +235,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   }
 
   public createSubTestBuilder(test: SubTest): TestResultBuilder {
-    const subTestBuilder = new TestResultBuilder(test, this.testRun, this.runInfo, true, this.level + 1);
+    const subTestBuilder = new TestResultBuilder(test, this.testRun, this.runPrefix, true, this.level + 1);
     this._subTestResultBuilders.push(subTestBuilder);
     return subTestBuilder;
   }

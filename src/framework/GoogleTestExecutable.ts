@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { promisify } from 'util';
+import * as ansi from 'ansi-colors';
 
 import { AbstractExecutable as AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { GoogleTestTest } from './GoogleTestTest';
@@ -237,7 +238,8 @@ export class GoogleTestExecutable extends AbstractExecutable {
     const executable = this; //eslint-disable-line
     const log = this.shared.log;
     const data = { lastBuilder: undefined as TestResultBuilder | undefined };
-    const runId = TestResultBuilder.calcRunId(runInfo);
+    const runId = TestResultBuilder.calcRunPrefix(runInfo);
+    const runPrefix = TestResultBuilder.calcRunPrefix(runInfo);
     // we dont need this now: const rngSeed: number | undefined = typeof this._shared.rngSeed === 'number' ? this._shared.rngSeed : undefined;
 
     const parser = new TextStreamParser(this.shared.log, {
@@ -255,17 +257,21 @@ export class GoogleTestExecutable extends AbstractExecutable {
           } else {
             expectedToRunAndFoundTests.push(test);
           }
-          data.lastBuilder = new TestResultBuilder(test, testRun, runInfo, false);
+          data.lastBuilder = new TestResultBuilder(test, testRun, runPrefix, false);
           return new TestCaseProcessor(executable.shared, testEndRe(test.id), data.lastBuilder);
+        } else {
+          testRun.appendOutput(runId + line + '\r\n');
         }
       },
-      alwaysonline(line: string): void {
-        testRun.appendOutput(runId + line + '\r\n');
-      },
+      // alwaysonline(line: string): void {
+      //   testRun.appendOutput(runPrefix + line + '\r\n');
+      // },
     });
 
     runInfo.process.stdout.on('data', (chunk: Uint8Array) => parser.write(chunk.toLocaleString()));
-    runInfo.process.stderr.on('data', (chunk: Uint8Array) => this.processStdErr(testRun, chunk.toLocaleString()));
+    runInfo.process.stderr.on('data', (chunk: Uint8Array) =>
+      this.processStdErr(testRun, runPrefix, chunk.toLocaleString()),
+    );
 
     await runInfo.result;
     // order matters
@@ -339,12 +345,20 @@ class TestCaseSharedData {
 ///
 
 class TestCaseProcessor implements LineProcessor {
-  constructor(shared: WorkspaceShared, private readonly testEndRe: RegExp, builder: TestResultBuilder) {
+  constructor(
+    shared: WorkspaceShared,
+    private readonly testEndRe: RegExp,
+    private readonly builder: TestResultBuilder,
+  ) {
     this.testCaseShared = new TestCaseSharedData(shared, builder);
     builder.started();
   }
 
   private readonly testCaseShared: TestCaseSharedData;
+
+  begin(line: string): void {
+    this.builder.addOutputLine(ansi.bold.underline(line)); //TODO: color line
+  }
 
   online(line: string): void | true | LineProcessor {
     const testEndMatch = this.testEndRe.exec(line);
@@ -354,10 +368,17 @@ class TestCaseProcessor implements LineProcessor {
       if (!Number.isNaN(duration)) this.testCaseShared.builder.setDurationMilisec(duration);
       const result = testEndMatch[1];
 
-      if (result === '[       OK ]') this.testCaseShared.builder.passed();
-      else if (result === '[  FAILED  ]') this.testCaseShared.builder.failed();
-      else if (result === '[  SKIPPED ]') this.testCaseShared.builder.skipped();
-      else {
+      let styleFunc = (s: string) => s;
+
+      if (result === '[       OK ]') {
+        styleFunc = (s: string) => ansi.green.bold(s);
+        this.testCaseShared.builder.passed();
+      } else if (result === '[  FAILED  ]') {
+        styleFunc = (s: string) => ansi.red.bold(s);
+        this.testCaseShared.builder.failed();
+      } else if (result === '[  SKIPPED ]') {
+        this.testCaseShared.builder.skipped();
+      } else {
         this.testCaseShared.shared.log.error('unexpected token:', line);
         this.testCaseShared.builder.errored();
       }
@@ -369,6 +390,8 @@ class TestCaseProcessor implements LineProcessor {
       }
 
       this.testCaseShared.builder.build();
+
+      this.builder.addOutputLine(styleFunc(line)); //TODO: color line
 
       return true;
     }
@@ -392,6 +415,8 @@ class TestCaseProcessor implements LineProcessor {
           break;
       }
     }
+
+    this.builder.addOutputLine(line);
   }
 }
 
@@ -412,7 +437,11 @@ class FailureProcessor implements LineProcessor {
 
   private lines: string[] = [];
 
-  online(line: string): void | false | LineProcessor {
+  begin(line: string): void {
+    this.testCaseShared.builder.addOutputLine(line); //TODO: color line
+  }
+
+  online(line: string): void | false {
     if (acceptedAndDecoratedPrefixes.some(prefix => line.startsWith(prefix))) {
       if (isDecorationEnabled) {
         const first = line.indexOf(':');
@@ -436,6 +465,8 @@ class FailureProcessor implements LineProcessor {
     } else {
       return false;
     }
+
+    this.testCaseShared.builder.addOutputLine(line); //TODO: color line
   }
 
   end(): void {
@@ -496,7 +527,11 @@ class ExpectCallProcessor implements LineProcessor {
   private expected = '';
   private actual: string[] = [];
 
-  online(line: string): void | boolean | LineProcessor {
+  begin(line: string): void {
+    this.testCaseShared.builder.addOutputLine(line); //TODO: color line
+  }
+
+  online(line: string): void | false {
     if (!this.expected && line.startsWith('  Expected')) {
       this.expected = line;
     } else if (this.expected && !this.actual.length && line.trim().startsWith('Actual:')) {
@@ -512,6 +547,8 @@ class ExpectCallProcessor implements LineProcessor {
       debugBreak();
       return false;
     }
+
+    this.testCaseShared.builder.addOutputLine(line); //TODO: color line
   }
 
   end(): void {

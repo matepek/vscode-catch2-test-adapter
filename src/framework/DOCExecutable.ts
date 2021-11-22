@@ -185,6 +185,7 @@ export class DOCExecutable extends AbstractExecutable {
     const expectedToRunAndFoundTests: DOCTest[] = [];
     const executable = this; //eslint-disable-line
     let options: Option = {};
+    const runPrefix = TestResultBuilder.calcRunPrefix(runInfo);
 
     const parser = new XmlParser(
       this.shared.log,
@@ -199,7 +200,7 @@ export class DOCExecutable extends AbstractExecutable {
               return new TestSuiteTagProcessor(
                 executable.shared,
                 testRun,
-                runInfo,
+                runPrefix,
                 (testNameAsId: string) => executable._getTest<DOCTest>(testNameAsId),
                 executable._createAndAddTest,
                 unexpectedTests,
@@ -256,7 +257,7 @@ class TestSuiteTagProcessor implements XmlTagProcessor {
   constructor(
     private readonly shared: WorkspaceShared,
     private readonly testRun: vscode.TestRun,
-    private readonly runInfo: RunningExecutable,
+    private readonly runPrefix: string,
     private readonly findTest: (testNameAsId: string) => DOCTest | undefined,
     private readonly create: (
       testName: string,
@@ -302,7 +303,7 @@ class TestSuiteTagProcessor implements XmlTagProcessor {
 
         if (skipped) return;
 
-        const builder = new TestResultBuilder(test, this.testRun, this.runInfo, true);
+        const builder = new TestResultBuilder(test, this.testRun, this.runPrefix, true);
         return new TestCaseTagProcessor(this.shared, builder, test as DOCTest, tag.attribs, this.options);
       }
     }
