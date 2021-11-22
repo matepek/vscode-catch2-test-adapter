@@ -1,12 +1,7 @@
-import * as xml2js from 'xml2js';
-import { AbstractTest, AbstractTestEvent, SharedWithTest } from '../AbstractTest';
-import { TestEventBuilder } from '../TestEventBuilder';
-import { Suite } from '../Suite';
-import { AbstractRunnable } from '../AbstractRunnable';
-
-interface XmlObject {
-  [prop: string]: any; //eslint-disable-line
-}
+import * as vscode from 'vscode';
+import { AbstractTest, SharedWithTest } from '../AbstractTest';
+import { AbstractExecutable } from '../AbstractExecutable';
+import { SharedTestTags } from '../SharedTestTags';
 
 interface Frame {
   name: string;
@@ -35,342 +30,44 @@ export class DOCSection implements Frame {
 export class DOCTest extends AbstractTest {
   public constructor(
     shared: SharedWithTest,
-    runnable: AbstractRunnable,
-    parent: Suite,
+    executable: AbstractExecutable,
+    container: vscode.TestItemCollection,
     testNameAsId: string,
-    skipped: boolean,
-    file: string | undefined,
-    line: number | undefined,
     tags: string[],
+    file: string | undefined,
+    line: string | undefined,
     description: string | undefined,
+    skipped: boolean,
   ) {
     super(
       shared,
-      runnable,
-      parent,
+      executable,
+      container,
       testNameAsId,
-      testNameAsId.startsWith('  Scenario:') ? '⒮' + testNameAsId.substr(11) : testNameAsId,
+      testNameAsId.startsWith('  Scenario:') ? testNameAsId.trimLeft() : testNameAsId,
       file,
       line,
       skipped,
       undefined,
+      AbstractTest.calcDescription(tags, undefined, undefined, description),
       tags,
-      description,
-      undefined,
-      undefined,
-    );
-    this._isSecnario = testNameAsId.startsWith('  Scenario:');
-  }
-
-  public update(file: string | undefined, line: number | undefined, tags: string[], skipped: boolean): boolean {
-    return this._updateBase(
-      this._label,
-      file,
-      line,
-      skipped,
-      tags,
-      this._testDescription,
-      this._typeParam,
-      this._valueParam,
-      this._staticEvent,
+      SharedTestTags.doctest,
     );
   }
 
-  public compare(testNameAsId: string): boolean {
-    return this.testNameAsId === testNameAsId;
-  }
-
-  private _sections: undefined | DOCSection[];
-  private _isSecnario: boolean;
-
-  public get sections(): undefined | DOCSection[] {
-    return this._sections;
+  public update2(
+    file: string | undefined,
+    line: string | undefined,
+    tags: string[],
+    skipped: boolean,
+    description: string | undefined,
+  ): void {
+    const calcDescription = AbstractTest.calcDescription(tags, undefined, undefined, description);
+    super.update(this.label, file, line, skipped, calcDescription, tags);
   }
 
   public getEscapedTestName(): string {
     /* ',' has special meaning */
-    return this.testNameAsId.replace(/,/g, '?');
-  }
-
-  public parseAndProcessTestCase(
-    testRunId: string,
-    output: string,
-    rngSeed: number | undefined,
-    timeout: number | null,
-    stderr: string | undefined,
-  ): AbstractTestEvent {
-    if (timeout !== null) {
-      const ev = this.getTimeoutEvent(testRunId, timeout);
-      this.lastRunEvent = ev;
-      return ev;
-    }
-
-    let res: XmlObject = {};
-    new xml2js.Parser({ explicitArray: true }).parseString(output, (err: Error, result: XmlObject) => {
-      if (err) {
-        throw err;
-      } else {
-        res = result;
-      }
-    });
-
-    const testEventBuilder = new TestEventBuilder(this, testRunId);
-
-    if (rngSeed) testEventBuilder.appendTooltip(`🔀 Randomness seeded to: ${rngSeed.toString()}`);
-
-    this._processXmlTagTestCaseInner(res.TestCase, testEventBuilder);
-
-    if (stderr) {
-      testEventBuilder.appendMessage('stderr arrived during running this test', null);
-      testEventBuilder.appendMessage('⬇ std::cerr:', null);
-      testEventBuilder.appendMessage(stderr, 1);
-      testEventBuilder.appendMessage('⬆ std::cerr', null);
-    }
-
-    const testEvent = testEventBuilder.build();
-
-    return testEvent;
-  }
-
-  private _processXmlTagTestCaseInner(testCase: XmlObject, testEventBuilder: TestEventBuilder): void {
-    const durationSec = Number(testCase.OverallResultsAsserts[0].$.duration) || undefined;
-
-    if (durationSec === undefined)
-      this._shared.log.errorS('doctest: duration is NaN', testCase.OverallResultsAsserts[0].$.duration);
-    else testEventBuilder.setDurationMilisec(durationSec * 1000);
-
-    testEventBuilder.appendMessage(testCase._, 0);
-
-    const title: DOCSection = new DOCSection(testCase.$.name, testCase.$.filename, testCase.$.line);
-
-    const mayFail = testCase.$.may_fail === 'true';
-    const shouldFail = testCase.$.should_fail === 'true';
-    const failures = parseInt(testCase.OverallResultsAsserts[0].$.failures) || 0;
-    const expectedFailures = parseInt(testCase.OverallResultsAsserts[0].$.expected_failures) || 0;
-    const hasException = testCase.Exception !== undefined;
-    const timeoutSec = Number(testCase.$.timeout) || undefined;
-    const hasTimedOut = timeoutSec !== undefined && durationSec !== undefined ? durationSec > timeoutSec : false;
-
-    // The logic is coming from the console output of ./doctest1.exe
-    if (shouldFail) {
-      if (failures > 0 || hasException || hasTimedOut) testEventBuilder.passed();
-      else testEventBuilder.failed();
-    } else if (mayFail) {
-      testEventBuilder.passed();
-    } else {
-      if (expectedFailures !== failures || hasException || hasTimedOut) testEventBuilder.failed();
-      else testEventBuilder.passed();
-    }
-
-    this._processTags(testCase, title, [], testEventBuilder);
-
-    this._processXmlTagSubcase(testCase, title, [], testEventBuilder, title);
-
-    this._sections = title.children;
-
-    if (this._sections.length) {
-      let failedBranch = 0;
-      let succBranch = 0;
-
-      const traverse = (section: DOCSection): void => {
-        if (section.children.length === 0) {
-          section.failed ? ++failedBranch : ++succBranch;
-        } else {
-          for (let i = 0; i < section.children.length; ++i) {
-            traverse(section.children[i]);
-          }
-        }
-      };
-
-      this._sections.forEach(section => traverse(section));
-
-      const branchMsg = (failedBranch ? '✘' + failedBranch + '|' : '') + '✔︎' + succBranch;
-
-      testEventBuilder.appendDescription(`ᛦ${branchMsg}ᛦ`);
-      testEventBuilder.appendTooltip(`ᛦ ${branchMsg} branches`);
-    }
-  }
-
-  private static readonly _expectedPropertyNames = new Set([
-    '_',
-    '$',
-    'SubCase',
-    'OverallResultsAsserts',
-    'Message',
-    'Expression',
-    'Exception',
-  ]);
-
-  private _processTags(xml: XmlObject, title: Frame, stack: DOCSection[], testEventBuilder: TestEventBuilder): void {
-    {
-      Object.getOwnPropertyNames(xml).forEach(n => {
-        if (!DOCTest._expectedPropertyNames.has(n)) {
-          this._shared.log.error('unexpected doctest tag: ' + n);
-          testEventBuilder.appendMessage('unexpected doctest tag:' + n, 0);
-          testEventBuilder.errored();
-        }
-      });
-    }
-
-    if (xml._) {
-      testEventBuilder.appendMessage('⬇ std::cout:', 1);
-      testEventBuilder.appendMessage(xml._.trim(), 2);
-      testEventBuilder.appendMessage('⬆ std::cout', 1);
-    }
-
-    try {
-      if (xml.Message) {
-        for (let j = 0; j < xml.Message.length; ++j) {
-          const msg = xml.Message[j];
-
-          testEventBuilder.appendMessage(msg.$.type, 0);
-
-          msg.Text.forEach((m: string) => testEventBuilder.appendMessage(m, 1));
-
-          testEventBuilder.appendDecorator(
-            msg.$.filename,
-            Number(msg.$.line) - 1,
-            msg.Text.map((x: string) => x.trim()).join(' | '),
-          );
-        }
-      }
-    } catch (e) {
-      this._shared.log.exceptionS(e);
-    }
-
-    try {
-      if (xml.Exception) {
-        for (let j = 0; j < xml.Exception.length; ++j) {
-          const e = xml.Exception[j];
-          testEventBuilder.appendMessage('Exception was thrown: ' + e._.trim(), 0);
-        }
-      }
-    } catch (e) {
-      this._shared.log.exceptionS(e);
-    }
-
-    try {
-      if (xml.Expression) {
-        for (let j = 0; j < xml.Expression.length; ++j) {
-          const expr = xml.Expression[j];
-          const file = expr.$.filename;
-          const line = Number(expr.$.line);
-          const location = `(at ${file}:${line})`;
-
-          testEventBuilder.appendMessage(`Expression failed ${location}:`, 1);
-
-          testEventBuilder.appendMessage('❕Original:  ' + expr.Original.map((x: string) => x.trim()).join('\n'), 2);
-
-          try {
-            for (let j = 0; expr.Expanded && j < expr.Expanded.length; ++j) {
-              testEventBuilder.appendMessage(
-                '❗️Expanded:  ' + expr.Expanded.map((x: string) => x.trim()).join('\n'),
-                2,
-              );
-              testEventBuilder.appendDecorator(file, line - 1, expr.Expanded.map((x: string) => x.trim()).join(' | '));
-            }
-          } catch (e) {
-            this._shared.log.exceptionS(e);
-          }
-
-          try {
-            for (let j = 0; expr.Exception && j < expr.Exception.length; ++j) {
-              testEventBuilder.appendMessage(
-                '  ❗️Exception:  ' + expr.Exception.map((x: string) => x.trim()).join('\n'),
-                2,
-              );
-              testEventBuilder.appendDecorator(file, line, expr.Exception.map((x: string) => x.trim()).join(' | '));
-            }
-          } catch (e) {
-            this._shared.log.exceptionS(e);
-          }
-
-          try {
-            for (let j = 0; expr.ExpectedException && j < expr.ExpectedException.length; ++j) {
-              testEventBuilder.appendMessage(
-                '❗️ExpectedException:  ' + expr.ExpectedException.map((x: string) => x.trim()).join('\n'),
-                2,
-              );
-              testEventBuilder.appendDecorator(
-                file,
-                line,
-                expr.ExpectedException.map((x: string) => x.trim()).join(' | '),
-              );
-            }
-          } catch (e) {
-            this._shared.log.exceptionS(e);
-          }
-
-          try {
-            for (let j = 0; expr.ExpectedExceptionString && j < expr.ExpectedExceptionString.length; ++j) {
-              testEventBuilder.appendMessage(
-                '❗️ExpectedExceptionString  ' + expr.ExpectedExceptionString[j]._.trim(),
-                2,
-              );
-              testEventBuilder.appendDecorator(
-                file,
-                line,
-                expr.ExpectedExceptionString.map((x: string) => x.trim()).join(' | '),
-              );
-            }
-          } catch (e) {
-            this._shared.log.exceptionS(e);
-          }
-        }
-      }
-    } catch (e) {
-      this._shared.log.exceptionS(e);
-    }
-  }
-
-  private _processXmlTagSubcase(
-    xml: XmlObject,
-    title: Frame,
-    stack: DOCSection[],
-    testEventBuilder: TestEventBuilder,
-    parentSection: DOCSection,
-  ): void {
-    for (let j = 0; xml.SubCase && j < xml.SubCase.length; ++j) {
-      const subcase = xml.SubCase[j];
-
-      try {
-        let currSection = parentSection.children.find(
-          v => v.name === subcase.$.name && v.filename === subcase.$.filename && v.line === subcase.$.line,
-        );
-
-        if (currSection === undefined) {
-          currSection = new DOCSection(subcase.$.name || '', subcase.$.filename, subcase.$.line);
-          parentSection.children.push(currSection);
-        }
-
-        const isLeaf = subcase.SubCase === undefined || subcase.SubCase.length === 0;
-
-        if (
-          isLeaf &&
-          subcase.Expression &&
-          subcase.Expression.length > 0 &&
-          // eslint-disable-next-line
-          subcase.Expression.some((x: any) => x.$ && x.$.success && x.$.success == 'false')
-        ) {
-          currSection.failed = true;
-        }
-
-        const name = this._isSecnario ? subcase.$.name.trimLeft() : subcase.$.name;
-
-        const msg =
-          '   '.repeat(stack.length) + '⮑ ' + (isLeaf ? (currSection.failed ? '❌' : '✅') : '') + `"${name}"`;
-
-        testEventBuilder.appendMessage(msg, null);
-
-        const currStack = stack.concat(currSection);
-
-        this._processTags(subcase, title, currStack, testEventBuilder);
-
-        this._processXmlTagSubcase(subcase, title, currStack, testEventBuilder, currSection);
-      } catch (error) {
-        testEventBuilder.appendMessage('Fatal error processing subcase', 1);
-        this._shared.log.exceptionS(error);
-      }
-    }
+    return this.id.replace(/,/g, '?');
   }
 }

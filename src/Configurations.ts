@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { LoggerWrapper } from './LoggerWrapper';
 import { ExecutableConfig } from './ExecutableConfig';
-import { SharedVariables } from './SharedVariables';
+import { WorkspaceShared } from './WorkspaceShared';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
 import { TestGrouping } from './TestGroupingInterface';
@@ -381,7 +381,7 @@ export class Configurations {
     return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  public getExecutables(shared: SharedVariables): ExecutableConfig[] {
+  public getExecutableConfigs(shared: WorkspaceShared): ExecutableConfig[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultParallelExecutionOfExecLimit = this.getParallelExecutionOfExecutableLimit() || 1;
 
@@ -402,11 +402,12 @@ export class Configurations {
         undefined,
         undefined,
         {},
-        undefined,
-        {},
-        {},
-        {},
-        {},
+        {
+          catch2: {},
+          gtest: {},
+          doctest: {},
+          gbenchmark: {},
+        },
       );
     };
 
@@ -520,8 +521,6 @@ export class Configurations {
             ? obj.sourceFileMap
             : {};
 
-        const fsWatcher: string | undefined = obj.fsWatcher === 'string' ? obj.fsWatcher : undefined;
-
         return new ExecutableConfig(
           shared,
           pattern,
@@ -538,11 +537,12 @@ export class Configurations {
           waitForBuildProcess,
           spawnerConfig,
           sourceFileMap,
-          fsWatcher,
-          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
-          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
-          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),
-          this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gbenchmark']),
+          {
+            catch2: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['catch2']),
+            gtest: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
+            doctest: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),
+            gbenchmark: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gbenchmark']),
+          },
         );
       };
 

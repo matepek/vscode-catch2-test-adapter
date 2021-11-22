@@ -46,7 +46,7 @@ jobs:
           sleep 3
           npm test
         env:
-          C2_DEBUG: true
+          TESTMATE_DEBUG: true
           DISPLAY: ':99.0'
 
   test-windows:
@@ -84,7 +84,7 @@ jobs:
       - name: Test
         run: npm test
         env:
-          C2_DEBUG: true
+          TESTMATE_DEBUG: true
 
   test-mac:
     name: MacOS

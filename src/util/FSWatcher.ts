@@ -60,7 +60,7 @@ export class GazeWrapper implements FSWatcher {
   }
 
   public onAll(handler: (fsPath: string) => void): void {
-    this._gaze.on('all', (event: string, fsPath: string) => {
+    this._gaze.on('all', (_event: string, fsPath: string) => {
       handler(fsPath);
     });
   }

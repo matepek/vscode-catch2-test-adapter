@@ -2,8 +2,8 @@ import * as assert from 'assert';
 
 import * as path from 'path';
 import { TestAdapter, settings } from './Common';
-import { Configurations } from '../src/Configurations';
-import { logger } from './LogOutputContent.test';
+import { Configurations } from '../../src/Configurations';
+import { logger } from '../LogOutputContent.test';
 
 describe(path.basename(__filename), function () {
   this.timeout(5000);
@@ -73,7 +73,7 @@ describe(path.basename(__filename), function () {
       await settings.updateConfig('test.advancedExecutables', [setting]);
 
       const config = new Configurations(logger, settings.workspaceFolderUri);
-      const execs = await config.getExecutables(null as any); /* eslint-disable-line */
+      const execs = await config.getExecutableConfigs(null as any); /* eslint-disable-line */
 
       assert.strictEqual(execs.length, 1);
       const exec = execs[0] as any; /* eslint-disable-line */

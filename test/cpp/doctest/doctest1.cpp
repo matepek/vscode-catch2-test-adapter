@@ -153,31 +153,31 @@ TEST_CASE("exception1") { throw std::runtime_error("exeception msg"); }
 
 TEST_CASE("testwith,char") { CHECK(false); }
 
-TEST_CASE("test may_fail:true" * doctest::may_fail()) { CHECK(true); }
-TEST_CASE("test may_fail:false" * doctest::may_fail()) { CHECK(false); }
-TEST_CASE("test may_fail:exception" * doctest::may_fail()) { throw std::runtime_error("exeception msg"); }
-TEST_CASE("test may_fail:sub exception" * doctest::may_fail()) { DOCTEST_SUBCASE("sub") { throw std::runtime_error("exeception msg"); } }
+TEST_CASE("test may_fail:true - succ" * doctest::may_fail()) { CHECK(true); }
+TEST_CASE("test may_fail:false - succ" * doctest::may_fail()) { CHECK(false); }
+TEST_CASE("test may_fail:exception - succ" * doctest::may_fail()) { throw std::runtime_error("exeception msg"); }
+TEST_CASE("test may_fail:sub exception - succ" * doctest::may_fail()) { DOCTEST_SUBCASE("sub") { throw std::runtime_error("exeception msg"); } }
 
-TEST_CASE("test should_fail:true" * doctest::should_fail()) { CHECK(true); }
-TEST_CASE("test should_fail:false" * doctest::should_fail()) { CHECK(false); }
-TEST_CASE("test should_fail:exception" * doctest::should_fail()) { throw std::runtime_error("exeception msg"); }
+TEST_CASE("test should_fail:true - fail" * doctest::should_fail()) { CHECK(true); }
+TEST_CASE("test should_fail:false - succ" * doctest::should_fail()) { CHECK(false); }
+TEST_CASE("test should_fail:exception - succ" * doctest::should_fail()) { throw std::runtime_error("exeception msg"); }
 
 
-TEST_CASE("test expected_failures(1):true" * doctest::expected_failures(1)) { CHECK(true); }
-TEST_CASE("test expected_failures(1):false" * doctest::expected_failures(1)) { CHECK(false); }
-TEST_CASE("test expected_failures(1):exception" * doctest::expected_failures(1)) { throw std::runtime_error("exeception msg"); }
+TEST_CASE("test expected_failures(1):true - fail" * doctest::expected_failures(1)) { CHECK(true); }
+TEST_CASE("test expected_failures(1):false - succ" * doctest::expected_failures(1)) { CHECK(false); }
+TEST_CASE("test expected_failures(1):exception - fail" * doctest::expected_failures(1)) { throw std::runtime_error("exeception msg"); }
 
-TEST_CASE("test mix: may_fail & should_fail:exception" * doctest::may_fail() * doctest::should_fail() ) { throw std::runtime_error("exeception msg"); }
+TEST_CASE("test mix: may_fail & should_fail:exception - succ" * doctest::may_fail() * doctest::should_fail() ) { throw std::runtime_error("exeception msg"); }
 
-TEST_CASE("test mix: may_fail & expected_failures(1): false" * doctest::may_fail() * doctest::expected_failures(1)) { CHECK(false); }
-TEST_CASE("test mix: may_fail & expected_failures(1): false false" * doctest::may_fail() * doctest::expected_failures(1)) { CHECK(false); CHECK(false); }
+TEST_CASE("test mix: may_fail & expected_failures(1): false - succ" * doctest::may_fail() * doctest::expected_failures(1)) { CHECK(false); }
+TEST_CASE("test mix: may_fail & expected_failures(1): false false - succ" * doctest::may_fail() * doctest::expected_failures(1)) { CHECK(false); CHECK(false); }
 
-TEST_CASE("test mix: should_fail & expected_failures(1): false" * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); }
-TEST_CASE("test mix: should_fail & expected_failures(1): false false" * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); CHECK(false); }
+TEST_CASE("test mix: should_fail & expected_failures(1): false - succ" * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); }
+TEST_CASE("test mix: should_fail & expected_failures(1): false false - succ" * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); CHECK(false); }
 
-TEST_CASE("test mix: may_fail & should_fail & expected_failures(1): true" * doctest::may_fail() * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(true); }
-TEST_CASE("test mix: may_fail & should_fail & expected_failures(1): false" * doctest::may_fail() * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); }
-TEST_CASE("test mix: may_fail & should_fail & expected_failures(1): false false" * doctest::may_fail() * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); CHECK(false); }
+TEST_CASE("test mix: may_fail & should_fail & expected_failures(1): true - fail" * doctest::may_fail() * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(true); }
+TEST_CASE("test mix: may_fail & should_fail & expected_failures(1): false - succ" * doctest::may_fail() * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); }
+TEST_CASE("test mix: may_fail & should_fail & expected_failures(1): false false - succ" * doctest::may_fail() * doctest::should_fail() * doctest::expected_failures(1)) { CHECK(false); CHECK(false); }
 
-TEST_CASE("test timeout: ok" * doctest::timeout(0.1)) { CHECK(true); }
-TEST_CASE("test timeout: fails" * doctest::timeout(0.1)) { std::this_thread::sleep_for(std::chrono::milliseconds(200)); CHECK(true); }
+TEST_CASE("test timeout: ok - succ" * doctest::timeout(0.1)) { CHECK(true); }
+TEST_CASE("test timeout: fails - fail" * doctest::timeout(0.1)) { std::this_thread::sleep_for(std::chrono::milliseconds(200)); CHECK(true); }

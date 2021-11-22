@@ -17,6 +17,16 @@ TEST_CASE("s2t2", "tag1 [.]") {
 
 TEST_CASE("s2t3", "tag1") {
   //
-  REQUIRE(std::false_type::value);
+  int i=5,j=5;
+  CHECK(i!=j);
+  REQUIRE(i!=j);
   //
 }
+
+// TEST_CASE("s2t4", "tag1") {
+//   //
+//   int i=5,j=6;
+//   CHECK(i==j);
+//   REQUIRE(i==j);
+//   //
+// }

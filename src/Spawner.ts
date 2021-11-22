@@ -19,6 +19,26 @@ export interface Spawner {
 
 ///
 
+export class SpawnBuilder {
+  public constructor(
+    private readonly spawner: Spawner,
+    public readonly cmd: string,
+    public readonly args: string[],
+    public readonly options: SpawnOptionsWithoutStdio,
+    public readonly timeout: number | undefined,
+  ) {}
+
+  public spawnAsync(): Promise<SpawnReturns> {
+    return this.spawner.spawnAsync(this.cmd, this.args, this.options, this.timeout);
+  }
+
+  public spawn(): Promise<fsw.ChildProcessWithoutNullStreams> {
+    return this.spawner.spawn(this.cmd, this.args, this.options);
+  }
+}
+
+///
+
 export class DefaultSpawner implements Spawner {
   spawnAsync(cmd: string, args: string[], options: SpawnOptionsWithoutStdio, timeout?: number): Promise<SpawnReturns> {
     return new Promise((resolve, reject) => {
@@ -102,7 +122,7 @@ export class SpawnWithExecutor extends DefaultSpawner {
     }
   }
 
-  async spawnAsync(
+  override async spawnAsync(
     cmd: string,
     args: string[],
     options: SpawnOptionsWithoutStdio,
@@ -112,7 +132,7 @@ export class SpawnWithExecutor extends DefaultSpawner {
     return super.spawnAsync(this._executor, argsV, options, timeout);
   }
 
-  async spawn(
+  override async spawn(
     cmd: string,
     args: string[],
     options: SpawnOptionsWithoutStdio,
@@ -158,7 +178,7 @@ export class SpawnWithExecutor extends DefaultSpawner {
     }
   }
 
-  public toString(): string {
+  public override toString(): string {
     return `SpawnWithExecutor(${this._executor}, [${this._args}])`;
   }
 }

@@ -18,7 +18,7 @@ export function expectedLoggedWarning(warning: string): void {
 
 ///
 
-export const logger = new LoggerWrapper('testMate.cpp.log', undefined, `C++ TestMate`);
+export const logger = new LoggerWrapper('testMate.cpp.log', `C++ TestMate`);
 // eslint-disable-next-line
 const spyError: sinon.SinonSpy<any[], void> = sinon.spy(logger, 'error');
 // eslint-disable-next-line

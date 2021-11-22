@@ -13,9 +13,8 @@
         "${workspaceFolder}/out/tmp/workspaceFolder"
       ],
       "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
-      "preLaunchTask": "npm: watch",
       "env": {
-        "C2_DEBUG": "true",
+        "TESTMATE_DEBUG": "true",
         "C2_INTEGRATIONFROMVSCODE": "true"
       }
     },
@@ -24,9 +23,9 @@
       "request": "launch",
       "name": "Manual cpp",
       "runtimeExecutable": "${execPath}",
-      "args": ["${workspaceFolder}/out/cpp", "--extensionDevelopmentPath=${workspaceFolder}"],
+      "args": ["${workspaceFolder}/out/cpp", "--extensionDevelopmentPath=${workspaceFolder}", "--disable-extensions"],
       "env": {
-        "C2_DEBUG": "true"
+        "TESTMATE_DEBUG": "true"
       },
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "preDebug",
@@ -39,7 +38,7 @@
       "runtimeExecutable": "${execPath}",
       "args": ["/Users/matepek/repo/ac-chorus-addon/nbschorusconnect", "--extensionDevelopmentPath=${workspaceFolder}"],
       "env": {
-        "C2_DEBUG": "true"
+        "TESTMATE_DEBUG": "true"
       },
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "preDebug",

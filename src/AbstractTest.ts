@@ -1,312 +1,262 @@
-import * as path from 'path';
-import { TestEvent, TestInfo } from 'vscode-test-adapter-api';
-import { generateId, concat } from './Util';
-import { Suite } from './Suite';
-import { AbstractRunnable } from './AbstractRunnable';
+import * as vscode from 'vscode';
+import { parseLine } from './Util';
+import { AbstractExecutable } from './AbstractExecutable';
 import { LoggerWrapper } from './LoggerWrapper';
+import { TestCreator } from './WorkspaceShared';
+import { debugAssert } from './util/DevelopmentHelper';
+import { SharedTestTags } from './SharedTestTags';
+
+///
 
 export interface SharedWithTest {
   log: LoggerWrapper;
+  testItemCreator: TestCreator;
 }
+///
 
-export interface StaticTestEventBase {
-  state: 'errored' | 'passed' | 'failed';
-  message: string;
-}
-
-export interface AbstractTestEvent extends TestEvent {
-  testRunId: string;
-  type: 'test';
-  test: string;
-}
-
-export abstract class AbstractTest implements TestInfo {
-  public readonly type: 'test' = 'test';
-  public readonly id: string;
-  public readonly testNameAsId: string;
-  public readonly debuggable = true;
-
-  protected _label = '';
-  protected _additionalDesciption = '';
-  protected _additionalTooltip = '';
-  protected _skipped = false;
-  protected _tags: string[] = [];
-  protected _testDescription: string | undefined = undefined;
-  protected _typeParam: string | undefined = undefined; // gtest specific
-  protected _valueParam: string | undefined = undefined; // gtest specific
-  protected _file: string | undefined = undefined;
-  protected _line: number | undefined = undefined;
-  protected _staticEvent: StaticTestEventBase | undefined;
-
-  public lastRunEvent: AbstractTestEvent | undefined;
-  public lastRunMilisec: number | undefined;
+export abstract class AbstractTest {
+  private _item: vscode.TestItem;
+  private _line: number | undefined = undefined;
 
   protected constructor(
-    protected readonly _shared: SharedWithTest,
-    public readonly runnable: AbstractRunnable,
-    public readonly parent: Suite, // ascending
-    testNameAsId: string,
-    label: string,
-    file: string | undefined,
-    line: number | undefined,
-    skipped: boolean,
-    staticEvent: StaticTestEventBase | undefined,
-    pureTags: string[], // without brackets
-    testDescription: string | undefined,
-    typeParam: string | undefined, // gtest specific
-    valueParam: string | undefined, // gtest specific
+    public readonly shared: SharedWithTest,
+    public readonly executable: AbstractExecutable,
+    private readonly _container: vscode.TestItemCollection,
+    public readonly id: string, // identifies the test inside the executable
+    label: string, // usually the same as testId
+    private _file: string | undefined,
+    line: string | undefined,
+    private _skipped: boolean,
+    private _staticError: string[] | undefined,
+    description: string | undefined,
+    private _tags: string[],
+    private readonly _frameworkTag: vscode.TestTag,
+    public readonly debuggable = true,
+    public readonly runnable = true,
   ) {
-    this.id = generateId();
-    this.testNameAsId = testNameAsId;
+    _tags.sort();
+    this._line = parseLine(line);
 
-    this._updateBase(label, file, line, skipped, pureTags, testDescription, typeParam, valueParam, staticEvent);
+    this._item = this._createItem(label, description);
+    this._container.add(this._item);
   }
 
-  protected _updateBase(
-    label: string,
+  public get item(): Readonly<vscode.TestItem> {
+    return this._item;
+  }
+
+  private _createItem(label: string, description: string | undefined): vscode.TestItem {
+    const item = this.shared.testItemCreator(this.id, label, this._file, this._line, this);
+
+    item.description = description;
+
+    if (this._staticError) {
+      debugAssert(this._staticError.length > 0);
+      item.error = this._staticError.join('\n');
+    }
+
+    item.tags = this._calcTags();
+
+    return item;
+  }
+
+  // null means unchanged
+  public update(
+    label: string | null,
     file: string | undefined,
-    line: number | undefined,
-    skipped: boolean,
-    tags: string[], // without brackets
-    testDescription: string | undefined,
-    typeParam: string | undefined, // gtest specific
-    valueParam: string | undefined, // gtest specific
-    staticEvent: StaticTestEventBase | undefined,
-  ): boolean {
-    if (line && line < 0) throw Error('line smaller than zero');
+    line: string | undefined,
+    skipped: boolean | null,
+    description: string | undefined | null,
+    tags: string[] | null,
+  ): void {
+    if (tags !== null) this._tags = tags;
 
-    let changed = false;
-
-    if (this._label != label) {
-      changed = true;
-      this._label = label;
+    if (this._file !== file) {
+      this._file = file;
+      this._line = parseLine(line);
+      const item = this._createItem(
+        label !== null ? label : this._item.label,
+        description !== null ? description : this._item.description,
+      );
+      this._container.delete(this._item.id);
+      this._container.add(item);
+      this._item = item;
+    } else {
+      if (label !== null) this._item.label = label;
+      this.line = line;
+      if (description !== null) this._item.description = description;
+      if (tags !== null) this._item.tags = this._calcTags();
     }
-
-    const newFile = file ? path.normalize(file) : undefined;
-    if (this._file != newFile) {
-      changed = true;
-      this._file = newFile;
-    }
-
-    if (this._line != line) {
-      changed = true;
-      this._line = line;
-    }
-
-    if (this._skipped != skipped) {
-      changed = true;
+    if (skipped !== null && this._skipped !== skipped) {
       this._skipped = skipped;
+      this._skipReported = false;
     }
-
-    if (this._testDescription != testDescription) {
-      changed = true;
-      this._testDescription = testDescription;
-    }
-
-    if (tags.length !== this._tags.length || tags.some(t => this._tags.indexOf(t) === -1)) {
-      changed = true;
-      this._tags = tags;
-    }
-
-    if (this._typeParam != typeParam) {
-      changed = true;
-      this._typeParam = typeParam;
-    }
-
-    if (this._valueParam != valueParam) {
-      changed = true;
-      this._valueParam = valueParam;
-    }
-
-    if (this._staticEvent !== staticEvent) {
-      changed = true;
-      this._staticEvent = staticEvent;
-    }
-
-    return changed;
-  }
-
-  public abstract compare(testNameAsId: string): boolean;
-
-  // should be used only from TestEventBuilder
-  public _updateDescriptionAndTooltip(description: string, tooltip: string): void {
-    this._additionalDesciption = description;
-    this._additionalTooltip = tooltip;
-  }
-
-  public getInterfaceObj(): TestInfo {
-    return {
-      type: 'test',
-      id: this.id,
-      label: this.label,
-      description: this.description,
-      tooltip: this.tooltip,
-      file: this.file,
-      line: this.line,
-      skipped: this.skipped,
-      debuggable: this.debuggable,
-      errored: this.errored,
-      message: this.message,
-    };
   }
 
   public get label(): string {
-    return this._label;
-  }
-
-  public get description(): string {
-    const description: string[] = [];
-
-    if (this._tags.length > 0) description.push(this._tags.map(t => `[${t}]`).join(''));
-
-    if (this._typeParam) description.push(`#️⃣Type: ${this._typeParam}`);
-
-    if (this._valueParam) description.push(`#️⃣Value: ${this._valueParam}`);
-
-    return concat(description.join('\n'), this._additionalDesciption, ' ');
-  }
-
-  public get tooltip(): string {
-    const tooltip = [`Name: ${this.testNameAsId}`];
-
-    if (this._tags.length > 0) {
-      const tagsStr = this._tags.map(t => `[${t}]`).join('');
-      tooltip.push(`Tags: ${tagsStr}`);
-    }
-
-    if (this._testDescription) tooltip.push(`Description: ${this._testDescription}`);
-
-    if (this._typeParam) tooltip.push(`#️⃣TypeParam() = ${this._typeParam}`);
-
-    if (this._valueParam) tooltip.push(`#️⃣GetParam() = ${this._valueParam}`);
-
-    return concat(tooltip.join('\n'), this._additionalTooltip, '\n');
+    return this._item.label;
   }
 
   public get file(): string | undefined {
     return this._file;
   }
 
+  public set file(file: string | undefined) {
+    if (this._file !== file) {
+      this._file = file;
+      const item = this._createItem(this._item.label, this._item.description);
+      this._container.delete(this._item.id);
+      this._container.add(item);
+      this._item = item;
+    }
+  }
+
   public get line(): number | undefined {
     return this._line;
   }
 
+  public set line(line: string | number | undefined) {
+    const newLine = parseLine(line);
+    if (newLine !== this._line) {
+      this._line = newLine;
+      this._item.range = newLine !== undefined ? new vscode.Range(newLine - 1, 0, newLine - 1, 0) : undefined;
+    }
+  }
+
+  public set description(description: string | undefined) {
+    this._item.description = description;
+  }
+
   public get skipped(): boolean {
-    return this._skipped || this.runnable.properties.markAsSkipped;
+    return this._skipped || this.executable.properties.markAsSkipped;
   }
 
-  public get errored(): boolean {
-    return this._staticEvent !== undefined && this._staticEvent!.state === 'errored';
-  }
-
-  public get message(): string | undefined {
-    return this._staticEvent?.message;
-  }
-
-  public getStaticEvent(testRunId: string): AbstractTestEvent | undefined {
-    if (this._staticEvent)
-      return {
-        testRunId,
-        type: 'test',
-        test: this.id,
-        state: this._staticEvent.state,
-        message: this._staticEvent?.message,
-      };
-    else return undefined;
-  }
-
-  public *route(): IterableIterator<Suite> {
-    let parent: Suite | undefined = this.parent;
-    do {
-      yield parent;
-      parent = parent.parent;
-    } while (parent);
-  }
-
-  private _reverseRoute: Suite[] | undefined = undefined;
-
-  public reverseRoute(): Suite[] {
-    if (this._reverseRoute === undefined) this._reverseRoute = [...this.route()].reverse();
-    return this._reverseRoute;
-  }
-
-  public removeWithLeafAscendants(): void {
-    const index = this.parent.children.indexOf(this);
-    if (index == -1) {
-      this._shared.log.info(
-        'Removing an already removed one.',
-        'Probably it was deleted and recompiled but there was no fs-change event and no reload has happened',
-        this,
-      );
-      return;
-    } else {
-      this.parent.children.splice(index, 1);
-
-      this.parent.removeIfLeaf();
+  public set skipped(skipped: boolean) {
+    if (this._skipped !== skipped) {
+      this._skipped = skipped;
+      this._skipReported = false;
     }
   }
 
-  public getStartEvent(testRunId: string): AbstractTestEvent {
-    return { testRunId, type: 'test', test: this.id, state: 'running' };
-  }
+  private _skipReported = false;
 
-  public getSkippedEvent(testRunId: string): AbstractTestEvent {
-    return { testRunId, type: 'test', test: this.id, state: 'skipped' };
-  }
-
-  public abstract parseAndProcessTestCase(
-    testRunId: string,
-    output: string,
-    rngSeed: number | undefined,
-    timeout: number | null,
-    stderr: string | undefined,
-  ): AbstractTestEvent;
-
-  public getCancelledEvent(testRunId: string, testOutput: string): AbstractTestEvent {
-    const ev = this.getFailedEventBase(testRunId);
-    ev.message += '⏹ Run is stopped by user. ✋';
-    ev.message += '\n\nTest Output : R"""';
-    ev.message += testOutput;
-    ev.message += '"""';
-    return ev;
-  }
-
-  public getTimeoutEvent(testRunId: string, milisec: number): AbstractTestEvent {
-    const ev = this.getFailedEventBase(testRunId);
-    ev.message += '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + milisec / 1000 + ' second(s).';
-    ev.state = 'errored';
-    return ev;
-  }
-
-  public getFailedEventBase(testRunId: string): AbstractTestEvent {
-    return {
-      testRunId,
-      type: 'test',
-      test: this.id,
-      state: 'failed',
-      message: '',
-      decorations: [],
-    };
-  }
-
-  public enumerateTestInfos(fn: (v: AbstractTest) => void): void {
-    fn(this);
-  }
-
-  public findTest(pred: (v: AbstractTest) => boolean): Readonly<AbstractTest> | undefined {
-    return pred(this) ? this : undefined;
-  }
-
-  public collectTestToRun(
-    tests: readonly string[],
-    isParentIn: boolean,
-    filter: (test: AbstractTest) => boolean = (): boolean => true,
-  ): AbstractTest[] {
-    if ((isParentIn && !this.skipped) || tests.indexOf(this.id) !== -1) {
-      if (filter(this)) return [this];
-      else return [];
-    } else {
-      return [];
+  public reportIfSkippedFirstOnly(testRun: vscode.TestRun): boolean {
+    const skipped = this.skipped;
+    if (!this._skipReported && skipped) {
+      this._skipReported = true;
+      testRun.skipped(this._item);
     }
+    return skipped;
+  }
+
+  public get hasStaticError(): boolean {
+    return this._staticError !== undefined;
+  }
+
+  public static calcDescription(
+    tags: string[] | undefined,
+    typeParam: string | undefined,
+    valueParam: string | undefined,
+    desc: string | undefined,
+  ): string | undefined {
+    const description: string[] = [];
+
+    if (tags && tags.length > 0) description.push(tags.map(t => `[${t}]`).join(''));
+
+    const param = [typeParam, valueParam].filter(x => !!x);
+    if (param.length) {
+      description.push(`{Param:\`${param.join(';')}\`}`);
+    }
+
+    if (desc) description.push(`"${desc.trim()}"`);
+
+    return description.length ? description.join(' ') : undefined;
+  }
+
+  private _calcTags(): vscode.TestTag[] {
+    const tags = [this._frameworkTag, ...this._tags.map(x => new vscode.TestTag(x))];
+    this.skipped && tags.push(SharedTestTags.skipped);
+    if (!this._staticError) {
+      this.runnable && tags.push(SharedTestTags.runnable);
+      this.debuggable && tags.push(SharedTestTags.debuggable);
+    }
+    return tags;
+  }
+
+  ///
+
+  public resolve(): Promise<void> {
+    if (this._subTests) this._item.children.replace([...this._subTests].map(x => x[1].item));
+    return Promise.resolve();
+  }
+
+  private _subTests: Map<string /*id*/, SubTest> | undefined = undefined;
+
+  public getOrCreateSubTest(
+    id: string,
+    label: string | undefined,
+    file: string | undefined,
+    line: string | undefined,
+  ): SubTest {
+    if (this._subTests) {
+      const found = this._subTests.get(id);
+
+      if (found) {
+        found.updateSub(label, file, line);
+        return found;
+      }
+    } else {
+      this._subTests = new Map();
+    }
+
+    const subTest = new SubTest(this.shared, this.executable, this._item, id, label, file, line, this._frameworkTag);
+    this._subTests.set(id, subTest);
+
+    return subTest;
+  }
+
+  public clearSubTests(): void {
+    this._item.children.replace([]);
+    this._subTests = undefined;
+  }
+}
+
+///
+
+export class SubTest extends AbstractTest {
+  constructor(
+    shared: SharedWithTest,
+    executable: AbstractExecutable,
+    readonly parent: vscode.TestItem,
+    id: string,
+    label: string | undefined,
+    file: string | undefined,
+    line: string | undefined,
+    frameworkTag: vscode.TestTag,
+  ) {
+    super(
+      shared,
+      executable,
+      parent.children,
+      id,
+      '⤷',
+      file,
+      line,
+      false,
+      undefined,
+      label || id,
+      [],
+      frameworkTag,
+      false,
+      false,
+    );
+  }
+
+  public override get label(): string {
+    return this.item.description!;
+  }
+
+  updateSub(label: string | undefined, file: string | undefined, line: string | undefined): void {
+    super.update(null, file, line, null, label || this.id, null);
   }
 }

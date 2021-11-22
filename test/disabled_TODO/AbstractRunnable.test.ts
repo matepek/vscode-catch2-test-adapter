@@ -1,15 +1,15 @@
 import * as assert from 'assert';
 import * as pathlib from 'path';
 import { SharedVariables, RootSuite, ChildProcessStub } from './Common';
-import { RunnableProperties } from '../src/RunnableProperties';
+import { RunnableProperties } from '../../src/RunnableProperties';
 import { RunnableReloadResult, AbstractRunnable } from '../src/AbstractRunnable';
-import { AbstractTest, StaticTestEventBase, AbstractTestEvent } from '../src/AbstractTest';
+import { AbstractTest, StaticTestEventBase, AbstractTestEvent } from '../../src/AbstractTest';
 import * as sinon from 'sinon';
-import { TestGrouping } from '../src/TestGroupingInterface';
+import { TestGrouping } from '../../src/TestGroupingInterface';
 import { Suite } from '../src/Suite';
 import { CancellationTokenSource } from 'vscode';
-import { DefaultSpawner } from '../src/Spawner';
-import * as fsw from '../src/util/FSWrapper';
+import { DefaultSpawner } from '../../src/Spawner';
+import * as fsw from '../../src/util/FSWrapper';
 
 ///
 
@@ -66,10 +66,6 @@ class Test extends AbstractTest {
     );
   }
 
-  public compare(testNameAsId: string): boolean {
-    return this.testNameAsId === testNameAsId;
-  }
-
   public parseAndProcessTestCase(): AbstractTestEvent {
     throw Error('unimplemented');
   }
@@ -120,36 +116,34 @@ describe(pathlib.basename(__filename), function () {
     assert.strictEqual(root.children.length, 0);
     assert.strictEqual(shared.loadCount, loadCount);
 
-    reloadStub.callsFake(
-      async (): Promise<RunnableReloadResult> => {
-        return new RunnableReloadResult().add(
-          ...(await runnable['_createSubtreeAndAddTest'](
-            groupByExec,
-            'test1nameid',
-            'test1name',
-            'test1file.cpp',
-            [],
-            (parent: Suite) => {
-              return new Test(
-                shared,
-                runnable,
-                parent,
-                'test1nameid',
-                'test1label',
-                'test1file.cpp',
-                42,
-                false,
-                undefined,
-                [],
-              );
-            },
-            () => {
-              return false;
-            },
-          )),
-        );
-      },
-    );
+    reloadStub.callsFake(async (): Promise<RunnableReloadResult> => {
+      return new RunnableReloadResult().add(
+        ...(await runnable['_createSubtreeAndAddTest'](
+          groupByExec,
+          'test1nameid',
+          'test1name',
+          'test1file.cpp',
+          [],
+          (parent: Suite) => {
+            return new Test(
+              shared,
+              runnable,
+              parent,
+              'test1nameid',
+              'test1label',
+              'test1file.cpp',
+              42,
+              false,
+              undefined,
+              [],
+            );
+          },
+          () => {
+            return false;
+          },
+        )),
+      );
+    });
 
     await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
 
@@ -163,78 +157,9 @@ describe(pathlib.basename(__filename), function () {
     assert.strictEqual(root.children.length, 1);
     assert.strictEqual(shared.loadCount, loadCount, 'no reload because update returns false');
 
-    reloadStub.callsFake(
-      async (): Promise<RunnableReloadResult> => {
-        return new RunnableReloadResult()
-          .add(
-            ...(await runnable['_createSubtreeAndAddTest'](
-              groupByExec,
-              'test1nameid',
-              'test1name',
-              'test1file.cpp',
-              [],
-              (parent: Suite) => {
-                return new Test(
-                  shared,
-                  runnable,
-                  parent,
-                  'test1nameid',
-                  'test1label',
-                  'test1file.cpp',
-                  42,
-                  false,
-                  undefined,
-                  [],
-                );
-              },
-              () => {
-                return false;
-              },
-            )),
-          )
-          .add(
-            ...(await runnable['_createSubtreeAndAddTest'](
-              groupByExec,
-              'test2nameid',
-              'test2name',
-              'test2file.cpp',
-              [],
-              (parent: Suite) =>
-                new Test(
-                  shared,
-                  runnable,
-                  parent,
-                  'test2nameid',
-                  'test2label',
-                  'test2file.cpp',
-                  42,
-                  false,
-                  undefined,
-                  [],
-                ),
-              () => {
-                return true;
-              },
-            )),
-          );
-      },
-    );
-
-    await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
-
-    assert.strictEqual(runnable.tests.size, 2);
-    assert.strictEqual(root.children.length, 1);
-    assert.strictEqual(shared.loadCount, ++loadCount);
-
-    await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
-
-    assert.strictEqual(runnable.tests.size, 2);
-    assert.strictEqual(root.children.length, 1);
-    assert.strictEqual(shared.loadCount, ++loadCount, 'should reload becasue update returns true');
-
-    reloadStub.callsFake(
-      async (): Promise<RunnableReloadResult> => {
-        return new RunnableReloadResult().add(
+    reloadStub.callsFake(async (): Promise<RunnableReloadResult> => {
+      return new RunnableReloadResult()
+        .add(
           ...(await runnable['_createSubtreeAndAddTest'](
             groupByExec,
             'test1nameid',
@@ -259,9 +184,74 @@ describe(pathlib.basename(__filename), function () {
               return false;
             },
           )),
+        )
+        .add(
+          ...(await runnable['_createSubtreeAndAddTest'](
+            groupByExec,
+            'test2nameid',
+            'test2name',
+            'test2file.cpp',
+            [],
+            (parent: Suite) =>
+              new Test(
+                shared,
+                runnable,
+                parent,
+                'test2nameid',
+                'test2label',
+                'test2file.cpp',
+                42,
+                false,
+                undefined,
+                [],
+              ),
+            () => {
+              return true;
+            },
+          )),
         );
-      },
-    );
+    });
+
+    await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
+
+    assert.strictEqual(runnable.tests.size, 2);
+    assert.strictEqual(root.children.length, 1);
+    assert.strictEqual(shared.loadCount, ++loadCount);
+
+    await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
+
+    assert.strictEqual(runnable.tests.size, 2);
+    assert.strictEqual(root.children.length, 1);
+    assert.strictEqual(shared.loadCount, ++loadCount, 'should reload becasue update returns true');
+
+    reloadStub.callsFake(async (): Promise<RunnableReloadResult> => {
+      return new RunnableReloadResult().add(
+        ...(await runnable['_createSubtreeAndAddTest'](
+          groupByExec,
+          'test1nameid',
+          'test1name',
+          'test1file.cpp',
+          [],
+          (parent: Suite) => {
+            return new Test(
+              shared,
+              runnable,
+              parent,
+              'test1nameid',
+              'test1label',
+              'test1file.cpp',
+              42,
+              false,
+              undefined,
+              [],
+            );
+          },
+          () => {
+            return false;
+          },
+        )),
+      );
+    });
 
     await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
 
@@ -289,115 +279,113 @@ describe(pathlib.basename(__filename), function () {
     before(async function () {
       spawnStub = sinonSandbox.stub(fsw, 'spawn');
 
-      sinonSandbox.stub(runnable, '_reloadChildren').callsFake(
-        async (): Promise<RunnableReloadResult> => {
-          return new RunnableReloadResult()
-            .add(
-              ...(await runnable['_createSubtreeAndAddTest'](
-                groupByExec,
-                'test1nameid',
-                'test1name',
-                'test1file.cpp',
-                [],
-                (parent: Suite) => {
-                  return new Test(
-                    shared,
-                    runnable,
-                    parent,
-                    'test1nameid',
-                    'test1label',
-                    'test1file.cpp',
-                    41,
-                    false,
-                    undefined,
-                    [],
-                  );
-                },
-                () => {
-                  return false;
-                },
-              )),
-            )
-            .add(
-              ...(await runnable['_createSubtreeAndAddTest'](
-                groupByExec,
-                'test2nameid',
-                'test2name',
-                'test2file.cpp',
-                [],
-                (parent: Suite) => {
-                  return new Test(
-                    shared,
-                    runnable,
-                    parent,
-                    'test2nameid',
-                    'test2label',
-                    'test2file.cpp',
-                    42,
-                    false,
-                    undefined,
-                    [],
-                  );
-                },
-                () => {
-                  return false;
-                },
-              )),
-            )
-            .add(
-              ...(await runnable['_createSubtreeAndAddTest'](
-                groupByExec,
-                'test3nameid',
-                'test3name',
-                'test3file.cpp',
-                [],
-                (parent: Suite) => {
-                  return new Test(
-                    shared,
-                    runnable,
-                    parent,
-                    'test3nameid',
-                    'test3label',
-                    'test3file.cpp',
-                    43,
-                    false,
-                    { state: 'errored', message: 'static event' },
-                    [],
-                  );
-                },
-                () => {
-                  return false;
-                },
-              )),
-            )
-            .add(
-              ...(await runnable['_createSubtreeAndAddTest'](
-                groupByExec,
-                'test4nameid',
-                'test4name',
-                'test4file.cpp',
-                [],
-                (parent: Suite) => {
-                  return new Test(
-                    shared,
-                    runnable,
-                    parent,
-                    'test4nameid',
-                    'test4label',
-                    'test4file.cpp',
-                    44,
-                    true,
-                    undefined,
-                    [],
-                  );
-                },
-                () => {
-                  return false;
-                },
-              )),
-            );
-        },
-      );
+      sinonSandbox.stub(runnable, '_reloadChildren').callsFake(async (): Promise<RunnableReloadResult> => {
+        return new RunnableReloadResult()
+          .add(
+            ...(await runnable['_createSubtreeAndAddTest'](
+              groupByExec,
+              'test1nameid',
+              'test1name',
+              'test1file.cpp',
+              [],
+              (parent: Suite) => {
+                return new Test(
+                  shared,
+                  runnable,
+                  parent,
+                  'test1nameid',
+                  'test1label',
+                  'test1file.cpp',
+                  41,
+                  false,
+                  undefined,
+                  [],
+                );
+              },
+              () => {
+                return false;
+              },
+            )),
+          )
+          .add(
+            ...(await runnable['_createSubtreeAndAddTest'](
+              groupByExec,
+              'test2nameid',
+              'test2name',
+              'test2file.cpp',
+              [],
+              (parent: Suite) => {
+                return new Test(
+                  shared,
+                  runnable,
+                  parent,
+                  'test2nameid',
+                  'test2label',
+                  'test2file.cpp',
+                  42,
+                  false,
+                  undefined,
+                  [],
+                );
+              },
+              () => {
+                return false;
+              },
+            )),
+          )
+          .add(
+            ...(await runnable['_createSubtreeAndAddTest'](
+              groupByExec,
+              'test3nameid',
+              'test3name',
+              'test3file.cpp',
+              [],
+              (parent: Suite) => {
+                return new Test(
+                  shared,
+                  runnable,
+                  parent,
+                  'test3nameid',
+                  'test3label',
+                  'test3file.cpp',
+                  43,
+                  false,
+                  { state: 'errored', message: 'static event' },
+                  [],
+                );
+              },
+              () => {
+                return false;
+              },
+            )),
+          )
+          .add(
+            ...(await runnable['_createSubtreeAndAddTest'](
+              groupByExec,
+              'test4nameid',
+              'test4name',
+              'test4file.cpp',
+              [],
+              (parent: Suite) => {
+                return new Test(
+                  shared,
+                  runnable,
+                  parent,
+                  'test4nameid',
+                  'test4label',
+                  'test4file.cpp',
+                  44,
+                  true,
+                  undefined,
+                  [],
+                );
+              },
+              () => {
+                return false;
+              },
+            )),
+          );
+      });
 
       await runnable.reloadTests(shared.taskPool, { isCancellationRequested: false });
 
@@ -486,6 +474,6 @@ describe(pathlib.basename(__filename), function () {
     });
   });
 
-  //TODO: tests about variables
-  //TODO: tests about grouping
+  //TODO:future tests about variables
+  //TODO:future tests about grouping
 });

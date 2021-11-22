@@ -1,20 +1,25 @@
 {
   "compilerOptions": {
-    "target": "es2018",
-    "lib": ["es2018"],
+    "target": "es2021",
+    "lib": ["es2021"],
     "module": "commonjs",
     "outDir": "out",
     "importHelpers": true,
     "sourceMap": true,
+    "alwaysStrict": true,
     "strict": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
     "removeComments": true,
     "skipLibCheck": true,
     "experimentalDecorators": true,
+    "useUnknownInCatchVariables": false,
     "typeRoots": ["node_modules/@types", "src/@types"]
   },
-  "include": ["src/main.ts", "test/**/*.ts"]
+  "include": ["src/main.ts", "test/*", "test/util/*", "test/repo_script/*"] //TODO:future test/**/*.ts
 }

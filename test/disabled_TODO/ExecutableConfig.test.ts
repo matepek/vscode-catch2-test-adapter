@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as assert from 'assert';
-import { ExecutableConfig } from '../src/ExecutableConfig';
-import { SharedVariables } from './Common';
+import { ExecutableConfig } from '../../src/ExecutableConfig';
+import { WorkspaceShared } from '../../src/WorkspaceShared';
 
 ///
 
@@ -9,7 +9,7 @@ describe(path.basename(__filename), function () {
   this.timeout(5000);
   this.slow(1000);
 
-  const shared = new SharedVariables();
+  const shared = new WorkspaceShared();
   const execConfig = new ExecutableConfig(
     shared,
     'pattern',
@@ -26,7 +26,6 @@ describe(path.basename(__filename), function () {
     undefined,
     undefined,
     {},
-    undefined,
     {},
     {},
     {},

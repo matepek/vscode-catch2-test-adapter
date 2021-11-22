@@ -1,26 +1,28 @@
 import { LoggerWrapper } from './LoggerWrapper';
 import * as vscode from 'vscode';
-import { TestRunStartedEvent, TestRunFinishedEvent, TestSuiteEvent, TestEvent } from 'vscode-test-adapter-api';
 import { TaskPool } from './util/TaskPool';
-import { AbstractTestEvent } from './AbstractTest';
 import { ResolveRuleAsync } from './util/ResolveRule';
 import { BuildProcessChecker } from './util/BuildProcessChecker';
-import { AbstractRunnable } from './AbstractRunnable';
+import { AbstractTest, SharedWithTest } from './AbstractTest';
+import { CancellationFlag } from './Util';
 
-export type TestRunEvent = TestRunStartedEvent | TestRunFinishedEvent | TestSuiteEvent | TestEvent;
+export type TestCreator = (
+  id: string,
+  label: string,
+  file: string | undefined,
+  line: string | number | undefined,
+  testData: AbstractTest | undefined,
+) => vscode.TestItem;
 
-export class SharedVariables implements vscode.Disposable {
-  private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
-  public readonly taskPool: TaskPool;
-  public readonly buildProcessChecker: BuildProcessChecker;
+export type TestItemMapper = (item: vscode.TestItem) => AbstractTest | undefined;
 
+export class WorkspaceShared implements SharedWithTest {
   public constructor(
-    public readonly log: LoggerWrapper,
     public readonly workspaceFolder: vscode.WorkspaceFolder,
-    public readonly loadWithTask: (task: () => Promise<void | unknown[]>) => Promise<void>,
-    public readonly sendRetireEvent: (tests: Iterable<AbstractRunnable>) => void,
-    public readonly sendTestRunEvent: (event: TestRunEvent) => void,
-    public readonly sendTestEvents: (testEvents: AbstractTestEvent[]) => void,
+    public readonly rootItems: vscode.TestItemCollection,
+    public readonly log: LoggerWrapper,
+    public readonly testItemCreator: TestCreator,
+    public readonly testItemMapper: TestItemMapper,
     public readonly executeTask: (
       taskName: string,
       varsToResolve: readonly ResolveRuleAsync[],
@@ -42,10 +44,20 @@ export class SharedVariables implements vscode.Disposable {
     this.buildProcessChecker = new BuildProcessChecker(log);
   }
 
+  public readonly taskPool: TaskPool;
+  public readonly buildProcessChecker: BuildProcessChecker;
+  private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
+  private readonly _cancellationFlag = { isCancellationRequested: false };
+
   public dispose(): void {
+    this._cancellationFlag.isCancellationRequested = true;
     this.buildProcessChecker.dispose();
     this._execRunningTimeoutChangeEmitter.dispose();
     this.log.dispose();
+  }
+
+  public get cancellationFlag(): CancellationFlag {
+    return this._cancellationFlag;
   }
 
   public get execRunningTimeout(): number | null {
