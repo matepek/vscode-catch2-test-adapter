@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [4.0.0]
+## [4.0.0] - 2021-11-22
 
 Replaced [Test Explorer](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer) with native API.
 
