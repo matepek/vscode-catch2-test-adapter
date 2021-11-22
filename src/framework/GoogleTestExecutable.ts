@@ -343,12 +343,21 @@ const testBeginRe = /\[ RUN      \] ((.+)\.(.+))$/m;
 // Ex: "Is True[       OK ] TestCas1.test5 (0 ms)"
 // m[1] == '[       '
 // m[2] == 'OK'
-// m[3] == ' ]'
+// m[3] == ' ] '
 // m[4] == 'TestCas1.test5'
-// m[5] == ' (0 ms)'
-// m[6] == '0'
+// m[5] == ' '
+// m[6] == '(0 ms)'
+// m[7] == '0'
+// Ex.: "[  FAILED  ] Params2/Failing.Fails2/0, where GetParam() = 3 (0 ms)"
+// m[1] == '[  '
+// m[2] == 'FAILED'
+// m[3] == '  ] '
+// m[4] == 'Params2/Failing.Fails2/0'
+// m[5] == ', where GetParam() = 3 '
+// m[6] == '(0 ms)'
+// m[7] == '0'
 const testEndRe = (testId: string) =>
-  new RegExp('(\\[\\s*)(\\S+)(\\s*\\] )(' + testId.replace('.', '\\.') + ')(.*\\(([0-9]+) ms\\))$');
+  new RegExp('(\\[\\s*)(\\S+)(\\s*\\] )(' + testId.replace('.', '\\.') + ')(.*)(\\(([0-9]+) ms\\))$');
 
 ///
 
@@ -380,7 +389,7 @@ class TestCaseProcessor implements LineProcessor {
     const testEndMatch = this.testEndRe.exec(line);
 
     if (testEndMatch) {
-      const duration = Number(testEndMatch[6]);
+      const duration = Number(testEndMatch[7]);
       if (!Number.isNaN(duration)) this.testCaseShared.builder.setDurationMilisec(duration);
       const result = testEndMatch[2];
 
@@ -412,8 +421,9 @@ class TestCaseProcessor implements LineProcessor {
         testEndMatch[1] +
           styleFunc(testEndMatch[2]) +
           testEndMatch[3] +
-          ansi.bold(testEndMatch[4]) +
-          ansi.grey(testEndMatch[5]),
+          testEndMatch[4] +
+          testEndMatch[5] +
+          ansi.grey(testEndMatch[6]),
         '',
       );
 
@@ -493,11 +503,11 @@ class FailureProcessor implements LineProcessor {
     } else {
       return false;
     }
-
-    this.testCaseShared.builder.addOutputLine(2, line);
   }
 
   end(): void {
+    this.testCaseShared.builder.addOutputLine(2, ...this.lines);
+
     if (isDecorationEnabled) {
       this.testCaseShared.builder.addMarkdownMsg(
         this.file,
@@ -552,6 +562,7 @@ class ExpectCallProcessor implements LineProcessor {
 
   private expected = '';
   private actual: string[] = [];
+  private readonly lines: string[] = [];
 
   online(line: string): void | false {
     if (!this.expected && line.startsWith('  Expected')) {
@@ -570,10 +581,12 @@ class ExpectCallProcessor implements LineProcessor {
       return false;
     }
 
-    this.testCaseShared.builder.addOutputLine(2, line);
+    this.lines.push(line);
   }
 
   end(): void {
+    this.testCaseShared.builder.addOutputLine(2, ...this.lines);
+
     this.testCaseShared.builder.addMessage(this.file, this.line, this.expected, ...this.actual);
   }
 }
