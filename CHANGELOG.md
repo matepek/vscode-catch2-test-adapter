@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [3.6.34]
+## [3.6.34] - 2021-11-22
 
 Moved to `legacy` branch and under new extension name `testmate-cpp-legacy` because master will support the new native VSCode API.
 
