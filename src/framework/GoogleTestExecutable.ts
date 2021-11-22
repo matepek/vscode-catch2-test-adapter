@@ -238,7 +238,6 @@ export class GoogleTestExecutable extends AbstractExecutable {
     const executable = this; //eslint-disable-line
     const log = this.shared.log;
     const data = { lastBuilder: undefined as TestResultBuilder | undefined };
-    const runId = TestResultBuilder.calcRunPrefix(runInfo);
     const runPrefix = TestResultBuilder.calcRunPrefix(runInfo);
     // we dont need this now: const rngSeed: number | undefined = typeof this._shared.rngSeed === 'number' ? this._shared.rngSeed : undefined;
 
@@ -259,8 +258,17 @@ export class GoogleTestExecutable extends AbstractExecutable {
           }
           data.lastBuilder = new TestResultBuilder(test, testRun, runPrefix, false);
           return new TestCaseProcessor(executable.shared, testEndRe(test.id), data.lastBuilder);
+        } else if (line.startsWith('[----------] Global test environment tear-down')) {
+          return new NoOpLineProcessor();
         } else {
-          testRun.appendOutput(runId + line + '\r\n');
+          if (
+            line === '' ||
+            ['Note: Google Test filter =', '[==========]', '[----------]'].some(x => line.startsWith(x))
+          ) {
+            //skip
+          } else {
+            testRun.appendOutput(runPrefix + line + '\r\n');
+          }
         }
       },
       // alwaysonline(line: string): void {
@@ -331,8 +339,15 @@ class TestSuiteListingProcessor implements XmlTagProcessor {
 
 // Remark: not necessarily starts like this so do not use: ^
 const testBeginRe = /\[ RUN      \] ((.+)\.(.+))$/m;
+// Ex: "Is True[       OK ] TestCas1.test5 (0 ms)"
+// m[1] == '[       '
+// m[2] == 'OK'
+// m[3] == ' ]'
+// m[4] == 'TestCas1.test5'
+// m[5] == ' (0 ms)'
+// m[6] == '0'
 const testEndRe = (testId: string) =>
-  new RegExp('(\\[..........\\]) ' + testId.replace('.', '\\.') + '.*\\(([0-9]+) ms\\)$');
+  new RegExp('(\\[\\s*)(\\S+)(\\s*\\] )(' + testId.replace('.', '\\.') + ')(.*\\(([0-9]+) ms\\))$');
 
 ///
 
@@ -357,26 +372,27 @@ class TestCaseProcessor implements LineProcessor {
   private readonly testCaseShared: TestCaseSharedData;
 
   begin(line: string): void {
-    this.builder.addOutputLine(ansi.bold.underline(line)); //TODO: color line
+    const loc = TestResultBuilder.getLocationAtStr(this.builder.test.file, this.builder.test.line);
+    this.builder.addOutputLine(ansi.bold(line) + loc); //TODO: color line
   }
 
   online(line: string): void | true | LineProcessor {
     const testEndMatch = this.testEndRe.exec(line);
 
     if (testEndMatch) {
-      const duration = Number(testEndMatch[2]);
+      const duration = Number(testEndMatch[6]);
       if (!Number.isNaN(duration)) this.testCaseShared.builder.setDurationMilisec(duration);
-      const result = testEndMatch[1];
+      const result = testEndMatch[2];
 
       let styleFunc = (s: string) => s;
 
-      if (result === '[       OK ]') {
+      if (result === 'OK') {
         styleFunc = (s: string) => ansi.green.bold(s);
         this.testCaseShared.builder.passed();
-      } else if (result === '[  FAILED  ]') {
+      } else if (result === 'FAILED') {
         styleFunc = (s: string) => ansi.red.bold(s);
         this.testCaseShared.builder.failed();
-      } else if (result === '[  SKIPPED ]') {
+      } else if (result === 'SKIPPED') {
         this.testCaseShared.builder.skipped();
       } else {
         this.testCaseShared.shared.log.error('unexpected token:', line);
@@ -391,36 +407,51 @@ class TestCaseProcessor implements LineProcessor {
 
       this.testCaseShared.builder.build();
 
-      this.builder.addOutputLine(styleFunc(line)); //TODO: color line
+      this.builder.addOutputLine(
+        testEndMatch[1] +
+          styleFunc(testEndMatch[2]) +
+          testEndMatch[3] +
+          ansi.bold(testEndMatch[4]) +
+          ansi.grey(testEndMatch[5]),
+      ); //TODO: color line
 
       return true;
     }
 
     const failureMatch = failureRe.exec(line);
     if (failureMatch) {
-      const type = failureMatch[5] as FailureType;
+      const type = failureMatch[6] as FailureType;
       const file = failureMatch[2];
       const line = failureMatch[3];
-      const fullMsg = failureMatch[4];
-      const message = failureMatch[6].trim();
+      const fullMsg = failureMatch[5];
+
+      this.builder.addOutputLine(
+        ansi.gray(failureMatch[1]) + failureMatch[4] + ansi.red(failureMatch[6]) + failureMatch[7],
+      );
 
       switch (type) {
         case 'Failure':
         case 'error':
-          return new FailureProcessor(this.testCaseShared, file, line, fullMsg, message);
+          return new FailureProcessor(this.testCaseShared, file, line, fullMsg);
         case 'EXPECT_CALL':
-          return new ExpectCallProcessor(this.testCaseShared, file, line, fullMsg, message);
+          return new ExpectCallProcessor(this.testCaseShared, file, line, fullMsg);
         default:
           this.testCaseShared.shared.log.errorS('assertion of gtest parser', line);
           break;
       }
     }
-
-    this.builder.addOutputLine(line);
   }
 }
 
-const failureRe = /^((.+)[:\(]([0-9]+)\)?): ((Failure|EXPECT_CALL|error)\w*:?\w*(.*))$/;
+// Ex:'/Users/mapek/private/vscode-catch2-test-adapter/test/cpp/gtest/gtest1.cpp:69: Failure blabla'
+// m[1] == '/Users/mapek/private/vscode-catch2-test-adapter/test/cpp/gtest/gtest1.cpp:69'
+// m[2] == '/Users/mapek/private/vscode-catch2-test-adapter/test/cpp/gtest/gtest1.cpp'
+// m[3] == '69'
+// m[4] == ': '
+// m[5] == 'Failure bla bla'
+// m[6] == 'Failure'
+// m[7] == ' bla bla'
+const failureRe = /^((.+)[:\(]([0-9]+)\)?)(: )((Failure|EXPECT_CALL|error)(.*))$/;
 type FailureType = 'Failure' | 'EXPECT_CALL' | 'error';
 
 ///
@@ -431,15 +462,9 @@ class FailureProcessor implements LineProcessor {
     private readonly file: string | undefined,
     private readonly line: string | undefined,
     private readonly fullMsg: string,
-    // @ts-expect-error fullMsg contains message
-    private readonly message: string,
   ) {}
 
   private lines: string[] = [];
-
-  begin(line: string): void {
-    this.testCaseShared.builder.addOutputLine(line); //TODO: color line
-  }
 
   online(line: string): void | false {
     if (acceptedAndDecoratedPrefixes.some(prefix => line.startsWith(prefix))) {
@@ -520,16 +545,10 @@ class ExpectCallProcessor implements LineProcessor {
     private readonly line: string | undefined,
     // @ts-expect-error don't need it here, could be removed
     private readonly fullMsg: string,
-    // @ts-expect-error don't need it here, could be removed
-    private readonly message: string,
   ) {}
 
   private expected = '';
   private actual: string[] = [];
-
-  begin(line: string): void {
-    this.testCaseShared.builder.addOutputLine(line); //TODO: color line
-  }
 
   online(line: string): void | false {
     if (!this.expected && line.startsWith('  Expected')) {
@@ -554,4 +573,12 @@ class ExpectCallProcessor implements LineProcessor {
   end(): void {
     this.testCaseShared.builder.addMessage(this.file, this.line, this.expected, ...this.actual);
   }
+}
+
+///
+
+class NoOpLineProcessor implements LineProcessor {
+  constructor() {}
+
+  online(_line: string): void {}
 }

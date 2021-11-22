@@ -39,7 +39,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (this.addBeginEndMsg) {
       const locStr = TestResultBuilder.getLocationAtStr(this.test.file, this.test.line);
       if (this.level === 0) {
-        this.addOutputLine(ansi.underline(ansi.bold(`# Started \`${this.test.label}\``) + `${locStr}:`));
+        this.addOutputLine(ansi.bold(`# \`${this.test.label}\` started`) + `${locStr}`);
       } else {
         this.addOutputLine(-1, prefixForNewSubCase(this.level) + '`' + ansi.italic(this.test.label) + '`' + locStr);
       }
@@ -178,10 +178,30 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
   ///
 
+  private coloredResult(): string {
+    switch (this._result) {
+      case 'passed':
+        return ansi.green(this._result);
+      case 'failed':
+        return ansi.red(this._result);
+      case 'skipped':
+        return this._result;
+      case 'errored':
+        return ansi.bgRedBright(this._result);
+      case undefined:
+        return '';
+    }
+  }
+
   public endMessage(): void {
-    if (this.addBeginEndMsg && this.level === 0) {
+    if (this.addBeginEndMsg) {
       const d = this._duration ? ansi.grey(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
-      this.addOutputLine(ansi.bold(`# Stopped \`${this.test.item.label}\``) + `${d}`, '');
+
+      if (this.level === 0) {
+        this.addOutputLine(ansi.bold(`# \`${this.test.label}\` ${this.coloredResult()}`) + `${d}`, '');
+      } else if (this._result !== 'passed') {
+        this.addOutputLine(ansi.bold(`# ${this.coloredResult()}`) + `${d}`);
+      }
     }
   }
 

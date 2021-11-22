@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.0]
+
 Replaced [Test Explorer](https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-test-explorer) with native API.
 
 ## [3.6.33] - 2021-10-20
