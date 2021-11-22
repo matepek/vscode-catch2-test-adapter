@@ -93,8 +93,8 @@ export class Configurations {
     return vscode.extensions.all.find(e => e.id === id) !== undefined;
   }
 
-  public getDebugConfigurationTemplate(): [vscode.DebugConfiguration, string] {
-    const [template, source] = ((): [vscode.DebugConfiguration, string] => {
+  public getDebugConfigurationTemplate(): DebugConfigData {
+    const debugConfigData = ((): DebugConfigData => {
       const templateFromConfig = this._getD<vscode.DebugConfiguration | null | 'extensionOnly'>(
         'debug.configTemplate',
         null,
@@ -110,7 +110,7 @@ export class Configurations {
         Object.assign(template, templateFromConfig);
         this._log.debug('template', template);
 
-        return [template, 'userDefined'];
+        return { template, source: 'userDefined', launchSourceFileMap: {} };
       } else if (templateFromConfig === null) {
         const wpLaunchConfigs = vscode.workspace
           .getConfiguration('launch', this._workspaceFolderUri)
@@ -162,7 +162,7 @@ export class Configurations {
               template,
             );
 
-            return [template, 'fromLaunchJson'];
+            return { template, source: 'fromLaunchJson', launchSourceFileMap: wpLaunchConfigs[i].sourceFileMap };
           }
         }
       }
@@ -178,7 +178,7 @@ export class Configurations {
           sourceMap: '${sourceFileMapObj}',
         });
 
-        return [template, 'vadimcn.vscode-lldb'];
+        return { template, source: 'vadimcn.vscode-lldb', launchSourceFileMap: {} };
       } else if (this._hasExtension('webfreak.debug')) {
         Object.assign(template, {
           type: 'gdb',
@@ -197,7 +197,7 @@ export class Configurations {
           template.lldbmipath = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-mi';
         }
 
-        return [template, 'webfreak.debug'];
+        return { template, source: 'webfreak.debug', launchSourceFileMap: {} };
       } else if (this._hasExtension('ms-vscode.cpptools')) {
         // documentation says debug"environment" = [{...}] but that doesn't work
         Object.assign(template, {
@@ -213,7 +213,7 @@ export class Configurations {
           sourceFileMap: '${sourceFileMapObj}',
         });
 
-        return [template, 'ms-vscode.cpptools'];
+        return { template, source: 'ms-vscode.cpptools', launchSourceFileMap: {} };
       }
 
       this._log.info('no debug config');
@@ -222,10 +222,10 @@ export class Configurations {
       );
     })();
 
-    const platfromProp = platformUtil.getPlatformProperty(template);
-    if (typeof platfromProp === 'object') Object.assign(template, platfromProp);
+    const platfromProp = platformUtil.getPlatformProperty(debugConfigData.template);
+    if (typeof platfromProp === 'object') Object.assign(debugConfigData.template, platfromProp);
 
-    return [template, source];
+    return debugConfigData;
   }
 
   public getOrCreateUserId(): string {
@@ -604,3 +604,16 @@ export class Configurations {
     return {};
   }
 }
+
+export type DebugConfigTemplateSource =
+  | 'fromLaunchJson'
+  | 'userDefined'
+  | 'vadimcn.vscode-lldb'
+  | 'ms-vscode.cpptools'
+  | 'webfreak.debug';
+
+export type DebugConfigData = {
+  template: vscode.DebugConfiguration;
+  source: DebugConfigTemplateSource;
+  launchSourceFileMap?: Record<string, string>;
+};

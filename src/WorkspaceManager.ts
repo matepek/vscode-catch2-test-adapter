@@ -396,9 +396,9 @@ export class WorkspaceManager implements vscode.Disposable {
 
       const argsArrayFunc = async (): Promise<string[]> => argsArray;
 
-      const [debugConfigTemplate, debugConfigTemplateSource] = configuration.getDebugConfigurationTemplate();
+      const debugConfigData = configuration.getDebugConfigurationTemplate();
 
-      this._shared.log.debug('debugConfigTemplate', { debugConfigTemplateSource, debugConfigTemplate });
+      this._shared.log.debug('debugConfigTemplate', { debugConfigTemplate: debugConfigData });
 
       // if (!TestAdapter._debugMetricSent) {
       //   this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
@@ -409,9 +409,9 @@ export class WorkspaceManager implements vscode.Disposable {
 
       {
         const setEnvKey = 'testMate.cpp.debug.setEnv';
-        if (typeof debugConfigTemplate[setEnvKey] === 'object') {
-          for (const envName in debugConfigTemplate[setEnvKey]) {
-            const envValue = debugConfigTemplate[setEnvKey][envName];
+        if (typeof debugConfigData.template[setEnvKey] === 'object') {
+          for (const envName in debugConfigData.template[setEnvKey]) {
+            const envValue = debugConfigData.template[setEnvKey][envName];
             if (typeof envValue !== 'string')
               this._shared.log.warn(
                 'Wrong value. testMate.cpp.debug.setEnv should contains only string values',
@@ -449,11 +449,12 @@ export class WorkspaceManager implements vscode.Disposable {
         },
         {
           resolve: '${sourceFileMapObj}',
-          rule: async (): Promise<Record<string, string>> => executable.properties.sourceFileMap,
+          rule: async (): Promise<Record<string, string>> =>
+            Object.assign({}, executable.properties.sourceFileMap, debugConfigData.launchSourceFileMap),
         },
       ];
 
-      const debugConfig = await resolveVariablesAsync(debugConfigTemplate, varToResolve);
+      const debugConfig = await resolveVariablesAsync(debugConfigData.template, varToResolve);
 
       // we dont know better: https://github.com/Microsoft/vscode/issues/70125
       const magicValueKey = 'magic variable  🤦🏼‍';
