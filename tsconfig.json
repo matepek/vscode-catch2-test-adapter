@@ -21,5 +21,5 @@
     "useUnknownInCatchVariables": false,
     "typeRoots": ["node_modules/@types", "src/@types"]
   },
-  "include": ["src/main.ts", "test/*", "test/util/*", "test/repo_script/*"] //TODO:future test/**/*.ts
+  "include": ["src/main.ts", "test/*", "test/util/*", "test/repo_scripts/*"] //TODO:future test/**/*.ts
 }
