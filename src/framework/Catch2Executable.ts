@@ -330,7 +330,6 @@ export class Catch2Executable extends AbstractExecutable {
     const executable = this; //eslint-disable-line
     const log = this.shared.log;
     let rngSeed: number | undefined = undefined;
-    const runPrefix = TestResultBuilder.calcRunPrefix(runInfo);
 
     const parser = new XmlParser(
       this.shared.log,
@@ -356,7 +355,7 @@ export class Catch2Executable extends AbstractExecutable {
               } else {
                 expectedToRunAndFoundTests.push(test);
               }
-              const builder = new TestResultBuilder(test, testRun, runPrefix, true);
+              const builder = new TestResultBuilder(test, testRun, runInfo.runPrefix, true);
               return new TestCaseTagProcessor(executable.shared, builder, test, tag.attribs);
             }
           }
@@ -374,7 +373,7 @@ export class Catch2Executable extends AbstractExecutable {
 
       parser.writeStdErr(c).then(hasHandled => {
         if (!hasHandled) {
-          executable.processStdErr(testRun, runPrefix, c);
+          executable.processStdErr(testRun, runInfo.runPrefix, c);
         }
       });
     });

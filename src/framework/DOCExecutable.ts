@@ -185,7 +185,6 @@ export class DOCExecutable extends AbstractExecutable {
     const expectedToRunAndFoundTests: DOCTest[] = [];
     const executable = this; //eslint-disable-line
     let options: Option = {};
-    const runPrefix = TestResultBuilder.calcRunPrefix(runInfo);
 
     const parser = new XmlParser(
       this.shared.log,
@@ -200,7 +199,7 @@ export class DOCExecutable extends AbstractExecutable {
               return new TestSuiteTagProcessor(
                 executable.shared,
                 testRun,
-                runPrefix,
+                runInfo.runPrefix,
                 (testNameAsId: string) => executable._getTest<DOCTest>(testNameAsId),
                 executable._createAndAddTest,
                 unexpectedTests,

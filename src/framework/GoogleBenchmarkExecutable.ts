@@ -128,7 +128,6 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable {
   protected async _handleProcess(testRun: vscode.TestRun, runInfo: RunningExecutable): Promise<HandleProcessResult> {
     // at first it's good enough
     runInfo.childrenToRun.forEach(test => testRun.started(test.item));
-    const runPrefix = TestResultBuilder.calcRunPrefix(runInfo);
 
     const unexpectedTests: GoogleBenchmarkTest[] = [];
     const expectedToRunAndFoundTests: GoogleBenchmarkTest[] = [];
@@ -185,7 +184,7 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable {
             expectedToRunAndFoundTests.push(test);
           }
 
-          const builder = new TestResultBuilder(test, testRun, runPrefix, true);
+          const builder = new TestResultBuilder(test, testRun, runInfo.runPrefix, true);
           parseAndProcessTestCase(this.shared.log, builder, benchmark);
 
           data.lastProcessedBenchmarkIndex = i;
@@ -199,7 +198,7 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable {
       data.sequentialProcessP = data.sequentialProcessP.then(() => processChunk(chunk.toLocaleString()));
     });
     runInfo.process.stderr.on('data', (chunk: Uint8Array) =>
-      this.processStdErr(testRun, runPrefix, chunk.toLocaleString()),
+      this.processStdErr(testRun, runInfo.runPrefix, chunk.toLocaleString()),
     );
 
     await runInfo.result;

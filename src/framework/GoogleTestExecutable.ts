@@ -238,7 +238,6 @@ export class GoogleTestExecutable extends AbstractExecutable {
     const executable = this; //eslint-disable-line
     const log = this.shared.log;
     const data = { lastBuilder: undefined as TestResultBuilder | undefined };
-    const runPrefix = TestResultBuilder.calcRunPrefix(runInfo);
     // we dont need this now: const rngSeed: number | undefined = typeof this._shared.rngSeed === 'number' ? this._shared.rngSeed : undefined;
 
     const parser = new TextStreamParser(this.shared.log, {
@@ -256,18 +255,20 @@ export class GoogleTestExecutable extends AbstractExecutable {
           } else {
             expectedToRunAndFoundTests.push(test);
           }
-          data.lastBuilder = new TestResultBuilder(test, testRun, runPrefix, false);
+          data.lastBuilder = new TestResultBuilder(test, testRun, runInfo.runPrefix, false);
           return new TestCaseProcessor(executable.shared, testEndRe(test.id), data.lastBuilder);
         } else if (line.startsWith('[----------] Global test environment tear-down')) {
           return new NoOpLineProcessor();
         } else {
           if (
             line === '' ||
-            ['Note: Google Test filter =', '[==========]', '[----------]'].some(x => line.startsWith(x))
+            ['Running main()', 'Note: Google Test filter =', '[==========]', '[----------]'].some(x =>
+              line.startsWith(x),
+            )
           ) {
             //skip
           } else {
-            testRun.appendOutput(runPrefix + line + '\r\n');
+            testRun.appendOutput(runInfo.runPrefix + line + '\r\n');
           }
         }
       },
@@ -278,7 +279,7 @@ export class GoogleTestExecutable extends AbstractExecutable {
 
     runInfo.process.stdout.on('data', (chunk: Uint8Array) => parser.write(chunk.toLocaleString()));
     runInfo.process.stderr.on('data', (chunk: Uint8Array) =>
-      this.processStdErr(testRun, runPrefix, chunk.toLocaleString()),
+      this.processStdErr(testRun, runInfo.runPrefix, chunk.toLocaleString()),
     );
 
     await runInfo.result;
@@ -360,11 +361,7 @@ class TestCaseSharedData {
 ///
 
 class TestCaseProcessor implements LineProcessor {
-  constructor(
-    shared: WorkspaceShared,
-    private readonly testEndRe: RegExp,
-    private readonly builder: TestResultBuilder,
-  ) {
+  constructor(shared: WorkspaceShared, private readonly testEndRe: RegExp, builder: TestResultBuilder) {
     this.testCaseShared = new TestCaseSharedData(shared, builder);
     builder.started();
   }
@@ -372,8 +369,11 @@ class TestCaseProcessor implements LineProcessor {
   private readonly testCaseShared: TestCaseSharedData;
 
   begin(line: string): void {
-    const loc = TestResultBuilder.getLocationAtStr(this.builder.test.file, this.builder.test.line);
-    this.builder.addOutputLine(ansi.bold(line) + loc); //TODO: color line
+    const loc = TestResultBuilder.getLocationAtStr(
+      this.testCaseShared.builder.test.file,
+      this.testCaseShared.builder.test.line,
+    );
+    this.testCaseShared.builder.addOutputLine(ansi.bold(line) + loc);
   }
 
   online(line: string): void | true | LineProcessor {
@@ -387,7 +387,7 @@ class TestCaseProcessor implements LineProcessor {
       let styleFunc = (s: string) => s;
 
       if (result === 'OK') {
-        styleFunc = (s: string) => ansi.green.bold(s);
+        styleFunc = (s: string) => ansi.green(s);
         this.testCaseShared.builder.passed();
       } else if (result === 'FAILED') {
         styleFunc = (s: string) => ansi.red.bold(s);
@@ -401,19 +401,21 @@ class TestCaseProcessor implements LineProcessor {
 
       if (this.testCaseShared.gMockWarningCount) {
         this.testCaseShared.builder.addOutputLine(
+          1,
           '⚠️' + this.testCaseShared.gMockWarningCount + ' GMock warning(s) in the output!',
         );
       }
 
       this.testCaseShared.builder.build();
 
-      this.builder.addOutputLine(
+      this.testCaseShared.builder.addOutputLine(
         testEndMatch[1] +
           styleFunc(testEndMatch[2]) +
           testEndMatch[3] +
           ansi.bold(testEndMatch[4]) +
           ansi.grey(testEndMatch[5]),
-      ); //TODO: color line
+        '',
+      );
 
       return true;
     }
@@ -425,7 +427,8 @@ class TestCaseProcessor implements LineProcessor {
       const line = failureMatch[3];
       const fullMsg = failureMatch[5];
 
-      this.builder.addOutputLine(
+      this.testCaseShared.builder.addOutputLine(
+        1,
         ansi.gray(failureMatch[1]) + failureMatch[4] + ansi.red(failureMatch[6]) + failureMatch[7],
       );
 
@@ -491,7 +494,7 @@ class FailureProcessor implements LineProcessor {
       return false;
     }
 
-    this.testCaseShared.builder.addOutputLine(line); //TODO: color line
+    this.testCaseShared.builder.addOutputLine(2, line);
   }
 
   end(): void {
@@ -567,7 +570,7 @@ class ExpectCallProcessor implements LineProcessor {
       return false;
     }
 
-    this.testCaseShared.builder.addOutputLine(line); //TODO: color line
+    this.testCaseShared.builder.addOutputLine(2, line);
   }
 
   end(): void {

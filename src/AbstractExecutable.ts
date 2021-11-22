@@ -625,6 +625,8 @@ export abstract class AbstractExecutable implements Disposable {
       cancellationToken,
     );
 
+    testRun.appendOutput(runInfo.getProcStartLine());
+
     this.shared.log.info('proc started', runInfo.process.pid, this.properties.path, this.properties, execParams);
 
     runInfo.setPriorityAsync(this.shared.log);
@@ -678,6 +680,8 @@ export abstract class AbstractExecutable implements Disposable {
         runInfo,
       );
       const result = await runInfo.result;
+
+      testRun.appendOutput(runInfo.getProcStopLine(result));
 
       if (result.value === ExecutableRunResultValue.Errored) {
         this.shared.log.warn(result.toString(), result, runInfo, this);

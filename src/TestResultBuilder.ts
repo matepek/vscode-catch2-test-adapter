@@ -1,11 +1,10 @@
 import * as vscode from 'vscode';
 import * as ansi from 'ansi-colors';
 
-import { generateId, parseLine } from './Util';
+import { parseLine } from './Util';
 import { LoggerWrapper } from './LoggerWrapper';
 import { AbstractTest, SubTest } from './AbstractTest';
 import { debugBreak } from './util/DevelopmentHelper';
-import { RunningExecutable } from './RunningExecutable';
 
 type TestResult = 'skipped' | 'failed' | 'errored' | 'passed';
 
@@ -23,11 +22,6 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     this._log = test.shared.log;
   }
 
-  public static calcRunPrefix(_runInfo: RunningExecutable): string {
-    //return `[#${runInfo.pid}] `;
-    return `[#${generateId()}] `;
-  }
-
   private readonly _log: LoggerWrapper;
   private readonly _message: vscode.TestMessage[] = [];
   private _result: TestResult | undefined = undefined;
@@ -39,7 +33,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (this.addBeginEndMsg) {
       const locStr = TestResultBuilder.getLocationAtStr(this.test.file, this.test.line);
       if (this.level === 0) {
-        this.addOutputLine(ansi.bold(`# \`${this.test.label}\` started`) + `${locStr}`);
+        this.addOutputLine(ansi.bold(`# \`${ansi.italic(this.test.label)}\` started`) + `${locStr}`);
       } else {
         this.addOutputLine(-1, prefixForNewSubCase(this.level) + '`' + ansi.italic(this.test.label) + '`' + locStr);
       }
@@ -105,9 +99,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (file) {
       const lineP = parseLine(line);
       if (typeof lineP == 'number') {
-        return ansi.grey(` (at ${file}:${lineP})`);
+        return ansi.grey(` @ ${file}:${lineP}`);
       } else {
-        return ansi.grey(` (at ${file})`);
+        return ansi.grey(` @ ${file}`);
       }
     }
     return '';
@@ -135,7 +129,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     this.addMessage(file, line, 'Expanded: `' + expanded + '`');
 
     const loc = TestResultBuilder.getLocationAtStr(file, line);
-    this.addOutputLine(1, `Expression failed${loc}:`);
+    this.addOutputLine(1, 'Expression ' + ansi.red('failed') + loc + ':');
     this.addOutputLine(2, '❕Original:  ' + original);
     this.addOutputLine(2, '❗️Expanded:  ' + expanded);
   }
@@ -173,7 +167,6 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     const loc = TestResultBuilder.getLocationAtStr(file, line);
     this.addOutputLine(1, `${title}${loc}${message.length ? ':' : ''}`);
     this.addOutputLine(2, ...message);
-    //if (message.length) this.addOutputLine(1, `⬆ ${title}`);
   }
 
   ///
@@ -183,11 +176,11 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
       case 'passed':
         return ansi.green(this._result);
       case 'failed':
-        return ansi.red(this._result);
+        return ansi.bold.red(this._result);
       case 'skipped':
         return this._result;
       case 'errored':
-        return ansi.bgRedBright(this._result);
+        return ansi.bold.bgRed(this._result);
       case undefined:
         return '';
     }
@@ -198,10 +191,11 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
       const d = this._duration ? ansi.grey(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
 
       if (this.level === 0) {
-        this.addOutputLine(ansi.bold(`# \`${this.test.label}\` ${this.coloredResult()}`) + `${d}`, '');
-      } else if (this._result !== 'passed') {
-        this.addOutputLine(ansi.bold(`# ${this.coloredResult()}`) + `${d}`);
+        this.addOutputLine(`# \`${ansi.italic(this.test.label)}\` ${this.coloredResult()}` + `${d}`, '');
       }
+      // else if (this._result !== 'passed') {
+      //   this.addOutputLine(`# ${this.coloredResult()}${d}`);
+      // }
     }
   }
 
@@ -263,11 +257,11 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
 ///
 
-const indentPrefix = '| ';
+const indentPrefix = ansi.grey('| ');
 
 const prefixForNewSubCase = (indentLevel: number): string => {
   if (indentLevel === 0) return '';
-  else return indentPrefix.repeat(indentLevel - 1) + '| ';
+  else return indentPrefix.repeat(indentLevel - 1) + ansi.grey('| ');
 };
 
 const reindentLines = (indentLevel: number, lines: string[]): string[] => {
