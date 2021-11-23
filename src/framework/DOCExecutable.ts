@@ -193,7 +193,9 @@ export class DOCExecutable extends AbstractExecutable {
           switch (tag.name) {
             case 'Options':
               options = tag.attribs;
-              testRun.appendOutput(`🔀 Randomness seeded to: ${options.rand_seed!.toString()}\r\n\r\n`);
+              testRun.appendOutput(
+                runInfo.runPrefix + `🔀 Randomness seeded to: ${options.rand_seed!.toString()}\r\n\r\n`,
+              );
               return;
             case 'TestSuite':
               return new TestSuiteTagProcessor(
@@ -221,12 +223,7 @@ export class DOCExecutable extends AbstractExecutable {
       const c = chunk.toLocaleString();
 
       parser.writeStdErr(c).then(hasHandled => {
-        if (!hasHandled) {
-          testRun.appendOutput('std::cerr:\n');
-          testRun.appendOutput(c);
-          c.endsWith('\n') || testRun.appendOutput('\n');
-          testRun.appendOutput('⬆ std::cerr\n');
-        }
+        if (!hasHandled) this.processStdErr(testRun, runInfo.runPrefix, c);
       });
     });
 

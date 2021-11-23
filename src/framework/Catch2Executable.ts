@@ -341,7 +341,7 @@ export class Catch2Executable extends AbstractExecutable {
           switch (tag.name) {
             case 'Randomness':
               rngSeed = parseInt(tag.attribs['seed']);
-              testRun.appendOutput(`🔀 Randomness seeded to: ${rngSeed.toString()}\r\n\r\n`);
+              testRun.appendOutput(runInfo.runPrefix + `🔀 Randomness seeded to: ${rngSeed.toString()}\r\n\r\n`);
               break;
             case 'TestCase': {
               let test = executable._getTest<Catch2Test>(tag.attribs.name);

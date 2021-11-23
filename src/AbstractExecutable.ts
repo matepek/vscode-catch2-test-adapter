@@ -686,8 +686,10 @@ export abstract class AbstractExecutable implements Disposable {
 
       if (result.value === ExecutableRunResultValue.Errored) {
         this.shared.log.warn(result.toString(), result, runInfo, this);
-        testRun.appendOutput('❌ Executable run is finished with error.');
-        testRun.appendOutput([runInfo.spawnBuilder.cmd, ...runInfo.spawnBuilder.args].map(x => `"${x}""`).join(' '));
+        testRun.appendOutput(runInfo.runPrefix + '❌ Executable run is finished with error.');
+        testRun.appendOutput(
+          runInfo.runPrefix + [runInfo.spawnBuilder.cmd, ...runInfo.spawnBuilder.args].map(x => `"${x}""`).join(' '),
+        );
       }
 
       if (leftBehindBuilder) {
