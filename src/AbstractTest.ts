@@ -192,24 +192,35 @@ export abstract class AbstractTest {
 
   private _subTests: Map<string /*id*/, SubTest> | undefined = undefined;
 
-  public getOrCreateSubTest(
+  public async getOrCreateSubTest(
     id: string,
     label: string | undefined,
     file: string | undefined,
     line: string | undefined,
-  ): SubTest {
+  ): Promise<SubTest> {
+    const resolvedFile = await this.executable.resolveAndFindSourceFilePath(file);
+
     if (this._subTests) {
       const found = this._subTests.get(id);
 
       if (found) {
-        found.updateSub(label, file, line);
+        found.updateSub(label, resolvedFile, line);
         return found;
       }
     } else {
       this._subTests = new Map();
     }
 
-    const subTest = new SubTest(this.shared, this.executable, this._item, id, label, file, line, this._frameworkTag);
+    const subTest = new SubTest(
+      this.shared,
+      this.executable,
+      this._item,
+      id,
+      label,
+      resolvedFile,
+      line,
+      this._frameworkTag,
+    );
     this._subTests.set(id, subTest);
 
     return subTest;

@@ -91,7 +91,7 @@ Plenty of more **fine-tuning options** are available under [test.advancedExecuta
 | ID                               | Command                                       |
 | -------------------------------- | --------------------------------------------- |
 | `testMate.cmd.reload-tests`      | Reload tests                                  |
-| `testMate.cmd.reload-workspaces` | Force reload workspaces (in case of na issue) |
+| `testMate.cmd.reload-workspaces` | Force reload workspaces (in case of an issue) |
 
 ## About [Sentry.io](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md) integration
 

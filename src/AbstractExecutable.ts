@@ -774,7 +774,7 @@ export abstract class AbstractExecutable implements Disposable {
     }
   }
 
-  protected async _resolveAndFindSourceFilePath(file: string | undefined): Promise<string | undefined> {
+  public async resolveAndFindSourceFilePath(file: string | undefined): Promise<string | undefined> {
     if (typeof file != 'string') return undefined;
 
     let resolved = file;

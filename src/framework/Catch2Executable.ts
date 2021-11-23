@@ -123,8 +123,6 @@ export class Catch2Executable extends AbstractExecutable {
             this.shared.log.error('Could not find catch2 file info1', lines);
           }
         }
-
-        filePath = await this._resolveAndFindSourceFilePath(filePath);
       }
 
       let description: string | undefined = lines[i++].substr(4);
@@ -181,7 +179,7 @@ export class Catch2Executable extends AbstractExecutable {
       if (matches) matches.forEach((t: string) => tags.push(t.substring(1, t.length - 1)));
     }
 
-    const resolvedFile = await this._resolveAndFindSourceFilePath(file);
+    const resolvedFile = await this.resolveAndFindSourceFilePath(file);
 
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
@@ -447,7 +445,7 @@ class TestCaseListingProcessor implements XmlTagProcessor {
 abstract class TagProcessorBase implements XmlTagProcessor {
   constructor(public readonly builder: TestResultBuilder, protected readonly shared: WorkspaceShared) {}
 
-  public onopentag(tag: XmlTag): XmlTagProcessor | void {
+  public onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
     const procCreator = TagProcessorBase.openTagProcessorMap.get(tag.name);
     if (procCreator) {
       return procCreator(tag, this.builder, this.shared);
@@ -498,7 +496,12 @@ abstract class TagProcessorBase implements XmlTagProcessor {
 
   private static readonly openTagProcessorMap: Map<
     string,
-    null | ((tag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared) => void | XmlTagProcessor)
+    | null
+    | ((
+        tag: XmlTag,
+        builder: TestResultBuilder,
+        shared: WorkspaceShared,
+      ) => void | XmlTagProcessor | Promise<void | XmlTagProcessor>)
   > = new Map([
     [
       'OverallResult',
@@ -532,14 +535,14 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'Section',
-      (tag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared): XmlTagProcessor =>
-        new SectionProcessor(shared, builder, tag.attribs),
+      (tag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared): Promise<XmlTagProcessor> =>
+        SectionProcessor.create(shared, builder, tag.attribs),
     ],
     [
       'BenchmarkResults',
-      (tag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared): XmlTagProcessor => {
+      async (tag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared): Promise<XmlTagProcessor> => {
         assert(tag.attribs.name);
-        const subTest = builder.test.getOrCreateSubTest(tag.attribs.name, undefined, undefined, undefined);
+        const subTest = await builder.test.getOrCreateSubTest(tag.attribs.name, undefined, undefined, undefined);
         const subBuilder = builder.createSubTestBuilder(subTest);
         return new BenchmarkResultsProcessor(shared, subBuilder, tag.attribs);
       },
@@ -638,14 +641,17 @@ class TestCaseTagProcessor extends TagProcessorBase {
 ///
 
 class SectionProcessor extends TagProcessorBase {
-  public constructor(shared: WorkspaceShared, testBuilder: TestResultBuilder, attribs: Record<string, string>) {
+  public static async create(shared: WorkspaceShared, testBuilder: TestResultBuilder, attribs: Record<string, string>) {
     if (typeof attribs.name !== 'string' || !attribs.name) throw Error('Section must have name attribute');
 
-    const subTest = testBuilder.test.getOrCreateSubTest(attribs.name, undefined, attribs.filename, attribs.line);
+    const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, undefined, attribs.filename, attribs.line);
     const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
-    subTestBuilder.started();
+    return new SectionProcessor(shared, subTestBuilder);
+  }
 
-    super(subTestBuilder, shared);
+  private constructor(shared: WorkspaceShared, testBuilder: TestResultBuilder) {
+    testBuilder.started();
+    super(testBuilder, shared);
   }
 
   public end(): void {

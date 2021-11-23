@@ -77,7 +77,7 @@ export class DOCExecutable extends AbstractExecutable {
   ): Promise<DOCTest> => {
     const tags: string[] = suiteName ? [suiteName] : [];
     const skippedB = skipped === 'true';
-    const resolvedFile = await this._resolveAndFindSourceFilePath(file);
+    const resolvedFile = await this.resolveAndFindSourceFilePath(file);
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
       testName,
@@ -319,7 +319,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     protected readonly caseData: CaseData,
   ) {}
 
-  public onopentag(tag: XmlTag): XmlTagProcessor | void {
+  public onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
     const procCreator = TagProcessorBase.openTagProcessorMap.get(tag.name);
     if (procCreator) {
       return procCreator(tag, this.builder, this.caseData, this.shared);
@@ -365,7 +365,12 @@ abstract class TagProcessorBase implements XmlTagProcessor {
   private static readonly openTagProcessorMap: Map<
     string,
     | null
-    | ((tag: XmlTag, builder: TestResultBuilder, caseData: CaseData, shared: WorkspaceShared) => void | XmlTagProcessor)
+    | ((
+        tag: XmlTag,
+        builder: TestResultBuilder,
+        caseData: CaseData,
+        shared: WorkspaceShared,
+      ) => void | XmlTagProcessor | Promise<void | XmlTagProcessor>)
   > = new Map([
     [
       'SubCase',
@@ -374,9 +379,9 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         builder: TestResultBuilder,
         caseData: CaseData,
         shared: WorkspaceShared,
-      ): void | XmlTagProcessor => {
+      ): void | XmlTagProcessor | Promise<XmlTagProcessor> => {
         // if name is missing we don't create subcase for it
-        if (tag.attribs.name) return new SubCaseProcessor(shared, builder, tag.attribs, caseData);
+        if (tag.attribs.name) return SubCaseProcessor.create(shared, builder, tag.attribs, caseData);
       },
     ],
     [
@@ -449,7 +454,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
     test.line = attribs.line;
   }
 
-  public override onopentag(tag: XmlTag): XmlTagProcessor | void {
+  public override onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
     if (tag.name === 'OverallResultsAsserts') {
       const durationSec = parseFloat(tag.attribs.duration) || undefined;
       if (durationSec === undefined) this.shared.log.errorS('doctest: duration is NaN: ' + tag.attribs.duration);
@@ -487,12 +492,12 @@ class TestCaseTagProcessor extends TagProcessorBase {
 ///
 
 class SubCaseProcessor extends TagProcessorBase {
-  public constructor(
+  public static async create(
     shared: WorkspaceShared,
     testBuilder: TestResultBuilder,
     attribs: Record<string, string>,
     parentCaseData: CaseData,
-  ) {
+  ): Promise<SubCaseProcessor> {
     if (typeof attribs.name !== 'string' || !attribs.name) throw Error('Section must have name attribute');
 
     let label: string | undefined = undefined;
@@ -501,11 +506,16 @@ class SubCaseProcessor extends TagProcessorBase {
       if (m) label = m[1];
     }
 
-    const subTest = testBuilder.test.getOrCreateSubTest(attribs.name, label, attribs.filename, attribs.line);
+    const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, label, attribs.filename, attribs.line);
     const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
-    subTestBuilder.started();
 
-    super(subTestBuilder, shared, parentCaseData);
+    return new SubCaseProcessor(shared, subTestBuilder, parentCaseData);
+  }
+
+  private constructor(shared: WorkspaceShared, testBuilder: TestResultBuilder, parentCaseData: CaseData) {
+    testBuilder.started();
+
+    super(testBuilder, shared, parentCaseData);
   }
 
   //doctest does not provide result for sub-cases, no point to build
