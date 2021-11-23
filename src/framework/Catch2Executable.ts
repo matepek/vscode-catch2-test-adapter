@@ -243,6 +243,9 @@ export class Catch2Executable extends AbstractExecutable {
     if (this._catch2Version && this._catch2Version.major >= 3) args.push('--reporter', 'xml');
 
     this.shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
+
+    //const process = await this.properties.spawner.spawn(this.properties.path, args, this.properties.options);
+
     const catch2TestListOutput = await this.properties.spawner.spawnAsync(
       this.properties.path,
       args,

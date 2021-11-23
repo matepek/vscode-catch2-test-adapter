@@ -693,7 +693,7 @@ export abstract class AbstractExecutable implements Disposable {
       if (leftBehindBuilder) {
         debugAssert(!leftBehindBuilder.built, "if it is built it shouldn't be passed");
         switch (result.value) {
-          case ExecutableRunResultValue.Ok:
+          case ExecutableRunResultValue.OK:
             {
               this.shared.log.errorS('builder should not left behind if no problem', this, leftBehindBuilder);
               leftBehindBuilder.addOutputLine(0, '❗️ Test run has been cancelled by user.');

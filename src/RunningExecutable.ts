@@ -11,7 +11,7 @@ import { assert } from './util/DevelopmentHelper';
 ///
 
 export enum ExecutableRunResultValue {
-  Ok,
+  OK,
   CancelledByUser,
   TimeoutByUser,
   Errored,
@@ -23,13 +23,13 @@ export class ExecutableRunResult {
   private constructor(public readonly value: ExecutableRunResultValue, private readonly _error: string | undefined) {}
 
   public get Ok(): boolean {
-    return this.value === ExecutableRunResultValue.Ok;
+    return this.value === ExecutableRunResultValue.OK;
   }
 
   public toString(): string {
     switch (this.value) {
-      case ExecutableRunResultValue.Ok:
-        return 'Ok';
+      case ExecutableRunResultValue.OK:
+        return 'Exit(0) / OK';
       case ExecutableRunResultValue.CancelledByUser:
         return 'CancelledByUser';
       case ExecutableRunResultValue.TimeoutByUser:
@@ -41,7 +41,7 @@ export class ExecutableRunResult {
   }
 
   public static Ok(): ExecutableRunResult {
-    return new ExecutableRunResult(ExecutableRunResultValue.Ok, undefined);
+    return new ExecutableRunResult(ExecutableRunResultValue.OK, undefined);
   }
 
   public static Error(message: string): ExecutableRunResult {
