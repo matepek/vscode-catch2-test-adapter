@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Improved Output formatting and colorization
 
+### Fixed
+
+- navigation to source file related issue
+
 ## [4.0.2] - 2021-11-22
 
 ### Added

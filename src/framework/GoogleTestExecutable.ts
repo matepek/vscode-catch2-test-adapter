@@ -14,7 +14,7 @@ import { TestGrouping } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
-import { debugAssert, debugBreak } from '../util/DevelopmentHelper';
+import { assert, debugBreak } from '../util/DevelopmentHelper';
 
 export class GoogleTestExecutable extends AbstractExecutable {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, private readonly _argumentPrefix: string) {
@@ -318,8 +318,8 @@ class TestSuiteListingProcessor implements XmlTagProcessor {
   onopentag(tag: XmlTag): void {
     switch (tag.name) {
       case 'testcase': {
-        debugAssert(this.suiteName);
-        debugAssert(tag.attribs.name);
+        assert(this.suiteName);
+        assert(tag.attribs.name);
         this.create(
           tag.attribs.name,
           this.suiteName!,

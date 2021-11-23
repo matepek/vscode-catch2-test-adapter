@@ -782,6 +782,7 @@ export abstract class AbstractExecutable implements Disposable {
     }
 
     resolved = await this.resolveText(resolved);
+    resolved = pathlib.normalize(resolved);
     resolved = this._findFilePath(resolved);
 
     this.shared.log.debug('_resolveSourceFilePath:', file, '=>', resolved);
@@ -789,8 +790,8 @@ export abstract class AbstractExecutable implements Disposable {
     return resolved;
   }
 
-  protected _findFilePath(matchedPath: string): string {
-    if (pathlib.isAbsolute(matchedPath)) return matchedPath;
+  private _findFilePath(path: string): string {
+    if (pathlib.isAbsolute(path)) return path;
 
     const directoriesToCheck: string[] = [pathlib.dirname(this.properties.path)];
 
@@ -804,9 +805,9 @@ export abstract class AbstractExecutable implements Disposable {
     )
       directoriesToCheck.push(this.shared.workspaceFolder.uri.fsPath);
 
-    const found = getAbsolutePath(matchedPath, directoriesToCheck);
+    const found = getAbsolutePath(path, directoriesToCheck);
 
-    return found || matchedPath;
+    return found || path;
   }
 
   public sendStaticEvents(
