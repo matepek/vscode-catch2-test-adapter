@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Improved Output formatting and colorization
 
-## [4.0.5]
+## [4.0.5] - 2021-11-24
 
 ## [4.0.4] - 2021-11-23
 
