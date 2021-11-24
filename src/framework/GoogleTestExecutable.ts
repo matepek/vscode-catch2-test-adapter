@@ -439,7 +439,9 @@ class TestCaseProcessor implements LineProcessor {
 
       this.testCaseShared.builder.addOutputLine(
         1,
-        ansi.gray(failureMatch[1]) + failureMatch[4] + ansi.red(failureMatch[6]) + failureMatch[7],
+        ansi.red(failureMatch[6]) +
+          failureMatch[7] +
+          TestResultBuilder.getLocationAtStr(failureMatch[2], failureMatch[3]),
       );
 
       switch (type) {
