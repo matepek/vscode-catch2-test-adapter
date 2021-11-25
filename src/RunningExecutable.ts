@@ -1,5 +1,4 @@
 import * as os from 'os';
-import * as ansi from 'ansi-colors';
 
 import { ChildProcessWithoutNullStreams } from './util/FSWrapper';
 import { AbstractTest } from './AbstractTest';
@@ -8,6 +7,7 @@ import { promisify } from 'util';
 import { CancellationToken, generateId } from './Util';
 import { SpawnBuilder } from './Spawner';
 import { assert } from './util/DevelopmentHelper';
+import { style } from './util/HtmlStyleTranslator';
 ///
 
 export enum ExecutableRunResultValue {
@@ -103,7 +103,7 @@ export class RunningExecutable {
     });
   }
 
-  public readonly runPrefix = ansi.gray(`$${generateId()}| `);
+  public readonly runPrefix = style.dim(`$${generateId()}| `);
 
   public killProcess(timeout: number | null = null): void {
     try {
@@ -176,7 +176,7 @@ export class RunningExecutable {
   public getProcStartLine(): string {
     return (
       this.runPrefix +
-      ansi.gray(`Started PID#${this.pid} - \`${this.process.spawnfile}\`\r\n`) +
+      style.dim(`Started PID#${this.pid} - \`${this.process.spawnfile}\`\r\n`) +
       this.runPrefix +
       '\r\n'
     );
@@ -184,7 +184,7 @@ export class RunningExecutable {
 
   public getProcStopLine(result: ExecutableRunResult): string {
     return (
-      this.runPrefix + ansi.gray(`Stopped PID#${this.pid} - ${result.toString()} - \`${this.process.spawnfile}\`\r\n`)
+      this.runPrefix + style.dim(`Stopped PID#${this.pid} - ${result.toString()} - \`${this.process.spawnfile}\`\r\n`)
     );
   }
 }

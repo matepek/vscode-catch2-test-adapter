@@ -1,15 +1,12 @@
 import * as vscode from 'vscode';
-import * as ansi from 'ansi-colors';
 
 import { parseLine } from './Util';
 import { LoggerWrapper } from './LoggerWrapper';
 import { AbstractTest, SubTest } from './AbstractTest';
 import { debugBreak } from './util/DevelopmentHelper';
+import { style, html2ansi, html2mkarkdown, escapeXmlChars } from './util/HtmlStyleTranslator';
 
 type TestResult = 'skipped' | 'failed' | 'errored' | 'passed';
-
-// TODO:shared variable to control and colorization  vscode.window.activeColorTheme.kind;
-// also gtest could be colorized if we change the processor
 
 export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   public constructor(
@@ -24,6 +21,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
   private readonly _log: LoggerWrapper;
   private readonly _message: vscode.TestMessage[] = [];
+  private readonly _outputStr: string[] = [];
   private _result: TestResult | undefined = undefined;
 
   public started(): void {
@@ -33,9 +31,14 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (this.addBeginEndMsg) {
       const locStr = TestResultBuilder.getLocationAtStr(this.test.file, this.test.line);
       if (this.level === 0) {
-        this.addOutputLine(ansi.bold(`[ RUN      ] \`${ansi.italic(this.test.label)}\``) + `${locStr}`);
+        this.addOutputLine(
+          style.bold(`[ RUN      ] \`${style.italic(escapeXmlChars(this.test.label))}\``) + `${locStr}`,
+        );
       } else {
-        this.addOutputLine(-1, prefixForNewSubCase(this.level) + '`' + ansi.italic(this.test.label) + '`' + locStr);
+        this.addOutputLine(
+          -1,
+          prefixForNewSubCase(this.level) + '`' + style.italic(escapeXmlChars(this.test.label)) + '`' + locStr,
+        );
       }
     }
   }
@@ -77,7 +80,10 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     } else {
       lines = msgs;
     }
-    this.testRun.appendOutput(lines.map(x => this.runPrefix + x + '\r\n').join(''));
+
+    this._outputStr.push(...lines);
+
+    this.testRun.appendOutput(html2ansi.translate(lines.map(x => this.runPrefix + x + '\r\n').join('')));
   }
 
   ///
@@ -99,9 +105,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (file) {
       const lineP = parseLine(line);
       if (typeof lineP == 'number') {
-        return ansi.grey(` @ ${file}:${lineP}`);
+        return style.location(escapeXmlChars(' @here'), `file:///${file}:${lineP}`, ` @ ${file}:${lineP}`);
       } else {
-        return ansi.grey(` @ ${file}`);
+        return style.location(escapeXmlChars(' @here'), `file:///${file}`, ` @ ${file}`);
       }
     }
     return '';
@@ -129,7 +135,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     this.addMessage(file, line, 'Expanded: `' + expanded + '`');
 
     const loc = TestResultBuilder.getLocationAtStr(file, line);
-    this.addOutputLine(1, 'Expression ' + ansi.red('failed') + loc + ':');
+    this.addOutputLine(1, 'Expression ' + style.color('failed', 'redBright') + loc + ':');
     this.addOutputLine(2, '❕Original:  ' + original);
     this.addOutputLine(2, '❗️Expanded:  ' + expanded);
   }
@@ -153,7 +159,10 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   }
 
   public addMarkdownMsg(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
-    const msg = new vscode.TestMessage(new vscode.MarkdownString(message.join('\r\n\n')));
+    const styledMsg = html2mkarkdown.translate(message.join('\r\n\r\n'));
+    const ms = new vscode.MarkdownString(styledMsg);
+    ms.supportHtml = true;
+    const msg = new vscode.TestMessage(ms);
     msg.location = TestResultBuilder._getLocation(file, line);
     this._message.push(msg);
   }
@@ -174,13 +183,13 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   private coloredResult(): string {
     switch (this._result) {
       case 'passed':
-        return '[' + ansi.green('  PASSED  ') + ']';
+        return '[' + style.color('  PASSED  ', 'green') + ']';
       case 'failed':
-        return '[' + ansi.bold.red('  FAILED  ') + ']';
+        return '[' + style.bold(style.color('  FAILED  ', 'red')) + ']';
       case 'skipped':
         return '[' + '  SKIPPED ' + ']';
       case 'errored':
-        return '[' + ansi.bold.bgRed('  ERRORED ') + ']';
+        return '[' + style.bold(style.color('  ERRORED ', undefined, 'red')) + ']';
       case undefined:
         return '';
     }
@@ -188,10 +197,10 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
   public endMessage(): void {
     if (this.addBeginEndMsg) {
-      const d = this._duration ? ansi.grey(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
+      const d = this._duration ? style.dim(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
 
       if (this.level === 0) {
-        this.addOutputLine(`${this.coloredResult()} \`${ansi.italic(this.test.label)}\`` + `${d}`, '');
+        this.addOutputLine(`${this.coloredResult()} \`${style.italic(escapeXmlChars(this.test.label))}\`` + `${d}`, '');
       }
       // else if (this._result !== 'passed') {
       //   this.addOutputLine(`# ${this.coloredResult()}${d}`);
@@ -214,6 +223,10 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     }
 
     this.endMessage();
+
+    if (this._result == 'failed' || this._result == 'errored') {
+      this.addMarkdownMsg(this.test.file, this.test.line, ...[style.h1('Output'), '', ...this._outputStr]);
+    }
 
     switch (this._result) {
       case undefined:
@@ -257,11 +270,11 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
 ///
 
-const indentPrefix = ansi.grey('| ');
+const indentPrefix = style.dim('| ');
 
 const prefixForNewSubCase = (indentLevel: number): string => {
   if (indentLevel === 0) return '';
-  else return indentPrefix.repeat(indentLevel - 1) + ansi.grey('| ');
+  else return indentPrefix.repeat(indentLevel - 1) + style.dim('| ');
 };
 
 const reindentLines = (indentLevel: number, lines: string[]): string[] => {

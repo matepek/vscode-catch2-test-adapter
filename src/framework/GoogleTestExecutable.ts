@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { promisify } from 'util';
-import * as ansi from 'ansi-colors';
 
 import { AbstractExecutable as AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { GoogleTestTest } from './GoogleTestTest';
@@ -15,6 +14,7 @@ import { TestResultBuilder } from '../TestResultBuilder';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
+import { style, escapeXmlChars } from '../util/HtmlStyleTranslator';
 
 export class GoogleTestExecutable extends AbstractExecutable {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, private readonly _argumentPrefix: string) {
@@ -382,7 +382,7 @@ class TestCaseProcessor implements LineProcessor {
       this.testCaseShared.builder.test.file,
       this.testCaseShared.builder.test.line,
     );
-    this.testCaseShared.builder.addOutputLine(ansi.bold(line) + loc);
+    this.testCaseShared.builder.addOutputLine(style.bold(escapeXmlChars(line)) + loc);
   }
 
   online(line: string): void | true | LineProcessor {
@@ -396,10 +396,10 @@ class TestCaseProcessor implements LineProcessor {
       let styleFunc = (s: string) => s;
 
       if (result === 'OK') {
-        styleFunc = (s: string) => ansi.green(s);
+        styleFunc = (s: string) => style.color(s, 'green');
         this.testCaseShared.builder.passed();
       } else if (result === 'FAILED') {
-        styleFunc = (s: string) => ansi.red.bold(s);
+        styleFunc = (s: string) => style.bold(style.color(s, 'red'));
         this.testCaseShared.builder.failed();
       } else if (result === 'SKIPPED') {
         this.testCaseShared.builder.skipped();
@@ -418,12 +418,10 @@ class TestCaseProcessor implements LineProcessor {
       this.testCaseShared.builder.build();
 
       this.testCaseShared.builder.addOutputLine(
-        testEndMatch[1] +
-          styleFunc(testEndMatch[2]) +
-          testEndMatch[3] +
-          testEndMatch[4] +
-          testEndMatch[5] +
-          ansi.grey(testEndMatch[6]),
+        escapeXmlChars(testEndMatch[1]) +
+          styleFunc(escapeXmlChars(testEndMatch[2])) +
+          escapeXmlChars(testEndMatch[3] + testEndMatch[4] + testEndMatch[5]) +
+          style.dim(escapeXmlChars(testEndMatch[6])),
         '',
       );
 
@@ -439,7 +437,7 @@ class TestCaseProcessor implements LineProcessor {
 
       this.testCaseShared.builder.addOutputLine(
         1,
-        ansi.red(failureMatch[6]) +
+        style.color(escapeXmlChars(failureMatch[6]), 'redBright') +
           failureMatch[7] +
           TestResultBuilder.getLocationAtStr(failureMatch[2], failureMatch[3]),
       );
@@ -508,13 +506,13 @@ class FailureProcessor implements LineProcessor {
   }
 
   end(): void {
-    this.testCaseShared.builder.addOutputLine(2, ...this.lines);
+    this.testCaseShared.builder.addOutputLine(2, ...this.lines.map(escapeXmlChars));
 
     if (isDecorationEnabled) {
       this.testCaseShared.builder.addMarkdownMsg(
         this.file,
         this.line,
-        `${isDecorationEnabled ? '### ' : ''}${this.fullMsg}:`,
+        (isDecorationEnabled ? style.h3(escapeXmlChars(this.fullMsg)) : this.fullMsg) + ':',
         ...this.lines,
       );
     } else {
@@ -587,7 +585,7 @@ class ExpectCallProcessor implements LineProcessor {
   }
 
   end(): void {
-    this.testCaseShared.builder.addOutputLine(2, ...this.lines);
+    this.testCaseShared.builder.addOutputLine(2, ...this.lines.map(escapeXmlChars));
 
     this.testCaseShared.builder.addMessage(this.file, this.line, this.expected, ...this.actual);
   }

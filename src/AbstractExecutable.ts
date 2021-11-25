@@ -23,6 +23,7 @@ import { debugAssert, debugBreak } from './util/DevelopmentHelper';
 import { SpawnBuilder } from './Spawner';
 import { SharedTestTags } from './SharedTestTags';
 import { Disposable } from './Util';
+import { html2ansi } from './util/HtmlStyleTranslator';
 
 export class TestsToRun {
   public readonly direct: AbstractTest[] = []; // test is drectly included, should be run even if it is skipped
@@ -626,7 +627,7 @@ export abstract class AbstractExecutable implements Disposable {
       cancellationToken,
     );
 
-    testRun.appendOutput(runInfo.getProcStartLine());
+    testRun.appendOutput(html2ansi.translate(runInfo.getProcStartLine()));
 
     this.shared.log.info('proc started', runInfo.process.pid, this.properties.path, this.properties, execParams);
 
@@ -682,7 +683,7 @@ export abstract class AbstractExecutable implements Disposable {
       );
       const result = await runInfo.result;
 
-      testRun.appendOutput(runInfo.getProcStopLine(result));
+      testRun.appendOutput(html2ansi.translate(runInfo.getProcStopLine(result)));
 
       if (result.value === ExecutableRunResultValue.Errored) {
         this.shared.log.warn(result.toString(), result, runInfo, this);
