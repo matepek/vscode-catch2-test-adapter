@@ -30,7 +30,7 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _name: string | undefined,
     private readonly _description: string | undefined,
     private readonly _cwd: string,
-    private readonly _env: { [prop: string]: string } | undefined,
+    private readonly _env: { [prop: string]: string },
     private readonly _envFile: string | undefined,
     private readonly _dependsOn: string[],
     private readonly _runTask: RunTask,
@@ -271,10 +271,8 @@ export class ExecutableConfig implements vscode.Disposable {
       this._shared.log.error('resolvedCwd', e);
     }
 
-    let resolvedEnv: Record<string, string> = {};
+    let resolvedEnv: Record<string, string> = this._env;
     try {
-      if (this._env) Object.assign(resolvedEnv, this._env);
-
       resolvedEnv = await this._resolveVariables(resolvedEnv, true, varToValue);
     } catch (e) {
       this._shared.log.error('resolvedEnv', e);

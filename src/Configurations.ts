@@ -476,7 +476,8 @@ export class Configurations {
 
         const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : defaultCwd;
 
-        const env: { [prop: string]: string } | undefined = typeof obj.env === 'object' ? obj.env : undefined;
+        const env: { [prop: string]: string } = typeof obj.env === 'object' ? obj.env : {};
+        Object.assign(env, this.getTerminalIntegratedEnv());
 
         const envFile: string | undefined = typeof obj.envFile === 'string' ? obj.envFile : undefined;
 
@@ -527,7 +528,7 @@ export class Configurations {
           name,
           description,
           cwd,
-          Object.assign(this.getTerminalIntegratedEnv(), env),
+          env,
           envFile,
           dependsOn,
           runTask,

@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.6]
+
 - Improved Output formatting and colorization
+
+### Fixed
+
+- `advancedExecutable`->`env` variable usage has been fixed
 
 ## [4.0.5] - 2021-11-24
 
