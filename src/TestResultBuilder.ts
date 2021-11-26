@@ -25,6 +25,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   private readonly _log: LoggerWrapper;
   private readonly _message: vscode.TestMessage[] = [];
   private _result: TestResult | undefined = undefined;
+  //private readonly _outputLines: string[] = [];
 
   public started(): void {
     this._log.info('Test', this.test.id, 'has started.');
@@ -77,6 +78,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     } else {
       lines = msgs;
     }
+
+    //this._outputLines.push(...lines);
+
     this.testRun.appendOutput(lines.map(x => this.runPrefix + x + '\r\n').join(''));
   }
 
@@ -214,6 +218,15 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     }
 
     this.endMessage();
+
+    // {
+    //   const fileOfTest = this.test.file;
+    //   const lineOfTest = this.test.line;
+    //   if (fileOfTest && lineOfTest && (this._result == 'failed' || this._result === 'errored')) {
+    //     const formatted = this._outputLines.map(x => ansi.unstyle(x));
+    //     this.addMessage(fileOfTest, lineOfTest, 'Output', ...formatted);
+    //   }
+    // }
 
     switch (this._result) {
       case undefined:
