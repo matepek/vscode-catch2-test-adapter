@@ -15,6 +15,7 @@ import { TestResultBuilder } from '../TestResultBuilder';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
+import { pipeProcess2Parser } from '../util/ParserInterface';
 
 export class GoogleTestExecutable extends AbstractExecutable {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, private readonly _argumentPrefix: string) {
@@ -272,19 +273,11 @@ export class GoogleTestExecutable extends AbstractExecutable {
           }
         }
       },
-      // alwaysonline(line: string): void {
-      //   testRun.appendOutput(runPrefix + line + '\r\n');
-      // },
     });
 
-    runInfo.process.stdout.on('data', (chunk: Uint8Array) => parser.write(chunk.toLocaleString()));
-    runInfo.process.stderr.on('data', (chunk: Uint8Array) =>
-      this.processStdErr(testRun, runInfo.runPrefix, chunk.toLocaleString()),
+    await pipeProcess2Parser(runInfo, parser, (data: string) =>
+      executable.processStdErr(testRun, runInfo.runPrefix, data),
     );
-
-    await runInfo.result;
-    // order matters
-    await parser.end();
 
     const leftBehindBuilder = data.lastBuilder && !data.lastBuilder.built ? data.lastBuilder : undefined;
 

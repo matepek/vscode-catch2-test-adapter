@@ -843,7 +843,7 @@ export abstract class AbstractExecutable implements Disposable {
   protected processStdErr(testRun: vscode.TestRun, runPrefix: string, str: string): void {
     testRun.appendOutput(runPrefix + '⬇ std::cerr:\r\n');
     const indented = reindentStr(0, 2, str);
-    testRun.appendOutput(indented.map(x => runPrefix + '|' + x + '\r\n').join(''));
+    testRun.appendOutput(indented.map(x => runPrefix + '> ' + x + '\r\n').join(''));
     testRun.appendOutput(runPrefix + '⬆ std::cerr\r\n');
   }
 }

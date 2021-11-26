@@ -13,6 +13,7 @@ import { TestGrouping } from '../TestGroupingInterface';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { assert, debugAssert, debugBreak } from '../util/DevelopmentHelper';
 import { TestResultBuilder } from '../TestResultBuilder';
+import { pipeProcess2Parser } from '../util/ParserInterface';
 
 export class DOCExecutable extends AbstractExecutable {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, docVersion: Version | undefined) {
@@ -217,19 +218,9 @@ export class DOCExecutable extends AbstractExecutable {
       },
     );
 
-    runInfo.process.stdout.on('data', (chunk: Uint8Array) => parser.write(chunk.toLocaleString()));
-
-    runInfo.process.stderr.on('data', (chunk: Uint8Array) => {
-      const c = chunk.toLocaleString();
-
-      parser.writeStdErr(c).then(hasHandled => {
-        if (!hasHandled) this.processStdErr(testRun, runInfo.runPrefix, c);
-      });
-    });
-
-    await runInfo.result;
-    // order matters
-    await parser.end();
+    await pipeProcess2Parser(runInfo, parser, (data: string) =>
+      executable.processStdErr(testRun, runInfo.runPrefix, data),
+    );
 
     const leftBehind = parser.parserStack.reverse().find(x => x instanceof TestCaseTagProcessor) as
       | TestCaseTagProcessor
@@ -354,12 +345,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
   }
 
   public onstderr(data: string, _parentTag: XmlTag | undefined): void {
-    this.builder.addQuoteWithLocation(
-      undefined,
-      undefined,
-      'std::cerr (stderr arrived during running this test)',
-      data,
-    );
+    this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
   }
 
   private static readonly openTagProcessorMap: Map<

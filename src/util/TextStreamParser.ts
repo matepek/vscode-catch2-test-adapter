@@ -1,7 +1,8 @@
 import { LoggerWrapper } from '../LoggerWrapper';
 import { debugBreak } from './DevelopmentHelper';
+import { ParserInterface } from './ParserInterface';
 
-export class TextStreamParser {
+export class TextStreamParser implements ParserInterface {
   public constructor(private readonly log: LoggerWrapper, rootProcessor: RootLineProcessor) {
     this.topProcessor = rootProcessor;
     this.alwaysonlineCb = rootProcessor.alwaysonline;
@@ -49,6 +50,11 @@ export class TextStreamParser {
 
       if (lines.length) this._process();
     }
+  }
+
+  writeStdErr(data: string): Promise<true> {
+    this.write(data);
+    return Promise.resolve(true);
   }
 
   private _process(): void {
