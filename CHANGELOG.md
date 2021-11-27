@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.7]
+
+### Fixed
+
+- running tasks feature with limitation: test list of executables won't be reloaded so in case the task results in a new test then that test won't be run.
+
 ## [4.0.6] - 2021-11-25
 
 - Improved Output formatting and colorization

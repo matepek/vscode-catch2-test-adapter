@@ -239,16 +239,21 @@ export class WorkspaceManager implements vscode.Disposable {
     cancellation: vscode.CancellationToken,
     testRun: vscode.TestRun,
   ): Promise<void> {
-    // try {
-    //   await this._runTasks('before', executables.keys(), cancellation);
-    //   //runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
-    // } catch (e) {
-    //   //for (const [runnable, tests] of executables.values()) {
-    //   //TODO:release runnable.sentStaticErrorEvent(testRunId, tests, e);
-    //   //}
+    try {
+      await this._runTasks('before', executables.keys(), cancellation);
+      //TODO: future: test list might changes: runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
+    } catch (e) {
+      const msg = e.toString();
+      testRun.appendOutput(msg);
+      const errorMsg = new vscode.TestMessage(msg);
+      for (const testsToRun of executables.values()) {
+        for (const test of testsToRun) {
+          testRun.errored(test.item, errorMsg);
+        }
+      }
 
-    //   return;
-    // }
+      return;
+    }
 
     const ps: Promise<void>[] = [];
 
@@ -262,13 +267,18 @@ export class WorkspaceManager implements vscode.Disposable {
 
     await Promise.allSettled(ps);
 
-    // try {
-    //   await this._runTasks('after', executables.keys(), cancellation);
-    // } catch (e) {
-    //   for (const [runnable, tests] of executables.values()) {
-    //     //TODO:release:runnable.sentStaticErrorEvent(testRunId, tests, e);
-    //   }
-    // }
+    try {
+      await this._runTasks('after', executables.keys(), cancellation);
+    } catch (e) {
+      const msg = e.toString();
+      testRun.appendOutput(msg);
+      const errorMsg = new vscode.TestMessage(msg);
+      for (const testsToRun of executables.values()) {
+        for (const test of testsToRun) {
+          testRun.errored(test.item, errorMsg);
+        }
+      }
+    }
   }
 
   private async _runTasks(

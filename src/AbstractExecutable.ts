@@ -8,7 +8,7 @@ import { AbstractTest } from './AbstractTest';
 import { TaskPool } from './util/TaskPool';
 import { WorkspaceShared } from './WorkspaceShared';
 import { ExecutableRunResultValue, RunningExecutable } from './RunningExecutable';
-import { promisify, inspect } from 'util';
+import { promisify } from 'util';
 import { Version, getAbsolutePath, CancellationToken, CancellationFlag, reindentStr } from './Util';
 import {
   resolveOSEnvironmentVariables,
@@ -544,15 +544,6 @@ export abstract class AbstractExecutable implements Disposable {
     taskPool: TaskPool,
     cancellationToken: CancellationToken,
   ): Promise<void> {
-    // DISABLED for now
-    // try {
-    //   await this.runTasks('beforeEach', taskPool, cancellationToken);
-    //   //await this.reloadTests(taskPool, cancellationToken); // this might relod the test list if the file timestamp has changed
-    // } catch (e) {
-    //   //this.sentStaticErrorEvent(testRunId, collectChildrenToRun(), e);
-    //   return;
-    // }
-
     const testsToRunFinal: AbstractTest[] = [];
 
     for (const t of testsToRun.direct) {
@@ -566,6 +557,20 @@ export abstract class AbstractExecutable implements Disposable {
 
     if (testsToRunFinal.length == 0) return;
 
+    try {
+      await this.runTasks('beforeEach', taskPool, cancellationToken);
+      //TODO: future: test list might changes: await this.reloadTests(taskPool, cancellationToken);
+      // that case the testsToRunFinal should be after this block
+    } catch (e) {
+      const msg = e.toString();
+      testRun.appendOutput(msg);
+      const errorMsg = new vscode.TestMessage(msg);
+      for (const test of testsToRun) {
+        testRun.errored(test.item, errorMsg);
+      }
+      return;
+    }
+
     const buckets = this._splitTestSetForMultirunIfEnabled(testsToRunFinal);
     await Promise.allSettled(
       buckets.map(async (bucket: readonly AbstractTest[]) => {
@@ -576,7 +581,13 @@ export abstract class AbstractExecutable implements Disposable {
     try {
       await this.runTasks('afterEach', taskPool, cancellationToken);
     } catch (e) {
-      //this.sentStaticErrorEvent(testRunId, collectChildrenToRun(), e);
+      const msg = e.toString();
+      testRun.appendOutput(msg);
+      const errorMsg = new vscode.TestMessage(msg);
+      for (const test of testsToRun) {
+        testRun.errored(test.item, errorMsg);
+      }
+      return;
     }
   }
 
@@ -759,9 +770,7 @@ export abstract class AbstractExecutable implements Disposable {
 
             if (exitCode !== undefined) {
               if (exitCode !== 0) {
-                throw Error(
-                  `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.${type}\`)`,
-                );
+                throw Error(`Task "${taskName}" has returned with exitCode(${exitCode}) != 0.`);
               }
             }
           }
@@ -810,34 +819,6 @@ export abstract class AbstractExecutable implements Disposable {
     const found = getAbsolutePath(path, directoriesToCheck);
 
     return found || path;
-  }
-
-  public sendStaticEvents(
-    _testRunId: string,
-    _childrenToRun: readonly AbstractTest[],
-    _staticEvent: unknown | undefined,
-  ): void {
-    // childrenToRun.forEach(test => {
-    //   const testStaticEvent = test.getStaticEvent(testRunId);
-    //   const event: TestEvent | undefined = staticEvent || testStaticEvent;
-    //   if (event) {
-    //     event.test = test;
-    //     event.testRunId = testRunId;
-    //     // we dont need to send events about ancestors: https://github.com/hbenl/vscode-test-explorer/issues/141
-    //     // probably we dont need this either: this._shared.sendTestEvent(test!.getStartEvent());
-    //     this._shared.sendTestRunEvent(event);
-    //   }
-    // });
-  }
-
-  // eslint-disable-next-line
-  public sentStaticErrorEvent(testRunId: string, childrenToRun: readonly AbstractTest[], err: any): void {
-    this.sendStaticEvents(testRunId, childrenToRun, {
-      type: 'test',
-      test: 'will be filled automatically',
-      state: 'errored',
-      message: err instanceof Error ? `⚡️ ${err.name}: ${err.message}` : inspect(err),
-    });
   }
 
   protected processStdErr(testRun: vscode.TestRun, runPrefix: string, str: string): void {
