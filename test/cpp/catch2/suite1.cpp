@@ -61,7 +61,3 @@ TEST_CASE("throws inside CHECK") {
   CHECK(throws() == 5);
   //
 }
-
-TEST_CASE("试试中文", "[test]") {
-  CHECK(true);
-}

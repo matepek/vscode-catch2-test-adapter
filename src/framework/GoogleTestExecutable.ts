@@ -15,6 +15,7 @@ import { TestResultBuilder } from '../TestResultBuilder';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
+import { TestItemParent } from '../TestItemManager';
 
 export class GoogleTestExecutable extends AbstractExecutable {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, private readonly _argumentPrefix: string) {
@@ -116,18 +117,8 @@ export class GoogleTestExecutable extends AbstractExecutable {
       resolvedFile,
       [suiteName],
       undefined,
-      (container: vscode.TestItemCollection) =>
-        new GoogleTestTest(
-          this.shared,
-          this,
-          container,
-          testName,
-          suiteName,
-          typeParam,
-          valueParam,
-          resolvedFile,
-          line,
-        ),
+      (parent: TestItemParent) =>
+        new GoogleTestTest(this.shared, this, parent, testName, suiteName, typeParam, valueParam, resolvedFile, line),
       (test: GoogleTestTest) => test.update2(testName, suiteName, resolvedFile, line, typeParam, valueParam),
     );
   };

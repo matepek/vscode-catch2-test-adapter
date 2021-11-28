@@ -72,7 +72,7 @@ export class Catch2Executable extends AbstractExecutable {
       if (lines[i].startsWith('    ')) {
         this.shared.log.warn('Probably too long test name', i, lines);
 
-        this._createAndAddError(
+        await this._createAndAddError(
           `⚡️ Too long test name`,
           [
             '⚠️ Probably too long test name or the test name starts with space characters!',
@@ -187,18 +187,8 @@ export class Catch2Executable extends AbstractExecutable {
       resolvedFile,
       tags,
       description,
-      (container: vscode.TestItemCollection) =>
-        new Catch2Test(
-          this.shared,
-          this,
-          container,
-          this._catch2Version,
-          testName,
-          resolvedFile,
-          line,
-          tags,
-          description,
-        ),
+      (parent: vscode.TestItem | undefined) =>
+        new Catch2Test(this.shared, this, parent, this._catch2Version, testName, resolvedFile, line, tags, description),
       (test: Catch2Test) => test.update2(resolvedFile, line, tags, description),
     );
   };
@@ -613,24 +603,15 @@ class TestCaseTagProcessor extends TagProcessorBase {
   public constructor(
     shared: WorkspaceShared,
     builder: TestResultBuilder,
-    test: Catch2Test,
-    attribs: Record<string, string>,
+    private readonly test: Catch2Test,
+    private readonly attribs: Record<string, string>,
   ) {
     super(builder, shared);
-    builder.started();
+  }
 
-    //TODO:release: can we do better?
-    // if (attribs.filename !== test.file) {
-    //   shared.log.info(
-    //     'Test file location mismatch. Indicates that the executable is outdated.',
-    //     test.label,
-    //     test.file,
-    //     attribs.filename,
-    //   );
-    //   //:TODO:future:race condition
-    //   test.executable.reloadTests(shared.taskPool, shared.cancellationFlag);
-    // }
-    test.line = attribs.line;
+  public async begin(): Promise<void> {
+    this.builder.started();
+    await this.test.updateFL(this.attribs.filename, this.attribs.line);
   }
 
   public end(): void {

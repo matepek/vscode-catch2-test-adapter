@@ -12,6 +12,7 @@ import { CancellationFlag } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
 import { LoggerWrapper } from '../LoggerWrapper';
+import { TestItemParent } from '../TestItemManager';
 
 export class GoogleBenchmarkExecutable extends AbstractExecutable {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties) {
@@ -47,8 +48,8 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable {
       undefined,
       [],
       undefined,
-      (container: vscode.TestItemCollection) =>
-        new GoogleBenchmarkTest(this.shared, this, container, testName, this.properties.failIfExceedsLimitNs),
+      (parent: TestItemParent) =>
+        new GoogleBenchmarkTest(this.shared, this, parent, testName, this.properties.failIfExceedsLimitNs),
       (test: GoogleBenchmarkTest) => test.update2(this.properties.failIfExceedsLimitNs),
     );
   };

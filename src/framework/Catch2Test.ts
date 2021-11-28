@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
 import { AbstractTest, SharedWithTest } from '../AbstractTest';
 import { Version } from '../Util';
 import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';
+import { TestItemParent } from '../TestItemManager';
 
 ///
 
@@ -10,10 +10,10 @@ export class Catch2Test extends AbstractTest {
   public constructor(
     shared: SharedWithTest,
     executable: AbstractExecutable,
-    container: vscode.TestItemCollection,
+    parent: TestItemParent,
     frameworkVersion: Version | undefined,
     testNameAsId: string,
-    file: string | undefined,
+    resolvedFile: string | undefined,
     line: string | undefined,
     tags: string[],
     description: string | undefined,
@@ -44,10 +44,10 @@ export class Catch2Test extends AbstractTest {
     super(
       shared,
       executable,
-      container,
+      parent,
       testNameAsId,
       testNameAsId,
-      file,
+      resolvedFile,
       line,
       Catch2Test.isSkipped(tags, testNameAsId),
       forceIgnoreError,

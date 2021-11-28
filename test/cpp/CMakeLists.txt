@@ -16,7 +16,16 @@ endif()
 
 #
 
-file(WRITE "${PROJECT_BINARY_DIR}/.vscode/settings.json" "{\n  \"testMate.cpp.test.executables\": \"*.exe\",\n  \"testMate.cpp.log.logpanel\": true\n}\n")
+add_custom_command(
+  OUTPUT ".vscode/settings.json"
+  COMMAND mkdir ".vscode"
+  COMMAND echo "{\n  \"testMate.cpp.test.executables\": \"*.exe\",\n  \"testMate.cpp.log.logpanel\": true\n}\n" > ".vscode/settings.json"
+  VERBATIM
+)
+add_custom_target(
+  "settings.json" ALL
+  DEPENDS ".vscode/settings.json"
+)
 
 #
 

@@ -13,6 +13,7 @@ import { TestGrouping } from '../TestGroupingInterface';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { assert, debugAssert, debugBreak } from '../util/DevelopmentHelper';
 import { TestResultBuilder } from '../TestResultBuilder';
+import { TestItemParent } from '../TestItemManager';
 
 export class DOCExecutable extends AbstractExecutable {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, docVersion: Version | undefined) {
@@ -84,8 +85,8 @@ export class DOCExecutable extends AbstractExecutable {
       resolvedFile,
       tags,
       description,
-      (container: vscode.TestItemCollection) =>
-        new DOCTest(this.shared, this, container, testName, tags, resolvedFile, line, description, skippedB),
+      (parent: TestItemParent) =>
+        new DOCTest(this.shared, this, parent, testName, tags, resolvedFile, line, description, skippedB),
       (test: DOCTest) => test.update2(resolvedFile, line, tags, skippedB, description),
     );
   };
@@ -433,25 +434,16 @@ class TestCaseTagProcessor extends TagProcessorBase {
   constructor(
     shared: WorkspaceShared,
     builder: TestResultBuilder,
-    test: DOCTest,
+    private readonly test: DOCTest,
     private readonly attribs: Record<string, string>,
     _option: Option,
   ) {
     super(builder, shared, {});
-    builder.started();
+  }
 
-    //TODO:release: can we do better?
-    // if (attribs.filename !== test.file) {
-    //   shared.log.info(
-    //     'Test file location mismatch. Indicates that the executable is outdated.',
-    //     test.label,
-    //     test.file,
-    //     attribs.filename,
-    //   );
-    //   //:TODO:future:race condition
-    //   test.executable.reloadTests(shared.taskPool, shared.cancellationFlag);
-    // }
-    test.line = attribs.line;
+  public async begin(): Promise<void> {
+    this.builder.started();
+    await this.test.updateFL(this.attribs.filename, this.attribs.line);
   }
 
   public override onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {

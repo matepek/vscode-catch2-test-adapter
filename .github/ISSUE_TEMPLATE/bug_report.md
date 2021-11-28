@@ -19,6 +19,9 @@ about: Create a report to help us improve
 - [ ] Check the [known issues](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/support.md#known-issues) list.
 - [ ] The latest version of the extension was used.
 - [ ] It is not related to remote-vscode or I checked the following [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/201)
+- [ ] Imagine yourself into my position and think how hard to debug the issue without insufficient information.
+      I understand that you have privacy concerns and I expect you to understand that this extension is developed for free.
+      Thanks.
 
 **Describe the bug**
 
@@ -69,6 +72,8 @@ about: Create a report to help us improve
 **Log** (optional but recommended)
 
 <!--
+  PLEASE attach an EXTENSIVE log. A lot of times reportes just select what they think it is important and those logs sometime not sufficient.
+
   https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/support.md#getting-logs
 
   Attach log:
@@ -78,6 +83,7 @@ about: Create a report to help us improve
 
   _Warning_: Log probably contains file and test names too.
 
-  PLEASE attach an extensive log. A lot of times reportes just select what they think it is important and those logs sometime not sufficient.
-    (Even if you allowed sentry because that just reports important log messages but far from everything.)
+  PLEASE attach an EXTENSIVE log. A lot of times reportes just select what they think it is important and those logs sometime not sufficient.
+
+  I might forget to mention that PLEASE attach an EXTENSIVE log. A lot of times reportes just select what they think it is important and those logs sometime not sufficient.
 -->

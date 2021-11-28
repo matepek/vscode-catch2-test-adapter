@@ -1,13 +1,13 @@
-import * as vscode from 'vscode';
 import { AbstractTest, SharedWithTest } from '../AbstractTest';
 import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';
+import { TestItemParent } from '../TestItemManager';
 
 export class GoogleTestTest extends AbstractTest {
   public constructor(
     shared: SharedWithTest,
     executable: AbstractExecutable,
-    container: vscode.TestItemCollection,
+    parent: TestItemParent,
     testName: string,
     suiteName: string,
     typeParam: string | undefined,
@@ -19,7 +19,7 @@ export class GoogleTestTest extends AbstractTest {
     super(
       shared,
       executable,
-      container,
+      parent,
       testNameAsId,
       GoogleTestTest.calcLabel(testName),
       file,

@@ -23,6 +23,7 @@ import { debugAssert, debugBreak } from './util/DevelopmentHelper';
 import { SpawnBuilder } from './Spawner';
 import { SharedTestTags } from './SharedTestTags';
 import { Disposable } from './Util';
+import { FilePathResolver, TestItemParent } from './TestItemManager';
 
 export class TestsToRun {
   public readonly direct: AbstractTest[] = []; // test is drectly included, should be run even if it is skipped
@@ -34,7 +35,7 @@ export class TestsToRun {
   }
 }
 
-export abstract class AbstractExecutable implements Disposable {
+export abstract class AbstractExecutable implements Disposable, FilePathResolver {
   public constructor(
     public readonly shared: WorkspaceShared,
     public readonly properties: RunnableProperties,
@@ -81,20 +82,26 @@ export abstract class AbstractExecutable implements Disposable {
     return this._tests.get(testId) as T;
   }
 
-  private _getOrCreateChildGroup(
+  private async _getOrCreateChildGroup(
     idIn: string | undefined,
     label: string,
     description: string,
-    _tooltip: string, // tooltip currently is not supported
     itemOfLevel: vscode.TestItem | undefined,
-  ): vscode.TestItem {
-    const childrenOfLevel = itemOfLevel?.children ?? this.shared.rootItems;
+  ): Promise<vscode.TestItem> {
+    const childrenOfLevel = this.shared.testController.getChildCollection(itemOfLevel);
     const id = idIn ?? label;
     const found = childrenOfLevel.get(id);
     if (found) {
       return found;
     } else {
-      const testItem = this.shared.testItemCreator(id, label, undefined, undefined, undefined);
+      const testItem = await this.shared.testController.createOrReplace(
+        itemOfLevel,
+        id,
+        label,
+        undefined,
+        undefined,
+        undefined,
+      );
       testItem.description = description;
       testItem.tags = SharedTestTags.groupArray;
       childrenOfLevel.add(testItem);
@@ -107,14 +114,12 @@ export abstract class AbstractExecutable implements Disposable {
     id: string | undefined,
     label: string,
     description: string | undefined,
-    tooltip: string | undefined,
     varsToResolve: ResolveRuleAsync<string>[],
   ): Promise<vscode.TestItem> {
     const resolvedLabel = await this.resolveText(label, ...varsToResolve);
     const resolvedDescr = description !== undefined ? await this.resolveText(description, ...varsToResolve) : '';
-    const resolvedToolt = tooltip !== undefined ? await this.resolveText(tooltip, ...varsToResolve) : '';
 
-    return this._getOrCreateChildGroup(id, resolvedLabel, resolvedDescr, resolvedToolt, itemOfLevel);
+    return this._getOrCreateChildGroup(id, resolvedLabel, resolvedDescr, itemOfLevel);
   }
 
   private _updateVarsWithTags(tg: TestGrouping, tags: string[], tagsResolveRule: ResolveRuleAsync<string>): void {
@@ -167,14 +172,14 @@ export abstract class AbstractExecutable implements Disposable {
   protected async _createTreeAndAddTest<T extends AbstractTest>(
     testGrouping: TestGrouping,
     testId: string,
-    file: string | undefined,
+    resolvedFile: string | undefined,
     tags: string[], // in case of google test it is the TestCase
     _description: string | undefined, // currently we don't use it for subtree creation
-    createTest: (container: vscode.TestItemCollection) => T,
+    createTest: (parent: TestItemParent) => T,
     updateTest: (test: T) => void,
   ): Promise<T> {
     this.shared.log.info('testGrouping', testId);
-    this.shared.log.debug('testGrouping', { testId, file, tags, testGrouping });
+    this.shared.log.debug('testGrouping', { testId, file: resolvedFile, tags, testGrouping });
 
     tags.sort();
 
@@ -182,12 +187,12 @@ export abstract class AbstractExecutable implements Disposable {
       resolve: AbstractExecutable._tagVar,
       rule: '', // will be filled soon enough
     };
-    const sourceRelPath = file ? pathlib.relative(this.shared.workspaceFolder.uri.fsPath, file) : '';
+    const sourceRelPath = resolvedFile ? pathlib.relative(this.shared.workspaceFolder.uri.fsPath, resolvedFile) : '';
 
     const varsToResolve = [
       tagsResolveRule,
       createPythonIndexerForPathVariable('sourceRelPath', sourceRelPath),
-      createPythonIndexerForPathVariable('sourceAbsPath', file ? file : ''),
+      createPythonIndexerForPathVariable('sourceAbsPath', resolvedFile ? resolvedFile : ''),
     ];
 
     // undefined means root
@@ -204,14 +209,7 @@ export abstract class AbstractExecutable implements Disposable {
           const label = g.label !== undefined ? g.label : '${filename}';
           const description = g.description !== undefined ? g.description : '${relDirpath}${osPathSep}';
 
-          itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
-            itemOfLevel,
-            id,
-            label,
-            description,
-            `Path: ${this.properties.path}\nCwd: ${this.properties.options.cwd}`,
-            varsToResolve,
-          );
+          itemOfLevel = await this._resolveAndGetOrCreateChildGroup(itemOfLevel, id, label, description, varsToResolve);
 
           this._execItem.item = itemOfLevel;
 
@@ -220,7 +218,7 @@ export abstract class AbstractExecutable implements Disposable {
           const g = currentGrouping.groupBySource;
           this._updateVarsWithTags(g, tags, tagsResolveRule);
 
-          if (file) {
+          if (resolvedFile) {
             const label = g.label ? g.label : sourceRelPath;
             const description = g.description;
 
@@ -229,15 +227,26 @@ export abstract class AbstractExecutable implements Disposable {
               undefined,
               label,
               description,
-              undefined,
               varsToResolve,
             );
+
+            //TODO
+            // if (resolvedFile && itemOfLevel.uri === undefined) {
+            //   itemOfLevel = await this.shared.testController.update(
+            //     itemOfLevel,
+            //     resolvedFile,
+            //     undefined,
+            //     this,
+            //     null,
+            //     null,
+            //     null,
+            //   );
+            // }
           } else if (g.groupUngroupedTo) {
             itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
               itemOfLevel,
               undefined,
               g.groupUngroupedTo,
-              undefined,
               undefined,
               varsToResolve,
             );
@@ -260,7 +269,6 @@ export abstract class AbstractExecutable implements Disposable {
                   undefined,
                   g.label ? g.label : AbstractExecutable._tagVar,
                   g.description,
-                  undefined,
                   varsToResolve,
                 );
               } else if (g.groupUngroupedTo) {
@@ -268,7 +276,6 @@ export abstract class AbstractExecutable implements Disposable {
                   itemOfLevel,
                   undefined,
                   g.groupUngroupedTo,
-                  undefined,
                   undefined,
                   varsToResolve,
                 );
@@ -284,7 +291,6 @@ export abstract class AbstractExecutable implements Disposable {
                   undefined,
                   g.label ? g.label : AbstractExecutable._tagVar,
                   g.description,
-                  undefined,
                   varsToResolve,
                 );
               } else if (g.groupUngroupedTo) {
@@ -292,7 +298,6 @@ export abstract class AbstractExecutable implements Disposable {
                   itemOfLevel,
                   undefined,
                   g.groupUngroupedTo,
-                  undefined,
                   undefined,
                   varsToResolve,
                 );
@@ -351,7 +356,6 @@ export abstract class AbstractExecutable implements Disposable {
                   undefined,
                   label,
                   description,
-                  undefined,
                   varsToResolve,
                 );
               } else if (g.groupUngroupedTo) {
@@ -359,7 +363,6 @@ export abstract class AbstractExecutable implements Disposable {
                   itemOfLevel,
                   undefined,
                   g.groupUngroupedTo,
-                  undefined,
                   undefined,
                   varsToResolve,
                 );
@@ -379,17 +382,16 @@ export abstract class AbstractExecutable implements Disposable {
       this.shared.log.exceptionS(e);
     }
 
-    const childrenOfLevel = itemOfLevel?.children ?? this.shared.rootItems;
-    const found = childrenOfLevel.get(testId);
+    const found = this.shared.testController.getChildCollection(itemOfLevel).get(testId);
 
     if (found) {
-      const test = this.shared.testItemMapper(found) as T;
+      const test = this.shared.testController.map(found) as T;
       if (!test) throw Error('missing test for item');
       updateTest(test);
       this._addTest(test.id, test);
       return test;
     } else {
-      const test = createTest(childrenOfLevel);
+      const test = createTest(itemOfLevel);
       this._addTest(test.id, test);
       return test;
     }
@@ -398,12 +400,11 @@ export abstract class AbstractExecutable implements Disposable {
   private removeWithLeafAscendants(testItem: vscode.TestItem, evenIfHasChildren = false): void {
     if (!evenIfHasChildren && testItem.children.size > 0) return;
 
-    if (testItem.parent) {
-      const parent = testItem.parent;
-      parent.children.delete(testItem.id);
+    const parent = testItem.parent;
+    this.shared.testController.getChildCollection(parent).delete(testItem.id);
+
+    if (parent) {
       this.removeWithLeafAscendants(parent);
-    } else {
-      this.shared.rootItems.delete(testItem.id);
     }
   }
 
@@ -411,12 +412,12 @@ export abstract class AbstractExecutable implements Disposable {
     this.removeWithLeafAscendants(test.item, true);
   }
 
-  protected _createAndAddError(label: string, message: string): void {
-    this._execItem.setError(label, message);
+  protected async _createAndAddError(label: string, message: string): Promise<void> {
+    await this._execItem.setError(label, message);
   }
 
-  protected _createAndAddUnexpectedStdError(stdout: string, stderr: string): void {
-    this._createAndAddError(
+  protected async _createAndAddUnexpectedStdError(stdout: string, stderr: string): Promise<void> {
+    await this._createAndAddError(
       `⚡️ Unexpected ERROR while parsing`,
       [
         `❗️Unexpected stderr!`,
@@ -867,21 +868,21 @@ class ExecutableGroup {
     }));
   }
 
-  public setError(label: string, message: string): void {
+  public async setError(label: string, message: string): Promise<void> {
     const l = label + ': ' + message;
     if (this._item) {
       this._item.error = l;
       this.removeSpecialItem();
     } else {
       if (!this._itemForStaticError) {
-        this._itemForStaticError = this.executable.shared.testItemCreator(
+        this._itemForStaticError = await this.executable.shared.testController.createOrReplace(
+          undefined,
           this.executable.properties.path,
           this.executable.properties.path,
           undefined,
           undefined,
           undefined,
         );
-        this.executable.shared.rootItems.add(this._itemForStaticError);
       }
       this._itemForStaticError.error = l;
     }
@@ -894,7 +895,9 @@ class ExecutableGroup {
 
   private removeSpecialItem(): void {
     if (this._itemForStaticError) {
-      this.executable.shared.rootItems.delete(this._itemForStaticError.id);
+      this.executable.shared.testController
+        .getChildCollection(this._itemForStaticError.parent)
+        .delete(this._itemForStaticError.id);
       this._itemForStaticError = undefined;
     }
   }

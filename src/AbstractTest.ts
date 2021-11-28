@@ -1,30 +1,28 @@
 import * as vscode from 'vscode';
-import { parseLine } from './Util';
 import { AbstractExecutable } from './AbstractExecutable';
 import { LoggerWrapper } from './LoggerWrapper';
-import { TestCreator } from './WorkspaceShared';
 import { debugAssert } from './util/DevelopmentHelper';
 import { SharedTestTags } from './SharedTestTags';
+import { TestItemManager } from './TestItemManager';
 
 ///
 
 export interface SharedWithTest {
   log: LoggerWrapper;
-  testItemCreator: TestCreator;
+  testController: TestItemManager;
 }
 ///
 
 export abstract class AbstractTest {
   private _item: vscode.TestItem;
-  private _line: number | undefined = undefined;
 
   protected constructor(
     public readonly shared: SharedWithTest,
     public readonly executable: AbstractExecutable,
-    private readonly _container: vscode.TestItemCollection,
+    parent: vscode.TestItem | undefined,
     public readonly id: string, // identifies the test inside the executable
     label: string, // usually the same as testId
-    private _file: string | undefined,
+    resolvedFile: string | undefined,
     line: string | undefined,
     private _skipped: boolean,
     private _staticError: string[] | undefined,
@@ -34,59 +32,57 @@ export abstract class AbstractTest {
     public readonly debuggable = true,
     public readonly runnable = true,
   ) {
-    _tags.sort();
-    this._line = parseLine(line);
+    this._item = this.shared.testController.createOrReplace(parent, id, label, resolvedFile, line, this);
 
-    this._item = this._createItem(label, description);
-    this._container.add(this._item);
+    this._item.description = description;
+
+    if (this._staticError) {
+      debugAssert(this._staticError.length > 0);
+      this._item.error = this._staticError.join('\n');
+    }
+
+    this._item.tags = this._calcTags();
   }
 
   public get item(): Readonly<vscode.TestItem> {
     return this._item;
   }
 
-  private _createItem(label: string, description: string | undefined): vscode.TestItem {
-    const item = this.shared.testItemCreator(this.id, label, this._file, this._line, this);
-
-    item.description = description;
-
-    if (this._staticError) {
-      debugAssert(this._staticError.length > 0);
-      item.error = this._staticError.join('\n');
-    }
-
-    item.tags = this._calcTags();
-
-    return item;
+  public get file(): string | undefined {
+    return this._item.uri?.path;
   }
 
-  // null means unchanged
-  public update(
+  public get line(): string | undefined {
+    return this._item.range?.start.line.toString();
+  }
+
+  public async updateFL(file: string | undefined, line: string | undefined): Promise<void> {
+    const oldItem = this._item;
+    this._item = await this.shared.testController.update(this._item, file, line, this.executable, null, null, null);
+    if (oldItem !== this._item) {
+      this.shared.log.info('TestItem locaction has been updated', {
+        old: oldItem.uri?.path,
+        current: this._item.uri?.path,
+      });
+    }
+  }
+
+  public async update(
     label: string | null,
     file: string | undefined,
     line: string | undefined,
     skipped: boolean | null,
     description: string | undefined | null,
     tags: string[] | null,
-  ): void {
-    if (tags !== null) this._tags = tags;
-
-    if (this._file !== file) {
-      this._file = file;
-      this._line = parseLine(line);
-      const item = this._createItem(
-        label !== null ? label : this._item.label,
-        description !== null ? description : this._item.description,
-      );
-      this._container.delete(this._item.id);
-      this._container.add(item);
-      this._item = item;
-    } else {
-      if (label !== null) this._item.label = label;
-      this.line = line;
-      if (description !== null) this._item.description = description;
-      if (tags !== null) this._item.tags = this._calcTags();
+  ): Promise<void> {
+    let tagsCalculated: vscode.TestTag[] | null = null;
+    if (tags !== null) {
+      this._tags = tags;
+      tagsCalculated = this._calcTags();
     }
+
+    this.shared.testController.update(this._item, file, line, this.executable, label, description, tagsCalculated);
+
     if (skipped !== null && this._skipped !== skipped) {
       this._skipped = skipped;
       this._skipReported = false;
@@ -95,36 +91,6 @@ export abstract class AbstractTest {
 
   public get label(): string {
     return this._item.label;
-  }
-
-  public get file(): string | undefined {
-    return this._file;
-  }
-
-  public set file(file: string | undefined) {
-    if (this._file !== file) {
-      this._file = file;
-      const item = this._createItem(this._item.label, this._item.description);
-      this._container.delete(this._item.id);
-      this._container.add(item);
-      this._item = item;
-    }
-  }
-
-  public get line(): number | undefined {
-    return this._line;
-  }
-
-  public set line(line: string | number | undefined) {
-    const newLine = parseLine(line);
-    if (newLine !== this._line) {
-      this._line = newLine;
-      this._item.range = newLine !== undefined ? new vscode.Range(newLine - 1, 0, newLine - 1, 0) : undefined;
-    }
-  }
-
-  public set description(description: string | undefined) {
-    this._item.description = description;
   }
 
   public get skipped(): boolean {
@@ -248,7 +214,7 @@ export class SubTest extends AbstractTest {
     super(
       shared,
       executable,
-      parent.children,
+      parent,
       id,
       '⤷',
       file,

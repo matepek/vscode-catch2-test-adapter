@@ -2,22 +2,21 @@ import * as vscode from 'vscode';
 import { Config, Configurations } from './Configurations';
 import { LoggerWrapper } from './LoggerWrapper';
 import { createPythonIndexerForPathVariable, ResolveRuleAsync, resolveVariablesAsync } from './util/ResolveRule';
-import { TestCreator, TestItemMapper, WorkspaceShared } from './WorkspaceShared';
+import { WorkspaceShared } from './WorkspaceShared';
 import { sep as osPathSeparator } from 'path';
 import { TaskQueue } from './util/TaskQueue';
 import { AbstractExecutable, TestsToRun } from './AbstractExecutable';
 import { ExecutableConfig } from './ExecutableConfig';
 import { generateId } from './Util';
 import { AbstractTest } from './AbstractTest';
+import { TestItemManager } from './TestItemManager';
 
 //TODO:release if workspace contains ".vscode/testMate.cpp.json" we have to start loading the tests
 export class WorkspaceManager implements vscode.Disposable {
   public constructor(
     private readonly workspaceFolder: vscode.WorkspaceFolder,
     private readonly log: LoggerWrapper,
-    rootItems: vscode.TestItemCollection,
-    testItemCreator: TestCreator,
-    testItemMapper: TestItemMapper,
+    testItemManager: TestItemManager,
   ) {
     const workspaceNameRes: ResolveRuleAsync = { resolve: '${workspaceName}', rule: this.workspaceFolder.name };
 
@@ -112,10 +111,8 @@ export class WorkspaceManager implements vscode.Disposable {
 
     this._shared = new WorkspaceShared(
       workspaceFolder,
-      rootItems,
       log,
-      testItemCreator,
-      testItemMapper,
+      testItemManager,
       executeTask,
       variableToValue,
       configuration.getRandomGeneratorSeed(),

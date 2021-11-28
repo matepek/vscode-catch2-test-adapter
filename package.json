@@ -37,7 +37,7 @@
     "google benchmark",
     "gbenchmark"
   ],
-  "main": "out/dist/main.js",
+  "main": "out/src/main.js",
   "scripts": {
     "reinstall": "rimraf node_modules package-lock.json && npm install",
     "clean": "rimraf out node_modules vscode-catch2-test-adapter-*.vsix",
@@ -462,10 +462,7 @@
                           "groupByRegex": {
                             "type": "object"
                           }
-                        },
-                        "required": [
-                          "sourceIndex"
-                        ]
+                        }
                       },
                       "groupByTags": {
                         "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
@@ -704,10 +701,7 @@
                           "groupByRegex": {
                             "type": "object"
                           }
-                        },
-                        "required": [
-                          "sourceIndex"
-                        ]
+                        }
                       },
                       "groupByTags": {
                         "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
@@ -940,10 +934,7 @@
                           "groupByRegex": {
                             "type": "object"
                           }
-                        },
-                        "required": [
-                          "sourceIndex"
-                        ]
+                        }
                       },
                       "groupByTags": {
                         "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
@@ -1176,10 +1167,7 @@
                           "groupByRegex": {
                             "type": "object"
                           }
-                        },
-                        "required": [
-                          "sourceIndex"
-                        ]
+                        }
                       },
                       "groupByTags": {
                         "markdownDescription": "Group test by tags. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
