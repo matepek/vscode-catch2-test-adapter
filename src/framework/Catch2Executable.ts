@@ -8,7 +8,7 @@ import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { Catch2Test } from './Catch2Test';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { RunningExecutable } from '../RunningExecutable';
-import { AbstractTest } from '../AbstractTest';
+import { AbstractTest, SubTestTree } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
@@ -433,12 +433,16 @@ class TestCaseListingProcessor implements XmlTagProcessor {
 ///
 
 abstract class TagProcessorBase implements XmlTagProcessor {
-  constructor(public readonly builder: TestResultBuilder, protected readonly shared: WorkspaceShared) {}
+  constructor(
+    public readonly builder: TestResultBuilder,
+    protected readonly shared: WorkspaceShared,
+    protected readonly sections: SubTestTree,
+  ) {}
 
   public onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
     const procCreator = TagProcessorBase.openTagProcessorMap.get(tag.name);
     if (procCreator) {
-      return procCreator(tag, this.builder, this.shared);
+      return procCreator(tag, this.builder, this.shared, this.sections);
     } else if (procCreator === null) {
       // known tag, do nothing
     } else {
@@ -491,11 +495,12 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         tag: XmlTag,
         builder: TestResultBuilder,
         shared: WorkspaceShared,
+        sections: SubTestTree,
       ) => void | XmlTagProcessor | Promise<void | XmlTagProcessor>)
   > = new Map([
     [
       'OverallResult',
-      (tag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
+      (tag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared, _sections: SubTestTree): void => {
         builder.setDurationMilisec(parseFloat(tag.attribs.durationInSeconds) * 1000);
         if (tag.attribs.success === 'true') {
           builder.passed();
@@ -525,8 +530,12 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'Section',
-      (tag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared): Promise<XmlTagProcessor> =>
-        SectionProcessor.create(shared, builder, tag.attribs),
+      (
+        tag: XmlTag,
+        builder: TestResultBuilder,
+        shared: WorkspaceShared,
+        sections: SubTestTree,
+      ): Promise<XmlTagProcessor> => SectionProcessor.create(shared, builder, tag.attribs, sections),
     ],
     [
       'BenchmarkResults',
@@ -599,18 +608,14 @@ abstract class TagProcessorBase implements XmlTagProcessor {
 
 ///
 
-//type SectionTree = Map<string, SectionTree>;
-
 class TestCaseTagProcessor extends TagProcessorBase {
-  //TODO:private readonly sections: SectionTree = new Map();
-
   public constructor(
     shared: WorkspaceShared,
     builder: TestResultBuilder,
     private readonly test: Catch2Test,
     private readonly attribs: Record<string, string>,
   ) {
-    super(builder, shared);
+    super(builder, shared, new Map());
   }
 
   async begin(): Promise<void> {
@@ -619,6 +624,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
   }
 
   end(): void {
+    this.builder.test.removeMissingSubTests(this.sections);
     this.builder.build();
   }
 }
@@ -626,17 +632,29 @@ class TestCaseTagProcessor extends TagProcessorBase {
 ///
 
 class SectionProcessor extends TagProcessorBase {
-  public static async create(shared: WorkspaceShared, testBuilder: TestResultBuilder, attribs: Record<string, string>) {
+  public static async create(
+    shared: WorkspaceShared,
+    testBuilder: TestResultBuilder,
+    attribs: Record<string, string>,
+    sections: SubTestTree,
+  ) {
     if (typeof attribs.name !== 'string' || !attribs.name) throw Error('Section must have name attribute');
 
     const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, undefined, attribs.filename, attribs.line);
     const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
-    return new SectionProcessor(shared, subTestBuilder);
+
+    let subSections = sections.get(attribs.name);
+    if (subSections === undefined) {
+      subSections = new Map();
+      sections.set(attribs.name, subSections);
+    }
+
+    return new SectionProcessor(shared, subTestBuilder, subSections);
   }
 
-  private constructor(shared: WorkspaceShared, testBuilder: TestResultBuilder) {
+  private constructor(shared: WorkspaceShared, testBuilder: TestResultBuilder, sections: SubTestTree) {
     testBuilder.started();
-    super(testBuilder, shared);
+    super(testBuilder, shared, sections);
   }
 
   public end(): void {

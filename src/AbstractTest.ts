@@ -151,11 +151,6 @@ export abstract class AbstractTest {
 
   ///
 
-  public resolve(): Promise<void> {
-    if (this._subTests) this._item.children.replace([...this._subTests].map(x => x[1].item));
-    return Promise.resolve();
-  }
-
   private _subTests: Map<string /*id*/, SubTest> | undefined = undefined;
 
   public async getOrCreateSubTest(
@@ -196,7 +191,24 @@ export abstract class AbstractTest {
     this._item.children.replace([]);
     this._subTests = undefined;
   }
+
+  public removeMissingSubTests(subTestTree: SubTestTree): void {
+    this._item.children.forEach(c => {
+      const subSections = subTestTree.get(c.id);
+      if (subSections) {
+        const subTest = this._subTests?.get(c.id);
+        if (subTest) subTest.removeMissingSubTests(subSections);
+      } else {
+        this._item.children.delete(c.id);
+        this._subTests?.delete(c.id);
+      }
+    });
+  }
 }
+
+///
+
+export type SubTestTree = Map<string, SubTestTree>;
 
 ///
 
