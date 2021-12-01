@@ -20,6 +20,7 @@ import { RunTask, ExecutionWrapper, FrameworkSpecific } from './AdvancedExecutab
 import { LoggerWrapper } from './LoggerWrapper';
 import { debugBreak } from './util/DevelopmentHelper';
 import { FrameworkType } from './framework/Framework';
+import { readFileSync } from 'fs';
 
 ///
 
@@ -281,7 +282,26 @@ export class ExecutableConfig implements vscode.Disposable {
     if (this._envFile) {
       const resolvedEnvFile = await this._pathProcessor(this._envFile, varToValue);
       try {
-        const envFromFile = readJSONSync(resolvedEnvFile.absPath);
+        let envFromFile: Record<string, string> | undefined = undefined;
+        if (resolvedEnvFile.absPath.endsWith('.json')) {
+          envFromFile = readJSONSync(resolvedEnvFile.absPath);
+        } else if (resolvedEnvFile.absPath.endsWith('.env')) {
+          const content = readFileSync(resolvedEnvFile.absPath).toString();
+          envFromFile = {};
+          content
+            .split(/\r?\n/)
+            .map(line => line.split('='))
+            .forEach(entry => {
+              if (entry.length === 2) {
+                envFromFile![entry[0]] = entry[1];
+              } else {
+                throw Error('Unknown line in: "' + resolvedEnvFile.absPath + '"' + entry);
+              }
+            });
+        } else {
+          throw Error('Unsupported file format: "' + resolvedEnvFile.absPath + '". Use only .json or .env');
+        }
+
         if (typeof envFromFile !== 'object') throw Error('envFile is not a JSON object');
 
         const props = Object.getOwnPropertyNames(envFromFile);

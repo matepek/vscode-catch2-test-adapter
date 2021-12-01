@@ -599,7 +599,11 @@ abstract class TagProcessorBase implements XmlTagProcessor {
 
 ///
 
+//type SectionTree = Map<string, SectionTree>;
+
 class TestCaseTagProcessor extends TagProcessorBase {
+  //TODO:private readonly sections: SectionTree = new Map();
+
   public constructor(
     shared: WorkspaceShared,
     builder: TestResultBuilder,
@@ -609,12 +613,12 @@ class TestCaseTagProcessor extends TagProcessorBase {
     super(builder, shared);
   }
 
-  public async begin(): Promise<void> {
+  async begin(): Promise<void> {
     this.builder.started();
     await this.test.updateFL(this.attribs.filename, this.attribs.line);
   }
 
-  public end(): void {
+  end(): void {
     this.builder.build();
   }
 }
