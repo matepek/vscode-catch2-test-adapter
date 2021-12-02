@@ -19,10 +19,6 @@ export type AdvancedExecutable = {
   strictPattern?: boolean;
   markAsSkipped?: boolean;
   waitForBuildProcess?: boolean;
-  catch2?: FrameworkSpecific;
-  gtest?: FrameworkSpecific;
-  doctest?: FrameworkSpecific;
-  gbenchmark?: FrameworkSpecific;
   testGrouping?: TestGrouping;
   executionWrapper?: ExecutionWrapper;
   sourceFileMap?: Record<string, string>;
