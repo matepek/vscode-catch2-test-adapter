@@ -61,7 +61,7 @@ export class ExecutableFactory {
           this._varToValue,
           this._execPath,
           this._execOptions,
-          this._frameworkSpecific.catch2,
+          frameworkSpecific,
           this._parallelizationLimit,
           this._markAsSkipped,
           this._runTask,

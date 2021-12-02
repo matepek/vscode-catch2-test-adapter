@@ -3,26 +3,15 @@ import * as vscode from 'vscode';
 import { TaskPool } from './util/TaskPool';
 import { ResolveRuleAsync } from './util/ResolveRule';
 import { BuildProcessChecker } from './util/BuildProcessChecker';
-import { AbstractTest, SharedWithTest } from './AbstractTest';
+import { SharedWithTest } from './AbstractTest';
 import { CancellationFlag } from './Util';
-
-export type TestCreator = (
-  id: string,
-  label: string,
-  file: string | undefined,
-  line: string | number | undefined,
-  testData: AbstractTest | undefined,
-) => vscode.TestItem;
-
-export type TestItemMapper = (item: vscode.TestItem) => AbstractTest | undefined;
+import { TestItemManager } from './TestItemManager';
 
 export class WorkspaceShared implements SharedWithTest {
   public constructor(
     public readonly workspaceFolder: vscode.WorkspaceFolder,
-    public readonly rootItems: vscode.TestItemCollection,
     public readonly log: LoggerWrapper,
-    public readonly testItemCreator: TestCreator,
-    public readonly testItemMapper: TestItemMapper,
+    public readonly testController: TestItemManager,
     public readonly executeTask: (
       taskName: string,
       varsToResolve: readonly ResolveRuleAsync[],

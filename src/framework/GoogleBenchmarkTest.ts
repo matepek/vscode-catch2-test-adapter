@@ -1,20 +1,20 @@
-import * as vscode from 'vscode';
 import { AbstractTest, SharedWithTest } from '../AbstractTest';
 import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';
+import { TestItemParent } from '../TestItemManager';
 
 export class GoogleBenchmarkTest extends AbstractTest {
   public constructor(
     shared: SharedWithTest,
     executable: AbstractExecutable,
-    container: vscode.TestItemCollection,
+    parent: TestItemParent,
     testNameAsId: string,
     public failIfExceedsLimitNs: number | undefined,
   ) {
     super(
       shared,
       executable,
-      container,
+      parent,
       testNameAsId,
       testNameAsId,
       undefined,

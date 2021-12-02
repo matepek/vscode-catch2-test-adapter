@@ -15,6 +15,7 @@ import { TestResultBuilder } from '../TestResultBuilder';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
+import { TestItemParent } from '../TestItemManager';
 import { pipeProcess2Parser } from '../util/ParserInterface';
 
 export class GoogleTestExecutable extends AbstractExecutable {
@@ -117,18 +118,8 @@ export class GoogleTestExecutable extends AbstractExecutable {
       resolvedFile,
       [suiteName],
       undefined,
-      (container: vscode.TestItemCollection) =>
-        new GoogleTestTest(
-          this.shared,
-          this,
-          container,
-          testName,
-          suiteName,
-          typeParam,
-          valueParam,
-          resolvedFile,
-          line,
-        ),
+      (parent: TestItemParent) =>
+        new GoogleTestTest(this.shared, this, parent, testName, suiteName, typeParam, valueParam, resolvedFile, line),
       (test: GoogleTestTest) => test.update2(testName, suiteName, resolvedFile, line, typeParam, valueParam),
     );
   };
@@ -184,8 +175,8 @@ export class GoogleTestExecutable extends AbstractExecutable {
 
         return result;
       } else {
-        this.shared.log.info(
-          "Couldn't parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output",
+        this.shared.log.warn(
+          "Couldn't parse output file. Possibly it is an older version of Google Test framework, NAVIGATION MIGHT WON'T WOKR. Fallback logic: Trying of parsing the output...",
         );
 
         try {

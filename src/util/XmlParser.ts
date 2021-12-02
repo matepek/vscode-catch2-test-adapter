@@ -40,7 +40,7 @@ export class XmlParser extends htmlparser2.Parser implements ParserInterface {
               if (processor) {
                 this.xmlTagProcessorStack.push(this.topTagProcessor);
                 this.topTagProcessor = { tag, processor, nesting: 0 };
-                if (processor.begin) processor.begin(tag);
+                if (processor.begin) await processor.begin(tag);
               } else {
                 if (this.topTagProcessor.tag.name === name) this.topTagProcessor.nesting++;
               }
@@ -150,7 +150,7 @@ export interface XmlTag {
 }
 
 export interface XmlTagProcessor {
-  begin?(tag: XmlTag): void;
+  begin?(tag: XmlTag): void | Promise<void>;
   end?(): void | Promise<void>;
 
   /**

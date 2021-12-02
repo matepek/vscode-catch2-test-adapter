@@ -13,6 +13,8 @@ import { TestGrouping } from '../TestGroupingInterface';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { assert, debugAssert, debugBreak } from '../util/DevelopmentHelper';
 import { TestResultBuilder } from '../TestResultBuilder';
+import { TestItemParent } from '../TestItemManager';
+import { SubTestTree } from '../AbstractTest';
 import { pipeProcess2Parser } from '../util/ParserInterface';
 
 export class DOCExecutable extends AbstractExecutable {
@@ -85,8 +87,8 @@ export class DOCExecutable extends AbstractExecutable {
       resolvedFile,
       tags,
       description,
-      (container: vscode.TestItemCollection) =>
-        new DOCTest(this.shared, this, container, testName, tags, resolvedFile, line, description, skippedB),
+      (parent: TestItemParent) =>
+        new DOCTest(this.shared, this, parent, testName, tags, resolvedFile, line, description, skippedB),
       (test: DOCTest) => test.update2(resolvedFile, line, tags, skippedB, description),
     );
   };
@@ -308,12 +310,13 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     public readonly builder: TestResultBuilder,
     protected readonly shared: WorkspaceShared,
     protected readonly caseData: CaseData,
+    protected readonly subCases: SubTestTree,
   ) {}
 
   public onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
     const procCreator = TagProcessorBase.openTagProcessorMap.get(tag.name);
     if (procCreator) {
-      return procCreator(tag, this.builder, this.caseData, this.shared);
+      return procCreator(tag, this.builder, this.caseData, this.shared, this.subCases);
     } else if (procCreator === null) {
       // known tag, do nothing
     } else {
@@ -356,6 +359,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         builder: TestResultBuilder,
         caseData: CaseData,
         shared: WorkspaceShared,
+        subCases: SubTestTree,
       ) => void | XmlTagProcessor | Promise<void | XmlTagProcessor>)
   > = new Map([
     [
@@ -365,9 +369,10 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         builder: TestResultBuilder,
         caseData: CaseData,
         shared: WorkspaceShared,
+        subCases: SubTestTree,
       ): void | XmlTagProcessor | Promise<XmlTagProcessor> => {
         // if name is missing we don't create subcase for it
-        if (tag.attribs.name) return SubCaseProcessor.create(shared, builder, tag.attribs, caseData);
+        if (tag.attribs.name) return SubCaseProcessor.create(shared, builder, tag.attribs, caseData, subCases);
       },
     ],
     [
@@ -419,25 +424,16 @@ class TestCaseTagProcessor extends TagProcessorBase {
   constructor(
     shared: WorkspaceShared,
     builder: TestResultBuilder,
-    test: DOCTest,
+    private readonly test: DOCTest,
     private readonly attribs: Record<string, string>,
     _option: Option,
   ) {
-    super(builder, shared, {});
-    builder.started();
+    super(builder, shared, {}, new Map());
+  }
 
-    //TODO:release: can we do better?
-    // if (attribs.filename !== test.file) {
-    //   shared.log.info(
-    //     'Test file location mismatch. Indicates that the executable is outdated.',
-    //     test.label,
-    //     test.file,
-    //     attribs.filename,
-    //   );
-    //   //:TODO:future:race condition
-    //   test.executable.reloadTests(shared.taskPool, shared.cancellationFlag);
-    // }
-    test.line = attribs.line;
+  public async begin(): Promise<void> {
+    this.builder.started();
+    await this.test.updateFL(this.attribs.filename, this.attribs.line);
   }
 
   public override onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
@@ -468,6 +464,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
       }
 
       this.builder[result]();
+      TODO: this.builder.test.removeMissingSubTests(this.subCases);
       this.builder.build();
     } else {
       return super.onopentag(tag);
@@ -483,6 +480,7 @@ class SubCaseProcessor extends TagProcessorBase {
     testBuilder: TestResultBuilder,
     attribs: Record<string, string>,
     parentCaseData: CaseData,
+    subCases: SubTestTree,
   ): Promise<SubCaseProcessor> {
     if (typeof attribs.name !== 'string' || !attribs.name) throw Error('Section must have name attribute');
 
@@ -495,13 +493,24 @@ class SubCaseProcessor extends TagProcessorBase {
     const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, label, attribs.filename, attribs.line);
     const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
 
-    return new SubCaseProcessor(shared, subTestBuilder, parentCaseData);
+    let subSubCases = subCases.get(attribs.name);
+    if (subSubCases === undefined) {
+      subSubCases = new Map();
+      subCases.set(attribs.name, subSubCases);
+    }
+
+    return new SubCaseProcessor(shared, subTestBuilder, parentCaseData, subSubCases);
   }
 
-  private constructor(shared: WorkspaceShared, testBuilder: TestResultBuilder, parentCaseData: CaseData) {
+  private constructor(
+    shared: WorkspaceShared,
+    testBuilder: TestResultBuilder,
+    parentCaseData: CaseData,
+    subCases: SubTestTree,
+  ) {
     testBuilder.started();
 
-    super(testBuilder, shared, parentCaseData);
+    super(testBuilder, shared, parentCaseData, subCases);
   }
 
   //doctest does not provide result for sub-cases, no point to build

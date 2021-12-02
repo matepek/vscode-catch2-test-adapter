@@ -159,6 +159,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { promisify } from 'util';
 import { LoggerWrapper } from './LoggerWrapper';
+
 type VersionT = [number, number, number];
 export class GoogleTestVersionFinder {
   private static readonly _versions: [number, VersionT][] = [

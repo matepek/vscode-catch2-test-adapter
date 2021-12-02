@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
 import { AbstractExecutable, TestsToRun } from './AbstractExecutable';
-import { AbstractTest } from './AbstractTest';
 import { LoggerWrapper } from './LoggerWrapper';
-import { parseLine } from './Util';
 import { WorkspaceManager } from './WorkspaceManager';
 import { SharedTestTags } from './SharedTestTags';
+import { TestItemManager } from './TestItemManager';
 
 ///
 
@@ -13,15 +12,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   log.info('Activating extension');
   const controller = vscode.tests.createTestController('testmatecpp', 'TestMate C++');
   const workspace2manager = new Map<vscode.WorkspaceFolder, WorkspaceManager>();
-  const testItem2test = new WeakMap<vscode.TestItem, AbstractTest>();
+  const testItemManager = new TestItemManager(controller);
 
   ///
 
   controller.resolveHandler = (item: vscode.TestItem | undefined): Thenable<void> => {
     if (item) {
-      const testData = testItem2test.get(item);
+      const testData = testItemManager.map(item);
       if (testData) {
-        return testData.resolve();
+        return Promise.resolve(); //testData.resolve();
       } else {
         log.errorS('Missing TestData for item', item.id, item.label);
         return Promise.resolve();
@@ -33,25 +32,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   ///
 
-  const testItemCreator = (
-    id: string,
-    label: string,
-    file: string | undefined,
-    line: string | number | undefined,
-    testData: AbstractTest | undefined,
-  ) => {
-    const uri: vscode.Uri | undefined = file ? vscode.Uri.file(file) : undefined;
-    const item = controller.createTestItem(id, label, uri);
-    if (uri) parseLine(line, l => (item.range = new vscode.Range(l - 1, 0, l - 1, 0)));
-    if (testData) testItem2test.set(item, testData);
-    return item;
-  };
-
-  const mapTestItem2Test = (item: vscode.TestItem): AbstractTest | undefined => testItem2test.get(item);
-
   const addWorkspaceManager = (wf: vscode.WorkspaceFolder): void => {
     if (workspace2manager.get(wf)) log.errorS('Unexpected workspace manager', wf);
-    else workspace2manager.set(wf, new WorkspaceManager(wf, log, controller.items, testItemCreator, mapTestItem2Test));
+    else workspace2manager.set(wf, new WorkspaceManager(wf, log, testItemManager));
   };
 
   const removeWorkspaceManager = (wf: vscode.WorkspaceFolder): void => {
@@ -90,7 +73,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const enumerator = (type: 'direct' | 'parent') => (item: vscode.TestItem) => {
       if (request.exclude?.includes(item)) return;
 
-      const test = testItem2test.get(item);
+      const test = testItemManager.map(item);
 
       if (test) {
         const executable = test.executable;

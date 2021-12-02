@@ -8,7 +8,7 @@ import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { Catch2Test } from './Catch2Test';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { RunningExecutable } from '../RunningExecutable';
-import { AbstractTest } from '../AbstractTest';
+import { AbstractTest, SubTestTree } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
@@ -82,7 +82,7 @@ export class Catch2Executable extends AbstractExecutable {
       if (lines[i].startsWith('    ')) {
         this.shared.log.warn('Probably too long test name', i, lines);
 
-        this._createAndAddError(
+        await this._createAndAddError(
           `⚡️ Too long test name`,
           [
             '⚠️ Probably too long test name or the test name starts with space characters!',
@@ -196,18 +196,8 @@ export class Catch2Executable extends AbstractExecutable {
       resolvedFile,
       tags,
       description,
-      (container: vscode.TestItemCollection) =>
-        new Catch2Test(
-          this.shared,
-          this,
-          container,
-          this._catch2Version,
-          testName,
-          resolvedFile,
-          line,
-          tags,
-          description,
-        ),
+      (parent: vscode.TestItem | undefined) =>
+        new Catch2Test(this.shared, this, parent, this._catch2Version, testName, resolvedFile, line, tags, description),
       (test: Catch2Test) => test.update2(resolvedFile, line, tags, description),
     );
   };
@@ -426,12 +416,16 @@ class TestCaseListingProcessor implements XmlTagProcessor {
 ///
 
 abstract class TagProcessorBase implements XmlTagProcessor {
-  constructor(public readonly builder: TestResultBuilder, protected readonly shared: WorkspaceShared) {}
+  constructor(
+    public readonly builder: TestResultBuilder,
+    protected readonly shared: WorkspaceShared,
+    protected readonly sections: SubTestTree,
+  ) {}
 
   public onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
     const procCreator = TagProcessorBase.openTagProcessorMap.get(tag.name);
     if (procCreator) {
-      return procCreator(tag, this.builder, this.shared);
+      return procCreator(tag, this.builder, this.shared, this.sections);
     } else if (procCreator === null) {
       // known tag, do nothing
     } else {
@@ -479,11 +473,12 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         tag: XmlTag,
         builder: TestResultBuilder,
         shared: WorkspaceShared,
+        sections: SubTestTree,
       ) => void | XmlTagProcessor | Promise<void | XmlTagProcessor>)
   > = new Map([
     [
       'OverallResult',
-      (tag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
+      (tag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared, _sections: SubTestTree): void => {
         builder.setDurationMilisec(parseFloat(tag.attribs.durationInSeconds) * 1000);
         if (tag.attribs.success === 'true') {
           builder.passed();
@@ -513,8 +508,12 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'Section',
-      (tag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared): Promise<XmlTagProcessor> =>
-        SectionProcessor.create(shared, builder, tag.attribs),
+      (
+        tag: XmlTag,
+        builder: TestResultBuilder,
+        shared: WorkspaceShared,
+        sections: SubTestTree,
+      ): Promise<XmlTagProcessor> => SectionProcessor.create(shared, builder, tag.attribs, sections),
     ],
     [
       'BenchmarkResults',
@@ -591,27 +590,19 @@ class TestCaseTagProcessor extends TagProcessorBase {
   public constructor(
     shared: WorkspaceShared,
     builder: TestResultBuilder,
-    test: Catch2Test,
-    attribs: Record<string, string>,
+    private readonly test: Catch2Test,
+    private readonly attribs: Record<string, string>,
   ) {
-    super(builder, shared);
-    builder.started();
-
-    //TODO:release: can we do better?
-    // if (attribs.filename !== test.file) {
-    //   shared.log.info(
-    //     'Test file location mismatch. Indicates that the executable is outdated.',
-    //     test.label,
-    //     test.file,
-    //     attribs.filename,
-    //   );
-    //   //:TODO:future:race condition
-    //   test.executable.reloadTests(shared.taskPool, shared.cancellationFlag);
-    // }
-    test.line = attribs.line;
+    super(builder, shared, new Map());
   }
 
-  public end(): void {
+  async begin(): Promise<void> {
+    this.builder.started();
+    await this.test.updateFL(this.attribs.filename, this.attribs.line);
+  }
+
+  end(): void {
+    this.builder.test.removeMissingSubTests(this.sections);
     this.builder.build();
   }
 }
@@ -619,17 +610,29 @@ class TestCaseTagProcessor extends TagProcessorBase {
 ///
 
 class SectionProcessor extends TagProcessorBase {
-  public static async create(shared: WorkspaceShared, testBuilder: TestResultBuilder, attribs: Record<string, string>) {
+  public static async create(
+    shared: WorkspaceShared,
+    testBuilder: TestResultBuilder,
+    attribs: Record<string, string>,
+    sections: SubTestTree,
+  ) {
     if (typeof attribs.name !== 'string' || !attribs.name) throw Error('Section must have name attribute');
 
     const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, undefined, attribs.filename, attribs.line);
     const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
-    return new SectionProcessor(shared, subTestBuilder);
+
+    let subSections = sections.get(attribs.name);
+    if (subSections === undefined) {
+      subSections = new Map();
+      sections.set(attribs.name, subSections);
+    }
+
+    return new SectionProcessor(shared, subTestBuilder, subSections);
   }
 
-  private constructor(shared: WorkspaceShared, testBuilder: TestResultBuilder) {
+  private constructor(shared: WorkspaceShared, testBuilder: TestResultBuilder, sections: SubTestTree) {
     testBuilder.started();
-    super(testBuilder, shared);
+    super(testBuilder, shared, sections);
   }
 
   public end(): void {

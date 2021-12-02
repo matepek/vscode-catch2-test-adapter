@@ -30,3 +30,7 @@ TEST_CASE("s2t3", "tag1") {
 //   REQUIRE(i==j);
 //   //
 // }
+
+TEST_CASE("试试中文", "[test]") {
+  CHECK(true);
+}

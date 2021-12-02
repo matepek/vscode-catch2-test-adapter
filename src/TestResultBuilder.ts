@@ -93,7 +93,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (file) {
       const lineP = parseLine(line);
       if (typeof lineP == 'number') {
-        return new vscode.Location(vscode.Uri.file(file), new vscode.Range(lineP - 1, 0, lineP - 1, 999));
+        return new vscode.Location(vscode.Uri.file(file), new vscode.Range(lineP - 1, 0, lineP, 0));
       }
     }
     return undefined;

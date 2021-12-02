@@ -1,7 +1,7 @@
-import * as vscode from 'vscode';
 import { AbstractTest, SharedWithTest } from '../AbstractTest';
 import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';
+import { TestItemParent } from '../TestItemManager';
 
 interface Frame {
   name: string;
@@ -31,7 +31,7 @@ export class DOCTest extends AbstractTest {
   public constructor(
     shared: SharedWithTest,
     executable: AbstractExecutable,
-    container: vscode.TestItemCollection,
+    parent: TestItemParent,
     testNameAsId: string,
     tags: string[],
     file: string | undefined,
@@ -42,7 +42,7 @@ export class DOCTest extends AbstractTest {
     super(
       shared,
       executable,
-      container,
+      parent,
       testNameAsId,
       testNameAsId.startsWith('  Scenario:') ? testNameAsId.trimLeft() : testNameAsId,
       file,
