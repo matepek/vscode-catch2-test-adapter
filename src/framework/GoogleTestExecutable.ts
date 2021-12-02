@@ -174,8 +174,8 @@ export class GoogleTestExecutable extends AbstractExecutable {
 
         return result;
       } else {
-        this.shared.log.info(
-          "Couldn't parse output file. Possibly it is an older version of Google Test framework. It is trying to parse the output",
+        this.shared.log.warn(
+          "Couldn't parse output file. Possibly it is an older version of Google Test framework, NAVIGATION MIGHT WON'T WOKR. Fallback logic: Trying of parsing the output...",
         );
 
         try {

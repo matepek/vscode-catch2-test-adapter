@@ -176,8 +176,7 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
     createTest: (parent: TestItemParent) => T,
     updateTest: (test: T) => void,
   ): Promise<T> {
-    this.shared.log.info('testGrouping', testId);
-    this.shared.log.debug('testGrouping', { testId, file: resolvedFile, tags, testGrouping });
+    this.shared.log.info('testGrouping', { testId, resolvedFile, tags, testGrouping });
 
     tags.sort();
 
