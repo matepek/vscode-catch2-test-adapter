@@ -69,8 +69,6 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
 
   private _lastReloadTime: number | undefined = undefined;
 
-  //TODO:future  special group to be expandable: private _execGroup: vscode.TestItem | undefined = undefined;
-
   // don't use this directly because _addTest and _getTest can be overwritten
   private _tests = new Map<string /*id*/, AbstractTest>();
 
@@ -211,7 +209,8 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
 
           itemOfLevel = await this._resolveAndGetOrCreateChildGroup(itemOfLevel, id, label, description, varsToResolve);
 
-          this._execItem.item = itemOfLevel;
+          // special item handling for exec
+          this._execItem.setItem(itemOfLevel, resolvedFile);
 
           currentGrouping = g;
         } else if (currentGrouping.groupBySource) {
@@ -230,18 +229,18 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
               varsToResolve,
             );
 
-            //TODO
-            // if (resolvedFile && itemOfLevel.uri === undefined) {
-            //   itemOfLevel = await this.shared.testController.update(
-            //     itemOfLevel,
-            //     resolvedFile,
-            //     undefined,
-            //     this,
-            //     null,
-            //     null,
-            //     null,
-            //   );
-            // }
+            // special item handling for source file
+            if (resolvedFile && itemOfLevel.uri === undefined) {
+              itemOfLevel = await this.shared.testController.update(
+                itemOfLevel,
+                resolvedFile,
+                undefined,
+                this,
+                null,
+                null,
+                null,
+              );
+            }
           } else if (g.groupUngroupedTo) {
             itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
               itemOfLevel,
@@ -839,28 +838,32 @@ export interface HandleProcessResult {
 class ExecutableGroup {
   public constructor(private readonly executable: AbstractExecutable) {}
 
-  private _count = 0;
+  private _busyCounter = 0;
   private _item: vscode.TestItem | undefined = undefined;
   private _itemForStaticError: vscode.TestItem | undefined = undefined;
   // we need to be exclusive because we save prevTests
   private _lock = Promise.resolve();
 
-  public set item(item: vscode.TestItem) {
-    if (this.item && this.item !== item) {
+  public setItem(item: vscode.TestItem, resolvedFile: string | undefined) {
+    if (this._item && this._item !== item) {
       this.executable.shared.log.errorS('why do we have different executableItem');
       debugBreak('why are we here?');
     } else if (!this._item) {
       this._item = item;
-      if (this._count > 0) this._item.busy = true;
+      if (this._busyCounter > 0) this._item.busy = true;
     }
+
+    // if (resolvedFile) {
+    //   //TODO if (this._item)
+    // }
   }
 
   // makes the item spinning
   public busy(func: () => Promise<void>): Promise<void> {
-    if (this._count++ === 0 && this._item) this._item.busy = true;
+    if (this._busyCounter++ === 0 && this._item) this._item.busy = true;
 
     return (this._lock = this._lock.then(func).finally(() => {
-      if (--this._count === 0) {
+      if (--this._busyCounter === 0) {
         if (this._item) {
           this._item.busy = false;
         }

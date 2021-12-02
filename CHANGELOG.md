@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.9]
+
+### Fixed
+
+- an issue that `testMate.cpp.test.advancedExecutables` framework specific settigns were only picking `catch2`
+
 ## [4.0.8] - 2021-12-01
 
 ### Added

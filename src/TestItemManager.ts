@@ -28,13 +28,17 @@ export class TestItemManager {
     const uri: vscode.Uri | undefined = file ? vscode.Uri.file(file) : undefined;
     const item = this.controller.createTestItem(id, label, uri);
     if (uri) {
-      parseLine(line, l => (item.range = new vscode.Range(l - 1, 0, l - 1, 0)));
+      parseLine(line, l => (item.range = new vscode.Range(l - 1, 0, l, 0)));
     }
     if (testData) this.testItem2test.set(item, testData);
 
     // add will replace it if it has one child with the same id
-    if (parent) parent.children.add(item);
-    else this.controller.items.add(item);
+    if (parent) {
+      parent.children.delete(item.id);
+      parent.children.add(item);
+    } else {
+      this.controller.items.add(item);
+    }
 
     return item;
   }
