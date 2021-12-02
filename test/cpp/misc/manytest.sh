@@ -4401,6 +4401,7 @@ if [ "$1" = "--gtest_list_tests" ]; then
     echo "  test0240"
     echo "  test0241"
     echo "  test0242"
+    sleep 1
     echo "  test0243"
     echo "  test0244"
     echo "  test0245"
@@ -5731,6 +5732,7 @@ if [ "$1" = "--gtest_list_tests" ]; then
     echo "  test0740"
     echo "  test0741"
     echo "  test0742"
+    sleep 1
     echo "  test0743"
     echo "  test0744"
     echo "  test0745"

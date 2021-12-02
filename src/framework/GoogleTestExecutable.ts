@@ -16,7 +16,8 @@ import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
 import { TestItemParent } from '../TestItemManager';
-import { pipeProcess2Parser } from '../util/ParserInterface';
+import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../util/ParserInterface';
+import { Readable } from 'stream';
 
 export class GoogleTestExecutable extends AbstractExecutable {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, private readonly _argumentPrefix: string) {
@@ -33,8 +34,7 @@ export class GoogleTestExecutable extends AbstractExecutable {
     }
   }
 
-  //TODO:release streaming would be more efficient
-  private async _reloadFromXml(xmlStr: string, _cancellationFlag: CancellationFlag): Promise<void> {
+  private async _reloadFromXml(xmlStream: Readable, _cancellationFlag: CancellationFlag): Promise<void> {
     const createAndAddTest = this._createAndAddTest;
 
     const parser = new XmlParser(
@@ -55,12 +55,16 @@ export class GoogleTestExecutable extends AbstractExecutable {
       },
     );
 
-    parser.write(xmlStr);
-    await parser.end();
+    await pipeOutputStreams2Parser(xmlStream, undefined, parser, undefined);
   }
 
-  private async _reloadFromString(stdOutStr: string, cancellationFlag: CancellationFlag): Promise<void> {
-    const lines = stdOutStr.split(/\r?\n/);
+  private async _reloadFromString(
+    stdoutStream: Readable,
+    stderrStream: Readable,
+    cancellationFlag: CancellationFlag,
+  ): Promise<void> {
+    const [stdout, _stderr] = await pipeOutputStreams2String(stdoutStream, stderrStream);
+    const lines = stdout.split(/\r?\n/);
 
     const testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.(?:\s+(#\s+TypeParam(?:\(\))?\s+=\s*(.+)))?$/;
     const testRe = /^\s+([A-z0-9][\/A-z0-9_\-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
@@ -134,9 +138,9 @@ export class GoogleTestExecutable extends AbstractExecutable {
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this.shared.log.info('loading from cache: ', cacheFile);
-          const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
+          const xmlStream = fs.createReadStream(cacheFile, 'utf8');
 
-          return await this._reloadFromXml(xmlStr, cancellationFlag);
+          return await this._reloadFromXml(xmlStream, cancellationFlag);
         }
       } catch (e) {
         this.shared.log.info('coudnt use cache', e);
@@ -149,23 +153,22 @@ export class GoogleTestExecutable extends AbstractExecutable {
     ]);
 
     this.shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
-    const googleTestListOutput = await this.properties.spawner.spawnAsync(
+
+    const googleTestListProcess = await this.properties.spawner.spawn(
       this.properties.path,
       args,
       this.properties.options,
-      30000,
     );
 
-    if (googleTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
-      this.shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
-      return await this._createAndAddUnexpectedStdError(googleTestListOutput.stdout, googleTestListOutput.stderr);
-    } else {
+    try {
+      await this._reloadFromString(googleTestListProcess.stdout, googleTestListProcess.stderr, cancellationFlag);
+
       const hasXmlFile = await promisify(fs.exists)(cacheFile);
 
       if (hasXmlFile) {
-        const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
+        const xmlStream = fs.createReadStream(cacheFile, 'utf8');
 
-        const result = await this._reloadFromXml(xmlStr, cancellationFlag);
+        const result = await this._reloadFromXml(xmlStream, cancellationFlag);
 
         if (!this.shared.enabledTestListCaching) {
           fs.unlink(cacheFile, (err: Error | null) => {
@@ -178,14 +181,10 @@ export class GoogleTestExecutable extends AbstractExecutable {
         this.shared.log.warn(
           "Couldn't parse output file. Possibly it is an older version of Google Test framework, NAVIGATION MIGHT WON'T WOKR. Fallback logic: Trying of parsing the output...",
         );
-
-        try {
-          return await this._reloadFromString(googleTestListOutput.stdout, cancellationFlag);
-        } catch (e) {
-          this.shared.log.info('GoogleTest._reloadFromStdOut error', e, googleTestListOutput);
-          throw e;
-        }
       }
+    } catch (e) {
+      this.shared.log.warn('reloadChildren error:', e);
+      return await this._createAndAddUnexpectedStdError(e.toString(), '');
     }
   }
 

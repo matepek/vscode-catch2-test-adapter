@@ -216,7 +216,6 @@ export class Catch2Executable extends AbstractExecutable {
 
           if (this._catch2Version && this._catch2Version.major >= 3)
             await this._reloadFromXml(stream, cancellationFlag);
-          //TODO:future: streaming
           else await this._reloadFromString(stream, cancellationFlag);
         }
       } catch (e) {
