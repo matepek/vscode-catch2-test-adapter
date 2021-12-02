@@ -844,7 +844,7 @@ class ExecutableGroup {
   // we need to be exclusive because we save prevTests
   private _lock = Promise.resolve();
 
-  public setItem(item: vscode.TestItem, resolvedFile: string | undefined) {
+  public setItem(item: vscode.TestItem, _resolvedFile: string | undefined) {
     if (this._item && this._item !== item) {
       this.executable.shared.log.errorS('why do we have different executableItem');
       debugBreak('why are we here?');
