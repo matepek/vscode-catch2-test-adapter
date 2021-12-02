@@ -16,10 +16,11 @@ import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
 import { TestItemParent } from '../TestItemManager';
+import { FrameworkType } from './Framework';
 
-export class GoogleTestExecutable extends AbstractExecutable {
+export class CppUTestExecutable extends AbstractExecutable {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, private readonly _argumentPrefix: string) {
-    super(shared, execInfo, 'gtest', undefined);
+    super(shared, execInfo, 'cpputest' as FrameworkType, undefined); //TODO:cpputest
   }
 
   private getTestGrouping(): TestGrouping {
@@ -32,74 +33,25 @@ export class GoogleTestExecutable extends AbstractExecutable {
     }
   }
 
-  //TODO:release streaming would be more efficient
-  private async _reloadFromXml(xmlStr: string, _cancellationFlag: CancellationFlag): Promise<void> {
-    const createAndAddTest = this._createAndAddTest;
-
-    const parser = new XmlParser(
-      this.shared.log,
-      {
-        onopentag(tag: XmlTag): void | XmlTagProcessor {
-          switch (tag.name) {
-            case 'testsuite':
-              return new TestSuiteListingProcessor(tag.attribs, createAndAddTest);
-            default:
-              return;
-          }
-        },
-      },
-      error => {
-        this.shared.log.error('reloadFromXml', error);
-        throw error;
-      },
-    );
-
-    parser.write(xmlStr);
-    await parser.end();
-  }
-
   private async _reloadFromString(stdOutStr: string, cancellationFlag: CancellationFlag): Promise<void> {
-    const lines = stdOutStr.split(/\r?\n/);
+    const parser = new TextStreamParser(this.shared.log, {
+      online(line: string): void {
+        line.split(' ').forEach(item => {
+          const itemS = item.split('.');
+          if (itemS.length !== 2) {
+            this.shared.log.errorS('unexpected cpptest fromat', line);
+          } else {
+            const groupName = itemS[0];
+            const testName = itemS[0];
 
-    const testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.(?:\s+(#\s+TypeParam(?:\(\))?\s+=\s*(.+)))?$/;
-    const testRe = /^\s+([A-z0-9][\/A-z0-9_\-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
+            this._createAndAddTest(testName, groupName, undefined, undefined);
+          }
+        });
+      },
+    });
 
-    let lineCount = lines.length;
-
-    while (lineCount > 0 && lines[lineCount - 1].match(testRe) === null) lineCount--;
-
-    let lineNum = 0;
-
-    // gtest_main.cc
-    while (lineCount > lineNum && lines[lineNum].match(testGroupRe) === null) lineNum++;
-
-    if (lineCount - lineNum === 0) throw Error('Wrong test list.');
-
-    let testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
-
-    while (testGroupMatch) {
-      lineNum++;
-
-      const suiteName = testGroupMatch[1];
-      const typeParam: string | undefined = testGroupMatch[3];
-
-      let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
-
-      while (testMatch) {
-        if (cancellationFlag.isCancellationRequested) return;
-
-        lineNum++;
-
-        const testName = testMatch[1];
-        const valueParam: string | undefined = testMatch[3];
-
-        await this._createAndAddTest(testName, suiteName, undefined, undefined, typeParam, valueParam);
-
-        testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
-      }
-
-      testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
-    }
+    parser.write(stdOutStr);
+    await parser.end();
   }
 
   private readonly _createAndAddTest = async (
@@ -133,19 +85,16 @@ export class GoogleTestExecutable extends AbstractExecutable {
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this.shared.log.info('loading from cache: ', cacheFile);
-          const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
+          const content = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-          return await this._reloadFromXml(xmlStr, cancellationFlag);
+          return await this._reloadFromString(content, cancellationFlag);
         }
       } catch (e) {
         this.shared.log.info('coudnt use cache', e);
       }
     }
 
-    const args = this.properties.prependTestListingArgs.concat([
-      `--${this._argumentPrefix}list_tests`,
-      `--${this._argumentPrefix}output=xml:${cacheFile}`,
-    ]);
+    const args = this.properties.prependTestListingArgs.concat([`-ln`]);
 
     this.shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
     const googleTestListOutput = await this.properties.spawner.spawnAsync(
@@ -156,15 +105,15 @@ export class GoogleTestExecutable extends AbstractExecutable {
     );
 
     if (googleTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
-      this.shared.log.warn('reloadChildren -> googleTestListOutput.stderr: ', googleTestListOutput);
+      this.shared.log.warn('reloadChildren -> cpputestListOutput.stderr: ', googleTestListOutput);
       return await this._createAndAddUnexpectedStdError(googleTestListOutput.stdout, googleTestListOutput.stderr);
     } else {
-      const hasXmlFile = await promisify(fs.exists)(cacheFile);
+      const strFile = await promisify(fs.exists)(cacheFile);
 
-      if (hasXmlFile) {
-        const xmlStr = await promisify(fs.readFile)(cacheFile, 'utf8');
+      if (strFile) {
+        const content = await promisify(fs.readFile)(cacheFile, 'utf8');
 
-        const result = await this._reloadFromXml(xmlStr, cancellationFlag);
+        const result = await this._reloadFromString(content, cancellationFlag);
 
         if (!this.shared.enabledTestListCaching) {
           fs.unlink(cacheFile, (err: Error | null) => {

@@ -21,7 +21,7 @@ export class Catch2Executable extends AbstractExecutable {
     execInfo: RunnableProperties,
     private readonly _catch2Version: Version | undefined,
   ) {
-    super(shared, execInfo, 'Catch2', _catch2Version);
+    super(shared, execInfo, 'catch2', _catch2Version);
   }
 
   protected override _addTest(testId: string, test: AbstractTest): void {

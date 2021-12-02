@@ -24,6 +24,7 @@ import { SpawnBuilder } from './Spawner';
 import { SharedTestTags } from './SharedTestTags';
 import { Disposable } from './Util';
 import { FilePathResolver, TestItemParent } from './TestItemManager';
+import { FrameworkType } from './framework/Framework';
 
 export class TestsToRun {
   public readonly direct: AbstractTest[] = []; // test is drectly included, should be run even if it is skipped
@@ -39,7 +40,7 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
   public constructor(
     public readonly shared: WorkspaceShared,
     public readonly properties: RunnableProperties,
-    public readonly frameworkName: string,
+    public readonly frameworkName: FrameworkType,
     public readonly frameworkVersion: Version | undefined,
   ) {
     this._execItem = new ExecutableGroup(this);

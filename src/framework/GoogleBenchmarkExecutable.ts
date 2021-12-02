@@ -16,7 +16,7 @@ import { TestItemParent } from '../TestItemManager';
 
 export class GoogleBenchmarkExecutable extends AbstractExecutable {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties) {
-    super(shared, execInfo, 'GoogleBenchmark', undefined);
+    super(shared, execInfo, 'gbenchmark', undefined);
   }
 
   private getTestGrouping(): TestGrouping {
