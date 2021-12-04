@@ -11,6 +11,7 @@ export type SpawnOptionsWithoutStdio = fsw.SpawnOptionsWithoutStdio;
 
 ///
 
+//TODO:future, add cancellation flag
 export interface Spawner {
   spawnAsync(cmd: string, args: string[], options: SpawnOptionsWithoutStdio, timeout?: number): Promise<SpawnReturns>;
 

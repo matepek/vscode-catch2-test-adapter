@@ -14,6 +14,8 @@ import { TestGrouping } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
 import { debugAssert, debugBreak } from '../util/DevelopmentHelper';
 import { assert } from 'console';
+import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../util/ParserInterface';
+import { Readable } from 'stream';
 
 export class Catch2Executable extends AbstractExecutable {
   public constructor(
@@ -43,8 +45,16 @@ export class Catch2Executable extends AbstractExecutable {
     }
   }
 
-  private async _reloadFromString(testListOutput: string, cancellationFlag: CancellationFlag): Promise<void> {
-    const lines = testListOutput.split(/\r?\n/);
+  private async _reloadFromString(stream: Readable, cancellationFlag: CancellationFlag): Promise<void> {
+    const [stdout, stderr] = await pipeOutputStreams2String(stream, undefined);
+
+    if (stderr && !this.properties.ignoreTestEnumerationStdErr) {
+      this.shared.log.warn('reloadChildren -> stderr', stderr);
+      await this._createAndAddUnexpectedStdError(stdout, stderr);
+      return;
+    }
+
+    const lines = stdout.split(/\r?\n/);
 
     const startRe = /Matching test cases:/;
     const endRe = /[0-9]+ matching test cases?/;
@@ -57,7 +67,7 @@ export class Catch2Executable extends AbstractExecutable {
     }
 
     if (i >= lines.length) {
-      this.shared.log.error('Wrong test list output format #1', testListOutput);
+      this.shared.log.error('Wrong test list output format #1', stdout);
       throw Error('Wrong test list output format');
     }
 
@@ -140,7 +150,7 @@ export class Catch2Executable extends AbstractExecutable {
     if (i >= lines.length) this.shared.log.error('Wrong test list output format #2', lines);
   }
 
-  private async _reloadFromXml(testListOutput: string, _cancellationFlag: CancellationFlag): Promise<void> {
+  private async _reloadFromXml(stream: Readable, _cancellationFlag: CancellationFlag): Promise<void> {
     const createAndAddTest = this._createAndAddTest;
 
     const parser = new XmlParser(
@@ -162,8 +172,7 @@ export class Catch2Executable extends AbstractExecutable {
       },
     );
 
-    parser.write(testListOutput);
-    await parser.end();
+    await pipeOutputStreams2Parser(stream, undefined, parser, undefined);
   }
 
   private readonly _createAndAddTest = async (
@@ -203,16 +212,11 @@ export class Catch2Executable extends AbstractExecutable {
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this.shared.log.info('loading from cache: ', cacheFile);
-          const content = await promisify(fs.readFile)(cacheFile, 'utf8');
+          const stream = fs.createReadStream(cacheFile, 'utf8');
 
-          if (content === '') {
-            this.shared.log.debug('loading from cache failed because file is empty');
-          } else {
-            if (this._catch2Version && this._catch2Version.major >= 3)
-              await this._reloadFromXml(content, cancellationFlag);
-            //TODO:future: streaming
-            else await this._reloadFromString(content, cancellationFlag);
-          }
+          if (this._catch2Version && this._catch2Version.major >= 3)
+            await this._reloadFromXml(stream, cancellationFlag);
+          else await this._reloadFromString(stream, cancellationFlag);
         }
       } catch (e) {
         this.shared.log.warn('coudnt use cache', e);
@@ -234,33 +238,23 @@ export class Catch2Executable extends AbstractExecutable {
 
     //const process = await this.properties.spawner.spawn(this.properties.path, args, this.properties.options);
 
-    const catch2TestListOutput = await this.properties.spawner.spawnAsync(
+    const catch2TestListingProcess = await this.properties.spawner.spawn(
       this.properties.path,
       args,
       this.properties.options,
-      30000,
     );
-
-    if (catch2TestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
-      this.shared.log.warn('reloadChildren -> catch2TestListOutput.stderr', catch2TestListOutput);
-      await this._createAndAddUnexpectedStdError(catch2TestListOutput.stdout, catch2TestListOutput.stderr);
-      return;
-    }
-
-    if (catch2TestListOutput.stdout.length === 0) {
-      this.shared.log.debug(catch2TestListOutput);
-      throw Error('stoud is empty');
-    }
 
     const result =
       this._catch2Version && this._catch2Version.major >= 3
-        ? await this._reloadFromXml(catch2TestListOutput.stdout, cancellationFlag)
-        : await this._reloadFromString(catch2TestListOutput.stdout, cancellationFlag);
+        ? await this._reloadFromXml(catch2TestListingProcess.stdout, cancellationFlag)
+        : await this._reloadFromString(catch2TestListingProcess.stdout, cancellationFlag);
 
     if (this.shared.enabledTestListCaching) {
-      promisify(fs.writeFile)(cacheFile, catch2TestListOutput.stdout).catch(err =>
-        this.shared.log.warn('couldnt write cache file:', err),
-      );
+      const writeStream = fs.createWriteStream(cacheFile);
+      catch2TestListingProcess.stdout.pipe(writeStream);
+      writeStream.once('error', (err: Error) => {
+        this.shared.log.warn('couldnt write cache file:', err);
+      });
     }
 
     return result;
@@ -357,21 +351,9 @@ export class Catch2Executable extends AbstractExecutable {
       },
     );
 
-    runInfo.process.stdout.on('data', (chunk: Uint8Array) => parser.write(chunk.toLocaleString()));
-
-    runInfo.process.stderr.on('data', (chunk: Uint8Array) => {
-      const c = chunk.toLocaleString();
-
-      parser.writeStdErr(c).then(hasHandled => {
-        if (!hasHandled) {
-          executable.processStdErr(testRun, runInfo.runPrefix, c);
-        }
-      });
-    });
-
-    await runInfo.result;
-    // order matters
-    await parser.end();
+    await pipeProcess2Parser(runInfo, parser, (data: string) =>
+      executable.processStdErr(testRun, runInfo.runPrefix, data),
+    );
 
     const leftBehind = parser.parserStack.reverse().find(x => x instanceof TestCaseTagProcessor) as
       | TestCaseTagProcessor
@@ -480,12 +462,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
   }
 
   public onstderr(data: string, _parentTag: XmlTag | undefined): void {
-    this.builder.addQuoteWithLocation(
-      undefined,
-      undefined,
-      'std::cerr (stderr arrived during running this test)',
-      data,
-    );
+    this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
   }
 
   private static readonly openTagProcessorMap: Map<

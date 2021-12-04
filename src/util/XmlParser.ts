@@ -1,11 +1,12 @@
 import * as htmlparser2 from 'htmlparser2';
 import { LoggerWrapper } from '../LoggerWrapper';
 import { debugBreak } from './DevelopmentHelper';
+import { ParserInterface } from './ParserInterface';
 
 type ProcessorFrame = { tag: XmlTag; processor: XmlTagProcessor; nesting: number };
 type XmlTagFrame = XmlTag & { _text: string };
 
-export class XmlParser extends htmlparser2.Parser {
+export class XmlParser extends htmlparser2.Parser implements ParserInterface {
   private sequentialP = Promise.resolve();
   private readonly tagStack: XmlTagFrame[] = [];
   private readonly xmlTagProcessorStack: ProcessorFrame[] = [];

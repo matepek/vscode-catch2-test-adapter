@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- streamed load of tests
+
+### Fixed
+
+- [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/304) which caused the test message's location not to be resolved.
+- [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/310) preventing proper load of gtest tests
+
 ## [4.0.9] - 2021-12-02
 
 ### Fixed
