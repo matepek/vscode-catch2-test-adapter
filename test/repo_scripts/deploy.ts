@@ -349,9 +349,9 @@ async function main(argv: string[]): Promise<void> {
 
     await gitPushBranch();
 
-    await closeMentionedIssues(info);
-
     await createGithubRelease(info, packagePath);
+
+    await closeMentionedIssues(info);
 
     console.log('Deployment has finished.');
   } else {
