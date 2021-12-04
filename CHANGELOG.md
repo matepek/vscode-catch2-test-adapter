@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- streamed load of tests
+
+### Fixed
+
+- issue which caused the test message's location not to be resolved.
+
 ## [4.0.9] - 2021-12-02
 
 ### Fixed

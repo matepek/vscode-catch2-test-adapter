@@ -9,7 +9,7 @@ import { TaskPool } from './util/TaskPool';
 import { WorkspaceShared } from './WorkspaceShared';
 import { ExecutableRunResultValue, RunningExecutable } from './RunningExecutable';
 import { promisify } from 'util';
-import { Version, getAbsolutePath, CancellationToken, CancellationFlag, reindentStr } from './Util';
+import { Version, getAbsolutePath, CancellationToken, reindentStr } from './Util';
 import {
   resolveOSEnvironmentVariables,
   createPythonIndexerForPathVariable,
@@ -487,7 +487,7 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
     return subsets;
   }
 
-  protected abstract _reloadChildren(cancellationFlag: CancellationFlag): Promise<void>;
+  protected abstract _reloadChildren(cancellationToken: CancellationToken): Promise<void>;
 
   protected abstract _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
 
@@ -506,13 +506,13 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
     return this.properties.prependTestRunningArgs.concat(this._getDebugParamsInner(childrenToRun, breakOnFailure));
   }
 
-  public reloadTests(taskPool: TaskPool, cancellationFlag: CancellationFlag): Promise<void> {
-    if (cancellationFlag.isCancellationRequested) return Promise.resolve();
+  public reloadTests(taskPool: TaskPool, cancellationToken: CancellationToken): Promise<void> {
+    if (cancellationToken.isCancellationRequested) return Promise.resolve();
 
     // mutually exclusive lock
     return this._execItem.busy(async () => {
       return taskPool.scheduleTask(async () => {
-        if (cancellationFlag.isCancellationRequested) return Promise.resolve();
+        if (cancellationToken.isCancellationRequested) return Promise.resolve();
 
         this.shared.log.info('reloadTests', this.frameworkName, this.frameworkVersion, this.properties.path);
 
@@ -525,7 +525,7 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
           this._tests = new Map();
           this._execItem.clearError();
 
-          await this._reloadChildren(cancellationFlag);
+          await this._reloadChildren(cancellationToken);
 
           for (const test of prevTests.values()) {
             if (!this._getTest(test.id)) this.removeTest(test);
@@ -742,7 +742,7 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
 
       if (hasMissingTest || hasNewTest) {
         // exec probably has changed
-        this.reloadTests(this.shared.taskPool, this.shared.cancellationFlag).catch((reason: Error) => {
+        this.reloadTests(this.shared.taskPool, this.shared.cancellationToken).catch((reason: Error) => {
           // Suite possibly deleted: It is a dead suite but this should have been handled elsewhere
           this.shared.log.error('reloading-error: ', reason);
         });
@@ -782,6 +782,23 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
     }
   }
 
+  public findSourceFilePath(file: string | undefined): string | undefined {
+    if (typeof file != 'string') return undefined;
+
+    let resolved = file;
+
+    for (const m in this.properties.sourceFileMap) {
+      resolved = resolved.replace(m, this.properties.sourceFileMap[m]); // Note: it just replaces the first occurence
+    }
+
+    resolved = pathlib.normalize(resolved);
+    resolved = this._findFilePath(resolved);
+
+    this.shared.log.debug('findSourceFilePath:', file, '=>', resolved);
+
+    return resolved;
+  }
+
   public async resolveAndFindSourceFilePath(file: string | undefined): Promise<string | undefined> {
     if (typeof file != 'string') return undefined;
 
@@ -795,7 +812,7 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
     resolved = pathlib.normalize(resolved);
     resolved = this._findFilePath(resolved);
 
-    this.shared.log.debug('_resolveSourceFilePath:', file, '=>', resolved);
+    this.shared.log.debug('resolveAndFindSourceFilePath:', file, '=>', resolved);
 
     return resolved;
   }

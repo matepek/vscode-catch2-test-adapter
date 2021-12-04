@@ -24,22 +24,31 @@ interface Info {
   label: string;
   date: string;
   full: string;
+  releaseContent: string;
+  mentionedIssues: string[];
 }
 
-async function spawn(command: string, ...args: (string | { arg: string; mask?: string })[]): Promise<void> {
+async function spawn(command: string, ...args: (string | { arg: string; mask?: string })[]): Promise<string> {
   console.log(
     '$ ' + command + ' ' + args.map(a => (typeof a === 'string' ? `"${a}"` : a.mask ?? '<masked>')).join(' '),
   );
-  return new Promise((resolve, reject) => {
+  const result = await new Promise<string>((resolve, reject) => {
     const c = cp.spawn(
       command,
       args.map(a => (typeof a === 'string' ? a : a.arg)),
       { stdio: 'inherit' },
     );
+    let output = '';
+    c.stdout?.on('data', chunk => {
+      output += chunk.toString();
+    });
     c.on('exit', (code: number) => {
-      code == 0 ? resolve() : reject(new Error('Process exited with: ' + code));
+      code == 0 ? resolve(output) : reject(new Error('Process exited with: ' + code));
     });
   });
+
+  console.log(result);
+  return result;
 }
 
 // eslint-disable-next-line
@@ -54,7 +63,7 @@ async function updateChangelog(): Promise<Info | undefined> {
 
   const changelog = changelogBuffer.toString();
   // example:'## [0.1.0-beta] - 2018-04-12'
-  const re = new RegExp(/## \[(([0-9]+)\.([0-9]+)\.([0-9]+)(?:|(?:-([^\]]+))))\](?: - (\S+))?/);
+  const re = new RegExp(/## \[(([0-9]+)\.([0-9]+)\.([0-9]+)(?:|(?:-([^\]]+))))\](?: - (.+))?/);
 
   const match = changelog.match(re);
   if (match === null) {
@@ -68,6 +77,16 @@ async function updateChangelog(): Promise<Info | undefined> {
     console.log('CHANGELOG.md doesn\'t contain unreleased version entry (ex.: "## [1.2.3]" (without date)).');
     console.log('(Last released version: ' + match[0] + ')');
     return undefined;
+  }
+
+  let releaseContent = changelog.substr(match.index! + match[0].length).trimLeft();
+  const mentionedIssues: string[] = [];
+  {
+    const nextM = releaseContent.match(re);
+    if (nextM) releaseContent = releaseContent.substring(0, nextM.index!).trimRight();
+
+    const issueRe = new RegExp(`https://github\\.com/${githubRepoFullId}/issues/(\\d+)`, 'g');
+    mentionedIssues.push(...[...releaseContent.matchAll(issueRe)].map(x => x[1]));
   }
 
   const now = new Date();
@@ -84,7 +103,6 @@ async function updateChangelog(): Promise<Info | undefined> {
   console.log('Updating CHANGELOG.md');
 
   await promisify(fs.writeFile)('CHANGELOG.md', changelogWithReleaseDate);
-
   return {
     version: match[1],
     vver: 'v' + match[1],
@@ -94,6 +112,8 @@ async function updateChangelog(): Promise<Info | undefined> {
     label: match[5],
     date: date,
     full: match[0].substr(3).trim() + ' - ' + date,
+    releaseContent,
+    mentionedIssues,
   };
 }
 
@@ -205,6 +225,47 @@ async function publishPackage(packagePath: string): Promise<void> {
   await vsce.publishVSIX(packagePath, { pat: process.env['VSCE_PAT']! });
 }
 
+async function closeMentionedIssues(info: Info): Promise<void> {
+  console.log('Closing mentioned issues');
+  if (info.mentionedIssues.length === 0) {
+    return;
+  }
+
+  assert.ok(typeof process.env['GITHUBM_API_KEY'] === 'string');
+  const apiKey = process.env['GITHUBM_API_KEY']!;
+  const keyBase64 = Buffer.from(`${githubOwnerId}:${apiKey}`, 'utf-8').toString('base64');
+  const headerBase = {
+    'User-Agent': `${githubOwnerId}-deploy.js`,
+    Authorization: `Basic ${keyBase64}`,
+    Accept: 'application/vnd.github.v3+json',
+  };
+
+  for (const issueId of info.mentionedIssues) {
+    //https://docs.github.com/en/rest/reference/issues#edit-an-issue
+
+    await bent(`https://api.github.com`, 'json', 'PATCH')(
+      `/repos/${githubRepoFullId}/issues/${issueId}`,
+      {
+        state: 'closed',
+      },
+      headerBase,
+    );
+
+    await bent(
+      `https://api.github.com`,
+      'json',
+      'POST',
+      201,
+    )(
+      `/repos/${githubRepoFullId}/issues/${issueId}/comments`,
+      {
+        body: `Fixed in ${info.vver}`,
+      },
+      headerBase,
+    );
+  }
+}
+
 async function createGithubRelease(info: Info, packagePath: string): Promise<void> {
   console.log('Publishing to github releases');
   assert.ok(typeof process.env['GITHUBM_API_KEY'] === 'string');
@@ -287,6 +348,8 @@ async function main(argv: string[]): Promise<void> {
     }
 
     await gitPushBranch();
+
+    await closeMentionedIssues(info);
 
     await createGithubRelease(info, packagePath);
 

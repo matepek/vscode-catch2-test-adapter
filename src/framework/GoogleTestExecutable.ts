@@ -9,14 +9,14 @@ import { RunnableProperties } from '../RunnableProperties';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { RunningExecutable } from '../RunningExecutable';
 import { AbstractTest } from '../AbstractTest';
-import { CancellationFlag } from '../Util';
+import { CancellationToken } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
 import { TestItemParent } from '../TestItemManager';
-import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../util/ParserInterface';
+import { pipeOutputStreams2Parser, pipeProcess2Parser } from '../util/ParserInterface';
 import { Readable } from 'stream';
 
 export class GoogleTestExecutable extends AbstractExecutable {
@@ -34,7 +34,7 @@ export class GoogleTestExecutable extends AbstractExecutable {
     }
   }
 
-  private async _reloadFromXml(xmlStream: Readable, _cancellationFlag: CancellationFlag): Promise<void> {
+  private async _reloadFromXml(xmlStream: Readable, _cancellationToken: CancellationToken): Promise<void> {
     const createAndAddTest = this._createAndAddTest;
 
     const parser = new XmlParser(
@@ -61,50 +61,38 @@ export class GoogleTestExecutable extends AbstractExecutable {
   private async _reloadFromString(
     stdoutStream: Readable,
     stderrStream: Readable,
-    cancellationFlag: CancellationFlag,
+    _cancellationToken: CancellationToken,
   ): Promise<void> {
-    const [stdout, _stderr] = await pipeOutputStreams2String(stdoutStream, stderrStream);
-    const lines = stdout.split(/\r?\n/);
-
     const testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.(?:\s+(#\s+TypeParam(?:\(\))?\s+=\s*(.+)))?$/;
     const testRe = /^\s+([A-z0-9][\/A-z0-9_\-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
 
-    let lineCount = lines.length;
+    let testGroupM: RegExpMatchArray | null = null;
+    const executable = this; //eslint-disable-line
 
-    while (lineCount > 0 && lines[lineCount - 1].match(testRe) === null) lineCount--;
+    const parser = new TextStreamParser(this.shared.log, {
+      async online(line: string): Promise<void> {
+        const newTestGroupM = line.match(testGroupRe);
+        if (newTestGroupM !== null) {
+          testGroupM = newTestGroupM;
+          return;
+        }
 
-    let lineNum = 0;
+        if (testGroupM === null) return;
 
-    // gtest_main.cc
-    while (lineCount > lineNum && lines[lineNum].match(testGroupRe) === null) lineNum++;
+        const testM = line.match(testRe);
+        if (testM) {
+          const suiteName = testGroupM[1];
+          const typeParam: string | undefined = testGroupM[3];
 
-    if (lineCount - lineNum === 0) throw Error('Wrong test list.');
+          const testName = testM[1];
+          const valueParam: string | undefined = testM[3];
 
-    let testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
+          await executable._createAndAddTest(testName, suiteName, undefined, undefined, typeParam, valueParam);
+        }
+      },
+    });
 
-    while (testGroupMatch) {
-      lineNum++;
-
-      const suiteName = testGroupMatch[1];
-      const typeParam: string | undefined = testGroupMatch[3];
-
-      let testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
-
-      while (testMatch) {
-        if (cancellationFlag.isCancellationRequested) return;
-
-        lineNum++;
-
-        const testName = testMatch[1];
-        const valueParam: string | undefined = testMatch[3];
-
-        await this._createAndAddTest(testName, suiteName, undefined, undefined, typeParam, valueParam);
-
-        testMatch = lineCount > lineNum ? lines[lineNum].match(testRe) : null;
-      }
-
-      testGroupMatch = lineCount > lineNum ? lines[lineNum].match(testGroupRe) : null;
-    }
+    await pipeOutputStreams2Parser(stdoutStream, stderrStream, parser, undefined);
   }
 
   private readonly _createAndAddTest = async (
@@ -128,7 +116,7 @@ export class GoogleTestExecutable extends AbstractExecutable {
     );
   };
 
-  protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<void> {
+  protected async _reloadChildren(cancellationToken: CancellationToken): Promise<void> {
     const cacheFile = this.properties.path + '.TestMate.testListCache.xml';
 
     if (this.shared.enabledTestListCaching) {
@@ -140,7 +128,7 @@ export class GoogleTestExecutable extends AbstractExecutable {
           this.shared.log.info('loading from cache: ', cacheFile);
           const xmlStream = fs.createReadStream(cacheFile, 'utf8');
 
-          return await this._reloadFromXml(xmlStream, cancellationFlag);
+          return await this._reloadFromXml(xmlStream, cancellationToken);
         }
       } catch (e) {
         this.shared.log.info('coudnt use cache', e);
@@ -161,14 +149,14 @@ export class GoogleTestExecutable extends AbstractExecutable {
     );
 
     try {
-      await this._reloadFromString(googleTestListProcess.stdout, googleTestListProcess.stderr, cancellationFlag);
+      await this._reloadFromString(googleTestListProcess.stdout, googleTestListProcess.stderr, cancellationToken);
 
       const hasXmlFile = await promisify(fs.exists)(cacheFile);
 
       if (hasXmlFile) {
         const xmlStream = fs.createReadStream(cacheFile, 'utf8');
 
-        const result = await this._reloadFromXml(xmlStream, cancellationFlag);
+        await this._reloadFromXml(xmlStream, cancellationToken);
 
         if (!this.shared.enabledTestListCaching) {
           fs.unlink(cacheFile, (err: Error | null) => {
@@ -176,7 +164,7 @@ export class GoogleTestExecutable extends AbstractExecutable {
           });
         }
 
-        return result;
+        return;
       } else {
         this.shared.log.warn(
           "Couldn't parse output file. Possibly it is an older version of Google Test framework, NAVIGATION MIGHT WON'T WOKR. Fallback logic: Trying of parsing the output...",

@@ -4,7 +4,7 @@ import { TaskPool } from './util/TaskPool';
 import { ResolveRuleAsync } from './util/ResolveRule';
 import { BuildProcessChecker } from './util/BuildProcessChecker';
 import { SharedWithTest } from './AbstractTest';
-import { CancellationFlag } from './Util';
+import { CancellationToken } from './Util';
 import { TestItemManager } from './TestItemManager';
 
 export class WorkspaceShared implements SharedWithTest {
@@ -15,7 +15,7 @@ export class WorkspaceShared implements SharedWithTest {
     public readonly executeTask: (
       taskName: string,
       varsToResolve: readonly ResolveRuleAsync[],
-      cancellationToken: vscode.CancellationToken,
+      cancellationToken: CancellationToken,
     ) => Promise<number | undefined>,
     public readonly varToValue: readonly Readonly<ResolveRuleAsync>[],
     public rngSeed: 'time' | number | null,
@@ -36,17 +36,14 @@ export class WorkspaceShared implements SharedWithTest {
   public readonly taskPool: TaskPool;
   public readonly buildProcessChecker: BuildProcessChecker;
   private readonly _execRunningTimeoutChangeEmitter = new vscode.EventEmitter<void>();
-  private readonly _cancellationFlag = { isCancellationRequested: false };
+  private readonly _cancellationTokenSource: vscode.CancellationTokenSource = new vscode.CancellationTokenSource();
+  public readonly cancellationToken: CancellationToken = this._cancellationTokenSource.token;
 
   public dispose(): void {
-    this._cancellationFlag.isCancellationRequested = true;
+    this._cancellationTokenSource.cancel();
     this.buildProcessChecker.dispose();
     this._execRunningTimeoutChangeEmitter.dispose();
     this.log.dispose();
-  }
-
-  public get cancellationFlag(): CancellationFlag {
-    return this._cancellationFlag;
   }
 
   public get execRunningTimeout(): number | null {

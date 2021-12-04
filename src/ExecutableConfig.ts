@@ -117,7 +117,7 @@ export class ExecutableConfig implements vscode.Disposable {
               const suite = await factory.create(false);
               if (suite) {
                 try {
-                  await suite.reloadTests(this._shared.taskPool, this._shared.cancellationFlag);
+                  await suite.reloadTests(this._shared.taskPool, this._shared.cancellationToken);
                   this._executables.set(file, suite);
                 } catch (reason) {
                   debugBreak();
@@ -355,7 +355,7 @@ export class ExecutableConfig implements vscode.Disposable {
   private readonly _lastEventArrivedAt: Map<string /*fsPath*/, number /*Date*/> = new Map();
 
   private async _handleEverything(filePath: string): Promise<void> {
-    if (this._shared.cancellationFlag.isCancellationRequested) return;
+    if (this._shared.cancellationToken.isCancellationRequested) return;
 
     const isHandlerRunningForFile = this._lastEventArrivedAt.get(filePath) !== undefined;
 
@@ -391,7 +391,7 @@ export class ExecutableConfig implements vscode.Disposable {
   }
 
   private async _recursiveHandleFile(filePath: string, delay = 1024, tryCount = 1): Promise<void> {
-    if (this._shared.cancellationFlag.isCancellationRequested) return;
+    if (this._shared.cancellationToken.isCancellationRequested) return;
 
     const lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
 
@@ -450,7 +450,7 @@ export class ExecutableConfig implements vscode.Disposable {
     isFileExistsAndExecutable = false,
     delay = 128,
   ): Promise<void> {
-    if (this._shared.cancellationFlag.isCancellationRequested) return;
+    if (this._shared.cancellationToken.isCancellationRequested) return;
 
     const filePath = runnable.properties.path;
     const lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
@@ -465,7 +465,7 @@ export class ExecutableConfig implements vscode.Disposable {
       if (this._waitForBuildProcess) await this._shared.buildProcessChecker.resolveAtFinish();
 
       try {
-        await runnable.reloadTests(this._shared.taskPool, this._shared.cancellationFlag);
+        await runnable.reloadTests(this._shared.taskPool, this._shared.cancellationToken);
         this._executables.set(filePath, runnable); // it might be set already but we don't care
         //TODO:release this._shared.sendRetireEvent([runnable]);
       } catch (reason: any /*eslint-disable-line*/) {

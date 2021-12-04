@@ -118,6 +118,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     expected: string,
     actual: string,
   ): void {
+    file = this.test.executable.findSourceFilePath(file);
     const msg = vscode.TestMessage.diff(message, expected, actual);
     msg.location = TestResultBuilder._getLocation(file, line);
     this._message.push(msg);
@@ -130,6 +131,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     expanded: string,
     _type: string | undefined,
   ): void {
+    file = this.test.executable.findSourceFilePath(file);
     this.addMessage(file, line, 'Expanded: `' + expanded + '`');
 
     const loc = TestResultBuilder.getLocationAtStr(file, line);
@@ -144,6 +146,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     title: string,
     ...message: string[]
   ): void {
+    file = this.test.executable.findSourceFilePath(file);
     this.addMessage(file, line, [`${title}`, ...message].join('\r\n'));
     const loc = TestResultBuilder.getLocationAtStr(file, line);
     this.addOutputLine(1, `${title}${loc}`);
@@ -151,12 +154,14 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   }
 
   public addMessage(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
+    file = this.test.executable.findSourceFilePath(file);
     const msg = new vscode.TestMessage(message.join('\r\n'));
     msg.location = TestResultBuilder._getLocation(file, line);
     this._message.push(msg);
   }
 
   public addMarkdownMsg(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
+    file = this.test.executable.findSourceFilePath(file);
     const msg = new vscode.TestMessage(new vscode.MarkdownString(message.join('\r\n\n')));
     msg.location = TestResultBuilder._getLocation(file, line);
     this._message.push(msg);
@@ -168,6 +173,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     title: string,
     ...message: string[]
   ): void {
+    file = this.test.executable.findSourceFilePath(file);
     const loc = TestResultBuilder.getLocationAtStr(file, line);
     this.addOutputLine(1, `${title}${loc}${message.length ? ':' : ''}`);
     this.addOutputLine(2, ...message);
