@@ -16,7 +16,7 @@ import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
 import { TestItemParent } from '../TestItemManager';
-import { pipeOutputStreams2Parser, pipeProcess2Parser } from '../util/ParserInterface';
+import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../util/ParserInterface';
 import { Readable } from 'stream';
 
 export class GoogleTestExecutable extends AbstractExecutable {
@@ -58,20 +58,20 @@ export class GoogleTestExecutable extends AbstractExecutable {
     await pipeOutputStreams2Parser(xmlStream, undefined, parser, undefined);
   }
 
+  private static readonly testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.(?:\s+(#\s+TypeParam(?:\(\))?\s+=\s*(.+)))?$/;
+  private static readonly testRe = /^\s+([A-z0-9][\/A-z0-9_\-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
+
   private async _reloadFromString(
-    stdoutStream: Readable,
-    stderrStream: Readable,
+    stdout: string,
+    stderr: string,
     _cancellationToken: CancellationToken,
   ): Promise<void> {
-    const testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.(?:\s+(#\s+TypeParam(?:\(\))?\s+=\s*(.+)))?$/;
-    const testRe = /^\s+([A-z0-9][\/A-z0-9_\-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
-
     let testGroupM: RegExpMatchArray | null = null;
-    const executable = this; //eslint-disable-line
+    const createAndAddTest = this._createAndAddTest;
 
     const parser = new TextStreamParser(this.shared.log, {
       async online(line: string): Promise<void> {
-        const newTestGroupM = line.match(testGroupRe);
+        const newTestGroupM = line.match(GoogleTestExecutable.testGroupRe);
         if (newTestGroupM !== null) {
           testGroupM = newTestGroupM;
           return;
@@ -79,7 +79,7 @@ export class GoogleTestExecutable extends AbstractExecutable {
 
         if (testGroupM === null) return;
 
-        const testM = line.match(testRe);
+        const testM = line.match(GoogleTestExecutable.testRe);
         if (testM) {
           const suiteName = testGroupM[1];
           const typeParam: string | undefined = testGroupM[3];
@@ -87,12 +87,14 @@ export class GoogleTestExecutable extends AbstractExecutable {
           const testName = testM[1];
           const valueParam: string | undefined = testM[3];
 
-          await executable._createAndAddTest(testName, suiteName, undefined, undefined, typeParam, valueParam);
+          await createAndAddTest(testName, suiteName, undefined, undefined, typeParam, valueParam);
         }
       },
     });
 
-    await pipeOutputStreams2Parser(stdoutStream, stderrStream, parser, undefined);
+    parser.write(stdout);
+    parser.writeStdErr(stderr);
+    await parser.end();
   }
 
   private readonly _createAndAddTest = async (
@@ -148,9 +150,9 @@ export class GoogleTestExecutable extends AbstractExecutable {
       this.properties.options,
     );
 
-    try {
-      await this._reloadFromString(googleTestListProcess.stdout, googleTestListProcess.stderr, cancellationToken);
+    const [stdout, stderr] = await pipeOutputStreams2String(googleTestListProcess.stdout, googleTestListProcess.stderr);
 
+    try {
       const hasXmlFile = await promisify(fs.exists)(cacheFile);
 
       if (hasXmlFile) {
@@ -169,6 +171,7 @@ export class GoogleTestExecutable extends AbstractExecutable {
         this.shared.log.warn(
           "Couldn't parse output file. Possibly it is an older version of Google Test framework, NAVIGATION MIGHT WON'T WOKR. Fallback logic: Trying of parsing the output...",
         );
+        await this._reloadFromString(stdout, stderr, cancellationToken);
       }
     } catch (e) {
       this.shared.log.warn('reloadChildren error:', e);
@@ -286,12 +289,12 @@ class TestSuiteListingProcessor implements XmlTagProcessor {
 
   private suiteName: string | undefined = undefined;
 
-  onopentag(tag: XmlTag): void {
+  async onopentag(tag: XmlTag): Promise<void> {
     switch (tag.name) {
       case 'testcase': {
         assert(this.suiteName);
         assert(tag.attribs.name);
-        this.create(
+        await this.create(
           tag.attribs.name,
           this.suiteName!,
           tag.attribs.file,
@@ -404,15 +407,14 @@ class TestCaseProcessor implements LineProcessor {
     const failureMatch = failureRe.exec(line);
     if (failureMatch) {
       const type = failureMatch[6] as FailureType;
-      const file = failureMatch[2];
+      const file = this.testCaseShared.builder.test.executable.findSourceFilePath(failureMatch[2]);
       const line = failureMatch[3];
       const fullMsg = failureMatch[5];
+      const failureMsg = failureMatch[7];
 
       this.testCaseShared.builder.addOutputLine(
         1,
-        ansi.red(failureMatch[6]) +
-          failureMatch[7] +
-          TestResultBuilder.getLocationAtStr(failureMatch[2], failureMatch[3]),
+        ansi.red(type) + failureMsg + TestResultBuilder.getLocationAtStr(file, line),
       );
 
       switch (type) {

@@ -37,6 +37,7 @@ export class TestItemManager {
       parent.children.delete(item.id);
       parent.children.add(item);
     } else {
+      this.controller.items.delete(item.id);
       this.controller.items.add(item);
     }
 
