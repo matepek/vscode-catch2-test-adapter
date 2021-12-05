@@ -35,7 +35,9 @@ export class TestsToRun {
   }
 }
 
-export abstract class AbstractExecutable implements Disposable, FilePathResolver {
+export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTest>
+  implements Disposable, FilePathResolver
+{
   public constructor(
     public readonly shared: WorkspaceShared,
     public readonly properties: RunnableProperties,
@@ -76,8 +78,8 @@ export abstract class AbstractExecutable implements Disposable, FilePathResolver
     this._tests.set(testId, test);
   }
 
-  protected _getTest<T extends AbstractTest>(testId: string): T | undefined {
-    return this._tests.get(testId) as T;
+  protected _getTest(testId: string): TestT | undefined {
+    return this._tests.get(testId) as TestT;
   }
 
   private async _getOrCreateChildGroup(
@@ -852,7 +854,7 @@ export interface HandleProcessResult {
 }
 
 class ExecutableGroup {
-  public constructor(private readonly executable: AbstractExecutable) {}
+  public constructor(private readonly executable: AbstractExecutable<AbstractTest>) {}
 
   private _busyCounter = 0;
   private _item: vscode.TestItem | undefined = undefined;

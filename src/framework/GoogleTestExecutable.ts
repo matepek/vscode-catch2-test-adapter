@@ -19,7 +19,7 @@ import { TestItemParent } from '../TestItemManager';
 import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../util/ParserInterface';
 import { Readable } from 'stream';
 
-export class GoogleTestExecutable extends AbstractExecutable {
+export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, private readonly _argumentPrefix: string) {
     super(shared, execInfo, 'GoogleTest', undefined);
   }
@@ -229,7 +229,7 @@ export class GoogleTestExecutable extends AbstractExecutable {
           const testNameAsId = beginMatch[1];
           const testName = beginMatch[3];
           const suiteName = beginMatch[2];
-          let test = executable._getTest<GoogleTestTest>(testNameAsId);
+          let test = executable._getTest(testNameAsId);
           if (!test) {
             log.info('TestCase not found in children', testNameAsId);
             test = await executable._createAndAddTest(testName, suiteName, undefined, undefined, undefined, undefined);

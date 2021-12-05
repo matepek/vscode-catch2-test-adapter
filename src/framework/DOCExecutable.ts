@@ -17,7 +17,7 @@ import { TestItemParent } from '../TestItemManager';
 import { SubTestTree } from '../AbstractTest';
 import { pipeProcess2Parser } from '../util/ParserInterface';
 
-export class DOCExecutable extends AbstractExecutable {
+export class DOCExecutable extends AbstractExecutable<DOCTest> {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, docVersion: Version | undefined) {
     super(shared, execInfo, 'doctest', docVersion);
   }
@@ -205,7 +205,7 @@ export class DOCExecutable extends AbstractExecutable {
                 executable.shared,
                 testRun,
                 runInfo.runPrefix,
-                (testNameAsId: string) => executable._getTest<DOCTest>(testNameAsId),
+                (testNameAsId: string) => executable._getTest(testNameAsId),
                 executable._createAndAddTest,
                 unexpectedTests,
                 expectedToRunAndFoundTests,

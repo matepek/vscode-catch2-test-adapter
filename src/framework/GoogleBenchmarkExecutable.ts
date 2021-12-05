@@ -14,7 +14,7 @@ import { TestResultBuilder } from '../TestResultBuilder';
 import { LoggerWrapper } from '../LoggerWrapper';
 import { TestItemParent } from '../TestItemManager';
 
-export class GoogleBenchmarkExecutable extends AbstractExecutable {
+export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmarkTest> {
   public constructor(shared: WorkspaceShared, execInfo: RunnableProperties) {
     super(shared, execInfo, 'GoogleBenchmark', undefined);
   }
@@ -175,7 +175,7 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable {
           }
 
           const testName = benchmark['name'];
-          let test = this._getTest<GoogleBenchmarkTest>(testName);
+          let test = this._getTest(testName);
 
           if (!test) {
             this.shared.log.info('Test not found in children', testName);

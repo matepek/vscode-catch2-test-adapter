@@ -8,7 +8,7 @@ import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { Catch2Test } from './Catch2Test';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { RunningExecutable } from '../RunningExecutable';
-import { AbstractTest, SubTestTree } from '../AbstractTest';
+import { SubTestTree } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
@@ -17,7 +17,7 @@ import { assert } from 'console';
 import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../util/ParserInterface';
 import { Readable } from 'stream';
 
-export class Catch2Executable extends AbstractExecutable {
+export class Catch2Executable extends AbstractExecutable<Catch2Test> {
   public constructor(
     shared: WorkspaceShared,
     execInfo: RunnableProperties,
@@ -26,14 +26,14 @@ export class Catch2Executable extends AbstractExecutable {
     super(shared, execInfo, 'Catch2', _catch2Version);
   }
 
-  protected override _addTest(testId: string, test: AbstractTest): void {
+  protected override _addTest(testId: string, test: Catch2Test): void {
     // Catch2: xml output trimmes the name of the test
     super._addTest(testId.trim(), test);
   }
 
-  protected override _getTest<T extends AbstractTest>(testId: string): T | undefined {
+  protected override _getTest(testId: string): Catch2Test | undefined {
     // Catch2: xml output trimmes the name of the test
-    return super._getTest<T>(testId.trim());
+    return super._getTest(testId.trim());
   }
 
   private getTestGrouping(): TestGrouping {
@@ -326,7 +326,7 @@ export class Catch2Executable extends AbstractExecutable {
               testRun.appendOutput(runInfo.runPrefix + `🔀 Randomness seeded to: ${rngSeed.toString()}\r\n\r\n`);
               break;
             case 'TestCase': {
-              let test = executable._getTest<Catch2Test>(tag.attribs.name);
+              let test = executable._getTest(tag.attribs.name);
               if (!test) {
                 log.info('TestCase not found in children', tag);
                 test = await executable._createAndAddTest(
