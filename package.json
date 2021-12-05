@@ -77,14 +77,14 @@
     "@typescript-eslint/parser": "^5.5.0",
     "bent": "^7.3.12",
     "deep-equal": "^2.0.5",
-    "eslint": "^8.3.0",
+    "eslint": "^8.4.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "4.0.0",
     "fs-extra": "^10.0.0",
     "glob": "^7.2.0",
     "mocha": "^9.1.3",
     "mocha-eslint": "^7.0.0",
-    "prettier": "^2.5.0",
+    "prettier": "^2.5.1",
     "raw-loader": "^4.0.2",
     "sinon": "^12.0.1",
     "source-map-support": "^0.5.21",
@@ -106,13 +106,13 @@
     "commands": [
       {
         "command": "testMate.cmd.reload-tests",
-        "title": "Reload tests",
-        "category": "C++ TestMate"
+        "title": "Reload tests by C++ TestMate",
+        "category": "Test"
       },
       {
         "command": "testMate.cmd.reload-workspaces",
-        "title": "Reload workspaces (in case of an issue)",
-        "category": "C++ TestMate"
+        "title": "Reload workspaces (in case of an issue) by C++ TestMate",
+        "category": "Test"
       }
     ],
     "configuration": {

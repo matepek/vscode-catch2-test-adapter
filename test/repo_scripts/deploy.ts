@@ -227,12 +227,14 @@ async function publishPackage(packagePath: string): Promise<void> {
 
 async function closeMentionedIssues(info: Info): Promise<void> {
   console.log('Closing mentioned issues');
-  if (info.mentionedIssues.length === 0) {
+  const issues = new Set(info.mentionedIssues);
+  if (issues.size === 0) {
     return;
   }
 
-  assert.ok(typeof process.env['GITHUBM_API_KEY'] === 'string');
-  const apiKey = process.env['GITHUBM_API_KEY']!;
+  // cannot be used for push because it has just a collaboration role
+  assert.ok(typeof process.env['TESTMATE_BOT_GITHUB_PAT'] === 'string');
+  const apiKey = process.env['TESTMATE_BOT_GITHUB_PAT']!;
   const keyBase64 = Buffer.from(`${githubOwnerId}:${apiKey}`, 'utf-8').toString('base64');
   const headerBase = {
     'User-Agent': `${githubOwnerId}-deploy.js`,
@@ -240,16 +242,8 @@ async function closeMentionedIssues(info: Info): Promise<void> {
     Accept: 'application/vnd.github.v3+json',
   };
 
-  for (const issueId of info.mentionedIssues) {
+  for (const issueId of issues) {
     //https://docs.github.com/en/rest/reference/issues#edit-an-issue
-
-    await bent(`https://api.github.com`, 'json', 'PATCH')(
-      `/repos/${githubRepoFullId}/issues/${issueId}`,
-      {
-        state: 'closed',
-      },
-      headerBase,
-    );
 
     await bent(
       `https://api.github.com`,
@@ -259,7 +253,22 @@ async function closeMentionedIssues(info: Info): Promise<void> {
     )(
       `/repos/${githubRepoFullId}/issues/${issueId}/comments`,
       {
-        body: `Fixed in ${info.vver}`,
+        body: [
+          '<details>',
+          `<summary>Fixed in **${info.vver}**.</summary>`,
+          '',
+          'This issue was mentioned in [CHANGELOG.md](./CHANGELOG.md) under a released entry so it is assumed to be fixed.',
+          'User verifications are always welcome.',
+          '</details>',
+        ].join('\n'),
+      },
+      headerBase,
+    );
+
+    await bent(`https://api.github.com`, 'json', 'PATCH')(
+      `/repos/${githubRepoFullId}/issues/${issueId}`,
+      {
+        state: 'closed',
       },
       headerBase,
     );

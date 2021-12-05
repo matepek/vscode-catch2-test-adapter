@@ -12,7 +12,7 @@ import { AbstractTest, SubTestTree } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
-import { debugAssert, debugBreak } from '../util/DevelopmentHelper';
+import { debugBreak } from '../util/DevelopmentHelper';
 import { assert } from 'console';
 import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../util/ParserInterface';
 import { Readable } from 'stream';
@@ -407,7 +407,7 @@ class TestCaseListingProcessor implements XmlTagProcessor {
   }
 
   async end(): Promise<void> {
-    debugAssert(this.name);
+    assert(this.name);
     await this.create(this.name!, this.tags, this.file, this.line, this.className);
   }
 }
@@ -673,7 +673,7 @@ class ExpressionProcessor implements XmlTagProcessor {
   }
 
   public end(): void {
-    debugAssert(this.original && this.expanded);
+    assert(this.original && this.expanded);
     if (this.fatalErrorCondition) {
       this.builder.addMessageWithOutput(
         this.attribs.filename,

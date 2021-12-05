@@ -34,9 +34,9 @@
     {
       "type": "extensionHost",
       "request": "launch",
-      "name": "Manual chorus",
+      "name": "Manual cpp + extensions",
       "runtimeExecutable": "${execPath}",
-      "args": ["/Users/matepek/repo/ac-chorus-addon/nbschorusconnect", "--extensionDevelopmentPath=${workspaceFolder}"],
+      "args": ["${workspaceFolder}/out/cpp", "--extensionDevelopmentPath=${workspaceFolder}"],
       "env": {
         "TESTMATE_DEBUG": "true"
       },

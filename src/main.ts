@@ -206,9 +206,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('testMate.cmd.reload-tests', async () => {
-      for (const ws of workspace2manager.values()) {
-        await ws.load();
-      }
+      return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then();
     }),
   );
 

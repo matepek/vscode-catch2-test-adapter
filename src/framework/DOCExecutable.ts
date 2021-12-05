@@ -11,7 +11,7 @@ import { RunnableProperties } from '../RunnableProperties';
 import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
-import { assert, debugAssert, debugBreak } from '../util/DevelopmentHelper';
+import { assert, debugBreak } from '../util/DevelopmentHelper';
 import { TestResultBuilder } from '../TestResultBuilder';
 import { TestItemParent } from '../TestItemManager';
 import { SubTestTree } from '../AbstractTest';
@@ -41,7 +41,7 @@ export class DOCExecutable extends AbstractExecutable {
           switch (tag.name) {
             case 'TestCase':
               {
-                debugAssert(tag.attribs.name);
+                assert(tag.attribs.name);
                 await createAndAddTest(
                   tag.attribs.name,
                   tag.attribs.testsuite, // currently doctest doesn't provide it
@@ -548,7 +548,7 @@ class ExpressionProcessor implements XmlTagProcessor {
   }
 
   public end(): void {
-    debugAssert(this.original);
+    assert(this.original);
 
     if (this.other.size) {
       if (this.expanded) this._shared.log.errorS('unknown doctest expression with expanded', this.expanded, this.other);
@@ -594,7 +594,7 @@ class MessageProcessor implements XmlTagProcessor {
   }
 
   public end(): void {
-    debugAssert(this.text !== undefined);
+    assert(this.text !== undefined);
 
     if (this.attribs.type === 'FATAL ERROR') {
       this.caseData.hasFailedExpression = true;
