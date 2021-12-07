@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.11]
+
+### Fixed
+
+- hopefully fixes the "infinite test loading" [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/313)
+
 ## [4.0.10] - 2021-12-04
 
 ### Changed

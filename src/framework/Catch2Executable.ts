@@ -12,8 +12,7 @@ import { SubTestTree } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
-import { debugBreak } from '../util/DevelopmentHelper';
-import { assert } from 'console';
+import { assert, debugBreak } from '../util/DevelopmentHelper';
 import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../util/ParserInterface';
 import { Readable } from 'stream';
 
