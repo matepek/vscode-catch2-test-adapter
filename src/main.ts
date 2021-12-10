@@ -76,7 +76,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       const test = testItemManager.map(item);
 
       if (test) {
-        const executable = test.executable;
+        const executable = test.exec;
         const manager = workspace2manager.get(executable.shared.workspaceFolder)!;
         let executables = managers.get(manager);
         if (!executables) {

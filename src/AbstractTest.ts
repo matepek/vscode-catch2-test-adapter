@@ -1,24 +1,15 @@
 import * as vscode from 'vscode';
 import { AbstractExecutable } from './AbstractExecutable';
-import { LoggerWrapper } from './LoggerWrapper';
 import { debugAssert } from './util/DevelopmentHelper';
 import { SharedTestTags } from './SharedTestTags';
-import { TestItemManager } from './TestItemManager';
 
-///
-
-export interface SharedWithTest {
-  log: LoggerWrapper;
-  testController: TestItemManager;
-}
 ///
 
 export abstract class AbstractTest {
   private _item: vscode.TestItem;
 
   protected constructor(
-    readonly shared: SharedWithTest,
-    readonly executable: AbstractExecutable,
+    readonly exec: AbstractExecutable,
     parent: vscode.TestItem | undefined,
     readonly id: string, // identifies the test inside the executable
     label: string, // usually the same as testId
@@ -32,7 +23,7 @@ export abstract class AbstractTest {
     readonly debuggable = true,
     readonly runnable = true,
   ) {
-    this._item = this.shared.testController.createOrReplace(parent, id, label, resolvedFile, line, this);
+    this._item = this.exec.shared.testController.createOrReplace(parent, id, label, resolvedFile, line, this);
 
     this._item.description = description;
 
@@ -43,6 +34,8 @@ export abstract class AbstractTest {
 
     this._item.tags = this._calcTags();
   }
+
+  readonly log = this.exec.log;
 
   get item(): Readonly<vscode.TestItem> {
     return this._item;
@@ -58,9 +51,9 @@ export abstract class AbstractTest {
 
   async updateFL(file: string | undefined, line: string | undefined): Promise<void> {
     const oldItem = this._item;
-    this._item = await this.shared.testController.update(this._item, file, line, this.executable, null, null, null);
+    this._item = await this.exec.shared.testController.update(this._item, file, line, this.exec, null, null, null);
     if (oldItem !== this._item) {
-      this.shared.log.info('TestItem locaction has been updated', {
+      this.exec.log.info('TestItem locaction has been updated', {
         old: oldItem.uri?.path,
         current: this._item.uri?.path,
       });
@@ -81,7 +74,7 @@ export abstract class AbstractTest {
       tagsCalculated = this._calcTags();
     }
 
-    this.shared.testController.update(this._item, file, line, this.executable, label, description, tagsCalculated);
+    this.exec.shared.testController.update(this._item, file, line, this.exec, label, description, tagsCalculated);
 
     if (skipped !== null && this._skipped !== skipped) {
       this._skipped = skipped;
@@ -94,7 +87,7 @@ export abstract class AbstractTest {
   }
 
   get skipped(): boolean {
-    return this._skipped || this.executable.properties.markAsSkipped;
+    return this._skipped || this.exec.shared.markAsSkipped;
   }
 
   set skipped(skipped: boolean) {
@@ -159,7 +152,7 @@ export abstract class AbstractTest {
     file: string | undefined,
     line: string | undefined,
   ): Promise<SubTest> {
-    const resolvedFile = await this.executable.resolveAndFindSourceFilePath(file);
+    const resolvedFile = await this.exec.resolveAndFindSourceFilePath(file);
 
     if (this._subTests) {
       const found = this._subTests.get(id);
@@ -172,16 +165,7 @@ export abstract class AbstractTest {
       this._subTests = new Map();
     }
 
-    const subTest = new SubTest(
-      this.shared,
-      this.executable,
-      this._item,
-      id,
-      label,
-      resolvedFile,
-      line,
-      this._frameworkTag,
-    );
+    const subTest = new SubTest(this.exec, this._item, id, label, resolvedFile, line, this._frameworkTag);
     this._subTests.set(id, subTest);
 
     return subTest;
@@ -214,7 +198,6 @@ export type SubTestTree = Map<string, SubTestTree>;
 
 export class SubTest extends AbstractTest {
   constructor(
-    shared: SharedWithTest,
     executable: AbstractExecutable,
     readonly parent: vscode.TestItem,
     id: string,
@@ -223,22 +206,7 @@ export class SubTest extends AbstractTest {
     line: string | undefined,
     frameworkTag: vscode.TestTag,
   ) {
-    super(
-      shared,
-      executable,
-      parent,
-      id,
-      '⤷',
-      file,
-      line,
-      false,
-      undefined,
-      label || id,
-      [],
-      frameworkTag,
-      false,
-      false,
-    );
+    super(executable, parent, id, '⤷', file, line, false, undefined, label || id, [], frameworkTag, false, false);
   }
 
   override get label(): string {

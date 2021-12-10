@@ -1,5 +1,5 @@
 import * as c2fs from './util/FSWrapper';
-import { RunnableProperties } from './RunnableProperties';
+import { SharedVarOfExec } from './SharedVarOfExec';
 import { AbstractExecutable } from './AbstractExecutable';
 import { Catch2Executable } from './framework/Catch2Executable';
 import { GoogleTestExecutable } from './framework/GoogleTestExecutable';
@@ -55,7 +55,8 @@ export class ExecutableFactory {
       const match = runWithHelpRes.stdout.match(regex);
 
       if (match) {
-        const properties = new RunnableProperties(
+        const execShared = new SharedVarOfExec(
+          this._shared,
           this._execName,
           this._execDescription,
           this._varToValue,
@@ -69,7 +70,7 @@ export class ExecutableFactory {
           this._sourceFileMap,
         );
 
-        return frameworkData.create(this._shared, properties, match);
+        return frameworkData.create(execShared, match);
       }
     }
 
@@ -88,37 +89,37 @@ const frameworkDatas: Record<
   Readonly<{
     priority: number;
     regex: RegExp;
-    create: (shared: WorkspaceShared, prop: RunnableProperties, match: RegExpMatchArray) => AbstractExecutable;
+    create: (execShared: SharedVarOfExec, match: RegExpMatchArray) => AbstractExecutable;
   }>
 > = {
   catch2: {
     priority: 10,
     regex: /Catch v(\d+)\.(\d+)\.(\d+)\s?/,
-    create: (shared: WorkspaceShared, prop: RunnableProperties, match: RegExpMatchArray) =>
-      new Catch2Executable(shared, prop, parseVersion123(match)),
+    create: (execShared: SharedVarOfExec, match: RegExpMatchArray) =>
+      new Catch2Executable(execShared, parseVersion123(match)),
   },
   gtest: {
     priority: 20,
     regex:
       /This program contains tests written using .*--(\w+)list_tests.*List the names of all tests instead of running them/s,
-    create: (shared: WorkspaceShared, prop: RunnableProperties, match: RegExpMatchArray) =>
-      new GoogleTestExecutable(shared, prop, match[1] ?? 'gtest_'),
+    create: (execShared: SharedVarOfExec, match: RegExpMatchArray) =>
+      new GoogleTestExecutable(execShared, match[1] ?? 'gtest_'),
   },
   doctest: {
     priority: 30,
     regex: /doctest version is "(\d+)\.(\d+)\.(\d+)"/,
-    create: (shared: WorkspaceShared, prop: RunnableProperties, match: RegExpMatchArray) =>
-      new DOCExecutable(shared, prop, parseVersion123(match)),
+    create: (execShared: SharedVarOfExec, match: RegExpMatchArray) =>
+      new DOCExecutable(execShared, parseVersion123(match)),
   },
   gbenchmark: {
     priority: 40,
     regex: /benchmark \[--benchmark_list_tests=\{true\|false\}\]/,
-    create: (shared: WorkspaceShared, prop: RunnableProperties) => new GoogleBenchmarkExecutable(shared, prop),
+    create: (execShared: SharedVarOfExec) => new GoogleBenchmarkExecutable(execShared),
   },
   'google-insider': {
     priority: 50,
     regex: /Try --helpfull to get a list of all flags./,
-    create: (shared: WorkspaceShared, prop: RunnableProperties) => new GoogleTestExecutable(shared, prop, 'gunit_'),
+    create: (execShared: SharedVarOfExec) => new GoogleTestExecutable(execShared, 'gunit_'),
   },
 };
 

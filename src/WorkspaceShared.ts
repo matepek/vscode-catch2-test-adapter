@@ -3,11 +3,11 @@ import * as vscode from 'vscode';
 import { TaskPool } from './util/TaskPool';
 import { ResolveRuleAsync } from './util/ResolveRule';
 import { BuildProcessChecker } from './util/BuildProcessChecker';
-import { SharedWithTest } from './AbstractTest';
 import { CancellationToken } from './Util';
 import { TestItemManager } from './TestItemManager';
+import { FrameworkSpecific } from './AdvancedExecutableInterface';
 
-export class WorkspaceShared implements SharedWithTest {
+export class WorkspaceShared {
   constructor(
     readonly workspaceFolder: vscode.WorkspaceFolder,
     readonly log: LoggerWrapper,
@@ -25,6 +25,7 @@ export class WorkspaceShared implements SharedWithTest {
     public isNoThrow: boolean,
     workerMaxNumber: number,
     public enabledTestListCaching: boolean,
+    public enabledSubTestListing: boolean,
     public enabledStrictPattern: boolean,
     public googleTestTreatGMockWarningAs: 'nothing' | 'failure',
     public googleTestGMockVerbose: 'default' | 'info' | 'warning' | 'error',
@@ -56,4 +57,15 @@ export class WorkspaceShared implements SharedWithTest {
   }
 
   readonly onDidChangeExecRunningTimeout = this._execRunningTimeoutChangeEmitter.event;
+
+  withFrameworkSpecific(fws: FrameworkSpecific): ExecutableShared {
+    return {
+      log: this.log,
+      'test.enabledSubTestListing': fws['test.enabledSubTestListing'] ?? this.enabledSubTestListing,
+    };
+  }
+}
+
+export interface ExecutableShared extends Readonly<FrameworkSpecific> {
+  readonly log: LoggerWrapper;
 }

@@ -3,10 +3,9 @@ import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
-import { RunnableProperties } from '../RunnableProperties';
+import { SharedVarOfExec } from '../SharedVarOfExec';
 import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { Catch2Test } from './Catch2Test';
-import { WorkspaceShared } from '../WorkspaceShared';
 import { RunningExecutable } from '../RunningExecutable';
 import { SubTestTree } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
@@ -17,12 +16,8 @@ import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser 
 import { Readable } from 'stream';
 
 export class Catch2Executable extends AbstractExecutable<Catch2Test> {
-  constructor(
-    shared: WorkspaceShared,
-    execInfo: RunnableProperties,
-    private readonly _catch2Version: Version | undefined,
-  ) {
-    super(shared, execInfo, 'Catch2', _catch2Version);
+  constructor(execShared: SharedVarOfExec, private readonly _catch2Version: Version | undefined) {
+    super(execShared, 'Catch2', _catch2Version);
   }
 
   protected override _addTest(testId: string, test: Catch2Test): void {
@@ -36,8 +31,8 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
   }
 
   private getTestGrouping(): TestGrouping {
-    if (this.properties.testGrouping) {
-      return this.properties.testGrouping;
+    if (this.shared.testGrouping) {
+      return this.shared.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
       return grouping;
@@ -47,7 +42,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
   private async _reloadFromString(stream: Readable, cancellationFlag: CancellationFlag): Promise<void> {
     const [stdout, stderr] = await pipeOutputStreams2String(stream, undefined);
 
-    if (stderr && !this.properties.ignoreTestEnumerationStdErr) {
+    if (stderr && !this.shared.ignoreTestEnumerationStdErr) {
       this.shared.log.warn('reloadChildren -> stderr', stderr);
       await this._createAndAddUnexpectedStdError(stdout, stderr);
       return;
@@ -196,18 +191,18 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
       tags,
       description,
       (parent: vscode.TestItem | undefined) =>
-        new Catch2Test(this.shared, this, parent, this._catch2Version, testName, resolvedFile, line, tags, description),
+        new Catch2Test(this, parent, this._catch2Version, testName, resolvedFile, line, tags, description),
       (test: Catch2Test) => test.update2(resolvedFile, line, tags, description),
     );
   };
 
   protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<void> {
-    const cacheFile = this.properties.path + '.TestMate.testListCache.txt';
+    const cacheFile = this.shared.path + '.TestMate.testListCache.txt';
 
     if (this.shared.enabledTestListCaching) {
       try {
         const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.properties.path);
+        const execStat = await promisify(fs.stat)(this.shared.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this.shared.log.info('loading from cache: ', cacheFile);
@@ -222,7 +217,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
       }
     }
 
-    const args = this.properties.prependTestListingArgs.concat([
+    const args = this.shared.prependTestListingArgs.concat([
       '[.],*',
       '--verbosity',
       'high',
@@ -233,15 +228,11 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
 
     if (this._catch2Version && this._catch2Version.major >= 3) args.push('--reporter', 'xml');
 
-    this.shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
+    this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
 
-    //const process = await this.properties.spawner.spawn(this.properties.path, args, this.properties.options);
+    //const process = await this.execShared.spawner.spawn(this.execShared.path, args, this.execShared.options);
 
-    const catch2TestListingProcess = await this.properties.spawner.spawn(
-      this.properties.path,
-      args,
-      this.properties.options,
-    );
+    const catch2TestListingProcess = await this.shared.spawner.spawn(this.shared.path, args, this.shared.options);
 
     const result =
       this._catch2Version && this._catch2Version.major >= 3
@@ -416,7 +407,7 @@ class TestCaseListingProcessor implements XmlTagProcessor {
 abstract class TagProcessorBase implements XmlTagProcessor {
   constructor(
     readonly builder: TestResultBuilder,
-    protected readonly shared: WorkspaceShared,
+    protected readonly shared: SharedVarOfExec,
     protected readonly sections: SubTestTree,
   ) {}
 
@@ -470,13 +461,13 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     | ((
         tag: XmlTag,
         builder: TestResultBuilder,
-        shared: WorkspaceShared,
+        shared: SharedVarOfExec,
         sections: SubTestTree,
       ) => void | XmlTagProcessor | Promise<void | XmlTagProcessor>)
   > = new Map([
     [
       'OverallResult',
-      (tag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared, _sections: SubTestTree): void => {
+      (tag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec, _sections: SubTestTree): void => {
         builder.setDurationMilisec(parseFloat(tag.attribs.durationInSeconds) * 1000);
         if (tag.attribs.success === 'true') {
           builder.passed();
@@ -487,7 +478,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'OverallResults',
-      (tag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
+      (tag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
         builder.setDurationMilisec(parseFloat(tag.attribs.durationInSeconds) * 1000);
         if (
           (!tag.attribs.expectedFailures && tag.attribs.failures !== '0') ||
@@ -501,7 +492,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'Expression',
-      (tag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared): XmlTagProcessor =>
+      (tag: XmlTag, builder: TestResultBuilder, shared: SharedVarOfExec): XmlTagProcessor =>
         new ExpressionProcessor(shared, builder, tag.attribs),
     ],
     [
@@ -509,13 +500,13 @@ abstract class TagProcessorBase implements XmlTagProcessor {
       (
         tag: XmlTag,
         builder: TestResultBuilder,
-        shared: WorkspaceShared,
+        shared: SharedVarOfExec,
         sections: SubTestTree,
       ): Promise<XmlTagProcessor> => SectionProcessor.create(shared, builder, tag.attribs, sections),
     ],
     [
       'BenchmarkResults',
-      async (tag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared): Promise<XmlTagProcessor> => {
+      async (tag: XmlTag, builder: TestResultBuilder, shared: SharedVarOfExec): Promise<XmlTagProcessor> => {
         assert(tag.attribs.name);
         const subTest = await builder.test.getOrCreateSubTest(tag.attribs.name, undefined, undefined, undefined);
         const subBuilder = builder.createSubTestBuilder(subTest);
@@ -526,23 +517,23 @@ abstract class TagProcessorBase implements XmlTagProcessor {
 
   private static readonly textProcessorMap: Map<
     string,
-    null | ((dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, shared: WorkspaceShared) => void)
+    null | ((dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, shared: SharedVarOfExec) => void)
   > = new Map([
     [
       'StdOut',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
         builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'std::cout', dataTrimmed);
       },
     ],
     [
       'StdErr',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
         builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'std::cerr', dataTrimmed);
       },
     ],
     [
       'Exception',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
         builder.addMessageWithOutput(
           parentTag.attribs.filename,
           parentTag.attribs.line,
@@ -552,7 +543,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'FatalErrorCondition',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
         builder.addMessageWithOutput(
           parentTag.attribs.filename,
           parentTag.attribs.line,
@@ -563,19 +554,19 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'Failure',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
         builder.addMessageWithOutput(parentTag.attribs.filename, parentTag.attribs.line, 'Failure', dataTrimmed);
       },
     ],
     [
       'Warning',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
         builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Warning', dataTrimmed);
       },
     ],
     [
       'Info',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: WorkspaceShared) => {
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
         builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Info', dataTrimmed);
       },
     ],
@@ -586,7 +577,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
 
 class TestCaseTagProcessor extends TagProcessorBase {
   constructor(
-    shared: WorkspaceShared,
+    shared: SharedVarOfExec,
     builder: TestResultBuilder,
     private readonly test: Catch2Test,
     private readonly attribs: Record<string, string>,
@@ -600,7 +591,8 @@ class TestCaseTagProcessor extends TagProcessorBase {
   }
 
   end(): void {
-    this.builder.test.removeMissingSubTests(this.sections);
+    if (this.shared.enabledSubTestListing) this.builder.test.removeMissingSubTests(this.sections);
+    else this.builder.test.clearSubTests();
     this.builder.build();
   }
 }
@@ -609,15 +601,23 @@ class TestCaseTagProcessor extends TagProcessorBase {
 
 class SectionProcessor extends TagProcessorBase {
   static async create(
-    shared: WorkspaceShared,
+    shared: SharedVarOfExec,
     testBuilder: TestResultBuilder,
     attribs: Record<string, string>,
     sections: SubTestTree,
   ) {
     if (typeof attribs.name !== 'string' || !attribs.name) throw Error('Section must have name attribute');
 
-    const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, undefined, attribs.filename, attribs.line);
-    const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
+    let subTestBuilder = testBuilder;
+    if (shared.enabledSubTestListing) {
+      const subTest = await testBuilder.test.getOrCreateSubTest(
+        attribs.name,
+        undefined,
+        attribs.filename,
+        attribs.line,
+      );
+      subTestBuilder = testBuilder.createSubTestBuilder(subTest);
+    }
 
     let subSections = sections.get(attribs.name);
     if (subSections === undefined) {
@@ -628,7 +628,7 @@ class SectionProcessor extends TagProcessorBase {
     return new SectionProcessor(shared, subTestBuilder, subSections);
   }
 
-  private constructor(shared: WorkspaceShared, testBuilder: TestResultBuilder, sections: SubTestTree) {
+  private constructor(shared: SharedVarOfExec, testBuilder: TestResultBuilder, sections: SubTestTree) {
     testBuilder.started();
     super(testBuilder, shared, sections);
   }
@@ -640,7 +640,7 @@ class SectionProcessor extends TagProcessorBase {
 
 class ExpressionProcessor implements XmlTagProcessor {
   constructor(
-    private readonly _shared: WorkspaceShared,
+    private readonly _shared: SharedVarOfExec,
     private readonly builder: TestResultBuilder,
     private readonly attribs: Record<string, string>,
   ) {}
@@ -710,7 +710,7 @@ class BenchmarkResultsProcessor implements XmlTagProcessor {
       </BenchmarkResults>
    */
   constructor(
-    private readonly shared: WorkspaceShared,
+    private readonly shared: SharedVarOfExec,
     private readonly builder: TestResultBuilder,
     private readonly attribs: Record<string, string>,
   ) {

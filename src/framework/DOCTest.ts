@@ -1,4 +1,4 @@
-import { AbstractTest, SharedWithTest } from '../AbstractTest';
+import { AbstractTest } from '../AbstractTest';
 import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';
 import { TestItemParent } from '../TestItemManager';
@@ -29,7 +29,6 @@ export class DOCSection implements Frame {
 
 export class DOCTest extends AbstractTest {
   constructor(
-    shared: SharedWithTest,
     executable: AbstractExecutable,
     parent: TestItemParent,
     testNameAsId: string,
@@ -40,7 +39,6 @@ export class DOCTest extends AbstractTest {
     skipped: boolean,
   ) {
     super(
-      shared,
       executable,
       parent,
       testNameAsId,

@@ -5,9 +5,8 @@ import { inspect, promisify } from 'util';
 import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 
 import { DOCTest } from './DOCTest';
-import { WorkspaceShared } from '../WorkspaceShared';
+import { SharedVarOfExec } from '../SharedVarOfExec';
 import { RunningExecutable } from '../RunningExecutable';
-import { RunnableProperties } from '../RunnableProperties';
 import { CancellationFlag, Version } from '../Util';
 import { TestGrouping } from '../TestGroupingInterface';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
@@ -18,13 +17,13 @@ import { SubTestTree } from '../AbstractTest';
 import { pipeProcess2Parser } from '../util/ParserInterface';
 
 export class DOCExecutable extends AbstractExecutable<DOCTest> {
-  constructor(shared: WorkspaceShared, execInfo: RunnableProperties, docVersion: Version | undefined) {
-    super(shared, execInfo, 'doctest', docVersion);
+  constructor(execShared: SharedVarOfExec, docVersion: Version | undefined) {
+    super(execShared, 'doctest', docVersion);
   }
 
   private getTestGrouping(): TestGrouping {
-    if (this.properties.testGrouping) {
-      return this.properties.testGrouping;
+    if (this.shared.testGrouping) {
+      return this.shared.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
       return grouping;
@@ -87,19 +86,18 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
       resolvedFile,
       tags,
       description,
-      (parent: TestItemParent) =>
-        new DOCTest(this.shared, this, parent, testName, tags, resolvedFile, line, description, skippedB),
+      (parent: TestItemParent) => new DOCTest(this, parent, testName, tags, resolvedFile, line, description, skippedB),
       (test: DOCTest) => test.update2(resolvedFile, line, tags, skippedB, description),
     );
   };
 
   protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<void> {
-    const cacheFile = this.properties.path + '.TestMate.testListCache.txt';
+    const cacheFile = this.shared.path + '.TestMate.testListCache.txt';
 
     if (this.shared.enabledTestListCaching) {
       try {
         const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.properties.path);
+        const execStat = await promisify(fs.stat)(this.shared.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this.shared.log.info('loading from cache: ', cacheFile);
@@ -112,22 +110,17 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
       }
     }
 
-    const args = this.properties.prependTestListingArgs.concat([
+    const args = this.shared.prependTestListingArgs.concat([
       '--list-test-cases',
       '--reporters=xml',
       '--no-skip=true',
       '--no-color=true',
     ]);
 
-    this.shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
-    const docTestListOutput = await this.properties.spawner.spawnAsync(
-      this.properties.path,
-      args,
-      this.properties.options,
-      30000,
-    );
+    this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
+    const docTestListOutput = await this.shared.spawner.spawnAsync(this.shared.path, args, this.shared.options, 30000);
 
-    if (docTestListOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
+    if (docTestListOutput.stderr && !this.shared.ignoreTestEnumerationStdErr) {
       this.shared.log.warn(
         'reloadChildren -> docTestListOutput.stderr',
         docTestListOutput.stdout,
@@ -244,7 +237,7 @@ type Option = Record<string, string> & { rand_seed?: string };
 
 class TestSuiteTagProcessor implements XmlTagProcessor {
   constructor(
-    private readonly shared: WorkspaceShared,
+    private readonly shared: SharedVarOfExec,
     private readonly testRun: vscode.TestRun,
     private readonly runPrefix: string,
     private readonly findTest: (testNameAsId: string) => DOCTest | undefined,
@@ -308,7 +301,7 @@ type CaseData = { hasException?: true; hasFailedExpression?: true };
 abstract class TagProcessorBase implements XmlTagProcessor {
   constructor(
     readonly builder: TestResultBuilder,
-    protected readonly shared: WorkspaceShared,
+    protected readonly shared: SharedVarOfExec,
     protected readonly caseData: CaseData,
     protected readonly subCases: SubTestTree,
   ) {}
@@ -358,7 +351,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         tag: XmlTag,
         builder: TestResultBuilder,
         caseData: CaseData,
-        shared: WorkspaceShared,
+        shared: SharedVarOfExec,
         subCases: SubTestTree,
       ) => void | XmlTagProcessor | Promise<void | XmlTagProcessor>)
   > = new Map([
@@ -368,7 +361,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         tag: XmlTag,
         builder: TestResultBuilder,
         caseData: CaseData,
-        shared: WorkspaceShared,
+        shared: SharedVarOfExec,
         subCases: SubTestTree,
       ): void | XmlTagProcessor | Promise<XmlTagProcessor> => {
         // if name is missing we don't create subcase for it
@@ -377,12 +370,12 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'Message',
-      (tag: XmlTag, builder: TestResultBuilder, caseData: CaseData, shared: WorkspaceShared): XmlTagProcessor =>
+      (tag: XmlTag, builder: TestResultBuilder, caseData: CaseData, shared: SharedVarOfExec): XmlTagProcessor =>
         new MessageProcessor(shared, builder, tag.attribs, caseData),
     ],
     [
       'Expression',
-      (tag: XmlTag, builder: TestResultBuilder, caseData: CaseData, shared: WorkspaceShared): XmlTagProcessor =>
+      (tag: XmlTag, builder: TestResultBuilder, caseData: CaseData, shared: SharedVarOfExec): XmlTagProcessor =>
         new ExpressionProcessor(shared, builder, tag.attribs, caseData),
     ],
   ]);
@@ -395,7 +388,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         parentTag: XmlTag,
         builder: TestResultBuilder,
         caseData: CaseData,
-        shared: WorkspaceShared,
+        shared: SharedVarOfExec,
       ) => void)
   > = new Map([
     [
@@ -405,7 +398,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         parentTag: XmlTag,
         builder: TestResultBuilder,
         caseData: CaseData,
-        _shared: WorkspaceShared,
+        _shared: SharedVarOfExec,
       ) => {
         builder.addMessageWithOutput(
           parentTag.attribs.filename,
@@ -423,7 +416,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
 
 class TestCaseTagProcessor extends TagProcessorBase {
   constructor(
-    shared: WorkspaceShared,
+    shared: SharedVarOfExec,
     builder: TestResultBuilder,
     private readonly test: DOCTest,
     private readonly attribs: Record<string, string>,
@@ -485,7 +478,10 @@ class TestCaseTagProcessor extends TagProcessorBase {
       }
 
       this.builder[result]();
-      this.builder.test.removeMissingSubTests(this.subCases);
+
+      if (this.shared.enabledSubTestListing) this.builder.test.removeMissingSubTests(this.subCases);
+      else this.builder.test.clearSubTests();
+
       this.builder.build();
     } else {
       return super.onopentag(tag);
@@ -497,7 +493,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
 
 class SubCaseProcessor extends TagProcessorBase {
   static async create(
-    shared: WorkspaceShared,
+    shared: SharedVarOfExec,
     testBuilder: TestResultBuilder,
     attribs: Record<string, string>,
     parentCaseData: CaseData,
@@ -511,9 +507,12 @@ class SubCaseProcessor extends TagProcessorBase {
       if (m) label = m[1];
     }
 
-    const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, label, attribs.filename, attribs.line);
-    const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
-    subTestBuilder.passed(); // set as passed and make it failed lateer if error happens
+    let subTestBuilder = testBuilder;
+    if (shared.enabledSubTestListing) {
+      const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, label, attribs.filename, attribs.line);
+      subTestBuilder = testBuilder.createSubTestBuilder(subTest);
+      subTestBuilder.passed(); // set as passed and make it failed lateer if error happens
+    }
 
     let subSubCases = subCases.get(attribs.name);
     if (subSubCases === undefined) {
@@ -525,7 +524,7 @@ class SubCaseProcessor extends TagProcessorBase {
   }
 
   private constructor(
-    shared: WorkspaceShared,
+    shared: SharedVarOfExec,
     testBuilder: TestResultBuilder,
     parentCaseData: CaseData,
     subCases: SubTestTree,
@@ -543,7 +542,7 @@ class SubCaseProcessor extends TagProcessorBase {
 
 class ExpressionProcessor implements XmlTagProcessor {
   constructor(
-    private readonly _shared: WorkspaceShared,
+    private readonly _shared: SharedVarOfExec,
     private readonly builder: TestResultBuilder,
     private readonly attribs: Record<string, string>,
     caseData: CaseData,
@@ -598,7 +597,7 @@ class ExpressionProcessor implements XmlTagProcessor {
 
 class MessageProcessor implements XmlTagProcessor {
   constructor(
-    private readonly _shared: WorkspaceShared,
+    private readonly _shared: SharedVarOfExec,
     private readonly builder: TestResultBuilder,
     private readonly attribs: Record<string, string>,
     private readonly caseData: CaseData,

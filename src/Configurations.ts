@@ -34,6 +34,7 @@ export type Config =
   | 'test.randomGeneratorSeed'
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
+  | 'test.enabledSubTestListing'
   | 'discovery.gracePeriodForMissing'
   | 'discovery.runtimeLimit'
   | 'discovery.testListCaching'
@@ -68,7 +69,7 @@ export class Configurations {
     return this._cfg.get<T>(section);
   }
 
-  private _getD<T>(section: string, defaultValue: T): T {
+  private _getD<T>(section: Config, defaultValue: T): T {
     return this._cfg.get<T>(section, defaultValue);
   }
 
@@ -340,6 +341,10 @@ export class Configurations {
     }
   }
 
+  getEnabledSubTestListing(): boolean {
+    return this._getD<boolean>('test.enabledSubTestListing', true);
+  }
+
   getParallelExecutionOfExecutableLimit(): number {
     const cfgName: Config = 'test.parallelExecutionOfExecutableLimit';
     const res = Math.max(1, this._getD<number>(cfgName, 1));
@@ -587,6 +592,9 @@ export class Configurations {
         r['debug.enableOutputColouring'] = obj['debug.enableOutputColouring'];
 
       if (typeof obj.failIfExceedsLimitNs === 'number') r.failIfExceedsLimitNs = obj.failIfExceedsLimitNs;
+
+      if (typeof obj['test.enabledSubTestListing'] === 'boolean')
+        r['test.enabledSubTestListing'] = obj['test.enabledSubTestListing'];
     }
 
     return r;

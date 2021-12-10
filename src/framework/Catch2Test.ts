@@ -1,4 +1,4 @@
-import { AbstractTest, SharedWithTest } from '../AbstractTest';
+import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
 import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';
@@ -8,7 +8,6 @@ import { TestItemParent } from '../TestItemManager';
 
 export class Catch2Test extends AbstractTest {
   constructor(
-    shared: SharedWithTest,
     executable: AbstractExecutable,
     parent: TestItemParent,
     frameworkVersion: Version | undefined,
@@ -42,7 +41,6 @@ export class Catch2Test extends AbstractTest {
     const calcDescription = AbstractTest.calcDescription(tags, undefined, undefined, description);
 
     super(
-      shared,
       executable,
       parent,
       testNameAsId,

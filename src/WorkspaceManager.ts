@@ -122,6 +122,7 @@ export class WorkspaceManager implements vscode.Disposable {
       configuration.getDefaultNoThrow(),
       configuration.getParallelExecutionLimit(),
       configuration.getEnableTestListCaching(),
+      configuration.getEnabledSubTestListing(),
       configuration.getEnableStrictPattern(),
       configuration.getGoogleTestTreatGMockWarningAs(),
       configuration.getGoogleTestGMockVerbose(),
@@ -159,6 +160,9 @@ export class WorkspaceManager implements vscode.Disposable {
           }
           if (affectsAny('test.parallelExecutionLimit')) {
             this._shared.taskPool.maxTaskCount = config.getParallelExecutionLimit();
+          }
+          if (affectsAny('test.enabledSubTestListing')) {
+            this._shared.enabledSubTestListing = config.getEnabledSubTestListing();
           }
           if (affectsAny('discovery.testListCaching')) {
             this._shared.enabledTestListCaching = config.getEnableTestListCaching();
@@ -258,7 +262,7 @@ export class WorkspaceManager implements vscode.Disposable {
       ps.push(
         exec
           .run(testRun, toRun, this._shared.taskPool, cancellation)
-          .catch(err => this._shared.log.error('RootTestSuite.run.for.child', exec.properties.path, err)),
+          .catch(err => this._shared.log.error('RootTestSuite.run.for.child', exec.shared.path, err)),
       );
     }
 
@@ -287,8 +291,8 @@ export class WorkspaceManager implements vscode.Disposable {
     const runnableExecArray: string[] = [];
 
     for (const runnable of runnables) {
-      runnable.properties.runTask[type]?.forEach(t => runTasks.add(t));
-      runnableExecArray.push(runnable.properties.path);
+      runnable.shared.runTask[type]?.forEach(t => runTasks.add(t));
+      runnableExecArray.push(runnable.shared.path);
     }
 
     if (runTasks.size === 0) return;
@@ -336,14 +340,14 @@ export class WorkspaceManager implements vscode.Disposable {
     try {
       this._shared.log.info('Using debug');
 
-      const executable = test.executable;
+      const executable = test.exec;
 
       this._shared.log.setNextInspectOptions({ depth: 5 });
       this._shared.log.info('test', executable, test);
 
       const configuration = this._getConfiguration(this._shared.log);
 
-      const label = `${test.label} (${test.executable.properties.path})`;
+      const label = `${test.label} (${test.exec.shared.path})`;
 
       const argsArray = executable.getDebugParams([test], configuration.getDebugBreakOnFailure());
 
@@ -408,7 +412,7 @@ export class WorkspaceManager implements vscode.Disposable {
       //   TestAdapter._debugMetricSent = true;
       // }
 
-      const envVars = Object.assign({}, process.env, executable.properties.options.env);
+      const envVars = Object.assign({}, process.env, executable.shared.options.env);
 
       {
         const setEnvKey = 'testMate.cpp.debug.setEnv';
@@ -428,9 +432,9 @@ export class WorkspaceManager implements vscode.Disposable {
       }
 
       const varToResolve: ResolveRuleAsync[] = [
-        ...executable.properties.varToValue,
+        ...executable.shared.varToValue,
         { resolve: '${label}', rule: label },
-        { resolve: '${exec}', rule: executable.properties.path },
+        { resolve: '${exec}', rule: executable.shared.path },
         { resolve: '${args}', rule: argsArrayFunc }, // deprecated
         { resolve: '${argsArray}', rule: argsArrayFunc },
         { resolve: '${argsArrayFlat}', rule: argsArrayFunc, isFlat: true },
@@ -438,7 +442,7 @@ export class WorkspaceManager implements vscode.Disposable {
           resolve: '${argsStr}',
           rule: async (): Promise<string> => '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"',
         },
-        { resolve: '${cwd}', rule: executable.properties.options.cwd!.toString() },
+        { resolve: '${cwd}', rule: executable.shared.options.cwd!.toString() },
         {
           resolve: '${envObj}',
           rule: async (): Promise<NodeJS.ProcessEnv> => envVars,
@@ -453,7 +457,7 @@ export class WorkspaceManager implements vscode.Disposable {
         {
           resolve: '${sourceFileMapObj}',
           rule: async (): Promise<Record<string, string>> =>
-            Object.assign({}, executable.properties.sourceFileMap, debugConfigData.launchSourceFileMap),
+            Object.assign({}, executable.shared.sourceFileMap, debugConfigData.launchSourceFileMap),
         },
       ];
 

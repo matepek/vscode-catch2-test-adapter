@@ -1,18 +1,16 @@
-import { AbstractTest, SharedWithTest } from '../AbstractTest';
+import { AbstractTest } from '../AbstractTest';
 import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';
 import { TestItemParent } from '../TestItemManager';
 
 export class GoogleBenchmarkTest extends AbstractTest {
   constructor(
-    shared: SharedWithTest,
     executable: AbstractExecutable,
     parent: TestItemParent,
     testNameAsId: string,
     public failIfExceedsLimitNs: number | undefined,
   ) {
     super(
-      shared,
       executable,
       parent,
       testNameAsId,

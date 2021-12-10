@@ -446,13 +446,13 @@ export class ExecutableConfig implements vscode.Disposable {
   }
 
   private async _recursiveHandleRunnable(
-    runnable: AbstractExecutable,
+    executable: AbstractExecutable,
     isFileExistsAndExecutable = false,
     delay = 128,
   ): Promise<void> {
     if (this._shared.cancellationToken.isCancellationRequested) return;
 
-    const filePath = runnable.properties.path;
+    const filePath = executable.shared.path;
     const lastEventArrivedAt = this._lastEventArrivedAt.get(filePath);
 
     if (lastEventArrivedAt === undefined) {
@@ -465,13 +465,13 @@ export class ExecutableConfig implements vscode.Disposable {
       if (this._waitForBuildProcess) await this._shared.buildProcessChecker.resolveAtFinish();
 
       try {
-        await runnable.reloadTests(this._shared.taskPool, this._shared.cancellationToken);
-        this._executables.set(filePath, runnable); // it might be set already but we don't care
+        await executable.reloadTests(this._shared.taskPool, this._shared.cancellationToken);
+        this._executables.set(filePath, executable); // it might be set already but we don't care
         //TODO:release this._shared.sendRetireEvent([runnable]);
       } catch (reason: any /*eslint-disable-line*/) {
         if (reason?.code === undefined)
-          this._shared.log.debug('problem under reloading', { reason, filePath, runnable });
-        return this._recursiveHandleRunnable(runnable, false, Math.min(delay * 2, 2000));
+          this._shared.log.debug('problem under reloading', { reason, filePath, runnable: executable });
+        return this._recursiveHandleRunnable(executable, false, Math.min(delay * 2, 2000));
       }
     } else if (Date.now() - lastEventArrivedAt > this._shared.execWatchTimeout) {
       this._shared.log.info('refresh timed out:', filePath);
@@ -488,7 +488,7 @@ export class ExecutableConfig implements vscode.Disposable {
         () => false,
       );
 
-      return this._recursiveHandleRunnable(runnable, isExec, Math.min(delay * 2, 2000));
+      return this._recursiveHandleRunnable(executable, isExec, Math.min(delay * 2, 2000));
     }
   }
 

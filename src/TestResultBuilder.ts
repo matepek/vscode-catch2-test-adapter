@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import * as ansi from 'ansi-colors';
 
 import { parseLine } from './Util';
-import { LoggerWrapper } from './LoggerWrapper';
 import { AbstractTest, SubTest } from './AbstractTest';
 import { debugBreak } from './util/DevelopmentHelper';
 
@@ -18,17 +17,16 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     private readonly runPrefix: string,
     private readonly addBeginEndMsg: boolean,
     readonly level = 0,
-  ) {
-    this._log = test.shared.log;
-  }
+  ) {}
 
-  private readonly _log: LoggerWrapper;
+  readonly log = this.test.log;
+
   private readonly _message: vscode.TestMessage[] = [];
   private _result: TestResult | undefined = undefined;
   //private readonly _outputLines: string[] = [];
 
   started(): void {
-    this._log.info('Test', this.test.id, 'has started.');
+    this.log.info('Test', this.test.id, 'has started.');
     this.testRun.started(this.test.item);
 
     if (this.addBeginEndMsg) {
@@ -118,7 +116,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     expected: string,
     actual: string,
   ): void {
-    file = this.test.executable.findSourceFilePath(file);
+    file = this.test.exec.findSourceFilePath(file);
     const msg = vscode.TestMessage.diff(message, expected, actual);
     msg.location = TestResultBuilder._getLocation(file, line);
     this._message.push(msg);
@@ -131,7 +129,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     expanded: string,
     _type: string | undefined,
   ): void {
-    file = this.test.executable.findSourceFilePath(file);
+    file = this.test.exec.findSourceFilePath(file);
     this.addMessage(file, line, 'Expanded: `' + expanded + '`');
 
     const loc = TestResultBuilder.getLocationAtStr(file, line);
@@ -146,7 +144,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     title: string,
     ...message: string[]
   ): void {
-    file = this.test.executable.findSourceFilePath(file);
+    file = this.test.exec.findSourceFilePath(file);
     this.addMessage(file, line, [`${title}`, ...message].join('\r\n'));
     const loc = TestResultBuilder.getLocationAtStr(file, line);
     this.addOutputLine(1, `${title}${loc}`);
@@ -154,14 +152,14 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   }
 
   addMessage(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
-    file = this.test.executable.findSourceFilePath(file);
+    file = this.test.exec.findSourceFilePath(file);
     const msg = new vscode.TestMessage(message.join('\r\n'));
     msg.location = TestResultBuilder._getLocation(file, line);
     this._message.push(msg);
   }
 
   addMarkdownMsg(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
-    file = this.test.executable.findSourceFilePath(file);
+    file = this.test.exec.findSourceFilePath(file);
     const msg = new vscode.TestMessage(new vscode.MarkdownString(message.join('\r\n\n')));
     msg.location = TestResultBuilder._getLocation(file, line);
     this._message.push(msg);
@@ -173,7 +171,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     title: string,
     ...message: string[]
   ): void {
-    file = this.test.executable.findSourceFilePath(file);
+    file = this.test.exec.findSourceFilePath(file);
     const loc = TestResultBuilder.getLocationAtStr(file, line);
     this.addOutputLine(1, `${title}${loc}${message.length ? ':' : ''}`);
     this.addOutputLine(2, ...message);
@@ -212,7 +210,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   ///
 
   build(): void {
-    this._log.info('Test', this.test.id, 'has stopped.');
+    this.log.info('Test', this.test.id, 'has stopped.');
 
     if (this._built) {
       debugBreak();

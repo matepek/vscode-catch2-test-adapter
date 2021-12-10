@@ -3,9 +3,11 @@ import { TestGrouping } from './TestGroupingInterface';
 import { ResolveRuleAsync } from './util/ResolveRule';
 import { TaskPool } from './util/TaskPool';
 import { Spawner, SpawnOptionsWithoutStdio } from './Spawner';
+import { WorkspaceShared } from './WorkspaceShared';
 
-export class RunnableProperties {
+export class SharedVarOfExec {
   constructor(
+    readonly shared: WorkspaceShared,
     readonly name: string | undefined,
     readonly description: string | undefined,
     readonly varToValue: readonly ResolveRuleAsync[],
@@ -45,5 +47,41 @@ export class RunnableProperties {
 
   get failIfExceedsLimitNs(): number | undefined {
     return this._frameworkSpecific.failIfExceedsLimitNs;
+  }
+
+  ///
+
+  readonly log = this.shared.log;
+  readonly workspaceFolder = this.shared.workspaceFolder;
+  readonly testController = this.shared.testController;
+
+  ///
+
+  get rngSeed(): 'time' | number | null {
+    return this.shared.rngSeed;
+  }
+  get execWatchTimeout(): number {
+    return this.shared.execWatchTimeout;
+  }
+  get execParsingTimeout(): number {
+    return this.shared.execParsingTimeout;
+  }
+  get isNoThrow(): boolean {
+    return this.shared.isNoThrow;
+  }
+  get enabledTestListCaching(): boolean {
+    return this.shared.enabledTestListCaching;
+  }
+  get enabledSubTestListing(): boolean {
+    return this._frameworkSpecific['test.enabledSubTestListing'] ?? this.shared.enabledSubTestListing;
+  }
+  get enabledStrictPattern(): boolean {
+    return this.shared.enabledStrictPattern;
+  }
+  get googleTestTreatGMockWarningAs(): 'nothing' | 'failure' {
+    return this.shared.googleTestTreatGMockWarningAs;
+  }
+  get googleTestGMockVerbose(): 'default' | 'info' | 'warning' | 'error' {
+    return this.shared.googleTestGMockVerbose;
   }
 }

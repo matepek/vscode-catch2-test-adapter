@@ -5,8 +5,7 @@ import * as ansi from 'ansi-colors';
 
 import { AbstractExecutable as AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { GoogleTestTest } from './GoogleTestTest';
-import { RunnableProperties } from '../RunnableProperties';
-import { WorkspaceShared } from '../WorkspaceShared';
+import { SharedVarOfExec } from '../SharedVarOfExec';
 import { RunningExecutable } from '../RunningExecutable';
 import { AbstractTest } from '../AbstractTest';
 import { CancellationToken } from '../Util';
@@ -20,13 +19,13 @@ import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser 
 import { Readable } from 'stream';
 
 export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
-  constructor(shared: WorkspaceShared, execInfo: RunnableProperties, private readonly _argumentPrefix: string) {
-    super(shared, execInfo, 'GoogleTest', undefined);
+  constructor(execShared: SharedVarOfExec, private readonly _argumentPrefix: string) {
+    super(execShared, 'GoogleTest', undefined);
   }
 
   private getTestGrouping(): TestGrouping {
-    if (this.properties.testGrouping) {
-      return this.properties.testGrouping;
+    if (this.shared.testGrouping) {
+      return this.shared.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
       grouping.groupByExecutable.groupByTags = { tags: [], tagFormat: '${tag}' };
@@ -117,18 +116,18 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
       [suiteName],
       undefined,
       (parent: TestItemParent) =>
-        new GoogleTestTest(this.shared, this, parent, testName, suiteName, typeParam, valueParam, resolvedFile, line),
+        new GoogleTestTest(this, parent, testName, suiteName, typeParam, valueParam, resolvedFile, line),
       (test: GoogleTestTest) => test.update2(testName, suiteName, resolvedFile, line, typeParam, valueParam),
     );
   };
 
   protected async _reloadChildren(cancellationToken: CancellationToken): Promise<void> {
-    const cacheFile = this.properties.path + '.TestMate.testListCache.xml';
+    const cacheFile = this.shared.path + '.TestMate.testListCache.xml';
 
     if (this.shared.enabledTestListCaching) {
       try {
         const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.properties.path);
+        const execStat = await promisify(fs.stat)(this.shared.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this.shared.log.info('loading from cache: ', cacheFile);
@@ -141,18 +140,14 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
       }
     }
 
-    const args = this.properties.prependTestListingArgs.concat([
+    const args = this.shared.prependTestListingArgs.concat([
       `--${this._argumentPrefix}list_tests`,
       `--${this._argumentPrefix}output=xml:${cacheFile}`,
     ]);
 
-    this.shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
+    this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
 
-    const googleTestListProcess = await this.properties.spawner.spawn(
-      this.properties.path,
-      args,
-      this.properties.options,
-    );
+    const googleTestListProcess = await this.shared.spawner.spawn(this.shared.path, args, this.shared.options);
 
     const loadFromFileIfHas = async (): Promise<boolean> => {
       const hasXmlFile = await promisify(fs.exists)(cacheFile);
@@ -238,7 +233,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
   }
 
   protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
-    const colouring = this.properties.enableDebugColouring ? 'yes' : 'no';
+    const colouring = this.shared.enableDebugColouring ? 'yes' : 'no';
     const debugParams = [`--${this._argumentPrefix}color=${colouring}`, ...this._getRunParamsCommon(childrenToRun)];
     if (breakOnFailure) debugParams.push(`--${this._argumentPrefix}break_on_failure`);
     return debugParams;
@@ -366,7 +361,7 @@ const testEndRe = (testId: string) =>
 ///
 
 class TestCaseSharedData {
-  constructor(readonly shared: WorkspaceShared, readonly builder: TestResultBuilder) {}
+  constructor(readonly shared: SharedVarOfExec, readonly builder: TestResultBuilder) {}
 
   gMockWarningCount = 0;
 }
@@ -374,7 +369,7 @@ class TestCaseSharedData {
 ///
 
 class TestCaseProcessor implements LineProcessor {
-  constructor(shared: WorkspaceShared, private readonly testEndRe: RegExp, builder: TestResultBuilder) {
+  constructor(shared: SharedVarOfExec, private readonly testEndRe: RegExp, builder: TestResultBuilder) {
     this.testCaseShared = new TestCaseSharedData(shared, builder);
     builder.started();
   }
@@ -437,7 +432,7 @@ class TestCaseProcessor implements LineProcessor {
     const failureMatch = failureRe.exec(line);
     if (failureMatch) {
       const type = failureMatch[6] as FailureType;
-      const file = this.testCaseShared.builder.test.executable.findSourceFilePath(failureMatch[2]);
+      const file = this.testCaseShared.builder.test.exec.findSourceFilePath(failureMatch[2]);
       const line = failureMatch[3];
       const fullMsg = failureMatch[5];
       const failureMsg = failureMatch[7];

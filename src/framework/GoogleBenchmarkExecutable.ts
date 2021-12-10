@@ -4,8 +4,7 @@ import { promisify } from 'util';
 
 import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { GoogleBenchmarkTest } from './GoogleBenchmarkTest';
-import { RunnableProperties } from '../RunnableProperties';
-import { WorkspaceShared } from '../WorkspaceShared';
+import { SharedVarOfExec } from '../SharedVarOfExec';
 import { RunningExecutable } from '../RunningExecutable';
 import { AbstractTest } from '../AbstractTest';
 import { CancellationFlag } from '../Util';
@@ -15,13 +14,13 @@ import { LoggerWrapper } from '../LoggerWrapper';
 import { TestItemParent } from '../TestItemManager';
 
 export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmarkTest> {
-  constructor(shared: WorkspaceShared, execInfo: RunnableProperties) {
-    super(shared, execInfo, 'GoogleBenchmark', undefined);
+  constructor(execShared: SharedVarOfExec) {
+    super(execShared, 'GoogleBenchmark', undefined);
   }
 
   private getTestGrouping(): TestGrouping {
-    if (this.properties.testGrouping) {
-      return this.properties.testGrouping;
+    if (this.shared.testGrouping) {
+      return this.shared.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
       return grouping;
@@ -48,19 +47,18 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
       undefined,
       [],
       undefined,
-      (parent: TestItemParent) =>
-        new GoogleBenchmarkTest(this.shared, this, parent, testName, this.properties.failIfExceedsLimitNs),
-      (test: GoogleBenchmarkTest) => test.update2(this.properties.failIfExceedsLimitNs),
+      (parent: TestItemParent) => new GoogleBenchmarkTest(this, parent, testName, this.shared.failIfExceedsLimitNs),
+      (test: GoogleBenchmarkTest) => test.update2(this.shared.failIfExceedsLimitNs),
     );
   };
 
   protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<void> {
-    const cacheFile = this.properties.path + '.TestMate.testListCache.xml';
+    const cacheFile = this.shared.path + '.TestMate.testListCache.xml';
 
     if (this.shared.enabledTestListCaching) {
       try {
         const cacheStat = await promisify(fs.stat)(cacheFile);
-        const execStat = await promisify(fs.stat)(this.properties.path);
+        const execStat = await promisify(fs.stat)(this.shared.path);
 
         if (cacheStat.size > 0 && cacheStat.mtime > execStat.mtime) {
           this.shared.log.info('loading from cache: ', cacheFile);
@@ -73,17 +71,12 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
       }
     }
 
-    const args = this.properties.prependTestListingArgs.concat([`--benchmark_list_tests=true`]);
+    const args = this.shared.prependTestListingArgs.concat([`--benchmark_list_tests=true`]);
 
-    this.shared.log.info('discovering tests', this.properties.path, args, this.properties.options.cwd);
-    const listOutput = await this.properties.spawner.spawnAsync(
-      this.properties.path,
-      args,
-      this.properties.options,
-      30000,
-    );
+    this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
+    const listOutput = await this.shared.spawner.spawnAsync(this.shared.path, args, this.shared.options, 30000);
 
-    if (listOutput.stderr && !this.properties.ignoreTestEnumerationStdErr) {
+    if (listOutput.stderr && !this.shared.ignoreTestEnumerationStdErr) {
       this.shared.log.warn('reloadChildren -> googleBenchmarkTestListOutput.stderr: ', listOutput);
       return await this._createAndAddUnexpectedStdError(listOutput.stdout, listOutput.stderr);
     } else {
@@ -121,7 +114,7 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
   protected _getDebugParamsInner(
     childrenToRun: readonly Readonly<AbstractTest>[], // breakOnFailure:boolean
   ): string[] {
-    const colouring = this.properties.enableDebugColouring ? 'true' : 'false';
+    const colouring = this.shared.enableDebugColouring ? 'true' : 'false';
     const debugParams = [`--benchmark_color=${colouring}`, ...this._getRunParamsCommon(childrenToRun)];
     return debugParams;
   }
