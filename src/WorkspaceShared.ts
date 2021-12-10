@@ -25,7 +25,6 @@ export class WorkspaceShared {
     public isNoThrow: boolean,
     workerMaxNumber: number,
     public enabledTestListCaching: boolean,
-    public enabledSubTestListing: boolean,
     public enabledStrictPattern: boolean,
     public googleTestTreatGMockWarningAs: 'nothing' | 'failure',
     public googleTestGMockVerbose: 'default' | 'info' | 'warning' | 'error',
@@ -57,13 +56,6 @@ export class WorkspaceShared {
   }
 
   readonly onDidChangeExecRunningTimeout = this._execRunningTimeoutChangeEmitter.event;
-
-  withFrameworkSpecific(fws: FrameworkSpecificConfig): ExecutableShared {
-    return {
-      log: this.log,
-      'test.enabledSubTestListing': fws['test.enabledSubTestListing'] ?? this.enabledSubTestListing,
-    };
-  }
 }
 
 export interface ExecutableShared extends Readonly<FrameworkSpecificConfig> {

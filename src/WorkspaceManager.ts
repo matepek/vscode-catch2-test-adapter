@@ -122,7 +122,6 @@ export class WorkspaceManager implements vscode.Disposable {
       configuration.getDefaultNoThrow(),
       configuration.getParallelExecutionLimit(),
       configuration.getEnableTestListCaching(),
-      configuration.getEnabledSubTestListing(),
       configuration.getEnableStrictPattern(),
       configuration.getGoogleTestTreatGMockWarningAs(),
       configuration.getGoogleTestGMockVerbose(),
@@ -160,9 +159,6 @@ export class WorkspaceManager implements vscode.Disposable {
           }
           if (affectsAny('test.parallelExecutionLimit')) {
             this._shared.taskPool.maxTaskCount = config.getParallelExecutionLimit();
-          }
-          if (affectsAny('test.enabledSubTestListing')) {
-            this._shared.enabledSubTestListing = config.getEnabledSubTestListing();
           }
           if (affectsAny('discovery.testListCaching')) {
             this._shared.enabledTestListCaching = config.getEnableTestListCaching();

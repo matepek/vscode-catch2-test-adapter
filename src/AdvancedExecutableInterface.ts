@@ -51,5 +51,4 @@ export interface FrameworkSpecificConfig {
   ignoreTestEnumerationStdErr?: boolean;
   'debug.enableOutputColouring'?: boolean;
   failIfExceedsLimitNs?: number;
-  'test.enabledSubTestListing'?: boolean;
 }

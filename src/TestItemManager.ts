@@ -36,7 +36,7 @@ export class TestItemManager {
     if (parent) {
       parent.children.delete(item.id);
       parent.children.add(item);
-    } else {
+    } else if (parent === undefined) {
       this.controller.items.delete(item.id);
       this.controller.items.add(item);
     }

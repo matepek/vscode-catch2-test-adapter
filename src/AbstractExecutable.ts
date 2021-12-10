@@ -88,13 +88,13 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     description: string,
     itemOfLevel: vscode.TestItem | undefined,
   ): Promise<vscode.TestItem> {
-    const childrenOfLevel = this.shared.shared.testController.getChildCollection(itemOfLevel);
+    const childrenOfLevel = this.shared.testController.getChildCollection(itemOfLevel);
     const id = idIn ?? label;
     const found = childrenOfLevel.get(id);
     if (found) {
       return found;
     } else {
-      const testItem = await this.shared.shared.testController.createOrReplace(
+      const testItem = await this.shared.testController.createOrReplace(
         itemOfLevel,
         id,
         label,
@@ -186,9 +186,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       resolve: AbstractExecutable._tagVar,
       rule: '', // will be filled soon enough
     };
-    const sourceRelPath = resolvedFile
-      ? pathlib.relative(this.shared.shared.workspaceFolder.uri.fsPath, resolvedFile)
-      : '';
+    const sourceRelPath = resolvedFile ? pathlib.relative(this.shared.workspaceFolder.uri.fsPath, resolvedFile) : '';
 
     const varsToResolve = [
       tagsResolveRule,
@@ -295,7 +293,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
             // special item handling for source file
             if (resolvedFile && itemOfLevel.uri === undefined) {
-              itemOfLevel = await this.shared.shared.testController.update(
+              itemOfLevel = await this.shared.testController.update(
                 itemOfLevel,
                 resolvedFile,
                 undefined,
@@ -375,10 +373,10 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       this.shared.log.exceptionS(e);
     }
 
-    const found = this.shared.shared.testController.getChildCollection(itemOfLevel).get(testId);
+    const found = this.shared.testController.getChildCollection(itemOfLevel).get(testId);
 
     if (found) {
-      const test = this.shared.shared.testController.map(found) as T;
+      const test = this.shared.testController.map(found) as T;
       if (!test) throw Error('missing test for item');
       updateTest(test);
       this._addTest(test.id, test);
@@ -394,7 +392,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     if (!evenIfHasChildren && testItem.children.size > 0) return;
 
     const parent = testItem.parent;
-    this.shared.shared.testController.getChildCollection(parent).delete(testItem.id);
+    this.shared.testController.getChildCollection(parent).delete(testItem.id);
 
     if (parent) {
       this.removeWithLeafAscendants(parent);
@@ -657,16 +655,16 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
         const cause_1 = await new Promise<'reschedule' | 'closed' | 'timeout'>(resolve => {
           trigger = resolve;
 
-          if (this.shared.shared.execRunningTimeout !== null) {
+          if (this.shared.execRunningTimeout !== null) {
             const elapsed = Date.now() - runInfo.startTime;
-            const left = Math.max(0, this.shared.shared.execRunningTimeout - elapsed);
+            const left = Math.max(0, this.shared.execRunningTimeout - elapsed);
             setTimeout(resolve, left, 'timeout');
           }
         });
         if (cause_1 === 'closed') {
           return Promise.resolve();
         } else if (cause_1 === 'timeout') {
-          runInfo.killProcess(this.shared.shared.execRunningTimeout);
+          runInfo.killProcess(this.shared.execRunningTimeout);
           return Promise.resolve();
         } else if (cause_1 === 'reschedule') {
           return shedule();
@@ -737,7 +735,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
       if (hasMissingTest || hasNewTest) {
         // exec probably has changed
-        this.reloadTests(this.shared.shared.taskPool, this.shared.shared.cancellationToken).catch((reason: Error) => {
+        this.reloadTests(this.shared.taskPool, this.shared.cancellationToken).catch((reason: Error) => {
           // Suite possibly deleted: It is a dead suite but this should have been handled elsewhere
           this.shared.log.error('reloading-error: ', reason);
         });
@@ -760,7 +758,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
         try {
           // sequential execution of tasks
           for (const taskName of this.shared.runTask[type] || []) {
-            const exitCode = await this.shared.shared.executeTask(taskName, this.shared.varToValue, cancellationToken);
+            const exitCode = await this.shared.executeTask(taskName, this.shared.varToValue, cancellationToken);
 
             if (exitCode !== undefined) {
               if (exitCode !== 0) {
@@ -822,10 +820,10 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     if (cwd && !this.shared.path.startsWith(cwd)) directoriesToCheck.push(cwd);
 
     if (
-      !this.shared.path.startsWith(this.shared.shared.workspaceFolder.uri.fsPath) &&
-      (!cwd || !cwd.startsWith(this.shared.shared.workspaceFolder.uri.fsPath))
+      !this.shared.path.startsWith(this.shared.workspaceFolder.uri.fsPath) &&
+      (!cwd || !cwd.startsWith(this.shared.workspaceFolder.uri.fsPath))
     )
-      directoriesToCheck.push(this.shared.shared.workspaceFolder.uri.fsPath);
+      directoriesToCheck.push(this.shared.workspaceFolder.uri.fsPath);
 
     const found = getAbsolutePath(path, directoriesToCheck);
 
@@ -889,7 +887,7 @@ class ExecutableGroup {
       this.removeSpecialItem();
     } else {
       if (!this._itemForStaticError) {
-        this._itemForStaticError = await this.executable.shared.shared.testController.createOrReplace(
+        this._itemForStaticError = await this.executable.shared.testController.createOrReplace(
           undefined,
           this.executable.shared.path,
           this.executable.shared.path,
@@ -909,7 +907,7 @@ class ExecutableGroup {
 
   private removeSpecialItem(): void {
     if (this._itemForStaticError) {
-      this.executable.shared.shared.testController
+      this.executable.shared.testController
         .getChildCollection(this._itemForStaticError.parent)
         .delete(this._itemForStaticError.id);
       this._itemForStaticError = undefined;

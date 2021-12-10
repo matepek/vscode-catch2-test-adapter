@@ -6,11 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [4.1.0]
+## [4.0.13]
 
-### Added
+### Fixed
 
-- `test.enabledSubTestListing` which is `true` by default
+- various issues
 
 ## [4.0.12] - 2021-12-10
 

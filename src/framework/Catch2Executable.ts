@@ -506,10 +506,22 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'BenchmarkResults',
-      async (tag: XmlTag, builder: TestResultBuilder, shared: SharedVarOfExec): Promise<XmlTagProcessor> => {
+      async (
+        tag: XmlTag,
+        builder: TestResultBuilder,
+        shared: SharedVarOfExec,
+        sections: SubTestTree,
+      ): Promise<XmlTagProcessor> => {
         assert(tag.attribs.name);
         const subTest = await builder.test.getOrCreateSubTest(tag.attribs.name, undefined, undefined, undefined);
         const subBuilder = builder.createSubTestBuilder(subTest);
+
+        let subSections = sections.get(tag.attribs.name);
+        if (subSections === undefined) {
+          subSections = new Map();
+          sections.set(tag.attribs.name, subSections);
+        }
+
         return new BenchmarkResultsProcessor(shared, subBuilder, tag.attribs);
       },
     ],
@@ -591,8 +603,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
   }
 
   end(): void {
-    if (this.shared.enabledSubTestListing) this.builder.test.removeMissingSubTests(this.sections);
-    else this.builder.test.clearSubTests();
+    this.builder.test.removeMissingSubTests(this.sections);
     this.builder.build();
   }
 }
@@ -608,16 +619,8 @@ class SectionProcessor extends TagProcessorBase {
   ) {
     if (typeof attribs.name !== 'string' || !attribs.name) throw Error('Section must have name attribute');
 
-    let subTestBuilder = testBuilder;
-    if (shared.enabledSubTestListing) {
-      const subTest = await testBuilder.test.getOrCreateSubTest(
-        attribs.name,
-        undefined,
-        attribs.filename,
-        attribs.line,
-      );
-      subTestBuilder = testBuilder.createSubTestBuilder(subTest);
-    }
+    const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, undefined, attribs.filename, attribs.line);
+    const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
 
     let subSections = sections.get(attribs.name);
     if (subSections === undefined) {

@@ -479,8 +479,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
 
       this.builder[result]();
 
-      if (this.shared.enabledSubTestListing) this.builder.test.removeMissingSubTests(this.subCases);
-      else this.builder.test.clearSubTests();
+      this.builder.test.removeMissingSubTests(this.subCases);
 
       this.builder.build();
     } else {
@@ -507,12 +506,9 @@ class SubCaseProcessor extends TagProcessorBase {
       if (m) label = m[1];
     }
 
-    let subTestBuilder = testBuilder;
-    if (shared.enabledSubTestListing) {
-      const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, label, attribs.filename, attribs.line);
-      subTestBuilder = testBuilder.createSubTestBuilder(subTest);
-      subTestBuilder.passed(); // set as passed and make it failed lateer if error happens
-    }
+    const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, label, attribs.filename, attribs.line);
+    const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
+    subTestBuilder.passed(); // set as passed and make it failed lateer if error happens
 
     let subSubCases = subCases.get(attribs.name);
     if (subSubCases === undefined) {

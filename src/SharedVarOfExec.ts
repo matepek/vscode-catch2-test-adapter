@@ -49,19 +49,23 @@ export class SharedVarOfExec {
     return this._frameworkSpecific.failIfExceedsLimitNs;
   }
 
-  ///
+  /// accessors for shared
 
   readonly log = this.shared.log;
   readonly workspaceFolder = this.shared.workspaceFolder;
   readonly testController = this.shared.testController;
-
-  ///
+  readonly cancellationToken = this.shared.cancellationToken;
+  readonly taskPool = this.shared.taskPool;
+  readonly executeTask = this.shared.executeTask;
 
   get rngSeed(): 'time' | number | null {
     return this.shared.rngSeed;
   }
   get execWatchTimeout(): number {
     return this.shared.execWatchTimeout;
+  }
+  get execRunningTimeout(): number | null {
+    return this.shared.execRunningTimeout;
   }
   get execParsingTimeout(): number {
     return this.shared.execParsingTimeout;
@@ -71,9 +75,6 @@ export class SharedVarOfExec {
   }
   get enabledTestListCaching(): boolean {
     return this.shared.enabledTestListCaching;
-  }
-  get enabledSubTestListing(): boolean {
-    return this._frameworkSpecific['test.enabledSubTestListing'] ?? this.shared.enabledSubTestListing;
   }
   get enabledStrictPattern(): boolean {
     return this.shared.enabledStrictPattern;

@@ -20,7 +20,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     if (item) {
       const testData = testItemManager.map(item);
       if (testData) {
-        return Promise.resolve(); //testData.resolve();
+        //testData.resolve();
+        return Promise.resolve();
       } else {
         log.errorS('Missing TestData for item', item.id, item.label);
         return Promise.resolve();
