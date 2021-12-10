@@ -263,8 +263,11 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
   private readonly _subTestResultBuilders: TestResultBuilder[] = [];
 
-  get subTestResultBuilders(): ReadonlyArray<TestResultBuilder> {
-    return this._subTestResultBuilders.flatMap(b => [b, ...b.subTestResultBuilders]);
+  *getSubTestResultBuilders(): IterableIterator<TestResultBuilder> {
+    for (const b of this._subTestResultBuilders) {
+      yield b;
+      for (const subB of b.getSubTestResultBuilders()) yield subB;
+    }
   }
 
   createSubTestBuilder(test: SubTest): TestResultBuilder {

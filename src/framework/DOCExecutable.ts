@@ -413,6 +413,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
           'Exception (crash=' + parentTag.attribs.crash + '): `' + dataTrimmed + '`',
         );
         caseData.hasException = true;
+        builder.failed();
       },
     ],
   ]);
@@ -442,29 +443,49 @@ class TestCaseTagProcessor extends TagProcessorBase {
       if (durationSec === undefined) this.shared.log.errorS('doctest: duration is NaN: ' + tag.attribs.duration);
       else this.builder.setDurationMilisec(durationSec * 1000);
 
-      const mayFail = this.attribs.may_fail === 'true';
-      const shouldFail = this.attribs.should_fail === 'true';
-      const failures = parseInt(tag.attribs.failures) || 0;
-      const expectedFailures = parseInt(tag.attribs.expected_failures) || 0;
-      const hasException = this.caseData.hasException === true;
-      const timeoutSec = parseFloat(this.attribs.timeout) || undefined;
-      const hasTimedOut = timeoutSec !== undefined && durationSec !== undefined ? durationSec > timeoutSec : false;
-
       let result: undefined | 'passed' | 'failed' = undefined;
 
-      // The logic is coming from the console output of ./doctest1.exe
-      if (shouldFail) {
-        if (failures > 0 || hasException || hasTimedOut) result = 'passed';
-        else result = 'failed';
-      } else if (mayFail) {
-        result = 'passed';
+      if (tag.attribs.test_case_success !== undefined) {
+        result = tag.attribs.test_case_success === 'true' ? 'passed' : 'failed';
       } else {
-        if (expectedFailures !== failures || hasException || hasTimedOut) result = 'failed';
-        else result = 'passed';
+        const mayFail = this.attribs.may_fail === 'true';
+        const shouldFail = this.attribs.should_fail === 'true';
+        const failures = parseInt(tag.attribs.failures) || 0;
+        const expectedFailures = parseInt(tag.attribs.expected_failures) || 0;
+        const hasException = this.caseData.hasException === true;
+        const timeoutSec = parseFloat(this.attribs.timeout) || undefined;
+        const hasTimedOut = timeoutSec !== undefined && durationSec !== undefined ? durationSec > timeoutSec : false;
+
+        // The logic is coming from the console output of ./doctest1.exe
+        if (shouldFail) {
+          if (failures > 0 || hasException || hasTimedOut) result = 'passed';
+          else result = 'failed';
+        } else if (mayFail) {
+          result = 'passed';
+        } else {
+          if (expectedFailures !== failures || hasException || hasTimedOut) result = 'failed';
+          else result = 'passed';
+        }
+      }
+
+      // if has no modifier
+      if (
+        this.attribs.may_fail === undefined &&
+        this.attribs.should_fail === undefined &&
+        tag.attribs.expected_failures === undefined
+      ) {
+        for (const b of this.builder.getSubTestResultBuilders()) b.build();
+      } else {
+        this.shared.log.info('For doctest there are modifier so sub-cases are not reported', {
+          id: this.builder.test.id,
+          label: this.builder.test.label,
+          testAttribs: this.attribs,
+          resultTag: tag,
+        });
       }
 
       this.builder[result]();
-      TODO: this.builder.test.removeMissingSubTests(this.subCases);
+      this.builder.test.removeMissingSubTests(this.subCases);
       this.builder.build();
     } else {
       return super.onopentag(tag);
@@ -492,6 +513,7 @@ class SubCaseProcessor extends TagProcessorBase {
 
     const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, label, attribs.filename, attribs.line);
     const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
+    subTestBuilder.passed(); // set as passed and make it failed lateer if error happens
 
     let subSubCases = subCases.get(attribs.name);
     if (subSubCases === undefined) {
@@ -526,7 +548,10 @@ class ExpressionProcessor implements XmlTagProcessor {
     private readonly attribs: Record<string, string>,
     caseData: CaseData,
   ) {
-    if (attribs.success === 'false') caseData.hasFailedExpression = true;
+    if (attribs.success === 'false') {
+      caseData.hasFailedExpression = true;
+      builder.failed();
+    }
   }
 
   private original?: string;
@@ -597,8 +622,9 @@ class MessageProcessor implements XmlTagProcessor {
     assert(this.text !== undefined);
 
     if (this.attribs.type === 'FATAL ERROR') {
-      this.caseData.hasFailedExpression = true;
       this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, this.attribs.type, this.text!);
+      this.caseData.hasFailedExpression = true;
+      this.builder.failed();
     } else if (this.attribs.type === 'WARNING') {
       this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, this.attribs.type, this.text!);
     } else {

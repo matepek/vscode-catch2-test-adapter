@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.12]
+
+### Added
+
+- partial support for doctest subcase evaluation (if there is some modiffier it won't do the evaluation)
+- support new doctest version: "skipped" and "test_case_success" xml attributes
+
 ## [4.0.11] - 2021-12-07
 
 ### Fixed
