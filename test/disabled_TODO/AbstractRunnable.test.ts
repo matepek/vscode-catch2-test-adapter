@@ -14,20 +14,20 @@ import * as fsw from '../../src/util/FSWrapper';
 ///
 
 class Runnable extends AbstractRunnable {
-  public constructor(shared: SharedVariables, rootSuite: RootSuite, properties: RunnableProperties) {
+  constructor(shared: SharedVariables, rootSuite: RootSuite, properties: RunnableProperties) {
     super(shared, rootSuite, properties, 'for test', Promise.resolve(undefined));
   }
 
-  public _reloadChildren(/*_cancellationFlag: CancellationFlag*/): Promise<RunnableReloadResult> {
+  _reloadChildren(/*_cancellationFlag: CancellationFlag*/): Promise<RunnableReloadResult> {
     throw Error('_reloadChildren should be mocked');
   }
 
   // eslint-disable-next-line
-  public _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
     throw Error('_getRunParams should be mocked');
   }
 
-  public _handleProcess(): Promise<void> {
+  _handleProcess(): Promise<void> {
     throw Error('_handleProcess should be mocked');
   }
 
@@ -37,7 +37,7 @@ class Runnable extends AbstractRunnable {
 }
 
 class Test extends AbstractTest {
-  public constructor(
+  constructor(
     shared: SharedVariables,
     runnable: AbstractRunnable,
     parent: Suite, // ascending
@@ -66,7 +66,7 @@ class Test extends AbstractTest {
     );
   }
 
-  public parseAndProcessTestCase(): AbstractTestEvent {
+  parseAndProcessTestCase(): AbstractTestEvent {
     throw Error('unimplemented');
   }
 }

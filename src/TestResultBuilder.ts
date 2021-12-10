@@ -12,12 +12,12 @@ type TestResult = 'skipped' | 'failed' | 'errored' | 'passed';
 // also gtest could be colorized if we change the processor
 
 export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
-  public constructor(
-    public readonly test: T,
-    public readonly testRun: vscode.TestRun,
+  constructor(
+    readonly test: T,
+    readonly testRun: vscode.TestRun,
     private readonly runPrefix: string,
     private readonly addBeginEndMsg: boolean,
-    public readonly level = 0,
+    readonly level = 0,
   ) {
     this._log = test.shared.log;
   }
@@ -27,7 +27,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   private _result: TestResult | undefined = undefined;
   //private readonly _outputLines: string[] = [];
 
-  public started(): void {
+  started(): void {
     this._log.info('Test', this.test.id, 'has started.');
     this.testRun.started(this.test.item);
 
@@ -41,35 +41,35 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     }
   }
 
-  public passed(): void {
+  passed(): void {
     if (this._result === undefined) this._result = 'passed';
   }
 
-  public failed(): void {
+  failed(): void {
     if (this._result !== 'errored') this._result = 'failed';
   }
 
-  public errored(): void {
+  errored(): void {
     this._result = 'errored';
   }
 
-  public skipped(): void {
+  skipped(): void {
     this._result = 'skipped';
   }
 
   private _duration: number | undefined = undefined;
 
-  public setDurationMilisec(duration: number | undefined): void {
+  setDurationMilisec(duration: number | undefined): void {
     // this will deal with NaN
     if (duration) this._duration = duration;
   }
 
-  public failedByTimeout(timeoutMilisec: number): void {
+  failedByTimeout(timeoutMilisec: number): void {
     this.addOutputLine(1, '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + timeoutMilisec / 1000 + ' second(s).');
     this.failed();
   }
 
-  public addOutputLine(indentOrMsg: number | string | undefined, ...msgs: string[]): void {
+  addOutputLine(indentOrMsg: number | string | undefined, ...msgs: string[]): void {
     let lines: string[];
     if (typeof indentOrMsg == 'number') {
       lines = reindentStr(this.level + indentOrMsg, ...msgs);
@@ -99,7 +99,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     return undefined;
   }
 
-  public static getLocationAtStr(file: string | undefined, line: number | string | undefined): string {
+  static getLocationAtStr(file: string | undefined, line: number | string | undefined): string {
     if (file) {
       const lineP = parseLine(line);
       if (typeof lineP == 'number') {
@@ -111,7 +111,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     return '';
   }
 
-  public addDiffMessage(
+  addDiffMessage(
     file: string | undefined,
     line: number | string | undefined,
     message: string,
@@ -124,7 +124,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     this._message.push(msg);
   }
 
-  public addExpressionMsg(
+  addExpressionMsg(
     file: string | undefined,
     line: string | undefined,
     original: string,
@@ -140,7 +140,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     this.addOutputLine(2, '❗️Expanded:  ' + expanded);
   }
 
-  public addMessageWithOutput(
+  addMessageWithOutput(
     file: string | undefined,
     line: number | string | undefined,
     title: string,
@@ -153,21 +153,21 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     this.addOutputLine(2, ...message);
   }
 
-  public addMessage(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
+  addMessage(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
     file = this.test.executable.findSourceFilePath(file);
     const msg = new vscode.TestMessage(message.join('\r\n'));
     msg.location = TestResultBuilder._getLocation(file, line);
     this._message.push(msg);
   }
 
-  public addMarkdownMsg(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
+  addMarkdownMsg(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
     file = this.test.executable.findSourceFilePath(file);
     const msg = new vscode.TestMessage(new vscode.MarkdownString(message.join('\r\n\n')));
     msg.location = TestResultBuilder._getLocation(file, line);
     this._message.push(msg);
   }
 
-  public addQuoteWithLocation(
+  addQuoteWithLocation(
     file: string | undefined,
     line: number | string | undefined,
     title: string,
@@ -196,7 +196,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     }
   }
 
-  public endMessage(): void {
+  endMessage(): void {
     if (this.addBeginEndMsg) {
       const d = this._duration ? ansi.grey(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
 
@@ -211,7 +211,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
   ///
 
-  public build(): void {
+  build(): void {
     this._log.info('Test', this.test.id, 'has stopped.');
 
     if (this._built) {
@@ -255,7 +255,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
   private _built = false;
 
-  public get built(): boolean {
+  get built(): boolean {
     return this._built;
   }
 
@@ -263,11 +263,11 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
   private readonly _subTestResultBuilders: TestResultBuilder[] = [];
 
-  public get subTestResultBuilders(): ReadonlyArray<TestResultBuilder> {
+  get subTestResultBuilders(): ReadonlyArray<TestResultBuilder> {
     return this._subTestResultBuilders.flatMap(b => [b, ...b.subTestResultBuilders]);
   }
 
-  public createSubTestBuilder(test: SubTest): TestResultBuilder {
+  createSubTestBuilder(test: SubTest): TestResultBuilder {
     const subTestBuilder = new TestResultBuilder(test, this.testRun, this.runPrefix, true, this.level + 1);
     this._subTestResultBuilders.push(subTestBuilder);
     return subTestBuilder;

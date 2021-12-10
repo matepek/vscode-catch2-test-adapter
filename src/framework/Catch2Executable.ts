@@ -17,7 +17,7 @@ import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser 
 import { Readable } from 'stream';
 
 export class Catch2Executable extends AbstractExecutable<Catch2Test> {
-  public constructor(
+  constructor(
     shared: WorkspaceShared,
     execInfo: RunnableProperties,
     private readonly _catch2Version: Version | undefined,
@@ -86,18 +86,18 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
           [
             '⚠️ Probably too long test name or the test name starts with space characters!',
             '🛠 - Try to define `CATCH_CONFIG_CONSOLE_WIDTH 300` before `catch2.hpp` is included.',
-            '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substr(2) + '"',
+            '🛠 - Remove whitespace characters from the beggining of test "' + lines[i].substring(2) + '"',
           ].join('\n'),
         );
 
         return;
       }
-      const testName = lines[i++].substr(2);
+      const testName = lines[i++].substring(2);
 
       let filePath: string | undefined = undefined;
       let line: string | undefined = undefined;
       {
-        const fileLine = lines[i++].substr(4);
+        const fileLine = lines[i++].substring(4);
         const fileLineRe = /(?:(.+):([0-9]+)|(.+)\(([0-9]+)\))/;
         const match = fileLine.match(fileLineRe);
 
@@ -107,7 +107,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
           line = match[2] ? match[2] : match[4];
         } else {
           if (i < lines.length) {
-            const match = (fileLine + lines[i].substr(4)).match(fileLineRe);
+            const match = (fileLine + lines[i].substring(4)).match(fileLineRe);
             if (match && match.length == 5) {
               const matchedPath = match[1] ? match[1] : match[3];
               filePath = matchedPath;
@@ -115,7 +115,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
               i += 1;
             } else {
               if (i + 1 < lines.length) {
-                const match = (fileLine + lines[i].substr(4) + lines[i + 1].substr(4)).match(fileLineRe);
+                const match = (fileLine + lines[i].substring(4) + lines[i + 1].substring(4)).match(fileLineRe);
                 if (match && match.length == 5) {
                   const matchedPath = match[1] ? match[1] : match[3];
                   filePath = matchedPath;
@@ -134,7 +134,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
         }
       }
 
-      let description: string | undefined = lines[i++].substr(4);
+      let description: string | undefined = lines[i++].substring(4);
       if (description.startsWith('(NO DESCRIPTION)')) description = undefined;
 
       let tagsStr: string | undefined = undefined;
@@ -415,12 +415,12 @@ class TestCaseListingProcessor implements XmlTagProcessor {
 
 abstract class TagProcessorBase implements XmlTagProcessor {
   constructor(
-    public readonly builder: TestResultBuilder,
+    readonly builder: TestResultBuilder,
     protected readonly shared: WorkspaceShared,
     protected readonly sections: SubTestTree,
   ) {}
 
-  public onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
+  onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
     const procCreator = TagProcessorBase.openTagProcessorMap.get(tag.name);
     if (procCreator) {
       return procCreator(tag, this.builder, this.shared, this.sections);
@@ -437,7 +437,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     }
   }
 
-  public ontext(dataTrimmed: string, parentTag: XmlTag): void {
+  ontext(dataTrimmed: string, parentTag: XmlTag): void {
     const processor = TagProcessorBase.textProcessorMap.get(parentTag.name);
     if (processor) {
       try {
@@ -460,7 +460,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     }
   }
 
-  public onstderr(data: string, _parentTag: XmlTag | undefined): void {
+  onstderr(data: string, _parentTag: XmlTag | undefined): void {
     this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
   }
 
@@ -585,7 +585,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
 ///
 
 class TestCaseTagProcessor extends TagProcessorBase {
-  public constructor(
+  constructor(
     shared: WorkspaceShared,
     builder: TestResultBuilder,
     private readonly test: Catch2Test,
@@ -608,7 +608,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
 ///
 
 class SectionProcessor extends TagProcessorBase {
-  public static async create(
+  static async create(
     shared: WorkspaceShared,
     testBuilder: TestResultBuilder,
     attribs: Record<string, string>,
@@ -633,13 +633,13 @@ class SectionProcessor extends TagProcessorBase {
     super(testBuilder, shared, sections);
   }
 
-  public end(): void {
+  end(): void {
     this.builder.build();
   }
 }
 
 class ExpressionProcessor implements XmlTagProcessor {
-  public constructor(
+  constructor(
     private readonly _shared: WorkspaceShared,
     private readonly builder: TestResultBuilder,
     private readonly attribs: Record<string, string>,
@@ -650,7 +650,7 @@ class ExpressionProcessor implements XmlTagProcessor {
   private exception?: string;
   private fatalErrorCondition?: string;
 
-  public ontext(dataTrimmed: string, parentTag: XmlTag): void {
+  ontext(dataTrimmed: string, parentTag: XmlTag): void {
     switch (parentTag.name) {
       case 'Original':
         this.original = dataTrimmed;
@@ -671,7 +671,7 @@ class ExpressionProcessor implements XmlTagProcessor {
     }
   }
 
-  public end(): void {
+  end(): void {
     assert(this.original && this.expanded);
     if (this.fatalErrorCondition) {
       this.builder.addMessageWithOutput(
@@ -709,7 +709,7 @@ class BenchmarkResultsProcessor implements XmlTagProcessor {
         <outliers variance="0.595328" lowMild="0" lowSevere="0" highMild="3" highSevere="2"/>
       </BenchmarkResults>
    */
-  public constructor(
+  constructor(
     private readonly shared: WorkspaceShared,
     private readonly builder: TestResultBuilder,
     private readonly attribs: Record<string, string>,
@@ -744,7 +744,7 @@ class BenchmarkResultsProcessor implements XmlTagProcessor {
     }
   }
 
-  public end(): void {
+  end(): void {
     if (this.failed) {
       this.builder.addOutputLine(1, 'Failed: `' + this.failed.message + '`');
       this.builder.failed();

@@ -1,7 +1,7 @@
 export type PlatformType = NodeJS.Platform;
 
 class Platform {
-  public is(id: PlatformType): boolean {
+  is(id: PlatformType): boolean {
     switch (id) {
       case 'darwin':
         return process.platform === 'darwin';
@@ -14,7 +14,7 @@ class Platform {
     }
   }
 
-  public getPlatformProperty<T>(obj: T): T | undefined {
+  getPlatformProperty<T>(obj: T): T | undefined {
     if (typeof obj !== 'object') throw Error('assert');
 
     if (process.platform in obj) {

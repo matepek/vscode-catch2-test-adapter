@@ -141,13 +141,13 @@ describe(path.basename(__filename), function () {
 
   context.skip('AdvancedII playground', function () {
     class AdvancedII<T> implements IterableIterator<T> {
-      public constructor(public readonly next: () => IteratorResult<T>) {}
+      constructor(readonly next: () => IteratorResult<T>) {}
 
-      public static from<T>(iterable: Iterable<T>): AdvancedII<T> {
+      static from<T>(iterable: Iterable<T>): AdvancedII<T> {
         return new AdvancedII<T>(iterable[Symbol.iterator]().next);
       }
 
-      public toArray(): T[] {
+      toArray(): T[] {
         return [...this];
       }
 
@@ -155,7 +155,7 @@ describe(path.basename(__filename), function () {
         return this;
       }
 
-      public map<U>(func: (t: T) => U): AdvancedII<U> {
+      map<U>(func: (t: T) => U): AdvancedII<U> {
         const nextFunc = this.next;
         let next: IteratorResult<T> = undefined as unknown as IteratorResult<T>;
 
@@ -166,7 +166,7 @@ describe(path.basename(__filename), function () {
         });
       }
 
-      public filter(func: (t: T) => boolean): AdvancedII<T> {
+      filter(func: (t: T) => boolean): AdvancedII<T> {
         const nextFunc = this.next;
         let next: IteratorResult<T> = undefined as unknown as IteratorResult<T>;
 
@@ -277,7 +277,7 @@ describe(path.basename(__filename), function () {
     //   };
     // }
     // class MyClass {
-    //   constructor(public readonly val: string) {}
+    //   constructor( readonly val: string) {}
     //   _cachedF: Promise<number> | undefined = undefined;
     //   _errOfF: any | undefined = undefined;
     //   @CacheableAsync<MyClass,number>(false);

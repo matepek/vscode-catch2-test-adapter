@@ -2,15 +2,15 @@ export class TaskPool {
   /**
    * @param maxTaskCount Has to be bigger than 0 or `undefined`.
    */
-  public constructor(private _maxTaskCount: number) {
+  constructor(private _maxTaskCount: number) {
     if (_maxTaskCount < 1) throw Error('invalid maxTaskCount: ' + _maxTaskCount);
   }
 
-  public get maxTaskCount(): number {
+  get maxTaskCount(): number {
     return this._maxTaskCount;
   }
 
-  public set maxTaskCount(value: number) {
+  set maxTaskCount(value: number) {
     if (value < 1) throw Error('invalid maxTaskCount: ' + value);
 
     this._maxTaskCount = value;
@@ -18,11 +18,11 @@ export class TaskPool {
     this._startIfCanAqure();
   }
 
-  public get availableSlotCount(): number {
+  get availableSlotCount(): number {
     return Math.max(0, this._maxTaskCount - this._runningTaskCount);
   }
 
-  public scheduleTask<TResult>(task: () => TResult | PromiseLike<TResult>): Promise<TResult> {
+  scheduleTask<TResult>(task: () => TResult | PromiseLike<TResult>): Promise<TResult> {
     return new Promise<void>(resolve => {
       if (this._acquire()) resolve();
       else this._waitingTasks.push(resolve);

@@ -2,11 +2,7 @@ import { request } from 'https';
 import * as vscode from 'vscode';
 
 export class Question {
-  public constructor(
-    public id: number,
-    public readonly message: string,
-    ...items: { text: string; link: string | undefined }[]
-  ) {
+  constructor(id: number, readonly message: string, ...items: { text: string; link: string | undefined }[]) {
     this.items = items;
   }
 
@@ -26,7 +22,7 @@ export class Question {
     });
   }
 
-  public async ask(): Promise<boolean> {
+  async ask(): Promise<boolean> {
     const items = this.items.map(x => x.text);
     const choice = await vscode.window.showInformationMessage(this.message, ...items);
 

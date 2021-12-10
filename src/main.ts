@@ -216,6 +216,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         removeWorkspaceManager(ws);
       }
 
+      // just to make sure
+      controller.items.replace([]);
+
       addOpenedWorkspaces();
       Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then();
     }),

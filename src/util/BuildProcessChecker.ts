@@ -6,7 +6,7 @@ import { LoggerWrapper } from '../LoggerWrapper';
 
 // not so nice, init in rootsuite in the future
 export class BuildProcessChecker {
-  public constructor(private readonly _log: LoggerWrapper) {}
+  constructor(private readonly _log: LoggerWrapper) {}
 
   private readonly _checkIntervalMillis = 2000;
   // https://en.wikipedia.org/wiki/List_of_compilers#C++_compilers
@@ -17,12 +17,12 @@ export class BuildProcessChecker {
   private _finishedResolver = (): void => {}; // eslint-disable-line
   private _timerId: NodeJS.Timeout | undefined = undefined; // number if have running build process
 
-  public dispose(): void {
+  dispose(): void {
     this._timerId && clearInterval(this._timerId);
     this._finishedResolver();
   }
 
-  public resolveAtFinish(): Promise<void> {
+  resolveAtFinish(): Promise<void> {
     if (this._timerId !== undefined) {
       return this._finishedP;
     }

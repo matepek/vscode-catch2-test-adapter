@@ -3,7 +3,7 @@ import { debugBreak } from './DevelopmentHelper';
 import { ParserInterface } from './ParserInterface';
 
 export class TextStreamParser implements ParserInterface {
-  public constructor(private readonly log: LoggerWrapper, rootProcessor: RootLineProcessor) {
+  constructor(private readonly log: LoggerWrapper, rootProcessor: RootLineProcessor) {
     this.topProcessor = rootProcessor;
     this.alwaysonlineCb = rootProcessor.alwaysonline;
   }
@@ -16,7 +16,7 @@ export class TextStreamParser implements ParserInterface {
   private topProcessor: LineProcessor;
   private readonly alwaysonlineCb: ((line: string) => void) | undefined = undefined;
 
-  public async end(): Promise<void> {
+  async end(): Promise<void> {
     if (this.lastLine) {
       if (this.alwaysonlineCb) this.alwaysonlineCb(this.lastLine);
 
@@ -36,7 +36,7 @@ export class TextStreamParser implements ParserInterface {
     }
   }
 
-  public write(data: string): void {
+  write(data: string): void {
     if (data) {
       const lines = data.split(/\r?\n/); // has at least 1 element
 

@@ -6,18 +6,15 @@ import { ParserInterface } from './ParserInterface';
 type ProcessorFrame = { tag: XmlTag; processor: XmlTagProcessor; nesting: number };
 type XmlTagFrame = XmlTag & { _text: string };
 
-export class XmlParser extends htmlparser2.Parser implements ParserInterface {
+export class XmlParser implements ParserInterface {
+  private readonly htmlParser: htmlparser2.Parser;
   private sequentialP = Promise.resolve();
   private readonly tagStack: XmlTagFrame[] = [];
   private readonly xmlTagProcessorStack: ProcessorFrame[] = [];
   private topTagProcessor: ProcessorFrame;
 
-  public constructor(
-    private readonly log: LoggerWrapper,
-    processor: XmlTagProcessor,
-    onerrorCb: (error: Error) => void,
-  ) {
-    super(
+  constructor(private readonly log: LoggerWrapper, processor: XmlTagProcessor, onerrorCb: (error: Error) => void) {
+    this.htmlParser = new htmlparser2.Parser(
       {
         onopentag: (name: string, attribs: Record<string, string>): void => {
           this.sequentialP = this.sequentialP.then(async () => {
@@ -134,8 +131,12 @@ export class XmlParser extends htmlparser2.Parser implements ParserInterface {
     return p;
   }
 
-  override async end(): Promise<void> {
-    super.end();
+  write(data: string): void {
+    this.htmlParser.write(data);
+  }
+
+  async end(): Promise<void> {
+    this.htmlParser.end();
     await this.sequentialP;
   }
 

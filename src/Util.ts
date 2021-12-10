@@ -60,21 +60,17 @@ export function concat(left: string, right: string, sep = ''): string {
 }
 
 export class Version {
-  public constructor(
-    public readonly major: number,
-    private readonly _minor?: number,
-    private readonly _patch?: number,
-  ) {}
+  constructor(readonly major: number, private readonly _minor?: number, private readonly _patch?: number) {}
 
-  public get minor(): number {
+  get minor(): number {
     return this._minor ? this._minor : 0;
   }
 
-  public get patch(): number {
+  get patch(): number {
     return this._patch ? this._patch : 0;
   }
 
-  public smaller(right: Version): boolean {
+  smaller(right: Version): boolean {
     if (this.major < right.major) return true;
     else if (this.major > right.major) return false;
 
@@ -87,7 +83,7 @@ export class Version {
     return false;
   }
 
-  public toString(): string {
+  toString(): string {
     return `${this.major}.${this.minor}.${this.patch}`;
   }
 }
@@ -180,7 +176,7 @@ export class GoogleTestVersionFinder {
 
   private static _version: Promise<VersionT | undefined> | undefined = undefined;
 
-  public static Get(log: LoggerWrapper): Promise<VersionT | undefined> {
+  static Get(log: LoggerWrapper): Promise<VersionT | undefined> {
     if (this._version === undefined) {
       const cancellation = new vscode.CancellationTokenSource();
 

@@ -4,7 +4,7 @@ import { SharedTestTags } from '../SharedTestTags';
 import { TestItemParent } from '../TestItemManager';
 
 export class GoogleTestTest extends AbstractTest {
-  public constructor(
+  constructor(
     shared: SharedWithTest,
     executable: AbstractExecutable,
     parent: TestItemParent,
@@ -32,7 +32,7 @@ export class GoogleTestTest extends AbstractTest {
     );
   }
 
-  public update2(
+  update2(
     testName: string,
     suiteName: string,
     file: string | undefined,

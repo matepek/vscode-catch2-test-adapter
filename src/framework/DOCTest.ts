@@ -10,7 +10,7 @@ interface Frame {
 }
 
 export class DOCSection implements Frame {
-  public constructor(name: string, filename: string, line: number) {
+  constructor(name: string, filename: string, line: number) {
     this.name = name;
     // some debug adapter on ubuntu starts debug session in shell,
     // this prevents the SECTION("`pwd`") to be executed
@@ -20,15 +20,15 @@ export class DOCSection implements Frame {
     this.line = line;
   }
 
-  public readonly name: string;
-  public readonly filename: string;
-  public readonly line: number;
-  public readonly children: DOCSection[] = [];
-  public failed = false;
+  readonly name: string;
+  readonly filename: string;
+  readonly line: number;
+  readonly children: DOCSection[] = [];
+  failed = false;
 }
 
 export class DOCTest extends AbstractTest {
-  public constructor(
+  constructor(
     shared: SharedWithTest,
     executable: AbstractExecutable,
     parent: TestItemParent,
@@ -55,7 +55,7 @@ export class DOCTest extends AbstractTest {
     );
   }
 
-  public update2(
+  update2(
     file: string | undefined,
     line: string | undefined,
     tags: string[],
@@ -66,7 +66,7 @@ export class DOCTest extends AbstractTest {
     super.update(this.label, file, line, skipped, calcDescription, tags);
   }
 
-  public getEscapedTestName(): string {
+  getEscapedTestName(): string {
     /* ',' has special meaning */
     return this.id.replace(/,/g, '?');
   }

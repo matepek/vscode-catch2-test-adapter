@@ -23,7 +23,7 @@ function longestCommonPath(paths: string[]): [string, string[]] {
 }
 
 export class GazeWrapper implements FSWatcher {
-  public constructor(patterns: string[]) {
+  constructor(patterns: string[]) {
     const [cwd, children] = longestCommonPath(patterns);
     this._gaze = new Gaze(children, { cwd, debounceDelay: 2000, interval: 2000 });
 
@@ -36,11 +36,11 @@ export class GazeWrapper implements FSWatcher {
     });
   }
 
-  public ready(): Promise<void> {
+  ready(): Promise<void> {
     return this._watcherReady;
   }
 
-  public async watched(): Promise<string[]> {
+  async watched(): Promise<string[]> {
     await this.ready();
     const filePaths: string[] = [];
     const watched = this._gaze.watched();
@@ -52,20 +52,20 @@ export class GazeWrapper implements FSWatcher {
     return filePaths;
   }
 
-  public dispose(): void {
+  dispose(): void {
     // we only can close it after it is ready. (empiric)
     this.ready().finally(() => {
       this._gaze.close();
     });
   }
 
-  public onAll(handler: (fsPath: string) => void): void {
+  onAll(handler: (fsPath: string) => void): void {
     this._gaze.on('all', (_event: string, fsPath: string) => {
       handler(fsPath);
     });
   }
 
-  public onError(handler: (err: Error) => void): void {
+  onError(handler: (err: Error) => void): void {
     this._gaze.on('error', handler);
   }
 
@@ -74,7 +74,7 @@ export class GazeWrapper implements FSWatcher {
 }
 
 export class VSCFSWatcherWrapper implements FSWatcher {
-  public constructor(workspaceFolder: vscode.WorkspaceFolder, relativePattern: string) {
+  constructor(workspaceFolder: vscode.WorkspaceFolder, relativePattern: string) {
     if (path.isAbsolute(relativePattern)) throw new Error('Relative path is expected:' + relativePattern);
 
     this._relativePattern = new vscode.RelativePattern(workspaceFolder, relativePattern);
@@ -83,15 +83,15 @@ export class VSCFSWatcherWrapper implements FSWatcher {
     this._disposables.push(this._vscWatcher);
   }
 
-  public dispose(): void {
+  dispose(): void {
     this._disposables.forEach(c => c.dispose());
   }
 
-  public ready(): Promise<void> {
+  ready(): Promise<void> {
     return Promise.resolve();
   }
 
-  public watched(): Promise<string[]> {
+  watched(): Promise<string[]> {
     return new Promise(resolve => {
       vscode.workspace
         .findFiles(this._relativePattern, null, 10000)
@@ -99,14 +99,14 @@ export class VSCFSWatcherWrapper implements FSWatcher {
     });
   }
 
-  public onAll(handler: (fsPath: string) => void): void {
+  onAll(handler: (fsPath: string) => void): void {
     this._disposables.push(this._vscWatcher.onDidCreate((uri: vscode.Uri) => handler(uri.fsPath)));
     this._disposables.push(this._vscWatcher.onDidChange((uri: vscode.Uri) => handler(uri.fsPath)));
     this._disposables.push(this._vscWatcher.onDidDelete((uri: vscode.Uri) => handler(uri.fsPath)));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public onError(_handler: (err: Error) => void): void {
+  onError(_handler: (err: Error) => void): void {
     return undefined;
   }
 

@@ -35,7 +35,7 @@ export class TestAdapterRegistrar<T extends { dispose: () => void }> {
     });
   }
 
-  public getAdapter(workspaceFolder: vscode.WorkspaceFolder): T | undefined {
+  getAdapter(workspaceFolder: vscode.WorkspaceFolder): T | undefined {
     return this.registeredAdapters.get(workspaceFolder);
   }
 

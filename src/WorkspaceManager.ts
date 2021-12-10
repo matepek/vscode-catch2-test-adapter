@@ -13,7 +13,7 @@ import { TestItemManager } from './TestItemManager';
 
 //TODO:release if workspace contains ".vscode/testMate.cpp.json" we have to start loading the tests
 export class WorkspaceManager implements vscode.Disposable {
-  public constructor(
+  constructor(
     private readonly workspaceFolder: vscode.WorkspaceFolder,
     private readonly log: LoggerWrapper,
     testItemManager: TestItemManager,
@@ -218,7 +218,7 @@ export class WorkspaceManager implements vscode.Disposable {
     return new Configurations(log, this.workspaceFolder.uri);
   }
 
-  public run(
+  run(
     executables: Map<AbstractExecutable, TestsToRun>,
     cancellation: vscode.CancellationToken,
     run: vscode.TestRun,
@@ -323,7 +323,7 @@ export class WorkspaceManager implements vscode.Disposable {
     }
   }
 
-  public debug(test: AbstractTest, cancellation: vscode.CancellationToken, run: vscode.TestRun): Thenable<void> {
+  debug(test: AbstractTest, cancellation: vscode.CancellationToken, run: vscode.TestRun): Thenable<void> {
     run.enqueued(test.item);
 
     return this._debugInner(test, cancellation, run).catch(e => {
@@ -332,11 +332,7 @@ export class WorkspaceManager implements vscode.Disposable {
     });
   }
 
-  public async _debugInner(
-    test: AbstractTest,
-    cancellation: vscode.CancellationToken,
-    run: vscode.TestRun,
-  ): Promise<void> {
+  async _debugInner(test: AbstractTest, cancellation: vscode.CancellationToken, run: vscode.TestRun): Promise<void> {
     try {
       this._shared.log.info('Using debug');
 

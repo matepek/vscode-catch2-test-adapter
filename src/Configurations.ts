@@ -49,7 +49,7 @@ export type Config =
   | 'gtest.gmockVerbose';
 
 class ConfigurationChangeEvent {
-  public constructor(private readonly event: vscode.ConfigurationChangeEvent) {}
+  constructor(private readonly event: vscode.ConfigurationChangeEvent) {}
   affectsConfiguration(config: Config, resource?: vscode.Uri): boolean {
     return this.event.affectsConfiguration(`${ConfigSectionBase}.${config}`, resource);
   }
@@ -60,7 +60,7 @@ class ConfigurationChangeEvent {
 export class Configurations {
   private _cfg: vscode.WorkspaceConfiguration;
 
-  public constructor(public _log: LoggerWrapper, private _workspaceFolderUri: vscode.Uri) {
+  constructor(readonly _log: LoggerWrapper, private _workspaceFolderUri: vscode.Uri) {
     this._cfg = vscode.workspace.getConfiguration(ConfigSectionBase, _workspaceFolderUri);
   }
 
@@ -73,7 +73,7 @@ export class Configurations {
   }
 
   // eslint-disable-next-line
-  public getValues(): { test: any; discovery: any; debug: any; log: any; gtest: any } {
+  getValues(): { test: any; discovery: any; debug: any; log: any; gtest: any } {
     return {
       test: this._cfg.get(Section.test),
       discovery: this._cfg.get(Section.discovery),
@@ -83,7 +83,7 @@ export class Configurations {
     };
   }
 
-  public static onDidChange(callbacks: (changeEvent: ConfigurationChangeEvent) => void): vscode.Disposable {
+  static onDidChange(callbacks: (changeEvent: ConfigurationChangeEvent) => void): vscode.Disposable {
     return vscode.workspace.onDidChangeConfiguration(changeEvent =>
       callbacks(new ConfigurationChangeEvent(changeEvent)),
     );
@@ -93,7 +93,7 @@ export class Configurations {
     return vscode.extensions.all.find(e => e.id === id) !== undefined;
   }
 
-  public getDebugConfigurationTemplate(): DebugConfigData {
+  getDebugConfigurationTemplate(): DebugConfigData {
     const debugConfigData = ((): DebugConfigData => {
       const templateFromConfig = this._getD<vscode.DebugConfiguration | null | 'extensionOnly'>(
         'debug.configTemplate',
@@ -228,7 +228,7 @@ export class Configurations {
     return debugConfigData;
   }
 
-  public getOrCreateUserId(): string {
+  getOrCreateUserId(): string {
     let userId = this._get<string>('log.userId');
 
     if (userId) {
@@ -244,18 +244,18 @@ export class Configurations {
     }
   }
 
-  // public static decrypt(encryptedMsg: string): string {
+  //  static decrypt(encryptedMsg: string): string {
   //   const buffer = Buffer.from(encryptedMsg, 'base64');
-  //   const decrypted = crypto.privateDecrypt(Configurations.PublicKey, buffer);
+  //   const decrypted = crypto.privateDecrypt(Configurations.Key, buffer);
   //   return decrypted.toString('utf8');
   // }
 
-  public isSentryEnabled(): boolean {
+  isSentryEnabled(): boolean {
     const val = this._get('log.logSentry');
     return val === 'enable' || val === 'enabled';
   }
 
-  public askSentryConsent(): void {
+  askSentryConsent(): void {
     const envAskSentry = process.env['TESTMATE_CPP_ASKSENTRYCONSENT'];
     if (envAskSentry === 'disabled_3') {
       return;
@@ -304,20 +304,20 @@ export class Configurations {
     }
   }
 
-  public getDebugBreakOnFailure(): boolean {
+  getDebugBreakOnFailure(): boolean {
     return this._getD<boolean>('debug.breakOnFailure', true);
   }
 
-  public getDefaultNoThrow(): boolean {
+  getDefaultNoThrow(): boolean {
     return this._getD<boolean>('debug.noThrow', false);
   }
 
-  public getDefaultCwd(): string {
+  getDefaultCwd(): string {
     const dirname = this._workspaceFolderUri.fsPath;
     return this._getD<string>('test.workingDirectory', dirname);
   }
 
-  public getRandomGeneratorSeed(): 'time' | number | null {
+  getRandomGeneratorSeed(): 'time' | number | null {
     const val = this._getD<string>('test.randomGeneratorSeed', 'time');
     if (val === 'time') return val;
     if (val === '') return null;
@@ -328,7 +328,7 @@ export class Configurations {
 
   private static _parallelExecutionLimitMetricSent = false;
 
-  public getParallelExecutionLimit(): number {
+  getParallelExecutionLimit(): number {
     const res = Math.max(1, this._getD<number>('test.parallelExecutionLimit', 1));
     if (typeof res != 'number') return 1;
     else {
@@ -340,7 +340,7 @@ export class Configurations {
     }
   }
 
-  public getParallelExecutionOfExecutableLimit(): number {
+  getParallelExecutionOfExecutableLimit(): number {
     const cfgName: Config = 'test.parallelExecutionOfExecutableLimit';
     const res = Math.max(1, this._getD<number>(cfgName, 1));
     if (typeof res != 'number' || Number.isNaN(res)) return 1;
@@ -350,38 +350,38 @@ export class Configurations {
     }
   }
 
-  public getExecWatchTimeout(): number {
+  getExecWatchTimeout(): number {
     const res = this._getD<number>('discovery.gracePeriodForMissing', 10) * 1000;
     return res;
   }
 
-  public getExecRunningTimeout(): null | number {
+  getExecRunningTimeout(): null | number {
     const r = this._getD<null | number>('test.runtimeLimit', null);
     return r !== null && r > 0 ? r * 1000 : null;
   }
 
-  public getExecParsingTimeout(): number {
+  getExecParsingTimeout(): number {
     const r = this._getD<number>('discovery.runtimeLimit', 5);
     return r * 1000;
   }
 
-  public getEnableTestListCaching(): boolean {
+  getEnableTestListCaching(): boolean {
     return this._getD<boolean>('discovery.testListCaching', false);
   }
 
-  public getEnableStrictPattern(): boolean {
+  getEnableStrictPattern(): boolean {
     return this._getD<boolean>('discovery.strictPattern', false);
   }
 
-  public getGoogleTestTreatGMockWarningAs(): 'nothing' | 'failure' {
+  getGoogleTestTreatGMockWarningAs(): 'nothing' | 'failure' {
     return this._getD<'nothing' | 'failure'>('gtest.treatGmockWarningAs', 'nothing');
   }
 
-  public getGoogleTestGMockVerbose(): 'default' | 'info' | 'warning' | 'error' {
+  getGoogleTestGMockVerbose(): 'default' | 'info' | 'warning' | 'error' {
     return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  public getExecutableConfigs(shared: WorkspaceShared): ExecutableConfig[] {
+  getExecutableConfigs(shared: WorkspaceShared): ExecutableConfig[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultParallelExecutionOfExecLimit = this.getParallelExecutionOfExecutableLimit() || 1;
 

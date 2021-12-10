@@ -13,7 +13,7 @@ import { WorkspaceShared } from './WorkspaceShared';
 import { Framework, FrameworkId, FrameworkType } from './framework/Framework';
 
 export class ExecutableFactory {
-  public constructor(
+  constructor(
     private readonly _shared: WorkspaceShared,
     private readonly _execName: string | undefined,
     private readonly _execDescription: string | undefined,
@@ -28,7 +28,7 @@ export class ExecutableFactory {
     private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecific>,
   ) {}
 
-  public async create(checkIsNativeExecutable: boolean): Promise<AbstractExecutable | undefined> {
+  async create(checkIsNativeExecutable: boolean): Promise<AbstractExecutable | undefined> {
     const runWithHelpRes = await this._shared.taskPool.scheduleTask(async () => {
       if (checkIsNativeExecutable) await c2fs.isNativeExecutableAsync(this._execPath);
 

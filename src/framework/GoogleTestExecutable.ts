@@ -10,7 +10,7 @@ import { WorkspaceShared } from '../WorkspaceShared';
 import { RunningExecutable } from '../RunningExecutable';
 import { AbstractTest } from '../AbstractTest';
 import { CancellationToken } from '../Util';
-import { TestGrouping } from '../TestGroupingInterface';
+import { TestGrouping, testGroupIterator } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
@@ -20,7 +20,7 @@ import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser 
 import { Readable } from 'stream';
 
 export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
-  public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, private readonly _argumentPrefix: string) {
+  constructor(shared: WorkspaceShared, execInfo: RunnableProperties, private readonly _argumentPrefix: string) {
     super(shared, execInfo, 'GoogleTest', undefined);
   }
 
@@ -62,8 +62,8 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
   private static readonly testRe = /^\s+([A-z0-9][\/A-z0-9_\-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
 
   private async _reloadFromString(
-    stdout: string,
-    stderr: string,
+    stdout: Readable | string,
+    stderr: Readable | string,
     _cancellationToken: CancellationToken,
   ): Promise<void> {
     let testGroupM: RegExpMatchArray | null = null;
@@ -92,9 +92,13 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
       },
     });
 
-    parser.write(stdout);
-    parser.writeStdErr(stderr);
-    await parser.end();
+    if (typeof stdout === 'string') {
+      parser.write(stdout);
+      parser.writeStdErr(stderr as string);
+      await parser.end();
+    } else {
+      await pipeOutputStreams2Parser(stdout, stderr as Readable, parser, undefined);
+    }
   }
 
   private readonly _createAndAddTest = async (
@@ -150,9 +154,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
       this.properties.options,
     );
 
-    const [stdout, stderr] = await pipeOutputStreams2String(googleTestListProcess.stdout, googleTestListProcess.stderr);
-
-    try {
+    const loadFromFileIfHas = async (): Promise<boolean> => {
       const hasXmlFile = await promisify(fs.exists)(cacheFile);
 
       if (hasXmlFile) {
@@ -166,12 +168,40 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
           });
         }
 
-        return;
+        return true;
       } else {
         this.shared.log.warn(
-          "Couldn't parse output file. Possibly it is an older version of Google Test framework, NAVIGATION MIGHT WON'T WOKR. Fallback logic: Trying of parsing the output...",
+          "Couldn't parse output file. Possibly it is an older version of Google Test framework, NAVIGATION MIGHT WON'T WORK.",
         );
-        await this._reloadFromString(stdout, stderr, cancellationToken);
+
+        return false;
+      }
+    };
+
+    // for gtest the source file is only available in the xml output file
+    let canLoadOutput = true;
+    for (const [groupingType] of testGroupIterator(this.getTestGrouping())) {
+      if (groupingType === 'groupBySource') {
+        canLoadOutput = false;
+        break;
+      }
+    }
+
+    try {
+      if (canLoadOutput) {
+        await this._reloadFromString(googleTestListProcess.stdout, googleTestListProcess.stderr, cancellationToken);
+        await loadFromFileIfHas();
+      } else {
+        const closedP = new Promise(r => googleTestListProcess.once('close', r));
+        const [stdout, stderr] = await pipeOutputStreams2String(
+          googleTestListProcess.stdout,
+          googleTestListProcess.stderr,
+        );
+        await closedP;
+        const loadedFromFile = await loadFromFileIfHas();
+        if (!loadedFromFile) {
+          await this._reloadFromString(stdout, stderr, cancellationToken);
+        }
       }
     } catch (e) {
       this.shared.log.warn('reloadChildren error:', e);
@@ -336,9 +366,9 @@ const testEndRe = (testId: string) =>
 ///
 
 class TestCaseSharedData {
-  constructor(public readonly shared: WorkspaceShared, public readonly builder: TestResultBuilder) {}
+  constructor(readonly shared: WorkspaceShared, readonly builder: TestResultBuilder) {}
 
-  public gMockWarningCount = 0;
+  gMockWarningCount = 0;
 }
 
 ///

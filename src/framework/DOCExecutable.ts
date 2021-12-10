@@ -18,7 +18,7 @@ import { SubTestTree } from '../AbstractTest';
 import { pipeProcess2Parser } from '../util/ParserInterface';
 
 export class DOCExecutable extends AbstractExecutable<DOCTest> {
-  public constructor(shared: WorkspaceShared, execInfo: RunnableProperties, docVersion: Version | undefined) {
+  constructor(shared: WorkspaceShared, execInfo: RunnableProperties, docVersion: Version | undefined) {
     super(shared, execInfo, 'doctest', docVersion);
   }
 
@@ -307,13 +307,13 @@ type CaseData = { hasException?: true; hasFailedExpression?: true };
 
 abstract class TagProcessorBase implements XmlTagProcessor {
   constructor(
-    public readonly builder: TestResultBuilder,
+    readonly builder: TestResultBuilder,
     protected readonly shared: WorkspaceShared,
     protected readonly caseData: CaseData,
     protected readonly subCases: SubTestTree,
   ) {}
 
-  public onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
+  onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
     const procCreator = TagProcessorBase.openTagProcessorMap.get(tag.name);
     if (procCreator) {
       return procCreator(tag, this.builder, this.caseData, this.shared, this.subCases);
@@ -330,7 +330,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     }
   }
 
-  public ontext(dataTrimmed: string, parentTag: XmlTag): void {
+  ontext(dataTrimmed: string, parentTag: XmlTag): void {
     const processor = TagProcessorBase.textProcessorMap.get(parentTag.name);
     if (processor) {
       try {
@@ -347,7 +347,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     }
   }
 
-  public onstderr(data: string, _parentTag: XmlTag | undefined): void {
+  onstderr(data: string, _parentTag: XmlTag | undefined): void {
     this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
   }
 
@@ -431,12 +431,12 @@ class TestCaseTagProcessor extends TagProcessorBase {
     super(builder, shared, {}, new Map());
   }
 
-  public async begin(): Promise<void> {
+  async begin(): Promise<void> {
     this.builder.started();
     await this.test.updateFL(this.attribs.filename, this.attribs.line);
   }
 
-  public override onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
+  override onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {
     if (tag.name === 'OverallResultsAsserts') {
       const durationSec = parseFloat(tag.attribs.duration) || undefined;
       if (durationSec === undefined) this.shared.log.errorS('doctest: duration is NaN: ' + tag.attribs.duration);
@@ -475,7 +475,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
 ///
 
 class SubCaseProcessor extends TagProcessorBase {
-  public static async create(
+  static async create(
     shared: WorkspaceShared,
     testBuilder: TestResultBuilder,
     attribs: Record<string, string>,
@@ -514,13 +514,13 @@ class SubCaseProcessor extends TagProcessorBase {
   }
 
   //doctest does not provide result for sub-cases, no point to build
-  //public end(): void { this.builder.build() }
+  // end(): void { this.builder.build() }
 }
 
 ///
 
 class ExpressionProcessor implements XmlTagProcessor {
-  public constructor(
+  constructor(
     private readonly _shared: WorkspaceShared,
     private readonly builder: TestResultBuilder,
     private readonly attribs: Record<string, string>,
@@ -533,7 +533,7 @@ class ExpressionProcessor implements XmlTagProcessor {
   private expanded?: string;
   private other = new Map<string, string>();
 
-  public ontext(dataTrimmed: string, parentTag: XmlTag): void {
+  ontext(dataTrimmed: string, parentTag: XmlTag): void {
     switch (parentTag.name) {
       case 'Original':
         this.original = dataTrimmed;
@@ -547,7 +547,7 @@ class ExpressionProcessor implements XmlTagProcessor {
     }
   }
 
-  public end(): void {
+  end(): void {
     assert(this.original);
 
     if (this.other.size) {
@@ -572,7 +572,7 @@ class ExpressionProcessor implements XmlTagProcessor {
 ///
 
 class MessageProcessor implements XmlTagProcessor {
-  public constructor(
+  constructor(
     private readonly _shared: WorkspaceShared,
     private readonly builder: TestResultBuilder,
     private readonly attribs: Record<string, string>,
@@ -581,7 +581,7 @@ class MessageProcessor implements XmlTagProcessor {
 
   private text = '';
 
-  public ontext(dataTrimmed: string, parentTag: XmlTag): void {
+  ontext(dataTrimmed: string, parentTag: XmlTag): void {
     switch (parentTag.name) {
       case 'Text':
         this.text = dataTrimmed;
@@ -593,7 +593,7 @@ class MessageProcessor implements XmlTagProcessor {
     }
   }
 
-  public end(): void {
+  end(): void {
     assert(this.text !== undefined);
 
     if (this.attribs.type === 'FATAL ERROR') {

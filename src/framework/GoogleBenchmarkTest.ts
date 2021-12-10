@@ -4,7 +4,7 @@ import { SharedTestTags } from '../SharedTestTags';
 import { TestItemParent } from '../TestItemManager';
 
 export class GoogleBenchmarkTest extends AbstractTest {
-  public constructor(
+  constructor(
     shared: SharedWithTest,
     executable: AbstractExecutable,
     parent: TestItemParent,
@@ -27,7 +27,7 @@ export class GoogleBenchmarkTest extends AbstractTest {
     );
   }
 
-  public update2(failIfExceedsLimitNs: number | undefined): boolean {
+  update2(failIfExceedsLimitNs: number | undefined): boolean {
     const changed = false;
     if (failIfExceedsLimitNs !== this.failIfExceedsLimitNs) {
       this.failIfExceedsLimitNs = failIfExceedsLimitNs;

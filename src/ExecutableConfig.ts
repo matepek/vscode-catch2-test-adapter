@@ -25,7 +25,7 @@ import { readFileSync } from 'fs';
 ///
 
 export class ExecutableConfig implements vscode.Disposable {
-  public constructor(
+  constructor(
     private readonly _shared: WorkspaceShared,
     private readonly _pattern: string,
     private readonly _name: string | undefined,
@@ -46,7 +46,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
   private _disposables: vscode.Disposable[] = [];
 
-  public dispose(): void {
+  dispose(): void {
     this._disposables.forEach(d => d.dispose());
 
     for (const exec of this._executables.values()) {
@@ -56,7 +56,7 @@ export class ExecutableConfig implements vscode.Disposable {
 
   private readonly _executables: Map<string /*fsPath*/, AbstractExecutable> = new Map();
 
-  public async load(): Promise<unknown[]> {
+  async load(): Promise<unknown[]> {
     const pattern = await this._pathProcessor(this._pattern);
 
     this._shared.log.info('pattern', this._pattern, this._shared.workspaceFolder.uri.fsPath, pattern);

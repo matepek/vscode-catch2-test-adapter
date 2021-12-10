@@ -106,13 +106,13 @@ function stateEventSequence(
 ///
 
 export class TestAdapter extends my.TestAdapter {
-  public readonly loadEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
+  readonly loadEvents: (TestLoadStartedEvent | TestLoadFinishedEvent)[] = [];
   private readonly _loadEventsConn: vscode.Disposable;
 
-  public readonly stateEvents: my2.TestRunEvent[] = [];
+  readonly stateEvents: my2.TestRunEvent[] = [];
   private readonly _stateEventsConn: vscode.Disposable;
 
-  public constructor() {
+  constructor() {
     super(settings.workspaceFolder, logger);
 
     this._loadEventsConn = this.tests((e: TestLoadStartedEvent | TestLoadFinishedEvent) => {
@@ -124,11 +124,11 @@ export class TestAdapter extends my.TestAdapter {
     });
   }
 
-  public dispose(): void {
+  dispose(): void {
     throw Error('should have called waitAndDispose');
   }
 
-  public async waitAndDispose(context: Mocha.Context): Promise<void> {
+  async waitAndDispose(context: Mocha.Context): Promise<void> {
     await waitFor(context, () => {
       /* eslint-disable-next-line */
       return (this as any)._isDebugging === false;
@@ -170,11 +170,11 @@ export class TestAdapter extends my.TestAdapter {
     }
   }
 
-  public get root(): TestSuiteInfo {
+  get root(): TestSuiteInfo {
     return (this as any) /* eslint-disable-line */._rootSuite;
   }
 
-  public getGroup(...index: number[]): TestSuiteInfo {
+  getGroup(...index: number[]): TestSuiteInfo {
     let group: TestSuiteInfo = this.root;
     for (let i = 0; i < index.length; i++) {
       assert.ok(group.children.length > index[i], index[i].toString());
@@ -185,7 +185,7 @@ export class TestAdapter extends my.TestAdapter {
     return group;
   }
 
-  public getTest(...index: number[]): TestInfo {
+  getTest(...index: number[]): TestInfo {
     let group: TestSuiteInfo = this.root;
     for (let i = 0; i < index.length; i++) {
       assert.ok(group.children.length > index[i], index[i].toString());
@@ -201,32 +201,32 @@ export class TestAdapter extends my.TestAdapter {
     throw Error(`coudn't find test ${index}`);
   }
 
-  public get group(): TestSuiteInfo {
+  get group(): TestSuiteInfo {
     return this.getGroup(0);
   }
-  public get group1(): TestSuiteInfo {
+  get group1(): TestSuiteInfo {
     return this.getGroup(1);
   }
-  public get group2(): TestSuiteInfo {
+  get group2(): TestSuiteInfo {
     return this.getGroup(2);
   }
-  public get group3(): TestSuiteInfo {
+  get group3(): TestSuiteInfo {
     return this.getGroup(3);
   }
 
-  public simplifiedAssertEqualStateEvents(expectedArr: my2.TestRunEvent[]): void {
+  simplifiedAssertEqualStateEvents(expectedArr: my2.TestRunEvent[]): void {
     simplifiedAssertEqualStateEvents(this.stateEvents, expectedArr);
   }
 
-  public indexOfStateEvent(searchFor: my2.TestRunEvent): number {
+  indexOfStateEvent(searchFor: my2.TestRunEvent): number {
     return indexOfStateEvent(this.stateEvents, searchFor);
   }
 
-  public stateEventSequence(before: my2.TestRunEvent, thanThis: my2.TestRunEvent): void {
+  stateEventSequence(before: my2.TestRunEvent, thanThis: my2.TestRunEvent): void {
     stateEventSequence(this.stateEvents, before, thanThis);
   }
 
-  public async doAndWaitForReloadEvent(
+  async doAndWaitForReloadEvent(
     context: Mocha.Context,
     action: () => Promise<void>,
   ): Promise<TestSuiteInfo | undefined> {
@@ -258,52 +258,52 @@ export class TestAdapter extends my.TestAdapter {
 ///
 
 export class ChildProcessStub extends EventEmitter implements ChildProcessWithoutNullStreams {
-  public readonly stdin: Writable = undefined as any; // eslint-disable-line
-  public readonly stdio: [
+  readonly stdin: Writable = undefined as any; // eslint-disable-line
+  readonly stdio: [
     Writable, // stdin
     Readable, // stdout
     Readable, // stderr
     Readable | Writable, // extra
     Readable | Writable, // extra
   ] = undefined as any; // eslint-disable-line
-  public readonly pid: number = undefined as any; // eslint-disable-line
-  public readonly connected: boolean = undefined as any; // eslint-disable-line
+  readonly pid: number = undefined as any; // eslint-disable-line
+  readonly connected: boolean = undefined as any; // eslint-disable-line
 
   // eslint-disable-next-line
-  public send(...args: any[]): boolean {
+  send(...args: any[]): boolean {
     throw Error('methond not implemented');
   }
-  public disconnect(): void {
+  disconnect(): void {
     throw Error('methond not implemented');
   }
-  public unref(): void {
+  unref(): void {
     throw Error('methond not implemented');
   }
-  public ref(): void {
+  ref(): void {
     throw Error('methond not implemented');
   }
-  public get exitCode(): number | null {
+  get exitCode(): number | null {
     throw Error('methond not implemented');
   }
-  public get signalCode(): NodeJS.Signals | null {
+  get signalCode(): NodeJS.Signals | null {
     throw Error('methond not implemented');
   }
-  public get spawnargs(): string[] {
+  get spawnargs(): string[] {
     throw Error('methond not implemented');
   }
-  public get spawnfile(): string {
+  get spawnfile(): string {
     throw Error('methond not implemented');
   }
 
-  public readonly stdout: Readable;
+  readonly stdout: Readable;
   private _stdoutChunks: (string | null)[] = [];
   private _canPushOut = false;
 
-  public readonly stderr: Readable;
+  readonly stderr: Readable;
   private _stderrChunks: (string | null)[] = [];
   private _canPushErr = false;
-  public closed = false;
-  public killed = false;
+  closed = false;
+  killed = false;
 
   private _writeStdOut(): void {
     while (this._stdoutChunks.length && this._canPushOut)
@@ -315,7 +315,7 @@ export class ChildProcessStub extends EventEmitter implements ChildProcessWithou
       this._canPushErr = this.stderr.push(this._stderrChunks.shift());
   }
 
-  public constructor(stdout?: string | Iterable<string>, close?: number | string, stderr?: string) {
+  constructor(stdout?: string | Iterable<string>, close?: number | string, stderr?: string) {
     super();
 
     if (stdout === undefined) this._stdoutChunks = [];
@@ -347,7 +347,7 @@ export class ChildProcessStub extends EventEmitter implements ChildProcessWithou
     });
   }
 
-  public kill(signal?: NodeJS.Signals | number): boolean {
+  kill(signal?: NodeJS.Signals | number): boolean {
     if (signal === undefined) signal = 'SIGTERM';
     this.killed = true;
     this.emit('close', null, signal);
@@ -356,24 +356,24 @@ export class ChildProcessStub extends EventEmitter implements ChildProcessWithou
     return true;
   }
 
-  public write(data: string): void {
+  write(data: string): void {
     this._stdoutChunks.push(data);
     this._writeStdOut();
   }
 
-  public close(): void {
+  close(): void {
     this._stdoutChunks.push(null);
     this._writeStdOut();
     this._stderrChunks.push(null);
     this._writeStdErr();
   }
 
-  public writeAndClose(data: string): void {
+  writeAndClose(data: string): void {
     this.write(data);
     this.close();
   }
 
-  public writeLineByLineAndClose(data: string): void {
+  writeLineByLineAndClose(data: string): void {
     const lines = data.split('\n');
     lines.forEach(l => {
       this.write(l + '\n');
@@ -383,10 +383,10 @@ export class ChildProcessStub extends EventEmitter implements ChildProcessWithou
 }
 
 export class SharedVariables extends my2.SharedVariables {
-  public loadCount = 0;
-  public readonly stateEvents: my2.TestRunEvent[] = [];
+  loadCount = 0;
+  readonly stateEvents: my2.TestRunEvent[] = [];
 
-  public constructor(workspaceFolder: vscode.WorkspaceFolder = settings.workspaceFolder) {
+  constructor(workspaceFolder: vscode.WorkspaceFolder = settings.workspaceFolder) {
     super(
       logger,
       workspaceFolder,
@@ -414,25 +414,25 @@ export class SharedVariables extends my2.SharedVariables {
     );
   }
 
-  public assertSimplifiedEqualStateEvents(expectedArr: my2.TestRunEvent[]): void {
+  assertSimplifiedEqualStateEvents(expectedArr: my2.TestRunEvent[]): void {
     simplifiedAssertEqualStateEvents(this.stateEvents, expectedArr);
   }
 
-  public indexOfStateEvent(searchFor: my2.TestRunEvent): number {
+  indexOfStateEvent(searchFor: my2.TestRunEvent): number {
     return indexOfStateEvent(this.stateEvents, searchFor);
   }
 
-  public assertStateEventSequence(before: my2.TestRunEvent, thanThis: my2.TestRunEvent): void {
+  assertStateEventSequence(before: my2.TestRunEvent, thanThis: my2.TestRunEvent): void {
     stateEventSequence(this.stateEvents, before, thanThis);
   }
 }
 
 export class RootSuite extends OrigRootSuite {
-  public constructor(shared: SharedVariables) {
+  constructor(shared: SharedVariables) {
     super(undefined, shared);
   }
 
-  public getGroup(...index: number[]): TestSuiteInfo {
+  getGroup(...index: number[]): TestSuiteInfo {
     let group = this as TestSuiteInfo;
     for (let i = 0; i < index.length; i++) {
       assert.ok(group.children.length > index[i], index[i].toString());
@@ -443,7 +443,7 @@ export class RootSuite extends OrigRootSuite {
     return group;
   }
 
-  public getTest(...index: number[]): TestInfo {
+  getTest(...index: number[]): TestInfo {
     let group = this as TestSuiteInfo;
     for (let i = 0; i < index.length; i++) {
       assert.ok(group.children.length > index[i], index[i].toString());

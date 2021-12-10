@@ -15,7 +15,7 @@ import { LoggerWrapper } from '../LoggerWrapper';
 import { TestItemParent } from '../TestItemManager';
 
 export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmarkTest> {
-  public constructor(shared: WorkspaceShared, execInfo: RunnableProperties) {
+  constructor(shared: WorkspaceShared, execInfo: RunnableProperties) {
     super(shared, execInfo, 'GoogleBenchmark', undefined);
   }
 
@@ -134,10 +134,10 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
     const expectedToRunAndFoundTests: GoogleBenchmarkTest[] = [];
 
     const data = new (class {
-      public sequentialProcessP = Promise.resolve();
-      public context: Record<string, unknown> | undefined = undefined;
-      public benchmarksJson = '';
-      public lastProcessedBenchmarkIndex = -1;
+      sequentialProcessP = Promise.resolve();
+      context: Record<string, unknown> | undefined = undefined;
+      benchmarksJson = '';
+      lastProcessedBenchmarkIndex = -1;
     })();
 
     const processChunk = async (chunk: string): Promise<void> => {

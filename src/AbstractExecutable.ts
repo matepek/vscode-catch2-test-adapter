@@ -16,7 +16,15 @@ import {
   ResolveRuleAsync,
   resolveVariablesAsync,
 } from './util/ResolveRule';
-import { TestGrouping, GroupByExecutable, GroupByTagRegex, GroupByRegex } from './TestGroupingInterface';
+import {
+  TestGrouping,
+  GroupByExecutable,
+  GroupByTagRegex,
+  GroupByRegex,
+  testGroupingForEach,
+  GroupBySource,
+  GroupByTags,
+} from './TestGroupingInterface';
 import { isSpawnBusyError } from './util/FSWrapper';
 import { TestResultBuilder } from './TestResultBuilder';
 import { debugAssert, debugBreak } from './util/DevelopmentHelper';
@@ -26,8 +34,8 @@ import { Disposable } from './Util';
 import { FilePathResolver, TestItemParent } from './TestItemManager';
 
 export class TestsToRun {
-  public readonly direct: AbstractTest[] = []; // test is drectly included, should be run even if it is skipped
-  public readonly parent: AbstractTest[] = []; // tests included because one of the ascendant was directly included
+  readonly direct: AbstractTest[] = []; // test is drectly included, should be run even if it is skipped
+  readonly parent: AbstractTest[] = []; // tests included because one of the ascendant was directly included
 
   *[Symbol.iterator](): Iterator<AbstractTest> {
     for (const i of this.direct) yield i;
@@ -38,11 +46,11 @@ export class TestsToRun {
 export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTest>
   implements Disposable, FilePathResolver
 {
-  public constructor(
-    public readonly shared: WorkspaceShared,
-    public readonly properties: RunnableProperties,
-    public readonly frameworkName: string,
-    public readonly frameworkVersion: Version | undefined,
+  constructor(
+    readonly shared: WorkspaceShared,
+    readonly properties: RunnableProperties,
+    readonly frameworkName: string,
+    readonly frameworkVersion: Version | undefined,
   ) {
     this._execItem = new ExecutableGroup(this);
     const versionStr = frameworkVersion ? frameworkVersion.toString() : 'unknown';
@@ -54,7 +62,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     AbstractExecutable._reportedFrameworks.push(frameworkName);
   }
 
-  public dispose(): void {
+  dispose(): void {
     for (const test of this._tests.values()) {
       this.removeTest(test);
     }
@@ -126,7 +134,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     const tagVar = '${tag}';
 
     tagsResolveRule.rule = async (): Promise<string> => {
-      let tagFormat = `[${tagVar}]`;
+      let tagFormat = `${tagVar}`;
       if (tg.tagFormat !== undefined) {
         if (tg.tagFormat.indexOf(tagVar) === -1) {
           this.shared.log.warn(`tagFormat should contain "${tagVar}" substring`, tg.tagFormat);
@@ -140,7 +148,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
   private static readonly _variableRe = /\$\{[^ ]*\}/;
 
-  public async resolveText(text: string, ...additionalVarToValue: readonly ResolveRuleAsync[]): Promise<string> {
+  async resolveText(text: string, ...additionalVarToValue: readonly ResolveRuleAsync[]): Promise<string> {
     let resolvedText = text;
     try {
       resolvedText = await resolveVariablesAsync(resolvedText, this.properties.varToValue);
@@ -196,31 +204,92 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     // undefined means root
     let itemOfLevel: vscode.TestItem | undefined = undefined;
-    let currentGrouping: TestGrouping = testGrouping;
 
     try {
-      while (true) {
-        if (currentGrouping.groupByExecutable) {
-          const g = currentGrouping.groupByExecutable;
+      const groupByTagRegexOrRegex = async (
+        groupType: 'groupByTagRegex' | 'groupByRegex',
+        g: GroupByTagRegex | GroupByRegex,
+      ): Promise<void> => {
+        this._updateVarsWithTags(g, tags, tagsResolveRule);
+
+        if (g.regexes) {
+          if (Array.isArray(g.regexes) && g.regexes.length > 0 && g.regexes.every(v => typeof v === 'string')) {
+            let match: RegExpMatchArray | null = null;
+
+            const matchOn = groupType == 'groupByTagRegex' ? tags : [testId];
+
+            let reIndex = 0;
+            while (reIndex < g.regexes.length && match == null) {
+              let tagIndex = 0;
+              while (tagIndex < matchOn.length && match == null) {
+                match = matchOn[tagIndex++].match(g.regexes[reIndex]);
+              }
+              reIndex++;
+            }
+
+            if (match !== null) {
+              this.shared.log.info(groupType + ' matched on', testId, g.regexes[reIndex - 1]);
+              const matchGroup = match[1] ? match[1] : match[0];
+
+              const lowerMatchGroup = matchGroup.toLowerCase();
+
+              const matchVar: ResolveRuleAsync[] = [
+                { resolve: '${match}', rule: matchGroup },
+                { resolve: '${match_lowercased}', rule: lowerMatchGroup },
+                {
+                  resolve: '${match_upperfirst}',
+                  rule: async (): Promise<string> =>
+                    lowerMatchGroup.substring(0, 1).toUpperCase() + lowerMatchGroup.substring(1),
+                },
+              ];
+
+              const label = g.label ? await resolveVariablesAsync(g.label, matchVar) : matchGroup;
+              const description =
+                g.description !== undefined ? await resolveVariablesAsync(g.description, matchVar) : undefined;
+
+              itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+                itemOfLevel,
+                undefined,
+                label,
+                description,
+                varsToResolve,
+              );
+            } else if (g.groupUngroupedTo) {
+              itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+                itemOfLevel,
+                undefined,
+                g.groupUngroupedTo,
+                undefined,
+                varsToResolve,
+              );
+            }
+          } else {
+            this.shared.log.warn(groupType + '.regexes should be a non-empty array of strings.', g.regexes);
+          }
+        } else {
+          this.shared.log.warn(groupType + ' missing "regexes": skipping grouping level');
+        }
+      };
+
+      await testGroupingForEach(testGrouping, {
+        groupByExecutable: async (g: GroupByExecutable): Promise<void> => {
           this._updateVarsWithTags(g, tags, tagsResolveRule);
 
           const id = this.properties.path;
-          const label = g.label !== undefined ? g.label : '${filename}';
-          const description = g.description !== undefined ? g.description : '${relDirpath}${osPathSep}';
+          const label = g.label ?? '${filename}';
+          const description = g.description ?? '${relDirpath}${osPathSep}';
 
           itemOfLevel = await this._resolveAndGetOrCreateChildGroup(itemOfLevel, id, label, description, varsToResolve);
 
           // special item handling for exec
           this._execItem.setItem(itemOfLevel, resolvedFile);
-
-          currentGrouping = g;
-        } else if (currentGrouping.groupBySource) {
-          const g = currentGrouping.groupBySource;
+        },
+        groupBySource: async (g: GroupBySource): Promise<void> => {
           this._updateVarsWithTags(g, tags, tagsResolveRule);
 
           if (resolvedFile) {
-            const label = g.label ? g.label : sourceRelPath;
-            const description = g.description;
+            const label = g.label ?? '${sourceRelPath[-1]}';
+            const description = g.description ?? '${sourceRelPath[0:-1]}';
 
             itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
               itemOfLevel,
@@ -251,10 +320,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
               varsToResolve,
             );
           }
-
-          currentGrouping = g;
-        } else if (currentGrouping.groupByTags) {
-          const g = currentGrouping.groupByTags;
+        },
+        groupByTags: async (g: GroupByTags): Promise<void> => {
           this._updateVarsWithTags(g, tags, tagsResolveRule);
 
           if (
@@ -267,7 +334,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
                 itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
                   itemOfLevel,
                   undefined,
-                  g.label ? g.label : AbstractExecutable._tagVar,
+                  g.label ?? AbstractExecutable._tagVar,
                   g.description,
                   varsToResolve,
                 );
@@ -289,7 +356,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
                 itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
                   itemOfLevel,
                   undefined,
-                  g.label ? g.label : AbstractExecutable._tagVar,
+                  g.label ?? AbstractExecutable._tagVar,
                   g.description,
                   varsToResolve,
                 );
@@ -306,78 +373,10 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
           } else {
             this.shared.log.warn('groupByTags.tags should be an array of strings. Empty array is OK.', g.tags);
           }
-
-          currentGrouping = g;
-        } else if (currentGrouping.groupByTagRegex || currentGrouping.groupByRegex) {
-          const groupType = currentGrouping.groupByTagRegex ? 'groupByTagRegex' : 'groupByRegex';
-          const g: GroupByTagRegex | GroupByRegex = currentGrouping.groupByTagRegex
-            ? currentGrouping.groupByTagRegex
-            : currentGrouping.groupByRegex!;
-
-          this._updateVarsWithTags(g, tags, tagsResolveRule);
-
-          if (g.regexes) {
-            if (Array.isArray(g.regexes) && g.regexes.length > 0 && g.regexes.every(v => typeof v === 'string')) {
-              let match: RegExpMatchArray | null = null;
-
-              const matchOn = groupType == 'groupByTagRegex' ? tags : [testId];
-
-              let reIndex = 0;
-              while (reIndex < g.regexes.length && match == null) {
-                let tagIndex = 0;
-                while (tagIndex < matchOn.length && match == null) {
-                  match = matchOn[tagIndex++].match(g.regexes[reIndex]);
-                }
-                reIndex++;
-              }
-
-              if (match !== null) {
-                this.shared.log.info(groupType + ' matched on', testId, g.regexes[reIndex - 1]);
-                const matchGroup = match[1] ? match[1] : match[0];
-
-                const lowerMatchGroup = matchGroup.toLowerCase();
-
-                const matchVar: ResolveRuleAsync[] = [
-                  { resolve: '${match}', rule: matchGroup },
-                  { resolve: '${match_lowercased}', rule: lowerMatchGroup },
-                  {
-                    resolve: '${match_upperfirst}',
-                    rule: async (): Promise<string> =>
-                      lowerMatchGroup.substr(0, 1).toUpperCase() + lowerMatchGroup.substr(1),
-                  },
-                ];
-
-                const label = g.label ? await resolveVariablesAsync(g.label, matchVar) : matchGroup;
-                const description =
-                  g.description !== undefined ? await resolveVariablesAsync(g.description, matchVar) : undefined;
-
-                itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
-                  itemOfLevel,
-                  undefined,
-                  label,
-                  description,
-                  varsToResolve,
-                );
-              } else if (g.groupUngroupedTo) {
-                itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
-                  itemOfLevel,
-                  undefined,
-                  g.groupUngroupedTo,
-                  undefined,
-                  varsToResolve,
-                );
-              }
-            } else {
-              this.shared.log.warn(groupType + '.regexes should be a non-empty array of strings.', g.regexes);
-            }
-          } else {
-            this.shared.log.warn(groupType + ' missing "regexes": skipping grouping level');
-          }
-          currentGrouping = g;
-        } else {
-          break;
-        }
-      }
+        },
+        groupByTagRegex: async (g: GroupByTagRegex): Promise<void> => groupByTagRegexOrRegex('groupByTagRegex', g),
+        groupByRegex: async (g: GroupByRegex): Promise<void> => groupByTagRegexOrRegex('groupByRegex', g),
+      });
     } catch (e) {
       this.shared.log.exceptionS(e);
     }
@@ -504,11 +503,11 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     breakOnFailure: boolean,
   ): string[];
 
-  public getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
+  getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
     return this.properties.prependTestRunningArgs.concat(this._getDebugParamsInner(childrenToRun, breakOnFailure));
   }
 
-  public reloadTests(taskPool: TaskPool, cancellationToken: CancellationToken): Promise<void> {
+  reloadTests(taskPool: TaskPool, cancellationToken: CancellationToken): Promise<void> {
     if (cancellationToken.isCancellationRequested) return Promise.resolve();
 
     // mutually exclusive lock
@@ -539,7 +538,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     });
   }
 
-  public async run(
+  async run(
     testRun: vscode.TestRun,
     testsToRun: TestsToRun,
     taskPool: TaskPool,
@@ -757,7 +756,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     }
   }
 
-  public async runTasks(
+  async runTasks(
     type: 'beforeEach' | 'afterEach',
     taskPool: TaskPool,
     cancellationToken: CancellationToken,
@@ -784,7 +783,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     }
   }
 
-  public findSourceFilePath(file: string | undefined): string | undefined {
+  findSourceFilePath(file: string | undefined): string | undefined {
     if (typeof file != 'string') return undefined;
 
     let resolved = file;
@@ -801,7 +800,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return resolved;
   }
 
-  public async resolveAndFindSourceFilePath(file: string | undefined): Promise<string | undefined> {
+  async resolveAndFindSourceFilePath(file: string | undefined): Promise<string | undefined> {
     if (typeof file != 'string') return undefined;
 
     let resolved = file;
@@ -854,7 +853,7 @@ export interface HandleProcessResult {
 }
 
 class ExecutableGroup {
-  public constructor(private readonly executable: AbstractExecutable<AbstractTest>) {}
+  constructor(private readonly executable: AbstractExecutable<AbstractTest>) {}
 
   private _busyCounter = 0;
   private _item: vscode.TestItem | undefined = undefined;
@@ -862,7 +861,7 @@ class ExecutableGroup {
   // we need to be exclusive because we save prevTests
   private _lock = Promise.resolve();
 
-  public setItem(item: vscode.TestItem, _resolvedFile: string | undefined) {
+  setItem(item: vscode.TestItem, _resolvedFile: string | undefined) {
     if (this._item && this._item !== item) {
       this.executable.shared.log.errorS('why do we have different executableItem');
       debugBreak('why are we here?');
@@ -877,7 +876,7 @@ class ExecutableGroup {
   }
 
   // makes the item spinning
-  public busy(func: () => Promise<void>): Promise<void> {
+  busy(func: () => Promise<void>): Promise<void> {
     if (this._busyCounter++ === 0 && this._item) this._item.busy = true;
 
     return (this._lock = this._lock.then(func).finally(() => {
@@ -889,7 +888,7 @@ class ExecutableGroup {
     }));
   }
 
-  public async setError(label: string, message: string): Promise<void> {
+  async setError(label: string, message: string): Promise<void> {
     const l = label + ': ' + message;
     if (this._item) {
       this._item.error = l;
@@ -909,7 +908,7 @@ class ExecutableGroup {
     }
   }
 
-  public clearError(): void {
+  clearError(): void {
     if (this._item) this._item.error = undefined;
     this.removeSpecialItem();
   }

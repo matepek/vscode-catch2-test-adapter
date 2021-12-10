@@ -7,7 +7,7 @@ import { TestItemParent } from '../TestItemManager';
 ///
 
 export class Catch2Test extends AbstractTest {
-  public constructor(
+  constructor(
     shared: SharedWithTest,
     executable: AbstractExecutable,
     parent: TestItemParent,
@@ -57,12 +57,7 @@ export class Catch2Test extends AbstractTest {
     );
   }
 
-  public update2(
-    file: string | undefined,
-    line: string | undefined,
-    tags: string[],
-    description: string | undefined,
-  ): void {
+  update2(file: string | undefined, line: string | undefined, tags: string[], description: string | undefined): void {
     const calcDescription = AbstractTest.calcDescription(tags, undefined, undefined, description);
     super.update(this.label, file, line, Catch2Test.isSkipped(tags, this.id), calcDescription, tags);
   }
@@ -71,7 +66,7 @@ export class Catch2Test extends AbstractTest {
     return tags.some((v: string) => v.startsWith('.') || v == 'hide' || v == '!hide') || testNameAsId.startsWith('./');
   }
 
-  public getEscapedTestName(): string {
+  getEscapedTestName(): string {
     /* ',' and '[' has special meaning */
     return this.id.replace('\\', '\\\\').replace(/,/g, '\\,').replace(/\[/g, '\\[');
   }

@@ -17,10 +17,10 @@ export abstract class AbstractTest {
   private _item: vscode.TestItem;
 
   protected constructor(
-    public readonly shared: SharedWithTest,
-    public readonly executable: AbstractExecutable,
+    readonly shared: SharedWithTest,
+    readonly executable: AbstractExecutable,
     parent: vscode.TestItem | undefined,
-    public readonly id: string, // identifies the test inside the executable
+    readonly id: string, // identifies the test inside the executable
     label: string, // usually the same as testId
     resolvedFile: string | undefined,
     line: string | undefined,
@@ -29,8 +29,8 @@ export abstract class AbstractTest {
     description: string | undefined,
     private _tags: string[],
     private readonly _frameworkTag: vscode.TestTag,
-    public readonly debuggable = true,
-    public readonly runnable = true,
+    readonly debuggable = true,
+    readonly runnable = true,
   ) {
     this._item = this.shared.testController.createOrReplace(parent, id, label, resolvedFile, line, this);
 
@@ -44,19 +44,19 @@ export abstract class AbstractTest {
     this._item.tags = this._calcTags();
   }
 
-  public get item(): Readonly<vscode.TestItem> {
+  get item(): Readonly<vscode.TestItem> {
     return this._item;
   }
 
-  public get file(): string | undefined {
+  get file(): string | undefined {
     return this._item.uri?.path;
   }
 
-  public get line(): string | undefined {
+  get line(): string | undefined {
     return this._item.range?.start.line.toString();
   }
 
-  public async updateFL(file: string | undefined, line: string | undefined): Promise<void> {
+  async updateFL(file: string | undefined, line: string | undefined): Promise<void> {
     const oldItem = this._item;
     this._item = await this.shared.testController.update(this._item, file, line, this.executable, null, null, null);
     if (oldItem !== this._item) {
@@ -67,7 +67,7 @@ export abstract class AbstractTest {
     }
   }
 
-  public async update(
+  async update(
     label: string | null,
     file: string | undefined,
     line: string | undefined,
@@ -89,15 +89,15 @@ export abstract class AbstractTest {
     }
   }
 
-  public get label(): string {
+  get label(): string {
     return this._item.label;
   }
 
-  public get skipped(): boolean {
+  get skipped(): boolean {
     return this._skipped || this.executable.properties.markAsSkipped;
   }
 
-  public set skipped(skipped: boolean) {
+  set skipped(skipped: boolean) {
     if (this._skipped !== skipped) {
       this._skipped = skipped;
       this._skipReported = false;
@@ -106,7 +106,7 @@ export abstract class AbstractTest {
 
   private _skipReported = false;
 
-  public reportIfSkippedFirstOnly(testRun: vscode.TestRun): boolean {
+  reportIfSkippedFirstOnly(testRun: vscode.TestRun): boolean {
     const skipped = this.skipped;
     if (!this._skipReported && skipped) {
       this._skipReported = true;
@@ -115,11 +115,11 @@ export abstract class AbstractTest {
     return skipped;
   }
 
-  public get hasStaticError(): boolean {
+  get hasStaticError(): boolean {
     return this._staticError !== undefined;
   }
 
-  public static calcDescription(
+  static calcDescription(
     tags: string[] | undefined,
     typeParam: string | undefined,
     valueParam: string | undefined,
@@ -153,7 +153,7 @@ export abstract class AbstractTest {
 
   private _subTests: Map<string /*id*/, SubTest> | undefined = undefined;
 
-  public async getOrCreateSubTest(
+  async getOrCreateSubTest(
     id: string,
     label: string | undefined,
     file: string | undefined,
@@ -187,12 +187,12 @@ export abstract class AbstractTest {
     return subTest;
   }
 
-  public clearSubTests(): void {
+  clearSubTests(): void {
     this._item.children.replace([]);
     this._subTests = undefined;
   }
 
-  public removeMissingSubTests(subTestTree: SubTestTree): void {
+  removeMissingSubTests(subTestTree: SubTestTree): void {
     this._item.children.forEach(c => {
       const subSections = subTestTree.get(c.id);
       if (subSections) {
@@ -241,7 +241,7 @@ export class SubTest extends AbstractTest {
     );
   }
 
-  public override get label(): string {
+  override get label(): string {
     return this.item.description!;
   }
 

@@ -1,7 +1,8 @@
 import { Readable } from 'stream';
 import { RunningExecutable } from '../RunningExecutable';
 
-//TODO: add cancellation somehow maybe abstract class or just to the pipe
+///
+
 export interface ParserInterface {
   write(data: string): void;
   end(): Promise<void>;

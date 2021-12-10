@@ -20,13 +20,13 @@ export enum ExecutableRunResultValue {
 ///
 
 export class ExecutableRunResult {
-  private constructor(public readonly value: ExecutableRunResultValue, private readonly _error: string | undefined) {}
+  private constructor(readonly value: ExecutableRunResultValue, private readonly _error: string | undefined) {}
 
-  public get Ok(): boolean {
+  get Ok(): boolean {
     return this.value === ExecutableRunResultValue.OK;
   }
 
-  public toString(): string {
+  toString(): string {
     switch (this.value) {
       case ExecutableRunResultValue.OK:
         return 'Exit(0) / OK';
@@ -40,19 +40,19 @@ export class ExecutableRunResult {
     }
   }
 
-  public static Ok(): ExecutableRunResult {
+  static Ok(): ExecutableRunResult {
     return new ExecutableRunResult(ExecutableRunResultValue.OK, undefined);
   }
 
-  public static Error(message: string): ExecutableRunResult {
+  static Error(message: string): ExecutableRunResult {
     return new ExecutableRunResult(ExecutableRunResultValue.Errored, message);
   }
 
-  public static createFromSignal(signal: string): ExecutableRunResult {
+  static createFromSignal(signal: string): ExecutableRunResult {
     return new ExecutableRunResult(ExecutableRunResultValue.Errored, 'Signal received: ' + signal);
   }
 
-  public static createFromErrorCode(code: number): ExecutableRunResult {
+  static createFromErrorCode(code: number): ExecutableRunResult {
     if (os.platform() === 'win32') {
       const curr = badCodes.get(code);
       if (curr) return ExecutableRunResult.Error('Process error: ' + curr);
@@ -60,7 +60,7 @@ export class ExecutableRunResult {
     return ExecutableRunResult.Ok();
   }
 
-  public static create(
+  static create(
     code: number | null,
     signal: string | null,
     isCancellationRequested: boolean,
@@ -77,7 +77,7 @@ export class ExecutableRunResult {
 ///
 
 export class RunningExecutable {
-  public static async create(
+  static async create(
     spawnBuilder: SpawnBuilder,
     childrenToRun: readonly AbstractTest[],
     cancellationToken: CancellationToken,
@@ -87,10 +87,10 @@ export class RunningExecutable {
   }
 
   private constructor(
-    public readonly spawnBuilder: SpawnBuilder,
-    public readonly process: ChildProcessWithoutNullStreams,
-    public readonly childrenToRun: readonly AbstractTest[],
-    public readonly cancellationToken: CancellationToken,
+    readonly spawnBuilder: SpawnBuilder,
+    readonly process: ChildProcessWithoutNullStreams,
+    readonly childrenToRun: readonly AbstractTest[],
+    readonly cancellationToken: CancellationToken,
   ) {
     const disp = cancellationToken.onCancellationRequested(() => this.killProcess());
 
@@ -103,9 +103,9 @@ export class RunningExecutable {
     });
   }
 
-  public readonly runPrefix = ansi.gray(`$${generateId()}| `);
+  readonly runPrefix = ansi.gray(`$${generateId()}| `);
 
-  public killProcess(timeout: number | null = null): void {
+  killProcess(timeout: number | null = null): void {
     try {
       if (!this._closed && !this._killed) {
         this._killed = true;
@@ -122,7 +122,7 @@ export class RunningExecutable {
     } catch {}
   }
 
-  public setPriorityAsync(log: LoggerWrapper): void {
+  setPriorityAsync(log: LoggerWrapper): void {
     const priority = 16;
     let retryOnFailure = 5;
 
@@ -149,21 +149,21 @@ export class RunningExecutable {
     promisify(setTimeout)(2000).then(setPriorityInner);
   }
 
-  public readonly startTime: number = Date.now();
+  readonly startTime: number = Date.now();
 
-  public get terminated(): boolean {
+  get terminated(): boolean {
     return this._closed;
   }
 
-  public get timeout(): number | null {
+  get timeout(): number | null {
     return this._timeout;
   }
 
-  public get timedout(): boolean {
+  get timedout(): boolean {
     return typeof this._timeout == 'number';
   }
 
-  public get pid(): string {
+  get pid(): string {
     return this.process.pid ? this.process.pid.toString() : 'unknown';
   }
 
@@ -171,9 +171,9 @@ export class RunningExecutable {
   private _closed = false;
   private _killed = false;
 
-  public readonly result: Promise<ExecutableRunResult>;
+  readonly result: Promise<ExecutableRunResult>;
 
-  public getProcStartLine(): string {
+  getProcStartLine(): string {
     return (
       this.runPrefix +
       ansi.gray(`Started PID#${this.pid} - \`${this.process.spawnfile}\`\r\n`) +
@@ -182,7 +182,7 @@ export class RunningExecutable {
     );
   }
 
-  public getProcStopLine(result: ExecutableRunResult): string {
+  getProcStopLine(result: ExecutableRunResult): string {
     return (
       this.runPrefix + ansi.gray(`Stopped PID#${this.pid} - ${result.toString()} - \`${this.process.spawnfile}\`\r\n`)
     );

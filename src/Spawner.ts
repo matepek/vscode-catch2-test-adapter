@@ -21,19 +21,19 @@ export interface Spawner {
 ///
 
 export class SpawnBuilder {
-  public constructor(
+  constructor(
     private readonly spawner: Spawner,
-    public readonly cmd: string,
-    public readonly args: string[],
-    public readonly options: SpawnOptionsWithoutStdio,
-    public readonly timeout: number | undefined,
+    readonly cmd: string,
+    readonly args: string[],
+    readonly options: SpawnOptionsWithoutStdio,
+    readonly timeout: number | undefined,
   ) {}
 
-  public spawnAsync(): Promise<SpawnReturns> {
+  spawnAsync(): Promise<SpawnReturns> {
     return this.spawner.spawnAsync(this.cmd, this.args, this.options, this.timeout);
   }
 
-  public spawn(): Promise<fsw.ChildProcessWithoutNullStreams> {
+  spawn(): Promise<fsw.ChildProcessWithoutNullStreams> {
     return this.spawner.spawn(this.cmd, this.args, this.options);
   }
 }
@@ -95,7 +95,7 @@ export class DefaultSpawner implements Spawner {
     return Promise.resolve(fsw.spawn(cmd, args, options));
   }
 
-  public toString(): string {
+  toString(): string {
     return 'DefaultSpawner';
   }
 }
@@ -108,7 +108,7 @@ export class SpawnWithExecutor extends DefaultSpawner {
   private readonly _argsR2 = '${argsFlat}';
   private readonly _argsStrR = '${argsStr}';
 
-  public constructor(private readonly _executor: string, private readonly _args?: ReadonlyArray<string>) {
+  constructor(private readonly _executor: string, private readonly _args?: ReadonlyArray<string>) {
     super();
 
     if (_args && !_args.some(x => x.indexOf(this._cmdR) != -1)) {
@@ -179,7 +179,7 @@ export class SpawnWithExecutor extends DefaultSpawner {
     }
   }
 
-  public override toString(): string {
+  override toString(): string {
     return `SpawnWithExecutor(${this._executor}, [${this._args}])`;
   }
 }

@@ -5,17 +5,17 @@ import { debugBreak } from './util/DevelopmentHelper';
 ///
 
 export class LoggerWrapper extends util.Log {
-  public constructor(configSection: string, outputChannelName: string) {
+  constructor(configSection: string, outputChannelName: string) {
     super(configSection, undefined, outputChannelName, { depth: 3 }, false);
   }
 
   //eslint-disable-next-line
-  public trace(msg: any, ...msgs: any[]): void {
+  trace(msg: any, ...msgs: any[]): void {
     process.env['TESTMATE_DEBUG'] && super.debug(msg, ...msgs);
   }
 
   //eslint-disable-next-line
-  public debugS(msg: any, ...msgs: any[]): void {
+  debugS(msg: any, ...msgs: any[]): void {
     super.debug(msg, ...msgs);
     try {
       Sentry.addBreadcrumb({ message: msg, data: msgs, level: Sentry.Severity.Debug });
@@ -25,7 +25,7 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public setContext(name: string, context: { [key: string]: any } | null): void {
+  setContext(name: string, context: { [key: string]: any } | null): void {
     super.info('context:' + name, context);
     try {
       Sentry.setContext(name, context);
@@ -34,7 +34,7 @@ export class LoggerWrapper extends util.Log {
     }
   }
 
-  public setTags(tags: { [key: string]: string }): void {
+  setTags(tags: { [key: string]: string }): void {
     try {
       Sentry.setTags(tags);
     } catch (e) {
@@ -43,7 +43,7 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public infoS(m: string, ...msg: any[]): void {
+  infoS(m: string, ...msg: any[]): void {
     super.info(...msg);
     try {
       Sentry.addBreadcrumb({ message: m, data: msg, level: Sentry.Severity.Info });
@@ -53,7 +53,7 @@ export class LoggerWrapper extends util.Log {
     }
   }
 
-  public infoSWithTags(m: string, tags: { [key: string]: string }): void {
+  infoSWithTags(m: string, tags: { [key: string]: string }): void {
     super.info(m, tags);
     try {
       Sentry.withScope(function (scope) {
@@ -66,7 +66,7 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public warnS(m: string, ...msg: any[]): void {
+  warnS(m: string, ...msg: any[]): void {
     super.warn(m, ...msg);
     try {
       Sentry.captureMessage(m, Sentry.Severity.Warning);
@@ -76,13 +76,13 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public override error(m: string, ...msg: any[]): void {
+  override error(m: string, ...msg: any[]): void {
     if (!m.startsWith('TODO')) debugBreak();
     super.error(m, ...msg);
   }
 
   //eslint-disable-next-line
-  public errorS(m: string, ...msg: any[]): void {
+  errorS(m: string, ...msg: any[]): void {
     this.error(m, ...msg);
     try {
       Sentry.captureMessage(m, Sentry.Severity.Error);
@@ -92,7 +92,7 @@ export class LoggerWrapper extends util.Log {
   }
 
   //eslint-disable-next-line
-  public exceptionS(e: unknown, ...msg: unknown[]): void {
+  exceptionS(e: unknown, ...msg: unknown[]): void {
     debugBreak();
     super.error(e, ...msg);
     try {

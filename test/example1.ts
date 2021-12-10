@@ -16,14 +16,14 @@ interface SuiteExample {
 ///
 
 export const example1 = new (class {
-  //public initImitationOfSuite();
+  // initImitationOfSuite();
 
-  public readonly suite1 = new (class {
-    public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath1.exe')).fsPath;
+  readonly suite1 = new (class {
+    readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath1.exe')).fsPath;
 
-    public readonly t1 = new (class {
-      public readonly fullTestName = 's1t1';
-      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
+    readonly t1 = new (class {
+      readonly fullTestName = 's1t1';
+      assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(test.file, 'suite1.cpp');
@@ -35,7 +35,7 @@ export const example1 = new (class {
         }
       }
 
-      public readonly outputs: [string[], string][] = [
+      readonly outputs: [string[], string][] = [
         [
           ['s1t1', '--reporter', 'xml', '--durations', 'yes'],
           `<?xml version="1.0" encoding="UTF-8"?>
@@ -66,9 +66,9 @@ export const example1 = new (class {
       ];
     })();
 
-    public readonly t2 = new (class {
-      public readonly fullTestName = 's1t2';
-      public assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
+    readonly t2 = new (class {
+      readonly fullTestName = 's1t2';
+      assert(label: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(test.file, 'suite1.cpp');
@@ -80,7 +80,7 @@ export const example1 = new (class {
         }
       }
 
-      public readonly outputs: [string[], string][] = [
+      readonly outputs: [string[], string][] = [
         [
           ['s1t2', '--reporter', 'xml', '--durations', 'yes'],
           `<?xml version="1.0" encoding="UTF-8"?>
@@ -127,7 +127,7 @@ export const example1 = new (class {
       ];
     })();
 
-    public readonly specialReverseTestOrder: [string[], string][] = [
+    readonly specialReverseTestOrder: [string[], string][] = [
       [
         ['s1t2,s1t1', '--reporter', 'xml', '--durations', 'yes'],
         `<?xml version="1.0" encoding="UTF-8"?>
@@ -154,7 +154,7 @@ export const example1 = new (class {
       ],
     ];
 
-    public readonly outputs: [string[], string][] = [
+    readonly outputs: [string[], string][] = [
       [['--help'], 'Catch v2.4.1'],
       [
         ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
@@ -221,7 +221,7 @@ export const example1 = new (class {
       ...this.specialReverseTestOrder,
     ];
 
-    public assert(label: string, childLabels: string[], suite: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
+    assert(label: string, childLabels: string[], suite: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
       assert.equal(suite.type, 'suite');
       assert.equal(suite.label, label);
       assert.equal(suite.file, 'suite1.cpp');
@@ -237,12 +237,12 @@ export const example1 = new (class {
     }
   })();
 
-  public readonly suite2 = new (class {
-    public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath2.exe')).fsPath;
+  readonly suite2 = new (class {
+    readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath2.exe')).fsPath;
 
-    public readonly t1 = new (class {
-      public readonly fullTestName = 's2t1';
-      public assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
+    readonly t1 = new (class {
+      readonly fullTestName = 's2t1';
+      assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(test.description, description);
@@ -255,7 +255,7 @@ export const example1 = new (class {
         }
       }
 
-      public readonly outputs: [string[], string][] = [
+      readonly outputs: [string[], string][] = [
         [
           ['s2t1', '--reporter', 'xml', '--durations', 'yes'],
           `<?xml version="1.0" encoding="UTF-8"?>
@@ -286,9 +286,9 @@ export const example1 = new (class {
       ];
     })();
 
-    public readonly t2 = new (class {
-      public readonly fullTestName = 's2t2';
-      public assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
+    readonly t2 = new (class {
+      readonly fullTestName = 's2t2';
+      assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(test.description, description);
@@ -301,7 +301,7 @@ export const example1 = new (class {
         }
       }
 
-      public readonly outputs: [string[], string][] = [
+      readonly outputs: [string[], string][] = [
         [
           ['s2t2', '--reporter', 'xml', '--durations', 'yes'],
           `<?xml version="1.0" encoding="UTF-8"?>
@@ -332,9 +332,9 @@ export const example1 = new (class {
       ];
     })();
 
-    public readonly t3 = new (class {
-      public readonly fullTestName = 's2t3';
-      public assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
+    readonly t3 = new (class {
+      readonly fullTestName = 's2t3';
+      assert(label: string, description: string, test: TestInfo, uniqeIdContainer?: Set<string>): void {
         assert.equal(test.type, 'test');
         assert.equal(test.label, label);
         assert.equal(test.description, description);
@@ -347,7 +347,7 @@ export const example1 = new (class {
         }
       }
 
-      public readonly outputs: [string[], string][] = [
+      readonly outputs: [string[], string][] = [
         [
           ['s2t3', '--reporter', 'xml', '--durations', 'yes'],
           `<?xml version="1.0" encoding="UTF-8"?>
@@ -394,7 +394,7 @@ export const example1 = new (class {
       ];
     })();
 
-    public assert(
+    assert(
       label: string,
       childLabels: string[],
       childDescs: string[],
@@ -416,7 +416,7 @@ export const example1 = new (class {
       }
     }
 
-    public readonly outputs: [string[], string][] = [
+    readonly outputs: [string[], string][] = [
       [['--help'], 'Catch v2.4.1'],
       [
         ['[.],*', '--verbosity', 'high', '--list-tests', '--use-colour', 'no'],
@@ -488,10 +488,10 @@ export const example1 = new (class {
     ];
   })();
 
-  public readonly suite3 = new (class {
-    public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath3.exe')).fsPath;
+  readonly suite3 = new (class {
+    readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'execPath3.exe')).fsPath;
 
-    public readonly outputs: [string[], string][] = [
+    readonly outputs: [string[], string][] = [
       [
         ['--help'],
         `
@@ -2075,7 +2075,7 @@ For more detailed usage please see the project docs
     ];
   })();
 
-  public assertWithoutChildren(root: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
+  assertWithoutChildren(root: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
     assert.strictEqual(root.type, 'suite');
     assert.strictEqual(root.label, 'C++ TestMate');
     assert.strictEqual(root.file, undefined);
@@ -2086,10 +2086,10 @@ For more detailed usage please see the project docs
     }
   }
 
-  public readonly gtest1 = new (class {
-    public readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'gtest1.exe')).fsPath;
+  readonly gtest1 = new (class {
+    readonly execPath = vscode.Uri.file(path.join(settings.workspaceFolderUri.path, 'gtest1.exe')).fsPath;
 
-    public readonly gtest_list_tests_output = [
+    readonly gtest_list_tests_output = [
       'Running main() from ...',
       'TestCas1.',
       '  test1',
@@ -2115,7 +2115,7 @@ For more detailed usage please see the project docs
       '',
     ].join(EOL);
 
-    public readonly gtest_list_tests_output_xml = [
+    readonly gtest_list_tests_output_xml = [
       '<?xml version="1.0" encoding="UTF-8"?>',
       '<testsuites tests="12" name="AllTests">',
       '  <testsuite name="TestCas1" tests="2">',
@@ -2149,7 +2149,7 @@ For more detailed usage please see the project docs
       '</testsuites>',
     ].join(EOL);
 
-    public readonly outputs: [string[], string][] = [
+    readonly outputs: [string[], string][] = [
       [
         ['--help'],
         'This program contains tests written using Google Test. ...  --gtest_list_tests ... List the names of all tests instead of running them. ...',
@@ -2371,9 +2371,9 @@ For more detailed usage please see the project docs
     ];
   })();
 
-  public readonly suites: SuiteExample[] = [this.suite1, this.suite2, this.suite3, this.gtest1];
+  readonly suites: SuiteExample[] = [this.suite1, this.suite2, this.suite3, this.gtest1];
 
-  public initImitationWithSuite(
+  initImitationWithSuite(
     imitation: Imitation,
     suiteExample: SuiteExample,
     watchers: Map<string, FileSystemWatcherStub>,
@@ -2414,7 +2414,7 @@ For more detailed usage please see the project docs
     });
   }
 
-  public initImitation(imitation: Imitation): Map<string, FileSystemWatcherStub> {
+  initImitation(imitation: Imitation): Map<string, FileSystemWatcherStub> {
     const watchers: Map<string, FileSystemWatcherStub> = new Map();
 
     this.suites.forEach(s => this.initImitationWithSuite(imitation, s, watchers));
