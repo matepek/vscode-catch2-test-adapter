@@ -4,7 +4,7 @@ import { AbstractExecutable } from './AbstractExecutable';
 import { Catch2Executable } from './framework/Catch2Executable';
 import { GoogleTestExecutable } from './framework/GoogleTestExecutable';
 import { DOCExecutable } from './framework/DOCExecutable';
-import { FrameworkSpecific, RunTask } from './AdvancedExecutableInterface';
+import { FrameworkSpecificConfig, RunTaskConfig } from './AdvancedExecutableInterface';
 import { Version } from './Util';
 import { Spawner, SpawnOptionsWithoutStdio } from './Spawner';
 import { GoogleBenchmarkExecutable } from './framework/GoogleBenchmarkExecutable';
@@ -22,10 +22,10 @@ export class ExecutableFactory {
     private readonly _varToValue: ResolveRuleAsync[],
     private readonly _parallelizationLimit: number,
     private readonly _markAsSkipped: boolean,
-    private readonly _runTask: RunTask,
+    private readonly _runTask: RunTaskConfig,
     private readonly _spawner: Spawner,
     private readonly _sourceFileMap: Record<string, string>,
-    private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecific>,
+    private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecificConfig>,
   ) {}
 
   async create(checkIsNativeExecutable: boolean): Promise<AbstractExecutable | undefined> {
@@ -55,7 +55,7 @@ export class ExecutableFactory {
       const match = runWithHelpRes.stdout.match(regex);
 
       if (match) {
-        const execShared = new SharedVarOfExec(
+        const sharedVarOfExec = new SharedVarOfExec(
           this._shared,
           this._execName,
           this._execDescription,
@@ -70,7 +70,7 @@ export class ExecutableFactory {
           this._sourceFileMap,
         );
 
-        return frameworkData.create(execShared, match);
+        return frameworkData.create(sharedVarOfExec, match);
       }
     }
 
@@ -89,37 +89,37 @@ const frameworkDatas: Record<
   Readonly<{
     priority: number;
     regex: RegExp;
-    create: (execShared: SharedVarOfExec, match: RegExpMatchArray) => AbstractExecutable;
+    create: (sharedVarOfExec: SharedVarOfExec, match: RegExpMatchArray) => AbstractExecutable;
   }>
 > = {
   catch2: {
     priority: 10,
     regex: /Catch v(\d+)\.(\d+)\.(\d+)\s?/,
-    create: (execShared: SharedVarOfExec, match: RegExpMatchArray) =>
-      new Catch2Executable(execShared, parseVersion123(match)),
+    create: (sharedVarOfExec: SharedVarOfExec, match: RegExpMatchArray) =>
+      new Catch2Executable(sharedVarOfExec, parseVersion123(match)),
   },
   gtest: {
     priority: 20,
     regex:
       /This program contains tests written using .*--(\w+)list_tests.*List the names of all tests instead of running them/s,
-    create: (execShared: SharedVarOfExec, match: RegExpMatchArray) =>
-      new GoogleTestExecutable(execShared, match[1] ?? 'gtest_'),
+    create: (sharedVarOfExec: SharedVarOfExec, match: RegExpMatchArray) =>
+      new GoogleTestExecutable(sharedVarOfExec, match[1] ?? 'gtest_'),
   },
   doctest: {
     priority: 30,
     regex: /doctest version is "(\d+)\.(\d+)\.(\d+)"/,
-    create: (execShared: SharedVarOfExec, match: RegExpMatchArray) =>
-      new DOCExecutable(execShared, parseVersion123(match)),
+    create: (sharedVarOfExec: SharedVarOfExec, match: RegExpMatchArray) =>
+      new DOCExecutable(sharedVarOfExec, parseVersion123(match)),
   },
   gbenchmark: {
     priority: 40,
     regex: /benchmark \[--benchmark_list_tests=\{true\|false\}\]/,
-    create: (execShared: SharedVarOfExec) => new GoogleBenchmarkExecutable(execShared),
+    create: (sharedVarOfExec: SharedVarOfExec) => new GoogleBenchmarkExecutable(sharedVarOfExec),
   },
   'google-insider': {
     priority: 50,
     regex: /Try --helpfull to get a list of all flags./,
-    create: (execShared: SharedVarOfExec) => new GoogleTestExecutable(execShared, 'gunit_'),
+    create: (sharedVarOfExec: SharedVarOfExec) => new GoogleTestExecutable(sharedVarOfExec, 'gunit_'),
   },
 };
 

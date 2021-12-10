@@ -9,7 +9,7 @@ import { SharedVarOfExec } from '../SharedVarOfExec';
 import { RunningExecutable } from '../RunningExecutable';
 import { AbstractTest } from '../AbstractTest';
 import { CancellationToken } from '../Util';
-import { TestGrouping, testGroupIterator } from '../TestGroupingInterface';
+import { TestGroupingConfig, testGroupIterator } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
@@ -19,11 +19,11 @@ import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser 
 import { Readable } from 'stream';
 
 export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
-  constructor(execShared: SharedVarOfExec, private readonly _argumentPrefix: string) {
-    super(execShared, 'GoogleTest', undefined);
+  constructor(sharedVarOfExec: SharedVarOfExec, private readonly _argumentPrefix: string) {
+    super(sharedVarOfExec, 'GoogleTest', undefined);
   }
 
-  private getTestGrouping(): TestGrouping {
+  private getTestGrouping(): TestGroupingConfig {
     if (this.shared.testGrouping) {
       return this.shared.testGrouping;
     } else {

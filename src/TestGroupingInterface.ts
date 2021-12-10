@@ -1,16 +1,16 @@
-export interface GroupByExecutable extends TestGrouping {
+export interface GroupByExecutable extends TestGroupingConfig {
   label?: string;
   description?: string;
 }
 
-export interface GroupBySource extends TestGrouping {
+export interface GroupBySource extends TestGroupingConfig {
   label?: string;
   description?: string;
 
   groupUngroupedTo?: string;
 }
 
-export interface GroupByTags extends TestGrouping {
+export interface GroupByTags extends TestGroupingConfig {
   tags?: string[][];
 
   label?: string; // ${tags} will by substituted
@@ -19,7 +19,7 @@ export interface GroupByTags extends TestGrouping {
   groupUngroupedTo?: string;
 }
 
-export interface GroupByTagRegex extends TestGrouping {
+export interface GroupByTagRegex extends TestGroupingConfig {
   regexes?: string[];
 
   label?: string; // ${match}, ${match_lowercased}, ${match_upperfirst} will by substituted
@@ -39,7 +39,7 @@ export type TestGroupingType =
   | 'groupByTagRegex'
   | 'groupByRegex';
 
-export interface TestGrouping extends Partial<Record<TestGroupingType, TestGrouping>> {
+export interface TestGroupingConfig extends Partial<Record<TestGroupingType, TestGroupingConfig>> {
   groupByExecutable?: GroupByExecutable;
 
   groupBySource?: GroupBySource;
@@ -53,7 +53,9 @@ export interface TestGrouping extends Partial<Record<TestGroupingType, TestGroup
   tagFormat?: string; // use "[${tag}]"
 }
 
-export function* testGroupIterator(testGrouping: TestGrouping): IterableIterator<[TestGroupingType, TestGrouping]> {
+export function* testGroupIterator(
+  testGrouping: TestGroupingConfig,
+): IterableIterator<[TestGroupingType, TestGroupingConfig]> {
   while (testGrouping) {
     if (testGrouping.groupByExecutable) {
       testGrouping = testGrouping.groupByExecutable;
@@ -77,7 +79,7 @@ export function* testGroupIterator(testGrouping: TestGrouping): IterableIterator
 }
 
 export async function testGroupingForEach(
-  testGrouping: TestGrouping,
+  testGrouping: TestGroupingConfig,
   callbacks: {
     groupByExecutable: (g: GroupByExecutable) => Promise<void>;
     groupBySource: (g: GroupBySource) => Promise<void>;

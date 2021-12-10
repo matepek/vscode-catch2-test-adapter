@@ -16,7 +16,7 @@ import {
   resolveVariablesAsync,
 } from './util/ResolveRule';
 import {
-  TestGrouping,
+  TestGroupingConfig,
   GroupByExecutable,
   GroupByTagRegex,
   GroupByRegex,
@@ -122,7 +122,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return this._getOrCreateChildGroup(id, resolvedLabel, resolvedDescr, itemOfLevel);
   }
 
-  private _updateVarsWithTags(tg: TestGrouping, tags: string[], tagsResolveRule: ResolveRuleAsync<string>): void {
+  private _updateVarsWithTags(tg: TestGroupingConfig, tags: string[], tagsResolveRule: ResolveRuleAsync<string>): void {
     const tagVar = '${tag}';
 
     tagsResolveRule.rule = async (): Promise<string> => {
@@ -170,7 +170,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
   private readonly _execItem: ExecutableGroup;
 
   protected async _createTreeAndAddTest<T extends AbstractTest>(
-    testGrouping: TestGrouping,
+    testGrouping: TestGroupingConfig,
     testId: string,
     resolvedFile: string | undefined,
     tags: string[], // in case of google test it is the TestCase

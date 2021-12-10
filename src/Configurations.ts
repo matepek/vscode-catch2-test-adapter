@@ -1,16 +1,16 @@
 import * as vscode from 'vscode';
 import { LoggerWrapper } from './LoggerWrapper';
-import { ExecutableConfig } from './ExecutableConfig';
+import { ConfigOfExecGroup } from './ConfigOfExecGroup';
 import { WorkspaceShared } from './WorkspaceShared';
 import { hashString } from './Util';
 import { performance } from 'perf_hooks';
-import { TestGrouping } from './TestGroupingInterface';
+import { TestGroupingConfig } from './TestGroupingInterface';
 import {
-  AdvancedExecutable,
-  AdvancedExecutableArray,
-  FrameworkSpecific,
-  RunTask,
-  ExecutionWrapper,
+  AdvancedExecutableConfig,
+  AdvancedExecutableConfigArray,
+  FrameworkSpecificConfig,
+  RunTaskConfig,
+  ExecutionWrapperConfig,
 } from './AdvancedExecutableInterface';
 import { platformUtil } from './util/Platform';
 
@@ -386,12 +386,12 @@ export class Configurations {
     return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  getExecutableConfigs(shared: WorkspaceShared): ExecutableConfig[] {
+  getExecutableConfigs(shared: WorkspaceShared): ConfigOfExecGroup[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultParallelExecutionOfExecLimit = this.getParallelExecutionOfExecutableLimit() || 1;
 
-    const createExecutableConfigFromPattern = (pattern: string): ExecutableConfig => {
-      return new ExecutableConfig(
+    const createExecutableConfigFromPattern = (pattern: string): ConfigOfExecGroup => {
+      return new ConfigOfExecGroup(
         shared,
         pattern,
         undefined,
@@ -416,8 +416,8 @@ export class Configurations {
       );
     };
 
-    const [advanced, simple] = ((): [AdvancedExecutableArray | undefined, string | undefined] => {
-      const advanced = this._cfg.inspect<AdvancedExecutableArray>('test.advancedExecutables');
+    const [advanced, simple] = ((): [AdvancedExecutableConfigArray | undefined, string | undefined] => {
+      const advanced = this._cfg.inspect<AdvancedExecutableConfigArray>('test.advancedExecutables');
       const simple = this._cfg.inspect<string>('test.executables');
 
       if (advanced === undefined || simple === undefined) {
@@ -455,12 +455,12 @@ export class Configurations {
         );
       }
     } else if (Array.isArray(advanced)) {
-      const executables: ExecutableConfig[] = [];
+      const executables: ConfigOfExecGroup[] = [];
 
       this._log.setContext('executables', advanced);
 
-      const createExecutableConfigFromObj = (origObj: AdvancedExecutable): ExecutableConfig => {
-        const obj: AdvancedExecutable = Object.assign({}, origObj);
+      const createExecutableConfigFromObj = (origObj: AdvancedExecutableConfig): ConfigOfExecGroup => {
+        const obj: AdvancedExecutableConfig = Object.assign({}, origObj);
 
         // we are cheating here: it will work for other os but that is undocumented
         const platformSpecificProperty = platformUtil.getPlatformProperty(obj);
@@ -490,7 +490,7 @@ export class Configurations {
           ? obj.dependsOn.filter(v => typeof v === 'string')
           : [];
 
-        const runTask: RunTask =
+        const runTask: RunTaskConfig =
           typeof obj.runTask === 'object'
             ? {
                 before: obj.runTask.before || [],
@@ -513,7 +513,7 @@ export class Configurations {
 
         const defaultTestGrouping = obj.testGrouping;
 
-        const spawnerConfig: ExecutionWrapper | undefined =
+        const spawnerConfig: ExecutionWrapperConfig | undefined =
           typeof obj.executionWrapper === 'object' &&
           typeof obj.executionWrapper.path === 'string' &&
           (obj.executionWrapper.args === undefined ||
@@ -527,7 +527,7 @@ export class Configurations {
             ? obj.sourceFileMap
             : {};
 
-        return new ExecutableConfig(
+        return new ConfigOfExecGroup(
           shared,
           pattern,
           name,
@@ -569,10 +569,10 @@ export class Configurations {
   }
 
   private _getFrameworkSpecificSettings(
-    defaultTestGrouping: TestGrouping | undefined,
-    obj?: FrameworkSpecific,
-  ): FrameworkSpecific {
-    const r: FrameworkSpecific = {};
+    defaultTestGrouping: TestGroupingConfig | undefined,
+    obj?: FrameworkSpecificConfig,
+  ): FrameworkSpecificConfig {
+    const r: FrameworkSpecificConfig = {};
     if (typeof obj === 'object') {
       if (obj.testGrouping) r.testGrouping = obj.testGrouping;
       else r.testGrouping = defaultTestGrouping;

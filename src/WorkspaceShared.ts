@@ -5,7 +5,7 @@ import { ResolveRuleAsync } from './util/ResolveRule';
 import { BuildProcessChecker } from './util/BuildProcessChecker';
 import { CancellationToken } from './Util';
 import { TestItemManager } from './TestItemManager';
-import { FrameworkSpecific } from './AdvancedExecutableInterface';
+import { FrameworkSpecificConfig } from './AdvancedExecutableInterface';
 
 export class WorkspaceShared {
   constructor(
@@ -58,7 +58,7 @@ export class WorkspaceShared {
 
   readonly onDidChangeExecRunningTimeout = this._execRunningTimeoutChangeEmitter.event;
 
-  withFrameworkSpecific(fws: FrameworkSpecific): ExecutableShared {
+  withFrameworkSpecific(fws: FrameworkSpecificConfig): ExecutableShared {
     return {
       log: this.log,
       'test.enabledSubTestListing': fws['test.enabledSubTestListing'] ?? this.enabledSubTestListing,
@@ -66,6 +66,6 @@ export class WorkspaceShared {
   }
 }
 
-export interface ExecutableShared extends Readonly<FrameworkSpecific> {
+export interface ExecutableShared extends Readonly<FrameworkSpecificConfig> {
   readonly log: LoggerWrapper;
 }

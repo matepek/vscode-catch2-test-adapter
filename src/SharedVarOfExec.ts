@@ -1,5 +1,5 @@
-import { FrameworkSpecific, RunTask } from './AdvancedExecutableInterface';
-import { TestGrouping } from './TestGroupingInterface';
+import { FrameworkSpecificConfig, RunTaskConfig } from './AdvancedExecutableInterface';
+import { TestGroupingConfig } from './TestGroupingInterface';
 import { ResolveRuleAsync } from './util/ResolveRule';
 import { TaskPool } from './util/TaskPool';
 import { Spawner, SpawnOptionsWithoutStdio } from './Spawner';
@@ -13,10 +13,10 @@ export class SharedVarOfExec {
     readonly varToValue: readonly ResolveRuleAsync[],
     readonly path: string,
     readonly options: SpawnOptionsWithoutStdio,
-    private readonly _frameworkSpecific: FrameworkSpecific,
+    private readonly _frameworkSpecific: FrameworkSpecificConfig,
     _parallelizationLimit: number,
     readonly markAsSkipped: boolean,
-    readonly runTask: RunTask,
+    readonly runTask: RunTaskConfig,
     readonly spawner: Spawner,
     readonly sourceFileMap: Record<string, string>,
   ) {
@@ -25,7 +25,7 @@ export class SharedVarOfExec {
 
   readonly parallelizationPool: TaskPool;
 
-  get testGrouping(): TestGrouping | undefined {
+  get testGrouping(): TestGroupingConfig | undefined {
     return this._frameworkSpecific.testGrouping;
   }
 

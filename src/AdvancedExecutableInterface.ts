@@ -1,11 +1,11 @@
-import { TestGrouping } from './TestGroupingInterface';
+import { TestGroupingConfig } from './TestGroupingInterface';
 import { FrameworkType } from './framework/Framework';
 
 ///
 
-export type AdvancedExecutableArray = Array<AdvancedExecutable>;
+export type AdvancedExecutableConfigArray = Array<AdvancedExecutableConfig>;
 
-export type AdvancedExecutable = {
+export type AdvancedExecutableConfig = {
   comment?: string;
   pattern?: string;
   name?: string;
@@ -14,37 +14,37 @@ export type AdvancedExecutable = {
   env?: Record<string, string>;
   envFile?: string;
   dependsOn?: Array<string>;
-  runTask?: RunTask;
+  runTask?: RunTaskConfig;
   parallelizationLimit?: number;
   strictPattern?: boolean;
   markAsSkipped?: boolean;
   waitForBuildProcess?: boolean;
-  catch2?: FrameworkSpecific;
-  gtest?: FrameworkSpecific;
-  doctest?: FrameworkSpecific;
-  gbenchmark?: FrameworkSpecific;
-  testGrouping?: TestGrouping;
-  executionWrapper?: ExecutionWrapper;
+  catch2?: FrameworkSpecificConfig;
+  gtest?: FrameworkSpecificConfig;
+  doctest?: FrameworkSpecificConfig;
+  gbenchmark?: FrameworkSpecificConfig;
+  testGrouping?: TestGroupingConfig;
+  executionWrapper?: ExecutionWrapperConfig;
   sourceFileMap?: Record<string, string>;
-  darwin?: AdvancedExecutable;
-  linux?: AdvancedExecutable;
-  win32?: AdvancedExecutable;
-} & Record<FrameworkType, FrameworkSpecific>;
+  darwin?: AdvancedExecutableConfig;
+  linux?: AdvancedExecutableConfig;
+  win32?: AdvancedExecutableConfig;
+} & Record<FrameworkType, FrameworkSpecificConfig>;
 
-export interface RunTask {
+export interface RunTaskConfig {
   before?: Array<string>;
   beforeEach?: Array<string>;
   after?: Array<string>;
   afterEach?: Array<string>;
 }
 
-export interface ExecutionWrapper {
+export interface ExecutionWrapperConfig {
   path: string;
   args?: Array<string>;
 }
 
-export interface FrameworkSpecific {
-  testGrouping?: TestGrouping;
+export interface FrameworkSpecificConfig {
+  testGrouping?: TestGroupingConfig;
   helpRegex?: string;
   prependTestRunningArgs?: Array<string>;
   prependTestListingArgs?: Array<string>;

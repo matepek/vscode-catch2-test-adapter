@@ -16,7 +16,7 @@ import { WorkspaceShared } from './WorkspaceShared';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
 import { readJSONSync } from 'fs-extra';
 import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
-import { RunTask, ExecutionWrapper, FrameworkSpecific } from './AdvancedExecutableInterface';
+import { RunTaskConfig, ExecutionWrapperConfig, FrameworkSpecificConfig } from './AdvancedExecutableInterface';
 import { LoggerWrapper } from './LoggerWrapper';
 import { debugBreak } from './util/DevelopmentHelper';
 import { FrameworkType } from './framework/Framework';
@@ -24,7 +24,7 @@ import { readFileSync } from 'fs';
 
 ///
 
-export class ExecutableConfig implements vscode.Disposable {
+export class ConfigOfExecGroup implements vscode.Disposable {
   constructor(
     private readonly _shared: WorkspaceShared,
     private readonly _pattern: string,
@@ -34,14 +34,14 @@ export class ExecutableConfig implements vscode.Disposable {
     private readonly _env: { [prop: string]: string },
     private readonly _envFile: string | undefined,
     private readonly _dependsOn: string[],
-    private readonly _runTask: RunTask,
+    private readonly _runTask: RunTaskConfig,
     private readonly _parallelizationLimit: number,
     private readonly _strictPattern: boolean | undefined,
     private readonly _markAsSkipped: boolean | undefined,
     private readonly _waitForBuildProcess: boolean | undefined,
-    private readonly _executionWrapper: ExecutionWrapper | undefined,
+    private readonly _executionWrapper: ExecutionWrapperConfig | undefined,
     private readonly _sourceFileMap: Record<string, string>,
-    private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecific>,
+    private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecificConfig>,
   ) {}
 
   private _disposables: vscode.Disposable[] = [];

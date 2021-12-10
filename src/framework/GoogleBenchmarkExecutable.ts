@@ -8,17 +8,17 @@ import { SharedVarOfExec } from '../SharedVarOfExec';
 import { RunningExecutable } from '../RunningExecutable';
 import { AbstractTest } from '../AbstractTest';
 import { CancellationFlag } from '../Util';
-import { TestGrouping } from '../TestGroupingInterface';
+import { TestGroupingConfig } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
 import { LoggerWrapper } from '../LoggerWrapper';
 import { TestItemParent } from '../TestItemManager';
 
 export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmarkTest> {
-  constructor(execShared: SharedVarOfExec) {
-    super(execShared, 'GoogleBenchmark', undefined);
+  constructor(sharedVarOfExec: SharedVarOfExec) {
+    super(sharedVarOfExec, 'GoogleBenchmark', undefined);
   }
 
-  private getTestGrouping(): TestGrouping {
+  private getTestGrouping(): TestGroupingConfig {
     if (this.shared.testGrouping) {
       return this.shared.testGrouping;
     } else {

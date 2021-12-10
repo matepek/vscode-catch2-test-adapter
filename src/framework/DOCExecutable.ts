@@ -8,7 +8,7 @@ import { DOCTest } from './DOCTest';
 import { SharedVarOfExec } from '../SharedVarOfExec';
 import { RunningExecutable } from '../RunningExecutable';
 import { CancellationFlag, Version } from '../Util';
-import { TestGrouping } from '../TestGroupingInterface';
+import { TestGroupingConfig } from '../TestGroupingInterface';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
 import { TestResultBuilder } from '../TestResultBuilder';
@@ -17,11 +17,11 @@ import { SubTestTree } from '../AbstractTest';
 import { pipeProcess2Parser } from '../util/ParserInterface';
 
 export class DOCExecutable extends AbstractExecutable<DOCTest> {
-  constructor(execShared: SharedVarOfExec, docVersion: Version | undefined) {
-    super(execShared, 'doctest', docVersion);
+  constructor(sharedVarOfExec: SharedVarOfExec, docVersion: Version | undefined) {
+    super(sharedVarOfExec, 'doctest', docVersion);
   }
 
-  private getTestGrouping(): TestGrouping {
+  private getTestGrouping(): TestGroupingConfig {
     if (this.shared.testGrouping) {
       return this.shared.testGrouping;
     } else {

@@ -6,7 +6,7 @@ import { WorkspaceShared } from './WorkspaceShared';
 import { sep as osPathSeparator } from 'path';
 import { TaskQueue } from './util/TaskQueue';
 import { AbstractExecutable, TestsToRun } from './AbstractExecutable';
-import { ExecutableConfig } from './ExecutableConfig';
+import { ConfigOfExecGroup } from './ConfigOfExecGroup';
 import { generateId } from './Util';
 import { AbstractTest } from './AbstractTest';
 import { TestItemManager } from './TestItemManager';
@@ -201,7 +201,7 @@ export class WorkspaceManager implements vscode.Disposable {
 
   private readonly _disposables: vscode.Disposable[] = [];
   private readonly _shared: WorkspaceShared;
-  private _executableConfig: ExecutableConfig[] = [];
+  private _executableConfig: ConfigOfExecGroup[] = [];
 
   dispose(): void {
     this._shared.dispose();
@@ -242,7 +242,7 @@ export class WorkspaceManager implements vscode.Disposable {
   ): Promise<void> {
     try {
       await this._runTasks('before', executables.keys(), cancellation);
-      //TODO: future: test list might changes: runnables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
+      //TODO: future: test list might changes: executables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
     } catch (e) {
       const msg = e.toString();
       testRun.appendOutput(msg);
@@ -284,13 +284,13 @@ export class WorkspaceManager implements vscode.Disposable {
 
   private async _runTasks(
     type: 'before' | 'after',
-    runnables: Iterable<AbstractExecutable>,
+    executables: Iterable<AbstractExecutable>,
     cancellationToken: vscode.CancellationToken,
   ): Promise<void> {
     const runTasks = new Set<string>();
     const runnableExecArray: string[] = [];
 
-    for (const runnable of runnables) {
+    for (const runnable of executables) {
       runnable.shared.runTask[type]?.forEach(t => runTasks.add(t));
       runnableExecArray.push(runnable.shared.path);
     }

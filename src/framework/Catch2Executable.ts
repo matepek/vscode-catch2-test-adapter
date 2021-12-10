@@ -9,15 +9,15 @@ import { Catch2Test } from './Catch2Test';
 import { RunningExecutable } from '../RunningExecutable';
 import { SubTestTree } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
-import { TestGrouping } from '../TestGroupingInterface';
+import { TestGroupingConfig } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
 import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../util/ParserInterface';
 import { Readable } from 'stream';
 
 export class Catch2Executable extends AbstractExecutable<Catch2Test> {
-  constructor(execShared: SharedVarOfExec, private readonly _catch2Version: Version | undefined) {
-    super(execShared, 'Catch2', _catch2Version);
+  constructor(sharedVarOfExec: SharedVarOfExec, private readonly _catch2Version: Version | undefined) {
+    super(sharedVarOfExec, 'Catch2', _catch2Version);
   }
 
   protected override _addTest(testId: string, test: Catch2Test): void {
@@ -30,7 +30,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     return super._getTest(testId.trim());
   }
 
-  private getTestGrouping(): TestGrouping {
+  private getTestGrouping(): TestGroupingConfig {
     if (this.shared.testGrouping) {
       return this.shared.testGrouping;
     } else {
@@ -230,7 +230,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
 
     this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
 
-    //const process = await this.execShared.spawner.spawn(this.execShared.path, args, this.execShared.options);
+    //const process = await this.sharedVarOfExec.spawner.spawn(this.sharedVarOfExec.path, args, this.sharedVarOfExec.options);
 
     const catch2TestListingProcess = await this.shared.spawner.spawn(this.shared.path, args, this.shared.options);
 
