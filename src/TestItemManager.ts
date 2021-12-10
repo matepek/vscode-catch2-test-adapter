@@ -88,8 +88,8 @@ export class TestItemManager {
       if (lineP) item.range = new vscode.Range(lineP - 1, 0, lineP, 0);
     }
 
-    if (label !== null) item.label = label;
-    if (description !== null) item.description = description;
+    if (label !== null && item.label !== label) item.label = label;
+    if (description !== null && item.description !== description) item.description = description;
     if (tags !== null) item.tags = tags;
 
     return item;

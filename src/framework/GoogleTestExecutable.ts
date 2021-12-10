@@ -381,7 +381,7 @@ class TestCaseProcessor implements LineProcessor {
       this.testCaseShared.builder.test.file,
       this.testCaseShared.builder.test.line,
     );
-    this.testCaseShared.builder.addOutputLine(ansi.bold(line) + loc);
+    this.testCaseShared.builder.addOutputLine(0, ansi.bold(line) + loc);
   }
 
   online(line: string): void | true | LineProcessor {
@@ -417,6 +417,7 @@ class TestCaseProcessor implements LineProcessor {
       this.testCaseShared.builder.build();
 
       this.testCaseShared.builder.addOutputLine(
+        0,
         testEndMatch[1] +
           styleFunc(testEndMatch[2]) +
           testEndMatch[3] +

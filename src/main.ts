@@ -212,7 +212,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('testMate.cmd.reload-workspaces', () => {
+    vscode.commands.registerCommand('testMate.cmd.reload-workspaces', async () => {
       for (const ws of workspace2manager.keys()) {
         removeWorkspaceManager(ws);
       }
@@ -220,8 +220,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       // just to make sure
       controller.items.replace([]);
 
+      await new Promise<void>(r => setTimeout(r, 500)); // there are soe race condition, thi fixes it: maybe async dispose would fix it too?
+
       addOpenedWorkspaces();
-      Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then();
+      return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then();
     }),
   );
 

@@ -32,9 +32,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (this.addBeginEndMsg) {
       const locStr = TestResultBuilder.getLocationAtStr(this.test.file, this.test.line);
       if (this.level === 0) {
-        this.addOutputLine(ansi.bold(`[ RUN      ] \`${ansi.italic(this.test.label)}\``) + `${locStr}`);
+        this.addOutputLine(0, ansi.bold(`[ RUN      ] \`${ansi.italic(this.test.label)}\``) + `${locStr}`);
       } else {
-        this.addOutputLine(-1, prefixForNewSubCase(this.level) + '`' + ansi.italic(this.test.label) + '`' + locStr);
+        this.addOutputLine(0, '`' + ansi.italic(this.test.label) + '`' + locStr);
       }
     }
   }
@@ -67,15 +67,8 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     this.failed();
   }
 
-  addOutputLine(indentOrMsg: number | string | undefined, ...msgs: string[]): void {
-    let lines: string[];
-    if (typeof indentOrMsg == 'number') {
-      lines = reindentStr(this.level + indentOrMsg, ...msgs);
-    } else if (typeof indentOrMsg == 'string') {
-      lines = reindentStr(this.level, indentOrMsg, ...msgs);
-    } else {
-      lines = msgs;
-    }
+  addOutputLine(indent: number, ...msgs: string[]): void {
+    const lines = indentStr(this.level + indent, ...msgs);
 
     //this._outputLines.push(...lines);
 
@@ -199,7 +192,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
       const d = this._duration ? ansi.grey(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
 
       if (this.level === 0) {
-        this.addOutputLine(`${this.coloredResult()} \`${ansi.italic(this.test.label)}\`` + `${d}`, '');
+        this.addOutputLine(0, `${this.coloredResult()} \`${ansi.italic(this.test.label)}\`` + `${d}`, '');
       }
       // else if (this._result !== 'passed') {
       //   this.addOutputLine(`# ${this.coloredResult()}${d}`);
@@ -232,14 +225,21 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     //   }
     // }
 
+    const messages = this._message;
+    // const messages = [];
+    // if (this.level === 0) {
+    //   messages.push(...this._message);
+    //   for (const sub of this.getSubTestResultBuilders()) messages.push(...sub._message);
+    // }
+
     switch (this._result) {
       case undefined:
         throw Error('result is not finalized');
       case 'errored':
-        this.testRun.errored(this.test.item, this._message, this._duration);
+        this.testRun.errored(this.test.item, messages, this._duration);
         break;
       case 'failed':
-        this.testRun.failed(this.test.item, this._message, this._duration);
+        this.testRun.failed(this.test.item, messages, this._duration);
         break;
       case 'skipped':
         this.testRun.skipped(this.test.item);
@@ -248,6 +248,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
         this.testRun.passed(this.test.item, this._duration);
         break;
     }
+
     this._built = true;
   }
 
@@ -279,23 +280,22 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
 const indentPrefix = ansi.grey('| ');
 
-const prefixForNewSubCase = (indentLevel: number): string => {
-  if (indentLevel === 0) return '';
-  else return indentPrefix.repeat(indentLevel - 1) + ansi.grey('| ');
+const indentStr = (indent: number, ...strs: string[]) => {
+  return reindentStr(...strs).map(l => indentPrefix.repeat(indent) + l);
 };
 
-const reindentLines = (indentLevel: number, lines: string[]): string[] => {
+const reindentLines = (lines: string[]): string[] => {
   let indent = 9999;
   lines.forEach(l => {
     let spaces = 0;
     while (spaces < l.length && l[spaces] === ' ') ++spaces;
     indent = Math.min(indent, spaces);
   });
-  const reindented = lines.map(l => indentPrefix.repeat(indentLevel) + l.substr(indent).trimRight());
+  const reindented = lines.map(l => l.substring(indent).trimEnd());
   return reindented;
 };
 
-const reindentStr = (indentLevel: number, ...strs: string[]): string[] => {
+const reindentStr = (...strs: string[]): string[] => {
   const lines = strs.flatMap(x => x.split(/\r?\n/));
-  return reindentLines(indentLevel, lines);
+  return reindentLines(lines);
 };

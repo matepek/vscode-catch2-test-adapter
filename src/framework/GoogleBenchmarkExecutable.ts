@@ -215,7 +215,7 @@ function parseAndProcessTestCase(
 
   try {
     if (metric['error_occurred']) {
-      builder.addOutputLine('❌ Error occurred:', (metric['error_occurred'] as string).toString());
+      builder.addOutputLine(1, '❌ Error occurred:', (metric['error_occurred'] as string).toString());
       builder.errored();
     }
 
@@ -245,6 +245,7 @@ function parseAndProcessTestCase(
     log.exceptionS(e, metric);
 
     builder.addOutputLine(
+      1,
       '❌ Unexpected ERROR while parsing',
       `Exception: "${e}"`,
       '(If you think it should work then file an issue)',
