@@ -423,7 +423,7 @@ class TestCaseProcessor implements LineProcessor {
           testEndMatch[3] +
           testEndMatch[4] +
           testEndMatch[5] +
-          ansi.grey(testEndMatch[6]),
+          ansi.dim(testEndMatch[6]),
         '',
       );
 

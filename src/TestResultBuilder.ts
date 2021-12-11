@@ -21,7 +21,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
   readonly log = this.test.log;
 
-  private readonly _message: vscode.TestMessage[] = [];
+  private readonly _messages: vscode.TestMessage[] = [];
   private _result: TestResult | undefined = undefined;
   //private readonly _outputLines: string[] = [];
 
@@ -34,7 +34,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
       if (this.level === 0) {
         this.addOutputLine(0, ansi.bold(`[ RUN      ] \`${ansi.italic(this.test.label)}\``) + `${locStr}`);
       } else {
-        this.addOutputLine(0, '`' + ansi.italic(this.test.label) + '`' + locStr);
+        this.addOutputLine(-1, ansi.dim('├') + '`' + ansi.italic(this.test.label) + '`' + locStr);
       }
     }
   }
@@ -94,9 +94,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (file) {
       const lineP = parseLine(line);
       if (typeof lineP == 'number') {
-        return ansi.grey(` @ ${file}:${lineP}`);
+        return ansi.dim(` @ ${file}:${lineP}`);
       } else {
-        return ansi.grey(` @ ${file}`);
+        return ansi.dim(` @ ${file}`);
       }
     }
     return '';
@@ -112,7 +112,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     file = this.test.exec.findSourceFilePath(file);
     const msg = vscode.TestMessage.diff(message, expected, actual);
     msg.location = TestResultBuilder._getLocation(file, line);
-    this._message.push(msg);
+    this._messages.push(msg);
   }
 
   addExpressionMsg(
@@ -148,14 +148,14 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     file = this.test.exec.findSourceFilePath(file);
     const msg = new vscode.TestMessage(message.join('\r\n'));
     msg.location = TestResultBuilder._getLocation(file, line);
-    this._message.push(msg);
+    this._messages.push(msg);
   }
 
   addMarkdownMsg(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
     file = this.test.exec.findSourceFilePath(file);
     const msg = new vscode.TestMessage(new vscode.MarkdownString(message.join('\r\n\n')));
     msg.location = TestResultBuilder._getLocation(file, line);
-    this._message.push(msg);
+    this._messages.push(msg);
   }
 
   addQuoteWithLocation(
@@ -189,14 +189,11 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
   endMessage(): void {
     if (this.addBeginEndMsg) {
-      const d = this._duration ? ansi.grey(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
+      const d = this._duration ? ansi.dim(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
 
       if (this.level === 0) {
         this.addOutputLine(0, `${this.coloredResult()} \`${ansi.italic(this.test.label)}\`` + `${d}`, '');
       }
-      // else if (this._result !== 'passed') {
-      //   this.addOutputLine(`# ${this.coloredResult()}${d}`);
-      // }
     }
   }
 
@@ -216,16 +213,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
     this.endMessage();
 
-    // {
-    //   const fileOfTest = this.test.file;
-    //   const lineOfTest = this.test.line;
-    //   if (fileOfTest && lineOfTest && (this._result == 'failed' || this._result === 'errored')) {
-    //     const formatted = this._outputLines.map(x => ansi.unstyle(x));
-    //     this.addMessage(fileOfTest, lineOfTest, 'Output', ...formatted);
-    //   }
-    // }
-
-    const messages = this._message;
+    const messages = this._messages;
     // const messages = [];
     // if (this.level === 0) {
     //   messages.push(...this._message);
@@ -278,10 +266,10 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
 ///
 
-const indentPrefix = ansi.grey('| ');
+const indentPrefix = (level: number) => ansi.dim('│ '.repeat(level));
 
 const indentStr = (indent: number, ...strs: string[]) => {
-  return reindentStr(...strs).map(l => indentPrefix.repeat(indent) + l);
+  return reindentStr(...strs).map(l => indentPrefix(indent) + l);
 };
 
 const reindentLines = (lines: string[]): string[] => {

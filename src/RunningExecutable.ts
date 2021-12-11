@@ -103,7 +103,7 @@ export class RunningExecutable {
     });
   }
 
-  readonly runPrefix = ansi.gray(`$${generateId()}| `);
+  readonly runPrefix = ansi.dim(`$${generateId()}│ `);
 
   killProcess(timeout: number | null = null): void {
     try {
@@ -175,16 +175,13 @@ export class RunningExecutable {
 
   getProcStartLine(): string {
     return (
-      this.runPrefix +
-      ansi.gray(`Started PID#${this.pid} - \`${this.process.spawnfile}\`\r\n`) +
-      this.runPrefix +
-      '\r\n'
+      this.runPrefix + ansi.dim(`Started PID#${this.pid} - \`${this.process.spawnfile}\`\r\n`) + this.runPrefix + '\r\n'
     );
   }
 
   getProcStopLine(result: ExecutableRunResult): string {
     return (
-      this.runPrefix + ansi.gray(`Stopped PID#${this.pid} - ${result.toString()} - \`${this.process.spawnfile}\`\r\n`)
+      this.runPrefix + ansi.dim(`Stopped PID#${this.pid} - ${result.toString()} - \`${this.process.spawnfile}\`\r\n`)
     );
   }
 }
