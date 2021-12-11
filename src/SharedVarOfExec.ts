@@ -53,6 +53,7 @@ export class SharedVarOfExec {
 
   readonly log = this.shared.log;
   readonly workspaceFolder = this.shared.workspaceFolder;
+  readonly workspacePath = this.workspaceFolder.uri.fsPath;
   readonly testController = this.shared.testController;
   readonly cancellationToken = this.shared.cancellationToken;
   readonly taskPool = this.shared.taskPool;

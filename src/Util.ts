@@ -94,15 +94,20 @@ export function generateId(): string {
   return (++uidCounter).toString();
 }
 
-export function parseLine(line: number | string | undefined, func?: (line: number) => void): number | undefined {
+export function parseLine(
+  line: number | string | undefined,
+  func?: (line: number) => void,
+  adjust?: number,
+): number | undefined {
   if (typeof line == 'number') {
     func && func(line);
     return line;
   } else if (typeof line == 'string') {
-    const p = parseInt(line);
+    let p = parseInt(line);
     if (Number.isNaN(p)) {
       return undefined;
     } else {
+      if (adjust) p += adjust;
       func && func(p);
       return p;
     }

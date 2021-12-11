@@ -369,7 +369,11 @@ class TestCaseSharedData {
 ///
 
 class TestCaseProcessor implements LineProcessor {
-  constructor(shared: SharedVarOfExec, private readonly testEndRe: RegExp, builder: TestResultBuilder) {
+  constructor(
+    shared: SharedVarOfExec,
+    private readonly testEndRe: RegExp,
+    private readonly builder: TestResultBuilder,
+  ) {
     this.testCaseShared = new TestCaseSharedData(shared, builder);
     builder.started();
   }
@@ -377,9 +381,10 @@ class TestCaseProcessor implements LineProcessor {
   private readonly testCaseShared: TestCaseSharedData;
 
   begin(line: string): void {
-    const loc = TestResultBuilder.getLocationAtStr(
+    const loc = this.builder.getLocationAtStr(
       this.testCaseShared.builder.test.file,
       this.testCaseShared.builder.test.line,
+      true,
     );
     this.testCaseShared.builder.addOutputLine(0, ansi.bold(line) + loc);
   }
@@ -440,7 +445,7 @@ class TestCaseProcessor implements LineProcessor {
 
       this.testCaseShared.builder.addOutputLine(
         1,
-        ansi.red(type) + failureMsg + TestResultBuilder.getLocationAtStr(file, line),
+        ansi.red(type) + failureMsg + this.builder.getLocationAtStr(file, line, false),
       );
 
       switch (type) {
@@ -485,9 +490,9 @@ class FailureProcessor implements LineProcessor {
       if (isDecorationEnabled) {
         const first = line.indexOf(':');
         if (first != -1) {
-          const value = line.substr(first + 1).trim();
-          const decoratedValue = value ? ' `' + line.substr(first + 1).trim() + '`' : '';
-          this.lines.push(line.substr(0, first + 1) + decoratedValue);
+          const value = line.substring(first + 1).trim();
+          const decoratedValue = value ? ' `' + line.substring(first + 1).trim() + '`' : '';
+          this.lines.push(line.substring(0, first + 1) + decoratedValue);
         } else {
           this.testCaseShared.shared.log.errorS("colon isn't found", line);
           this.lines.push(line);

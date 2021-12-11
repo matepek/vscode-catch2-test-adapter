@@ -30,7 +30,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     this.testRun.started(this.test.item);
 
     if (this.addBeginEndMsg) {
-      const locStr = TestResultBuilder.getLocationAtStr(this.test.file, this.test.line);
+      const locStr = this.getLocationAtStr(this.test.file, this.test.line, true);
       if (this.level === 0) {
         this.addOutputLine(0, ansi.bold(`[ RUN      ] \`${ansi.italic(this.test.label)}\``) + `${locStr}`);
       } else {
@@ -90,14 +90,17 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     return undefined;
   }
 
-  static getLocationAtStr(file: string | undefined, line: number | string | undefined): string {
+  static readonly relativeLocPrefix = ' @ ./';
+
+  getLocationAtStr(file: string | undefined, line: number | string | undefined, lineIsZeroBased: boolean): string {
     if (file) {
-      const lineP = parseLine(line);
-      if (typeof lineP == 'number') {
-        return ansi.dim(` @ ${file}:${lineP}`);
-      } else {
-        return ansi.dim(` @ ${file}`);
-      }
+      let lineSuffix = '';
+      parseLine(line, l => (lineSuffix = `:${l + (lineIsZeroBased ? 1 : 0)}`));
+      // const wp = this.test.exec.shared.workspacePath + '/';
+      // if (file.startsWith(wp)) {
+      //   return ansi.dim(TestResultBuilder.relativeLocPrefix) + ansi.dim(file.substring(wp.length) + lineSuffix);
+      // }
+      return ansi.dim(` @ ${file}${lineSuffix}`);
     }
     return '';
   }
@@ -125,7 +128,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     file = this.test.exec.findSourceFilePath(file);
     this.addMessage(file, line, 'Expanded: `' + expanded + '`');
 
-    const loc = TestResultBuilder.getLocationAtStr(file, line);
+    const loc = this.getLocationAtStr(file, line, false);
     this.addOutputLine(1, 'Expression ' + ansi.red('failed') + loc + ':');
     this.addOutputLine(2, '❕Original:  ' + original);
     this.addOutputLine(2, '❗️Expanded:  ' + expanded);
@@ -139,7 +142,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   ): void {
     file = this.test.exec.findSourceFilePath(file);
     this.addMessage(file, line, [`${title}`, ...message].join('\r\n'));
-    const loc = TestResultBuilder.getLocationAtStr(file, line);
+    const loc = this.getLocationAtStr(file, line, false);
     this.addOutputLine(1, `${title}${loc}`);
     this.addOutputLine(2, ...message);
   }
@@ -165,7 +168,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     ...message: string[]
   ): void {
     file = this.test.exec.findSourceFilePath(file);
-    const loc = TestResultBuilder.getLocationAtStr(file, line);
+    const loc = this.getLocationAtStr(file, line, false);
     this.addOutputLine(1, `${title}${loc}${message.length ? ':' : ''}`);
     this.addOutputLine(2, ...message);
   }

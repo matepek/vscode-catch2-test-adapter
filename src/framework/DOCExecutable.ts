@@ -7,7 +7,7 @@ import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { DOCTest } from './DOCTest';
 import { SharedVarOfExec } from '../SharedVarOfExec';
 import { RunningExecutable } from '../RunningExecutable';
-import { CancellationFlag, Version } from '../Util';
+import { CancellationFlag, parseLine, Version } from '../Util';
 import { TestGroupingConfig } from '../TestGroupingInterface';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
@@ -617,7 +617,12 @@ class MessageProcessor implements XmlTagProcessor {
     assert(this.text !== undefined);
 
     if (this.attribs.type === 'FATAL ERROR') {
-      this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, this.attribs.type, this.text!);
+      this.builder.addMessageWithOutput(
+        this.attribs.filename,
+        parseLine(this.attribs.line, undefined, -1),
+        this.attribs.type,
+        this.text!,
+      );
       this.caseData.hasFailedExpression = true;
       this.builder.failed();
     } else if (this.attribs.type === 'WARNING') {
