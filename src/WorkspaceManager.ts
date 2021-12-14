@@ -205,8 +205,10 @@ export class WorkspaceManager implements vscode.Disposable {
     this._disposables.forEach(d => d.dispose());
   }
 
-  load(): Thenable<void> {
+  async load(): Promise<void> {
     this._executableConfig.forEach(c => c.dispose());
+
+    await new Promise<void>(r => setTimeout(r, 500)); // there are some race condition, this fixes it: maybe async dispose would fix it too?
 
     const configuration = this._getConfiguration(this.log);
     const executableConfig = configuration.getExecutableConfigs(this._shared);

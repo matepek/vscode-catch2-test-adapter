@@ -427,7 +427,8 @@ class TestCaseTagProcessor extends TagProcessorBase {
 
   async begin(): Promise<void> {
     this.builder.started();
-    await this.test.updateFL(this.attribs.filename, this.attribs.line);
+    const file = await this.test.exec.resolveAndFindSourceFilePath(this.attribs.filename);
+    await this.test.updateFL(file, this.attribs.line);
   }
 
   override onopentag(tag: XmlTag): void | XmlTagProcessor | Promise<void | XmlTagProcessor> {

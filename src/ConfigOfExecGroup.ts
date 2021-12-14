@@ -148,14 +148,10 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       );
     }
 
-    const errors: unknown[] = [];
-    for (const task of suiteCreationAndLoadingTasks) {
-      try {
-        await task;
-      } catch (e) {
-        errors.push(e);
-      }
-    }
+    const errors: unknown[] = (await Promise.allSettled(suiteCreationAndLoadingTasks))
+      .filter(r => r.status === 'rejected')
+      .map(r => (r as PromiseRejectedResult).reason);
+
     if (errors.length > 0) return errors;
 
     if (this._dependsOn.length > 0) {

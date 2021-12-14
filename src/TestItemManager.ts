@@ -31,6 +31,7 @@ export class TestItemManager {
       parseLine(line, l => (item.range = new vscode.Range(l - 1, 0, l, 0)));
     }
     if (testData) this.testItem2test.set(item, testData);
+    else this.testItem2test.delete(item);
 
     // add will replace it if it has one child with the same id
     if (parent) {
@@ -44,7 +45,7 @@ export class TestItemManager {
     return item;
   }
 
-  private readonly testItem2test = new Map<vscode.TestItem, AbstractTest>();
+  private readonly testItem2test = new WeakMap<vscode.TestItem, AbstractTest>();
 
   map(item: vscode.TestItem): AbstractTest | undefined {
     return this.testItem2test.get(item);
