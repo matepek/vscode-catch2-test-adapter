@@ -22,7 +22,7 @@ export abstract class AbstractTest {
     private readonly _frameworkTag: vscode.TestTag,
     readonly debuggable = true,
     readonly runnable = true,
-    readonly isSubTest = false,
+    readonly subLevel = 0,
   ) {
     this._item = this.exec.shared.testController.createOrReplace(parent, id, label, resolvedFile, line, this);
 
@@ -166,9 +166,18 @@ export abstract class AbstractTest {
       this._subTests = new Map();
     }
 
-    const subTest = new SubTest(this.exec, this._item, id, label, resolvedFile, line, this._frameworkTag);
+    const subTest = new SubTest(
+      this.exec,
+      this._item,
+      id,
+      label,
+      resolvedFile,
+      line,
+      this._frameworkTag,
+      this.subLevel + 1,
+    );
 
-    if (!this.isSubTest && this._subTests.size === 0) this._item.canResolveChildren = true;
+    if (this.subLevel === 0 && this._subTests.size === 0) this._item.canResolveChildren = true;
 
     this._subTests.set(id, subTest);
 
@@ -209,8 +218,24 @@ export class SubTest extends AbstractTest {
     file: string | undefined,
     line: string | undefined,
     frameworkTag: vscode.TestTag,
+    level: number,
   ) {
-    super(executable, parent, id, '⤷', file, line, false, undefined, label || id, [], frameworkTag, false, false, true);
+    super(
+      executable,
+      parent,
+      id,
+      '⤷',
+      file,
+      line,
+      false,
+      undefined,
+      label ?? id,
+      [],
+      frameworkTag,
+      false,
+      false,
+      level,
+    );
   }
 
   override get label(): string {
@@ -218,6 +243,6 @@ export class SubTest extends AbstractTest {
   }
 
   updateSub(label: string | undefined, file: string | undefined, line: string | undefined): void {
-    super.update(null, file, line, null, label || this.id, null);
+    super.update(null, file, line, null, label ?? this.id, null);
   }
 }

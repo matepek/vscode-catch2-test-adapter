@@ -67,3 +67,26 @@ SCENARIO("completely different", "[.][unit]") {
     }
   }
 }
+
+TEST_CASE("SectionTest should fail", "[!shouldfail]") {
+  SECTION("Section 1") { FAIL("Failed to do stuff!"); }
+}
+
+TEST_CASE("SectionTest should fail2", "[!shouldfail]") {
+  SECTION("Section 1") {
+    CHECK(false);
+    CHECK(false);
+  }
+}
+
+TEST_CASE("SectionTest should fail but not", "[!shouldfail]") {
+  SECTION("Section 1") { CHECK(true); }
+}
+
+TEST_CASE("SectionTest may fail", "[!mayfail]") {
+  SECTION("Section 1") { REQUIRE(false); }
+}
+
+TEST_CASE("SectionTest may fail but not", "[!mayfail]") {
+  SECTION("Section 1") { REQUIRE(true); }
+}

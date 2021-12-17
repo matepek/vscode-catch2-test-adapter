@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.16]
+
+### Changed
+
+- some Catch2 related [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/316) which prevented handling `[!shoudfail]` and `[!mayfail]`
+
 ## [4.0.15] - 2021-12-14
 
 ### Fixed

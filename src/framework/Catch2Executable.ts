@@ -480,10 +480,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
       'OverallResults',
       (tag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
         builder.setDurationMilisec(parseFloat(tag.attribs.durationInSeconds) * 1000);
-        if (
-          (!tag.attribs.expectedFailures && tag.attribs.failures !== '0') ||
-          (tag.attribs.expectedFailures && tag.attribs.failures !== tag.attribs.expectedFailures)
-        ) {
+        if (tag.attribs.failures !== '0') {
           builder.failed();
         } else {
           builder.passed();

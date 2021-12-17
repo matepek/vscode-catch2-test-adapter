@@ -233,8 +233,8 @@ async function closeMentionedIssues(info: Info): Promise<void> {
   }
 
   // cannot be used for push because it has just a collaboration role
-  assert.ok(typeof process.env['TESTMATE_BOT_GITHUB_PAT'] === 'string');
-  const apiKey = process.env['TESTMATE_BOT_GITHUB_PAT']!;
+  assert.ok(typeof process.env['GITHUBM_API_KEY'] === 'string');
+  const apiKey = process.env['GITHUBM_API_KEY']!;
   const keyBase64 = Buffer.from(`${githubOwnerId}:${apiKey}`, 'utf-8').toString('base64');
   const headerBase = {
     'User-Agent': `${githubOwnerId}-deploy.js`,

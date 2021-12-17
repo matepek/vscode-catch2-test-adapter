@@ -105,13 +105,23 @@
     "editor.formatOnSave": false
   },
   "[typescript]": {
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
-  "todo-tree.general.tags": ["BUG", "HACK", "FIXME", "TODO", "TODO:future", "TODO:nice", "TODO:release", "XXX"],
+  "todo-tree.general.tags": [
+    "BUG",
+    "HACK",
+    "FIXME",
+    "TODO",
+    "TODO:future",
+    "TODO:nice",
+    "TODO:release",
+    "XXX"
+  ],
   "todo-tree.highlights.customHighlight": {
     "TODO:future": {
       "type": "none"
