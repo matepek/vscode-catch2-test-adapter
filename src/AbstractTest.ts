@@ -153,7 +153,7 @@ export abstract class AbstractTest {
     file: string | undefined,
     line: string | undefined,
   ): Promise<SubTest> {
-    const resolvedFile = await this.exec.resolveAndFindSourceFilePath(file);
+    const resolvedFile = await this.exec.findSourceFilePath(file);
 
     if (this._subTests) {
       const found = this._subTests.get(id);

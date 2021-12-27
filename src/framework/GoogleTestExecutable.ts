@@ -108,7 +108,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     typeParam: string | undefined,
     valueParam: string | undefined,
   ): Promise<GoogleTestTest> => {
-    const resolvedFile = await this.resolveAndFindSourceFilePath(file);
+    const resolvedFile = this.findSourceFilePath(file);
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
       testName,

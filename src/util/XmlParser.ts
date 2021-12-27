@@ -9,11 +9,18 @@ type XmlTagFrame = XmlTag & { _text: string };
 export class XmlParser implements ParserInterface {
   private readonly htmlParser: htmlparser2.Parser;
   private sequentialP = Promise.resolve();
+  private readonly endP: Promise<void>;
+  private readonly endPResolver: () => void;
   private readonly tagStack: XmlTagFrame[] = [];
   private readonly xmlTagProcessorStack: ProcessorFrame[] = [];
   private topTagProcessor: ProcessorFrame;
 
   constructor(private readonly log: LoggerWrapper, processor: XmlTagProcessor, onerrorCb: (error: Error) => void) {
+    {
+      let resolver: () => void;
+      this.endP = new Promise<void>(resolve => (resolver = resolve));
+      this.endPResolver = resolver!;
+    }
     this.htmlParser = new htmlparser2.Parser(
       {
         onopentag: (name: string, attribs: Record<string, string>): void => {
@@ -79,18 +86,19 @@ export class XmlParser implements ParserInterface {
           });
         },
         onend: () => {
-          this.sequentialP = this.sequentialP.then(async () => {
-            this.log.trace('onend');
+          this.sequentialP = this.sequentialP
+            .then(async () => {
+              this.log.trace('onend');
 
-            if (this.xmlTagProcessorStack.length !== 0) {
-              debugBreak();
-              this.log.warn('onend should not have more processors unless the parser was abandoned', this);
-            }
+              if (this.xmlTagProcessorStack.length !== 0) {
+                debugBreak();
+                this.log.warn('onend should not have more processors unless the parser was abandoned', this);
+              }
 
-            if (this.topTagProcessor.processor.end) await this.topTagProcessor.processor.end();
-
-            this.sequentialP.catch(reason => this.log.errorS(reason));
-          });
+              if (this.topTagProcessor.processor.end) await this.topTagProcessor.processor.end();
+            })
+            .catch(reason => this.log.errorS(reason))
+            .finally(this.endPResolver);
         },
         ontext: (dataStr: string): void => {
           this.sequentialP = this.sequentialP.then(() => {
@@ -137,7 +145,7 @@ export class XmlParser implements ParserInterface {
 
   async end(): Promise<void> {
     this.htmlParser.end();
-    await this.sequentialP;
+    await this.endP;
   }
 
   get parserStack(): XmlTagProcessor[] {

@@ -7,7 +7,7 @@ import { parseLine } from './Util';
 export type TestItemParent = vscode.TestItem | undefined;
 
 export interface FilePathResolver {
-  resolveAndFindSourceFilePath(file: string | undefined): Promise<string | undefined>;
+  findSourceFilePath(file: string | undefined): string | undefined;
 }
 
 export class TestItemManager {
@@ -59,7 +59,7 @@ export class TestItemManager {
     description: string | undefined | null,
     tags: vscode.TestTag[] | null,
   ): Promise<vscode.TestItem> {
-    const resolvedFile = await fileResolver.resolveAndFindSourceFilePath(file);
+    const resolvedFile = fileResolver.findSourceFilePath(file);
 
     if (item.uri?.path !== resolvedFile) {
       const newItem = this.createOrReplace(

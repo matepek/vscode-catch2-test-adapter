@@ -455,7 +455,7 @@ export class WorkspaceManager implements vscode.Disposable {
         {
           resolve: '${sourceFileMapObj}',
           rule: async (): Promise<Record<string, string>> =>
-            Object.assign({}, executable.shared.sourceFileMap, debugConfigData.launchSourceFileMap),
+            Object.assign({}, executable.shared.resolvedSourceFileMap, debugConfigData.launchSourceFileMap),
         },
       ];
 

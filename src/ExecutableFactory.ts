@@ -24,7 +24,7 @@ export class ExecutableFactory {
     private readonly _markAsSkipped: boolean,
     private readonly _runTask: RunTaskConfig,
     private readonly _spawner: Spawner,
-    private readonly _sourceFileMap: Record<string, string>,
+    private readonly _resolvedSourceFileMap: Record<string, string>,
     private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecificConfig>,
   ) {}
 
@@ -67,7 +67,7 @@ export class ExecutableFactory {
           this._markAsSkipped,
           this._runTask,
           this._spawner,
-          this._sourceFileMap,
+          this._resolvedSourceFileMap,
         );
 
         return frameworkData.create(sharedVarOfExec, match);

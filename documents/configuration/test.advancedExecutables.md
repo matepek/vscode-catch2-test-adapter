@@ -86,6 +86,23 @@ If the pattern is too general like `out/**/*test*`, it could cause unexpected ex
 which would not just increase the test-loading duration but also could have other unexpected effects.
 I suggest to have a stricter file-name convention and a corresponding pattern like `out/**/*.test.*` or `out/**/Test.*`
 
+## `sourceFileMap`
+
+Applies a simple search and replace for the file paths.
+It resolves variables
+
+Examples:
+
+```json
+  "testMate.test.advancedExecutables": [{
+    "pattern": "<default pattern>",
+    "sourceFileMap": {
+      "/path/to/be/replaced/": "/path/I/want/to/use/",
+      "/other-path-to-resolve/": "${workspaceFolder}/"
+    }
+  }]
+```
+
 ## `dependsOn`
 
 - ℹ️Executables found by pattern are automatically watched, don't need to add them to `dependsOn`.
@@ -99,7 +116,7 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
   - Paths on different drive in the same `dependsOn` array maybe won't work.
   - (If you find another corner case, feel free to open an issue. It could be handy once in the future.)
 
-## envFile
+## `envFile`
 
 Probably your best option if your executables need some initinalization of enviroment.
 Use it with `dependsOn` and then in case the `envFile` changes the tests will be retired.

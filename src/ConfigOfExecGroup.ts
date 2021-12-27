@@ -329,6 +329,8 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       }
     }
 
+    const resolvedSourceFileMap = await resolveVariablesAsync(this._sourceFileMap, varToValue);
+
     return new ExecutableFactory(
       this._shared,
       this._name,
@@ -343,7 +345,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       this._markAsSkipped === true,
       this._runTask,
       spawner,
-      this._sourceFileMap,
+      resolvedSourceFileMap,
       this._frameworkSpecific,
     );
   }

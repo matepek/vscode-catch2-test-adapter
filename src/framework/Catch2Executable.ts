@@ -182,7 +182,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
       if (matches) matches.forEach((t: string) => tags.push(t.substring(1, t.length - 1)));
     }
 
-    const resolvedFile = await this.resolveAndFindSourceFilePath(file);
+    const resolvedFile = this.findSourceFilePath(file);
 
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
@@ -597,7 +597,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
 
   async begin(): Promise<void> {
     this.builder.started();
-    const file = await this.test.exec.resolveAndFindSourceFilePath(this.attribs.filename);
+    const file = await this.test.exec.findSourceFilePath(this.attribs.filename);
     await this.test.updateFL(file, this.attribs.line);
   }
 

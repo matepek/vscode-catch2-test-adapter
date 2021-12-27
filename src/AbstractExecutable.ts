@@ -788,32 +788,14 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     let resolved = file;
 
-    for (const m in this.shared.sourceFileMap) {
-      resolved = resolved.replace(m, this.shared.sourceFileMap[m]); // Note: it just replaces the first occurence
+    for (const m in this.shared.resolvedSourceFileMap) {
+      resolved = resolved.replace(m, this.shared.resolvedSourceFileMap[m]); // Note: it just replaces the first occurence
     }
 
     resolved = pathlib.normalize(resolved);
     resolved = this._findFilePath(resolved);
 
     this.shared.log.debug('findSourceFilePath:', file, '=>', resolved);
-
-    return resolved;
-  }
-
-  async resolveAndFindSourceFilePath(file: string | undefined): Promise<string | undefined> {
-    if (typeof file != 'string') return undefined;
-
-    let resolved = file;
-
-    for (const m in this.shared.sourceFileMap) {
-      resolved = resolved.replace(m, this.shared.sourceFileMap[m]); // Note: it just replaces the first occurence
-    }
-
-    resolved = await this.resolveText(resolved);
-    resolved = pathlib.normalize(resolved);
-    resolved = this._findFilePath(resolved);
-
-    this.shared.log.debug('resolveAndFindSourceFilePath:', file, '=>', resolved);
 
     return resolved;
   }

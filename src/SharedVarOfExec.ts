@@ -18,7 +18,7 @@ export class SharedVarOfExec {
     readonly markAsSkipped: boolean,
     readonly runTask: RunTaskConfig,
     readonly spawner: Spawner,
-    readonly sourceFileMap: Record<string, string>,
+    readonly resolvedSourceFileMap: Record<string, string>,
   ) {
     this.parallelizationPool = new TaskPool(_parallelizationLimit);
   }

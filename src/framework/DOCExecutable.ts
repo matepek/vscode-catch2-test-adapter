@@ -79,7 +79,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
   ): Promise<DOCTest> => {
     const tags: string[] = suiteName ? [suiteName] : [];
     const skippedB = skipped === 'true';
-    const resolvedFile = await this.resolveAndFindSourceFilePath(file);
+    const resolvedFile = this.findSourceFilePath(file);
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
       testName,
@@ -428,7 +428,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
 
   async begin(): Promise<void> {
     this.builder.started();
-    const file = await this.test.exec.resolveAndFindSourceFilePath(this.attribs.filename);
+    const file = this.test.exec.findSourceFilePath(this.attribs.filename);
     await this.test.updateFL(file, this.attribs.line);
   }
 
