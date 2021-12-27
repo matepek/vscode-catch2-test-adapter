@@ -84,6 +84,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
       this.getTestGrouping(),
       testName,
       resolvedFile,
+      line,
       tags,
       description,
       (parent: TestItemParent) => new DOCTest(this, parent, testName, tags, resolvedFile, line, description, skippedB),

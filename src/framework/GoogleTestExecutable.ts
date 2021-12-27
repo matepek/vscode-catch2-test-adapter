@@ -113,6 +113,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
       this.getTestGrouping(),
       testName,
       resolvedFile,
+      line,
       [suiteName],
       undefined,
       (parent: TestItemParent) =>

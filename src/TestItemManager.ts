@@ -33,7 +33,6 @@ export class TestItemManager {
     if (testData) this.testItem2test.set(item, testData);
     else this.testItem2test.delete(item);
 
-    // add will replace it if it has one child with the same id
     if (parent) {
       parent.children.delete(item.id);
       parent.children.add(item);

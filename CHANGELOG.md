@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.17]
+
+### Changed
+
+- Test groups like _executable_, _suite_ and _source_ (`groupByExecutable`, `groupBySource`, `groupByTags`) will have navigation set to their first found item.
+  This features does not intended to be bullet proof but for the majority of the cases it might provide a useful link. Feel free to provide feedback [here](https://github.com/matepek/vscode-catch2-test-adapter/issues/317).
+
 ## [4.0.16] - 2021-12-17
 
 ### Changed

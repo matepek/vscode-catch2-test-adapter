@@ -45,6 +45,7 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
       this.getTestGrouping(),
       testName,
       undefined,
+      undefined,
       [],
       undefined,
       (parent: TestItemParent) => new GoogleBenchmarkTest(this, parent, testName, this.shared.failIfExceedsLimitNs),

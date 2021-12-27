@@ -87,6 +87,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     label: string,
     description: string,
     itemOfLevel: vscode.TestItem | undefined,
+    resolvedFile: string | undefined, // sets file only if not exists. can be misleading but we don't know better
+    line: undefined | string,
   ): Promise<vscode.TestItem> {
     const childrenOfLevel = this.shared.testController.getChildCollection(itemOfLevel);
     const id = idIn ?? label;
@@ -98,13 +100,12 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
         itemOfLevel,
         id,
         label,
-        undefined,
-        undefined,
+        resolvedFile,
+        line,
         undefined,
       );
       testItem.description = description;
       testItem.tags = SharedTestTags.groupArray;
-      childrenOfLevel.add(testItem);
       return testItem;
     }
   }
@@ -115,11 +116,13 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     label: string,
     description: string | undefined,
     varsToResolve: ResolveRuleAsync<string>[],
+    resolvedFile?: string | undefined,
+    line?: undefined | string,
   ): Promise<vscode.TestItem> {
     const resolvedLabel = await this.resolveText(label, ...varsToResolve);
     const resolvedDescr = description !== undefined ? await this.resolveText(description, ...varsToResolve) : '';
 
-    return this._getOrCreateChildGroup(id, resolvedLabel, resolvedDescr, itemOfLevel);
+    return this._getOrCreateChildGroup(id, resolvedLabel, resolvedDescr, itemOfLevel, resolvedFile, line);
   }
 
   private _updateVarsWithTags(tg: TestGroupingConfig, tags: string[], tagsResolveRule: ResolveRuleAsync<string>): void {
@@ -169,15 +172,16 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
    */
   private readonly _execItem: ExecutableGroup;
 
-  protected async _createTreeAndAddTest<T extends AbstractTest>(
+  protected async _createTreeAndAddTest(
     testGrouping: TestGroupingConfig,
     testId: string,
     resolvedFile: string | undefined,
+    lineInFile: string | undefined,
     tags: string[], // in case of google test it is the TestCase
     _description: string | undefined, // currently we don't use it for subtree creation
-    createTest: (parent: TestItemParent) => T,
-    updateTest: (test: T) => void,
-  ): Promise<T> {
+    createTest: (parent: TestItemParent) => TestT,
+    updateTest: (test: TestT) => void,
+  ): Promise<TestT> {
     this.shared.log.info('testGrouping', { testId, resolvedFile, tags, testGrouping });
 
     tags.sort();
@@ -245,6 +249,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
                 label,
                 description,
                 varsToResolve,
+                resolvedFile,
+                lineInFile,
               );
             } else if (g.groupUngroupedTo) {
               itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
@@ -271,38 +277,36 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
           const label = g.label ?? '${filename}';
           const description = g.description ?? '${relDirpath}${osPathSep}';
 
-          itemOfLevel = await this._resolveAndGetOrCreateChildGroup(itemOfLevel, id, label, description, varsToResolve);
+          itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+            itemOfLevel,
+            id,
+            label,
+            description,
+            varsToResolve,
+            resolvedFile,
+            lineInFile,
+          );
 
           // special item handling for exec
-          this._execItem.setItem(itemOfLevel, resolvedFile);
+          this._execItem.setItem(itemOfLevel);
         },
         groupBySource: async (g: GroupBySource): Promise<void> => {
           this._updateVarsWithTags(g, tags, tagsResolveRule);
 
           if (resolvedFile) {
+            const id = resolvedFile;
             const label = g.label ?? '${sourceRelPath[-1]}';
             const description = g.description ?? '${sourceRelPath[0:-1]}';
 
             itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
               itemOfLevel,
-              undefined,
+              id,
               label,
               description,
               varsToResolve,
+              resolvedFile,
+              lineInFile,
             );
-
-            // special item handling for source file
-            if (resolvedFile && itemOfLevel.uri === undefined) {
-              itemOfLevel = await this.shared.testController.update(
-                itemOfLevel,
-                resolvedFile,
-                undefined,
-                this,
-                null,
-                null,
-                null,
-              );
-            }
           } else if (g.groupUngroupedTo) {
             itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
               itemOfLevel,
@@ -329,6 +333,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
                   g.label ?? AbstractExecutable._tagVar,
                   g.description,
                   varsToResolve,
+                  resolvedFile,
+                  lineInFile,
                 );
               } else if (g.groupUngroupedTo) {
                 itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
@@ -351,6 +357,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
                   g.label ?? AbstractExecutable._tagVar,
                   g.description,
                   varsToResolve,
+                  resolvedFile,
+                  lineInFile,
                 );
               } else if (g.groupUngroupedTo) {
                 itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
@@ -376,7 +384,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     const found = this.shared.testController.getChildCollection(itemOfLevel).get(testId);
 
     if (found) {
-      const test = this.shared.testController.map(found) as T;
+      const test = this.shared.testController.map(found) as TestT;
       if (!test) throw Error('missing test for item');
       updateTest(test);
       this._addTest(test.id, test);
@@ -853,7 +861,7 @@ class ExecutableGroup {
   // we need to be exclusive because we save prevTests
   private _lock = Promise.resolve();
 
-  setItem(item: vscode.TestItem, _resolvedFile: string | undefined) {
+  setItem(item: vscode.TestItem) {
     if (this._item && this._item !== item) {
       this.executable.shared.log.errorS('why do we have different executableItem');
       debugBreak('why are we here?');
@@ -861,10 +869,6 @@ class ExecutableGroup {
       this._item = item;
       if (this._busyCounter > 0) this._item.busy = true;
     }
-
-    // if (resolvedFile) {
-    //   //TODO if (this._item)
-    // }
   }
 
   // makes the item spinning

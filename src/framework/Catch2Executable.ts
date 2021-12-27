@@ -188,6 +188,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
       this.getTestGrouping(),
       testName,
       resolvedFile,
+      line,
       tags,
       description,
       (parent: vscode.TestItem | undefined) =>
