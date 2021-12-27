@@ -16,7 +16,7 @@ It also have basic support for [Google Benchmark](https://github.com/google/benc
 
 ## Features / Show-Off
 
-The previous version (v3.x.y) of the extension is published as [C++ TestMate Legacy](https://github.com/matepek/testmate-cpp-legacy)
+The previous version (v3.x.y) of the extension is published as [C++ TestMate Legacy](https://github.com/matepek/vscode-catch2-test-adapter/tree/legacy)
 in case this is too buggy or you cannot wait for some old feature.
 
 - New testing API integration has just happened with a tons of improvements.
