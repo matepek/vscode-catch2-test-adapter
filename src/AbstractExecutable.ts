@@ -88,7 +88,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     description: string,
     itemOfLevel: vscode.TestItem | undefined,
     resolvedFile: string | undefined, // sets file only if not exists. can be misleading but we don't know better
-    line: undefined | string,
+    line: undefined | string | number,
   ): Promise<vscode.TestItem> {
     const childrenOfLevel = this.shared.testController.getChildCollection(itemOfLevel);
     const id = idIn ?? label;
@@ -117,7 +117,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     description: string | undefined,
     varsToResolve: ResolveRuleAsync<string>[],
     resolvedFile?: string | undefined,
-    line?: undefined | string,
+    line?: undefined | string | number,
   ): Promise<vscode.TestItem> {
     const resolvedLabel = await this.resolveText(label, ...varsToResolve);
     const resolvedDescr = description !== undefined ? await this.resolveText(description, ...varsToResolve) : '';

@@ -86,5 +86,3 @@ If you think your changes worth of a release add a new version entry to `CHANGEL
 ### TODOs
 
 - 1. run skipped directly; 2. run skipped by parent; see status: not resetted, shouldn't be
-- merge changes from legacy `git difftool -d v3.6.31 v3.6.33`
-- if parallel exec limit > 1 then prefix PID
