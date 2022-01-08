@@ -95,7 +95,7 @@ export class Configurations {
 
   getDebugConfigurationTemplate(): DebugConfigData {
     const debugConfigData = ((): DebugConfigData => {
-      const templateFromConfig = this._getD<vscode.DebugConfiguration | null | 'extensionOnly'>(
+      const templateFromConfig = this._getD<vscode.DebugConfiguration | null | 'extensionOnly' | string>(
         'debug.configTemplate',
         null,
       );
@@ -163,6 +163,41 @@ export class Configurations {
             );
 
             return { template, source: 'fromLaunchJson', launchSourceFileMap: wpLaunchConfigs[i].sourceFileMap };
+          }
+        }
+      } else if (templateFromConfig === 'extensionOnly') {
+        // do nothing, just fallthrough
+      } else if (typeof templateFromConfig === 'string' && templateFromConfig.startsWith('name:')) {
+        const nameOfLaunchConfigItem = templateFromConfig.substring('name:'.length);
+
+        const wpLaunchConfigs = vscode.workspace
+          .getConfiguration('launch', this._workspaceFolderUri)
+          .get('configurations');
+
+        if (wpLaunchConfigs && Array.isArray(wpLaunchConfigs) && wpLaunchConfigs.length > 0) {
+          for (let i = 0; i < wpLaunchConfigs.length; ++i) {
+            if (wpLaunchConfigs[i].request !== 'launch') continue;
+            if (wpLaunchConfigs[i].name !== nameOfLaunchConfigItem) continue;
+
+            // putting as much known properties as much we can and hoping for the best 🤞
+            Object.assign(template, wpLaunchConfigs[i], {
+              program: '${exec}',
+              target: '${exec}',
+              arguments: '${argsStr}',
+              args: '${argsArray}',
+              cwd: '${cwd}',
+              env: '${envObj}',
+              environment: '${envObjArray}',
+              sourceFileMap: '${sourceFileMapObj}',
+            });
+
+            this._log.info(
+              "using debug config from launch.json by name. If it doesn't work for you please read the manual: https://github.com/matepek/vscode-catch2-test-adapter#or-user-can-manually-fill-it",
+              template,
+              nameOfLaunchConfigItem,
+            );
+
+            return { template, source: 'fromLaunchJsonByName', launchSourceFileMap: wpLaunchConfigs[i].sourceFileMap };
           }
         }
       }
@@ -608,6 +643,7 @@ export class Configurations {
 
 export type DebugConfigTemplateSource =
   | 'fromLaunchJson'
+  | 'fromLaunchJsonByName'
   | 'userDefined'
   | 'vadimcn.vscode-lldb'
   | 'ms-vscode.cpptools'

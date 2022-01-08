@@ -1391,6 +1391,10 @@
           "default": null,
           "oneOf": [
             {
+              "type": "string",
+              "pattern": "^(extensionOnly|name:.+)$"
+            },
+            {
               "type": "object",
               "properties": {
                 "type": {
@@ -1440,12 +1444,6 @@
             },
             {
               "type": "null"
-            },
-            {
-              "type": "string",
-              "enum": [
-                "extensionOnly"
-              ]
             }
           ]
         },

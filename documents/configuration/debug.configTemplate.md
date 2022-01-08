@@ -30,6 +30,7 @@ If it works it is good for you.
 If it isn't.. I suggest to create your own `"testMate.cpp.debug.configTemplate"` template.
 If you read the _Related documents_ and still have a question feel free to open an issue.
 Value `"extensionOnly"` will cause to skip the search of local launch configurations.
+Value `"name:<name-of-item-in-launch.json>"` will try to use the item from local launch configurations which has the name `<name-of-item-in-launch.json>`.
 
 #### or user can manually fill it
 
