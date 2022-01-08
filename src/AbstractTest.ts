@@ -134,7 +134,11 @@ export abstract class AbstractTest {
   }
 
   private _calcTags(): vscode.TestTag[] {
-    const tags = [this._frameworkTag, ...this._tags.map(x => new vscode.TestTag(x))];
+    const tags = [
+      this._frameworkTag,
+      new vscode.TestTag(`level.` + this.subLevel),
+      ...this._tags.map(x => new vscode.TestTag(`tag."${x}"`)),
+    ];
     this.skipped && tags.push(SharedTestTags.skipped);
     if (!this._staticError) {
       this.runnable && tags.push(SharedTestTags.runnable);
@@ -174,6 +178,7 @@ export abstract class AbstractTest {
       label,
       resolvedFile,
       line,
+      this._tags,
       this._frameworkTag,
       this.subLevel + 1,
       enableRunAndDebug,
@@ -219,6 +224,7 @@ export class SubTest extends AbstractTest {
     label: string | undefined,
     file: string | undefined,
     line: string | undefined,
+    tags: string[],
     frameworkTag: vscode.TestTag,
     level: number,
     private readonly enableRunAndDebug: boolean,
@@ -233,7 +239,7 @@ export class SubTest extends AbstractTest {
       false,
       undefined,
       undefined,
-      [],
+      tags,
       frameworkTag,
       enableRunAndDebug,
       enableRunAndDebug,
