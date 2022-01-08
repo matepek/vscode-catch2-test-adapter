@@ -7,7 +7,7 @@ import { SharedVarOfExec } from '../SharedVarOfExec';
 import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { Catch2Test } from './Catch2Test';
 import { RunningExecutable } from '../RunningExecutable';
-import { SubTestTree } from '../AbstractTest';
+import { AbstractTest, SubTest, SubTestTree } from '../AbstractTest';
 import { CancellationFlag, Version } from '../Util';
 import { TestGroupingConfig } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
@@ -251,11 +251,31 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     return result;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly Readonly<Catch2Test>[]): string[] {
-    const execParams: string[] = [];
+  private _getCatch2RunParams(childrenToRun: readonly AbstractTest[]): string[] {
+    const params: string[] = [];
 
-    const testNames = childrenToRun.map(c => c.getEscapedTestName());
-    execParams.push(testNames.join(','));
+    if (childrenToRun.length == 1 && childrenToRun[0] instanceof SubTest) {
+      const subTestIds: SubTest[] = [childrenToRun[0]];
+      let p = childrenToRun[0].parentTest;
+      while (p instanceof SubTest) {
+        subTestIds.unshift(p);
+        p = p.parentTest;
+      }
+      assert(p instanceof Catch2Test);
+      params.push((p as Catch2Test).getEscapedTestName(), ...subTestIds.flatMap(s => ['-c', s.id]));
+    } else if (childrenToRun.every(v => v instanceof Catch2Test)) {
+      const testNames = childrenToRun.map(c => (c as Catch2Test).getEscapedTestName());
+      params.push(testNames.join(','));
+    } else {
+      this.log.warnS('wrong run/debug combo', childrenToRun);
+      throw Error('Cannot run/debug this combination. Only 1 section or multiple tests can be selected only.');
+    }
+
+    return params;
+  }
+
+  protected _getRunParamsInner(childrenToRun: readonly AbstractTest[]): string[] {
+    const execParams = this._getCatch2RunParams(childrenToRun);
 
     execParams.push('--reporter');
     execParams.push('xml');
@@ -274,11 +294,8 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     return execParams;
   }
 
-  protected _getDebugParamsInner(childrenToRun: readonly Catch2Test[], breakOnFailure: boolean): string[] {
-    const debugParams: string[] = [];
-
-    const testNames = childrenToRun.map(c => c.getEscapedTestName());
-    debugParams.push(testNames.join(','));
+  protected _getDebugParamsInner(childrenToRun: readonly AbstractTest[], breakOnFailure: boolean): string[] {
+    const debugParams = this._getCatch2RunParams(childrenToRun);
 
     debugParams.push('--reporter');
     debugParams.push('console');
@@ -332,7 +349,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
                 expectedToRunAndFoundTests.push(test);
               }
               const builder = new TestResultBuilder(test, testRun, runInfo.runPrefix, true);
-              return new TestCaseTagProcessor(executable.shared, builder, test, tag.attribs);
+              return new TestCaseTagProcessor(executable.shared, builder, runInfo, test, tag.attribs);
             }
           }
         },
@@ -589,6 +606,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
   constructor(
     shared: SharedVarOfExec,
     builder: TestResultBuilder,
+    private readonly runInfo: RunningExecutable,
     private readonly test: Catch2Test,
     private readonly attribs: Record<string, string>,
   ) {
@@ -602,7 +620,10 @@ class TestCaseTagProcessor extends TagProcessorBase {
   }
 
   end(): void {
-    this.builder.test.removeMissingSubTests(this.sections);
+    // if a subtest is run then we don't expect all the sections to arrive so we assume the missing ones weren't run.
+    if (this.runInfo.childrenToRun.length !== 1 || !(this.runInfo.childrenToRun[0] instanceof SubTest)) {
+      this.builder.test.removeMissingSubTests(this.sections);
+    }
     this.builder.build();
   }
 }

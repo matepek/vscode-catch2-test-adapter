@@ -152,6 +152,7 @@ export abstract class AbstractTest {
     label: string | undefined,
     file: string | undefined,
     line: string | undefined,
+    enableRunAndDebug = false,
   ): Promise<SubTest> {
     const resolvedFile = await this.exec.findSourceFilePath(file);
 
@@ -168,13 +169,14 @@ export abstract class AbstractTest {
 
     const subTest = new SubTest(
       this.exec,
-      this._item,
+      this,
       id,
       label,
       resolvedFile,
       line,
       this._frameworkTag,
       this.subLevel + 1,
+      enableRunAndDebug,
     );
 
     if (this.subLevel === 0 && this._subTests.size === 0) this._item.canResolveChildren = true;
@@ -212,17 +214,18 @@ export type SubTestTree = Map<string, SubTestTree>;
 export class SubTest extends AbstractTest {
   constructor(
     executable: AbstractExecutable,
-    parent: vscode.TestItem,
+    readonly parentTest: AbstractTest,
     id: string,
     label: string | undefined,
     file: string | undefined,
     line: string | undefined,
     frameworkTag: vscode.TestTag,
     level: number,
+    private readonly enableRunAndDebug: boolean,
   ) {
     super(
       executable,
-      parent,
+      parentTest.item,
       id,
       '⤷',
       file,
@@ -232,8 +235,8 @@ export class SubTest extends AbstractTest {
       label ?? id,
       [],
       frameworkTag,
-      false,
-      false,
+      enableRunAndDebug,
+      enableRunAndDebug,
       level,
     );
   }
@@ -244,5 +247,14 @@ export class SubTest extends AbstractTest {
 
   updateSub(label: string | undefined, file: string | undefined, line: string | undefined): void {
     super.update(null, file, line, null, label ?? this.id, null);
+  }
+
+  override async getOrCreateSubTest(
+    id: string,
+    label: string | undefined,
+    file: string | undefined,
+    line: string | undefined,
+  ): Promise<SubTest> {
+    return super.getOrCreateSubTest(id, label, file, line, this.enableRunAndDebug);
   }
 }

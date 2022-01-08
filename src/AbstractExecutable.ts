@@ -572,12 +572,16 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     }
 
     const buckets = this._splitTestSetForMultirunIfEnabled(testsToRunFinal);
-    await Promise.allSettled(
-      buckets.map(async (bucket: readonly AbstractTest[]) => {
-        const smallerTestSet = this._splitTestsToSmallEnoughSubsets(bucket); //TODO:future merge with _splitTestSetForMultirunIfEnabled
-        for (const testSet of smallerTestSet) await this._runInner(testRun, testSet, taskPool, cancellationToken);
+    const actualTestBuckets = buckets.flatMap(b => this._splitTestsToSmallEnoughSubsets(b)); //TODO:future merge with _splitTestSetForMultirunIfEnabled
+
+    const runningBucketPromises = actualTestBuckets.map(b =>
+      this._runInner(testRun, b, taskPool, cancellationToken).catch(err => {
+        vscode.window.showWarningMessage(err.toString());
       }),
     );
+
+    await Promise.allSettled(runningBucketPromises);
+
     try {
       await this.runTasks('afterEach', taskPool, cancellationToken);
     } catch (e) {
@@ -607,7 +611,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       };
 
       try {
-        return taskPool.scheduleTask(runIfNotCancelled);
+        return await taskPool.scheduleTask(runIfNotCancelled);
       } catch (err) {
         if (isSpawnBusyError(err)) {
           this.shared.log.info('executable is busy, rescheduled: 2sec', err);
