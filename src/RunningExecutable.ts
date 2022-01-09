@@ -179,7 +179,7 @@ export class RunningExecutable {
     );
   }
 
-  //TODO:future
+  //TODO:future includeArgs
   getProcStopLine(result: ExecutableRunResult, includeArgs = false): string {
     const args = includeArgs
       ? ' ' + this.process.spawnargs.map(a => "'" + a + "'").join(' ')
