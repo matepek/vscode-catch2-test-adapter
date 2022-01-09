@@ -50,14 +50,21 @@ export class Catch2Test extends AbstractTest {
       Catch2Test.isSkipped(tags, testNameAsId),
       forceIgnoreError,
       calcDescription,
-      tags,
+      tags.filter(v => v !== '.' && v !== 'hide' && v !== '!hide'), // special tags to mark tests as skipped
       SharedTestTags.catch2,
     );
   }
 
   update2(file: string | undefined, line: string | undefined, tags: string[], description: string | undefined): void {
     const calcDescription = AbstractTest.calcDescription(tags, undefined, undefined, description);
-    super.update(this.label, file, line, Catch2Test.isSkipped(tags, this.id), calcDescription, tags);
+    super.update(
+      this.label,
+      file,
+      line,
+      Catch2Test.isSkipped(tags, this.id),
+      calcDescription,
+      tags.filter(v => v !== '.' && v !== 'hide' && v !== '!hide'), // special tags to mark tests as skipped
+    );
   }
 
   private static isSkipped(tags: string[], testNameAsId: string): boolean {
