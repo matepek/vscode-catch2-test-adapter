@@ -3,30 +3,6 @@ import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';
 import { TestItemParent } from '../TestItemManager';
 
-interface Frame {
-  name: string;
-  filename: string;
-  line: number;
-}
-
-export class DOCSection implements Frame {
-  constructor(name: string, filename: string, line: number) {
-    this.name = name;
-    // some debug adapter on ubuntu starts debug session in shell,
-    // this prevents the SECTION("`pwd`") to be executed
-    this.name = this.name.replace(/`/g, '\\`');
-
-    this.filename = filename;
-    this.line = line;
-  }
-
-  readonly name: string;
-  readonly filename: string;
-  readonly line: number;
-  readonly children: DOCSection[] = [];
-  failed = false;
-}
-
 export class DOCTest extends AbstractTest {
   constructor(
     executable: AbstractExecutable,
@@ -42,7 +18,7 @@ export class DOCTest extends AbstractTest {
       executable,
       parent,
       testNameAsId,
-      testNameAsId.startsWith('  Scenario:') ? testNameAsId.trimLeft() : testNameAsId,
+      testNameAsId.startsWith('  Scenario:') ? testNameAsId.trimStart() : testNameAsId,
       file,
       line,
       skipped,

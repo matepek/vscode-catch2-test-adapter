@@ -255,14 +255,15 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     const params: string[] = [];
 
     if (childrenToRun.length == 1 && childrenToRun[0] instanceof SubTest) {
-      const subTestIds: SubTest[] = [childrenToRun[0]];
+      const subTests: SubTest[] = [childrenToRun[0]];
       let p = childrenToRun[0].parentTest;
       while (p instanceof SubTest) {
-        subTestIds.unshift(p);
+        subTests.unshift(p);
         p = p.parentTest;
       }
       assert(p instanceof Catch2Test);
-      params.push((p as Catch2Test).getEscapedTestName(), ...subTestIds.flatMap(s => ['-c', s.id]));
+      params.push((p as Catch2Test).getEscapedTestName());
+      params.push(...subTests.flatMap(s => ['-c', s.id]));
     } else if (childrenToRun.every(v => v instanceof Catch2Test)) {
       const testNames = childrenToRun.map(c => (c as Catch2Test).getEscapedTestName());
       params.push(testNames.join(','));
@@ -639,7 +640,13 @@ class SectionProcessor extends TagProcessorBase {
   ) {
     if (typeof attribs.name !== 'string' || !attribs.name) throw Error('Section must have name attribute');
 
-    const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, undefined, attribs.filename, attribs.line);
+    const subTest = await testBuilder.test.getOrCreateSubTest(
+      attribs.name,
+      undefined,
+      attribs.filename,
+      attribs.line,
+      true,
+    );
     const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
 
     let subSections = sections.get(attribs.name);

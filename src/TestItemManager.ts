@@ -79,19 +79,19 @@ export class TestItemManager {
       newItem.canResolveChildren = item.canResolveChildren;
 
       return newItem;
+    } else {
+      if (line === undefined) {
+        if (item.range) item.range = undefined;
+      } else if (item.range === undefined || (item.range.start.line + 1).toString() !== line) {
+        const lineP = parseLine(line);
+        if (lineP) item.range = new vscode.Range(lineP - 1, 0, lineP, 0);
+      }
+
+      if (label !== null && item.label !== label) item.label = label;
+      if (description !== null && item.description !== description) item.description = description;
+      if (tags !== null) item.tags = tags;
+
+      return item;
     }
-
-    if (line === undefined) {
-      if (item.range) item.range = undefined;
-    } else if (item.range === undefined || (item.range.start.line + 1).toString() !== line) {
-      const lineP = parseLine(line);
-      if (lineP) item.range = new vscode.Range(lineP - 1, 0, lineP, 0);
-    }
-
-    if (label !== null && item.label !== label) item.label = label;
-    if (description !== null && item.description !== description) item.description = description;
-    if (tags !== null) item.tags = tags;
-
-    return item;
   }
 }

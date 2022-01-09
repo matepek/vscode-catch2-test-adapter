@@ -252,7 +252,7 @@ export class SubTest extends AbstractTest {
   }
 
   updateSub(label: string | undefined, file: string | undefined, line: string | undefined): void {
-    super.update(null, file, line, null, label ?? this.id, null);
+    super.update(label ? '⤷ ' + label : null, file, line, null, null, null);
   }
 
   override async getOrCreateSubTest(

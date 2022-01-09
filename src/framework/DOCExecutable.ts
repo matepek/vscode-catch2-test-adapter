@@ -13,7 +13,7 @@ import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { assert, debugBreak } from '../util/DevelopmentHelper';
 import { TestResultBuilder } from '../TestResultBuilder';
 import { TestItemParent } from '../TestItemManager';
-import { SubTestTree } from '../AbstractTest';
+import { AbstractTest, SubTest, SubTestTree } from '../AbstractTest';
 import { pipeProcess2Parser } from '../util/ParserInterface';
 
 export class DOCExecutable extends AbstractExecutable<DOCTest> {
@@ -143,35 +143,49 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     return result;
   }
 
-  private _getRunParamsCommon(childrenToRun: readonly Readonly<DOCTest>[]): string[] {
-    const execParams: string[] = [];
+  private _getDocTestRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+    const params: string[] = [];
 
-    const testNames = childrenToRun.map(c => c.getEscapedTestName());
-    execParams.push('--test-case=' + testNames.join(','));
-    execParams.push('--no-skip=true');
-
-    execParams.push('--case-sensitive=true');
-    execParams.push('--duration=true');
-
-    if (this.shared.isNoThrow) execParams.push('--no-throw=true');
-
-    if (this.shared.rngSeed !== null) {
-      execParams.push('--order-by=rand');
-      execParams.push('--rand-seed=' + this.shared.rngSeed.toString());
+    if (childrenToRun.length == 1 && childrenToRun[0] instanceof SubTest) {
+      const subTests: SubTest[] = [childrenToRun[0]];
+      let p = childrenToRun[0].parentTest;
+      while (p instanceof SubTest) {
+        subTests.unshift(p);
+        p = p.parentTest;
+      }
+      assert(p instanceof DOCTest);
+      params.push('--test-case=' + (p as DOCTest).getEscapedTestName());
+      params.push('--subcase=' + subTests.map(s => s.id.replaceAll(',', '?')).join(','));
+      params.push('--subcase-filter-levels=' + subTests.length);
+    } else if (childrenToRun.every(v => v instanceof DOCTest)) {
+      const testNames = childrenToRun.map(c => (c as DOCTest).getEscapedTestName());
+      params.push('--test-case=' + testNames.join(','));
+    } else {
+      this.log.warnS('wrong run/debug combo', childrenToRun);
+      throw Error('Cannot run/debug this combination. Only 1 section or multiple tests can be selected only.');
     }
 
-    return execParams;
+    params.push('--no-skip=true');
+    params.push('--case-sensitive=true');
+    params.push('--duration=true');
+    if (this.shared.isNoThrow) params.push('--no-throw=true');
+    if (this.shared.rngSeed !== null) {
+      params.push('--order-by=rand');
+      params.push('--rand-seed=' + this.shared.rngSeed.toString());
+    }
+
+    return params;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly Readonly<DOCTest>[]): string[] {
-    const execParams: string[] = this._getRunParamsCommon(childrenToRun);
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+    const execParams: string[] = this._getDocTestRunParams(childrenToRun);
     execParams.push('--reporters=xml');
     return execParams;
   }
 
   // eslint-disable-next-line
-  protected _getDebugParamsInner(childrenToRun: readonly Readonly<DOCTest>[], breakOnFailure: boolean): string[] {
-    const execParams: string[] = this._getRunParamsCommon(childrenToRun);
+  protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
+    const execParams: string[] = this._getDocTestRunParams(childrenToRun);
     execParams.push('--reporters=console');
     execParams.push('--no-breaks=' + (breakOnFailure ? 'false' : 'true'));
     return execParams;
@@ -197,6 +211,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
             case 'TestSuite':
               return new TestSuiteTagProcessor(
                 executable.shared,
+                runInfo,
                 testRun,
                 runInfo.runPrefix,
                 (testNameAsId: string) => executable._getTest(testNameAsId),
@@ -239,6 +254,7 @@ type Option = Record<string, string> & { rand_seed?: string };
 class TestSuiteTagProcessor implements XmlTagProcessor {
   constructor(
     private readonly shared: SharedVarOfExec,
+    private readonly runInfo: RunningExecutable,
     private readonly testRun: vscode.TestRun,
     private readonly runPrefix: string,
     private readonly findTest: (testNameAsId: string) => DOCTest | undefined,
@@ -287,7 +303,7 @@ class TestSuiteTagProcessor implements XmlTagProcessor {
         if (skipped) return;
 
         const builder = new TestResultBuilder(test, this.testRun, this.runPrefix, true);
-        return new TestCaseTagProcessor(this.shared, builder, test as DOCTest, tag.attribs, this.options);
+        return new TestCaseTagProcessor(this.shared, builder, this.runInfo, test as DOCTest, tag.attribs, this.options);
       }
     }
   }
@@ -419,6 +435,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
   constructor(
     shared: SharedVarOfExec,
     builder: TestResultBuilder,
+    private readonly runInfo: RunningExecutable,
     private readonly test: DOCTest,
     private readonly attribs: Record<string, string>,
     _option: Option,
@@ -481,7 +498,10 @@ class TestCaseTagProcessor extends TagProcessorBase {
 
       this.builder[result]();
 
-      this.builder.test.removeMissingSubTests(this.subCases);
+      // if a subtest is run then we don't expect all the sections to arrive so we assume the missing ones weren't run.
+      if (this.runInfo.childrenToRun.length !== 1 || !(this.runInfo.childrenToRun[0] instanceof SubTest)) {
+        this.builder.test.removeMissingSubTests(this.subCases);
+      }
 
       this.builder.build();
     } else {
@@ -508,7 +528,13 @@ class SubCaseProcessor extends TagProcessorBase {
       if (m) label = m[1];
     }
 
-    const subTest = await testBuilder.test.getOrCreateSubTest(attribs.name, label, attribs.filename, attribs.line);
+    const subTest = await testBuilder.test.getOrCreateSubTest(
+      attribs.name,
+      label,
+      attribs.filename,
+      attribs.line,
+      true,
+    );
     const subTestBuilder = testBuilder.createSubTestBuilder(subTest);
     subTestBuilder.passed(); // set as passed and make it failed lateer if error happens
 

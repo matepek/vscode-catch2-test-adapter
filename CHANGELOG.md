@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.21]
+
+### Added
+
+- enable run and debug option for _doctest_ subtest
+
+### Fixed
+
+- issue which repeated the label as description for SubTests
+
 ## [4.0.20] - 2022-01-08
 
 ### Added

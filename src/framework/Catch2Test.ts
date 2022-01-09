@@ -1,4 +1,4 @@
-import { AbstractTest, SubTest } from '../AbstractTest';
+import { AbstractTest } from '../AbstractTest';
 import { Version } from '../Util';
 import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';
@@ -67,15 +67,6 @@ export class Catch2Test extends AbstractTest {
   getEscapedTestName(): string {
     /* ',' and '[' has special meaning */
     return this.id.replace('\\', '\\\\').replace(/,/g, '\\,').replace(/\[/g, '\\[');
-  }
-
-  override async getOrCreateSubTest(
-    id: string,
-    label: string | undefined,
-    file: string | undefined,
-    line: string | undefined,
-  ): Promise<SubTest> {
-    return super.getOrCreateSubTest(id, label, file, line, true);
   }
 }
 

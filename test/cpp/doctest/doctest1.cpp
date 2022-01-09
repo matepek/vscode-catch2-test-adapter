@@ -55,6 +55,7 @@ SCENARIO("vectors can be sized and resized") {
       v.resize(10);
 
       THEN("the size and capacity change") {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         CHECK(v.size() == 20);
         CHECK(v.capacity() >= 10);
       }
@@ -63,6 +64,7 @@ SCENARIO("vectors can be sized and resized") {
       v.resize(0);
 
       THEN("the size changes but not capacity") {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         CHECK(v.size() == 0);
         CHECK(v.capacity() >= 5);
       }
