@@ -9,7 +9,7 @@ import { SharedVarOfExec } from '../SharedVarOfExec';
 import { RunningExecutable } from '../RunningExecutable';
 import { AbstractTest } from '../AbstractTest';
 import { CancellationToken } from '../Util';
-import { TestGroupingConfig, testGroupIterator } from '../TestGroupingInterface';
+import { TestGroupingConfig } from '../TestGroupingInterface';
 import { TestResultBuilder } from '../TestResultBuilder';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
 import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
@@ -174,30 +174,14 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
       }
     };
 
-    // for gtest the source file is only available in the xml output file
-    let canLoadOutput = true;
-    for (const [groupingType] of testGroupIterator(this.getTestGrouping())) {
-      if (groupingType === 'groupBySource') {
-        canLoadOutput = false;
-        break;
-      }
-    }
-
     try {
-      if (canLoadOutput) {
-        await this._reloadFromString(googleTestListProcess.stdout, googleTestListProcess.stderr, cancellationToken);
-        await loadFromFileIfHas();
-      } else {
-        const closedP = new Promise(r => googleTestListProcess.once('close', r));
-        const [stdout, stderr] = await pipeOutputStreams2String(
-          googleTestListProcess.stdout,
-          googleTestListProcess.stderr,
-        );
-        await closedP;
-        const loadedFromFile = await loadFromFileIfHas();
-        if (!loadedFromFile) {
-          await this._reloadFromString(stdout, stderr, cancellationToken);
-        }
+      const [stdout, stderr] = await pipeOutputStreams2String(
+        googleTestListProcess.stdout,
+        googleTestListProcess.stderr,
+      );
+      const loadedFromFile = await loadFromFileIfHas();
+      if (!loadedFromFile) {
+        await this._reloadFromString(stdout, stderr, cancellationToken);
       }
     } catch (e) {
       this.shared.log.warn('reloadChildren error:', e);

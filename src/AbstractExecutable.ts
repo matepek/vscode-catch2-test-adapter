@@ -8,7 +8,7 @@ import { AbstractTest } from './AbstractTest';
 import { TaskPool } from './util/TaskPool';
 import { ExecutableRunResultValue, RunningExecutable } from './RunningExecutable';
 import { promisify } from 'util';
-import { Version, getAbsolutePath, CancellationToken, reindentStr } from './Util';
+import { Version, getAbsolutePath, CancellationToken, reindentStr, parseLine } from './Util';
 import {
   resolveOSEnvironmentVariables,
   createPythonIndexerForPathVariable,
@@ -186,6 +186,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     tags.sort();
 
+    const aboveLineInFile = parseLine(lineInFile, undefined, -1);
+
     const tagsResolveRule: ResolveRuleAsync<string> = {
       resolve: AbstractExecutable._tagVar,
       rule: '', // will be filled soon enough
@@ -250,7 +252,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
                 description,
                 varsToResolve,
                 resolvedFile,
-                lineInFile,
+                aboveLineInFile,
               );
             } else if (g.groupUngroupedTo) {
               itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
@@ -284,7 +286,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
             description,
             varsToResolve,
             resolvedFile,
-            lineInFile,
+            aboveLineInFile,
           );
 
           // special item handling for exec
@@ -305,7 +307,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
               description,
               varsToResolve,
               resolvedFile,
-              lineInFile,
+              aboveLineInFile,
             );
           } else if (g.groupUngroupedTo) {
             itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
@@ -334,7 +336,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
                   g.description,
                   varsToResolve,
                   resolvedFile,
-                  lineInFile,
+                  aboveLineInFile,
                 );
               } else if (g.groupUngroupedTo) {
                 itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
@@ -358,7 +360,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
                   g.description,
                   varsToResolve,
                   resolvedFile,
-                  lineInFile,
+                  aboveLineInFile,
                 );
               } else if (g.groupUngroupedTo) {
                 itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
