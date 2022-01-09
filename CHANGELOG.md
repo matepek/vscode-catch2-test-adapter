@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.22]
+
+### Fixed
+
+- missing subtest name in output window
+
 ## [4.0.21] - 2022-01-09
 
 ### Added

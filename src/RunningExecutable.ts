@@ -175,14 +175,16 @@ export class RunningExecutable {
 
   getProcStartLine(): string {
     return (
-      this.runPrefix + ansi.dim(`Started PID#${this.pid} - \`${this.process.spawnfile}\`\r\n`) + this.runPrefix + '\r\n'
+      this.runPrefix + ansi.dim(`Started PID#${this.pid} - '${this.process.spawnfile}'\r\n`) + this.runPrefix + '\r\n'
     );
   }
 
-  getProcStopLine(result: ExecutableRunResult): string {
-    return (
-      this.runPrefix + ansi.dim(`Stopped PID#${this.pid} - ${result.toString()} - \`${this.process.spawnfile}\`\r\n`)
-    );
+  //TODO:future
+  getProcStopLine(result: ExecutableRunResult, includeArgs = false): string {
+    const args = includeArgs
+      ? ' ' + this.process.spawnargs.map(a => "'" + a + "'").join(' ')
+      : "'" + this.process.spawnfile + "'";
+    return this.runPrefix + ansi.dim(`Stopped PID#${this.pid} - ${result.toString()} - ${args}\r\n`);
   }
 }
 

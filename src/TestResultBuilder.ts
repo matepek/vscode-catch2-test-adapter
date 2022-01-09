@@ -178,7 +178,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   private coloredResult(): string {
     switch (this._result) {
       case 'passed':
-        return '[' + ansi.green('  PASSED  ') + ']';
+        return '[' + ansi.greenBright('       OK ') + ']';
       case 'failed':
         return '[' + ansi.bold.red('  FAILED  ') + ']';
       case 'skipped':

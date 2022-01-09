@@ -247,10 +247,6 @@ export class SubTest extends AbstractTest {
     );
   }
 
-  override get label(): string {
-    return this.item.description!;
-  }
-
   updateSub(label: string | undefined, file: string | undefined, line: string | undefined): void {
     super.update(label ? '⤷ ' + label : null, file, line, null, null, null);
   }
