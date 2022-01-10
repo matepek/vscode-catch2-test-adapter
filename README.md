@@ -34,8 +34,6 @@ in case this is too buggy or you cannot wait for some old feature.
 ### Missing features (coming in the future if possible):
 
 - Retire tests and "Autorun" them.
-- Running/debugging Sections and SubCases.
-- Output colorization (without changing other output window).
 
 ### Screenshots
 
