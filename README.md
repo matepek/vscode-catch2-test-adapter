@@ -26,11 +26,6 @@ in case this is too buggy or you cannot wait for some old feature.
 - Sorts tests and suites (_testExplorer.sort_).
 - Supports popular **debuggers** such as `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools` out of the box.
 
-### Upcoming features:
-
-- Reloads test list of an executable if it is recompiled. (_Hint: Right click -> Enable Autorun_)
-- Streamed loading of tests.
-
 ### Missing features (coming in the future if possible):
 
 - Retire tests and "Autorun" them.
