@@ -21,6 +21,7 @@ import { LoggerWrapper } from './LoggerWrapper';
 import { debugBreak } from './util/DevelopmentHelper';
 import { FrameworkType } from './framework/Framework';
 import { readFileSync } from 'fs';
+import { getModiTime } from './Util';
 
 ///
 
@@ -169,6 +170,10 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
             w.onAll((fsPath: string): void => {
               this._shared.log.info('dependsOn watcher event:', fsPath);
+              getModiTime(fsPath).then(modiTime => {
+                for (const exec of this._executables.values())
+                  exec.reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime);
+              });
               //TODO:future this._shared.sendRetireEvent(this._executables.values());
             });
           } else {

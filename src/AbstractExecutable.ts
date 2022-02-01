@@ -1,5 +1,4 @@
 import * as pathlib from 'path';
-import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { EOL } from 'os';
 
@@ -8,7 +7,7 @@ import { AbstractTest } from './AbstractTest';
 import { TaskPool } from './util/TaskPool';
 import { ExecutableRunResultValue, RunningExecutable } from './RunningExecutable';
 import { promisify } from 'util';
-import { Version, getAbsolutePath, CancellationToken, reindentStr, parseLine } from './Util';
+import { Version, getAbsolutePath, CancellationToken, reindentStr, parseLine, getModiTime } from './Util';
 import {
   resolveOSEnvironmentVariables,
   createPythonIndexerForPathVariable,
@@ -432,13 +431,6 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     );
   }
 
-  private _getModiTime(): Promise<number | undefined> {
-    return promisify(fs.stat)(this.shared.path).then(
-      stat => stat.mtimeMs,
-      () => undefined,
-    );
-  }
-
   private _splitTestSetForMultirunIfEnabled(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
     const parallelizationLimit = this.shared.parallelizationPool.maxTaskCount;
 
@@ -509,7 +501,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return this.shared.prependTestRunningArgs.concat(this._getDebugParamsInner(childrenToRun, breakOnFailure));
   }
 
-  reloadTests(taskPool: TaskPool, cancellationToken: CancellationToken): Promise<void> {
+  reloadTests(taskPool: TaskPool, cancellationToken: CancellationToken, lastModiTime?: number): Promise<void> {
     if (cancellationToken.isCancellationRequested) return Promise.resolve();
 
     // mutually exclusive lock
@@ -519,9 +511,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
         this.shared.log.info('reloadTests', this.frameworkName, this.frameworkVersion, this.shared.path);
 
-        const lastModiTime = await this._getModiTime();
+        lastModiTime = lastModiTime ?? (await getModiTime(this.shared.path));
 
-        if (this._lastReloadTime === undefined || lastModiTime === undefined || this._lastReloadTime !== lastModiTime) {
+        if (this._lastReloadTime === undefined || lastModiTime === undefined || this._lastReloadTime < lastModiTime) {
           this._lastReloadTime = lastModiTime;
 
           const prevTests = this._tests;

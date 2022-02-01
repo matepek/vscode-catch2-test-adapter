@@ -277,3 +277,10 @@ export function getAbsolutePath(filePath: string, directories: Iterable<string>)
 
   return filePath;
 }
+
+export function getModiTime(path: string): Promise<number | undefined> {
+  return promisify(fs.stat)(path).then(
+    stat => stat.mtimeMs,
+    () => undefined,
+  );
+}
