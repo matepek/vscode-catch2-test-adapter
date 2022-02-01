@@ -94,7 +94,7 @@ const frameworkDatas: Record<
 > = {
   catch2: {
     priority: 10,
-    regex: /Catch v(\d+)\.(\d+)\.(\d+)\s?/,
+    regex: /Catch2? v(\d+)\.(\d+)\.(\d+)\s?/,
     create: (sharedVarOfExec: SharedVarOfExec, match: RegExpMatchArray) =>
       new Catch2Executable(sharedVarOfExec, parseVersion123(match)),
   },
