@@ -285,8 +285,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
             label,
             description,
             varsToResolve,
-            resolvedFile,
-            aboveLineInFile,
+            undefined,
+            undefined,
           );
 
           // special item handling for exec

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.23]
+
+### Changed
+
+- Removed location added to executabe test item node. [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/325)
+
 ## [4.0.22] - 2022-01-09
 
 ### Fixed
