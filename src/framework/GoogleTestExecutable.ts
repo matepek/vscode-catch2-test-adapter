@@ -232,39 +232,50 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     const data = { lastBuilder: undefined as TestResultBuilder | undefined };
     // we dont need this now: const rngSeed: number | undefined = typeof this._shared.rngSeed === 'number' ? this._shared.rngSeed : undefined;
 
-    const parser = new TextStreamParser(this.shared.log, {
-      async online(line: string): Promise<void | LineProcessor> {
-        const beginMatch = testBeginRe.exec(line);
-        if (beginMatch) {
-          const testNameAsId = beginMatch[1];
-          const testName = beginMatch[3];
-          const suiteName = beginMatch[2];
-          let test = executable._getTest(testNameAsId);
-          if (!test) {
-            log.info('TestCase not found in children', testNameAsId);
-            test = await executable._createAndAddTest(testName, suiteName, undefined, undefined, undefined, undefined);
-            unexpectedTests.push(test);
+    const parser = new TextStreamParser(
+      this.shared.log,
+      {
+        async online(line: string): Promise<void | LineProcessor> {
+          const beginMatch = testBeginRe.exec(line);
+          if (beginMatch) {
+            const testNameAsId = beginMatch[1];
+            const testName = beginMatch[3];
+            const suiteName = beginMatch[2];
+            let test = executable._getTest(testNameAsId);
+            if (!test) {
+              log.info('TestCase not found in children', testNameAsId);
+              test = await executable._createAndAddTest(
+                testName,
+                suiteName,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+              );
+              unexpectedTests.push(test);
+            } else {
+              expectedToRunAndFoundTests.push(test);
+            }
+            data.lastBuilder = new TestResultBuilder(test, testRun, runInfo.runPrefix, false);
+            return new TestCaseProcessor(executable.shared, testEndRe(test.id), data.lastBuilder);
+          } else if (line.startsWith('[----------] Global test environment tear-down')) {
+            return new NoOpLineProcessor();
           } else {
-            expectedToRunAndFoundTests.push(test);
+            if (
+              line === '' ||
+              ['Running main()', 'Note: Google Test filter =', '[==========]', '[----------]'].some(x =>
+                line.startsWith(x),
+              )
+            ) {
+              //skip
+            } else {
+              testRun.appendOutput(runInfo.runPrefix + line + '\r\n');
+            }
           }
-          data.lastBuilder = new TestResultBuilder(test, testRun, runInfo.runPrefix, false);
-          return new TestCaseProcessor(executable.shared, testEndRe(test.id), data.lastBuilder);
-        } else if (line.startsWith('[----------] Global test environment tear-down')) {
-          return new NoOpLineProcessor();
-        } else {
-          if (
-            line === '' ||
-            ['Running main()', 'Note: Google Test filter =', '[==========]', '[----------]'].some(x =>
-              line.startsWith(x),
-            )
-          ) {
-            //skip
-          } else {
-            testRun.appendOutput(runInfo.runPrefix + line + '\r\n');
-          }
-        }
+        },
       },
-    });
+      false,
+    );
 
     await pipeProcess2Parser(runInfo, parser, (data: string) =>
       executable.processStdErr(testRun, runInfo.runPrefix, data),
@@ -444,6 +455,8 @@ class TestCaseProcessor implements LineProcessor {
           break;
       }
     }
+
+    this.testCaseShared.builder.addOutputLine(1, line);
   }
 }
 

@@ -229,7 +229,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
   private async _createSuiteByUri(filePath: string): Promise<ExecutableFactory> {
     const relPath = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
-    let varToValue: ResolveRuleAsync[] = [];
+    const varToValue: ResolveRuleAsync[] = [];
 
     const subPath = createPythonIndexerForPathVariable;
 
@@ -242,7 +242,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       const baseFilename = pathlib.basename(filename, extFilename);
       const relDirpath = pathlib.dirname(relPath);
 
-      varToValue = [
+      varToValue.push(
         { resolve: '${filename}', rule: filename }, // redundant but might faster
         { resolve: '${relDirpath}', rule: relDirpath }, // redundant but might faster
         subFilename('filename', filename),
@@ -253,7 +253,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
         { resolve: '${extFilename}', rule: extFilename },
         { resolve: '${baseFilename}', rule: baseFilename },
         ...this._shared.varToValue,
-      ];
+      );
     } catch (e) {
       this._shared.log.exceptionS(e);
     }

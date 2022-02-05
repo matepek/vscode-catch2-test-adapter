@@ -353,7 +353,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     } else if (processor === null) {
       // known tag, do nothing
     } else {
-      this.builder.addOutputLine(1, '> ' + dataTrimmed);
+      this.builder.addOutputLine(1, dataTrimmed);
     }
   }
 

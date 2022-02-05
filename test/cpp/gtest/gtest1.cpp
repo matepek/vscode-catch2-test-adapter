@@ -143,3 +143,9 @@ int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
+
+TEST(Std, NoOutput)
+{
+    std::cout << "cout\n"; // (1)
+    std::cerr << "cerr\n"; // (2)
+}

@@ -3,7 +3,11 @@ import { debugBreak } from './DevelopmentHelper';
 import { ParserInterface } from './ParserInterface';
 
 export class TextStreamParser implements ParserInterface {
-  constructor(private readonly log: LoggerWrapper, rootProcessor: RootLineProcessor) {
+  constructor(
+    private readonly log: LoggerWrapper,
+    rootProcessor: RootLineProcessor,
+    private readonly handleStdErr = true,
+  ) {
     this.topProcessor = rootProcessor;
     this.alwaysonlineCb = rootProcessor.alwaysonline;
   }
@@ -52,9 +56,9 @@ export class TextStreamParser implements ParserInterface {
     }
   }
 
-  writeStdErr(data: string): Promise<true> {
-    this.write(data);
-    return Promise.resolve(true);
+  writeStdErr(data: string): Promise<boolean> {
+    if (this.handleStdErr) this.write(data);
+    return Promise.resolve(this.handleStdErr);
   }
 
   private _process(): void {

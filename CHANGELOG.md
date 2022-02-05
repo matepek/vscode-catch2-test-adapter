@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.25]
+
+- fixed GoogleTest cout and cerr parsin [issue#329](https://github.com/matepek/vscode-catch2-test-adapter/issues/329) and [issue#323](https://github.com/matepek/vscode-catch2-test-adapter/issues/323).
+
 ## [4.0.24] - 2022-02-01
 
 ## Changed

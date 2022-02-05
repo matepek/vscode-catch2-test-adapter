@@ -112,16 +112,7 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
-  "todo-tree.general.tags": [
-    "BUG",
-    "HACK",
-    "FIXME",
-    "TODO",
-    "TODO:future",
-    "TODO:nice",
-    "TODO:release",
-    "XXX"
-  ],
+  "todo-tree.general.tags": ["BUG", "HACK", "FIXME", "TODO", "TODO:future", "TODO:nice", "TODO:release", "XXX"],
   "todo-tree.highlights.customHighlight": {
     "TODO:future": {
       "type": "none"
@@ -136,5 +127,8 @@
       "type": "tag",
       "background": "yellow"
     }
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "DotJoshJohnson.xml"
   }
 }
