@@ -19,6 +19,7 @@
     "skipLibCheck": true,
     "experimentalDecorators": true,
     "useUnknownInCatchVariables": false,
+    "allowSyntheticDefaultImports": true,
     "typeRoots": ["node_modules/@types", "src/@types"]
   },
   "include": ["src/main.ts", "test/**/*.ts"],

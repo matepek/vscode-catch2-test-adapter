@@ -1,6 +1,5 @@
-import { promisify } from 'util';
-import * as psnode from 'ps-node';
 import { LoggerWrapper } from '../LoggerWrapper';
+import find_process = require('find-process');
 
 ///
 
@@ -46,14 +45,14 @@ export class BuildProcessChecker {
 
   private async _refresh(): Promise<void> {
     try {
-      const processes = await promisify(psnode.lookup)({
-        command: this._pattern,
-      });
+      const processes = await find_process('name', this._pattern);
 
       this._lastChecked = Date.now();
 
       if (processes.length > 0) {
-        this._log.info('Found running build related processes: ' + processes.map(x => x.command).join(', '));
+        this._log.info(
+          'Found running build related processes: ' + processes.map(x => JSON.stringify(x, undefined, 0)).join(', '),
+        );
       } else {
         this._log.info('Not found running build related process');
         this._finishedResolver();
@@ -62,6 +61,9 @@ export class BuildProcessChecker {
       }
     } catch (reason) {
       this._log.exceptionS(reason);
+      clearInterval(this._timerId!);
+      this._timerId = undefined;
+      this._finishedResolver();
     }
   }
 }

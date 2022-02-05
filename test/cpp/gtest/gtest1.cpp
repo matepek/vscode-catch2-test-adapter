@@ -146,6 +146,6 @@ int main(int argc, char **argv) {
 
 TEST(Std, NoOutput)
 {
-    std::cout << "cout\n"; // (1)
-    std::cerr << "cerr\n"; // (2)
+    std::cout << "cout\n";
+    std::cerr << "cerr\n";
 }
