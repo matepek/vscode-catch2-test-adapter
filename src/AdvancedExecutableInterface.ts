@@ -18,7 +18,7 @@ export type AdvancedExecutableConfig = {
   parallelizationLimit?: number;
   strictPattern?: boolean;
   markAsSkipped?: boolean;
-  waitForBuildProcess?: boolean;
+  waitForBuildProcess?: boolean | string;
   catch2?: FrameworkSpecificConfig;
   gtest?: FrameworkSpecificConfig;
   doctest?: FrameworkSpecificConfig;

@@ -39,7 +39,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     private readonly _parallelizationLimit: number,
     private readonly _strictPattern: boolean | undefined,
     private readonly _markAsSkipped: boolean | undefined,
-    private readonly _waitForBuildProcess: boolean | undefined,
+    private readonly _waitForBuildProcess: boolean | string | undefined,
     private readonly _executionWrapper: ExecutionWrapperConfig | undefined,
     private readonly _sourceFileMap: Record<string, string>,
     private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecificConfig>,
@@ -465,7 +465,11 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     }
 
     if (isFileExistsAndExecutable) {
-      if (this._waitForBuildProcess) await this._shared.buildProcessChecker.resolveAtFinish();
+      if (this._waitForBuildProcess) {
+        await this._shared.buildProcessChecker.resolveAtFinish(
+          typeof this._waitForBuildProcess === 'string' ? this._waitForBuildProcess : undefined,
+        );
+      }
 
       try {
         await executable.reloadTests(this._shared.taskPool, this._shared.cancellationToken);

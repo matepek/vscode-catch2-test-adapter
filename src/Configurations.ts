@@ -539,7 +539,7 @@ export class Configurations {
 
         const markAsSkipped: boolean | undefined = obj.markAsSkipped;
 
-        const waitForBuildProcess: boolean | undefined = obj.waitForBuildProcess;
+        const waitForBuildProcess: boolean | string | undefined = obj.waitForBuildProcess;
 
         const defaultTestGrouping = obj.testGrouping;
 
