@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+- changing the `testMate.cpp.discovery.runtimeLimit` option used to take effect only after reloading the window; now it takes effect immediately
+
 ## [4.0.25] - 2022-02-05
 
 ### Fixed
