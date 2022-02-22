@@ -9,8 +9,8 @@ export class BuildProcessChecker {
 
   private readonly _checkIntervalMillis = 2000;
   // https://en.wikipedia.org/wiki/List_of_compilers#C++_compilers
-  private readonly _pattern =
-    /[/\\](cmake|make|ninja|cl|c\+\+|ld|clang|gcc|g\+\+|link|icc|armcc|armclang)(-[^/\\]+)?(\.exe)?$/;
+  private readonly _defaultPattern =
+    /(^|[/\\])(cmake|make|ninja|cl|c\+\+|ld|clang|clang\+\+|gcc|g\+\+|link|icc|armcc|armclang)(-[^/\\]+)?(\.exe)?$/;
   private _lastChecked = 0;
   private _finishedP = Promise.resolve();
   private _finishedResolver = (): void => {}; // eslint-disable-line
@@ -21,7 +21,7 @@ export class BuildProcessChecker {
     this._finishedResolver();
   }
 
-  resolveAtFinish(): Promise<void> {
+  resolveAtFinish(pattern: string | undefined): Promise<void> {
     if (this._timerId !== undefined) {
       return this._finishedP;
     }
@@ -37,15 +37,16 @@ export class BuildProcessChecker {
     });
 
     this._log.info('Checking running build related processes');
-    this._timerId = setInterval(this._refresh.bind(this), this._checkIntervalMillis);
-    this._refresh();
+    const patternToUse = pattern ? RegExp(pattern) : this._defaultPattern;
+    this._timerId = global.setInterval(this._refresh.bind(this, patternToUse), this._checkIntervalMillis);
+    this._refresh(patternToUse);
 
     return this._finishedP;
   }
 
-  private async _refresh(): Promise<void> {
+  private async _refresh(pattern: RegExp): Promise<void> {
     try {
-      const processes = await find_process('name', this._pattern);
+      const processes = await find_process('name', pattern);
 
       this._lastChecked = Date.now();
 

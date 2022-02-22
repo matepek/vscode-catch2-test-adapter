@@ -345,8 +345,11 @@
                 "default": false
               },
               "waitForBuildProcess": {
-                "markdownDescription": "(experimental) Prevents the extension of auto-reloading. With this linking failure might can be avoided.",
-                "type": "boolean",
+                "markdownDescription": "(experimental) Prevents the extension of auto-reloading. With this linking failure might can be avoided. Can be true to use a default pattern that works for most cases, or a string to pass your own search pattern (regex) for processes.",
+                "type": [
+                  "boolean",
+                  "string"
+                ],
                 "default": false
               },
               "darwin": {
