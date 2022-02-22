@@ -6,9 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-- Improvements to the built-in default search pattern for waitForBuildProcess
-- waitForBuildProcess can now take a string (custom regex search pattern to
-  match processes), see [issue328](https://github.com/matepek/vscode-catch2-test-adapter/issues/328)
+### Changed
+
+- improvements to the built-in default search pattern for waitForBuildProcess
+- waitForBuildProcess can now take a string (custom regex search pattern to match processes), see [issue328](https://github.com/matepek/vscode-catch2-test-adapter/issues/328)
+- changing the `testMate.cpp.discovery.runtimeLimit` option used to take effect only after reloading the window; now it takes effect immediately
 
 ## [4.0.25] - 2022-02-05
 
