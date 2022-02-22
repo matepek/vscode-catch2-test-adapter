@@ -152,7 +152,7 @@ export class WorkspaceManager implements vscode.Disposable {
             this._shared.setExecRunningTimeout(config.getExecRunningTimeout());
           }
           if (affectsAny('discovery.runtimeLimit')) {
-            this._shared.setExecRunningTimeout(config.getExecParsingTimeout());
+            this._shared.setExecParsingTimeout(config.getExecParsingTimeout());
           }
           if (affectsAny('debug.noThrow')) {
             this._shared.isNoThrow = config.getDefaultNoThrow();

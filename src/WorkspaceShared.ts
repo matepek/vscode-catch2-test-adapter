@@ -55,6 +55,10 @@ export class WorkspaceShared {
     this._execRunningTimeoutChangeEmitter.fire();
   }
 
+  setExecParsingTimeout(value: number): void {
+    this.execParsingTimeout = value;
+  }
+
   readonly onDidChangeExecRunningTimeout = this._execRunningTimeoutChangeEmitter.event;
 }
 
