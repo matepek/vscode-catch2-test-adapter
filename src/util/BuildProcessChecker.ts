@@ -21,7 +21,9 @@ export class BuildProcessChecker {
     this._finishedResolver();
   }
 
-  resolveAtFinish(pattern: string | undefined): Promise<void> {
+  resolveAtFinish(pattern: string | boolean | undefined): Promise<void> {
+    if (pattern === false) return Promise.resolve();
+
     if (this._timerId !== undefined) {
       return this._finishedP;
     }
@@ -36,8 +38,8 @@ export class BuildProcessChecker {
       this._finishedResolver = r;
     });
 
-    this._log.info('Checking running build related processes');
-    const patternToUse = pattern ? RegExp(pattern) : this._defaultPattern;
+    const patternToUse = typeof pattern == 'string' ? RegExp(pattern) : this._defaultPattern;
+    this._log.info('Checking running build related processes', patternToUse);
     this._timerId = global.setInterval(this._refresh.bind(this, patternToUse), this._checkIntervalMillis);
     this._refresh(patternToUse);
 

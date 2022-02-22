@@ -465,11 +465,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     }
 
     if (isFileExistsAndExecutable) {
-      if (this._waitForBuildProcess) {
-        await this._shared.buildProcessChecker.resolveAtFinish(
-          typeof this._waitForBuildProcess === 'string' ? this._waitForBuildProcess : undefined,
-        );
-      }
+      await this._shared.buildProcessChecker.resolveAtFinish(this._waitForBuildProcess);
 
       try {
         await executable.reloadTests(this._shared.taskPool, this._shared.cancellationToken);
