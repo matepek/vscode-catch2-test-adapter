@@ -291,6 +291,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
           envFromFile = {};
           content
             .split(/\r?\n/)
+            .filter(x => x.length > 0)
             .map(line => line.split('='))
             .forEach(entry => {
               if (entry.length === 2) {
