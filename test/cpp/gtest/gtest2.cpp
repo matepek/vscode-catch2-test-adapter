@@ -47,7 +47,7 @@ GTEST_TEST(TestCas3, test5) {
 
 GTEST_TEST(TestCas3, test6) {
   std::vector<int> v({5, 10});
-  ASSERT_THAT(v, ::testing::ElementsAre(5, 10, 15));
+  ASSERT_THAT(v, ::testing::ElementsAre(5, 10, 15)) << "extra message";
 }
 
 // with custom matcher

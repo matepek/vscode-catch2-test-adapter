@@ -109,17 +109,33 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     valueParam: string | undefined,
   ): Promise<GoogleTestTest> => {
     const resolvedFile = this.findSourceFilePath(file);
-    return this._createTreeAndAddTest(
-      this.getTestGrouping(),
-      testName,
-      resolvedFile,
-      line,
-      [suiteName],
-      undefined,
-      (parent: TestItemParent) =>
-        new GoogleTestTest(this, parent, testName, suiteName, typeParam, valueParam, resolvedFile, line),
-      (test: GoogleTestTest) => test.update2(testName, suiteName, resolvedFile, line, typeParam, valueParam),
-    );
+    const id = suiteName + '.' + testName;
+    // gunit
+    if (testName === '') {
+      return this._createTreeAndAddTest(
+        this.getTestGrouping(),
+        '<GUnit>',
+        resolvedFile,
+        line,
+        [suiteName],
+        undefined,
+        (parent: TestItemParent) =>
+          new GoogleTestTest(this, parent, id, '<GUnit>', suiteName, typeParam, valueParam, resolvedFile, line),
+        (test: GoogleTestTest) => test.update2('<GUnit>', suiteName, resolvedFile, line, typeParam, valueParam),
+      );
+    } else {
+      return this._createTreeAndAddTest(
+        this.getTestGrouping(),
+        testName,
+        resolvedFile,
+        line,
+        [suiteName],
+        undefined,
+        (parent: TestItemParent) =>
+          new GoogleTestTest(this, parent, id, testName, suiteName, typeParam, valueParam, resolvedFile, line),
+        (test: GoogleTestTest) => test.update2(testName, suiteName, resolvedFile, line, typeParam, valueParam),
+      );
+    }
   };
 
   protected async _reloadChildren(cancellationToken: CancellationToken): Promise<void> {
@@ -314,7 +330,7 @@ class TestSuiteListingProcessor implements XmlTagProcessor {
     switch (tag.name) {
       case 'testcase': {
         assert(this.suiteName);
-        assert(tag.attribs.name);
+        assert(typeof tag.attribs.name == 'string'); // for gunit it can be empty
         await this.create(
           tag.attribs.name,
           this.suiteName!,
@@ -334,7 +350,7 @@ class TestSuiteListingProcessor implements XmlTagProcessor {
 ///
 
 // Remark: not necessarily starts like this so do not use: ^
-const testBeginRe = /\[ RUN      \] ((.+)\.(.+))$/m;
+const testBeginRe = /\[ RUN      \] ((.+)\.(.*))$/m;
 // Ex: "Is True[       OK ] TestCas1.test5 (0 ms)"
 // m[1] == '[       '
 // m[2] == 'OK'
