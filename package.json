@@ -420,10 +420,20 @@
                             "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
+                          "mergeByLabel": {
+                            "markdownDescription": "By default the executables are distiguished so they have distinct tree-item, unless we set this option to true.",
+                            "type": "boolean"
+                          },
+                          "groupByExecutable": {
+                            "type": "object"
+                          },
                           "groupBySource": {
                             "type": "object"
                           },
                           "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByTagRegex": {
                             "type": "object"
                           },
                           "groupByRegex": {
@@ -652,6 +662,10 @@
                           "description": {
                             "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
+                          },
+                          "mergeByLabel": {
+                            "markdownDescription": "By default the executables are distiguished so they have distinct tree-item, unless we set this option to true.",
+                            "type": "boolean"
                           },
                           "groupByExecutable": {
                             "type": "object"
@@ -892,10 +906,20 @@
                             "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
+                          "mergeByLabel": {
+                            "markdownDescription": "By default the executables are distiguished so they have distinct tree-item, unless we set this option to true.",
+                            "type": "boolean"
+                          },
+                          "groupByExecutable": {
+                            "type": "object"
+                          },
                           "groupBySource": {
                             "type": "object"
                           },
                           "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByTagRegex": {
                             "type": "object"
                           },
                           "groupByRegex": {
@@ -1125,10 +1149,20 @@
                             "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
+                          "mergeByLabel": {
+                            "markdownDescription": "By default the executables are distiguished so they have distinct tree-item, unless we set this option to true.",
+                            "type": "boolean"
+                          },
+                          "groupByExecutable": {
+                            "type": "object"
+                          },
                           "groupBySource": {
                             "type": "object"
                           },
                           "groupByTags": {
+                            "type": "object"
+                          },
+                          "groupByTagRegex": {
                             "type": "object"
                           },
                           "groupByRegex": {

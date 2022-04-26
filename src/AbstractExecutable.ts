@@ -274,7 +274,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
         groupByExecutable: async (g: GroupByExecutable): Promise<void> => {
           this._updateVarsWithTags(g, tags, tagsResolveRule);
 
-          const id = this.shared.path;
+          const id = g.mergeByLabel === true ? undefined : this.shared.path;
           const label = g.label ?? '${filename}';
           const description = g.description ?? '${relDirpath}${osPathSep}';
 
@@ -836,16 +836,17 @@ class ExecutableGroup {
   constructor(private readonly executable: AbstractExecutable<AbstractTest>) {}
 
   private _busyCounter = 0;
-  private _item: vscode.TestItem | undefined = undefined;
+  private _item: vscode.TestItem | undefined | null = undefined;
   private _itemForStaticError: vscode.TestItem | undefined = undefined;
   // we need to be exclusive because we save prevTests
   private _lock = Promise.resolve();
 
   setItem(item: vscode.TestItem) {
-    if (this._item && this._item !== item) {
-      this.executable.shared.log.errorS('why do we have different executableItem');
-      debugBreak('why are we here?');
-    } else if (!this._item) {
+    if (this._item !== undefined) {
+      if (this._item !== null && this._item !== item) {
+        this._item = null;
+      }
+    } else {
       this._item = item;
       if (this._busyCounter > 0) this._item.busy = true;
     }

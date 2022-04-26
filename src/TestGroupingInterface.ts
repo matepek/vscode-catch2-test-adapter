@@ -1,6 +1,7 @@
 export interface GroupByExecutable extends TestGroupingConfig {
   label?: string;
   description?: string;
+  mergeByLabel?: boolean;
 }
 
 export interface GroupBySource extends TestGroupingConfig {
