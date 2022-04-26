@@ -9,6 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - `mergeByLabel` to `groupByExecutable`. If it is set to true then groups having the same name won't be distingueshed and all their childern will go under the 1 node.
+  Solves [this](https://github.com/matepek/vscode-catch2-test-adapter/issues/337) issue.
+
+### Fixed
+
+- [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/346) related to Catch2 v3 preview 5
 
 ## [4.0.26] - 2022-02-22
 

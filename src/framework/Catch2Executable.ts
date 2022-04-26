@@ -218,16 +218,10 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
       }
     }
 
-    const args = this.shared.prependTestListingArgs.concat([
-      '[.],*',
-      '--verbosity',
-      'high',
-      '--list-tests',
-      '--use-colour',
-      'no',
-    ]);
+    const args = this.shared.prependTestListingArgs.concat(['[.],*', '--verbosity', 'high', '--list-tests']);
 
     if (this._catch2Version && this._catch2Version.major >= 3) args.push('--reporter', 'xml');
+    else args.push('--use-colour', 'no');
 
     this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
 

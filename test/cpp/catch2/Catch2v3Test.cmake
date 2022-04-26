@@ -2,7 +2,7 @@ include(FetchContent)
 
 FetchContent_Declare(catch2v3test
                      GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-                     GIT_TAG v3.0.0-preview3)
+                     GIT_TAG v3.0.0-preview5)
 
 FetchContent_GetProperties(catch2v3test)
 if(NOT catch2v3test_POPULATED)
