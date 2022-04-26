@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.1.0]
+
 ### Added
 
 - `mergeByLabel` to `groupByExecutable`. If it is set to true then groups having the same name won't be distingueshed and all their childern will go under the 1 node.
