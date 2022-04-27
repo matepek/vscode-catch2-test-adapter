@@ -20,7 +20,7 @@ The previous version (v3.x.y) of the extension is published as [C++ TestMate Leg
 in case this is too buggy or you cannot wait for some old feature.
 
 - New testing API integration has just happened with a tons of improvements.
-  - Streaming the test run: Don't have to wait for the result to see the progress (in case you test uses `std::cout`)
+  - Streaming the test run: Don't have to wait for the result to see the progress (in case you test used `std::cout`)
   - Catch Section and DOCTest SubCase support (limited but still sometings)
 - Runs executables parallel (_testMate.cpp.test.parallelExecutionLimit_).
 - Sorts tests and suites (_testExplorer.sort_).
