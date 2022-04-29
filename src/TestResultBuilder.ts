@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as ansi from 'ansi-colors';
 
 import { parseLine } from './Util';
-import { AbstractTest, SubTest } from './AbstractTest';
+import { AbstractTest, SubTest } from './framework/AbstractTest';
 import { debugBreak } from './util/DevelopmentHelper';
 
 type TestResult = 'skipped' | 'failed' | 'errored' | 'passed';

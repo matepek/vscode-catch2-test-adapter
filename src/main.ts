@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { AbstractExecutable, TestsToRun } from './AbstractExecutable';
+import { AbstractExecutable, TestsToRun } from './framework/AbstractExecutable';
 import { LoggerWrapper } from './LoggerWrapper';
 import { WorkspaceManager } from './WorkspaceManager';
-import { SharedTestTags } from './SharedTestTags';
+import { SharedTestTags } from './framework/SharedTestTags';
 import { TestItemManager } from './TestItemManager';
 
 ///

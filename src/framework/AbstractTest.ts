@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { AbstractExecutable } from './AbstractExecutable';
-import { debugAssert } from './util/DevelopmentHelper';
+import { debugAssert } from '../util/DevelopmentHelper';
 import { SharedTestTags } from './SharedTestTags';
 
 ///

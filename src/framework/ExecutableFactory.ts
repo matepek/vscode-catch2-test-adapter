@@ -1,16 +1,16 @@
-import * as c2fs from './util/FSWrapper';
+import * as c2fs from '../util/FSWrapper';
 import { SharedVarOfExec } from './SharedVarOfExec';
 import { AbstractExecutable } from './AbstractExecutable';
-import { Catch2Executable } from './framework/Catch2Executable';
-import { GoogleTestExecutable } from './framework/GoogleTestExecutable';
-import { DOCExecutable } from './framework/DOCExecutable';
-import { FrameworkSpecificConfig, RunTaskConfig } from './AdvancedExecutableInterface';
-import { Version } from './Util';
-import { Spawner, SpawnOptionsWithoutStdio } from './Spawner';
-import { GoogleBenchmarkExecutable } from './framework/GoogleBenchmarkExecutable';
-import { ResolveRuleAsync } from './util/ResolveRule';
-import { WorkspaceShared } from './WorkspaceShared';
-import { Framework, FrameworkId, FrameworkType } from './framework/Framework';
+import { Catch2Executable } from './Catch2/Catch2Executable';
+import { GoogleTestExecutable } from './GoogleTest/GoogleTestExecutable';
+import { DOCExecutable } from './doctest/DOCExecutable';
+import { FrameworkSpecificConfig, RunTaskConfig } from '../AdvancedExecutableInterface';
+import { Version } from '../Util';
+import { Spawner, SpawnOptionsWithoutStdio } from '../Spawner';
+import { GoogleBenchmarkExecutable } from './GoogleBenchmark/GoogleBenchmarkExecutable';
+import { ResolveRuleAsync } from '../util/ResolveRule';
+import { WorkspaceShared } from '../WorkspaceShared';
+import { Framework, FrameworkId, FrameworkType } from './Framework';
 
 export class ExecutableFactory {
   constructor(

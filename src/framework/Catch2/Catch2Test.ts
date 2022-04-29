@@ -1,8 +1,8 @@
 import { AbstractTest } from '../AbstractTest';
-import { Version } from '../Util';
+import { Version } from '../../Util';
 import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';
-import { TestItemParent } from '../TestItemManager';
+import { TestItemParent } from '../../TestItemManager';
 
 ///
 

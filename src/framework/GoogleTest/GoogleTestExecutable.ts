@@ -6,16 +6,16 @@ import * as ansi from 'ansi-colors';
 import { AbstractExecutable as AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { GoogleTestTest } from './GoogleTestTest';
 import { SharedVarOfExec } from '../SharedVarOfExec';
-import { RunningExecutable } from '../RunningExecutable';
+import { RunningExecutable } from '../../RunningExecutable';
 import { AbstractTest } from '../AbstractTest';
-import { CancellationToken } from '../Util';
-import { TestGroupingConfig } from '../TestGroupingInterface';
-import { TestResultBuilder } from '../TestResultBuilder';
-import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
-import { LineProcessor, TextStreamParser } from '../util/TextStreamParser';
-import { assert, debugBreak } from '../util/DevelopmentHelper';
-import { TestItemParent } from '../TestItemManager';
-import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../util/ParserInterface';
+import { CancellationToken } from '../../Util';
+import { TestGroupingConfig } from '../../TestGroupingInterface';
+import { TestResultBuilder } from '../../TestResultBuilder';
+import { XmlParser, XmlTag, XmlTagProcessor } from '../../util/XmlParser';
+import { LineProcessor, TextStreamParser } from '../../util/TextStreamParser';
+import { assert, debugBreak } from '../../util/DevelopmentHelper';
+import { TestItemParent } from '../../TestItemManager';
+import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../../util/ParserInterface';
 import { Readable } from 'stream';
 
 export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {

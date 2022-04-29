@@ -1,7 +1,7 @@
 import { AbstractTest } from '../AbstractTest';
 import { AbstractExecutable } from '../AbstractExecutable';
 import { SharedTestTags } from '../SharedTestTags';
-import { TestItemParent } from '../TestItemManager';
+import { TestItemParent } from '../../TestItemManager';
 
 export class GoogleBenchmarkTest extends AbstractTest {
   constructor(

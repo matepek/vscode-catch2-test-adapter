@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { AbstractTest } from './AbstractTest';
+import { AbstractTest } from './framework/AbstractTest';
 import { parseLine } from './Util';
 
 ///

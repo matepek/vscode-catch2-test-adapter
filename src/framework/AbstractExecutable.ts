@@ -4,16 +4,16 @@ import { EOL } from 'os';
 
 import { SharedVarOfExec } from './SharedVarOfExec';
 import { AbstractTest } from './AbstractTest';
-import { TaskPool } from './util/TaskPool';
-import { ExecutableRunResultValue, RunningExecutable } from './RunningExecutable';
+import { TaskPool } from '../util/TaskPool';
+import { ExecutableRunResultValue, RunningExecutable } from '../RunningExecutable';
 import { promisify } from 'util';
-import { Version, getAbsolutePath, CancellationToken, reindentStr, parseLine, getModiTime } from './Util';
+import { Version, getAbsolutePath, CancellationToken, reindentStr, parseLine, getModiTime } from '../Util';
 import {
   resolveOSEnvironmentVariables,
   createPythonIndexerForPathVariable,
   ResolveRuleAsync,
   resolveVariablesAsync,
-} from './util/ResolveRule';
+} from '../util/ResolveRule';
 import {
   TestGroupingConfig,
   GroupByExecutable,
@@ -22,14 +22,14 @@ import {
   testGroupingForEach,
   GroupBySource,
   GroupByTags,
-} from './TestGroupingInterface';
-import { isSpawnBusyError } from './util/FSWrapper';
-import { TestResultBuilder } from './TestResultBuilder';
-import { debugAssert, debugBreak } from './util/DevelopmentHelper';
-import { SpawnBuilder } from './Spawner';
+} from '../TestGroupingInterface';
+import { isSpawnBusyError } from '../util/FSWrapper';
+import { TestResultBuilder } from '../TestResultBuilder';
+import { debugAssert, debugBreak } from '../util/DevelopmentHelper';
+import { SpawnBuilder } from '../Spawner';
 import { SharedTestTags } from './SharedTestTags';
-import { Disposable } from './Util';
-import { FilePathResolver, TestItemParent } from './TestItemManager';
+import { Disposable } from '../Util';
+import { FilePathResolver, TestItemParent } from '../TestItemManager';
 
 ///
 

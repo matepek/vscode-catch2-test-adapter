@@ -2,17 +2,17 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { inspect, promisify } from 'util';
 
-import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
+import { XmlParser, XmlTag, XmlTagProcessor } from '../../util/XmlParser';
 import { SharedVarOfExec } from '../SharedVarOfExec';
 import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { Catch2Test } from './Catch2Test';
-import { RunningExecutable } from '../RunningExecutable';
+import { RunningExecutable } from '../../RunningExecutable';
 import { AbstractTest, SubTest, SubTestTree } from '../AbstractTest';
-import { CancellationFlag, Version } from '../Util';
-import { TestGroupingConfig } from '../TestGroupingInterface';
-import { TestResultBuilder } from '../TestResultBuilder';
-import { assert, debugBreak } from '../util/DevelopmentHelper';
-import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../util/ParserInterface';
+import { CancellationFlag, Version } from '../../Util';
+import { TestGroupingConfig } from '../../TestGroupingInterface';
+import { TestResultBuilder } from '../../TestResultBuilder';
+import { assert, debugBreak } from '../../util/DevelopmentHelper';
+import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../../util/ParserInterface';
 import { Readable } from 'stream';
 
 export class Catch2Executable extends AbstractExecutable<Catch2Test> {

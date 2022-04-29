@@ -2,7 +2,7 @@ import * as os from 'os';
 import * as ansi from 'ansi-colors';
 
 import { ChildProcessWithoutNullStreams } from './util/FSWrapper';
-import { AbstractTest } from './AbstractTest';
+import { AbstractTest } from './framework/AbstractTest';
 import { LoggerWrapper } from './LoggerWrapper';
 import { promisify } from 'util';
 import { CancellationToken, generateId } from './Util';

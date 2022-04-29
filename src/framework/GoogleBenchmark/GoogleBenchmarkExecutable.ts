@@ -5,13 +5,13 @@ import { promisify } from 'util';
 import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 import { GoogleBenchmarkTest } from './GoogleBenchmarkTest';
 import { SharedVarOfExec } from '../SharedVarOfExec';
-import { RunningExecutable } from '../RunningExecutable';
+import { RunningExecutable } from '../../RunningExecutable';
 import { AbstractTest } from '../AbstractTest';
-import { CancellationFlag } from '../Util';
-import { TestGroupingConfig } from '../TestGroupingInterface';
-import { TestResultBuilder } from '../TestResultBuilder';
-import { LoggerWrapper } from '../LoggerWrapper';
-import { TestItemParent } from '../TestItemManager';
+import { CancellationFlag } from '../../Util';
+import { TestGroupingConfig } from '../../TestGroupingInterface';
+import { TestResultBuilder } from '../../TestResultBuilder';
+import { LoggerWrapper } from '../../LoggerWrapper';
+import { TestItemParent } from '../../TestItemManager';
 
 export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmarkTest> {
   constructor(sharedVarOfExec: SharedVarOfExec) {

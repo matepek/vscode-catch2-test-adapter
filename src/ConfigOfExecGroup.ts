@@ -2,7 +2,7 @@ import * as pathlib from 'path';
 import { promisify } from 'util';
 import * as vscode from 'vscode';
 
-import { AbstractExecutable } from './AbstractExecutable';
+import { AbstractExecutable } from './framework/AbstractExecutable';
 import * as c2fs from './util/FSWrapper';
 import {
   resolveOSEnvironmentVariables,
@@ -11,7 +11,7 @@ import {
   resolveVariablesAsync,
   ResolveRuleAsync,
 } from './util/ResolveRule';
-import { ExecutableFactory } from './ExecutableFactory';
+import { ExecutableFactory } from './framework/ExecutableFactory';
 import { WorkspaceShared } from './WorkspaceShared';
 import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
 import { readJSONSync } from 'fs-extra';

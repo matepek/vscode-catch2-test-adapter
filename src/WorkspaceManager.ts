@@ -5,10 +5,10 @@ import { createPythonIndexerForPathVariable, ResolveRuleAsync, resolveVariablesA
 import { WorkspaceShared } from './WorkspaceShared';
 import { sep as osPathSeparator } from 'path';
 import { TaskQueue } from './util/TaskQueue';
-import { AbstractExecutable, TestsToRun } from './AbstractExecutable';
+import { AbstractExecutable, TestsToRun } from './framework/AbstractExecutable';
 import { ConfigOfExecGroup } from './ConfigOfExecGroup';
 import { generateId } from './Util';
-import { AbstractTest } from './AbstractTest';
+import { AbstractTest } from './framework/AbstractTest';
 import { TestItemManager } from './TestItemManager';
 
 //TODO:release if workspace contains ".vscode/testMate.cpp.json" we have to start loading the tests

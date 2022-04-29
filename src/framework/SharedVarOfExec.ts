@@ -1,9 +1,9 @@
-import { FrameworkSpecificConfig, RunTaskConfig } from './AdvancedExecutableInterface';
-import { TestGroupingConfig } from './TestGroupingInterface';
-import { ResolveRuleAsync } from './util/ResolveRule';
-import { TaskPool } from './util/TaskPool';
-import { Spawner, SpawnOptionsWithoutStdio } from './Spawner';
-import { WorkspaceShared } from './WorkspaceShared';
+import { FrameworkSpecificConfig, RunTaskConfig } from '../AdvancedExecutableInterface';
+import { TestGroupingConfig } from '../TestGroupingInterface';
+import { ResolveRuleAsync } from '../util/ResolveRule';
+import { TaskPool } from '../util/TaskPool';
+import { Spawner, SpawnOptionsWithoutStdio } from '../Spawner';
+import { WorkspaceShared } from '../WorkspaceShared';
 
 export class SharedVarOfExec {
   constructor(

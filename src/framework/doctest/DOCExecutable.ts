@@ -6,15 +6,15 @@ import { AbstractExecutable, HandleProcessResult } from '../AbstractExecutable';
 
 import { DOCTest } from './DOCTest';
 import { SharedVarOfExec } from '../SharedVarOfExec';
-import { RunningExecutable } from '../RunningExecutable';
-import { CancellationFlag, Version } from '../Util';
-import { TestGroupingConfig } from '../TestGroupingInterface';
-import { XmlParser, XmlTag, XmlTagProcessor } from '../util/XmlParser';
-import { assert, debugBreak } from '../util/DevelopmentHelper';
-import { TestResultBuilder } from '../TestResultBuilder';
-import { TestItemParent } from '../TestItemManager';
+import { RunningExecutable } from '../../RunningExecutable';
+import { CancellationFlag, Version } from '../../Util';
+import { TestGroupingConfig } from '../../TestGroupingInterface';
+import { XmlParser, XmlTag, XmlTagProcessor } from '../../util/XmlParser';
+import { assert, debugBreak } from '../../util/DevelopmentHelper';
+import { TestResultBuilder } from '../../TestResultBuilder';
+import { TestItemParent } from '../../TestItemManager';
 import { AbstractTest, SubTest, SubTestTree } from '../AbstractTest';
-import { pipeProcess2Parser } from '../util/ParserInterface';
+import { pipeProcess2Parser } from '../../util/ParserInterface';
 
 export class DOCExecutable extends AbstractExecutable<DOCTest> {
   constructor(sharedVarOfExec: SharedVarOfExec, docVersion: Version | undefined) {
