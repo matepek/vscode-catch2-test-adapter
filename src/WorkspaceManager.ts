@@ -125,7 +125,7 @@ export class WorkspaceManager implements vscode.Disposable {
       configuration.getEnableStrictPattern(),
       configuration.getGoogleTestTreatGMockWarningAs(),
       configuration.getGoogleTestGMockVerbose(),
-      false,
+      true,
     );
 
     this._disposables.push(

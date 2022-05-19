@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.2.0]
+
+### Added
+
+- refresh button to reload the all the tests
+
 ## [4.1.1] - 2022-04-26
 
 ### Added

@@ -16,23 +16,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   ///
 
-  controller.resolveHandler = (item: vscode.TestItem | undefined): Thenable<void> => {
-    if (item) {
-      const testData = testItemManager.map(item);
-      if (testData) {
-        //testData.resolve();
-        return Promise.resolve();
-      } else {
-        log.errorS('Missing TestData for item', item.id, item.label);
-        return Promise.resolve();
-      }
-    } else {
-      return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then();
-    }
-  };
-
-  ///
-
   const addWorkspaceManager = (wf: vscode.WorkspaceFolder): void => {
     if (workspace2manager.get(wf)) log.errorS('Unexpected workspace manager', wf);
     else workspace2manager.set(wf, new WorkspaceManager(wf, log, testItemManager));
@@ -55,6 +38,47 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
     }
   };
+
+  const commandReloadTests = async () => {
+    return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then<void>();
+  };
+
+  const commandReloadWorkspaces = async () => {
+    for (const ws of workspace2manager.keys()) {
+      removeWorkspaceManager(ws);
+    }
+
+    // just to make sure
+    controller.items.replace([]);
+
+    addOpenedWorkspaces();
+    return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then<void>();
+  };
+
+  ///
+
+  controller.resolveHandler = (item: vscode.TestItem | undefined): Thenable<void> => {
+    if (item) {
+      const testData = testItemManager.map(item);
+      if (testData) {
+        //testData.resolve();
+        return Promise.resolve();
+      } else {
+        log.errorS('Missing TestData for item', item.id, item.label);
+        return Promise.resolve();
+      }
+    } else {
+      return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then();
+    }
+  };
+
+  ///
+
+  controller.refreshHandler = (_token: vscode.CancellationToken): Thenable<void> => {
+    return commandReloadWorkspaces();
+  };
+
+  ///
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(event => {
@@ -205,59 +229,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     },
   });
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand('testMate.cmd.reload-tests', async () => {
-      return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then();
-    }),
-  );
+  context.subscriptions.push(vscode.commands.registerCommand('testMate.cmd.reload-tests', commandReloadTests));
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('testMate.cmd.reload-workspaces', async () => {
-      for (const ws of workspace2manager.keys()) {
-        removeWorkspaceManager(ws);
-      }
-
-      // just to make sure
-      controller.items.replace([]);
-
-      addOpenedWorkspaces();
-      return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then();
-    }),
+    vscode.commands.registerCommand('testMate.cmd.reload-workspaces', commandReloadWorkspaces),
   );
 
   addOpenedWorkspaces();
 
   log.info('Activation finished');
 }
-
-// import { AbstractTest } from './AbstractTest';
-// import { TestResultBuilder } from './TestResultBuilder';
-//
-// function registerLinkProvider(context: vscode.ExtensionContext) {
-//   context.subscriptions.push(
-//     vscode.window.registerTerminalLinkProvider({
-//       provideTerminalLinks: (context: vscode.TerminalLinkContext, _token: vscode.CancellationToken) => {
-//         if (!context.terminal.name.startsWith('Test Output')) return;
-//         // Detect the first instance of the word "link" if it exists and linkify it
-//         const m = context.line.match(linkRe);
-//         if (m === null) return [];
-//         const l = new vscode.TerminalLink(m.index! + 1, m[0].length - 1);
-//         //eslint-disable-next-line
-//         (l as any)[dataSymbol] = {
-//           line: context.line,
-//           match: m,
-//         };
-//         return [l];
-//       },
-//       handleTerminalLink: (link: vscode.TerminalLink) => {
-//         const data = (link as any)[dataSymbol]; //eslint-disable-line
-//         if (data) {
-//           vscode.window.showTextDocument(data.match[1]);
-//         }
-//       },
-//     }),
-//   );
-// }
-//
-// const dataSymbol = Symbol('TerminalLinkSymbol');
-// const linkRe = new RegExp(TestResultBuilder.relativeLocPrefix + '([^:]+)(?::(\\d+))?');

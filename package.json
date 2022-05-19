@@ -71,7 +71,7 @@
     "@types/request-promise": "4.1.48",
     "@types/sinon": "^10.0.11",
     "@types/source-map-support": "^0.5.4",
-    "@types/vscode": "1.62.0",
+    "@types/vscode": "1.65.0",
     "@typescript-eslint/eslint-plugin": "^5.21.0",
     "@typescript-eslint/parser": "^5.21.0",
     "bent": "^7.3.12",
