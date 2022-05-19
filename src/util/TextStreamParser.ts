@@ -9,7 +9,6 @@ export class TextStreamParser implements ParserInterface {
     private readonly handleStdErr = true,
   ) {
     this.topProcessor = rootProcessor;
-    this.alwaysonlineCb = rootProcessor.alwaysonline;
   }
 
   private readonly lines: string[] = [];
@@ -18,12 +17,9 @@ export class TextStreamParser implements ParserInterface {
   private sequentialP = Promise.resolve();
   private readonly processorStack: LineProcessor[] = [];
   private topProcessor: LineProcessor;
-  private readonly alwaysonlineCb: ((line: string) => void) | undefined = undefined;
 
   async end(): Promise<void> {
     if (this.lastLine) {
-      if (this.alwaysonlineCb) this.alwaysonlineCb(this.lastLine);
-
       this.lines.push(this.lastLine);
     }
     this.lastLine = '';
@@ -47,8 +43,6 @@ export class TextStreamParser implements ParserInterface {
       lines[0] = this.lastLine + lines[0];
 
       this.lastLine = lines.pop()!; // has at least 1 element
-
-      if (this.alwaysonlineCb) lines.forEach(l => this.alwaysonlineCb!(l));
 
       this.lines.push(...lines);
 
@@ -110,13 +104,22 @@ export interface LineProcessor {
   online(line: string): void | boolean | LineProcessor | Promise<void | boolean | LineProcessor>;
 }
 
-export interface RootLineProcessor {
+export interface RootLineProcessor extends LineProcessor {
   end?(): void;
 
   online(line: string): void | LineProcessor | Promise<void | LineProcessor>;
+}
 
-  /**
-   * Called for every line regardless of the active processor
-   */
-  alwaysonline?(line: string): void;
+export class NoOpLineProcessor implements LineProcessor {
+  constructor() {}
+
+  online(_line: string): void {}
+}
+
+export class LambdaLineProcessor implements LineProcessor {
+  constructor(private readonly _processor: (line: string) => void) {}
+
+  online(line: string): void {
+    this._processor(line);
+  }
 }

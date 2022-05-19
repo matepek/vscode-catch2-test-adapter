@@ -12,7 +12,7 @@ import { CancellationToken } from '../../Util';
 import { TestGroupingConfig } from '../../TestGroupingInterface';
 import { TestResultBuilder } from '../../TestResultBuilder';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../../util/XmlParser';
-import { LineProcessor, TextStreamParser } from '../../util/TextStreamParser';
+import { LambdaLineProcessor, LineProcessor, NoOpLineProcessor, TextStreamParser } from '../../util/TextStreamParser';
 import { assert, debugBreak } from '../../util/DevelopmentHelper';
 import { TestItemParent } from '../../TestItemManager';
 import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../../util/ParserInterface';
@@ -275,7 +275,9 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
             data.lastBuilder = new TestResultBuilder(test, testRun, runInfo.runPrefix, false);
             return new TestCaseProcessor(executable.shared, testEndRe(test.id), data.lastBuilder);
           } else if (line.startsWith('[----------] Global test environment tear-down')) {
-            return new NoOpLineProcessor();
+            return executable.shared.shared.hideUninterestingOutput
+              ? new NoOpLineProcessor()
+              : new LambdaLineProcessor(l => testRun.appendOutput(runInfo.runPrefix + l + '\r\n'));
           } else {
             if (
               line === '' ||
@@ -283,7 +285,8 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
                 line.startsWith(x),
               )
             ) {
-              //skip
+              if (executable.shared.shared.hideUninterestingOutput == false)
+                testRun.appendOutput(runInfo.runPrefix + line + '\r\n');
             } else {
               testRun.appendOutput(runInfo.runPrefix + line + '\r\n');
             }
@@ -609,12 +612,4 @@ class ExpectCallProcessor implements LineProcessor {
 
     this.testCaseShared.builder.addMessage(this.file, this.line, this.expected, ...this.actual);
   }
-}
-
-///
-
-class NoOpLineProcessor implements LineProcessor {
-  constructor() {}
-
-  online(_line: string): void {}
 }
