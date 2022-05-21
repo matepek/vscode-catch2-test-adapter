@@ -209,12 +209,21 @@ export class WorkspaceManager implements vscode.Disposable {
   async load(): Promise<void> {
     this._executableConfig.forEach(c => c.dispose());
 
-    await new Promise<void>(r => setTimeout(r, 500)); // there are some race condition, this fixes it: maybe async dispose would fix it too?
+    return vscode.window.withProgress(
+      { location: { viewId: 'workbench.view.extension.test' } },
+      async (
+        _progress: vscode.Progress<{ message?: string; increment?: number }>,
+        _token: vscode.CancellationToken,
+      ): Promise<void> => {
+        await new Promise<void>(r => setTimeout(r, 500)); // there are some race condition, this fixes it: maybe async dispose would fix it too?
 
-    const configuration = this._getConfiguration(this.log);
-    const executableConfig = configuration.getExecutableConfigs(this._shared);
-    this._executableConfig = executableConfig;
-    return Promise.allSettled(executableConfig.map(x => x.load().catch(e => this.log.errorS(e)))).then();
+        const configuration = this._getConfiguration(this.log);
+        const executableConfig = configuration.getExecutableConfigs(this._shared);
+        this._executableConfig = executableConfig;
+
+        await Promise.allSettled(executableConfig.map(x => x.load().catch(e => this.log.errorS(e))));
+      },
+    );
   }
 
   private _getConfiguration(log: LoggerWrapper): Configurations {

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.2.1]
+
+### Added
+
+- show more progress in case of reloading workspace.
+
 ## [4.2.0] - 2022-05-19
 
 ### Added
