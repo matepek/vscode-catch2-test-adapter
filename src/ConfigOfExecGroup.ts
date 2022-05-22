@@ -22,6 +22,7 @@ import { debugBreak } from './util/DevelopmentHelper';
 import { FrameworkType } from './framework/Framework';
 import { readFileSync } from 'fs';
 import { getModiTime } from './Util';
+import { SubProgressReporter } from './util/ProgressReporter';
 
 ///
 
@@ -57,7 +58,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
   private readonly _executables: Map<string /*fsPath*/, AbstractExecutable> = new Map();
 
-  async load(): Promise<unknown[]> {
+  async load(progressReporter: SubProgressReporter): Promise<unknown[]> {
     const pattern = await this._pathProcessor(this._pattern);
 
     this._shared.log.info('pattern', this._pattern, this._shared.workspaceFolder.uri.fsPath, pattern);
@@ -99,6 +100,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       this._shared.log.exceptionS(e, "Couldn't watch pattern");
     }
 
+    progressReporter.setMax(filePaths.length);
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];
 
     for (let i = 0; i < filePaths.length; i++) {
@@ -145,6 +147,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
           } catch (reason) {
             this._shared.log.debug('Not an executable:', file, reason);
           }
+          progressReporter.incrementBy1();
         })(),
       );
     }

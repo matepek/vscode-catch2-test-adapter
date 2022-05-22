@@ -10,6 +10,7 @@ import { ConfigOfExecGroup } from './ConfigOfExecGroup';
 import { generateId } from './Util';
 import { AbstractTest } from './framework/AbstractTest';
 import { TestItemManager } from './TestItemManager';
+import { ProgressReporter } from './util/ProgressReporter';
 
 //TODO:release if workspace contains ".vscode/testMate.cpp.json" we have to start loading the tests
 export class WorkspaceManager implements vscode.Disposable {
@@ -209,10 +210,12 @@ export class WorkspaceManager implements vscode.Disposable {
   async load(): Promise<void> {
     this._executableConfig.forEach(c => c.dispose());
 
+    const sbm = vscode.window.setStatusBarMessage('TestMate C++: loading tests...');
+
     return vscode.window.withProgress(
       { location: { viewId: 'workbench.view.extension.test' } },
       async (
-        _progress: vscode.Progress<{ message?: string; increment?: number }>,
+        progress: vscode.Progress<{ message?: string; increment?: number }>,
         _token: vscode.CancellationToken,
       ): Promise<void> => {
         await new Promise<void>(r => setTimeout(r, 500)); // there are some race condition, this fixes it: maybe async dispose would fix it too?
@@ -220,8 +223,15 @@ export class WorkspaceManager implements vscode.Disposable {
         const configuration = this._getConfiguration(this.log);
         const executableConfig = configuration.getExecutableConfigs(this._shared);
         this._executableConfig = executableConfig;
+        const progressReporter = new ProgressReporter(progress);
 
-        await Promise.allSettled(executableConfig.map(x => x.load().catch(e => this.log.errorS(e))));
+        await Promise.allSettled(
+          executableConfig.map(x => {
+            const subProgressReporter = progressReporter.createSubProgressReporter();
+            return x.load(subProgressReporter).catch(e => this.log.errorS(e));
+          }),
+        );
+        sbm.dispose();
       },
     );
   }
