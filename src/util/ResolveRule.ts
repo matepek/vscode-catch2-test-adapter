@@ -121,10 +121,16 @@ interface ResolveStrRuleStr {
   isFlat?: boolean;
 }
 
-interface ResolveStrRuleAsync<R> {
+interface ResolveStrRule<R> {
   resolve: string;
-  rule: () => Promise<R>;
+  rule: () => R | Promise<R>;
   isFlat?: boolean;
+}
+
+interface ResolveRegexRule {
+  resolve: RegExp;
+  rule: (m: RegExpMatchArray) => string;
+  isFlat?: never;
 }
 
 interface ResolveRegexRuleAsync {
@@ -134,7 +140,11 @@ interface ResolveRegexRuleAsync {
 }
 
 // eslint-disable-next-line
-export type ResolveRuleAsync<R = any> = ResolveStrRuleStr | ResolveStrRuleAsync<R> | ResolveRegexRuleAsync;
+export type ResolveRuleAsync<R = any> =
+  | ResolveStrRuleStr
+  | ResolveStrRule<R>
+  | ResolveRegexRule
+  | ResolveRegexRuleAsync;
 
 // eslint-disable-next-line
 export function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRuleAsync<any>[]): Promise<T> {
@@ -260,17 +270,17 @@ export function createPythonIndexerForStringVariable(
   value: string,
   separator: string | RegExp,
   join: string,
-): ResolveRegexRuleAsync {
+): ResolveRegexRule {
   const resolve = new RegExp('\\$\\{' + varName + PythonIndexerRegexStr + '?\\}');
   const array = value.split(separator);
 
   return {
     resolve,
-    rule: async (m: RegExpMatchArray): Promise<string> => processArrayWithPythonIndexer(array, m).join(join),
+    rule: (m: RegExpMatchArray): string => processArrayWithPythonIndexer(array, m).join(join),
   };
 }
 
-export function createPythonIndexerForPathVariable(valName: string, pathStr: string): ResolveRegexRuleAsync {
+export function createPythonIndexerForPathVariable(valName: string, pathStr: string): ResolveRegexRule {
   const { resolve, rule } = createPythonIndexerForStringVariable(
     valName,
     pathlib.normalize(pathStr),
@@ -280,10 +290,9 @@ export function createPythonIndexerForPathVariable(valName: string, pathStr: str
 
   return {
     resolve,
-    rule: async (m: RegExpMatchArray): Promise<string> => {
+    rule: (m: RegExpMatchArray): string => {
       try {
-        const ruleV = await rule(m);
-        return pathlib.normalize(ruleV);
+        return pathlib.normalize(rule(m));
       } catch (e) {
         return m[0];
       }

@@ -27,19 +27,33 @@ export class WorkspaceManager implements vscode.Disposable {
       }),
     );
 
+    const wsConfig = vscode.workspace.getConfiguration();
+
     const variableToValue = [
       createPythonIndexerForPathVariable('workspaceFolder', this.workspaceFolder.uri.fsPath),
       createPythonIndexerForPathVariable('workspaceDirectory', this.workspaceFolder.uri.fsPath),
       workspaceNameRes,
       {
         resolve: /\$\{assert(?::([^}]+))?\}/,
-        rule: async (m: RegExpMatchArray): Promise<never> => {
+        rule: (m: RegExpMatchArray): never => {
           const msg = m[1] ? ': ' + m[1] : '';
           throw Error('Assertion while resolving variable' + msg);
         },
       },
       { resolve: '${osPathSep}', rule: osPathSeparator },
       { resolve: '${osPathEnvSep}', rule: process.platform === 'win32' ? ';' : ':' },
+      {
+        resolve: /\$\{config:([^}]+)\}/,
+        rule: (m: RegExpMatchArray): string => {
+          try {
+            const ruleV = wsConfig.get<string>(m[1])?.toString();
+            if (ruleV !== undefined) return ruleV;
+          } catch (reason) {
+            log.warnS("couldn't resolve config", m[0]);
+          }
+          return m[0];
+        },
+      },
       {
         resolve: /\$\{command:([^}]+)\}/,
         rule: async (m: RegExpMatchArray): Promise<string> => {

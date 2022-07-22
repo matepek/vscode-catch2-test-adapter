@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.2.3]
+
+### Added
+
+- new variable resolution rule: `${config:<config name>}` where `<config name>` can be anything like
+
 ## [4.2.2] - 2022-05-22
 
 ### Added
