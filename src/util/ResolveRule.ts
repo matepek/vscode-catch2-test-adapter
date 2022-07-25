@@ -57,7 +57,12 @@ async function _mapAllStringsAsync(
     case 'undefined':
       return value;
     case 'string': {
-      return mapperFunc(value, parent);
+      let prevMappedValue = await mapperFunc(value, parent);
+      let nextMappedValue = await mapperFunc(prevMappedValue, parent);
+      while (prevMappedValue !== (nextMappedValue = await mapperFunc(prevMappedValue, parent))) {
+        prevMappedValue = nextMappedValue;
+      }
+      return nextMappedValue;
     }
     case 'object': {
       if (Array.isArray(value)) {
@@ -160,7 +165,7 @@ export function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRul
           if (s === resolve) {
             if (typeof rule == 'string') {
               return rule;
-            } else {
+            } /* rule is callable */ else {
               const ruleV = await (rule as () => Promise<any>)(); // eslint-disable-line
               if (isFlat) {
                 if (Array.isArray(parent)) {
@@ -183,8 +188,7 @@ export function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRul
             }
           } else if (typeof rule == 'string') {
             s = replaceAllString(s, resolve, rule);
-          } else {
-            // rule as Function
+          } /* rule is callable */ else {
             if (s.indexOf(resolve) != -1) {
               const ruleV = await (rule as () => Promise<any>)(); // eslint-disable-line
               s = replaceAllString(s, resolve, ruleV);
@@ -211,7 +215,7 @@ export function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRul
         }
       }
 
-      return Promise.resolve(s);
+      return s;
     },
   );
 }

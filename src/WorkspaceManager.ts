@@ -27,8 +27,6 @@ export class WorkspaceManager implements vscode.Disposable {
       }),
     );
 
-    const wsConfig = vscode.workspace.getConfiguration();
-
     const variableToValue = [
       createPythonIndexerForPathVariable('workspaceFolder', this.workspaceFolder.uri.fsPath),
       createPythonIndexerForPathVariable('workspaceDirectory', this.workspaceFolder.uri.fsPath),
@@ -46,7 +44,7 @@ export class WorkspaceManager implements vscode.Disposable {
         resolve: /\$\{config:([^}]+)\}/,
         rule: (m: RegExpMatchArray): string => {
           try {
-            const ruleV = wsConfig.get<string>(m[1])?.toString();
+            const ruleV = vscode.workspace.getConfiguration().get<string>(m[1])?.toString();
             if (ruleV !== undefined) return ruleV;
           } catch (reason) {
             log.warnS("couldn't resolve config", m[0]);
