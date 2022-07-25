@@ -1,7 +1,12 @@
 import * as vscode from 'vscode';
 import { Config, Configurations } from './Configurations';
 import { LoggerWrapper } from './LoggerWrapper';
-import { createPythonIndexerForPathVariable, ResolveRuleAsync, resolveVariablesAsync } from './util/ResolveRule';
+import {
+  createPythonIndexerForArray,
+  createPythonIndexerForPathVariable,
+  ResolveRuleAsync,
+  resolveVariablesAsync,
+} from './util/ResolveRule';
 import { WorkspaceShared } from './WorkspaceShared';
 import { sep as osPathSeparator } from 'path';
 import { TaskQueue } from './util/TaskQueue';
@@ -461,6 +466,15 @@ export class WorkspaceManager implements vscode.Disposable {
         }
       }
 
+      const parentLabel: string[] = [];
+      {
+        let curr = test.item.parent;
+        while (curr !== undefined) {
+          parentLabel.push(curr.label);
+          curr = curr.parent;
+        }
+      }
+
       const varToResolve: ResolveRuleAsync[] = [
         ...executable.shared.varToValue,
         { resolve: '${label}', rule: label },
@@ -470,25 +484,26 @@ export class WorkspaceManager implements vscode.Disposable {
         { resolve: '${argsArrayFlat}', rule: argsArrayFunc, isFlat: true },
         {
           resolve: '${argsStr}',
-          rule: async (): Promise<string> => '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"',
+          rule: (): string => '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"',
         },
         { resolve: '${cwd}', rule: executable.shared.options.cwd!.toString() },
         {
           resolve: '${envObj}',
-          rule: async (): Promise<NodeJS.ProcessEnv> => envVars,
+          rule: (): NodeJS.ProcessEnv => envVars,
         },
         {
           resolve: '${envObjArray}',
-          rule: async (): Promise<{ name: string; value: string }[]> =>
+          rule: (): { name: string; value: string }[] =>
             Object.keys(envVars).map(name => {
               return { name, value: envVars[name] || '' };
             }),
         },
         {
           resolve: '${sourceFileMapObj}',
-          rule: async (): Promise<Record<string, string>> =>
+          rule: (): Record<string, string> =>
             Object.assign({}, executable.shared.resolvedSourceFileMap, debugConfigData.launchSourceFileMap),
         },
+        createPythonIndexerForArray('parentLabel', parentLabel, '▸'),
       ];
 
       const debugConfig = await resolveVariablesAsync(debugConfigData.template, varToResolve);

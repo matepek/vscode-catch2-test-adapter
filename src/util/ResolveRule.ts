@@ -269,14 +269,8 @@ export function processArrayWithPythonIndexer<T>(arr: readonly T[], match: RegEx
   }
 }
 
-export function createPythonIndexerForStringVariable(
-  varName: string,
-  value: string,
-  separator: string | RegExp,
-  join: string,
-): ResolveRegexRule {
+export function createPythonIndexerForArray(varName: string, array: string[], join: string): ResolveRegexRule {
   const resolve = new RegExp('\\$\\{' + varName + PythonIndexerRegexStr + '?\\}');
-  const array = value.split(separator);
 
   return {
     resolve,
@@ -284,9 +278,18 @@ export function createPythonIndexerForStringVariable(
   };
 }
 
-export function createPythonIndexerForPathVariable(valName: string, pathStr: string): ResolveRegexRule {
+export function createPythonIndexerForStringVariable(
+  varName: string,
+  value: string,
+  separator: string | RegExp,
+  join: string,
+): ResolveRegexRule {
+  return createPythonIndexerForArray(varName, value.split(separator), join);
+}
+
+export function createPythonIndexerForPathVariable(varName: string, pathStr: string): ResolveRegexRule {
   const { resolve, rule } = createPythonIndexerForStringVariable(
-    valName,
+    varName,
     pathlib.normalize(pathStr),
     /\/|\\/,
     pathlib.sep,
