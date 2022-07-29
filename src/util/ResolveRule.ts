@@ -58,6 +58,9 @@ async function _mapAllStringsAsync(
       return value;
     case 'string': {
       let prevMappedValue = await mapperFunc(value, parent);
+      /* this check is a hack. at this point we cannot assume that mapperFunc resolves variables only with '$'.
+       * but good enough for now. Should saves some resources. https://xkcd.com/1691/ */
+      if (typeof prevMappedValue === 'string' && prevMappedValue.indexOf('$') === -1) return prevMappedValue;
       let nextMappedValue = await mapperFunc(prevMappedValue, parent);
       while (prevMappedValue !== (nextMappedValue = await mapperFunc(prevMappedValue, parent))) {
         prevMappedValue = nextMappedValue;
