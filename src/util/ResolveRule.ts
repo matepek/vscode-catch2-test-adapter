@@ -43,9 +43,9 @@ function _mapAllStrings(
 const _flatResolved = Symbol('special value which means that the veriable was flat resolved');
 
 async function _mapAllStringsAsync(
-  value: Readonly<any> /*eslint-disable-line*/,
+  value: unknown /*eslint-disable-line*/,
   parent: any /*eslint-disable-line*/,
-  mapperFunc: (s: string, parent: any) => Promise<any> /*eslint-disable-line*/,
+  mapperFunc: (s: string, parent: unknown) => Promise<any> /*eslint-disable-line*/,
 ): Promise<any> /*eslint-disable-line*/ {
   if (value === null) return null;
   switch (typeof value) {
@@ -61,10 +61,15 @@ async function _mapAllStringsAsync(
       /* this check is a hack. at this point we cannot assume that mapperFunc resolves variables only with '$'.
        * but good enough for now. Should saves some resources. https://xkcd.com/1691/ */
       if (typeof prevMappedValue === 'string' && prevMappedValue.indexOf('$') === -1) return prevMappedValue;
-      let nextMappedValue = await mapperFunc(prevMappedValue, parent);
-      while (prevMappedValue !== (nextMappedValue = await mapperFunc(prevMappedValue, parent))) {
+
+      let nextMappedValue = await _mapAllStringsAsync(prevMappedValue, parent, mapperFunc);
+      while (
+        typeof prevMappedValue === 'string' /*this limits to string but object comparison is more complicated*/ &&
+        prevMappedValue !== (nextMappedValue = await _mapAllStringsAsync(prevMappedValue, parent, mapperFunc))
+      ) {
         prevMappedValue = nextMappedValue;
       }
+
       return nextMappedValue;
     }
     case 'object': {
@@ -79,7 +84,7 @@ async function _mapAllStringsAsync(
         const newValue = Object.create(Object.getPrototypeOf(value));
         Object.defineProperties(newValue, Object.getOwnPropertyDescriptors(value));
         for (const prop in value) {
-          const res = await _mapAllStringsAsync(value[prop], newValue, mapperFunc);
+          const res = await _mapAllStringsAsync((value as Record<string, unknown>)[prop], newValue, mapperFunc);
           if (res !== _flatResolved) newValue[prop] = res;
           else delete newValue[prop];
         }
