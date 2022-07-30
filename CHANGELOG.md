@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [4.2.5]
+## [4.2.5] - 2022-07-30
 
 Fixed broken version.
 
