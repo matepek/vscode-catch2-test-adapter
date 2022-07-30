@@ -2,11 +2,7 @@ import * as pathlib from 'path';
 
 ///
 
-function _mapAllStrings(
-  value: any /*eslint-disable-line*/,
-  parent: any /*eslint-disable-line*/,
-  mapperFunc: (s: string, parent: any) => any /*eslint-disable-line*/,
-): any /*eslint-disable-line*/ {
+function _mapAllStrings(value: unknown, parent: unknown, mapperFunc: (s: string, parent: unknown) => unknown): unknown {
   if (value === null) return null;
   switch (typeof value) {
     case 'bigint':
@@ -21,7 +17,7 @@ function _mapAllStrings(
     }
     case 'object': {
       if (Array.isArray(value)) {
-        const newValue: any[] = []; /*eslint-disable-line*/
+        const newValue: unknown[] = [];
         for (const v of value) {
           const res = _mapAllStrings(v, value, mapperFunc);
           if (res !== undefined) newValue.push(res);
@@ -31,7 +27,7 @@ function _mapAllStrings(
         const newValue = Object.create(Object.getPrototypeOf(value));
         Object.defineProperties(newValue, Object.getOwnPropertyDescriptors(value));
         for (const prop in value) {
-          const res = _mapAllStrings(value[prop], value, mapperFunc);
+          const res = _mapAllStrings((value as Record<string, unknown>)[prop], value, mapperFunc);
           if (res !== undefined) newValue[prop] = res;
         }
         return newValue;
@@ -43,10 +39,10 @@ function _mapAllStrings(
 const _flatResolved = Symbol('special value which means that the veriable was flat resolved');
 
 async function _mapAllStringsAsync(
-  value: unknown /*eslint-disable-line*/,
-  parent: any /*eslint-disable-line*/,
-  mapperFunc: (s: string, parent: unknown) => Promise<any> /*eslint-disable-line*/,
-): Promise<any> /*eslint-disable-line*/ {
+  value: unknown,
+  parent: unknown,
+  mapperFunc: (s: string, parent: unknown) => Promise<unknown>,
+): Promise<unknown> {
   if (value === null) return null;
   switch (typeof value) {
     case 'bigint':
@@ -57,24 +53,11 @@ async function _mapAllStringsAsync(
     case 'undefined':
       return value;
     case 'string': {
-      let prevMappedValue = await mapperFunc(value, parent);
-      /* this check is a hack. at this point we cannot assume that mapperFunc resolves variables only with '$'.
-       * but good enough for now. Should saves some resources. https://xkcd.com/1691/ */
-      if (typeof prevMappedValue === 'string' && prevMappedValue.indexOf('$') === -1) return prevMappedValue;
-
-      let nextMappedValue = await _mapAllStringsAsync(prevMappedValue, parent, mapperFunc);
-      while (
-        typeof prevMappedValue === 'string' /*this limits to string but object comparison is more complicated*/ &&
-        prevMappedValue !== (nextMappedValue = await _mapAllStringsAsync(prevMappedValue, parent, mapperFunc))
-      ) {
-        prevMappedValue = nextMappedValue;
-      }
-
-      return nextMappedValue;
+      return mapperFunc(value, parent);
     }
     case 'object': {
       if (Array.isArray(value)) {
-        const newValue: any[] = []; /*eslint-disable-line*/
+        const newValue: unknown[] = [];
         for (const v of value) {
           const res = await _mapAllStringsAsync(v, newValue, mapperFunc);
           if (res !== _flatResolved) newValue.push(res);
@@ -160,72 +143,75 @@ export type ResolveRuleAsync<R = any> =
   | ResolveRegexRuleAsync;
 
 // eslint-disable-next-line
-export function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRuleAsync<any>[]): Promise<T> {
-  return _mapAllStringsAsync(
-    value,
-    undefined,
-    // eslint-disable-next-line
-    async (s: string, parent: any): Promise<any> => {
-      for (let i = 0; i < varValue.length; ++i) {
-        const { resolve, rule, isFlat } = varValue[i];
+export async function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRuleAsync<any>[]): Promise<T> {
+  const mapper = async (s: string, parent: unknown): Promise<unknown> => {
+    for (let i = 0; i < varValue.length; ++i) {
+      const { resolve, rule, isFlat } = varValue[i];
 
-        if (typeof resolve == 'string') {
-          if (s === resolve) {
-            if (typeof rule == 'string') {
-              return rule;
-            } /* rule is callable */ else {
-              const ruleV = await (rule as () => Promise<any>)(); // eslint-disable-line
-              if (isFlat) {
-                if (Array.isArray(parent)) {
-                  if (Array.isArray(ruleV)) {
-                    parent.push(...ruleV);
-                    return _flatResolved;
-                  }
-                } else if (typeof parent === 'object') {
-                  if (typeof ruleV === 'object') {
-                    Object.assign(parent, ruleV);
-                    return _flatResolved;
-                  }
-                }
-                throw Error(
-                  `resolveVariablesAsync: coudn't flat-resolve because ${typeof parent} != ${typeof ruleV} for ${s}`,
-                );
-              } else {
-                return ruleV;
-              }
-            }
-          } else if (typeof rule == 'string') {
-            s = replaceAllString(s, resolve, rule);
+      if (typeof resolve == 'string') {
+        if (s === resolve) {
+          if (typeof rule == 'string') {
+            return rule;
           } /* rule is callable */ else {
-            if (s.indexOf(resolve) != -1) {
-              const ruleV = await (rule as () => Promise<any>)(); // eslint-disable-line
-              s = replaceAllString(s, resolve, ruleV);
+            const ruleV = await (rule as () => Promise<unknown>)();
+            if (isFlat) {
+              if (Array.isArray(parent)) {
+                if (Array.isArray(ruleV)) {
+                  parent.push(...ruleV);
+                  return _flatResolved;
+                }
+              } else if (typeof parent === 'object' && parent !== null) {
+                if (typeof ruleV === 'object') {
+                  Object.assign(parent, ruleV);
+                  return _flatResolved;
+                }
+              }
+              throw Error(
+                `resolveVariablesAsync: coudn't flat-resolve because ${typeof parent} != ${typeof ruleV} for ${s}`,
+              );
+            } else {
+              return ruleV;
             }
           }
-        } else {
-          const ruleF = rule as (m: RegExpMatchArray) => Promise<string>;
-          // resolve as RegExp && rule as Function
-          // eslint-disable-next-line
-          if (rule.length > 1) {
-            throw Error('resolveVariables regex func should expect 1 argument');
-          }
-
-          const match = s.match(resolve);
-
-          if (match) {
-            // whole input matches
-            if (match.index === 0 && match[0].length === s.length) {
-              return ruleF(match);
-            }
-
-            s = await replaceAllRegExp(s, resolve, ruleF, match);
+        } else if (typeof rule == 'string') {
+          s = replaceAllString(s, resolve, rule);
+        } /* rule is callable */ else {
+          if (s.indexOf(resolve) != -1) {
+            const ruleV = await (rule as () => Promise<string>)();
+            s = replaceAllString(s, resolve, ruleV);
           }
         }
-      }
+      } else {
+        const ruleF = rule as (m: RegExpMatchArray) => Promise<string>;
+        // resolve as RegExp && rule as Function
+        // eslint-disable-next-line
+        if (rule.length > 1) {
+          throw Error('resolveVariables regex func should expect 1 argument');
+        }
 
-      return s;
-    },
-  );
+        const match = s.match(resolve);
+
+        if (match) {
+          // whole input matches
+          if (match.index === 0 && match[0].length === s.length) {
+            return ruleF(match);
+          }
+
+          s = await replaceAllRegExp(s, resolve, ruleF, match);
+        }
+      }
+    }
+
+    return s;
+  };
+
+  let resolved = await _mapAllStringsAsync(value, undefined, mapper);
+
+  // adding an extra level resolution
+  if (typeof resolved === 'string' && resolved.indexOf('$') !== -1)
+    resolved = await _mapAllStringsAsync(resolved, undefined, mapper);
+
+  return resolved as T;
 }
 
 const _normalizedEnvCache: Record<string, string | undefined> =
@@ -260,7 +246,7 @@ export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolea
 
       s = s.substring(match.index! + match[0].length);
     }
-  });
+  }) as T;
 }
 
 export const PythonIndexerRegexStr = '(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])';
