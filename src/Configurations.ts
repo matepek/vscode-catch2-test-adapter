@@ -34,6 +34,7 @@ export type Config =
   | 'test.randomGeneratorSeed'
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
+  | 'discovery.loadOnStartup'
   | 'discovery.gracePeriodForMissing'
   | 'discovery.runtimeLimit'
   | 'discovery.testListCaching'
@@ -101,7 +102,7 @@ export class Configurations {
       );
 
       const template: vscode.DebugConfiguration = {
-        name: '${label} (${suiteLabel})',
+        name: '${label} (${parentLabel})',
         request: 'launch',
         type: 'cppdbg',
       };
@@ -337,6 +338,10 @@ export class Configurations {
           }
         });
     }
+  }
+
+  getLoadAtStartup(): boolean {
+    return this._getD<boolean>('discovery.loadOnStartup', false);
   }
 
   getDebugBreakOnFailure(): boolean {

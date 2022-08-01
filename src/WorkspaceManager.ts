@@ -127,6 +127,8 @@ export class WorkspaceManager implements vscode.Disposable {
 
     const configuration = this._getConfiguration(log);
 
+    this.initP = configuration.getLoadAtStartup();
+
     this._shared = new WorkspaceShared(
       workspaceFolder,
       log,
@@ -205,7 +207,7 @@ export class WorkspaceManager implements vscode.Disposable {
               'discovery.strictPattern',
             )
           ) {
-            this.load();
+            this.init(true);
           }
         } catch (e) {
           this._shared.log.exceptionS(e);
@@ -224,12 +226,19 @@ export class WorkspaceManager implements vscode.Disposable {
     this._disposables.forEach(d => d.dispose());
   }
 
-  async load(): Promise<void> {
+  private initP: Thenable<void> | boolean;
+
+  async init(forceReload: boolean): Promise<void> {
+    if (typeof this.initP !== 'boolean') {
+      if (!forceReload) return this.initP;
+      else await this.initP;
+    }
+
     this._executableConfig.forEach(c => c.dispose());
 
     const sbm = vscode.window.setStatusBarMessage('TestMate C++: loading tests...');
 
-    return vscode.window.withProgress(
+    this.initP = vscode.window.withProgress(
       { location: { viewId: 'workbench.view.extension.test' } },
       async (
         progress: vscode.Progress<{ message?: string; increment?: number }>,
@@ -251,6 +260,12 @@ export class WorkspaceManager implements vscode.Disposable {
         sbm.dispose();
       },
     );
+
+    return this.initP;
+  }
+
+  public initAtStartupIfRequestes(): void {
+    if (this.initP === true) this.init(false);
   }
 
   private _getConfiguration(log: LoggerWrapper): Configurations {
@@ -382,8 +397,6 @@ export class WorkspaceManager implements vscode.Disposable {
 
       const configuration = this._getConfiguration(this._shared.log);
 
-      const label = `${test.label} (${test.exec.shared.path})`;
-
       const argsArray = executable.getDebugParams([test], configuration.getDebugBreakOnFailure());
 
       // if (test instanceof Catch2Test) {
@@ -477,7 +490,7 @@ export class WorkspaceManager implements vscode.Disposable {
 
       const varToResolve: ResolveRuleAsync[] = [
         ...executable.shared.varToValue,
-        { resolve: '${label}', rule: label },
+        { resolve: '${label}', rule: test.label },
         { resolve: '${exec}', rule: executable.shared.path },
         { resolve: '${args}', rule: argsArrayFunc }, // deprecated
         { resolve: '${argsArray}', rule: argsArrayFunc },

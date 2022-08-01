@@ -73,7 +73,7 @@ For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) 
 | Variable name         | Value meaning                                                             | Type                            |
 | --------------------- | ------------------------------------------------------------------------- | ------------------------------- |
 | `${label}`            | The name of the test. Same as in the Test Explorer.                       | string                          |
-| `${suiteLabel}`       | The name of parent suites of the test. Same as in the Test Explorer.      | string                          |
+| `${parentLabel}`      | The name of parent suites of the test. Same as in the Test Explorer.      | string                          |
 | `${exec}`             | The path of the executable.                                               | string                          |
 | `${argsArray}`        | The arguments for the executable.                                         | string[]                        |
 | `${argsArrayFlat}`    | The arguments for the executable.                                         | string[]                        |

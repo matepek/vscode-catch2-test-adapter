@@ -39,11 +39,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
   };
 
-  const commandReloadTests = async () => {
-    return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then<void>();
-  };
+  const initWorkspaceManagers = (forceReload: boolean) =>
+    Promise.allSettled([...workspace2manager.values()].map(manager => manager.init(forceReload))).then<void>();
 
-  const commandReloadWorkspaces = async () => {
+  const commandReloadWorkspaces = () => {
     for (const ws of workspace2manager.keys()) {
       removeWorkspaceManager(ws);
     }
@@ -52,7 +51,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     controller.items.replace([]);
 
     addOpenedWorkspaces();
-    return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then<void>();
+
+    return initWorkspaceManagers(false);
   };
 
   ///
@@ -68,7 +68,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         return Promise.resolve();
       }
     } else {
-      return Promise.allSettled([...workspace2manager.values()].map(manager => manager.load())).then();
+      return initWorkspaceManagers(false);
     }
   };
 
@@ -229,7 +229,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     },
   });
 
-  context.subscriptions.push(vscode.commands.registerCommand('testMate.cmd.reload-tests', commandReloadTests));
+  context.subscriptions.push(
+    vscode.commands.registerCommand('testMate.cmd.reload-tests', () => initWorkspaceManagers(true)),
+  );
 
   context.subscriptions.push(
     vscode.commands.registerCommand('testMate.cmd.reload-workspaces', commandReloadWorkspaces),
@@ -238,4 +240,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   addOpenedWorkspaces();
 
   log.info('Activation finished');
+
+  [...workspace2manager.values()].forEach(manager => manager.initAtStartupIfRequestes());
 }
