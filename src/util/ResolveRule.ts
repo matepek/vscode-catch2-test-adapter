@@ -3,7 +3,6 @@ import * as pathlib from 'path';
 ///
 
 function _mapAllStrings(value: unknown, parent: unknown, mapperFunc: (s: string, parent: unknown) => unknown): unknown {
-  if (value === null) return null;
   switch (typeof value) {
     case 'bigint':
     case 'boolean':
@@ -16,7 +15,9 @@ function _mapAllStrings(value: unknown, parent: unknown, mapperFunc: (s: string,
       return mapperFunc(value, parent);
     }
     case 'object': {
-      if (Array.isArray(value)) {
+      if (value === null) {
+        return null;
+      } else if (Array.isArray(value)) {
         const newValue: unknown[] = [];
         for (const v of value) {
           const res = _mapAllStrings(v, value, mapperFunc);
@@ -43,7 +44,6 @@ async function _mapAllStringsAsync(
   parent: unknown,
   mapperFunc: (s: string, parent: unknown) => Promise<unknown>,
 ): Promise<unknown> {
-  if (value === null) return null;
   switch (typeof value) {
     case 'bigint':
     case 'boolean':
@@ -56,7 +56,9 @@ async function _mapAllStringsAsync(
       return mapperFunc(value, parent);
     }
     case 'object': {
-      if (Array.isArray(value)) {
+      if (value === null) {
+        return null;
+      } else if (Array.isArray(value)) {
         const newValue: unknown[] = [];
         for (const v of value) {
           const res = await _mapAllStringsAsync(v, newValue, mapperFunc);
