@@ -224,6 +224,7 @@ which can be used in `cwd` and `env` of `executables`:
 | `${os_env_strict:<varname>}` | Resolves it to the given(`<varname>`) environment variable if exists won't set the variable othewise. Can be used ONLY in `env`.                                                             |
 | `${osPathSep}`               | `/` on Linux and macOS, `\` on Windows.                                                                                                                                                      |
 | `${osPathEnvSep}`            | `:` on Linux and macOS, `;` on Windows.                                                                                                                                                      |
+| `${config:<varname>}`        | Resolves it to the given(`<varname>`) vscode config variable. Can be used everywhere.                                                                                                        |
 
 [Array index]ing: `(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?`.
 Exmaple: `${relPath[:-2]}`: 'a/b/c/d' -> 'a/b'
