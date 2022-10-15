@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fse from 'fs-extra';
 
-import { runTests } from 'vscode-test';
+import { runTests } from '@vscode/test-electron';
 
 const extensionDevelopmentPath = path.join(__dirname, '../../');
 
