@@ -9,8 +9,8 @@ import { ExecutableRunResultValue, RunningExecutable } from '../RunningExecutabl
 import { promisify } from 'util';
 import { Version, getAbsolutePath, CancellationToken, reindentStr, parseLine, getModiTime } from '../Util';
 import {
-  resolveOSEnvironmentVariables,
   createPythonIndexerForPathVariable,
+  resolveAllAsync,
   ResolveRuleAsync,
   resolveVariablesAsync,
 } from '../util/ResolveRule';
@@ -145,14 +145,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
   async resolveText(text: string, ...additionalVarToValue: readonly ResolveRuleAsync[]): Promise<string> {
     let resolvedText = text;
     try {
-      resolvedText = await resolveVariablesAsync(resolvedText, this.shared.varToValue);
-
-      resolvedText =
-        additionalVarToValue.length > 0
-          ? await resolveVariablesAsync(resolvedText, additionalVarToValue)
-          : resolvedText;
-
-      resolvedText = resolveOSEnvironmentVariables(resolvedText, false);
+      const varToValue =
+        additionalVarToValue.length > 0 ? [...this.shared.varToValue, ...additionalVarToValue] : this.shared.varToValue;
+      resolvedText = await resolveAllAsync(resolvedText, varToValue, false);
 
       if (resolvedText.match(AbstractExecutable._variableRe))
         this.shared.log.warn('Possibly unresolved variable', resolvedText, text, this);
@@ -553,7 +548,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     try {
       await this.runTasks('beforeEach', taskPool, cancellationToken);
-      //TODO: future: test list might changes: await this.reloadTests(taskPool, cancellationToken);
+      //TODO:future: test list might changes: await this.reloadTests(taskPool, cancellationToken);
       // that case the testsToRunFinal should be after this block
     } catch (e) {
       const msg = e.toString();

@@ -5,11 +5,10 @@ import * as vscode from 'vscode';
 import { AbstractExecutable } from './framework/AbstractExecutable';
 import * as c2fs from './util/FSWrapper';
 import {
-  resolveOSEnvironmentVariables,
   createPythonIndexerForPathVariable,
   createPythonIndexerForStringVariable,
-  resolveVariablesAsync,
   ResolveRuleAsync,
+  resolveAllAsync,
 } from './util/ResolveRule';
 import { ExecutableFactory } from './framework/ExecutableFactory';
 import { WorkspaceShared } from './WorkspaceShared';
@@ -338,7 +337,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       }
     }
 
-    const resolvedSourceFileMap = await resolveVariablesAsync(this._sourceFileMap, varToValue);
+    const resolvedSourceFileMap = await resolveAllAsync(this._sourceFileMap, varToValue, false);
 
     return new ExecutableFactory(
       this._shared,
@@ -522,9 +521,8 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     strictAllowed: boolean,
     moreVarsToResolve?: readonly ResolveRuleAsync[],
   ): Promise<T> {
-    let resolved = resolveOSEnvironmentVariables(value, strictAllowed);
-    resolved = await resolveVariablesAsync(resolved, this._shared.varToValue);
-    if (moreVarsToResolve) resolved = await resolveVariablesAsync(resolved, moreVarsToResolve);
+    const varToValue = moreVarsToResolve ? [...this._shared.varToValue, ...moreVarsToResolve] : this._shared.varToValue;
+    const resolved = resolveAllAsync(value, varToValue, strictAllowed);
     this._shared.log.debug('ExecutableConfig.resolveVariable: ', { value, resolved, strictAllowed });
     return resolved;
   }

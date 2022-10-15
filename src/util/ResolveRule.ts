@@ -144,8 +144,7 @@ export type ResolveRuleAsync<R = any> =
   | ResolveRegexRule
   | ResolveRegexRuleAsync;
 
-// eslint-disable-next-line
-export async function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRuleAsync<any>[]): Promise<T> {
+export async function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRuleAsync<unknown>[]): Promise<T> {
   const mapper = async (s: string, parent: unknown): Promise<unknown> => {
     for (let i = 0; i < varValue.length; ++i) {
       const { resolve, rule, isFlat } = varValue[i];
@@ -225,7 +224,7 @@ export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolea
   return _mapAllStrings(value, undefined, (s: string): string | undefined => {
     let replacedS = '';
     while (true) {
-      const match = s.match(/\$\{(os_env|os_env_strict):([A-z_][A-z0-9_]*)\}/);
+      const match = s.match(/\$\{(env|os_env|os_env_strict):([A-z_][A-z0-9_]*)\}/);
 
       if (!match) return replacedS + s;
 
@@ -249,6 +248,18 @@ export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolea
       s = s.substring(match.index! + match[0].length);
     }
   }) as T;
+}
+
+export async function resolveAllAsync<T>(
+  value: T,
+  varValue: readonly ResolveRuleAsync<unknown>[],
+  strictAllowed: boolean,
+  availableRecursionCount = 3,
+): Promise<T> {
+  let resolved = await resolveVariablesAsync(value, varValue);
+  resolved = resolveOSEnvironmentVariables(resolved, strictAllowed);
+  if (value === resolved || availableRecursionCount == 0) return resolved;
+  else return resolveAllAsync(resolved, varValue, strictAllowed, availableRecursionCount - 1);
 }
 
 export const PythonIndexerRegexStr = '(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])';
