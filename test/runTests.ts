@@ -23,11 +23,7 @@ async function main(): Promise<void> {
     console.log('Working directory has been created', testWorkspace);
 
     const version =
-      process.env['VSCODE_VERSION'] === 'latest'
-        ? undefined
-        : process.env['VSCODE_VERSION'] === 'minimum'
-        ? getMinimumSupportedVersion()
-        : process.env['VSCODE_VERSION'];
+      process.env['VSCODE_VERSION'] === 'minimum' ? getMinimumSupportedVersion() : process.env['VSCODE_VERSION'];
 
     await runTests({
       version,

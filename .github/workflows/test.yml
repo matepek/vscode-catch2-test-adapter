@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['latest', 'minimum']
+        VSCODE_VERSION: ['stable', 'minimum']
         experimental: [false]
         include:
           - VSCODE_VERSION: 'insiders'
@@ -46,7 +46,6 @@ jobs:
           sleep 3
           npm test
         env:
-          TESTMATE_DEBUG: true
           DISPLAY: ':99.0'
 
   test-windows:
@@ -55,7 +54,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['latest', 'minimum']
+        VSCODE_VERSION: ['stable', 'minimum']
         experimental: [false]
         include:
           - VSCODE_VERSION: 'insiders'
@@ -83,8 +82,6 @@ jobs:
 
       - name: Test
         run: npm test
-        env:
-          TESTMATE_DEBUG: true
 
   test-mac:
     name: MacOS
@@ -92,7 +89,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['latest', 'minimum']
+        VSCODE_VERSION: ['stable', 'minimum']
         experimental: [false]
         include:
           - VSCODE_VERSION: 'insiders'
