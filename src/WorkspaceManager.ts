@@ -460,7 +460,9 @@ export class WorkspaceManager implements vscode.Disposable {
       //   TestAdapter._debugMetricSent = true;
       // }
 
-      const envVars = Object.assign({}, process.env, executable.shared.options.env);
+      const envVarsRaw = Object.assign({}, process.env, executable.shared.options.env);
+      const envVarsEntries = Object.entries(envVarsRaw).filter(item => !item[1]?.includes("\n"));
+      const envVars = Object.fromEntries(envVarsEntries);
 
       {
         const setEnvKey = 'testMate.cpp.debug.setEnv';
