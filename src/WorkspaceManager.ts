@@ -382,7 +382,6 @@ export class WorkspaceManager implements vscode.Disposable {
 
     return this._debugInner(test, cancellation, run).catch(e => {
       this.log.errorS('error during debug', e);
-      debugger;
     });
   }
 
@@ -467,14 +466,14 @@ export class WorkspaceManager implements vscode.Disposable {
         if (typeof debugConfigData.template[setEnvKey] === 'object') {
           for (const envName in debugConfigData.template[setEnvKey]) {
             const envValue = debugConfigData.template[setEnvKey][envName];
-            if (typeof envValue !== 'string')
+            if (envValue === null) delete envVars[envName];
+            else if (typeof envValue === 'string') envVars[envName] = envValue;
+            else
               this._shared.log.warn(
                 'Wrong value. testMate.cpp.debug.setEnv should contains only string values',
                 envName,
                 setEnvKey,
               );
-            else if (envValue === null) delete envVars[envName];
-            else envVars[envName] = envValue;
           }
         }
       }

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.3.2]
+
+### Fixed
+
+- an issue which prevented to unset variables using `null` value in `"testMate.cpp.debug.setEnv"`
+
 ## [4.3.1] - 2022-10-15
 
 ### Added
