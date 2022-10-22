@@ -398,66 +398,18 @@ export class WorkspaceManager implements vscode.Disposable {
 
       const argsArray = executable.getDebugParams([test], configuration.getDebugBreakOnFailure());
 
-      // if (test instanceof Catch2Test) {
-      //   const sections = (test as Catch2Test).sections;
-      //   if (sections && sections.length > 0) {
-      //     interface QuickPickItem extends vscode.QuickPickItem {
-      //       sectionStack: Catch2Section[];
-      //     }
-
-      //     const items: QuickPickItem[] = [
-      //       {
-      //         label: label,
-      //         sectionStack: [],
-      //         description: 'Select the section combo you wish to debug or choose this to debug all of it.',
-      //       },
-      //     ];
-
-      //     const traverse = (
-      //       stack: Catch2Section[],
-      //       section: Catch2Section,
-      //       hasNextStack: boolean[],
-      //       hasNext: boolean,
-      //     ): void => {
-      //       const currStack = stack.concat(section);
-      //       const space = '\u3000';
-      //       let label = hasNextStack.map(h => (h ? '┃' : space)).join('');
-      //       label += hasNext ? '┣' : '┗';
-      //       label += section.name;
-
-      //       items.push({
-      //         label: label,
-      //         description: section.failed ? '❌' : '✅',
-      //         sectionStack: currStack,
-      //       });
-
-      //       for (let i = 0; i < section.children.length; ++i)
-      //         traverse(currStack, section.children[i], hasNextStack.concat(hasNext), i < section.children.length - 1);
-      //     };
-
-      //     for (let i = 0; i < sections.length; ++i) traverse([], sections[i], [], i < sections.length - 1);
-
-      //     const pick = await vscode.window.showQuickPick(items);
-
-      //     if (pick === undefined) return Promise.resolve();
-
-      //     pick.sectionStack.forEach(s => {
-      //       argsArray.push('-c');
-      //       argsArray.push(s.escapedName);
-      //     });
-      //   }
-      // }
-
       const argsArrayFunc = async (): Promise<string[]> => argsArray;
 
       const debugConfigData = configuration.getDebugConfigurationTemplate();
 
-      this._shared.log.debug('debugConfigTemplate', { debugConfigTemplate: debugConfigData });
-
-      // if (!TestAdapter._debugMetricSent) {
-      //   this._shared.log.infoSWithTags('Using debug', { debugConfigTemplateSource });
-      //   TestAdapter._debugMetricSent = true;
-      // }
+      this._shared.log.info('debug config data', {
+        source: debugConfigData.source,
+        launchSourceFileMap: debugConfigData.launchSourceFileMap,
+      });
+      this._shared.log.info(
+        'debug config template can be set by "testMate.cpp.debug.configTemplate", one can customize and put it into settings.json:\n' +
+          JSON.stringify({ 'testMate.cpp.debug.configTemplate': debugConfigData.template }, undefined, 2),
+      );
 
       const envVars = Object.assign({}, process.env, executable.shared.options.env);
 
@@ -525,7 +477,7 @@ export class WorkspaceManager implements vscode.Disposable {
       const magicValue = generateId();
       debugConfig[magicValueKey] = magicValue;
 
-      this._shared.log.info('Debug: resolved debugConfig:', debugConfig);
+      this._shared.log.info('resolved debugConfig:', debugConfig);
 
       await this._runTasks('before', [executable], cancellation);
       await executable.runTasks('beforeEach', this._shared.taskPool, cancellation);
