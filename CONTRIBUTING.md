@@ -37,6 +37,7 @@ npx mocha ./out/test/Documentation.test.js ./out/test/ESLint.test.js
 ### Install
 
 ```bash
+nvm use
 npm install
 ```
 
@@ -81,9 +82,16 @@ If you think your changes worth of a release add a new version entry to `CHANGEL
 - https://code.visualstudio.com/api/working-with-extensions/publishing-extension
 - https://matepek.visualstudio.com/_usersSettings/tokens
 
-## VSCode API
+## VSCode API Change tracking tool
 
-https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.d.ts
+```bash
+LAST_CHECKED_VERSION="1.72.2" && \
+curl "https://raw.githubusercontent.com/microsoft/vscode/${LAST_CHECKED_VERSION}/src/vscode-dts/vscode.d.ts" \
+--output "./out/latest_checked.vscode.d.ts" && \
+curl "https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.d.ts" \
+--output "./out/latest.vscode.d.ts" && \
+bcomp "./out/latest_checked.vscode.d.ts" "./out/latest.vscode.d.ts"
+```
 
 ## VSCODE TESTING API
 
