@@ -12,7 +12,7 @@ import { sep as osPathSeparator } from 'path';
 import { TaskQueue } from './util/TaskQueue';
 import { AbstractExecutable, TestsToRun } from './framework/AbstractExecutable';
 import { ConfigOfExecGroup } from './ConfigOfExecGroup';
-import { generateId } from './Util';
+import { generateId, Version } from './Util';
 import { AbstractTest } from './framework/AbstractTest';
 import { TestItemManager } from './TestItemManager';
 import { ProgressReporter } from './util/ProgressReporter';
@@ -87,10 +87,13 @@ export class WorkspaceManager implements vscode.Disposable {
         }
 
         const resolvedTask = await resolveVariablesAsync(found, varToValue);
-        // Task.name setter needs to be triggered in order for the task to clear its __id field
-        // (https://github.com/microsoft/vscode/blob/ba33738bb3db01e37e3addcdf776c5a68d64671c/src/vs/workbench/api/common/extHostTypes.ts#L1976),
-        // otherwise task execution fails with "Task not found".
-        resolvedTask.name += '';
+
+        if (Version.from(vscode.version)?.smaller(new Version(1, 72))) {
+          // Task.name setter needs to be triggered in order for the task to clear its __id field
+          // (https://github.com/microsoft/vscode/blob/ba33738bb3db01e37e3addcdf776c5a68d64671c/src/vs/workbench/api/common/extHostTypes.ts#L1976),
+          // otherwise task execution fails with "Task not found".
+          resolvedTask.name += '';
+        }
 
         if (cancellationToken.isCancellationRequested) return;
 

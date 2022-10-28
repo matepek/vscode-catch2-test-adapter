@@ -60,6 +60,14 @@ export function concat(left: string, right: string, sep = ''): string {
 }
 
 export class Version {
+  static from(value: string): Version | undefined {
+    const match = value.match(/^(\d+)(?:\.(\d+)(?:\.(\d+))?)?$/);
+    if (!match) return undefined;
+
+    const [, major, minor, patch] = match;
+    return new Version(Number(major), minor ? Number(minor) : undefined, patch ? Number(patch) : undefined);
+  }
+
   constructor(readonly major: number, private readonly _minor?: number, private readonly _patch?: number) {}
 
   get minor(): number {
