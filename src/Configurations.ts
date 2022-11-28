@@ -244,7 +244,6 @@ export class Configurations {
           program: '${exec}',
           args: '${argsArray}',
           cwd: '${cwd}',
-          env: '${envObj}',
           environment: '${envObjArray}',
           sourceFileMap: '${sourceFileMapObj}',
         });

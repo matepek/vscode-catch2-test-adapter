@@ -146,6 +146,8 @@ int main(int argc, char **argv) {
 
 TEST(Std, NoOutput)
 {
+    if(const char* env_p = std::getenv("ENV_TEST"))
+      std::cout << "ENV_TEST: " << env_p << "\n";
     std::cout << "cout\n";
     std::cerr << "cerr\n";
 }
