@@ -100,13 +100,13 @@ async function replaceAllRegExp(
   const newStr: string[] = [];
 
   while (m && m.index !== undefined) {
-    newStr.push(remainingStr.substr(0, m.index));
+    newStr.push(remainingStr.substring(0, m.index));
 
     const ruleV = await rule(m);
     if (typeof ruleV !== 'string') throw Error('resolveVariables regex func return type should be string');
     newStr.push(ruleV);
 
-    remainingStr = remainingStr.substr(m.index + m[0].length);
+    remainingStr = remainingStr.substring(m.index + m[0].length);
     m = remainingStr.match(resolve);
   }
 
@@ -312,4 +312,8 @@ export function createPythonIndexerForPathVariable(varName: string, pathStr: str
       }
     },
   };
+}
+
+export function cloneRecursively<T>(value: T): T {
+  return _mapAllStrings(value, undefined, x => x) as T;
 }

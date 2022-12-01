@@ -13,6 +13,7 @@ import {
   ExecutionWrapperConfig,
 } from './AdvancedExecutableInterface';
 import { platformUtil } from './util/Platform';
+import { cloneRecursively } from './util/ResolveRule';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
 
@@ -112,12 +113,9 @@ export class Configurations {
       };
 
       if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
-        Object.assign(template, templateFromConfig);
-        // assign does not unwrap Proxy so we have to do it
-        //https://github.com/matepek/vscode-catch2-test-adapter/issues/369
-        template[setEnvKey] = Object.assign({}, templateFromConfig[setEnvKey]);
+        // we need this trick to get rid of the proxy, because asigns works on proxy but not on it's children
+        Object.assign(template, cloneRecursively(templateFromConfig));
         this._log.debug('template', template);
-
         return { template, source: 'userDefined', launchSourceFileMap: {} };
       } else if (templateFromConfig === null) {
         const wpLaunchConfigs = vscode.workspace
@@ -242,7 +240,6 @@ export class Configurations {
 
         return { template, source: 'webfreak.debug', launchSourceFileMap: {} };
       } else if (this._hasExtension('ms-vscode.cpptools')) {
-        // documentation says debug"environment" = [{...}] but that doesn't work
         Object.assign(template, {
           type: 'cppvsdbg',
           linux: { type: 'cppdbg', MIMode: 'gdb' },
