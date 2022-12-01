@@ -146,7 +146,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         const runQueue: Thenable<void>[] = [];
 
         for (const [manager, executables] of managers) {
-          runQueue.push(manager.run(executables, cancellation, testRun));
+          runQueue.push(
+            manager.run(executables, cancellation, testRun).catch(e => {
+              vscode.window.showErrorMessage('Unexpected error from run: ' + e);
+            }),
+          );
         }
 
         await Promise.allSettled(runQueue);
@@ -200,7 +204,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             return;
           }
           const test = testsToRun.direct[0];
-          runQueue.push(manager.debug(test, cancellation, testRun));
+          runQueue.push(
+            manager.debug(test, cancellation, testRun).catch(e => {
+              vscode.window.showErrorMessage('Unexpected error from debug: ' + e);
+            }),
+          );
         }
 
         await Promise.allSettled(runQueue);

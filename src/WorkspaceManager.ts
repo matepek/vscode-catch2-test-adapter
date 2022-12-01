@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Config, Configurations } from './Configurations';
+import { Config, Configurations, setEnvKey } from './Configurations';
 import { LoggerWrapper } from './LoggerWrapper';
 import {
   createPythonIndexerForArray,
@@ -279,12 +279,12 @@ export class WorkspaceManager implements vscode.Disposable {
     executables: Map<AbstractExecutable, TestsToRun>,
     cancellation: vscode.CancellationToken,
     run: vscode.TestRun,
-  ): Thenable<void> {
+  ): Promise<void> {
     for (const exec of executables.values()) for (const test of exec) run.enqueued(test.item);
 
     return this._runInner(executables, cancellation, run).catch(e => {
       this.log.errorS('error during run', e);
-      debugger;
+      throw e;
     });
   }
 
@@ -380,11 +380,12 @@ export class WorkspaceManager implements vscode.Disposable {
     }
   }
 
-  debug(test: AbstractTest, cancellation: vscode.CancellationToken, run: vscode.TestRun): Thenable<void> {
+  debug(test: AbstractTest, cancellation: vscode.CancellationToken, run: vscode.TestRun): Promise<void> {
     run.enqueued(test.item);
 
     return this._debugInner(test, cancellation, run).catch(e => {
       this.log.errorS('error during debug', e);
+      throw e;
     });
   }
 
@@ -417,7 +418,6 @@ export class WorkspaceManager implements vscode.Disposable {
       const envVars = Object.assign({}, process.env, executable.shared.options.env);
 
       {
-        const setEnvKey = 'testMate.cpp.debug.setEnv';
         if (typeof debugConfigData.template[setEnvKey] === 'object') {
           for (const envName in debugConfigData.template[setEnvKey]) {
             const envValue = debugConfigData.template[setEnvKey][envName];

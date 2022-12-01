@@ -58,6 +58,10 @@ class ConfigurationChangeEvent {
 
 ///
 
+export const setEnvKey = 'testMate.cpp.debug.setEnv';
+
+///
+
 export class Configurations {
   private _cfg: vscode.WorkspaceConfiguration;
 
@@ -109,6 +113,9 @@ export class Configurations {
 
       if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
         Object.assign(template, templateFromConfig);
+        // assign does not unwrap Proxy so we have to do it
+        //https://github.com/matepek/vscode-catch2-test-adapter/issues/369
+        template[setEnvKey] = Object.assign({}, templateFromConfig[setEnvKey]);
         this._log.debug('template', template);
 
         return { template, source: 'userDefined', launchSourceFileMap: {} };
