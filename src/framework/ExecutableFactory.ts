@@ -128,8 +128,11 @@ const frameworkIdsSorted = Object.keys(frameworkDatas).sort(
 ) as ReadonlyArray<FrameworkId>;
 
 function parseVersion123(match: RegExpMatchArray): Version | undefined {
-  if (match && match.length === 4 && Number(match[1]) !== NaN && Number(match[2]) !== NaN && Number(match[3]) !== NaN) {
-    return new Version(Number(match[1]), Number(match[2]), Number(match[3]));
+  const major = parseInt(match[1]);
+  const minor = parseInt(match[2]);
+  const patch = parseInt(match[3]);
+  if (match && match.length === 4 && !Number.isNaN(major) && !Number.isNaN(minor) && !Number.isNaN(patch)) {
+    return new Version(major, minor, patch);
   } else {
     return undefined;
   }
