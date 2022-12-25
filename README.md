@@ -32,7 +32,7 @@ in case this is too buggy or you cannot wait for some old feature.
 
 ### Screenshots
 
-![Screenshot1](resources/ScreenShot_2021-11-20.png)
+![Screenshot1](resources/Screenshot_2022-12-25.png)
 
 ### More features
 
