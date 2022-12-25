@@ -338,6 +338,9 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     }
 
     const resolvedSourceFileMap = await resolveAllAsync(this._sourceFileMap, varToValue, false);
+    for (const key in resolvedSourceFileMap) {
+      resolvedSourceFileMap[key] = pathlib.normalize(resolvedSourceFileMap[key]);
+    }
 
     return new ExecutableFactory(
       this._shared,

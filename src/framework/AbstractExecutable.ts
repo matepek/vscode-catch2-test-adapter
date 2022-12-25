@@ -779,16 +779,19 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
   findSourceFilePath(file: string | undefined): string | undefined {
     if (typeof file != 'string') return undefined;
 
-    let resolved = file;
+    // normalize before apply resolvedSourceFileMap because it is normalize too
+    // this is for better platfrom independent resolution
+    let resolved = pathlib.normalize(file);
 
     for (const m in this.shared.resolvedSourceFileMap) {
       resolved = resolved.replace(m, this.shared.resolvedSourceFileMap[m]); // Note: it just replaces the first occurence
     }
 
-    resolved = pathlib.normalize(resolved);
     resolved = this._findFilePath(resolved);
 
     this.shared.log.debug('findSourceFilePath:', file, '=>', resolved);
+
+    resolved = pathlib.normalize(resolved);
 
     return resolved;
   }
@@ -800,7 +803,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     const cwd = this.shared.options.cwd?.toString();
 
-    if (cwd && !this.shared.path.startsWith(cwd)) directoriesToCheck.push(cwd);
+    if (cwd && !this.shared.path.startsWith(cwd)) {
+      directoriesToCheck.push(cwd);
+    }
 
     if (
       !this.shared.path.startsWith(this.shared.workspaceFolder.uri.fsPath) &&

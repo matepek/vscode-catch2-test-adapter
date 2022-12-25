@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.3.8]
+
+### Fixed
+
+- issue related to path resolution. Especially Catch2 related on windows but it also effects source file mapping. [details](https://github.com/matepek/vscode-catch2-test-adapter/issues/367)
+
 ## [4.3.7] - 2022-12-01
 
 ## [4.3.6] - 2022-12-01
