@@ -255,7 +255,7 @@ async function closeMentionedIssues(info: Info): Promise<void> {
       {
         body: [
           '<details>',
-          `<summary>Fixed in **${info.vver}**.</summary>`,
+          `<summary>Fixed in <b>${info.vver}</b>.</summary>`,
           '',
           'This issue was mentioned in [CHANGELOG.md](./CHANGELOG.md) under a released entry so it is assumed to be fixed.',
           'User verifications are always welcome.',
