@@ -65,8 +65,9 @@ export class TestItemManager {
     tags: vscode.TestTag[] | null,
   ): Promise<vscode.TestItem> {
     const resolvedFile = fileResolver.findSourceFilePath(file);
+    const resolvedFileUri = resolvedFile ? vscode.Uri.file(resolvedFile) : undefined;
 
-    if (item.uri?.fsPath !== resolvedFile) {
+    if (item.uri?.fsPath !== resolvedFileUri?.fsPath) {
       const newItem = this.createOrReplace(
         item.parent,
         item.id,
