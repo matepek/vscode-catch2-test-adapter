@@ -1,19 +1,18 @@
 import { TestGroupingConfig } from './TestGroupingInterface';
-import { FrameworkType } from './framework/Framework';
 
 ///
 
 export type AdvancedExecutableConfigArray = Array<AdvancedExecutableConfig>;
 
 export type AdvancedExecutableConfig = {
+  pattern: ResolvableString;
+  name?: ResolvableString;
+  description?: ResolvableString;
   comment?: string;
-  pattern?: string;
-  name?: string;
-  description?: string;
-  cwd?: string;
-  env?: Record<string, string>;
-  envFile?: string;
-  dependsOn?: Array<string>;
+  cwd?: ResolvableString;
+  env?: Record<string, ResolvableString>;
+  envFile?: ResolvableString;
+  dependsOn?: Array<ResolvableString>;
   runTask?: RunTaskConfig;
   parallelizationLimit?: number;
   strictPattern?: boolean;
@@ -25,22 +24,22 @@ export type AdvancedExecutableConfig = {
   gbenchmark?: FrameworkSpecificConfig;
   testGrouping?: TestGroupingConfig;
   executionWrapper?: ExecutionWrapperConfig;
-  sourceFileMap?: Record<string, string>;
+  sourceFileMap?: Record<string, ResolvableString>;
   darwin?: AdvancedExecutableConfig;
   linux?: AdvancedExecutableConfig;
   win32?: AdvancedExecutableConfig;
-} & Record<FrameworkType, FrameworkSpecificConfig>;
+};
 
 export interface RunTaskConfig {
-  before?: Array<string>;
-  beforeEach?: Array<string>;
-  after?: Array<string>;
-  afterEach?: Array<string>;
+  before?: Array<TaskName>;
+  beforeEach?: Array<TaskName>;
+  after?: Array<TaskName>;
+  afterEach?: Array<TaskName>;
 }
 
 export interface ExecutionWrapperConfig {
-  path: string;
-  args?: Array<string>;
+  path: ResolvableString;
+  args?: Array<ResolvableString>;
 }
 
 export interface FrameworkSpecificConfig {
@@ -52,3 +51,6 @@ export interface FrameworkSpecificConfig {
   'debug.enableOutputColouring'?: boolean;
   failIfExceedsLimitNs?: number;
 }
+
+type ResolvableString = string;
+type TaskName = string;

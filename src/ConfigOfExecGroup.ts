@@ -233,11 +233,6 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     const varToValue: ResolveRuleAsync[] = [];
 
-    const subPath = createPythonIndexerForPathVariable;
-
-    const subFilename = (valName: string, filename: string): ResolveRuleAsync =>
-      createPythonIndexerForStringVariable(valName, filename, '.', '.');
-
     try {
       const filename = pathlib.basename(filePath);
       const extFilename = pathlib.extname(filename);
@@ -247,11 +242,11 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       varToValue.push(
         { resolve: '${filename}', rule: filename }, // redundant but might faster
         { resolve: '${relDirpath}', rule: relDirpath }, // redundant but might faster
-        subFilename('filename', filename),
-        subPath('relPath', relPath),
-        subPath('absPath', filePath),
-        subPath('relDirpath', relDirpath),
-        subPath('absDirpath', pathlib.dirname(filePath)),
+        createPythonIndexerForStringVariable('filename', filename, '.', '.'),
+        createPythonIndexerForPathVariable('relPath', relPath),
+        createPythonIndexerForPathVariable('absPath', filePath),
+        createPythonIndexerForPathVariable('relDirpath', relDirpath),
+        createPythonIndexerForPathVariable('absDirpath', pathlib.dirname(filePath)),
         { resolve: '${extFilename}', rule: extFilename },
         { resolve: '${baseFilename}', rule: baseFilename },
         ...this._shared.varToValue,
@@ -270,7 +265,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
       resolvedCwd = pathlib.resolve(this._shared.workspaceFolder.uri.fsPath, resolvedCwd);
 
-      varToValue.push(subPath('cwd', resolvedCwd));
+      varToValue.push(createPythonIndexerForPathVariable('cwd', resolvedCwd));
     } catch (e) {
       this._shared.log.error('resolvedCwd', e);
     }

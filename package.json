@@ -145,7 +145,7 @@
                     "enum": [
                       "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
                       "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*.exe",
-                      "${command:cmake.buildDirectory}"
+                      "${command:cmake.buildDirectory}/**/*{test,Test,TEST}*"
                     ],
                     "minLength": 1
                   },
