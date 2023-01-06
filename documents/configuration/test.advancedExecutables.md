@@ -227,7 +227,7 @@ which can be used in `cwd` and `env` of `executables`:
 | `${config:<varname>}`        | Resolves it to the given(`<varname>`) vscode config variable. Can be used everywhere.                                                                                                        |
 
 [Array index]ing: `(?:\[(-?[0-9]+)?:(-?[0-9]+)?\])?`.
-Exmaple: `${relPath[:-2]}`: 'a/b/c/d' -> 'a/b'
+Example: `${relPath[:-2]}`: 'a/b/c/d' -> 'a/b'
 
 ## Framework specific settings
 
@@ -406,8 +406,8 @@ Note: This example overused it.
 ## `executionWrapper`
 
 - `${cmd}`
-- `${argsFlat}`: Exmaple: `["pre", "${argsFlat}", "post"]` -> `["pre", "$1", "$2", ..., "$x", "post"]`
-- `${argsStr}`: Exmaple: `["pre", "pre ${argsStr} post", "post"]` -> `["pre", " pre \"$1\" \"$2\" ... \"$x\" post", "post"]`
+- `${argsFlat}`: Example: `["pre", "${argsFlat}", "post"]` -> `["pre", "$1", "$2", ..., "$x", "post"]`
+- `${argsStr}`: Example: `["pre", "pre ${argsStr} post", "post"]` -> `["pre", " pre \"$1\" \"$2\" ... \"$x\" post", "post"]`
 
 Examples:
 
