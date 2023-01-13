@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- support for vscode "continuous tests" [feature](https://github.com/microsoft/vscode/issues/134941)
+
 ## [4.3.10] - 2022-12-26
 
 ### Fixed

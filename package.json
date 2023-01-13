@@ -94,6 +94,10 @@
     "webpack-bundle-analyzer": "^4.7.0",
     "webpack-cli": "^5.0.1"
   },
+  "enabledApiProposals": [
+    "testCoverage",
+    "testContinuousRun"
+  ],
   "engines": {
     "vscode": "^1.65.0"
   },

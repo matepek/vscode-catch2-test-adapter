@@ -13,12 +13,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const controller = vscode.tests.createTestController('testmatecpp', 'TestMate C++');
   const workspace2manager = new Map<vscode.WorkspaceFolder, WorkspaceManager>();
   const testItemManager = new TestItemManager(controller);
+  const executableChangedEmitter = new vscode.EventEmitter<Iterable<AbstractExecutable>>();
+  const executableChanged = (e: Iterable<AbstractExecutable>): void => executableChangedEmitter.fire(e);
 
   ///
 
   const addWorkspaceManager = (wf: vscode.WorkspaceFolder): void => {
     if (workspace2manager.get(wf)) log.errorS('Unexpected workspace manager', wf);
-    else workspace2manager.set(wf, new WorkspaceManager(wf, log, testItemManager));
+    else workspace2manager.set(wf, new WorkspaceManager(wf, log, testItemManager, executableChanged));
   };
 
   const removeWorkspaceManager = (wf: vscode.WorkspaceFolder): void => {
@@ -128,41 +130,59 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   let runCount = 0;
   let debugCount = 0;
 
+  const startTestRun = async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken) => {
+    if (debugCount) {
+      vscode.window.showWarningMessage('Cannot run new tests while debugging.');
+      return;
+    }
+
+    const testRun = controller.createTestRun(request);
+    ++runCount;
+
+    try {
+      const managers = collectExecutablesForRun(request);
+
+      const runQueue: Thenable<void>[] = [];
+
+      for (const [manager, executables] of managers) {
+        runQueue.push(
+          manager.run(executables, cancellation, testRun).catch(e => {
+            vscode.window.showErrorMessage('Unexpected error from run: ' + e);
+          }),
+        );
+      }
+
+      await Promise.allSettled(runQueue);
+    } catch (e) {
+      log.errorS('runHandler errored. never should be here', e);
+    } finally {
+      testRun.end();
+      --runCount;
+    }
+  };
+
   const runProfile = controller.createRunProfile(
     'Run Test',
     vscode.TestRunProfileKind.Run,
-    async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken): Promise<void> => {
-      if (debugCount) {
-        vscode.window.showWarningMessage('Cannot run new tests while debugging.');
-        return;
-      }
-
-      const testRun = controller.createTestRun(request);
-      ++runCount;
-
-      try {
-        const managers = collectExecutablesForRun(request);
-
-        const runQueue: Thenable<void>[] = [];
-
-        for (const [manager, executables] of managers) {
-          runQueue.push(
-            manager.run(executables, cancellation, testRun).catch(e => {
-              vscode.window.showErrorMessage('Unexpected error from run: ' + e);
-            }),
-          );
-        }
-
-        await Promise.allSettled(runQueue);
-      } catch (e) {
-        log.errorS('runHandler errored. never should be here', e);
-      } finally {
-        testRun.end();
-        --runCount;
+    async (request: vscode.TestRunRequest2, cancellation: vscode.CancellationToken): Promise<void> => {
+      if (request.continuous) {
+        const l = executableChangedEmitter.event(executables => {
+          const include: vscode.TestItem[] = [];
+          for (const e of executables) {
+            const eit = e.getExecTestItem();
+            if (eit) include.push(eit);
+            else for (const t of e.getTests()) include.push(t.item);
+          }
+          startTestRun(new vscode.TestRunRequest2(include, request.exclude, request.profile, true), cancellation);
+        });
+        cancellation.onCancellationRequested(() => l.dispose());
+      } else {
+        return startTestRun(request, cancellation);
       }
     },
     true,
     SharedTestTags.runnable,
+    true,
   );
 
   const debugProfile = controller.createRunProfile(

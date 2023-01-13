@@ -6,6 +6,7 @@ import { BuildProcessChecker } from './util/BuildProcessChecker';
 import { CancellationToken } from './Util';
 import { TestItemManager } from './TestItemManager';
 import { FrameworkSpecificConfig } from './AdvancedExecutableInterface';
+import { AbstractExecutable } from './framework/AbstractExecutable';
 
 export class WorkspaceShared {
   constructor(
@@ -17,6 +18,7 @@ export class WorkspaceShared {
       varsToResolve: readonly ResolveRuleAsync[],
       cancellationToken: CancellationToken,
     ) => Promise<number | undefined>,
+    readonly sendRetireEvent: (executables: Iterable<AbstractExecutable>) => void,
     readonly varToValue: readonly Readonly<ResolveRuleAsync>[],
     public rngSeed: 'time' | number | null,
     public execWatchTimeout: number,

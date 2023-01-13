@@ -81,6 +81,10 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return this._tests.get(testId) as TestT;
   }
 
+  public getTests(): Iterable<AbstractTest> {
+    return this._tests.values();
+  }
+
   private async _getOrCreateChildGroup(
     idIn: string | undefined,
     label: string,
@@ -165,6 +169,10 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
    * It can be nested, in this case the shallowest/first will be stored.
    */
   private readonly _execItem: ExecutableGroup;
+
+  public getExecTestItem(): vscode.TestItem | undefined {
+    return this._execItem.getItem();
+  }
 
   protected async _createTreeAndAddTest(
     testGrouping: TestGroupingConfig,
@@ -840,6 +848,10 @@ class ExecutableGroup {
   private _itemForStaticError: vscode.TestItem | undefined = undefined;
   // we need to be exclusive because we save prevTests
   private _lock = Promise.resolve();
+
+  getItem(): vscode.TestItem | undefined {
+    return this._item ?? undefined;
+  }
 
   setItem(item: vscode.TestItem) {
     if (this._item !== undefined) {

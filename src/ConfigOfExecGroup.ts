@@ -176,7 +176,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
                 for (const exec of this._executables.values())
                   exec.reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime);
               });
-              //TODO:future this._shared.sendRetireEvent(this._executables.values());
+              this._shared.sendRetireEvent(this._executables.values());
             });
           } else {
             absPatterns.push(p.absPath);
@@ -191,7 +191,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
           w.onAll((fsPath: string): void => {
             this._shared.log.info('dependsOn watcher event:', fsPath);
-            //TODO:future this._shared.sendRetireEvent(this._executables.values());
+            this._shared.sendRetireEvent(this._executables.values());
           });
         }
       } catch (e) {
@@ -471,7 +471,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       try {
         await executable.reloadTests(this._shared.taskPool, this._shared.cancellationToken);
         this._executables.set(filePath, executable); // it might be set already but we don't care
-        //TODO:release this._shared.sendRetireEvent([runnable]);
+        this._shared.sendRetireEvent([executable]);
       } catch (reason: any /*eslint-disable-line*/) {
         if (reason?.code === undefined)
           this._shared.log.debug('problem under reloading', { reason, filePath, runnable: executable });
