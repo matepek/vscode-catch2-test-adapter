@@ -168,10 +168,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (request.continuous) {
         const l = executableChangedEmitter.event(executables => {
           const include: vscode.TestItem[] = [];
-          for (const e of executables) {
-            const eit = e.getExecTestItem();
-            if (eit) include.push(eit);
-            else for (const t of e.getTests()) include.push(t.item);
+          if (request.include === undefined) {
+            for (const e of executables) {
+              const eit = e.getExecTestItem();
+              if (eit) include.push(eit);
+              else for (const t of e.getTests()) include.push(t.item);
+            }
+          } else {
+            for (const e of executables) {
+              for (const t of e.getTests()) {
+                if (request.include.indexOf(t.item) !== -1) include.push(t.item);
+              }
+            }
           }
           startTestRun(new vscode.TestRunRequest2(include, request.exclude, request.profile, true), cancellation);
         });
