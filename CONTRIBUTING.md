@@ -16,6 +16,7 @@ Author's note:
 - Report a bug ("properly").
 - Tell me about your desired features.
 - Create a pull request (against the development branch or master (if you sure your your PR is ready to be deployed)).
+- Documentation related improvements (ex.:typos) are only accepted as issues, not as PRs.
 
 ### Clone Repo
 
