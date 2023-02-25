@@ -44,6 +44,8 @@ npm install
 
 ### Test
 
+> Since the big refactoring I had no time to adjust the tests :(
+
 After installing:
 
 ```bash
@@ -58,25 +60,17 @@ After test:
 2. Let task `npm watch` run in the background.
 3. VSCode "Run" / Debug page: Select `Manual cpp`.
 4. Start debugging.
-5. Add your folder to the newly opened VSCode's workspace. (Or change [launch.json](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/.vscode/launch.json#L27)'s `Manual cpp` to the folder which is intended to be debugged and the start.)
+5. Add your folder to the newly opened VSCode's workspace. (Or change [launch.json](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/.vscode/launch.json)'s `Manual cpp` to the folder which is intended to be debugged and the start.)
 
 Issues are tipically related to file operations:
 
-- [RunnableFactory.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/RunnableFactory.ts#L36)
-- [GoogleRunnable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/GoogleTestRunnable.ts)
-- [Catch2Runnable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/Catch2Runnable.ts#L204)
+- [ExecutableFactory.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/ExecutableFactory.ts)
+- [GoogleTestExecutable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/GoogleTest/GoogleTestExecutable.ts)
+- [Catch2Executable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/Catch2/Catch2Executable.ts)
 
 ### Publishing to market
 
-If you think your changes worth of a release add a new version entry to `CHANGELOG.md` file without a date. Travis will publish it automatically.
-
-## TODO:future
-
-- doctest: supporting test suites
-- Test cases: google test, catch2: info, warn, fail, stdout, stderr, capture, gtest_skip, gmock_verbose
-- gaze is not good enough: detects change and delete, but not creation
-- Use https://github.com/assistunion/xml-stream/blob/master/tests/test-readable-stream.js
-- https://www.npmjs.com/package/ansi-colors
+If you think your changes worth of a release add a new version entry to `CHANGELOG.md` file without a date. CI will publish it automatically.
 
 ## VSCE_PAT
 
@@ -85,7 +79,7 @@ If you think your changes worth of a release add a new version entry to `CHANGEL
 
 ## VSCode API Change tracking tool
 
-```bash
+```sh
 LAST_CHECKED_VERSION="1.74.0" && \
 curl "https://raw.githubusercontent.com/microsoft/vscode/${LAST_CHECKED_VERSION}/src/vscode-dts/vscode.d.ts" \
 --output "./out/latest_checked.vscode.d.ts" && \
