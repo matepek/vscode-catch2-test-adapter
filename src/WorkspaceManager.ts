@@ -384,7 +384,7 @@ export class WorkspaceManager implements vscode.Disposable {
     test: AbstractTest,
     cancellation: vscode.CancellationToken,
     run: vscode.TestRun,
-    setDebugArgs: (args: string[]) => void,
+    setDebugArgs: (exec: string, args: string[]) => void,
   ): Promise<void> {
     run.enqueued(test.item);
 
@@ -398,7 +398,7 @@ export class WorkspaceManager implements vscode.Disposable {
     test: AbstractTest,
     cancellation: vscode.CancellationToken,
     run: vscode.TestRun,
-    setDebugArgs: (args: string[]) => void,
+    setDebugArgs: (exec: string, args: string[]) => void,
   ): Promise<void> {
     try {
       this._shared.log.info('Using debug');
@@ -411,7 +411,7 @@ export class WorkspaceManager implements vscode.Disposable {
       const configuration = this._getConfiguration(this._shared.log);
 
       const argsArray = executable.getDebugParams([test], configuration.getDebugBreakOnFailure());
-      setDebugArgs(argsArray);
+      setDebugArgs(executable.shared.path, argsArray);
 
       const argsArrayFunc = async (): Promise<string[]> => argsArray;
 

@@ -166,7 +166,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   // https://github.com/matepek/vscode-catch2-test-adapter/issues/375
+  let currentDebugExec = '';
   let currentDebugArgs: string[] = [];
+  const setCurrentDebugVars = (exec: string, args: string[]) => {
+    currentDebugExec = exec;
+    currentDebugArgs = args;
+  };
 
   const debugProfile = controller.createRunProfile(
     'Debug Test',
@@ -209,7 +214,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           const test = testsToRun.direct[0];
           runQueue.push(
             manager
-              .debug(test, cancellation, testRun, (args: string[]) => (currentDebugArgs = args))
+              .debug(test, cancellation, testRun, setCurrentDebugVars)
               .catch(e => {
                 vscode.window.showErrorMessage('Unexpected error from debug: ' + e);
               })
@@ -250,6 +255,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.commands.registerCommand('testMate.cmd.reload-workspaces', commandReloadWorkspaces),
   );
+
+  context.subscriptions.push(vscode.commands.registerCommand('testMate.cmd.get-debug-exec', () => currentDebugExec));
 
   context.subscriptions.push(
     vscode.commands.registerCommand('testMate.cmd.get-debug-args', () =>
