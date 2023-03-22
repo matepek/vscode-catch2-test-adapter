@@ -165,6 +165,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     SharedTestTags.runnable,
   );
 
+  // https://github.com/matepek/vscode-catch2-test-adapter/issues/375
+  let currentDebugArgs: string[] = [];
+
   const debugProfile = controller.createRunProfile(
     'Debug Test',
     vscode.TestRunProfileKind.Debug,
@@ -205,9 +208,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           }
           const test = testsToRun.direct[0];
           runQueue.push(
-            manager.debug(test, cancellation, testRun).catch(e => {
-              vscode.window.showErrorMessage('Unexpected error from debug: ' + e);
-            }),
+            manager
+              .debug(test, cancellation, testRun, (args: string[]) => (currentDebugArgs = args))
+              .catch(e => {
+                vscode.window.showErrorMessage('Unexpected error from debug: ' + e);
+              })
+              .finally(() => (currentDebugArgs = [])),
           );
         }
 
@@ -243,6 +249,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('testMate.cmd.reload-workspaces', commandReloadWorkspaces),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('testMate.cmd.get-debug-args', () =>
+      currentDebugArgs.map(a => a.replaceAll('"', '\\"')).join('" "'),
+    ),
   );
 
   addOpenedWorkspaces();
