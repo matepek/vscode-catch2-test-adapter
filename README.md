@@ -5,7 +5,6 @@
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 [![GitHub issues](https://img.shields.io/github/issues/matepek/vscode-catch2-test-adapter?color=green)](https://github.com/matepek/vscode-catch2-test-adapter/issues)
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/d/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
-[![Gitter](https://badges.gitter.im/CppTestMate/community.svg)](https://gitter.im/CppTestMate/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 This extension allows you to run your
 [Catch2](https://github.com/catchorg/Catch2),
@@ -16,19 +15,13 @@ It also have basic support for [Google Benchmark](https://github.com/google/benc
 
 ## Features / Show-Off
 
-The previous version (v3.x.y) of the extension is published as [C++ TestMate Legacy](https://github.com/matepek/vscode-catch2-test-adapter/tree/legacy)
-in case this is too buggy or you cannot wait for some old feature.
-
 - New testing API integration has just happened with a tons of improvements.
   - Streaming the test run: Don't have to wait for the result to see the progress (in case you test uses `std::cout`)
   - Catch Section and DOCTest SubCase support (limited but still sometings)
 - Runs executables parallel (_testMate.cpp.test.parallelExecutionLimit_).
 - Sorts tests and suites (_testExplorer.sort_).
 - Supports popular **debuggers** such as `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools` out of the box.
-
-### Missing features (coming in the future if possible):
-
-- Retire tests and "Autorun" them.
+- Retire tests and "Autorun" them. (Coming soon..)
 
 ### Screenshots
 
@@ -48,7 +41,13 @@ in case this is too buggy or you cannot wait for some old feature.
 [test.advancedexecutables]: https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md
 [debug.configtemplate]: https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/debug.configTemplate.md
 
-The extension is \*_pre-configured_ and it should find executables inside the working directory which match the following [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options):
+The extension is **pre-configured** and it should find executables inside the working directory
+which match the following [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options):
+
+```
+{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*
+```
+
 Not good enough for you?!: Edit your `.vscode/`[settings.json] file according to the [test.advancedExecutables]!
 
 | `testMate.cpp.___`                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -82,10 +81,11 @@ Plenty of more **fine-tuning options** are available under [test.advancedExecuta
 
 ## Commands
 
-| ID                               | Command                                       |
-| -------------------------------- | --------------------------------------------- |
-| `testMate.cmd.reload-tests`      | Reload tests                                  |
-| `testMate.cmd.reload-workspaces` | Force reload workspaces (in case of an issue) |
+| ID                               | Command                               |
+| -------------------------------- | ------------------------------------- |
+| `testMate.cmd.reload-tests`      | Reload tests                          |
+| `testMate.cmd.reload-workspaces` | Force reload workspaces (clean slate) |
+| `testing.refreshTests`           | Force reload workspaces (clean slate) |
 
 ## About [Sentry.io](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md) integration
 

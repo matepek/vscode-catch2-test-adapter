@@ -90,3 +90,8 @@ TEST_CASE("SectionTest may fail", "[!mayfail]") {
 TEST_CASE("SectionTest may fail but not", "[!mayfail]") {
   SECTION("Section 1") { REQUIRE(true); }
 }
+
+TEST_CASE("log macros test") {
+  INFO("Logging some INFO");
+  FAIL("fail msg");
+}

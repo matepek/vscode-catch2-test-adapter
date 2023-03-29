@@ -381,16 +381,26 @@ export class WorkspaceManager implements vscode.Disposable {
     }
   }
 
-  debug(test: AbstractTest, cancellation: vscode.CancellationToken, run: vscode.TestRun): Promise<void> {
+  debug(
+    test: AbstractTest,
+    cancellation: vscode.CancellationToken,
+    run: vscode.TestRun,
+    setDebugArgs: (exec: string, args: string[]) => void,
+  ): Promise<void> {
     run.enqueued(test.item);
 
-    return this._debugInner(test, cancellation, run).catch(e => {
+    return this._debugInner(test, cancellation, run, setDebugArgs).catch(e => {
       this.log.errorS('error during debug', e);
       throw e;
     });
   }
 
-  async _debugInner(test: AbstractTest, cancellation: vscode.CancellationToken, run: vscode.TestRun): Promise<void> {
+  async _debugInner(
+    test: AbstractTest,
+    cancellation: vscode.CancellationToken,
+    run: vscode.TestRun,
+    setDebugArgs: (exec: string, args: string[]) => void,
+  ): Promise<void> {
     try {
       this._shared.log.info('Using debug');
 
@@ -402,6 +412,7 @@ export class WorkspaceManager implements vscode.Disposable {
       const configuration = this._getConfiguration(this._shared.log);
 
       const argsArray = executable.getDebugParams([test], configuration.getDebugBreakOnFailure());
+      setDebugArgs(executable.shared.path, argsArray);
 
       const argsArrayFunc = async (): Promise<string[]> => argsArray;
 
@@ -452,7 +463,7 @@ export class WorkspaceManager implements vscode.Disposable {
         { resolve: '${argsArrayFlat}', rule: argsArrayFunc, isFlat: true },
         {
           resolve: '${argsStr}',
-          rule: (): string => '"' + argsArray.map(a => a.replace('"', '\\"')).join('" "') + '"',
+          rule: (): string => '"' + argsArray.map(a => a.replaceAll('"', '\\"')).join('" "') + '"',
         },
         { resolve: '${cwd}', rule: executable.shared.options.cwd!.toString() },
         {
