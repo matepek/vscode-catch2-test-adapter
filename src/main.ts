@@ -164,7 +164,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const runProfile = controller.createRunProfile(
     'Run Test',
     vscode.TestRunProfileKind.Run,
-    async (request: vscode.TestRunRequest2, cancellation: vscode.CancellationToken): Promise<void> => {
+    async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken): Promise<void> => {
       if (request.continuous) {
         const l = executableChangedEmitter.event(executables => {
           const include: vscode.TestItem[] = [];
@@ -181,7 +181,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               }
             }
           }
-          startTestRun(new vscode.TestRunRequest2(include, request.exclude, request.profile, true), cancellation);
+          startTestRun(new vscode.TestRunRequest(include, request.exclude, request.profile, true), cancellation);
         });
         cancellation.onCancellationRequested(() => l.dispose());
       } else {

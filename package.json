@@ -37,7 +37,7 @@
     "google benchmark",
     "gbenchmark"
   ],
-  "main": "out/src/main.js",
+  "main": "out/dist/main.js",
   "scripts": {
     "reinstall": "rimraf node_modules package-lock.json && npm install",
     "clean": "rimraf out node_modules vscode-catch2-test-adapter-*.vsix",
@@ -71,7 +71,7 @@
     "@types/sinon": "^10.0.13",
     "@types/source-map-support": "^0.5.6",
     "@vscode/vsce": "^2.18.0",
-    "@types/vscode": "1.65.0",
+    "@types/vscode": "1.77.0",
     "@typescript-eslint/eslint-plugin": "^5.56.0",
     "@typescript-eslint/parser": "^5.56.0",
     "@vscode/test-electron": "^2.3.0",
@@ -94,12 +94,9 @@
     "webpack-bundle-analyzer": "^4.8.0",
     "webpack-cli": "^5.0.1"
   },
-  "enabledApiProposals": [
-    "testCoverage",
-    "testContinuousRun"
-  ],
+  "enabledApiProposals": [],
   "engines": {
-    "vscode": "^1.65.0"
+    "vscode": "^1.77.0"
   },
   "activationEvents": [
     "onStartupFinished"
