@@ -17,12 +17,12 @@ import { AbstractTest } from './framework/AbstractTest';
 import { TestItemManager } from './TestItemManager';
 import { ProgressReporter } from './util/ProgressReporter';
 
-//TODO:release if workspace contains ".vscode/testMate.cpp.json" we have to start loading the tests
 export class WorkspaceManager implements vscode.Disposable {
   constructor(
     private readonly workspaceFolder: vscode.WorkspaceFolder,
     private readonly log: LoggerWrapper,
     testItemManager: TestItemManager,
+    executableChanged: (e: Iterable<AbstractExecutable>) => void,
   ) {
     const workspaceNameRes: ResolveRuleAsync = { resolve: '${workspaceName}', rule: this.workspaceFolder.name };
 
@@ -137,6 +137,7 @@ export class WorkspaceManager implements vscode.Disposable {
       log,
       testItemManager,
       executeTask,
+      executableChanged,
       variableToValue,
       configuration.getRandomGeneratorSeed(),
       configuration.getExecWatchTimeout(),

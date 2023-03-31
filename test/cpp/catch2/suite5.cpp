@@ -1,4 +1,4 @@
-#include "catch2/catch.hpp"
+#include "catch2/catch_all.hpp"
 
 TEST_CASE("suite with label 1", "descr [1][2]") {}
 TEST_CASE("suite with label 2", "descr [2][3]") {}

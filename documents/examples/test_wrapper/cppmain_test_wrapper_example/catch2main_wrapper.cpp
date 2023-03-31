@@ -4,7 +4,7 @@
  * https://github.com/catchorg/Catch2/blob/master/docs/own-main.md
  */
 #define CATCH_CONFIG_RUNNER
-#include "catch2/catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "env_setter.hpp"
 
