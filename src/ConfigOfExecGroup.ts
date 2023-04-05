@@ -102,8 +102,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     progressReporter.setMax(filePaths.length);
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];
 
-    for (let i = 0; i < filePaths.length; i++) {
-      const file = filePaths[i];
+    for (const file of filePaths) {
       this._shared.log.debug('Checking file for tests:', file);
 
       if (this._shouldIgnorePath(file)) continue;

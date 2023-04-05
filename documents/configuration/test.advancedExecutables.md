@@ -444,3 +444,20 @@ This is useful if stderr/std::cerr is missing:
   }
 ]
 ```
+
+## running the same executable with different env values
+
+```json
+"testMate.cpp.test.advancedExecutables": [
+  {
+    "name": "${filename} [APPLE=1]",
+    "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+    "env":{ "APPLE": "1" }
+  },
+  {
+    "name": "${filename} [APPLE=2]",
+    "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+    "env":{ "APPLE": "2" }
+  }
+]
+```

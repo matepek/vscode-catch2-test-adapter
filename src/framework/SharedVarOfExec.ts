@@ -5,6 +5,9 @@ import { TaskPool } from '../util/TaskPool';
 import { Spawner, SpawnOptionsWithoutStdio } from '../Spawner';
 import { WorkspaceShared } from '../WorkspaceShared';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const hash = require('object-hash');
+
 export class SharedVarOfExec {
   constructor(
     readonly shared: WorkspaceShared,
@@ -21,9 +24,12 @@ export class SharedVarOfExec {
     readonly resolvedSourceFileMap: Record<string, string>,
   ) {
     this.parallelizationPool = new TaskPool(_parallelizationLimit);
+    this.optionsHash = hash.MD5(options).substring(0, 6);
   }
 
   readonly parallelizationPool: TaskPool;
+
+  readonly optionsHash: string;
 
   get testGrouping(): TestGroupingConfig | undefined {
     return this._frameworkSpecific.testGrouping;

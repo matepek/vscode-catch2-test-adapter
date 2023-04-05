@@ -277,7 +277,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
         groupByExecutable: async (g: GroupByExecutable): Promise<void> => {
           this._updateVarsWithTags(g, tags, tagsResolveRule);
 
-          const id = g.mergeByLabel === true ? undefined : this.shared.path;
+          const optionHash = this.shared.optionsHash;
+          const id = g.mergeByLabel === true ? undefined : this.shared.path + `#${optionHash}`;
           const label = g.label ?? '${filename}';
           const description = g.description ?? '${relDirpath}${osPathSep}';
 

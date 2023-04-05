@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.4.1]
+
+### Added
+
+- support 'multi-environment' tests [feature](https://github.com/matepek/vscode-catch2-test-adapter/issues/379)
+
 ## [4.4.0] - 2023-03-31
 
 ### Added
