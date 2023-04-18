@@ -1,13 +1,9 @@
-import { LoggerWrapper } from '../LoggerWrapper';
+import { Logger } from '../Logger';
 import { debugBreak } from './DevelopmentHelper';
 import { ParserInterface } from './ParserInterface';
 
 export class TextStreamParser implements ParserInterface {
-  constructor(
-    private readonly log: LoggerWrapper,
-    rootProcessor: RootLineProcessor,
-    private readonly handleStdErr = true,
-  ) {
+  constructor(private readonly log: Logger, rootProcessor: RootLineProcessor, private readonly handleStdErr = true) {
     this.topProcessor = rootProcessor;
   }
 

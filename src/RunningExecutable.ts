@@ -3,7 +3,7 @@ import * as ansi from 'ansi-colors';
 
 import { ChildProcessWithoutNullStreams } from './util/FSWrapper';
 import { AbstractTest } from './framework/AbstractTest';
-import { LoggerWrapper } from './LoggerWrapper';
+import { Logger } from './Logger';
 import { promisify } from 'util';
 import { CancellationToken, generateId } from './Util';
 import { SpawnBuilder } from './Spawner';
@@ -122,7 +122,7 @@ export class RunningExecutable {
     } catch {}
   }
 
-  setPriorityAsync(log: LoggerWrapper): void {
+  setPriorityAsync(log: Logger): void {
     const priority = 16;
     let retryOnFailure = 5;
 

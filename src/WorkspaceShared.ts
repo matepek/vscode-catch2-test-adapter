@@ -1,4 +1,4 @@
-import { LoggerWrapper } from './LoggerWrapper';
+import { Logger } from './Logger';
 import * as vscode from 'vscode';
 import { TaskPool } from './util/TaskPool';
 import { ResolveRuleAsync } from './util/ResolveRule';
@@ -11,7 +11,7 @@ import { AbstractExecutable } from './framework/AbstractExecutable';
 export class WorkspaceShared {
   constructor(
     readonly workspaceFolder: vscode.WorkspaceFolder,
-    readonly log: LoggerWrapper,
+    readonly log: Logger,
     readonly testController: TestItemManager,
     readonly executeTask: (
       taskName: string,
@@ -66,5 +66,5 @@ export class WorkspaceShared {
 }
 
 export interface ExecutableShared extends Readonly<FrameworkSpecificConfig> {
-  readonly log: LoggerWrapper;
+  readonly log: Logger;
 }

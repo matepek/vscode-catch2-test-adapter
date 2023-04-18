@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Config, Configurations, setEnvKey } from './Configurations';
-import { LoggerWrapper } from './LoggerWrapper';
+import { Logger } from './Logger';
 import {
   createPythonIndexerForArray,
   createPythonIndexerForPathVariable,
@@ -20,7 +20,7 @@ import { ProgressReporter } from './util/ProgressReporter';
 export class WorkspaceManager implements vscode.Disposable {
   constructor(
     private readonly workspaceFolder: vscode.WorkspaceFolder,
-    private readonly log: LoggerWrapper,
+    private readonly log: Logger,
     testItemManager: TestItemManager,
     executableChanged: (e: Iterable<AbstractExecutable>) => void,
   ) {
@@ -272,7 +272,7 @@ export class WorkspaceManager implements vscode.Disposable {
     if (this.initP === true) this.init(false);
   }
 
-  private _getConfiguration(log: LoggerWrapper): Configurations {
+  private _getConfiguration(log: Logger): Configurations {
     return new Configurations(log, this.workspaceFolder.uri);
   }
 

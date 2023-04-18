@@ -10,7 +10,7 @@ import { AbstractTest } from '../AbstractTest';
 import { CancellationFlag } from '../../Util';
 import { TestGroupingConfig } from '../../TestGroupingInterface';
 import { TestResultBuilder } from '../../TestResultBuilder';
-import { LoggerWrapper } from '../../LoggerWrapper';
+import { Logger } from '../../Logger';
 import { TestItemParent } from '../../TestItemManager';
 
 export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmarkTest> {
@@ -207,7 +207,7 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
 }
 
 function parseAndProcessTestCase(
-  log: LoggerWrapper,
+  log: Logger,
   builder: TestResultBuilder<GoogleBenchmarkTest>,
   metric: Record<string, unknown>,
 ): void {

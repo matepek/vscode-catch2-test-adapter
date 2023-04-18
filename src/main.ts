@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { AbstractExecutable, TestsToRun } from './framework/AbstractExecutable';
-import { LoggerWrapper } from './LoggerWrapper';
+import { Logger } from './Logger';
 import { WorkspaceManager } from './WorkspaceManager';
 import { SharedTestTags } from './framework/SharedTestTags';
 import { TestItemManager } from './TestItemManager';
@@ -8,7 +8,7 @@ import { TestItemManager } from './TestItemManager';
 ///
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  const log = new LoggerWrapper('testMate.cpp.log', 'C++ TestMate');
+  const log = new Logger();
   log.info('Activating extension');
   const controller = vscode.tests.createTestController('testmatecpp', 'TestMate C++');
   const workspace2manager = new Map<vscode.WorkspaceFolder, WorkspaceManager>();

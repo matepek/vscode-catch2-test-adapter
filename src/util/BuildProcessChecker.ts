@@ -1,11 +1,11 @@
-import { LoggerWrapper } from '../LoggerWrapper';
+import { Logger } from '../Logger';
 import find_process = require('find-process');
 
 ///
 
 // not so nice, init in rootsuite in the future
 export class BuildProcessChecker {
-  constructor(private readonly _log: LoggerWrapper) {}
+  constructor(private readonly _log: Logger) {}
 
   private readonly _checkIntervalMillis = 2000;
   // https://en.wikipedia.org/wiki/List_of_compilers#C++_compilers

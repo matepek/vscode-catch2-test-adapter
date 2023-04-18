@@ -16,7 +16,7 @@ import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
 import { readJSONSync } from 'fs-extra';
 import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
 import { RunTaskConfig, ExecutionWrapperConfig, FrameworkSpecificConfig } from './AdvancedExecutableInterface';
-import { LoggerWrapper } from './LoggerWrapper';
+import { Logger } from './Logger';
 import { debugBreak } from './util/DevelopmentHelper';
 import { FrameworkType } from './framework/Framework';
 import { readFileSync } from 'fs';
@@ -525,7 +525,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
   }
 }
 
-function checkEnvForPath(env: Record<string, string>, log: LoggerWrapper): void {
+function checkEnvForPath(env: Record<string, string>, log: Logger): void {
   if (process.platform === 'win32') {
     checkPathVariance('PATH', env, log);
     checkPathVariance('Path', env, log);
@@ -533,7 +533,7 @@ function checkEnvForPath(env: Record<string, string>, log: LoggerWrapper): void 
   }
 }
 
-function checkPathVariance(variance: string, env: Record<string, string>, log: LoggerWrapper): void {
+function checkPathVariance(variance: string, env: Record<string, string>, log: Logger): void {
   if (variance in env) {
     if (env[variance].indexOf('/') != -1)
       log.warn(`Env variable ${variance} contains slash on Windows: "${env[variance]}". That won't really work.`);

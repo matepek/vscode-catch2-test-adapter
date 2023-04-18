@@ -167,7 +167,7 @@ export function milisecToStr(durationInMilisec: number): string {
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { promisify } from 'util';
-import { LoggerWrapper } from './LoggerWrapper';
+import { Logger } from './Logger';
 
 type VersionT = [number, number, number];
 export class GoogleTestVersionFinder {
@@ -189,7 +189,7 @@ export class GoogleTestVersionFinder {
 
   private static _version: Promise<VersionT | undefined> | undefined = undefined;
 
-  static Get(log: LoggerWrapper): Promise<VersionT | undefined> {
+  static Get(log: Logger): Promise<VersionT | undefined> {
     if (this._version === undefined) {
       const cancellation = new vscode.CancellationTokenSource();
 
