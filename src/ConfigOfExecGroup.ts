@@ -282,20 +282,24 @@ export class ConfigOfExecGroup implements vscode.Disposable {
         let envFromFile: Record<string, string> | undefined = undefined;
         if (resolvedEnvFile.absPath.endsWith('.json')) {
           envFromFile = readJSONSync(resolvedEnvFile.absPath);
-        } else if (resolvedEnvFile.absPath.endsWith('.env')) {
+        } else if (resolvedEnvFile.absPath.indexOf('.env') !== -1) {
           const content = readFileSync(resolvedEnvFile.absPath).toString();
           envFromFile = {};
-          content
-            .split(/\r?\n/)
-            .filter(x => x.length > 0)
-            .map(line => line.split('='))
-            .forEach(entry => {
-              if (entry.length === 2) {
-                envFromFile![entry[0]] = entry[1];
-              } else {
-                throw Error('Unknown line in: "' + resolvedEnvFile.absPath + '"' + entry);
-              }
-            });
+          const lines = content.split(/\r?\n/).filter(x => {
+            const t = x.trim();
+            return t.length > 0 && !t.startsWith('#') && !t.startsWith('//');
+          });
+          lines.forEach((line: string) => {
+            const eqChar = line.indexOf('=');
+            if (eqChar !== -1) {
+              let value = line.substring(eqChar + 1);
+              if (value.startsWith('"') || value.startsWith("'")) value = value.substring(1);
+              if (value.endsWith('"') || value.endsWith("'")) value = value.substring(0, value.length - 1);
+              envFromFile![line.substring(0, eqChar)] = line.substring(eqChar + 1);
+            } else {
+              throw Error('line missing "=" in: "' + resolvedEnvFile.absPath + '"' + line);
+            }
+          });
         } else {
           throw Error('Unsupported file format: "' + resolvedEnvFile.absPath + '". Use only .json or .env');
         }
