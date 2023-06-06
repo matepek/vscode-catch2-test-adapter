@@ -21,7 +21,7 @@ It also have basic support for [Google Benchmark](https://github.com/google/benc
 - Runs executables parallel (_testMate.cpp.test.parallelExecutionLimit_).
 - Sorts tests and suites (_testExplorer.sort_).
 - Supports popular **debuggers** such as `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools` out of the box.
-- Retire tests and "Autorun" them. (Coming soon..)
+- Retire tests and "Autorun" them.
 
 ### Screenshots
 
@@ -86,8 +86,6 @@ Plenty of more **fine-tuning options** are available under [test.advancedExecuta
 | `testMate.cmd.reload-tests`      | Reload tests                          |
 | `testMate.cmd.reload-workspaces` | Force reload workspaces (clean slate) |
 | `testing.refreshTests`           | Force reload workspaces (clean slate) |
-
-## About [Sentry.io](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md) integration
 
 ## [License](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/LICENSE)
 

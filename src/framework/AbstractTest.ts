@@ -151,6 +151,17 @@ export abstract class AbstractTest {
 
   private _subTests: Map<string /*id*/, SubTest> | undefined = undefined;
 
+  public hasSubTest(id: string): boolean {
+    if (this._subTests === undefined) return false;
+    const found = this._subTests.get(id);
+    if (found !== undefined) return true;
+    for (const subTest of this._subTests.values()) {
+      const found = subTest.hasSubTest(id);
+      if (found) return true;
+    }
+    return false;
+  }
+
   async getOrCreateSubTest(
     id: string,
     label: string | undefined,

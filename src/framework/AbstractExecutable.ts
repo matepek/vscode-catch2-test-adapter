@@ -85,6 +85,17 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return this._tests.values();
   }
 
+  public hasTestWithId(id: string): boolean {
+    if (this._execItem.getItem()?.id === id) return true;
+    const found = this._tests.get(id);
+    if (found) return true;
+    for (const test of this._tests.values()) {
+      const found = test.hasSubTest(id);
+      if (found) return true;
+    }
+    return false;
+  }
+
   private async _getOrCreateChildGroup(
     idIn: string | undefined,
     label: string,

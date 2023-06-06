@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.4.3]
+
+### Fixed
+
+- issue related to autorun feature. It was not picking up some level of tests. [related](https://github.com/matepek/vscode-catch2-test-adapter/issues/387).
+
 ## [4.4.2] - 2023-04-28
 
 Improved .env file parser

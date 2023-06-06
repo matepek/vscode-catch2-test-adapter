@@ -175,9 +175,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               else for (const t of e.getTests()) include.push(t.item);
             }
           } else {
-            for (const e of executables) {
-              for (const t of e.getTests()) {
-                if (request.include.indexOf(t.item) !== -1) include.push(t.item);
+            for (const item of request.include) {
+              for (const e of executables) {
+                if (e.hasTestWithId(item.id)) {
+                  include.push(item);
+                  break;
+                }
               }
             }
           }
