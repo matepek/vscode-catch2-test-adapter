@@ -707,8 +707,8 @@ class ExpressionProcessor implements XmlTagProcessor {
       this.builder.addMessageWithOutput(
         this.attribs.filename,
         this.attribs.line,
-        `${this.attribs.type} threw an exception: \`${this.exception}\``,
-        'Original:  ' + this.original,
+        (this.attribs.type ?? `Expression`) + ` threw an exception \`${this.exception}\``,
+        this.original ?? '',
       );
     } else {
       this.builder.addExpressionMsg(

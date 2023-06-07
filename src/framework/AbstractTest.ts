@@ -151,12 +151,12 @@ export abstract class AbstractTest {
 
   private _subTests: Map<string /*id*/, SubTest> | undefined = undefined;
 
-  public hasSubTest(id: string): boolean {
+  public hasSubTestItem(item: vscode.TestItem): boolean {
     if (this._subTests === undefined) return false;
-    const found = this._subTests.get(id);
-    if (found !== undefined) return true;
+    const found = this._subTests.get(item.id);
+    if (found?.item === item) return true;
     for (const subTest of this._subTests.values()) {
-      const found = subTest.hasSubTest(id);
+      const found = subTest.hasSubTestItem(item);
       if (found) return true;
     }
     return false;
