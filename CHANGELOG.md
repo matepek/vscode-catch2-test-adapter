@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
-- issue related to autorun feture.
+- issue related to autorun feature.
 
 ## [4.4.3] - 2023-06-06
 

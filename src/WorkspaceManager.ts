@@ -234,8 +234,15 @@ export class WorkspaceManager implements vscode.Disposable {
 
   async init(forceReload: boolean): Promise<void> {
     if (typeof this.initP !== 'boolean') {
-      if (!forceReload) return this.initP;
-      else await this.initP;
+      if (!forceReload) {
+        return await this.initP;
+      } else {
+        try {
+          await this.initP;
+        } catch (e) {
+          this.log.warn('error during init with forceReload', e);
+        }
+      }
     }
 
     this._executableConfig.forEach(c => c.dispose());
