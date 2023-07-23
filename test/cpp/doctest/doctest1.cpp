@@ -183,3 +183,13 @@ TEST_CASE("test mix: may_fail & should_fail & expected_failures(1): false false 
 
 TEST_CASE("test timeout: ok - succ" * doctest::timeout(0.1)) { CHECK(true); }
 TEST_CASE("test timeout: fails - fail" * doctest::timeout(0.1)) { std::this_thread::sleep_for(std::chrono::milliseconds(200)); CHECK(true); }
+
+TEST_SUITE("First")
+{
+  TEST_CASE("MyTest") { FAIL(""); }
+}
+
+TEST_SUITE("Second")
+{
+  TEST_CASE("MyTest") { FAIL(""); }
+}

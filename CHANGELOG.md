@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- issue that test with same name but different suite are merged in case of doctest [related](https://github.com/matepek/vscode-catch2-test-adapter/issues/391)
+
 ## [4.4.4] - 2023-06-07
 
 ### Fixed
