@@ -26,6 +26,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
       return this.shared.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
+      grouping.groupByExecutable.groupByTags = { tags: [], tagFormat: '${tag}' };
       return grouping;
     }
   }

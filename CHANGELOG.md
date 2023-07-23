@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- doctest default grouping now uses tags which is based on suites [related](https://github.com/matepek/vscode-catch2-test-adapter/issues/391)
+
 ### Fixed
 
 - issue that test with same name but different suite are merged in case of doctest [related](https://github.com/matepek/vscode-catch2-test-adapter/issues/391)
