@@ -7,8 +7,8 @@ export class DOCTest extends AbstractTest {
   constructor(
     executable: AbstractExecutable,
     parent: TestItemParent,
-    id: string,
-    testName: string,
+    testNameAsId: string,
+    public readonly suiteName: string | undefined,
     tags: string[],
     file: string | undefined,
     line: string | undefined,
@@ -18,8 +18,8 @@ export class DOCTest extends AbstractTest {
     super(
       executable,
       parent,
-      id,
-      testName.startsWith('  Scenario:') ? testName.trimStart() : testName,
+      testNameAsId,
+      testNameAsId.startsWith('  Scenario:') ? testNameAsId.trimStart() : testNameAsId,
       file,
       line,
       skipped,

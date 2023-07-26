@@ -78,19 +78,18 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     description: string | undefined,
     skipped: string | undefined,
   ): Promise<DOCTest> => {
-    const resolvedFile = this.findSourceFilePath(file);
-    const id = `${resolvedFile}:${line}:${testName}`;
     const tags: string[] = suiteName ? [suiteName] : [];
     const skippedB = skipped === 'true';
+    const resolvedFile = this.findSourceFilePath(file);
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
-      id,
+      testName,
       resolvedFile,
       line,
       tags,
       description,
       (parent: TestItemParent) =>
-        new DOCTest(this, parent, id, testName, tags, resolvedFile, line, description, skippedB),
+        new DOCTest(this, parent, testName, suiteName, tags, resolvedFile, line, description, skippedB),
       (test: DOCTest) => test.update2(resolvedFile, line, tags, skippedB, description),
     );
   };
@@ -156,8 +155,8 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
         subTests.unshift(p);
         p = p.parentTest;
       }
-      assert(p instanceof DOCTest);
-      params.push('--test-case=' + (p as DOCTest).getEscapedTestName());
+      if (!(p instanceof DOCTest)) throw Error('unexpected doctest issue');
+      params.push('--test-case=' + p.getEscapedTestName());
       params.push('--subcase=' + subTests.map(s => s.id.replaceAll(',', '?')).join(','));
       params.push('--subcase-filter-levels=' + subTests.length);
     } else if (childrenToRun.every(v => v instanceof DOCTest)) {

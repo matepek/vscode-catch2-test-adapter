@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.5.1]
+
+### Fixed
+
+- regression issue related to [doctest](https://github.com/matepek/vscode-catch2-test-adapter/issues/392)
+
 ## [4.5.0] - 2023-07-23
 
 ### Changed

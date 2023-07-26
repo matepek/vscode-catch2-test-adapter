@@ -24,12 +24,13 @@ export class TestItemManager {
 
   createOrReplace(
     parent: vscode.TestItem | undefined,
-    id: string,
+    testId: string,
     label: string,
     file: string | undefined,
     line: string | number | undefined,
     testData: AbstractTest | undefined,
   ): vscode.TestItem {
+    const id = testId;
     const uri: vscode.Uri | undefined = file ? vscode.Uri.file(file) : undefined;
     const item = this.controller.createTestItem(id, label, uri);
     if (uri) {
