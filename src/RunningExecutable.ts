@@ -130,7 +130,7 @@ export class RunningExecutable {
       try {
         if (this.terminated) {
           return Promise.resolve();
-        } else if (this.process.pid) {
+        } else if (this.process.pid && this.process.exitCode === null) {
           os.setPriority(this.process.pid, os.constants.priority.PRIORITY_LOW);
           log.debug('setPriority is done', `priority(${priority})`, `pid(${this.process.pid})`);
 

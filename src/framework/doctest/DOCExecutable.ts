@@ -78,6 +78,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     description: string | undefined,
     skipped: string | undefined,
   ): Promise<DOCTest> => {
+    const id = getTestId(file, line, testName);
     const tags: string[] = suiteName ? [suiteName] : [];
     const skippedB = skipped === 'true';
     const resolvedFile = this.findSourceFilePath(file);
@@ -89,7 +90,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
       tags,
       description,
       (parent: TestItemParent) =>
-        new DOCTest(this, parent, testName, suiteName, tags, resolvedFile, line, description, skippedB),
+        new DOCTest(this, parent, id, testName, suiteName, tags, resolvedFile, line, description, skippedB),
       (test: DOCTest) => test.update2(resolvedFile, line, tags, skippedB, description),
     );
   };
@@ -156,15 +157,22 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
         p = p.parentTest;
       }
       if (!(p instanceof DOCTest)) throw Error('unexpected doctest issue');
+      if (p.suiteName !== undefined) {
+        params.push('--test-suite=' + p.suiteName);
+      }
       params.push('--test-case=' + p.getEscapedTestName());
       params.push('--subcase=' + subTests.map(s => s.id.replaceAll(',', '?')).join(','));
       params.push('--subcase-filter-levels=' + subTests.length);
     } else if (childrenToRun.every(v => v instanceof DOCTest)) {
-      const testNames = childrenToRun.map(c => (c as DOCTest).getEscapedTestName());
+      const dc = childrenToRun as readonly DOCTest[];
+      if (dc.length > 0 && dc[0].suiteName && dc.every(v => v.suiteName === dc[0].suiteName)) {
+        params.push('--test-suite=' + dc[0].suiteName);
+      }
+      const testNames = dc.map(c => c.getEscapedTestName());
       params.push('--test-case=' + testNames.join(','));
     } else {
       this.log.warnS('wrong run/debug combo', childrenToRun);
-      throw Error('Cannot run/debug this combination. Only 1 section or multiple tests can be selected only.');
+      throw Error('Cannot run/debug this combination. Only 1 section or multiple tests can be selected.');
     }
 
     params.push('--no-skip=true');
@@ -247,6 +255,9 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
   }
 }
 
+const getTestId = (file: string | undefined, line: string | undefined, testName: string) =>
+  `${file ?? ''}:${line ?? ''}:${testName}`;
+
 ///
 
 type Option = Record<string, string> & { rand_seed?: string };
@@ -286,7 +297,8 @@ class TestSuiteTagProcessor implements XmlTagProcessor {
 
         assert(typeof name === 'string' && name.length > 0);
 
-        let test = this.findTest(name);
+        const testId = getTestId(tag.attribs.filename, tag.attribs.line, name);
+        let test = this.findTest(testId);
         if (!test) {
           this.shared.log.info('TestCase not found in children', tag, name);
           test = await this.create(
