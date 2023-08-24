@@ -165,7 +165,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
       params.push('--subcase-filter-levels=' + subTests.length);
     } else if (childrenToRun.every(v => v instanceof DOCTest)) {
       const dc = childrenToRun as readonly DOCTest[];
-      if (dc.length > 0 && dc[0].suiteName && dc.every(v => v.suiteName === dc[0].suiteName)) {
+      if (dc.length && dc[0].suiteName && dc.every(v => v.suiteName === dc[0].suiteName)) {
         params.push('--test-suite=' + dc[0].suiteName);
       }
       const testNames = dc.map(c => c.getEscapedTestName());
@@ -199,6 +199,31 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     execParams.push('--reporters=console');
     execParams.push('--no-breaks=' + (breakOnFailure ? 'false' : 'true'));
     return execParams;
+  }
+
+  protected override _splitTests(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
+    const withoutSuite: AbstractTest[] = [];
+    const suites = new Map<string, AbstractTest[]>();
+    for (const test of tests) {
+      if (test instanceof DOCTest) {
+        if (test.suiteName) {
+          const f = suites.get(test.suiteName);
+          if (f) f.push(test);
+          else {
+            const s = [test];
+            suites.set(test.suiteName, s);
+          }
+        } else {
+          withoutSuite.push(test);
+        }
+      } else {
+        this.shared.log.error('expected DOCTest but got something else');
+      }
+    }
+    const result: AbstractTest[][] = [];
+    if (withoutSuite.length) result.push(withoutSuite);
+    result.push(...suites.values());
+    return result;
   }
 
   protected async _handleProcess(testRun: vscode.TestRun, runInfo: RunningExecutable): Promise<HandleProcessResult> {

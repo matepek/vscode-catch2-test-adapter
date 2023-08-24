@@ -512,6 +512,13 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     breakOnFailure: boolean,
   ): string[];
 
+  /**
+   * Can be overridden, some cases make it necessary
+   */
+  protected _splitTests(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
+    return [tests];
+  }
+
   getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
     return this.shared.prependTestRunningArgs.concat(this._getDebugParamsInner(childrenToRun, breakOnFailure));
   }
@@ -580,10 +587,11 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       return;
     }
 
-    const buckets = this._splitTestSetForMultirunIfEnabled(testsToRunFinal);
-    const actualTestBuckets = buckets.flatMap(b => this._splitTestsToSmallEnoughSubsets(b)); //TODO:future merge with _splitTestSetForMultirunIfEnabled
+    const splittedForFramework = this._splitTests(testsToRunFinal);
+    const splittedForMultirun = splittedForFramework.flatMap(v => this._splitTestSetForMultirunIfEnabled(v));
+    const splittedFinal = splittedForMultirun.flatMap(b => this._splitTestsToSmallEnoughSubsets(b)); //TODO:future merge with _splitTestSetForMultirunIfEnabled
 
-    const runningBucketPromises = actualTestBuckets.map(b =>
+    const runningBucketPromises = splittedFinal.map(b =>
       this._runInner(testRun, b, taskPool, cancellationToken).catch(err => {
         vscode.window.showWarningMessage(err.toString());
       }),
