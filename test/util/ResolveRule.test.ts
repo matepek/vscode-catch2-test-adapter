@@ -139,6 +139,13 @@ describe(path.basename(__filename), function () {
     assert.deepStrictEqual(await resolveVariablesAsync([input, input], varsToResolve), [expected, expected]);
   });
 
+  describe('createRegex', function () {
+    it('works', function () {
+      assert.equal(true, false);
+      // $r{'${alma}', 'xy', '$1'}
+    });
+  });
+
   context.skip('AdvancedII playground', function () {
     class AdvancedII<T> implements IterableIterator<T> {
       constructor(readonly next: () => IteratorResult<T>) {}

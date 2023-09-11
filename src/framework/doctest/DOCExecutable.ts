@@ -501,10 +501,10 @@ class TestCaseTagProcessor extends TagProcessorBase {
       } else {
         const mayFail = this.attribs.may_fail === 'true';
         const shouldFail = this.attribs.should_fail === 'true';
-        const failures = parseInt(tag.attribs.failures) || 0;
-        const expectedFailures = parseInt(tag.attribs.expected_failures) || 0;
+        const failures = parseInt(tag.attribs.failures) ?? 0;
+        const expectedFailures = parseInt(tag.attribs.expected_failures) ?? 0;
         const hasException = this.caseData.hasException === true;
-        const timeoutSec = parseFloat(this.attribs.timeout) || undefined;
+        const timeoutSec = parseFloat(this.attribs.timeout) ?? undefined;
         const hasTimedOut = timeoutSec !== undefined && durationSec !== undefined ? durationSec > timeoutSec : false;
 
         // The logic is coming from the console output of ./doctest1.exe

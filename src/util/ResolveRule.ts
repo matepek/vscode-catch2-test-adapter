@@ -1,4 +1,6 @@
 import * as pathlib from 'path';
+import { isRegExp } from 'util/types';
+import { assert } from './DevelopmentHelper';
 
 ///
 
@@ -137,12 +139,19 @@ interface ResolveRegexRuleAsync {
   isFlat?: never;
 }
 
+interface ResolveFunctionRule {
+  resolve: (input: string) => { index: number; match: string } | null;
+  rule: (match: string) => string;
+  isFlat?: never;
+}
+
 // eslint-disable-next-line
 export type ResolveRuleAsync<R = any> =
   | ResolveStrRuleStr
   | ResolveStrRule<R>
   | ResolveRegexRule
-  | ResolveRegexRuleAsync;
+  | ResolveRegexRuleAsync
+  | ResolveFunctionRule;
 
 export async function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRuleAsync<unknown>[]): Promise<T> {
   const mapper = async (s: string, parent: unknown): Promise<unknown> => {
@@ -182,7 +191,7 @@ export async function resolveVariablesAsync<T>(value: T, varValue: readonly Reso
             s = replaceAllString(s, resolve, ruleV);
           }
         }
-      } else {
+      } else if (isRegExp(resolve)) {
         const ruleF = rule as (m: RegExpMatchArray) => Promise<string>;
         // resolve as RegExp && rule as Function
         // eslint-disable-next-line
@@ -199,6 +208,12 @@ export async function resolveVariablesAsync<T>(value: T, varValue: readonly Reso
           }
 
           s = await replaceAllRegExp(s, resolve, ruleF, match);
+        }
+      } else if (typeof resolve === 'function') {
+        //TODO:mapek
+        const found = resolve(s);
+        if (found) {
+          const ruleF = rule as (m: string) => Promise<string>;
         }
       }
     }
@@ -316,4 +331,48 @@ export function createPythonIndexerForPathVariable(varName: string, pathStr: str
 
 export function cloneRecursively<T>(value: T): T {
   return _mapAllStrings(value, undefined, x => x) as T;
+}
+
+const findClosingPair = (str: string, start: number, beginSeq: string, endSeq: string): number => {
+  assert(beginSeq !== endSeq);
+  assert(!str.substring(start).startsWith(beginSeq));
+  const nestedUnclosedBeginCnt = 0;
+  const nextBeginIdx = str.indexOf(beginSeq, start + beginSeq.length);
+  const nextEndIdx = str.indexOf(endSeq, start + beginSeq.length);
+  if (nextEndIdx === -1) throw Error(`missing end sequence: ${endSeq}`);
+  if (nextBeginIdx === -1) return nextEndIdx;
+
+  do {
+    if (nextEndIdx < nextBeginIdx) {
+      if (nestedUnclosedBeginCnt !== 0) throw Error('assert');
+      return nextEndIdx;
+    }
+  } while (true);
+};
+
+const regexRuleBegin = '$r{';
+
+export function createRegex() {
+  const resolve = (input: string): { begin: number; match: string } | null => {
+    const index = input.indexOf(regexRuleBegin);
+    if (index === -1) return null;
+    const innerBeginIdx = index + regexRuleBegin.length;
+    let innerEndIdx = innerBeginIdx;
+    let unclosedBraces = 1;
+    while (input.length > innerEndIdx) {
+      if (input[innerEndIdx] === '}') {
+        if (--unclosedBraces === 0) break;
+      } else if (input[innerEndIdx] === '{') {
+        ++unclosedBraces;
+      }
+      innerEndIdx++;
+    }
+    if (unclosedBraces) {
+      throw Error(`Missing closing '}' in ${input}`);
+    }
+    const innerStr = input.substring(innerBeginIdx, innerEndIdx);
+    //if()
+  };
+
+  return { resolve };
 }
