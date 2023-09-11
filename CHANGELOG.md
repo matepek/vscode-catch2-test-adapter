@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [4.6.0]
+## [4.6.0] - 2023-09-11
 
 Implemented new vscode veature: invalidate result.
 
