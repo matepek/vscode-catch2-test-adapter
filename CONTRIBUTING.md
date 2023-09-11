@@ -80,7 +80,7 @@ If you think your changes worth of a release add a new version entry to `CHANGEL
 ## VSCode API Change tracking tool
 
 ```sh
-LAST_CHECKED_VERSION="1.77.0" && \
+LAST_CHECKED_VERSION="1.82.0" && \
 curl "https://raw.githubusercontent.com/microsoft/vscode/${LAST_CHECKED_VERSION}/src/vscode-dts/vscode.d.ts" \
 --output "./out/latest_checked.vscode.d.ts" && \
 curl "https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.d.ts" \
