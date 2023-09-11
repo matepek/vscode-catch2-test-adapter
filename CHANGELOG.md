@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.6.0]
+
+Implemented new vscode veature: invalidate result.
+
 ## [4.5.2] - 2023-08-25
 
 _doctest_ improvements

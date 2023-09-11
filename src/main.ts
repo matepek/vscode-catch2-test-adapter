@@ -161,6 +161,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
   };
 
+  const testResultInvalidator = executableChangedEmitter.event(executables => {
+    const changedItems: vscode.TestItem[] = [];
+    for (const e of executables) {
+      const ei = e.getExecTestItem();
+      if (ei) changedItems.push(ei);
+      else for (const t of e.getTests()) changedItems.push(t.item);
+    }
+    controller.invalidateTestResults(changedItems);
+  });
+
   const runProfile = controller.createRunProfile(
     'Run Test',
     vscode.TestRunProfileKind.Run,
@@ -272,6 +282,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         removeWorkspaceManager(wf);
       }
       log.info('Disposing controller');
+      testResultInvalidator.dispose();
       runProfile.dispose();
       debugProfile.dispose();
       controller.dispose();
