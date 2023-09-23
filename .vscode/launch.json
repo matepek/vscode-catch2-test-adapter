@@ -12,11 +12,12 @@
         "--extensionTestsPath=${workspaceFolder}/out/test",
         "${workspaceFolder}/out/tmp/workspaceFolder"
       ],
-      "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "env": {
         "TESTMATE_DEBUG": "true",
         "C2_INTEGRATIONFROMVSCODE": "true"
-      }
+      },
+      "sourceMaps": true
     },
     {
       "type": "extensionHost",
@@ -29,7 +30,8 @@
       },
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "preDebug",
-      "postDebugTask": "postDebug"
+      "postDebugTask": "postDebug",
+      "sourceMaps": true
     },
     {
       "type": "extensionHost",

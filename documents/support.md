@@ -2,36 +2,14 @@
 
 For support open an issue with **detailed** description and please attach logs.
 
-## Getting logs
+BUT before that read ALL this document.
 
-Set `testMate.cpp.log.logpanel: true` and check the VSCode oputput window. Change the window to "Test Explorer: ...". The log should be there.
+## Quick Tips
 
-Or one can set the `testMate.cpp.log.logfile: "<full path>"`. In this case a logfile will be created to the given path. Close VSCode to flush the log before you attach to an issue.
-
-**Don't forget** to disable after it by un-setting. Unnecessary logging can have a performance impact on VSCode.
-
-## Known issues
-
-### for all
-
-- (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
-
-### for Catch2
-
-- (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures.
-  Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300` and it has to be defined before every `#include "catch.hpp"` lines.
-- (2020-04-19) Catch2 version < 2.11.4 have a parameter parsing problem issue which makes some test name restrictions. The extension will notify if you are affected.
-- (2020-12-05) Catch2 test result parsing can fail if the test outputs unescaped "xml-like" text: `<Pin:10>`.
-
-### for doctest
-
-- (2019-12-27) doctest 2.3.6 is support file and line informations. Previous version will recognise the tests but navigation will be disabled.
-- (2021-10-22) doctest does not provide the skipped information at test listing phase so this extension does not mark the tests skipped.
-- (2021-11-20) doctest SubCase statuses are not set. No point to do int now because the framework doesn't provide partial result just overall result.
-
-## For self-service
-
-Check [CONTRIBUTING.md](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/CONTRIBUTING.md).
+- Do your test names matches the directory and pattern the extension is looking for?
+- Do your test exectuable depend on some dynamic library?
+- Did you set up the `cwd` working directory propery?
+- Did you read the rest of this document?
 
 ## F.A.Q
 
@@ -180,3 +158,34 @@ If you want dynamically set enviranment variables generate a file which contains
 >   }
 > }
 > ```
+
+## Getting logs
+
+Set `testMate.cpp.log.logpanel: true` and check the VSCode oputput window. Change the window to "Test Explorer: ...". The log should be there.
+
+Or one can set the `testMate.cpp.log.logfile: "<full path>"`. In this case a logfile will be created to the given path. Close VSCode to flush the log before you attach to an issue.
+
+**Don't forget** to disable after it by un-setting. Unnecessary logging can have a performance impact on VSCode.
+
+## Known issues
+
+### for all
+
+- (2018-09-03) On windows the navigate to source button isn't working. It is a framework bug.
+
+### for Catch2
+
+- (2018-11-17) Catch2: Long (>80 character) filename, test-name or description can cause test-list parsing failures.
+  Workaround: `#define CATCH_CONFIG_CONSOLE_WIDTH 300` and it has to be defined before every `#include "catch.hpp"` lines.
+- (2020-04-19) Catch2 version < 2.11.4 have a parameter parsing problem issue which makes some test name restrictions. The extension will notify if you are affected.
+- (2020-12-05) Catch2 test result parsing can fail if the test outputs unescaped "xml-like" text: `<Pin:10>`.
+
+### for doctest
+
+- (2019-12-27) doctest 2.3.6 is support file and line informations. Previous version will recognise the tests but navigation will be disabled.
+- (2021-10-22) doctest does not provide the skipped information at test listing phase so this extension does not mark the tests skipped.
+- (2021-11-20) doctest SubCase statuses are not set. No point to do int now because the framework doesn't provide partial result just overall result.
+
+## For self-service
+
+Check [CONTRIBUTING.md](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/CONTRIBUTING.md).
