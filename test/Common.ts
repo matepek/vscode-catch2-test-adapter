@@ -33,6 +33,8 @@ export class ChildProcessStub extends EventEmitter implements ChildProcessWithou
   readonly pid: number = undefined as any; // eslint-disable-line
   readonly connected: boolean = undefined as any; // eslint-disable-line
 
+  [Symbol.dispose](): void {}
+
   // eslint-disable-next-line
   send(..._args: any[]): boolean {
     throw Error('methond not implemented');
