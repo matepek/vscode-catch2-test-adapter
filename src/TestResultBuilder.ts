@@ -90,17 +90,16 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     return undefined;
   }
 
-  static readonly relativeLocPrefix = ' @ ./';
-
   getLocationAtStr(file: string | undefined, line: number | string | undefined, lineIsZeroBased: boolean): string {
     if (file) {
       let lineSuffix = '';
       parseLine(line, l => (lineSuffix = `:${l + (lineIsZeroBased ? 1 : 0)}`));
-      // const wp = this.test.exec.shared.workspacePath + '/';
-      // if (file.startsWith(wp)) {
-      //   return ansi.dim(TestResultBuilder.relativeLocPrefix) + ansi.dim(file.substring(wp.length) + lineSuffix);
-      // }
-      return ansi.dim(` @ ${file}${lineSuffix}`);
+      const wp = this.test.exec.shared.workspacePath + '/';
+      if (file.startsWith(wp)) {
+        return ansi.dim(' @ ./' + file.substring(wp.length) + lineSuffix);
+      } else {
+        return ansi.dim(` @ ${file}${lineSuffix}`);
+      }
     }
     return '';
   }

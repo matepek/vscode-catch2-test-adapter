@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.6.1]
+
+### Changed
+
+- using relative path at test output. users can use Cmd+click to navigate.
+
 ### Fixed
 
 - issue preventing to cancel continuous runs: [link](https://github.com/matepek/vscode-catch2-test-adapter/issues/398)
