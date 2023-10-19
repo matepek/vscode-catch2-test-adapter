@@ -283,26 +283,18 @@ export class WorkspaceManager implements vscode.Disposable {
     return new Configurations(log, this.workspaceFolder.uri);
   }
 
-  run(
-    executables: Map<AbstractExecutable, TestsToRun>,
-    cancellation: vscode.CancellationToken,
-    run: vscode.TestRun,
-  ): Promise<void> {
+  run(executables: Map<AbstractExecutable, TestsToRun>, run: vscode.TestRun): Promise<void> {
     for (const exec of executables.values()) for (const test of exec) run.enqueued(test.item);
 
-    return this._runInner(executables, cancellation, run).catch(e => {
+    return this._runInner(executables, run).catch(e => {
       this.log.errorS('error during run', e);
       throw e;
     });
   }
 
-  private async _runInner(
-    executables: Map<AbstractExecutable, TestsToRun>,
-    cancellation: vscode.CancellationToken,
-    testRun: vscode.TestRun,
-  ): Promise<void> {
+  private async _runInner(executables: Map<AbstractExecutable, TestsToRun>, testRun: vscode.TestRun): Promise<void> {
     try {
-      await this._runTasks('before', executables.keys(), cancellation);
+      await this._runTasks('before', executables.keys(), testRun.token);
       //TODO: future: test list might changes: executables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
     } catch (e) {
       const msg = e.toString();
@@ -322,7 +314,7 @@ export class WorkspaceManager implements vscode.Disposable {
     for (const [exec, toRun] of executables) {
       ps.push(
         exec
-          .run(testRun, toRun, this._shared.taskPool, cancellation)
+          .run(testRun, toRun, this._shared.taskPool)
           .catch(err => this._shared.log.error('RootTestSuite.run.for.child', exec.shared.path, err)),
       );
     }
@@ -330,7 +322,7 @@ export class WorkspaceManager implements vscode.Disposable {
     await Promise.allSettled(ps);
 
     try {
-      await this._runTasks('after', executables.keys(), cancellation);
+      await this._runTasks('after', executables.keys(), testRun.token);
     } catch (e) {
       const msg = e.toString();
       testRun.appendOutput(msg);

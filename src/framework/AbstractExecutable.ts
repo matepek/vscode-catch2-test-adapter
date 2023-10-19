@@ -554,12 +554,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     });
   }
 
-  async run(
-    testRun: vscode.TestRun,
-    testsToRun: TestsToRun,
-    taskPool: TaskPool,
-    cancellationToken: CancellationToken,
-  ): Promise<void> {
+  async run(testRun: vscode.TestRun, testsToRun: TestsToRun, taskPool: TaskPool): Promise<void> {
     const testsToRunFinal: AbstractTest[] = [];
 
     for (const t of testsToRun.direct) {
@@ -574,8 +569,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     if (testsToRunFinal.length == 0) return;
 
     try {
-      await this.runTasks('beforeEach', taskPool, cancellationToken);
-      //TODO:future: test list might changes: await this.reloadTests(taskPool, cancellationToken);
+      await this.runTasks('beforeEach', taskPool, testRun.token);
+      //TODO:future: test list might changes: await this.reloadTests(taskPool, testRun.token);
       // that case the testsToRunFinal should be after this block
     } catch (e) {
       const msg = e.toString();
@@ -592,7 +587,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     const splittedFinal = splittedForMultirun.flatMap(b => this._splitTestsToSmallEnoughSubsets(b)); //TODO:future merge with _splitTestSetForMultirunIfEnabled
 
     const runningBucketPromises = splittedFinal.map(b =>
-      this._runInner(testRun, b, taskPool, cancellationToken).catch(err => {
+      this._runInner(testRun, b, taskPool).catch(err => {
         vscode.window.showWarningMessage(err.toString());
       }),
     );
@@ -600,7 +595,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     await Promise.allSettled(runningBucketPromises);
 
     try {
-      await this.runTasks('afterEach', taskPool, cancellationToken);
+      await this.runTasks('afterEach', taskPool, testRun.token);
     } catch (e) {
       const msg = e.toString();
       testRun.appendOutput(msg);
@@ -612,19 +607,14 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     }
   }
 
-  private _runInner(
-    testRun: vscode.TestRun,
-    testsToRun: readonly AbstractTest[],
-    taskPool: TaskPool,
-    cancellation: CancellationToken,
-  ): Promise<void> {
+  private _runInner(testRun: vscode.TestRun, testsToRun: readonly AbstractTest[], taskPool: TaskPool): Promise<void> {
     return this.shared.parallelizationPool.scheduleTask(async () => {
       const runIfNotCancelled = (): Promise<void> => {
-        if (cancellation.isCancellationRequested) {
+        if (testRun.token.isCancellationRequested) {
           this.shared.log.info('test was canceled:', this);
           return Promise.resolve();
         }
-        return this._runProcess(testRun, testsToRun, cancellation);
+        return this._runProcess(testRun, testsToRun);
       };
 
       try {
@@ -643,11 +633,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     });
   }
 
-  private async _runProcess(
-    testRun: vscode.TestRun,
-    childrenToRun: readonly AbstractTest[],
-    cancellationToken: CancellationToken,
-  ): Promise<void> {
+  private async _runProcess(testRun: vscode.TestRun, childrenToRun: readonly AbstractTest[]): Promise<void> {
     const execParams = this._getRunParams(childrenToRun);
 
     this.shared.log.info('proc starting', this.shared.path, execParams);
@@ -655,7 +641,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     const runInfo = await RunningExecutable.create(
       new SpawnBuilder(this.shared.spawner, this.shared.path, execParams, this.shared.options, undefined),
       childrenToRun,
-      cancellationToken,
+      testRun.token,
     );
 
     testRun.appendOutput(runInfo.getProcStartLine());

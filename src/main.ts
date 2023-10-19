@@ -130,7 +130,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   let runCount = 0;
   let debugCount = 0;
 
-  const startTestRun = async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken) => {
+  const startTestRun = async (request: vscode.TestRunRequest) => {
     if (debugCount) {
       vscode.window.showWarningMessage('Cannot run new tests while debugging.');
       return;
@@ -146,7 +146,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
       for (const [manager, executables] of managers) {
         runQueue.push(
-          manager.run(executables, cancellation, testRun).catch(e => {
+          manager.run(executables, testRun).catch(e => {
             vscode.window.showErrorMessage('Unexpected error from run: ' + e);
           }),
         );
@@ -194,11 +194,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               }
             }
           }
-          startTestRun(new vscode.TestRunRequest(include, request.exclude, request.profile, true), cancellation);
+          startTestRun(new vscode.TestRunRequest(include, request.exclude, request.profile, true));
         });
         cancellation.onCancellationRequested(() => l.dispose());
       } else {
-        return startTestRun(request, cancellation);
+        return startTestRun(request);
       }
     },
     true,
