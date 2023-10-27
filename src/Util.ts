@@ -292,3 +292,10 @@ export function getModiTime(path: string): Promise<number | undefined> {
     () => undefined,
   );
 }
+
+export function waitWithTimout<T>(f: Promise<T>, timeoutMs: number, errMsg?: string): Promise<T> {
+  return Promise.race([
+    f,
+    new Promise<T>((_r, rej) => setTimeout(() => rej(Error(errMsg ?? `Timeout ${timeoutMs} has expired`)), timeoutMs)),
+  ]);
+}

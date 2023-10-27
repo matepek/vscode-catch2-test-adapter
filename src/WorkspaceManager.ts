@@ -12,7 +12,7 @@ import { sep as osPathSeparator } from 'path';
 import { TaskQueue } from './util/TaskQueue';
 import { AbstractExecutable, TestsToRun } from './framework/AbstractExecutable';
 import { ConfigOfExecGroup } from './ConfigOfExecGroup';
-import { generateId, Version } from './Util';
+import { generateId, Version, waitWithTimout } from './Util';
 import { AbstractTest } from './framework/AbstractTest';
 import { TestItemManager } from './TestItemManager';
 import { ProgressReporter } from './util/ProgressReporter';
@@ -380,15 +380,10 @@ export class WorkspaceManager implements vscode.Disposable {
     }
   }
 
-  debug(
-    test: AbstractTest,
-    cancellation: vscode.CancellationToken,
-    run: vscode.TestRun,
-    setDebugArgs: (exec: string, args: string[]) => void,
-  ): Promise<void> {
+  debug(test: AbstractTest, run: vscode.TestRun, setDebugArgs: (exec: string, args: string[]) => void): Promise<void> {
     run.enqueued(test.item);
 
-    return this._debugInner(test, cancellation, run, setDebugArgs).catch(e => {
+    return this._debugInner(test, run, setDebugArgs).catch(e => {
       this.log.errorS('error during debug', e);
       throw e;
     });
@@ -396,7 +391,6 @@ export class WorkspaceManager implements vscode.Disposable {
 
   async _debugInner(
     test: AbstractTest,
-    cancellation: vscode.CancellationToken,
     run: vscode.TestRun,
     setDebugArgs: (exec: string, args: string[]) => void,
   ): Promise<void> {
@@ -493,8 +487,8 @@ export class WorkspaceManager implements vscode.Disposable {
 
       this._shared.log.info('resolved debugConfig:', debugConfig);
 
-      await this._runTasks('before', [executable], cancellation);
-      await executable.runTasks('beforeEach', this._shared.taskPool, cancellation);
+      await this._runTasks('before', [executable], run.token);
+      await executable.runTasks('beforeEach', this._shared.taskPool, run.token);
 
       let currentSession: vscode.DebugSession | undefined = undefined;
 
@@ -529,19 +523,19 @@ export class WorkspaceManager implements vscode.Disposable {
         this._shared.log.info('debugSessionStarted');
         await started;
         if (currentSession) {
-          cancellation.onCancellationRequested(() => {
+          run.token.onCancellationRequested(() => {
             vscode.debug.stopDebugging(currentSession);
           });
         }
-        await terminated;
+        await waitWithTimout(terminated, 5000, 'Abandoning waiting for termination of debug session');
       } else {
         throw Error(
           'Failed starting the debug session. Maybe something wrong with "testMate.cpp.debug.configTemplate".',
         );
       }
 
-      await executable.runTasks('afterEach', this._shared.taskPool, cancellation);
-      await this._runTasks('after', [executable], cancellation);
+      await executable.runTasks('afterEach', this._shared.taskPool, run.token);
+      await this._runTasks('after', [executable], run.token);
     } catch (err) {
       this._shared.log.warn(err);
       throw err;

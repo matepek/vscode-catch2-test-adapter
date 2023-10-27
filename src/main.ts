@@ -217,7 +217,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const debugProfile = controller.createRunProfile(
     'Debug Test',
     vscode.TestRunProfileKind.Debug,
-    async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken): Promise<void> => {
+    async (request: vscode.TestRunRequest, _cancellation: vscode.CancellationToken): Promise<void> => {
       if (runCount) {
         vscode.window.showWarningMessage('Cannot debug test while running test(s).');
         return;
@@ -255,7 +255,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           const test = testsToRun.direct[0];
           runQueue.push(
             manager
-              .debug(test, cancellation, testRun, setCurrentDebugVars)
+              .debug(test, testRun, setCurrentDebugVars)
               .catch(e => {
                 vscode.window.showErrorMessage('Unexpected error from debug: ' + e);
               })
