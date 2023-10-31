@@ -9,7 +9,7 @@
 This extension allows you to run your
 [Catch2](https://github.com/catchorg/Catch2),
 [Google Test](https://github.com/google/googletest)
-and [DOCtest](https://github.com/onqtam/doctest)
+and [DOCtest](https://github.com/doctest/doctest)
 tests using the native testing vscode-api.
 It also have basic support for [Google Benchmark](https://github.com/google/benchmark).
 
