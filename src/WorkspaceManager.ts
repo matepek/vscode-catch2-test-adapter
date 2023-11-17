@@ -12,7 +12,7 @@ import { sep as osPathSeparator } from 'path';
 import { TaskQueue } from './util/TaskQueue';
 import { AbstractExecutable, TestsToRun } from './framework/AbstractExecutable';
 import { ConfigOfExecGroup } from './ConfigOfExecGroup';
-import { generateId, Version, waitWithTimout } from './Util';
+import { generateId, Version } from './Util';
 import { AbstractTest } from './framework/AbstractTest';
 import { TestItemManager } from './TestItemManager';
 import { ProgressReporter } from './util/ProgressReporter';
