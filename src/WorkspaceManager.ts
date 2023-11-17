@@ -527,7 +527,7 @@ export class WorkspaceManager implements vscode.Disposable {
             vscode.debug.stopDebugging(currentSession);
           });
         }
-        await waitWithTimout(terminated, 5000, 'Abandoning waiting for termination of debug session');
+        await terminated;
       } else {
         throw Error(
           'Failed starting the debug session. Maybe something wrong with "testMate.cpp.debug.configTemplate".',
