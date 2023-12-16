@@ -132,8 +132,5 @@
       "background": "yellow"
     }
   },
-  "[xml]": {
-    "editor.defaultFormatter": "DotJoshJohnson.xml"
-  },
   "task.allowAutomaticTasks": "on"
 }

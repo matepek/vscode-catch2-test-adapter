@@ -1,5 +1,8 @@
 export class TaskQueue {
-  constructor(depends: Iterable<TaskQueue> = [], readonly name?: string) {
+  constructor(
+    depends: Iterable<TaskQueue> = [],
+    readonly name?: string,
+  ) {
     for (const dep of depends) {
       this._checkCircle(dep);
       this._depends.push(dep);

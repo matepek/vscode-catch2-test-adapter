@@ -15,7 +15,11 @@ export class XmlParser implements ParserInterface {
   private readonly xmlTagProcessorStack: ProcessorFrame[] = [];
   private topTagProcessor: ProcessorFrame;
 
-  constructor(private readonly log: Logger, processor: XmlTagProcessor, onerrorCb: (error: Error) => void) {
+  constructor(
+    private readonly log: Logger,
+    processor: XmlTagProcessor,
+    onerrorCb: (error: Error) => void,
+  ) {
     {
       let resolver: () => void;
       this.endP = new Promise<void>(resolve => (resolver = resolve));

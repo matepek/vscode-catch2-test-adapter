@@ -20,7 +20,10 @@ export enum ExecutableRunResultValue {
 ///
 
 export class ExecutableRunResult {
-  private constructor(readonly value: ExecutableRunResultValue, private readonly _error: string | undefined) {}
+  private constructor(
+    readonly value: ExecutableRunResultValue,
+    private readonly _error: string | undefined,
+  ) {}
 
   get Ok(): boolean {
     return this.value === ExecutableRunResultValue.OK;

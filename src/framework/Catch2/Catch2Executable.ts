@@ -16,7 +16,10 @@ import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser 
 import { Readable } from 'stream';
 
 export class Catch2Executable extends AbstractExecutable<Catch2Test> {
-  constructor(sharedVarOfExec: SharedVarOfExec, private readonly _catch2Version: Version | undefined) {
+  constructor(
+    sharedVarOfExec: SharedVarOfExec,
+    private readonly _catch2Version: Version | undefined,
+  ) {
     super(sharedVarOfExec, 'Catch2', _catch2Version);
   }
 

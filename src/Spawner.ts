@@ -108,7 +108,10 @@ export class SpawnWithExecutor extends DefaultSpawner {
   private readonly _argsR2 = '${argsFlat}';
   private readonly _argsStrR = '${argsStr}';
 
-  constructor(private readonly _executor: string, private readonly _args?: ReadonlyArray<string>) {
+  constructor(
+    private readonly _executor: string,
+    private readonly _args?: ReadonlyArray<string>,
+  ) {
     super();
 
     if (_args && !_args.some(x => x.indexOf(this._cmdR) != -1)) {

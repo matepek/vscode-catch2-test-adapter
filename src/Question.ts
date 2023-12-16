@@ -2,7 +2,11 @@ import { request } from 'https';
 import * as vscode from 'vscode';
 
 export class Question {
-  constructor(id: number, readonly message: string, ...items: { text: string; link: string | undefined }[]) {
+  constructor(
+    id: number,
+    readonly message: string,
+    ...items: { text: string; link: string | undefined }[]
+  ) {
     this.items = items;
   }
 

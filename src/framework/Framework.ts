@@ -6,7 +6,10 @@ export type FrameworkType = 'catch2' | 'gtest' | 'doctest' | 'gbenchmark';
 export type FrameworkId = FrameworkType | 'google-insider';
 
 export class Framework {
-  constructor(readonly id: FrameworkId, readonly type: FrameworkType) {
+  constructor(
+    readonly id: FrameworkId,
+    readonly type: FrameworkType,
+  ) {
     this.testTag = new vscode.TestTag(`framework.${type}`);
   }
 

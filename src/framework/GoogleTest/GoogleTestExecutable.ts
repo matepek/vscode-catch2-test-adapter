@@ -19,7 +19,10 @@ import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser 
 import { Readable } from 'stream';
 
 export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
-  constructor(sharedVarOfExec: SharedVarOfExec, private readonly _argumentPrefix: string) {
+  constructor(
+    sharedVarOfExec: SharedVarOfExec,
+    private readonly _argumentPrefix: string,
+  ) {
     super(sharedVarOfExec, 'GoogleTest', undefined);
   }
 
@@ -376,7 +379,10 @@ const testEndRe = (testId: string) =>
 ///
 
 class TestCaseSharedData {
-  constructor(readonly shared: SharedVarOfExec, readonly builder: TestResultBuilder) {}
+  constructor(
+    readonly shared: SharedVarOfExec,
+    readonly builder: TestResultBuilder,
+  ) {}
 
   gMockWarningCount = 0;
 }

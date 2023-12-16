@@ -68,7 +68,11 @@ export class Version {
     return new Version(Number(major), minor ? Number(minor) : undefined, patch ? Number(patch) : undefined);
   }
 
-  constructor(readonly major: number, private readonly _minor?: number, private readonly _patch?: number) {}
+  constructor(
+    readonly major: number,
+    private readonly _minor?: number,
+    private readonly _patch?: number,
+  ) {}
 
   get minor(): number {
     return this._minor ? this._minor : 0;
