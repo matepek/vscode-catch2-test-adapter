@@ -66,7 +66,10 @@ export const setEnvKey = 'testMate.cpp.debug.setEnv';
 export class Configurations {
   private _cfg: vscode.WorkspaceConfiguration;
 
-  constructor(readonly _log: Logger, private _workspaceFolderUri: vscode.Uri) {
+  constructor(
+    readonly _log: Logger,
+    private _workspaceFolderUri: vscode.Uri,
+  ) {
     this._cfg = vscode.workspace.getConfiguration(ConfigSectionBase, _workspaceFolderUri);
   }
 
