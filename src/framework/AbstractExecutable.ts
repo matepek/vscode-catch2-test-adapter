@@ -1,5 +1,6 @@
 import * as pathlib from 'path';
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import { EOL } from 'os';
 
 import { SharedVarOfExec } from './SharedVarOfExec';
@@ -633,20 +634,45 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     });
   }
 
+  /**
+   * since the cloning executable feature for test listing and test running (not for discovery)
+   * we should use this function which will make sure we are not working on the original file
+   * if the feature is enabled
+   */
+  protected async _getPathForExecution(): Promise<string> {
+    if (!this.shared.executableCloning) {
+      return this.shared.path;
+    }
+    const origModiTime = await getModiTime(this.shared.path);
+    if (origModiTime === undefined) {
+      return this.shared.path; // no file exists, nothing to do
+    }
+
+    const clonePath = ExecCloner.generateClonePath(this.shared.path);
+    const cloneModiTime = await getModiTime(clonePath);
+
+    if (cloneModiTime === undefined || cloneModiTime < origModiTime) {
+      await fs.promises.copyFile(this.shared.path, clonePath, fs.constants.COPYFILE_FICLONE);
+    }
+
+    return clonePath;
+  }
+
   private async _runProcess(testRun: vscode.TestRun, childrenToRun: readonly AbstractTest[]): Promise<void> {
     const execParams = this._getRunParams(childrenToRun);
 
-    this.shared.log.info('proc starting', this.shared.path, execParams);
+    const pathForExecution = await this._getPathForExecution();
+    this.shared.log.info('proc starting', pathForExecution, execParams, this.shared.path);
 
     const runInfo = await RunningExecutable.create(
-      new SpawnBuilder(this.shared.spawner, this.shared.path, execParams, this.shared.options, undefined),
+      new SpawnBuilder(this.shared.spawner, pathForExecution, execParams, this.shared.options, undefined),
       childrenToRun,
       testRun.token,
     );
 
     testRun.appendOutput(runInfo.getProcStartLine());
 
-    this.shared.log.info('proc started', runInfo.process.pid, this.shared.path, this.shared, execParams);
+    this.shared.log.info('proc started', runInfo.process.pid, pathForExecution, this.shared, execParams);
 
     runInfo.setPriorityAsync(this.shared.log);
 
@@ -662,7 +688,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       });
 
       runInfo.process.once('close', (...args) => {
-        this.shared.log.info('proc close:', this.shared.path, args);
+        this.shared.log.info('proc close:', pathForExecution, args);
         trigger('closed');
       });
 
@@ -759,7 +785,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       debugBreak(); // we really shouldnt be here
       this.shared.log.exceptionS(e);
     } finally {
-      this.shared.log.info('proc finished:', this.shared.path);
+      this.shared.log.info('proc finished:', pathForExecution);
     }
   }
 
@@ -927,5 +953,19 @@ export class TestsToRun {
   *[Symbol.iterator](): Iterator<AbstractTest> {
     for (const i of this.direct) yield i;
     for (const i of this.parent) yield i;
+  }
+}
+
+///
+
+export class ExecCloner {
+  private constructor() {}
+
+  public static readonly prefix = '.';
+  public static readonly suffix = '.TestMate.execClone.tmp';
+
+  public static generateClonePath(path: string): string {
+    const { dir, base } = pathlib.parse(path);
+    return pathlib.join(dir, this.prefix + base + this.suffix);
   }
 }

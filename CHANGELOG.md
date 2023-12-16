@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.7.0]
+
+### Added
+
+- `testMate.test.advancedExecutables` - `executableCloning`: (experimental) If enabled it creates a copy of the test executable before listing or running the tests. NOTE: discovery (`--help`) still uses the original file.
+
 ## [4.6.3] - 2023-11-17
 
 ### Fixed

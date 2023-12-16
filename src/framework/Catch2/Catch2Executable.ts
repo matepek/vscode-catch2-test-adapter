@@ -223,11 +223,9 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     if (this._catch2Version && this._catch2Version.major >= 3) args.push('--reporter', 'xml');
     else args.push('--use-colour', 'no');
 
-    this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
-
-    //const process = await this.sharedVarOfExec.spawner.spawn(this.sharedVarOfExec.path, args, this.sharedVarOfExec.options);
-
-    const catch2TestListingProcess = await this.shared.spawner.spawn(this.shared.path, args, this.shared.options);
+    const pathForExecution = await this._getPathForExecution();
+    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options.cwd);
+    const catch2TestListingProcess = await this.shared.spawner.spawn(pathForExecution, args, this.shared.options);
 
     const result =
       this._catch2Version && this._catch2Version.major >= 3

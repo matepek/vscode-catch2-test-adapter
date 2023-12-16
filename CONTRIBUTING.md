@@ -93,3 +93,4 @@ bcomp "./out/latest_checked.vscode.d.ts" "./out/latest.vscode.d.ts"
 ### TODOs
 
 - 1. run skipped directly; 2. run skipped by parent; see status: not resetted, shouldn't be
+- 2. security concern note

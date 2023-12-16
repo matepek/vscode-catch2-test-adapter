@@ -22,6 +22,7 @@ import { FrameworkType } from './framework/Framework';
 import { readFileSync } from 'fs';
 import { getModiTime } from './Util';
 import { SubProgressReporter } from './util/ProgressReporter';
+import { ExecCloner } from './framework/AbstractExecutable';
 
 ///
 
@@ -39,6 +40,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     private readonly _parallelizationLimit: number,
     private readonly _strictPattern: boolean | undefined,
     private readonly _markAsSkipped: boolean | undefined,
+    private readonly _executableCloning: boolean | undefined,
     private readonly _waitForBuildProcess: boolean | string | undefined,
     private readonly _executionWrapper: ExecutionWrapperConfig | undefined,
     private readonly _sourceFileMap: Record<string, string>,
@@ -352,6 +354,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       varToValue,
       this._parallelizationLimit,
       this._markAsSkipped === true,
+      this._executableCloning === true,
       this._runTask,
       spawner,
       resolvedSourceFileMap,
@@ -507,6 +510,9 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     } else if (!this._pattern.match(/(\/|\\)CMakeFiles(\/|\\)/) && filePath.indexOf('/CMakeFiles/') !== -1) {
       // cmake fetches the dependencies here. we dont care about it 🤞
       this._shared.log.info('skipping because it is under "/CMakeFiles/"', filePath);
+      return true;
+    } else if (filePath.endsWith(ExecCloner.suffix)) {
+      this._shared.log.info('skipping because it is part of the cloning feature of this extension', filePath);
       return true;
     } else {
       return false;

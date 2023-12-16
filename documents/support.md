@@ -15,6 +15,10 @@ BUT before that read ALL this document.
 
 ### Link / Build process fails because the executable is locked by this extension.
 
+> Check `testMate.cpp.test.advancedExecutables` -> `executableCloning`.
+
+and
+
 > Check `testMate.cpp.test.advancedExecutables` -> `waitForBuildProcess`.
 
 ### Debug button doesn't work / stopped working

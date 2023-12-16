@@ -5,7 +5,6 @@ import { ResolveRuleAsync } from './util/ResolveRule';
 import { BuildProcessChecker } from './util/BuildProcessChecker';
 import { CancellationToken } from './Util';
 import { TestItemManager } from './TestItemManager';
-import { FrameworkSpecificConfig } from './AdvancedExecutableInterface';
 import { AbstractExecutable } from './framework/AbstractExecutable';
 
 export class WorkspaceShared {
@@ -63,8 +62,4 @@ export class WorkspaceShared {
   }
 
   readonly onDidChangeExecRunningTimeout = this._execRunningTimeoutChangeEmitter.event;
-}
-
-export interface ExecutableShared extends Readonly<FrameworkSpecificConfig> {
-  readonly log: Logger;
 }

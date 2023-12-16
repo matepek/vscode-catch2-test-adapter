@@ -121,8 +121,9 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
       '--no-color=true',
     ]);
 
-    this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
-    const docTestListOutput = await this.shared.spawner.spawnAsync(this.shared.path, args, this.shared.options, 30000);
+    const pathForExecution = await this._getPathForExecution();
+    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options.cwd);
+    const docTestListOutput = await this.shared.spawner.spawnAsync(pathForExecution, args, this.shared.options, 30000);
 
     if (docTestListOutput.stderr && !this.shared.ignoreTestEnumerationStdErr) {
       this.shared.log.warn(

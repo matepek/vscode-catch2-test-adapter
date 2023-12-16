@@ -440,7 +440,8 @@ export class Configurations {
         [],
         { before: [], beforeEach: [], after: [], afterEach: [] },
         defaultParallelExecutionOfExecLimit,
-        false,
+        undefined,
+        undefined,
         undefined,
         undefined,
         undefined,
@@ -547,6 +548,8 @@ export class Configurations {
 
         const markAsSkipped: boolean | undefined = obj.markAsSkipped;
 
+        const executableCloning: boolean | undefined = obj.executableCloning;
+
         const waitForBuildProcess: boolean | string | undefined = obj.waitForBuildProcess;
 
         const defaultTestGrouping = obj.testGrouping;
@@ -578,6 +581,7 @@ export class Configurations {
           parallelizationLimit,
           strictPattern,
           markAsSkipped,
+          executableCloning,
           waitForBuildProcess,
           spawnerConfig,
           sourceFileMap,

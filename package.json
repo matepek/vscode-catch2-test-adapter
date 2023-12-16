@@ -344,8 +344,13 @@
                 "type": "boolean",
                 "default": false
               },
+              "executableCloning": {
+                "markdownDescription": "(experimental) If enabled it creates a copy of the test executable before listing or running the tests. NOTE: discovery (`--help`) still uses the original file.",
+                "type": "boolean",
+                "default": false
+              },
               "waitForBuildProcess": {
-                "markdownDescription": "(experimental) Prevents the extension of auto-reloading. With this linking failure might can be avoided. Can be true to use a default pattern that works for most cases, or a string to pass your own search pattern (regex) for processes.",
+                "markdownDescription": "Prevents the extension of auto-reloading. With this linking failure might can be avoided. Can be true to use a default pattern that works for most cases, or a string to pass your own search pattern (regex) for processes.",
                 "type": [
                   "boolean",
                   "string"
@@ -1416,7 +1421,7 @@
           "maximum": 900
         },
         "testMate.cpp.discovery.testListCaching": {
-          "markdownDescription": "(Experimental) In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.)",
+          "markdownDescription": "In case your executable took too much time to list the tests, one can set this. It will preserve the output of `--gtest_list_tests --gtest_output=xml:...`. (Beware: Older Google Test doesn't support xml test list format.)",
           "scope": "resource",
           "type": "boolean",
           "default": false

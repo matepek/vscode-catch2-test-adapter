@@ -10,7 +10,7 @@ export class BuildProcessChecker {
   private readonly _checkIntervalMillis = 2000;
   // https://en.wikipedia.org/wiki/List_of_compilers#C++_compilers
   private readonly _defaultPattern =
-    /(^|[/\\])(cmake|make|ninja|cl|c\+\+|ld|clang|clang\+\+|gcc|g\+\+|link|icc|armcc|armclang)(-[^/\\]+)?(\.exe)?$/;
+    /(^|[/\\])(bazel|cmake|make|ninja|cl|c\+\+|ld|clang|clang\+\+|gcc|g\+\+|link|icc|armcc|armclang)(-[^/\\]+)?(\.exe)?$/;
   private _lastChecked = 0;
   private _finishedP = Promise.resolve();
   private _finishedResolver = (): void => {}; // eslint-disable-line

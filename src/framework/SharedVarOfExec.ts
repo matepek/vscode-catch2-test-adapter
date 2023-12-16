@@ -19,6 +19,7 @@ export class SharedVarOfExec {
     private readonly _frameworkSpecific: FrameworkSpecificConfig,
     _parallelizationLimit: number,
     readonly markAsSkipped: boolean,
+    readonly executableCloning: boolean,
     readonly runTask: RunTaskConfig,
     readonly spawner: Spawner,
     readonly resolvedSourceFileMap: Record<string, string>,
