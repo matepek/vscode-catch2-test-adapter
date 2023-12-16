@@ -114,7 +114,7 @@
   },
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    "source.fixAll.eslint": "explicit"
   },
   "todo-tree.general.tags": ["BUG", "HACK", "FIXME", "TODO", "TODO:future", "TODO:nice", "TODO:release", "XXX"],
   "todo-tree.highlights.customHighlight": {
