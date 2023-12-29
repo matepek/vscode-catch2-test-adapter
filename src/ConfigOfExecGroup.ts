@@ -177,7 +177,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
                 for (const exec of this._executables.values())
                   exec.reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime);
               });
-              this._shared.sendRetireEvent(this._executables.values());
+              this.sendRetireAllExecutables();
             });
           } else {
             absPatterns.push(p.absPath);
@@ -192,7 +192,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
           w.onAll((fsPath: string): void => {
             this._shared.log.info('dependsOn watcher event:', fsPath);
-            this._shared.sendRetireEvent(this._executables.values());
+            this.sendRetireAllExecutables();
           });
         }
       } catch (e) {
@@ -532,6 +532,10 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     const resolved = resolveAllAsync(value, varToValue, strictAllowed);
     this._shared.log.debug('ExecutableConfig.resolveVariable: ', { value, resolved, strictAllowed });
     return resolved;
+  }
+
+  public sendRetireAllExecutables(): void {
+    this._shared.sendRetireEvent(this._executables.values());
   }
 }
 

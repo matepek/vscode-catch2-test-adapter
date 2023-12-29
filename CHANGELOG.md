@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- files matching `files.watcherExclude` will be ignored. [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/414)
+- increased max test file count from `10,000` to `100,000`.
+- refactored configuration change event. Not relevant to user but wort to mention.
+
 ## [4.7.0] - 2023-12-16
 
 ### Added

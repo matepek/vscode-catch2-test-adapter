@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Config, Configurations, setEnvKey } from './Configurations';
+import { Configurations, setEnvKey } from './Configurations';
 import { Logger } from './Logger';
 import {
   createPythonIndexerForArray,
@@ -153,9 +153,9 @@ export class WorkspaceManager implements vscode.Disposable {
     );
 
     this._disposables.push(
-      Configurations.onDidChange(changeEvent => {
+      Configurations.onDidChange(this.log, this.workspaceFolder, changeEvent => {
         try {
-          const config = this._getConfiguration(log);
+          const config = changeEvent.config;
 
           // Sentry
           // try {
@@ -164,52 +164,48 @@ export class WorkspaceManager implements vscode.Disposable {
           //   log.exceptionS(e);
           // }
 
-          const affectsAny = (...config: Config[]): boolean =>
-            config.some(c => changeEvent.affectsConfiguration(c, this.workspaceFolder.uri));
-
-          if (affectsAny('test.randomGeneratorSeed')) {
+          if (changeEvent.affects('test.randomGeneratorSeed')) {
             this._shared.rngSeed = config.getRandomGeneratorSeed();
           }
-          if (affectsAny('discovery.gracePeriodForMissing')) {
+          if (changeEvent.affects('discovery.gracePeriodForMissing')) {
             this._shared.execWatchTimeout = config.getExecWatchTimeout();
           }
-          if (affectsAny('test.runtimeLimit')) {
+          if (changeEvent.affects('test.runtimeLimit')) {
             this._shared.setExecRunningTimeout(config.getExecRunningTimeout());
           }
-          if (affectsAny('discovery.runtimeLimit')) {
+          if (changeEvent.affects('discovery.runtimeLimit')) {
             this._shared.setExecParsingTimeout(config.getExecParsingTimeout());
           }
-          if (affectsAny('debug.noThrow')) {
+          if (changeEvent.affects('debug.noThrow')) {
             this._shared.isNoThrow = config.getDefaultNoThrow();
           }
-          if (affectsAny('test.parallelExecutionLimit')) {
+          if (changeEvent.affects('test.parallelExecutionLimit')) {
             this._shared.taskPool.maxTaskCount = config.getParallelExecutionLimit();
           }
-          if (affectsAny('discovery.testListCaching')) {
+          if (changeEvent.affects('discovery.testListCaching')) {
             this._shared.enabledTestListCaching = config.getEnableTestListCaching();
           }
-          if (affectsAny('discovery.strictPattern')) {
+          if (changeEvent.affects('discovery.strictPattern')) {
             this._shared.enabledStrictPattern = config.getEnableStrictPattern();
           }
-          if (affectsAny('gtest.treatGmockWarningAs')) {
+          if (changeEvent.affects('gtest.treatGmockWarningAs')) {
             this._shared.googleTestTreatGMockWarningAs = config.getGoogleTestTreatGMockWarningAs();
           }
-          if (affectsAny('gtest.gmockVerbose')) {
+          if (changeEvent.affects('gtest.gmockVerbose')) {
             this._shared.googleTestGMockVerbose = config.getGoogleTestGMockVerbose();
           }
-
-          if (affectsAny('test.randomGeneratorSeed', 'gtest.treatGmockWarningAs', 'gtest.gmockVerbose')) {
-            //TODO:release sendRetireEvent -> this.executables. ...;
+          if (changeEvent.affectsAny('test.randomGeneratorSeed', 'gtest.treatGmockWarningAs', 'gtest.gmockVerbose')) {
+            this._executableConfig.forEach(i => i.sendRetireAllExecutables());
           }
-
           if (
-            affectsAny(
+            changeEvent.affectsAny(
               'test.workingDirectory',
               'test.advancedExecutables',
               'test.executables',
               'test.parallelExecutionOfExecutableLimit',
               'discovery.strictPattern',
-            )
+            ) ||
+            changeEvent.affectsNotTestMate('files.watcherExclude')
           ) {
             this.init(true);
           }

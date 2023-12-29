@@ -92,9 +92,20 @@ export class VSCFSWatcherWrapper implements FSWatcher {
   }
 
   watched(): Promise<string[]> {
+    const excludeObj = vscode.workspace.getConfiguration('files').get<Record<string, boolean>>('watcherExclude') ?? {};
+    const enabledExcludes = Object.entries(excludeObj)
+      .filter(i => i[1])
+      .map(i => i[0]);
+    // this trick seems working but would need more understanding
+    const exclude =
+      enabledExcludes.length === 0
+        ? null
+        : enabledExcludes.length === 1
+          ? enabledExcludes[0]
+          : '{' + enabledExcludes.join(',') + '}';
     return new Promise(resolve => {
       vscode.workspace
-        .findFiles(this._relativePattern, null, 10000)
+        .findFiles(this._relativePattern, exclude, 10000)
         .then((uris: vscode.Uri[]) => resolve(uris.map(v => v.fsPath)));
     });
   }

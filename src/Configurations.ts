@@ -50,10 +50,21 @@ export type Config =
   | 'gtest.treatGmockWarningAs'
   | 'gtest.gmockVerbose';
 
+///
+
 class ConfigurationChangeEvent {
-  constructor(private readonly event: vscode.ConfigurationChangeEvent) {}
-  affectsConfiguration(config: Config, resource?: vscode.Uri): boolean {
-    return this.event.affectsConfiguration(`${ConfigSectionBase}.${config}`, resource);
+  constructor(
+    private readonly event: vscode.ConfigurationChangeEvent,
+    public readonly config: Configurations,
+  ) {}
+  affects(config: Config): boolean {
+    return this.event.affectsConfiguration(`${ConfigSectionBase}.${config}`, this.config._workspaceFolderUri);
+  }
+  affectsAny(...config: Config[]): boolean {
+    return config.some(c => this.affects(c));
+  }
+  affectsNotTestMate(config: string): boolean {
+    return this.event.affectsConfiguration(config, this.config._workspaceFolderUri);
   }
 }
 
@@ -68,7 +79,7 @@ export class Configurations {
 
   constructor(
     readonly _log: Logger,
-    private _workspaceFolderUri: vscode.Uri,
+    readonly _workspaceFolderUri: vscode.Uri,
   ) {
     this._cfg = vscode.workspace.getConfiguration(ConfigSectionBase, _workspaceFolderUri);
   }
@@ -92,10 +103,15 @@ export class Configurations {
     };
   }
 
-  static onDidChange(callbacks: (changeEvent: ConfigurationChangeEvent) => void): vscode.Disposable {
-    return vscode.workspace.onDidChangeConfiguration(changeEvent =>
-      callbacks(new ConfigurationChangeEvent(changeEvent)),
-    );
+  static onDidChange(
+    log: Logger,
+    workspaceFolder: vscode.WorkspaceFolder,
+    callbacks: (changeEvent: ConfigurationChangeEvent) => void,
+  ): vscode.Disposable {
+    return vscode.workspace.onDidChangeConfiguration(changeEvent => {
+      const config = new Configurations(log, workspaceFolder.uri);
+      callbacks(new ConfigurationChangeEvent(changeEvent, config));
+    });
   }
 
   private _hasExtension(id: string): boolean {
