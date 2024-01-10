@@ -132,5 +132,11 @@
       "background": "yellow"
     }
   },
-  "task.allowAutomaticTasks": "on"
+  "task.allowAutomaticTasks": "on",
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "/package-lock.json": true
+  }
 }

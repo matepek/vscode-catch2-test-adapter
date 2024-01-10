@@ -58,7 +58,7 @@ export class WorkspaceManager implements vscode.Disposable {
         },
       },
       {
-        resolve: /\$\{command:([^}]+)\}/,
+        resolve: /\$\{command:([^}]+)\}/, //TODO: add parameter options
         rule: async (m: RegExpMatchArray): Promise<string> => {
           try {
             const ruleV = await vscode.commands.executeCommand<string>(m[1]);
