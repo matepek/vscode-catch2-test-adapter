@@ -1393,7 +1393,7 @@
           "minimum": 1
         },
         "testMate.cpp.test.parallelExecutionOfExecutableLimit": {
-          "markdownDescription": "Maximum number of execution of the same executable. With this config it can be allowed that one executable is running at the same time as multiple processes and those processes *'running a set of tests'* parallel. Useful if one executable has a lot of tests which can be run parallel. It won't have effect unless the `test.parallelExecutionLimit` is adjusted too. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. NOTE: if your **test cases** depend on the **same resource** exclusively then this **could cause a problem**.",
+          "markdownDescription": "Maximum number of execution of the same executable. With this config it can be allowed that one executable is running at the same time as multiple processes and those processes _'running a set of tests'_ parallel. Useful if one executable has a lot of tests which can be run parallel. It won't have effect unless the `test.parallelExecutionLimit` is adjusted too. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. NOTE: if your **test cases** depend on the **same resource** exclusively then this **could cause a problem**.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
