@@ -13,6 +13,12 @@ BUT before that read ALL this document.
 
 ## F.A.Q
 
+### The extension cannot find my test executables.
+
+> In version `4.8.0` a new filtering was introduced.
+> Searching for executables respects `files.watcherExclude` vscode config.
+> One can try removing their executable files' pattern from this config.
+
 ### Link / Build process fails because the executable is locked by this extension.
 
 > Check `testMate.cpp.test.advancedExecutables` -> `executableCloning`.

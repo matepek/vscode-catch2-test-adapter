@@ -70,12 +70,31 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     if (this._pattern.indexOf('\\') != -1)
       this._shared.log.info('Pattern contains backslash character. Try to avoid that.');
 
+    let enabledExcludes: string[] = [];
+    try {
+      const fileWatcherExclude =
+        vscode.workspace.getConfiguration('files').get<Record<string, boolean>>('watcherExclude') ?? {};
+      enabledExcludes = Object.entries(fileWatcherExclude)
+        .filter(i => i[1])
+        .map(i => i[0]);
+    } catch (err) {
+      this._shared.log.error('Something wrong with exclusion', err);
+    }
+
+    if (enabledExcludes.length > 0) {
+      this._shared.log.info(
+        'Test executables might be ignored! Excluding some patterns because they are set in vscode under `files.watcherExclude`.',
+        enabledExcludes,
+      );
+      enabledExcludes = []; //TODO:mapek
+    }
+
     let filePaths: string[] = [];
 
     let execWatcher: FSWatcher | undefined = undefined;
     try {
       if (pattern.isPartOfWs) {
-        execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.relativeToWsPosix);
+        execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.relativeToWsPosix, enabledExcludes);
       } else {
         execWatcher = new GazeWrapper([pattern.absPath]);
       }
@@ -166,7 +185,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
         for (const pattern of this._dependsOn) {
           const p = await this._pathProcessor(pattern);
           if (p.isPartOfWs) {
-            const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.relativeToWsPosix);
+            const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.relativeToWsPosix, []);
             this._disposables.push(w);
 
             w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, p));

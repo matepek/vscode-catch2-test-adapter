@@ -74,14 +74,20 @@ export class GazeWrapper implements FSWatcher {
 }
 
 export class VSCFSWatcherWrapper implements FSWatcher {
-  constructor(workspaceFolder: vscode.WorkspaceFolder, relativePattern: string) {
+  constructor(workspaceFolder: vscode.WorkspaceFolder, relativePattern: string, excludePatterns: string[]) {
     if (path.isAbsolute(relativePattern)) throw new Error('Relative path is expected:' + relativePattern);
 
     this._relativePattern = new vscode.RelativePattern(workspaceFolder, relativePattern);
 
     this._vscWatcher = vscode.workspace.createFileSystemWatcher(this._relativePattern, false, false, false);
     this._disposables.push(this._vscWatcher);
+    this._excludePattern = excludePatterns;
   }
+
+  private readonly _relativePattern: vscode.RelativePattern;
+  private readonly _vscWatcher: vscode.FileSystemWatcher;
+  private readonly _disposables: vscode.Disposable[] = [];
+  private readonly _excludePattern: readonly string[] = [];
 
   dispose(): void {
     this._disposables.forEach(c => c.dispose());
@@ -91,23 +97,16 @@ export class VSCFSWatcherWrapper implements FSWatcher {
     return Promise.resolve();
   }
 
-  watched(): Promise<string[]> {
-    const excludeObj = vscode.workspace.getConfiguration('files').get<Record<string, boolean>>('watcherExclude') ?? {};
-    const enabledExcludes = Object.entries(excludeObj)
-      .filter(i => i[1])
-      .map(i => i[0]);
+  async watched(): Promise<string[]> {
     // this trick seems working but would need more understanding
     const exclude =
-      enabledExcludes.length === 0
+      this._excludePattern.length === 0
         ? null
-        : enabledExcludes.length === 1
-          ? enabledExcludes[0]
-          : '{' + enabledExcludes.join(',') + '}';
-    return new Promise(resolve => {
-      vscode.workspace
-        .findFiles(this._relativePattern, exclude, 10000)
-        .then((uris: vscode.Uri[]) => resolve(uris.map(v => v.fsPath)));
-    });
+        : this._excludePattern.length === 1
+          ? this._excludePattern[0]
+          : '{' + this._excludePattern.join(',') + '}';
+    const uris = await vscode.workspace.findFiles(this._relativePattern, exclude, 10000);
+    return uris.map(v => v.fsPath);
   }
 
   onAll(handler: (fsPath: string) => void): void {
@@ -120,8 +119,4 @@ export class VSCFSWatcherWrapper implements FSWatcher {
   onError(_handler: (err: Error) => void): void {
     return undefined;
   }
-
-  private readonly _relativePattern: vscode.RelativePattern;
-  private readonly _vscWatcher: vscode.FileSystemWatcher;
-  private readonly _disposables: vscode.Disposable[] = [];
 }
