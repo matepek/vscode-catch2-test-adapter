@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.8.2]
+
+### Fixed
+
+- issue related to `files.watcherExclude`. It is not working in `v4.8.1`.
+
 ## [4.8.1] - 2024-02-07
 
 Improved logging

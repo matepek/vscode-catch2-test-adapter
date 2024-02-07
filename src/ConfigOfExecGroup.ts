@@ -86,7 +86,6 @@ export class ConfigOfExecGroup implements vscode.Disposable {
         'Test executables might be ignored! Excluding some patterns because they are set in vscode under `files.watcherExclude`.',
         enabledExcludes,
       );
-      enabledExcludes = []; //TODO:mapek
     }
 
     let filePaths: string[] = [];
