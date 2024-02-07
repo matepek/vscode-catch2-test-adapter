@@ -345,9 +345,16 @@
                 "default": false
               },
               "executableCloning": {
-                "markdownDescription": "(experimental) If enabled it creates a copy of the test executable before listing or running the tests. NOTE: discovery (`--help`) still uses the original file.",
+                "markdownDescription": "If enabled it creates a copy of the test executable before listing or running the tests. NOTE: discovery (`--help`) still uses the original file.",
                 "type": "boolean",
                 "default": false
+              },
+              "executableSuffixToInclude": {
+                "markdownDescription": "Filter files based on suffix for faster discovery.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               },
               "waitForBuildProcess": {
                 "markdownDescription": "Prevents the extension of auto-reloading. With this linking failure might can be avoided. Can be true to use a default pattern that works for most cases, or a string to pass your own search pattern (regex) for processes.",

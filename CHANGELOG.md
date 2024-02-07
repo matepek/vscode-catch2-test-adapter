@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.8.3]
+
+### Added
+
+- `testMate.test.advancedExecutables` - `executableSuffixToInclude` for [custom filtering](https://github.com/matepek/vscode-catch2-test-adapter/issues/415).
+
 ## [4.8.2] - 2024-02-07
 
 ### Fixed
