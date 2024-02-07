@@ -569,64 +569,65 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     if (testsToRunFinal.length == 0) return;
 
-    try {
-      await this.runTasks('beforeEach', taskPool, testRun.token);
-      //TODO:future: test list might changes: await this.reloadTests(taskPool, testRun.token);
-      // that case the testsToRunFinal should be after this block
-    } catch (e) {
-      const msg = e.toString();
-      testRun.appendOutput(msg);
-      const errorMsg = new vscode.TestMessage(msg);
-      for (const test of testsToRun) {
-        testRun.errored(test.item, errorMsg);
+    return taskPool.scheduleTask(async (taskSlotId: number) => {
+      try {
+        await this.runTasks('beforeEach', taskSlotId, testRun.token);
+        //TODO:future: test list might changes: await this.reloadTests(taskSlotId, testRun.token);
+        // that case the testsToRunFinal should be after this block
+      } catch (e) {
+        const msg = e.toString();
+        testRun.appendOutput(msg);
+        const errorMsg = new vscode.TestMessage(msg);
+        for (const test of testsToRun) {
+          testRun.errored(test.item, errorMsg);
+        }
+        return;
       }
-      return;
-    }
 
-    const splittedForFramework = this._splitTests(testsToRunFinal);
-    const splittedForMultirun = splittedForFramework.flatMap(v => this._splitTestSetForMultirunIfEnabled(v));
-    const splittedFinal = splittedForMultirun.flatMap(b => this._splitTestsToSmallEnoughSubsets(b)); //TODO:future merge with _splitTestSetForMultirunIfEnabled
+      const splittedForFramework = this._splitTests(testsToRunFinal);
+      const splittedForMultirun = splittedForFramework.flatMap(v => this._splitTestSetForMultirunIfEnabled(v));
+      const splittedFinal = splittedForMultirun.flatMap(b => this._splitTestsToSmallEnoughSubsets(b)); //TODO:future merge with _splitTestSetForMultirunIfEnabled
 
-    const runningBucketPromises = splittedFinal.map(b =>
-      this._runInner(testRun, b, taskPool).catch(err => {
-        vscode.window.showWarningMessage(err.toString());
-      }),
-    );
+      const runningBucketPromises = splittedFinal.map(b =>
+        this._runInner(testRun, b, taskSlotId).catch(err => {
+          vscode.window.showWarningMessage(err.toString());
+        }),
+      );
 
-    await Promise.allSettled(runningBucketPromises);
+      await Promise.allSettled(runningBucketPromises);
 
-    try {
-      await this.runTasks('afterEach', taskPool, testRun.token);
-    } catch (e) {
-      const msg = e.toString();
-      testRun.appendOutput(msg);
-      const errorMsg = new vscode.TestMessage(msg);
-      for (const test of testsToRun) {
-        testRun.errored(test.item, errorMsg);
+      try {
+        await this.runTasks('afterEach', taskSlotId, testRun.token);
+      } catch (e) {
+        const msg = e.toString();
+        testRun.appendOutput(msg);
+        const errorMsg = new vscode.TestMessage(msg);
+        for (const test of testsToRun) {
+          testRun.errored(test.item, errorMsg);
+        }
+        return;
       }
-      return;
-    }
+    });
   }
 
-  private _runInner(testRun: vscode.TestRun, testsToRun: readonly AbstractTest[], taskPool: TaskPool): Promise<void> {
+  private _runInner(testRun: vscode.TestRun, testsToRun: readonly AbstractTest[], taskSlotId: number): Promise<void> {
     return this.shared.parallelizationPool.scheduleTask(async () => {
-      const runIfNotCancelled = (): Promise<void> => {
+      const runIfNotCancelled = async (): Promise<void> => {
         if (testRun.token.isCancellationRequested) {
           this.shared.log.info('test was canceled:', this);
-          return Promise.resolve();
+          return;
         }
+        //TODO use and resolve taskSlotId
         return this._runProcess(testRun, testsToRun);
       };
 
       try {
-        return await taskPool.scheduleTask(runIfNotCancelled);
+        return await runIfNotCancelled();
       } catch (err) {
         if (isSpawnBusyError(err)) {
           this.shared.log.info('executable is busy, rescheduled: 2sec', err);
-
-          return promisify(setTimeout)(2000).then(() => {
-            taskPool.scheduleTask(runIfNotCancelled);
-          });
+          await promisify(setTimeout)(2000);
+          return runIfNotCancelled();
         } else {
           throw err;
         }
@@ -791,28 +792,27 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
   async runTasks(
     type: 'beforeEach' | 'afterEach',
-    taskPool: TaskPool,
+    taskSlotId: number,
     cancellationToken: CancellationToken,
   ): Promise<void> {
     if (this.shared.runTask[type]?.length) {
-      return taskPool.scheduleTask(async () => {
-        try {
-          // sequential execution of tasks
-          for (const taskName of this.shared.runTask[type] || []) {
-            const exitCode = await this.shared.executeTask(taskName, this.shared.varToValue, cancellationToken);
+      try {
+        // sequential execution of tasks
+        for (const taskName of this.shared.runTask[type] || []) {
+          // TODO: resolve taskSlotId
+          const exitCode = await this.shared.executeTask(taskName, this.shared.varToValue, cancellationToken);
 
-            if (exitCode !== undefined) {
-              if (exitCode !== 0) {
-                throw Error(`Task "${taskName}" has returned with exitCode(${exitCode}) != 0.`);
-              }
+          if (exitCode !== undefined) {
+            if (exitCode !== 0) {
+              throw Error(`Task "${taskName}" has returned with exitCode(${exitCode}) != 0.`);
             }
           }
-        } catch (e) {
-          throw Error(
-            `One of the tasks of the \`testMate.test.advancedExecutables:runTask.${type}\` array has failed: ` + e,
-          );
         }
-      });
+      } catch (e) {
+        throw Error(
+          `One of the tasks of the \`testMate.test.advancedExecutables:runTask.${type}\` array has failed: ` + e,
+        );
+      }
     }
   }
 

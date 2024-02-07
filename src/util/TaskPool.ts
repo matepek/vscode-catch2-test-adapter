@@ -6,6 +6,10 @@ export class TaskPool {
     if (_maxTaskCount < 1) throw Error('invalid maxTaskCount: ' + _maxTaskCount);
   }
 
+  private readonly _availableSlots: number[] = [];
+  private _usedSlots = new Set<number>();
+  private readonly _waitingTasks: ((_: number | PromiseLike<number>) => void)[] = [];
+
   get maxTaskCount(): number {
     return this._maxTaskCount;
   }
@@ -15,43 +19,54 @@ export class TaskPool {
 
     this._maxTaskCount = value;
 
-    this._startIfCanAqure();
+    this._startIfCanAcquire();
   }
 
-  get availableSlotCount(): number {
-    return Math.max(0, this._maxTaskCount - this._runningTaskCount);
+  scheduleTask<TResult>(task: (slotId: number) => TResult | PromiseLike<TResult>): Promise<TResult> {
+    const slotId = this._acquire();
+    const pre =
+      slotId !== undefined
+        ? Promise.resolve(slotId)
+        : new Promise<number>(resolve => {
+            this._waitingTasks.push(resolve);
+          });
+    return pre.then(slotId =>
+      Promise.resolve(slotId)
+        .then(task)
+        .finally(() => this._release(slotId)),
+    );
   }
 
-  scheduleTask<TResult>(task: () => TResult | PromiseLike<TResult>): Promise<TResult> {
-    return new Promise<void>(resolve => {
-      if (this._acquire()) resolve();
-      else this._waitingTasks.push(resolve);
-    })
-      .then(task)
-      .finally(() => this._release());
-  }
-
-  private _runningTaskCount = 0;
-  private readonly _waitingTasks: ((_: void | PromiseLike<void>) => void)[] = [];
-
-  private _acquire(): boolean {
-    if (this._runningTaskCount < this._maxTaskCount) {
-      this._runningTaskCount++;
-      return true;
+  private _acquire(): number | undefined {
+    const slotId = this._availableSlots.shift();
+    if (slotId !== undefined) {
+      this._usedSlots.add(slotId);
+      return slotId;
+    } else if (this._usedSlots.size < this._maxTaskCount) {
+      for (let i = 0; i < this._maxTaskCount; ++i) {
+        if (!this._usedSlots.has(i)) {
+          this._usedSlots.add(i);
+          return i;
+        }
+      }
+      throw Error('must have a unused slotId');
     } else {
-      return false;
+      return undefined;
     }
   }
 
-  private _release(): void {
-    this._runningTaskCount--;
-
-    this._startIfCanAqure();
+  private _release(slotId: number): void {
+    this._usedSlots.delete(slotId);
+    if (slotId < this._maxTaskCount) {
+      this._availableSlots.push(slotId);
+      this._startIfCanAcquire();
+    }
   }
 
-  private _startIfCanAqure(): void {
-    while (this._waitingTasks.length > 0 && this._acquire()) {
-      this._waitingTasks.shift()!();
+  private _startIfCanAcquire(): void {
+    let slotId: number | undefined;
+    while (this._waitingTasks.length > 0 && (slotId = this._acquire()) !== undefined) {
+      this._waitingTasks.shift()!(slotId);
     }
   }
 }
