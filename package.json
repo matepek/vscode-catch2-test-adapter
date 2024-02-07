@@ -1386,7 +1386,7 @@
           "minimum": -1
         },
         "testMate.cpp.test.parallelExecutionLimit": {
-          "markdownDescription": "Maximum parallel run of tasks. Tasks are *'running a set of tests'*, *'test executable discovery'* and *'reload of the executable's test list'*. NOTE: If your executables depend on the **same resource** exclusively then this **could cause a problem**. ",
+          "markdownDescription": "Maximum parallel run of tasks. Tasks are _'running a set of tests'_, _'test executable discovery'_ and _'reload of the executable's test list'_. NOTE: If your executables depend on the **same resource** exclusively then this **could cause a problem**. ",
           "scope": "resource",
           "type": "integer",
           "default": 1,
