@@ -8,7 +8,7 @@ import { FrameworkSpecificConfig, RunTaskConfig } from '../AdvancedExecutableInt
 import { Version } from '../Util';
 import { Spawner, SpawnOptionsWithoutStdio } from '../Spawner';
 import { GoogleBenchmarkExecutable } from './GoogleBenchmark/GoogleBenchmarkExecutable';
-import { ResolveRuleAsync } from '../util/ResolveRule';
+import { ResolveRuleAsync, resolveVariablesAsync } from '../util/ResolveRule';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { Framework, FrameworkId, FrameworkType } from './Framework';
 
@@ -32,15 +32,17 @@ export class ExecutableFactory {
   ) {}
 
   async create(checkIsNativeExecutable: boolean): Promise<AbstractExecutable | undefined> {
-    const runWithHelpRes = await this._shared.taskPool.scheduleTask(async () => {
+    const runWithHelpRes = await this._shared.taskPool.scheduleTask(async (taskSlotId: number) => {
       if (checkIsNativeExecutable)
         await c2fs.isNativeExecutableAsync(
           this._execPath,
           this._executableSuffixToInclude,
           this._executableSuffixToExclude,
         );
-
-      return this._spawner.spawnAsync(this._execPath, ['--help'], this._execOptions, this._shared.execParsingTimeout);
+      const options = await resolveVariablesAsync(this._execOptions, [
+        { resolve: '${testMate.var.taskSlotId}', rule: taskSlotId.toString() },
+      ]);
+      return this._spawner.spawnAsync(this._execPath, ['--help'], options, this._shared.execParsingTimeout);
     });
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
     // s: dotAll

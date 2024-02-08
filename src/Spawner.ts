@@ -7,7 +7,7 @@ export interface SpawnReturns extends fsw.SpawnSyncReturns<string> {
   closed: boolean;
 }
 
-export type SpawnOptionsWithoutStdio = fsw.SpawnOptionsWithoutStdio;
+export type SpawnOptionsWithoutStdio = fsw.SpawnOptionsWithoutStdio & { env: NodeJS.ProcessEnv; cwd: string };
 
 ///
 
@@ -54,7 +54,10 @@ export class DefaultSpawner implements Spawner {
         closed: false,
       };
 
-      const optionsEx = Object.assign<SpawnOptionsWithoutStdio, SpawnOptionsWithoutStdio>({ timeout }, options || {});
+      const optionsEx = Object.assign<SpawnOptionsWithoutStdio, SpawnOptionsWithoutStdio>(
+        { timeout, env: {}, cwd: '' },
+        options || {},
+      );
 
       const command = fsw.spawn(cmd, args || [], optionsEx);
 

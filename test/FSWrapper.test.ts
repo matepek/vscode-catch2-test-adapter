@@ -16,7 +16,7 @@ const spawner = new DefaultSpawner();
 describe('FsWrapper.spawnAsync', function () {
   it('echoes', async function () {
     const isWin = process.platform === 'win32';
-    const opt: SpawnOptionsWithoutStdio = isWin ? { shell: true } : {};
+    const opt: SpawnOptionsWithoutStdio = isWin ? { shell: true, env: {}, cwd: '' } : { env: {}, cwd: '' };
     const r = await spawner.spawnAsync('echo', ['apple'], opt);
     assert.strictEqual(r.stdout, 'apple' + EOL);
     assert.strictEqual(r.output.length, 3);
@@ -29,7 +29,7 @@ describe('FsWrapper.spawnAsync', function () {
     if (process.env['TRAVIS'] == 'true') this.skip();
     let hasErr = false;
     return spawner
-      .spawnAsync('notexisting.exe', [], {})
+      .spawnAsync('notexisting.exe', [], { env: {}, cwd: '' })
       .then(
         () => {
           assert.ok(false);
@@ -65,7 +65,7 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function () {
     assert.strictEqual(fsRes.stderr, '');
     assert.strictEqual(fsRes.error, undefined);
 
-    return spawner.spawnAsync('echo', ['apple'], {}).then(res => {
+    return spawner.spawnAsync('echo', ['apple'], { env: {}, cwd: '' }).then(res => {
       compare(res, fsRes);
     });
   });
@@ -82,7 +82,7 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function () {
       assert.ok(typeof fsRes.output[2] === 'string');
       assert.ok(typeof fsRes.stderr === 'string');
 
-      return spawner.spawnAsync('ls', ['--wrongparam'], {}).then(res => {
+      return spawner.spawnAsync('ls', ['--wrongparam'], { env: {}, cwd: '' }).then(res => {
         compare(res, fsRes);
       });
     });
@@ -98,7 +98,7 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function () {
     assert.strictEqual(fsRes.stderr, null);
     assert.ok(fsRes.error instanceof Error, fsRes.error);
 
-    return spawner.spawnAsync('fnksdlfnlskfdn', [''], {}).then(
+    return spawner.spawnAsync('fnksdlfnlskfdn', [''], { env: {}, cwd: '' }).then(
       () => {
         assert.fail();
       },

@@ -618,7 +618,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
           return;
         }
         //TODO use and resolve taskSlotId
-        return this._runProcess(testRun, testsToRun);
+        return this._runProcess(testRun, testsToRun, taskSlotId);
       };
 
       try {
@@ -659,14 +659,21 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return clonePath;
   }
 
-  private async _runProcess(testRun: vscode.TestRun, childrenToRun: readonly AbstractTest[]): Promise<void> {
+  private async _runProcess(
+    testRun: vscode.TestRun,
+    childrenToRun: readonly AbstractTest[],
+    taskSlotId: number,
+  ): Promise<void> {
     const execParams = this._getRunParams(childrenToRun);
 
     const pathForExecution = await this._getPathForExecution();
     this.shared.log.info('proc starting', pathForExecution, execParams, this.shared.path);
 
+    const options = await resolveVariablesAsync(this.shared.options, [
+      { resolve: '${testMate.var.taskSlotId}', rule: taskSlotId.toString() },
+    ]);
     const runInfo = await RunningExecutable.create(
-      new SpawnBuilder(this.shared.spawner, pathForExecution, execParams, this.shared.options, undefined),
+      new SpawnBuilder(this.shared.spawner, pathForExecution, execParams, options, undefined),
       childrenToRun,
       testRun.token,
     );
@@ -799,9 +806,11 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       try {
         // sequential execution of tasks
         for (const taskName of this.shared.runTask[type] || []) {
-          // TODO: resolve taskSlotId
-          const exitCode = await this.shared.executeTask(taskName, this.shared.varToValue, cancellationToken);
-
+          const exitCode = await this.shared.executeTask(
+            taskName,
+            [{ resolve: '${testMate.var.taskSlotId}', rule: taskSlotId.toString() }, ...this.shared.varToValue],
+            cancellationToken,
+          );
           if (exitCode !== undefined) {
             if (exitCode !== 0) {
               throw Error(`Task "${taskName}" has returned with exitCode(${exitCode}) != 0.`);

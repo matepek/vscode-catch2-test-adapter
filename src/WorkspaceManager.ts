@@ -87,6 +87,8 @@ export class WorkspaceManager implements vscode.Disposable {
         }
 
         const resolvedTask = await resolveVariablesAsync(found, varToValue);
+        // need a new task, ssems like task wiht existing name are handled spcially and changed fields are ignored
+        resolvedTask.name = 'testMate:' + resolvedTask.name;
 
         if (Version.from(vscode.version)?.smaller(new Version(1, 72))) {
           // Task.name setter needs to be triggered in order for the task to clear its __id field
@@ -124,7 +126,7 @@ export class WorkspaceManager implements vscode.Disposable {
           execution.terminate();
         });
 
-        return result;
+        return await result;
       });
     };
 
@@ -416,8 +418,7 @@ export class WorkspaceManager implements vscode.Disposable {
           JSON.stringify({ 'testMate.cpp.debug.configTemplate': debugConfigData.template }, undefined, 2),
       );
 
-      const envVars = Object.assign({}, process.env, executable.shared.options.env);
-
+      const envVars = Object.assign({}, executable.shared.options.env);
       {
         if (typeof debugConfigData.template[setEnvKey] === 'object') {
           for (const envName in debugConfigData.template[setEnvKey]) {
@@ -454,7 +455,7 @@ export class WorkspaceManager implements vscode.Disposable {
           resolve: '${argsStr}',
           rule: (): string => '"' + argsArray.map(a => a.replaceAll('"', '\\"')).join('" "') + '"',
         },
-        { resolve: '${cwd}', rule: executable.shared.options.cwd!.toString() },
+        { resolve: '${cwd}', rule: executable.shared.options.cwd.toString() },
         {
           resolve: '${envObj}',
           rule: (): NodeJS.ProcessEnv => envVars,
@@ -474,7 +475,11 @@ export class WorkspaceManager implements vscode.Disposable {
         createPythonIndexerForArray('parentLabel', parentLabel, '▸'),
       ];
 
-      const debugConfig = await resolveVariablesAsync(debugConfigData.template, varToResolve);
+      let debugConfig = await resolveVariablesAsync(debugConfigData.template, varToResolve);
+      const taskSlotId = 0;
+      debugConfig = await resolveVariablesAsync(debugConfig, [
+        { resolve: '${testMate.var.taskSlotId}', rule: taskSlotId.toString() },
+      ]);
 
       // we dont know better: https://github.com/Microsoft/vscode/issues/70125
       const magicValueKey = 'magic variable  🤦🏼‍';
@@ -484,7 +489,7 @@ export class WorkspaceManager implements vscode.Disposable {
       this._shared.log.info('resolved debugConfig:', debugConfig);
 
       await this._runTasks('before', [executable], run.token);
-      await executable.runTasks('beforeEach', this._shared.taskPool, run.token);
+      await executable.runTasks('beforeEach', taskSlotId, run.token);
 
       let currentSession: vscode.DebugSession | undefined = undefined;
 
@@ -530,7 +535,7 @@ export class WorkspaceManager implements vscode.Disposable {
         );
       }
 
-      await executable.runTasks('afterEach', this._shared.taskPool, run.token);
+      await executable.runTasks('afterEach', taskSlotId, run.token);
       await this._runTasks('after', [executable], run.token);
     } catch (err) {
       this._shared.log.warn(err);
