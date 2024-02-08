@@ -23,6 +23,8 @@ export class ExecutableFactory {
     private readonly _parallelizationLimit: number,
     private readonly _markAsSkipped: boolean,
     private readonly _executableCloning: boolean,
+    private readonly _executableSuffixToInclude: Set<string> | undefined,
+    private readonly _executableSuffixToExclude: Set<string> | undefined,
     private readonly _runTask: RunTaskConfig,
     private readonly _spawner: Spawner,
     private readonly _resolvedSourceFileMap: Record<string, string>,
@@ -31,7 +33,12 @@ export class ExecutableFactory {
 
   async create(checkIsNativeExecutable: boolean): Promise<AbstractExecutable | undefined> {
     const runWithHelpRes = await this._shared.taskPool.scheduleTask(async () => {
-      if (checkIsNativeExecutable) await c2fs.isNativeExecutableAsync(this._execPath);
+      if (checkIsNativeExecutable)
+        await c2fs.isNativeExecutableAsync(
+          this._execPath,
+          this._executableSuffixToInclude,
+          this._executableSuffixToExclude,
+        );
 
       return this._spawner.spawnAsync(this._execPath, ['--help'], this._execOptions, this._shared.execParsingTimeout);
     });

@@ -41,12 +41,56 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     private readonly _strictPattern: boolean | undefined,
     private readonly _markAsSkipped: boolean | undefined,
     private readonly _executableCloning: boolean | undefined,
+    executableSuffixToInclude: string[] | undefined,
     private readonly _waitForBuildProcess: boolean | string | undefined,
     private readonly _executionWrapper: ExecutionWrapperConfig | undefined,
     private readonly _sourceFileMap: Record<string, string>,
     private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecificConfig>,
-  ) {}
+  ) {
+    this._executableSuffixToInclude =
+      process.platform === 'win32' ? new Set(executableSuffixToInclude ?? ['.exe', '.cmd', '.bat']) : undefined;
+    // https://askubuntu.com/questions/156392/what-is-the-equivalent-of-an-exe-file
+    this._executableSuffixToExclude =
+      process.platform !== 'win32'
+        ? new Set([
+            '.a',
+            '.bat',
+            '.c',
+            '.cc',
+            '.cmake',
+            '.cpp',
+            '.cxx',
+            '.deb',
+            '.dir',
+            '.gz',
+            '.h',
+            '.hpp',
+            '.hxx',
+            '.in',
+            '.input',
+            '.ko',
+            '.log',
+            '.md',
+            '.mm',
+            '.ninja',
+            '.o',
+            '.obj',
+            '.pc',
+            '.php',
+            '.pyc',
+            '.rpm',
+            '.so',
+            '.stamp',
+            '.tar',
+            '.txt',
+            '.vcxproj.user',
+            '.xml',
+          ])
+        : undefined;
+  }
 
+  private readonly _executableSuffixToInclude: Set<string> | undefined;
+  private readonly _executableSuffixToExclude: Set<string> | undefined;
   private _disposables: vscode.Disposable[] = [];
 
   dispose(): void {
@@ -132,7 +176,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       suiteCreationAndLoadingTasks.push(
         (async (): Promise<void> => {
           try {
-            await c2fs.isNativeExecutableAsync(file);
+            await c2fs.isNativeExecutableAsync(file, this._executableSuffixToInclude, this._executableSuffixToExclude);
             try {
               const factory = await this._createSuiteByUri(file);
               const suite = await factory.create(false);
@@ -373,6 +417,8 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       this._parallelizationLimit,
       this._markAsSkipped === true,
       this._executableCloning === true,
+      this._executableSuffixToInclude,
+      this._executableSuffixToExclude,
       this._runTask,
       spawner,
       resolvedSourceFileMap,
@@ -434,10 +480,12 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       return;
     }
 
-    const isExec = await c2fs.isNativeExecutableAsync(filePath).then(
-      () => true,
-      () => false,
-    );
+    const isExec = await c2fs
+      .isNativeExecutableAsync(filePath, this._executableSuffixToInclude, this._executableSuffixToExclude)
+      .then(
+        () => true,
+        () => false,
+      );
 
     if (isExec) {
       try {
@@ -511,10 +559,12 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     } else {
       await promisify(setTimeout)(delay);
 
-      const isExec = await c2fs.isNativeExecutableAsync(filePath).then(
-        () => true,
-        () => false,
-      );
+      const isExec = await c2fs
+        .isNativeExecutableAsync(filePath, this._executableSuffixToInclude, this._executableSuffixToExclude)
+        .then(
+          () => true,
+          () => false,
+        );
 
       return this._recursiveHandleRunnable(executable, isExec, Math.min(delay * 2, 2000));
     }

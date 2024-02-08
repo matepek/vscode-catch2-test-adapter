@@ -464,6 +464,7 @@ export class Configurations {
         undefined,
         undefined,
         undefined,
+        undefined,
         {},
         {
           catch2: {},
@@ -569,6 +570,8 @@ export class Configurations {
 
         const executableCloning: boolean | undefined = obj.executableCloning;
 
+        const executableSuffixToInclude: string[] | undefined = obj.executableSuffixToInclude;
+
         const waitForBuildProcess: boolean | string | undefined = obj.waitForBuildProcess;
 
         const defaultTestGrouping = obj.testGrouping;
@@ -601,6 +604,7 @@ export class Configurations {
           strictPattern,
           markAsSkipped,
           executableCloning,
+          executableSuffixToInclude,
           waitForBuildProcess,
           spawnerConfig,
           sourceFileMap,

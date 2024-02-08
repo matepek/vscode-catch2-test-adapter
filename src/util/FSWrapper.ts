@@ -42,60 +42,22 @@ function accessAsync(filePath: string, flag: number): Promise<void> {
   });
 }
 
-// https://askubuntu.com/questions/156392/what-is-the-equivalent-of-an-exe-file
-const nativeExecutableExtensionFilter = new Set([
-  '.a',
-  '.bat',
-  '.c',
-  '.cc',
-  '.cmake',
-  '.cpp',
-  '.cxx',
-  '.deb',
-  '.dir',
-  '.gz',
-  '.h',
-  '.hpp',
-  '.hxx',
-  '.in',
-  '.input',
-  '.ko',
-  '.log',
-  '.md',
-  '.mm',
-  '.ninja',
-  '.o',
-  '.obj',
-  '.pc',
-  '.php',
-  '.pyc',
-  '.rpm',
-  '.so',
-  '.stamp',
-  '.tar',
-  '.txt',
-  '.vcxproj.user',
-  '.xml',
-]);
-
-const win32NativeExecutableExtensionFilter = new Set(['.exe', '.cmd', '.bat']);
-
-export function isNativeExecutableAsync(filePath: string): Promise<void> {
+export function isNativeExecutableAsync(
+  filePath: string,
+  extensionIncludeFilter: Set<string> | undefined,
+  extensionExcludeFilter: Set<string> | undefined,
+): Promise<void> {
   const ext = path.extname(filePath);
-  if (process.platform === 'win32') {
-    if (win32NativeExecutableExtensionFilter.has(ext)) return accessAsync(filePath, ExecutableFlag);
-    else return Promise.reject(new Error('Not a native executable extension on win32: ' + filePath));
-  } else {
-    if (filePath.endsWith('/')) {
-      // noted that we got ".../CMakeFiles/" a lot. I assume the slash means directory.
-      return Promise.reject(new Error('It is a directory, not a native executable: ' + filePath));
-    }
-    if (nativeExecutableExtensionFilter.has(ext)) {
-      return Promise.reject(new Error('Not a native executable (filtered because of its extension): ' + filePath));
-    } else {
-      return accessAsync(filePath, ExecutableFlag);
-    }
+  if (extensionIncludeFilter) {
+    if (!extensionIncludeFilter.has(ext)) return Promise.reject(new Error('Not included by filter: ' + filePath));
+  } else if (extensionExcludeFilter) {
+    if (extensionExcludeFilter.has(ext)) return Promise.reject(new Error('Excluded by fitler: ' + filePath));
   }
+  if (process.platform !== 'win32' && filePath.endsWith('/')) {
+    // noted that we got ".../CMakeFiles/" a lot. I assume the slash means directory.
+    return Promise.reject(new Error('It is a directory, not a native executable: ' + filePath));
+  }
+  return accessAsync(filePath, ExecutableFlag);
 }
 
 export function existsSync(filePath: string): boolean {

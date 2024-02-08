@@ -18,6 +18,7 @@ export type AdvancedExecutableConfig = {
   strictPattern?: boolean;
   markAsSkipped?: boolean;
   executableCloning?: boolean;
+  executableSuffixToInclude?: string[];
   waitForBuildProcess?: boolean | string;
   catch2?: FrameworkSpecificConfig;
   gtest?: FrameworkSpecificConfig;

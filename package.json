@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "4.8.1",
+  "version": "4.8.2",
   "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -345,9 +345,16 @@
                 "default": false
               },
               "executableCloning": {
-                "markdownDescription": "(experimental) If enabled it creates a copy of the test executable before listing or running the tests. NOTE: discovery (`--help`) still uses the original file.",
+                "markdownDescription": "If enabled it creates a copy of the test executable before listing or running the tests. NOTE: discovery (`--help`) still uses the original file.",
                 "type": "boolean",
                 "default": false
+              },
+              "executableSuffixToInclude": {
+                "markdownDescription": "Filter files based on suffix for faster discovery.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               },
               "waitForBuildProcess": {
                 "markdownDescription": "Prevents the extension of auto-reloading. With this linking failure might can be avoided. Can be true to use a default pattern that works for most cases, or a string to pass your own search pattern (regex) for processes.",
@@ -1386,14 +1393,14 @@
           "minimum": -1
         },
         "testMate.cpp.test.parallelExecutionLimit": {
-          "markdownDescription": "Maximizes the number of the parallel test executions. (It applies instantly.) Note: If your executables depend on the **same resource** exclusively then this **could cause a problem**.",
+          "markdownDescription": "Maximum parallel run of tasks. Tasks are _'running a set of tests'_, _'test executable discovery'_ and _'reload of the executable's test list'_. NOTE: If your executables depend on the **same resource** exclusively then this **could cause a problem**.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
           "minimum": 1
         },
         "testMate.cpp.test.parallelExecutionOfExecutableLimit": {
-          "markdownDescription": "Maximizes the number of the parallel execution of executables. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. The `testMate.cpp.test.parallelExecutionLimit` is a global limit and this is a local one. Note: If your **test cases** depend on the **same resource** exclusively then this **could cause a problem**.",
+          "markdownDescription": "Maximum number of execution of the same executable. With this config it can be allowed that one executable is running at the same time as multiple processes and those processes _'running a set of tests'_ parallel. Useful if one executable has a lot of tests which can be run parallel. It won't have effect unless the `test.parallelExecutionLimit` is adjusted too. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. NOTE: if your **test cases** depend on the **same resource** exclusively then this **could cause a problem**.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
