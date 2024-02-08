@@ -2,7 +2,9 @@
 
 node_modules
 
-out
+/out
+/test/cpp/.vscode/
+/test/cpp/build/
 
 *.vsix
 .vscode-test

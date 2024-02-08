@@ -14,6 +14,8 @@
     "editor.tabSize": 2
   },
   "files.associations": {
+    "*.excalidraw": "json",
+    "*.excalidrawlib": "json",
     "*.cpp.o.d": "makefile",
     "catch.hpp.txt": "cpp",
     "__bit_reference": "cpp",
@@ -102,7 +104,12 @@
     "__bits": "cpp",
     "__verbose_abort": "cpp",
     "compare": "cpp",
-    "concepts": "cpp"
+    "concepts": "cpp",
+    "any": "cpp",
+    "charconv": "cpp",
+    "forward_list": "cpp",
+    "unordered_set": "cpp",
+    "valarray": "cpp"
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[javascript]": {
