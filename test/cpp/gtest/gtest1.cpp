@@ -151,3 +151,21 @@ TEST(Std, NoOutput)
     std::cout << "cout\n";
     std::cerr << "cerr\n";
 }
+
+TEST(Std, Whitespace)
+{
+    std::cout << "0space\n";
+    std::cout << " 1space\n";
+    std::cout << "  2spaces\n";
+ 
+    std::cout << "0space\r\n";
+    std::cout << " 1space\r\n";
+    std::cout << "  2spaces\r\n";
+
+    std::cout << "0space\n";
+    std::cout << " 1space\n";
+    std::cout << "  2spaces\n";
+
+    std::cout << "\t1tab\r\n";
+    std::cout << "\t\t2tabs\r\n";
+}
