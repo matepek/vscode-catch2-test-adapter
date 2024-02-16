@@ -349,6 +349,68 @@
                 "type": "boolean",
                 "default": false
               },
+              "debug.configTemplate": {
+                "markdownDescription": "Sets the necessary debug configurations and the debug button will work.",
+                "scope": "resource",
+                "default": null,
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(extensionOnly|name:.+)$"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ],
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "${exec}",
+                            "${argsArray}",
+                            "${argsArrayFlat}",
+                            "${argsStr}",
+                            "${cwd}",
+                            "${envObj}",
+                            "${envObjArray}",
+                            "${sourceFileMapObj}",
+                            "${label}",
+                            "${parentLabel}"
+                          ]
+                        },
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array"
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "object"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
               "executableSuffixToInclude": {
                 "markdownDescription": "Filter files based on suffix for faster discovery.",
                 "type": "array",

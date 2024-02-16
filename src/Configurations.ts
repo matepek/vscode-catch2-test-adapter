@@ -14,6 +14,7 @@ import {
 } from './AdvancedExecutableInterface';
 import { platformUtil } from './util/Platform';
 import { cloneRecursively } from './util/ResolveRule';
+import { DebugConfigData } from './DebugConfigType';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
 
@@ -118,13 +119,10 @@ export class Configurations {
     return vscode.extensions.all.find(e => e.id === id) !== undefined;
   }
 
-  getDebugConfigurationTemplate(): DebugConfigData {
+  private _getDebugConfigData(
+    templateFromConfig: vscode.DebugConfiguration | null | 'extensionOnly' | string,
+  ): DebugConfigData {
     const debugConfigData = ((): DebugConfigData => {
-      const templateFromConfig = this._getD<vscode.DebugConfiguration | null | 'extensionOnly' | string>(
-        'debug.configTemplate',
-        null,
-      );
-
       const template: vscode.DebugConfiguration = {
         name: '${label} (${parentLabel})',
         request: 'launch',
@@ -284,6 +282,12 @@ export class Configurations {
     if (typeof platfromProp === 'object') Object.assign(debugConfigData.template, platfromProp);
 
     return debugConfigData;
+  }
+
+  getDebugConfigurationTemplate(): DebugConfigData {
+    return this._getDebugConfigData(
+      this._getD<vscode.DebugConfiguration | null | 'extensionOnly' | string>('debug.configTemplate', null),
+    );
   }
 
   getOrCreateUserId(): string {
@@ -465,6 +469,7 @@ export class Configurations {
         undefined,
         undefined,
         undefined,
+        undefined,
         {},
         {
           catch2: {},
@@ -574,6 +579,10 @@ export class Configurations {
 
         const waitForBuildProcess: boolean | string | undefined = obj.waitForBuildProcess;
 
+        const debugConfigData: DebugConfigData | undefined = obj['debug.configTemplate']
+          ? this._getDebugConfigData(obj['debug.configTemplate'])
+          : undefined;
+
         const defaultTestGrouping = obj.testGrouping;
 
         const spawnerConfig: ExecutionWrapperConfig | undefined =
@@ -606,6 +615,7 @@ export class Configurations {
           executableCloning,
           executableSuffixToInclude,
           waitForBuildProcess,
+          debugConfigData,
           spawnerConfig,
           sourceFileMap,
           {
@@ -675,17 +685,3 @@ export class Configurations {
     return {};
   }
 }
-
-export type DebugConfigTemplateSource =
-  | 'fromLaunchJson'
-  | 'fromLaunchJsonByName'
-  | 'userDefined'
-  | 'vadimcn.vscode-lldb'
-  | 'ms-vscode.cpptools'
-  | 'webfreak.debug';
-
-export type DebugConfigData = {
-  template: vscode.DebugConfiguration;
-  source: DebugConfigTemplateSource;
-  launchSourceFileMap?: Record<string, string>;
-};

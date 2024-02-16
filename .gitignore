@@ -4,6 +4,8 @@ node_modules
 
 out
 
+/test/cpp/build
+
 *.vsix
 .vscode-test
 

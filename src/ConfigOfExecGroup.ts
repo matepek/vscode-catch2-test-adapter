@@ -23,6 +23,7 @@ import { readFileSync } from 'fs';
 import { getModiTime } from './Util';
 import { SubProgressReporter } from './util/ProgressReporter';
 import { ExecCloner } from './framework/AbstractExecutable';
+import { DebugConfigData } from './DebugConfigType';
 
 ///
 
@@ -43,6 +44,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     private readonly _executableCloning: boolean | undefined,
     executableSuffixToInclude: string[] | undefined,
     private readonly _waitForBuildProcess: boolean | string | undefined,
+    private readonly _debugConfigData: DebugConfigData | undefined,
     private readonly _executionWrapper: ExecutionWrapperConfig | undefined,
     private readonly _sourceFileMap: Record<string, string>,
     private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecificConfig>,
@@ -417,6 +419,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       this._parallelizationLimit,
       this._markAsSkipped === true,
       this._executableCloning === true,
+      this._debugConfigData,
       this._executableSuffixToInclude,
       this._executableSuffixToExclude,
       this._runTask,

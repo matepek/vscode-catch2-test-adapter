@@ -1,3 +1,4 @@
+import { DebugConfig } from './DebugConfigType';
 import { TestGroupingConfig } from './TestGroupingInterface';
 
 ///
@@ -20,6 +21,7 @@ export type AdvancedExecutableConfig = {
   executableCloning?: boolean;
   executableSuffixToInclude?: string[];
   waitForBuildProcess?: boolean | string;
+  'debug.configTemplate': DebugConfig;
   catch2?: FrameworkSpecificConfig;
   gtest?: FrameworkSpecificConfig;
   doctest?: FrameworkSpecificConfig;

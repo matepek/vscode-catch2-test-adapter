@@ -4,6 +4,7 @@ import { ResolveRuleAsync } from '../util/ResolveRule';
 import { TaskPool } from '../util/TaskPool';
 import { Spawner, SpawnOptionsWithoutStdio } from '../Spawner';
 import { WorkspaceShared } from '../WorkspaceShared';
+import { DebugConfigData } from '../DebugConfigType';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const hash = require('object-hash');
@@ -20,6 +21,7 @@ export class SharedVarOfExec {
     _parallelizationLimit: number,
     readonly markAsSkipped: boolean,
     readonly executableCloning: boolean,
+    readonly debugConfigData: DebugConfigData | undefined,
     readonly runTask: RunTaskConfig,
     readonly spawner: Spawner,
     readonly resolvedSourceFileMap: Record<string, string>,

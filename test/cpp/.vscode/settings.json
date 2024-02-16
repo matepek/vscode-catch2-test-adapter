@@ -1,0 +1,11 @@
+{
+    "cmake.configureOnOpen": true,
+    "testMate.cpp.test.advancedExecutables": [
+        {
+            "pattern":"build/**/*{test,Test,TEST}*",
+            "runTask": {
+                "before": ["build_all"]
+            }
+        }
+    ]
+}
