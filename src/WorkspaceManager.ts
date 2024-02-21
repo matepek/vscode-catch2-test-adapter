@@ -405,7 +405,7 @@ export class WorkspaceManager implements vscode.Disposable {
 
       const argsArrayFunc = async (): Promise<string[]> => argsArray;
 
-      const debugConfigData = configuration.getDebugConfigurationTemplate();
+      const debugConfigData = executable.shared.debugConfigData ?? configuration.getDebugConfigurationTemplate();
 
       this._shared.log.info('debug config data', {
         source: debugConfigData.source,

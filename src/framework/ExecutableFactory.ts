@@ -11,6 +11,7 @@ import { GoogleBenchmarkExecutable } from './GoogleBenchmark/GoogleBenchmarkExec
 import { ResolveRuleAsync } from '../util/ResolveRule';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { Framework, FrameworkId, FrameworkType } from './Framework';
+import { DebugConfigData } from '../DebugConfigType';
 
 export class ExecutableFactory {
   constructor(
@@ -23,6 +24,7 @@ export class ExecutableFactory {
     private readonly _parallelizationLimit: number,
     private readonly _markAsSkipped: boolean,
     private readonly _executableCloning: boolean,
+    private readonly _debugConfigData: DebugConfigData | undefined,
     private readonly _executableSuffixToInclude: Set<string> | undefined,
     private readonly _executableSuffixToExclude: Set<string> | undefined,
     private readonly _runTask: RunTaskConfig,
@@ -74,6 +76,7 @@ export class ExecutableFactory {
           this._parallelizationLimit,
           this._markAsSkipped,
           this._executableCloning,
+          this._debugConfigData,
           this._runTask,
           this._spawner,
           this._resolvedSourceFileMap,

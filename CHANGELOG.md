@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `testMate.test.advancedExecutables` - `debug.configTemplate`
+
 ## [4.8.3] - 2024-02-07
 
 ### Added
