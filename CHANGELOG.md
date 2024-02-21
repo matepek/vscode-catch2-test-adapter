@@ -6,9 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.9.0]
+
 ### Added
 
-- `testMate.test.advancedExecutables` - `debug.configTemplate`
+- `testMate.test.advancedExecutables` - `debug.configTemplate`. ([req](https://github.com/matepek/vscode-catch2-test-adapter/issues/424))
 
 ## [4.8.3] - 2024-02-07
 
