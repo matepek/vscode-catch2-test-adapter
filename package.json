@@ -156,6 +156,27 @@
                   }
                 ]
               },
+              "exclude": {
+                "markdownDescription": "Setting path like `files.watcherExclude` to use for test lookup.",
+                "default": null,
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "files.watcherExclude",
+                      "files.exclude",
+                      "search.exclude"
+                    ]
+                  },
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
               "name": {
                 "markdownDescription": "The name of the test suite (file). Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "anyOf": [

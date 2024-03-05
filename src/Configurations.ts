@@ -64,8 +64,8 @@ class ConfigurationChangeEvent {
   affectsAny(...config: Config[]): boolean {
     return config.some(c => this.affects(c));
   }
-  affectsNotTestMate(config: string): boolean {
-    return this.event.affectsConfiguration(config, this.config._workspaceFolderUri);
+  affectsNotTestMate(...config: string[]): boolean {
+    return config.some(c => this.event.affectsConfiguration(c, this.config._workspaceFolderUri));
   }
 }
 
@@ -457,6 +457,7 @@ export class Configurations {
         pattern,
         undefined,
         undefined,
+        undefined,
         defaultCwd,
         this.getTerminalIntegratedEnv(),
         undefined,
@@ -543,6 +544,8 @@ export class Configurations {
           }
         }
 
+        const exclude: string | null | undefined = obj.exclude;
+
         const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : defaultCwd;
 
         const env: { [prop: string]: string } = typeof obj.env === 'object' ? obj.env : {};
@@ -602,6 +605,7 @@ export class Configurations {
         return new ConfigOfExecGroup(
           shared,
           pattern,
+          exclude,
           name,
           description,
           cwd,

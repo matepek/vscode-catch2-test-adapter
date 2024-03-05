@@ -38,7 +38,7 @@
       "request": "launch",
       "name": "Manual cpp",
       "runtimeExecutable": "${execPath}",
-      "args": ["${workspaceFolder}/out/cpp", "--extensionDevelopmentPath=${workspaceFolder}", "--disable-extensions"],
+      "args": ["${workspaceFolder}/test/cpp", "--extensionDevelopmentPath=${workspaceFolder}", "--disable-extensions"],
       "env": {
         "TESTMATE_DEBUG": "true"
       },
@@ -51,7 +51,7 @@
       "request": "launch",
       "name": "Manual cpp + extensions",
       "runtimeExecutable": "${execPath}",
-      "args": ["${workspaceFolder}/out/cpp", "--extensionDevelopmentPath=${workspaceFolder}"],
+      "args": ["${workspaceFolder}/test/cpp", "--extensionDevelopmentPath=${workspaceFolder}"],
       "env": {
         "TESTMATE_DEBUG": "true"
       },

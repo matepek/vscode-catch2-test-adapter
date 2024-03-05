@@ -204,9 +204,11 @@ export class WorkspaceManager implements vscode.Disposable {
               'test.executables',
               'test.parallelExecutionOfExecutableLimit',
               'discovery.strictPattern',
-            ) ||
-            changeEvent.affectsNotTestMate('files.watcherExclude')
+            )
           ) {
+            this.init(true);
+          }
+          if (changeEvent.affectsNotTestMate('files.watcherExclude', 'files.exclude', 'search.exclude')) {
             this.init(true);
           }
         } catch (e) {

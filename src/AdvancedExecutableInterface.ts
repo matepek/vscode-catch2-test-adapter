@@ -7,6 +7,7 @@ export type AdvancedExecutableConfigArray = Array<AdvancedExecutableConfig>;
 
 export type AdvancedExecutableConfig = {
   pattern: ResolvableString;
+  exclude: string;
   name?: ResolvableString;
   description?: ResolvableString;
   comment?: string;

@@ -31,6 +31,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
   constructor(
     private readonly _shared: WorkspaceShared,
     private readonly _pattern: string,
+    private readonly _exclude: string | undefined,
     private readonly _name: string | undefined,
     private readonly _description: string | undefined,
     private readonly _cwd: string,
@@ -118,19 +119,29 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     let enabledExcludes: string[] = [];
     try {
-      const fileWatcherExclude =
-        vscode.workspace.getConfiguration('files').get<Record<string, boolean>>('watcherExclude') ?? {};
-      enabledExcludes = Object.entries(fileWatcherExclude)
-        .filter(i => i[1])
-        .map(i => i[0]);
+      if (this._exclude === null || this._exclude === undefined) {
+        // skip
+      } else if (typeof this._exclude === 'string') {
+        const excludeObj = vscode.workspace.getConfiguration().get<Record<string, boolean>>(this._exclude);
+        if (typeof excludeObj === 'object') {
+          enabledExcludes = Object.entries(excludeObj)
+            .filter(i => i[1])
+            .map(i => i[0]);
+        } else if (excludeObj !== undefined && excludeObj !== null) {
+          this._shared.log.error('Unknown exclude format, should be {}');
+        }
+      } else {
+        this._shared.log.error('Unknown exclude type');
+      }
     } catch (err) {
       this._shared.log.error('Something wrong with exclusion', err);
     }
 
     if (enabledExcludes.length > 0) {
       this._shared.log.info(
-        'Test executables might be ignored! Excluding some patterns because they are set in vscode under `files.watcherExclude`.',
+        'Test executables might be ignored! Excluding some patterns because they are set in vscode',
         enabledExcludes,
+        this._exclude,
       );
     }
 
@@ -574,11 +585,11 @@ export class ConfigOfExecGroup implements vscode.Disposable {
   }
 
   private _shouldIgnorePath(filePath: string): boolean {
-    if (!this._pattern.match(/(\/|\\)_deps(\/|\\)/) && filePath.indexOf('/_deps/') !== -1) {
+    if (!this._pattern.match(/(\/|\\)_deps(\/|\\)/) && filePath.match(/(\/|\\)_deps(\/|\\)/)) {
       // cmake fetches the dependencies here. we dont care about it 🤞
       this._shared.log.info('skipping because it is under "/_deps/"', filePath);
       return true;
-    } else if (!this._pattern.match(/(\/|\\)CMakeFiles(\/|\\)/) && filePath.indexOf('/CMakeFiles/') !== -1) {
+    } else if (!this._pattern.match(/(\/|\\)CMakeFiles(\/|\\)/) && filePath.match(/(\/|\\)CMakeFiles(\/|\\)/)) {
       // cmake fetches the dependencies here. we dont care about it 🤞
       this._shared.log.info('skipping because it is under "/CMakeFiles/"', filePath);
       return true;

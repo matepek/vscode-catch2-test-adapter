@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.10.0]
+
+### Added/Changed/Removed
+
+- `files.watcherExclude` is not applied by default anymore: reverts `v4.8.0`.
+- `testMate.test.advancedExecutables` -> `exclude`: Here one can specify a vscode setting to be applied for exclusion.
+
 ## [4.9.0] - 2024-02-21
 
 ### Added
