@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.11.0]
+
+### Changed
+
+- from now `mergeByLabel` configuration only takes `env` in account. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/427))
+- Catch2 parser improvements ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/428))
+
 ## [4.10.0] - 2024-03-05
 
 ### Added/Changed/Removed

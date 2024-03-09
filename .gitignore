@@ -5,8 +5,10 @@ node_modules
 out
 
 /test/cpp/build
+/test/cpp/.vscode/
 
 *.vsix
 .vscode-test
 
 .vscode/ipch
+

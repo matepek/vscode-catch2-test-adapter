@@ -502,6 +502,17 @@ abstract class TagProcessorBase implements XmlTagProcessor {
       },
     ],
     [
+      'OverallResultsCases',
+      (tag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        builder.setDurationMilisec(parseFloat(tag.attribs.durationInSeconds) * 1000);
+        if (tag.attribs.failures !== '0') {
+          builder.failed();
+        } else {
+          builder.passed();
+        }
+      },
+    ],
+    [
       'Expression',
       (tag: XmlTag, builder: TestResultBuilder, shared: SharedVarOfExec): XmlTagProcessor =>
         new ExpressionProcessor(shared, builder, tag.attribs),

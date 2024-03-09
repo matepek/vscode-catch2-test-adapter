@@ -3,7 +3,6 @@
     "testMate.cpp.test.advancedExecutables": [
         {
             "pattern":"build/**/*{test,Test,TEST}*",
-            "exclude": "files.watcherExcludee",
             "runTask": {
                 // "before": ["build_all"]
             }
