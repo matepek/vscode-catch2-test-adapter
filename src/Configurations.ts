@@ -652,9 +652,9 @@ export class Configurations {
     obj?: FrameworkSpecificConfig,
   ): FrameworkSpecificConfig {
     const r: FrameworkSpecificConfig = {};
+    r.testGrouping = defaultTestGrouping;
     if (typeof obj === 'object') {
       if (obj.testGrouping) r.testGrouping = obj.testGrouping;
-      else r.testGrouping = defaultTestGrouping;
 
       if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
 
@@ -672,7 +672,6 @@ export class Configurations {
 
       if (typeof obj.failIfExceedsLimitNs === 'number') r.failIfExceedsLimitNs = obj.failIfExceedsLimitNs;
     }
-
     return r;
   }
 

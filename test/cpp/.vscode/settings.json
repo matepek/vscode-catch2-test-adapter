@@ -2,9 +2,27 @@
     "cmake.configureOnOpen": true,
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern":"build/**/*{test,Test,TEST}*",
+            "pattern":"build/**/*gtest*",
             "runTask": {
                 // "before": ["build_all"]
+            },
+            "testGrouping": {
+                "groupByLabel": {
+                    "label": "alma",
+                    "groupByExecutable": {}
+                },
+            }
+        },
+        {
+            "pattern":"build/**/*suite*",
+            "runTask": {
+                // "before": ["build_all"]
+            },
+            "testGrouping": {
+                "groupByLabel": {
+                    "label": "korte",
+                    "groupByExecutable": {}
+                },
             }
         }
     ],

@@ -157,6 +157,17 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
       filePaths = await execWatcher.watched();
 
+      // TODO: we could figure out that it is a symlink and add extra
+      // filePaths.forEach(f => {
+      //   try {
+      //     if (fs.readlinkSync(f)) {
+      //       console.log(`sym ${f}`);
+      //     }
+      //   } catch (e) {
+      //     console.log(`not sym ${f}`);
+      //   }
+      // });
+
       execWatcher.onError((err: Error) => {
         // eslint-disable-next-line
         if ((err as any).code == 'ENOENT') this._shared.log.info('watcher error', err);

@@ -49,6 +49,23 @@
     {
       "type": "extensionHost",
       "request": "launch",
+      "name": "tmp",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "/Users/matepek/Downloads/testmate",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--disable-extensions"
+      ],
+      "env": {
+        "TESTMATE_DEBUG": "true"
+      },
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "preLaunchTask": "preDebug",
+      "postDebugTask": "postDebug"
+    },
+    {
+      "type": "extensionHost",
+      "request": "launch",
       "name": "Manual cpp + extensions",
       "runtimeExecutable": "${execPath}",
       "args": ["${workspaceFolder}/test/cpp", "--extensionDevelopmentPath=${workspaceFolder}"],

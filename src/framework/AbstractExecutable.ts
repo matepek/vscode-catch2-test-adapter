@@ -23,6 +23,7 @@ import {
   testGroupingForEach,
   GroupBySource,
   GroupByTags,
+  GroupByLabel,
 } from '../TestGroupingInterface';
 import { isSpawnBusyError } from '../util/FSWrapper';
 import { TestResultBuilder } from '../TestResultBuilder';
@@ -286,6 +287,20 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       };
 
       await testGroupingForEach(testGrouping, {
+        groupByLabel: async (g: GroupByLabel): Promise<void> => {
+          const label = g.label ?? '${filename}';
+          const id = label;
+          const description = g.description ?? '${relDirpath}${osPathSep}';
+          itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+            itemOfLevel,
+            id,
+            label,
+            description,
+            varsToResolve,
+            undefined,
+            undefined,
+          );
+        },
         groupByExecutable: async (g: GroupByExecutable): Promise<void> => {
           this._updateVarsWithTags(g, tags, tagsResolveRule);
 
