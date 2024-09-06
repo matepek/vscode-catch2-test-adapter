@@ -156,6 +156,11 @@
                   }
                 ]
               },
+              "patternAsAbsPath": {
+                "markdownDescription": "If true then the `pattern` is treated as an absolute path. (default: false)",
+                "type": "boolean",
+                "default": false
+              },
               "exclude": {
                 "markdownDescription": "Setting path like `files.watcherExclude` to use for test lookup.",
                 "default": null,

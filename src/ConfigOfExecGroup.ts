@@ -31,6 +31,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
   constructor(
     private readonly _shared: WorkspaceShared,
     private readonly _pattern: string,
+    private readonly _patternAsAbsPath: boolean,
     private readonly _exclude: string | undefined,
     private readonly _name: string | undefined,
     private readonly _description: string | undefined,
@@ -147,44 +148,53 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     let filePaths: string[] = [];
 
-    let execWatcher: FSWatcher | undefined = undefined;
-    try {
-      if (pattern.isPartOfWs) {
-        execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.relativeToWsPosix, enabledExcludes);
-      } else {
-        execWatcher = new GazeWrapper([pattern.absPath]);
-      }
-
-      filePaths = await execWatcher.watched();
-
-      // TODO: we could figure out that it is a symlink and add extra
-      // filePaths.forEach(f => {
-      //   try {
-      //     if (fs.readlinkSync(f)) {
-      //       console.log(`sym ${f}`);
-      //     }
-      //   } catch (e) {
-      //     console.log(`not sym ${f}`);
-      //   }
-      // });
-
-      execWatcher.onError((err: Error) => {
-        // eslint-disable-next-line
-        if ((err as any).code == 'ENOENT') this._shared.log.info('watcher error', err);
-        else this._shared.log.error('watcher error', err);
-      });
-
-      execWatcher.onAll(fsPath => {
-        this._shared.log.info('watcher event:', fsPath);
-        this._handleEverything(fsPath);
-      });
-
-      this._disposables.push(execWatcher);
-    } catch (e) {
-      execWatcher && execWatcher.dispose();
+    if (this._patternAsAbsPath) {
+      // if the user knows it better give him what he wants
       filePaths.push(this._pattern);
+    } else {
+      let execWatcher: FSWatcher | undefined = undefined;
+      try {
+        if (pattern.isPartOfWs) {
+          execWatcher = new VSCFSWatcherWrapper(
+            this._shared.workspaceFolder,
+            pattern.relativeToWsPosix,
+            enabledExcludes,
+          );
+        } else {
+          execWatcher = new GazeWrapper([pattern.absPath]);
+        }
 
-      this._shared.log.exceptionS(e, "Couldn't watch pattern");
+        filePaths = await execWatcher.watched();
+
+        // TODO: we could figure out that it is a symlink and add extra
+        // filePaths.forEach(f => {
+        //   try {
+        //     if (fs.readlinkSync(f)) {
+        //       console.log(`sym ${f}`);
+        //     }
+        //   } catch (e) {
+        //     console.log(`not sym ${f}`);
+        //   }
+        // });
+
+        execWatcher.onError((err: Error) => {
+          // eslint-disable-next-line
+          if ((err as any).code == 'ENOENT') this._shared.log.info('watcher error', err);
+          else this._shared.log.error('watcher error', err);
+        });
+
+        execWatcher.onAll(fsPath => {
+          this._shared.log.info('watcher event:', fsPath);
+          this._handleEverything(fsPath);
+        });
+
+        this._disposables.push(execWatcher);
+      } catch (e) {
+        execWatcher && execWatcher.dispose();
+        filePaths.push(this._pattern);
+
+        this._shared.log.exceptionS(e, "Couldn't watch pattern");
+      }
     }
 
     progressReporter.setMax(filePaths.length);
