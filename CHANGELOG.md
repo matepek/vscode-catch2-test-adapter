@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `patternAsAbsPath` added to advancedExecutables to allow the pattern to be treated as an absolute path. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/444))
+
 ## [4.12.0] - 2024-03-29
 
 ### Added
