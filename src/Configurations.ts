@@ -455,6 +455,7 @@ export class Configurations {
       return new ConfigOfExecGroup(
         shared,
         pattern,
+        false,
         undefined,
         undefined,
         undefined,
@@ -544,6 +545,8 @@ export class Configurations {
           }
         }
 
+        const patternAsAbsPath: boolean = typeof obj.patternAsAbsPath === 'boolean' ? obj.patternAsAbsPath : false;
+
         const exclude: string | null | undefined = obj.exclude;
 
         const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : defaultCwd;
@@ -605,6 +608,7 @@ export class Configurations {
         return new ConfigOfExecGroup(
           shared,
           pattern,
+          patternAsAbsPath,
           exclude,
           name,
           description,

@@ -156,6 +156,11 @@
                   }
                 ]
               },
+              "patternAsAbsPath": {
+                "markdownDescription": "If true the pattern will not be treated as pattern but as absolute path. This setting is only helpful if you have a fixed number of test executables and a very large workspaces, which might be searched with a regular pattern. (default: false)",
+                "type": "boolean",
+                "default": false
+              },
               "exclude": {
                 "markdownDescription": "Setting path like `files.watcherExclude` to use for test lookup.",
                 "default": null,
