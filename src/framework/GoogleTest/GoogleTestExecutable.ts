@@ -506,10 +506,16 @@ class FailureProcessor implements LineProcessor {
     private readonly fullMsg: string,
   ) {}
 
+  private treatRemainingAsPart: boolean = false;
   private lines: string[] = [];
 
   online(line: string): void | false {
-    if (acceptedAndDecoratedPrefixes.some(prefix => line.startsWith(prefix))) {
+    if (this.treatRemainingAsPart) {
+      if (line.startsWith('[')) {
+        return false;
+      }
+      this.lines.push(line);
+    } else if (acceptedAndDecoratedPrefixes.some(prefix => line.startsWith(prefix))) {
       if (isDecorationEnabled) {
         const first = line.indexOf(':');
         if (first != -1) {
@@ -529,6 +535,9 @@ class FailureProcessor implements LineProcessor {
       this.lines.push(line);
     } else if (line.startsWith('  ')) {
       this.lines.push(line); /* special prefix. This might cause some issue */
+    } else if (line.startsWith('Failed')) {
+      this.lines.push(line);
+      this.treatRemainingAsPart = true;
     } else {
       return false;
     }

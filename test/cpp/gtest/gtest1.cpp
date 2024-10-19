@@ -160,3 +160,16 @@ TEST(CppMateTest, LeadingWhitespace)
               << "  Fourth line\n";
     FAIL() << "bad whitespace";
 }
+
+TEST(ThisTest, FailsWithContext) {
+  FAIL() << "This test fails with context";
+}
+
+TEST(ThisTest, FailsWithEmpty) {
+  FAIL();
+  std::cout << "not related";
+}
+
+TEST(ThisTest, AlsoFailsWithContext) {
+  ASSERT_EQ(1, 2) << "Value of [" << 1 << "] is not equal to [" << 2 << "]";
+}
