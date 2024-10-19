@@ -407,7 +407,7 @@ class TestCaseProcessor implements LineProcessor {
       this.testCaseShared.builder.test.line,
       true,
     );
-    this.testCaseShared.builder.addOutputLine(0, ansi.bold(line) + loc);
+    this.testCaseShared.builder.addReindentedOutput(0, ansi.bold(line) + loc);
   }
 
   online(line: string): void | true | LineProcessor {
@@ -434,7 +434,7 @@ class TestCaseProcessor implements LineProcessor {
       }
 
       if (this.testCaseShared.gMockWarningCount) {
-        this.testCaseShared.builder.addOutputLine(
+        this.testCaseShared.builder.addReindentedOutput(
           1,
           '⚠️' + this.testCaseShared.gMockWarningCount + ' GMock warning(s) in the output!',
         );
@@ -442,7 +442,7 @@ class TestCaseProcessor implements LineProcessor {
 
       this.testCaseShared.builder.build();
 
-      this.testCaseShared.builder.addOutputLine(
+      this.testCaseShared.builder.addReindentedOutput(
         0,
         testEndMatch[1] +
           styleFunc(testEndMatch[2]) +
@@ -464,7 +464,7 @@ class TestCaseProcessor implements LineProcessor {
       const fullMsg = failureMatch[5];
       const failureMsg = failureMatch[7];
 
-      this.testCaseShared.builder.addOutputLine(
+      this.testCaseShared.builder.addReindentedOutput(
         1,
         ansi.red(type) + failureMsg + this.builder.getLocationAtStr(file, line, false),
       );
@@ -481,7 +481,7 @@ class TestCaseProcessor implements LineProcessor {
       }
     }
 
-    this.testCaseShared.builder.addOutputLine(1, line);
+    this.testCaseShared.builder.addOutput(1, line);
   }
 }
 
@@ -535,7 +535,7 @@ class FailureProcessor implements LineProcessor {
   }
 
   end(): void {
-    this.testCaseShared.builder.addOutputLine(2, ...this.lines);
+    this.testCaseShared.builder.addReindentedOutput(2, ...this.lines);
 
     if (isDecorationEnabled) {
       this.testCaseShared.builder.addMarkdownMsg(
@@ -614,7 +614,7 @@ class ExpectCallProcessor implements LineProcessor {
   }
 
   end(): void {
-    this.testCaseShared.builder.addOutputLine(2, ...this.lines);
+    this.testCaseShared.builder.addReindentedOutput(2, ...this.lines);
 
     this.testCaseShared.builder.addMessage(this.file, this.line, this.expected, ...this.actual);
   }

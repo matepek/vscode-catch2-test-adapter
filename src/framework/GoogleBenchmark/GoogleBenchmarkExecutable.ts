@@ -217,7 +217,7 @@ function parseAndProcessTestCase(
 
   try {
     if (metric['error_occurred']) {
-      builder.addOutputLine(1, '❌ Error occurred:', (metric['error_occurred'] as string).toString());
+      builder.addReindentedOutput(1, '❌ Error occurred:', (metric['error_occurred'] as string).toString());
       builder.errored();
     }
 
@@ -232,8 +232,8 @@ function parseAndProcessTestCase(
         typeof builder.test.failIfExceedsLimitNs === 'number' &&
         builder.test.failIfExceedsLimitNs < value * timeUnitMultiplier
       ) {
-        builder.addOutputLine(1, `❌ Failed: "${key}" exceeded limit: ${builder.test.failIfExceedsLimitNs} ns.`);
-        builder.addOutputLine(1, ' ');
+        builder.addReindentedOutput(1, `❌ Failed: "${key}" exceeded limit: ${builder.test.failIfExceedsLimitNs} ns.`);
+        builder.addReindentedOutput(1, ' ');
         builder.failed();
       }
     }
@@ -241,12 +241,12 @@ function parseAndProcessTestCase(
     Object.keys(metric).forEach(key => {
       const value = metric[key];
       const value2 = typeof value === 'string' ? '"' + value + '"' : value;
-      builder.addOutputLine(1, key + ': ' + value2);
+      builder.addReindentedOutput(1, key + ': ' + value2);
     });
   } catch (e) {
     log.exceptionS(e, metric);
 
-    builder.addOutputLine(
+    builder.addReindentedOutput(
       1,
       '❌ Unexpected ERROR while parsing',
       `Exception: "${e}"`,

@@ -375,7 +375,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         // known tag, do nothing
       } else {
         this.shared.log.errorS('unhandled tag:' + tag.name);
-        this.builder.addOutputLine(1, `Unknown XML tag: ${tag.name} with ${JSON.stringify(tag.attribs)}`);
+        this.builder.addReindentedOutput(1, `Unknown XML tag: ${tag.name} with ${JSON.stringify(tag.attribs)}`);
       }
     }
   }
@@ -387,13 +387,13 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         return processor(dataTrimmed, parentTag, this.builder, this.caseData, this.shared);
       } catch (e) {
         this.shared.log.exceptionS(e);
-        this.builder.addOutputLine(1, 'Unknown fatal error: ' + inspect(e));
+        this.builder.addReindentedOutput(1, 'Unknown fatal error: ' + inspect(e));
         this.builder.errored(); //TODO: check this is really working
       }
     } else if (processor === null) {
       // known tag, do nothing
     } else {
-      this.builder.addOutputLine(1, dataTrimmed);
+      this.builder.addReindentedOutput(1, dataTrimmed);
     }
   }
 

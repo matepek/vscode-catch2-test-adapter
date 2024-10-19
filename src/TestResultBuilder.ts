@@ -32,9 +32,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (this.addBeginEndMsg) {
       const locStr = this.getLocationAtStr(this.test.file, this.test.line, true);
       if (this.level === 0) {
-        this.addOutputLine(0, ansi.bold(`[ RUN      ] \`${ansi.italic(this.test.label)}\``) + `${locStr}`);
+        this.addReindentedOutput(0, ansi.bold(`[ RUN      ] \`${ansi.italic(this.test.label)}\``) + `${locStr}`);
       } else {
-        this.addOutputLine(-1, ansi.dim('├') + '`' + ansi.italic(this.test.label) + '`' + locStr);
+        this.addReindentedOutput(-1, ansi.dim('├') + '`' + ansi.italic(this.test.label) + '`' + locStr);
       }
     }
   }
@@ -63,12 +63,23 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   }
 
   failedByTimeout(timeoutMilisec: number): void {
-    this.addOutputLine(1, '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + timeoutMilisec / 1000 + ' second(s).');
+    this.addReindentedOutput(
+      1,
+      '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + timeoutMilisec / 1000 + ' second(s).',
+    );
     this.failed();
   }
 
-  addOutputLine(indent: number, ...msgs: string[]): void {
-    const lines = indentStr(this.level + indent, ...msgs);
+  addReindentedOutput(indent: number, ...msgs: string[]): void {
+    const lines = formatStr(this.level + indent, true, ...msgs);
+
+    //this._outputLines.push(...lines);
+
+    this.testRun.appendOutput(lines.map(x => this.runPrefix + x + '\r\n').join(''));
+  }
+
+  addOutput(indent: number, ...msgs: string[]): void {
+    const lines = formatStr(this.level + indent, false, ...msgs);
 
     //this._outputLines.push(...lines);
 
@@ -128,9 +139,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     this.addMessage(file, line, 'Expanded: `' + expanded + '`');
 
     const loc = this.getLocationAtStr(file, line, false);
-    this.addOutputLine(1, 'Expression ' + ansi.red('failed') + loc + ':');
-    this.addOutputLine(2, '❕Original:  ' + original);
-    this.addOutputLine(2, '❗️Expanded:  ' + expanded);
+    this.addReindentedOutput(1, 'Expression ' + ansi.red('failed') + loc + ':');
+    this.addReindentedOutput(2, '❕Original:  ' + original);
+    this.addReindentedOutput(2, '❗️Expanded:  ' + expanded);
   }
 
   addMessageWithOutput(
@@ -142,8 +153,8 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     file = this.test.exec.findSourceFilePath(file);
     this.addMessage(file, line, [`${title}`, ...message].join('\r\n'));
     const loc = this.getLocationAtStr(file, line, false);
-    this.addOutputLine(1, `${title}${loc}`);
-    this.addOutputLine(2, ...message);
+    this.addReindentedOutput(1, `${title}${loc}`);
+    this.addReindentedOutput(2, ...message);
   }
 
   addMessage(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
@@ -168,8 +179,8 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   ): void {
     file = this.test.exec.findSourceFilePath(file);
     const loc = this.getLocationAtStr(file, line, false);
-    this.addOutputLine(1, `${title}${loc}${message.length ? ':' : ''}`);
-    this.addOutputLine(2, ...message);
+    this.addReindentedOutput(1, `${title}${loc}${message.length ? ':' : ''}`);
+    this.addReindentedOutput(2, ...message);
   }
 
   ///
@@ -194,7 +205,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
       const d = this._duration ? ansi.dim(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
 
       if (this.level === 0) {
-        this.addOutputLine(0, `${this.coloredResult()} \`${ansi.italic(this.test.label)}\`` + `${d}`, '');
+        this.addReindentedOutput(0, `${this.coloredResult()} \`${ansi.italic(this.test.label)}\`` + `${d}`, '');
       }
     }
   }
@@ -270,8 +281,12 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
 const indentPrefix = (level: number) => ansi.dim('│ '.repeat(level));
 
-const indentStr = (indent: number, ...strs: string[]) => {
-  return reindentStr(...strs).map(l => indentPrefix(indent) + l);
+const formatStr = (indent_lvl: number, reindent: boolean, ...strs: string[]) => {
+  strs = strs.flatMap(x => x.split(/\r?\n/));
+  if (reindent) {
+    strs = reindentLines(strs);
+  }
+  return strs.map(l => indentPrefix(indent_lvl) + l);
 };
 
 const reindentLines = (lines: string[]): string[] => {
@@ -283,9 +298,4 @@ const reindentLines = (lines: string[]): string[] => {
   });
   const reindented = lines.map(l => l.substring(indent).trimEnd());
   return reindented;
-};
-
-const reindentStr = (...strs: string[]): string[] => {
-  const lines = strs.flatMap(x => x.split(/\r?\n/));
-  return reindentLines(lines);
 };

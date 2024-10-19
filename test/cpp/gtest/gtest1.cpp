@@ -151,3 +151,12 @@ TEST(Std, NoOutput)
     std::cout << "cout\n";
     std::cerr << "cerr\n";
 }
+
+TEST(CppMateTest, LeadingWhitespace)
+{
+    std::cout << "First line\n"
+              << "    Second line\n"
+              << "- Third line\n"
+              << "  Fourth line\n";
+    FAIL() << "bad whitespace";
+}

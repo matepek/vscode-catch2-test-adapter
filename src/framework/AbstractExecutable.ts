@@ -757,28 +757,28 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
           case ExecutableRunResultValue.OK:
             {
               this.shared.log.errorS('builder should not left behind if no problem', this, leftBehindBuilder);
-              leftBehindBuilder.addOutputLine(0, '❗️ Test run has been cancelled by user.');
+              leftBehindBuilder.addReindentedOutput(0, '❗️ Test run has been cancelled by user.');
               leftBehindBuilder.errored();
             }
             break;
           case ExecutableRunResultValue.CancelledByUser:
             {
               this.shared.log.info('Test run has been cancelled by user. ✋', leftBehindBuilder);
-              leftBehindBuilder.addOutputLine(0, '❓ Test run has been cancelled by user.');
+              leftBehindBuilder.addReindentedOutput(0, '❓ Test run has been cancelled by user.');
               leftBehindBuilder.errored();
             }
             break;
           case ExecutableRunResultValue.TimeoutByUser:
             {
               this.shared.log.info('Test has timed out. See `test.runtimeLimit` for details.', leftBehindBuilder);
-              leftBehindBuilder.addOutputLine(0, '❗️ Test has timed out. See `test.runtimeLimit` for details.');
+              leftBehindBuilder.addReindentedOutput(0, '❗️ Test has timed out. See `test.runtimeLimit` for details.');
               leftBehindBuilder.errored();
             }
             break;
           case ExecutableRunResultValue.Errored:
             {
               this.shared.log.warn('Test has ended unexpectedly.', result, leftBehindBuilder);
-              leftBehindBuilder.addOutputLine(0, '❗️ Test has ended unexpectedly: ' + result.toString());
+              leftBehindBuilder.addReindentedOutput(0, '❗️ Test has ended unexpectedly: ' + result.toString());
               leftBehindBuilder.errored();
             }
             break;

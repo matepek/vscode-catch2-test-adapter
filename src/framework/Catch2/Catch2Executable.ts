@@ -437,7 +437,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         // known tag, do nothing
       } else {
         this.shared.log.errorS('unhandled tag:' + tag.name);
-        this.builder.addOutputLine(1, `Unknown XML tag: ${tag.name} with ${JSON.stringify(tag.attribs)}`);
+        this.builder.addReindentedOutput(1, `Unknown XML tag: ${tag.name} with ${JSON.stringify(tag.attribs)}`);
       }
     }
   }
@@ -449,7 +449,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         return processor(dataTrimmed, parentTag, this.builder, this.shared);
       } catch (e) {
         this.shared.log.exceptionS(e);
-        this.builder.addOutputLine(1, 'Unknown fatal error: ' + inspect(e));
+        this.builder.addReindentedOutput(1, 'Unknown fatal error: ' + inspect(e));
         this.builder.errored();
       }
     } else if (processor === null) {
@@ -460,7 +460,10 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         // known tag, do nothing
       } else {
         this.shared.log.errorS('unhandled tag:' + parentTag.name, parentTag);
-        this.builder.addOutputLine(1, `Unknown XML tag: ${parentTag.name} with ${JSON.stringify(parentTag.attribs)}`);
+        this.builder.addReindentedOutput(
+          1,
+          `Unknown XML tag: ${parentTag.name} with ${JSON.stringify(parentTag.attribs)}`,
+        );
       }
     }
   }
@@ -782,7 +785,7 @@ class BenchmarkResultsProcessor implements XmlTagProcessor {
 
   end(): void {
     if (this.failed) {
-      this.builder.addOutputLine(1, 'Failed: `' + this.failed.message + '`');
+      this.builder.addReindentedOutput(1, 'Failed: `' + this.failed.message + '`');
       this.builder.failed();
     } else {
       {
@@ -793,7 +796,7 @@ class BenchmarkResultsProcessor implements XmlTagProcessor {
           .filter(n => n !== 'name')
           .map(key => `- ${key}: ${attribs[key]}`);
 
-        this.builder.addOutputLine(1, ...params);
+        this.builder.addReindentedOutput(1, ...params);
       }
       if (this.mean) {
         const mean = this.mean;
@@ -801,8 +804,8 @@ class BenchmarkResultsProcessor implements XmlTagProcessor {
           .filter(n => n !== 'value')
           .map(key => `- ${key}: ${mean[key]} ns`);
 
-        this.builder.addOutputLine(1, `Mean: ${mean.value} ns:`);
-        this.builder.addOutputLine(1, ...params);
+        this.builder.addReindentedOutput(1, `Mean: ${mean.value} ns:`);
+        this.builder.addReindentedOutput(1, ...params);
       }
       if (this.standardDeviation) {
         const standardDeviation = this.standardDeviation;
@@ -810,15 +813,15 @@ class BenchmarkResultsProcessor implements XmlTagProcessor {
           .filter(n => n !== 'value')
           .map(key => `- ${key}: ${standardDeviation[key]} ns`);
 
-        this.builder.addOutputLine(1, `Standard Deviation: ${standardDeviation.value} ns:`);
-        this.builder.addOutputLine(1, ...params);
+        this.builder.addReindentedOutput(1, `Standard Deviation: ${standardDeviation.value} ns:`);
+        this.builder.addReindentedOutput(1, ...params);
       }
       if (this.outliers) {
         const outliers = this.outliers;
         const params = Object.keys(outliers).map(key => `- ${key}: ${outliers[key]} ns`);
 
-        this.builder.addOutputLine(1, `Outliers:`);
-        this.builder.addOutputLine(1, ...params);
+        this.builder.addReindentedOutput(1, `Outliers:`);
+        this.builder.addReindentedOutput(1, ...params);
       }
 
       this.builder.setDurationMilisec(Date.now() - this.started);
