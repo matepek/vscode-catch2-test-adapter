@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 - google test indentation [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/437)
+- google test parsing [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/436)
+- google test parsing: show global env setup and teardown: [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/442)
 
 ## [4.12.0] - 2024-03-29
 

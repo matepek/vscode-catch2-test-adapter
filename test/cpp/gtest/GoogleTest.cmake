@@ -56,3 +56,8 @@ function(add_gtest_with_main target cpp_file)
   target_link_libraries(${target} PUBLIC ThirdParty.GoogleMockWithMain)
 endfunction()
 
+function(add_gtest target cpp_file)
+  add_executable(${target} "${cpp_file}")
+  target_link_libraries(${target} PUBLIC ThirdParty.GoogleMockWithMain)
+endfunction()
+
