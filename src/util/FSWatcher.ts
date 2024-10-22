@@ -78,7 +78,6 @@ export class VSCFSWatcherWrapper implements FSWatcher {
     if (path.isAbsolute(relativePattern)) throw new Error('Relative path is expected:' + relativePattern);
 
     this._relativePattern = new vscode.RelativePattern(workspaceFolder, relativePattern);
-
     this._vscWatcher = vscode.workspace.createFileSystemWatcher(this._relativePattern, false, false, false);
     this._disposables.push(this._vscWatcher);
     this._excludePattern = excludePatterns;
@@ -98,6 +97,9 @@ export class VSCFSWatcherWrapper implements FSWatcher {
   }
 
   async watched(): Promise<string[]> {
+    if (!this._isGlobPattern()) {
+      return [path.join(this._relativePattern.baseUri.fsPath, this._relativePattern.pattern)];
+    }
     // this trick seems working but would need more understanding
     const exclude =
       this._excludePattern.length === 0
@@ -119,4 +121,20 @@ export class VSCFSWatcherWrapper implements FSWatcher {
   onError(_handler: (err: Error) => void): void {
     return undefined;
   }
+
+  _isGlobPattern(): boolean {
+    /* According to findFiles documentation:
+     * Glob patterns can have the following syntax:
+     * * `*` to match zero or more characters in a path segment
+     * * `?` to match on one character in a path segment
+     * * `**` to match any number of path segments, including none
+     * * `{}` to group conditions (e.g. `**​/*.{ts,js}` matches all TypeScript and JavaScript files)
+     * * `[]` to declare a range of characters to match in a path segment (e.g., `example.[0-9]` to match on `example.0`, `example.1`, …)
+     * * `[!...]` to negate a range of characters to match in a path segment (e.g., `example.[!0-9]` to match on `example.a`, `example.b`, but not `example.0`)
+     *
+     */
+    return this._relativePattern.pattern.match(this._globRe) !== null;
+  }
+
+  private readonly _globRe = /(?<!\\)(\[|\*|\?|\{)/;
 }

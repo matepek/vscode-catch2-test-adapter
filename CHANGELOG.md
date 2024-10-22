@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.12.2]
+
+### Added
+
+- Workaround to make search faster with exact path specified instead of glob pattern. [related](https://github.com/matepek/vscode-catch2-test-adapter/issues/444)
+
 ## [4.12.1] - 2024-10-19
 
 ### Fixed
