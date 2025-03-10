@@ -3,7 +3,11 @@ import { Logger } from '../Logger';
 import { debugBreak } from './DevelopmentHelper';
 import { ParserInterface } from './ParserInterface';
 
-type ProcessorFrame = { tag: XmlTag; processor: XmlTagProcessor; nesting: number };
+interface ProcessorFrame {
+  tag: XmlTag;
+  processor: XmlTagProcessor;
+  nesting: number;
+}
 type XmlTagFrame = XmlTag & { _text: string };
 
 export class XmlParser implements ParserInterface {
@@ -63,6 +67,7 @@ export class XmlParser implements ParserInterface {
             const tag = this.tagStack.pop();
 
             if (tag?.name !== name) {
+              // eslint-disable-next-line
               debugger;
               throw Error('onclosetag: tag mismatch');
             }
@@ -77,6 +82,7 @@ export class XmlParser implements ParserInterface {
               if (this.topTagProcessor.processor.end) await this.topTagProcessor.processor.end();
 
               if (this.xmlTagProcessorStack.length === 0) {
+                // eslint-disable-next-line
                 debugger;
                 const error = Error('onclosetag should have at least the root');
                 this.log.exceptionS(error, this);

@@ -181,7 +181,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
   ): Promise<Catch2Test> => {
     const tags: string[] = [];
     if (tagsStr) {
-      const matches = tagsStr.match(/\[[^\[\]]+\]/g);
+      const matches = tagsStr.match(/\[[^[]]+\]/g);
       if (matches) matches.forEach((t: string) => tags.push(t.substring(1, t.length - 1)));
     }
 
@@ -552,10 +552,10 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
   ]);
 
-  private static readonly textProcessorMap: Map<
+  private static readonly textProcessorMap = new Map<
     string,
     null | ((dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, shared: SharedVarOfExec) => void)
-  > = new Map([
+  >([
     [
       'StdOut',
       (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {

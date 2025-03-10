@@ -55,7 +55,7 @@ export class TaskQueue {
 
   private _checkCircle(tq: TaskQueue): void {
     if (tq === this) throw Error('circle');
-
+    // eslint-disable-next-line
     for (let i = 0; i < tq._depends.length; i++) {
       this._checkCircle(tq._depends[i]);
     }

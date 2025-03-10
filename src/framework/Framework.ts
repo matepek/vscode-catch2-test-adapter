@@ -37,5 +37,5 @@ export class Framework {
     'google-insider': Framework.googleInsider,
   };
 
-  static readonly list: ReadonlyArray<Framework> = Object.values(Framework.map);
+  static readonly list: readonly Framework[] = Object.values(Framework.map);
 }

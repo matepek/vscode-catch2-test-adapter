@@ -137,7 +137,7 @@ const frameworkDatas: Record<
 
 const frameworkIdsSorted = Object.keys(frameworkDatas).sort(
   (a: string, b: string) => frameworkDatas[a as FrameworkId].priority - frameworkDatas[b as FrameworkId].priority,
-) as ReadonlyArray<FrameworkId>;
+) as readonly FrameworkId[];
 
 function parseVersion123(match: RegExpMatchArray): Version | undefined {
   const major = parseInt(match[1]);
