@@ -30,6 +30,10 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/no-parameter-properties': 'off',
+    '@typescript-eslint/no-unnecessary-type-constraint': 'error',
+    '@typescript-eslint/no-unused-expressions': {
+      'allowShortCircuit': false, 'allowTernary': false 
+    },
     'prettier/prettier': 'warn',
   },
 };
