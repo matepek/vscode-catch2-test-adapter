@@ -3,7 +3,7 @@ import { Logger } from '../Logger';
 import { debugBreak } from './DevelopmentHelper';
 import { ParserInterface } from './ParserInterface';
 
-type ProcessorFrame = { tag: XmlTag; processor: XmlTagProcessor; nesting: number };
+interface ProcessorFrame { tag: XmlTag; processor: XmlTagProcessor; nesting: number }
 type XmlTagFrame = XmlTag & { _text: string };
 
 export class XmlParser implements ParserInterface {

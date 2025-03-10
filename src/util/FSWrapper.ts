@@ -13,7 +13,7 @@ export type ChildProcessWithoutNullStreams = cp.ChildProcessWithoutNullStreams;
 
 export function spawn(
   cmd: string,
-  args: ReadonlyArray<string>,
+  args: readonly string[],
   options: cp.SpawnOptionsWithoutStdio,
 ): cp.ChildProcessWithoutNullStreams {
   return cp.spawn(cmd, args, options);

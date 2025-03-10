@@ -32,7 +32,7 @@ class Platform {
   }
 }
 
-const alternativePlatformIds: { [id in PlatformType]?: string[] } = {
+const alternativePlatformIds: Partial<Record<PlatformType, string[]>> = {
   win32: ['win', 'windows'],
   darwin: ['osx', 'mac', 'macos', 'macOS'],
 };
