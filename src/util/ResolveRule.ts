@@ -71,6 +71,7 @@ async function _mapAllStringsAsync(
         for (const prop in value) {
           const res = await _mapAllStringsAsync((value as Record<string, unknown>)[prop], newValue, mapperFunc);
           if (res !== _flatResolved) newValue[prop] = res;
+          // eslint-disable-next-line
           else delete newValue[prop];
         }
         return newValue;
@@ -146,6 +147,7 @@ export type ResolveRuleAsync<R = any> =
 
 export async function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRuleAsync<unknown>[]): Promise<T> {
   const mapper = async (s: string, parent: unknown): Promise<unknown> => {
+    // eslint-disable-next-line
     for (let i = 0; i < varValue.length; ++i) {
       const { resolve, rule, isFlat } = varValue[i];
 
@@ -185,7 +187,7 @@ export async function resolveVariablesAsync<T>(value: T, varValue: readonly Reso
       } else {
         const ruleF = rule as (m: RegExpMatchArray) => Promise<string>;
         // resolve as RegExp && rule as Function
-         
+
         if (rule.length > 1) {
           throw Error('resolveVariables regex func should expect 1 argument');
         }

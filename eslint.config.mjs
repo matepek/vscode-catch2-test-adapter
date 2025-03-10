@@ -21,6 +21,8 @@ export default tseslint.config(
       '@typescript-eslint/no-parameter-properties': 'off',
       '@typescript-eslint/no-unnecessary-type-constraint': 'error',
       '@typescript-eslint/no-extraneous-class': 'off',
+      'no-irregular-whitespace': 'off',
+      '@typescript-eslint/no-invalid-void-type': 'off'
     },
   }
 );

@@ -117,7 +117,6 @@ export class VSCFSWatcherWrapper implements FSWatcher {
     this._disposables.push(this._vscWatcher.onDidDelete((uri: vscode.Uri) => handler(uri.fsPath)));
   }
 
-   
   onError(_handler: (err: Error) => void): void {
     return undefined;
   }
