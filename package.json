@@ -48,7 +48,8 @@
     "package": "vsce package",
     "deploy": "node ./out/test/repo_scripts/deploy.js",
     "vscode:prepublish": "webpack --config webpack.config.js --mode production",
-    "webpack": "webpack --config webpack.config.js --mode development"
+    "webpack": "webpack --config webpack.config.js --mode development",
+    "eslint": "eslint src/**/*.ts"
   },
   "extensionDependencies": [],
   "dependencies": {
