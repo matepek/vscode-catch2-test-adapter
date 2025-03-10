@@ -3,8 +3,9 @@ import { TestGroupingConfig } from './TestGroupingInterface';
 
 ///
 
-export type AdvancedExecutableConfigArray = Array<AdvancedExecutableConfig>;
+export type AdvancedExecutableConfigArray = AdvancedExecutableConfig[];
 
+// eslint-disable-next-line
 export type AdvancedExecutableConfig = {
   pattern: ResolvableString;
   exclude: string;
@@ -14,7 +15,7 @@ export type AdvancedExecutableConfig = {
   cwd?: ResolvableString;
   env?: Record<string, ResolvableString>;
   envFile?: ResolvableString;
-  dependsOn?: Array<ResolvableString>;
+  dependsOn?: ResolvableString[];
   runTask?: RunTaskConfig;
   parallelizationLimit?: number;
   strictPattern?: boolean;
@@ -36,22 +37,22 @@ export type AdvancedExecutableConfig = {
 };
 
 export interface RunTaskConfig {
-  before?: Array<TaskName>;
-  beforeEach?: Array<TaskName>;
-  after?: Array<TaskName>;
-  afterEach?: Array<TaskName>;
+  before?: TaskName[];
+  beforeEach?: TaskName[];
+  after?: TaskName[];
+  afterEach?: TaskName[];
 }
 
 export interface ExecutionWrapperConfig {
   path: ResolvableString;
-  args?: Array<ResolvableString>;
+  args?: ResolvableString[];
 }
 
 export interface FrameworkSpecificConfig {
   testGrouping?: TestGroupingConfig;
   helpRegex?: string;
-  prependTestRunningArgs?: Array<string>;
-  prependTestListingArgs?: Array<string>;
+  prependTestRunningArgs?: string[];
+  prependTestListingArgs?: string[];
   ignoreTestEnumerationStdErr?: boolean;
   'debug.enableOutputColouring'?: boolean;
   failIfExceedsLimitNs?: number;
