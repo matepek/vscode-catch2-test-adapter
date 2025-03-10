@@ -45,6 +45,7 @@ jobs:
           /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           sleep 3
           npm test
+          npx eslint src/**/*.ts
         env:
           DISPLAY: ':99.0'
 
@@ -83,6 +84,9 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: ESLint
+        run: npx eslint src/**/*.ts
+
   test-mac:
     name: MacOS
     runs-on: macos-latest
@@ -114,3 +118,6 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: ESLint
+        run: npx eslint src/**/*.ts
