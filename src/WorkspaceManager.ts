@@ -86,7 +86,14 @@ export class WorkspaceManager implements vscode.Disposable {
           throw Error(msg);
         }
 
-        const resolvedTask = await resolveVariablesAsync(found, varToValue);
+        const resolvedTask = new vscode.Task(
+          found.definition,
+          found.scope ?? vscode.TaskScope.Workspace,
+          found.name,
+          found.source,
+          await resolveVariablesAsync(found.execution, varToValue),
+          found.problemMatchers,
+        );
 
         if (Version.from(vscode.version)?.smaller(new Version(1, 72))) {
           // Task.name setter needs to be triggered in order for the task to clear its __id field

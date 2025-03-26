@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.12.3]
+
+### Fixed
+
+- variable resolution for `runTask`. [related](https://github.com/matepek/vscode-catch2-test-adapter/issues/467)
+
 ## [4.12.2] - 2024-10-22
 
 ### Added
