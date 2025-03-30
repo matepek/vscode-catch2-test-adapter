@@ -135,10 +135,11 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     resolvedFile?: string | undefined,
     line?: undefined | string | number,
   ): Promise<vscode.TestItem> {
+    const resolvedId = id !== undefined ? await this.resolveText(id, ...varsToResolve) : undefined;
     const resolvedLabel = await this.resolveText(label, ...varsToResolve);
     const resolvedDescr = description !== undefined ? await this.resolveText(description, ...varsToResolve) : '';
 
-    return this._getOrCreateChildGroup(id, resolvedLabel, resolvedDescr, itemOfLevel, resolvedFile, line);
+    return this._getOrCreateChildGroup(resolvedId, resolvedLabel, resolvedDescr, itemOfLevel, resolvedFile, line);
   }
 
   private _updateVarsWithTags(tg: TestGroupingConfig, tags: string[], tagsResolveRule: ResolveRuleAsync<string>): void {
