@@ -307,7 +307,7 @@ export function createPythonIndexerForPathVariable(varName: string, pathStr: str
     rule: (m: RegExpMatchArray): string => {
       try {
         return pathlib.normalize(rule(m));
-      } catch (e) {
+      } catch (_e) {
         return m[0];
       }
     },

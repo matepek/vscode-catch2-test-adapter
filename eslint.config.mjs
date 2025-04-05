@@ -11,9 +11,20 @@ export default defineConfig([
   {
     files: ['**/*.{js,mjs,cjs,ts}'],
     rules: {
-      "constructor-super": "error",
-      "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": "off",
+      'constructor-super': 'error',
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          args: 'all',
+          argsIgnorePattern: '^_',
+          caughtErrors: 'all',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
     },
   },
 ]);
