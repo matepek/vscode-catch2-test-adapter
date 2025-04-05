@@ -39,6 +39,7 @@
   ],
   "main": "out/dist/main.js",
   "scripts": {
+    "eslint": "eslint src",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
     "clean": "rimraf out node_modules vscode-catch2-test-adapter-*.vsix",
     "watch": "tsc -watch -p ./tsconfig.json",

@@ -40,6 +40,9 @@ jobs:
           npm run webpack
           ls -all out/dist
 
+      - name: ESLint
+        run: npm run eslint
+
       - name: Test
         run: |
           /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
@@ -77,6 +80,9 @@ jobs:
       - name: Compile
         run: npm run compile
 
+      - name: ESLint
+        run: npm run eslint
+
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.3
 
@@ -111,6 +117,9 @@ jobs:
 
       - name: Compile
         run: npm run compile
+
+      - name: ESLint
+        run: npm run eslint
 
       - name: Test
         run: npm test
