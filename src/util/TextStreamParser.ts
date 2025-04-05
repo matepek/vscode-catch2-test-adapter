@@ -28,7 +28,7 @@ export class TextStreamParser implements ParserInterface {
 
     await this.sequentialP;
 
-    this.topProcessor.end && this.topProcessor.end();
+    if (this.topProcessor.end) this.topProcessor.end();
 
     while (this.processorStack.length) {
       const p = this.processorStack.pop()!;

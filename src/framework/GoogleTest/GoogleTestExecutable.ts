@@ -60,8 +60,8 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     await pipeOutputStreams2Parser(xmlStream, undefined, parser, undefined);
   }
 
-  private static readonly testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.(?:\s+(#\s+TypeParam(?:\(\))?\s+=\s*(.+)))?$/;
-  private static readonly testRe = /^\s+([A-z0-9][\/A-z0-9_\-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
+  private static readonly testGroupRe = /^([A-z][/A-z0-9_-]*)\.(?:\s+(#\s+TypeParam(?:\(\))?\s+=\s*(.+)))?$/;
+  private static readonly testRe = /^\s+([A-z0-9][/A-z0-9_-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
 
   private async _reloadFromString(
     stdout: Readable | string,
@@ -180,7 +180,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
 
         if (!this.shared.enabledTestListCaching) {
           fs.unlink(cacheFile, (err: Error | null) => {
-            err && this.shared.log.warn("Couldn't remove: ", cacheFile, err);
+            if (err) this.shared.log.warn("Couldn't remove: ", cacheFile, err);
           });
         }
 
@@ -494,7 +494,7 @@ class TestCaseProcessor implements LineProcessor {
 // m[5] == 'Failure bla bla'
 // m[6] == 'Failure'
 // m[7] == ' bla bla'
-const failureRe = /^((.+)[:\(]([0-9]+)\)?)(: )((Failure|EXPECT_CALL|error)(.*))$/;
+const failureRe = /^((.+)[:(]([0-9]+)\)?)(: )((Failure|EXPECT_CALL|error)(.*))$/;
 type FailureType = 'Failure' | 'EXPECT_CALL' | 'error';
 
 ///

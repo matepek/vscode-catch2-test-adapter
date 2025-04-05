@@ -122,7 +122,7 @@ export class RunningExecutable {
           }
         }, 5000);
       }
-    } catch {}
+    } catch {} // eslint-disable-line
   }
 
   setPriorityAsync(log: Logger): void {

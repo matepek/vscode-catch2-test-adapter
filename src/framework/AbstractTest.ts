@@ -139,10 +139,10 @@ export abstract class AbstractTest {
       new vscode.TestTag(`level.` + this.subLevel),
       ...this._tags.map(x => new vscode.TestTag(`tag."${x}"`)),
     ];
-    this.skipped && tags.push(SharedTestTags.skipped);
+    if (this.skipped) tags.push(SharedTestTags.skipped);
     if (!this._staticError) {
-      this.runnable && tags.push(SharedTestTags.runnable);
-      this.debuggable && tags.push(SharedTestTags.debuggable);
+      if (this.runnable) tags.push(SharedTestTags.runnable);
+      if (this.debuggable) tags.push(SharedTestTags.debuggable);
     }
     return tags;
   }

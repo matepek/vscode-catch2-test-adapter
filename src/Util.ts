@@ -44,7 +44,7 @@ export interface CancellationToken {
   /**
    * An [event](#Event) which fires upon cancellation.
    */
-  readonly onCancellationRequested: Event<void>;  
+  readonly onCancellationRequested: Event<void>;
 }
 
 ///
@@ -112,7 +112,7 @@ export function parseLine(
   adjust?: number,
 ): number | undefined {
   if (typeof line == 'number') {
-    func && func(line);
+    if (func) func(line);
     return line;
   } else if (typeof line == 'string') {
     let p = parseInt(line);
@@ -120,7 +120,7 @@ export function parseLine(
       return undefined;
     } else {
       if (adjust) p += adjust;
-      func && func(p);
+      if (func) func(p);
       return p;
     }
   } else return undefined;
@@ -284,7 +284,7 @@ export function getAbsolutePath(filePath: string, directories: Iterable<string>)
         current = parent;
         parent = pathlib.dirname(current);
       } while (current != parent);
-    } catch {}
+    } catch {} // eslint-disable-line
   }
 
   return filePath;

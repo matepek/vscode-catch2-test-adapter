@@ -12,7 +12,7 @@ export class Logger {
 
   //eslint-disable-next-line
   trace(msg: any, ...msgs: any[]): void {
-    process.env['TESTMATE_DEBUG'] && this._logger.debug(msg, ...msgs);
+    if (process.env['TESTMATE_DEBUG']) this._logger.debug(msg, ...msgs);
   }
 
   //eslint-disable-next-line
@@ -67,13 +67,11 @@ export class Logger {
     this.error(m, ...msg);
   }
 
-   
   exception(e: unknown, ...msg: unknown[]): void {
     debugBreak();
     this._logger.error(e, ...msg);
   }
 
-   
   exceptionS(e: unknown, ...msg: unknown[]): void {
     debugBreak();
     this._logger.error(e, ...msg);
