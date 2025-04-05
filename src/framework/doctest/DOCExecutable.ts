@@ -195,7 +195,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     return execParams;
   }
 
-  // eslint-disable-next-line
+   
   protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
     const execParams: string[] = this._getDocTestRunParams(childrenToRun);
     execParams.push('--reporters=console');

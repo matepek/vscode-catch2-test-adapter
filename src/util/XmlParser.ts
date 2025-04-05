@@ -63,7 +63,7 @@ export class XmlParser implements ParserInterface {
             const tag = this.tagStack.pop();
 
             if (tag?.name !== name) {
-              debugger;
+              debugger; // eslint-disable-line
               throw Error('onclosetag: tag mismatch');
             }
 
@@ -77,7 +77,7 @@ export class XmlParser implements ParserInterface {
               if (this.topTagProcessor.processor.end) await this.topTagProcessor.processor.end();
 
               if (this.xmlTagProcessorStack.length === 0) {
-                debugger;
+                debugger; // eslint-disable-line
                 const error = Error('onclosetag should have at least the root');
                 this.log.exceptionS(error, this);
                 throw error;

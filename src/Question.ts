@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 
 export class Question {
   constructor(
-    id: number,
+    _id: number,
     readonly message: string,
     ...items: { text: string; link: string | undefined }[]
   ) {

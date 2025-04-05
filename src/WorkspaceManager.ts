@@ -51,7 +51,7 @@ export class WorkspaceManager implements vscode.Disposable {
           try {
             const ruleV = vscode.workspace.getConfiguration().get<string>(m[1])?.toString();
             if (ruleV !== undefined) return ruleV;
-          } catch (reason) {
+          } catch (_reason) {
             log.warnS("couldn't resolve config", m[0]);
           }
           return m[0];
@@ -63,7 +63,7 @@ export class WorkspaceManager implements vscode.Disposable {
           try {
             const ruleV = await vscode.commands.executeCommand<string>(m[1]);
             if (ruleV !== undefined) return ruleV;
-          } catch (reason) {
+          } catch (_reason) {
             log.warnS("couldn't resolve command", m[0]);
           }
           return m[0];

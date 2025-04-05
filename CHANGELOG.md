@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.13.3]
+
+Dev environment and NPM update.
+
 ## [4.13.2] - 2025-04-05
 
 ### Added

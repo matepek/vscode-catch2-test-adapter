@@ -181,7 +181,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
       this._disposables.push(execWatcher);
     } catch (e) {
-      execWatcher && execWatcher.dispose();
+      if (execWatcher) execWatcher.dispose();
       filePaths.push(this._pattern);
 
       this._shared.log.exceptionS(e, "Couldn't watch pattern");
@@ -216,7 +216,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
                     (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
                   )
                     throw Error(
-                      `Coudn\'t load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
+                      `Coudn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
                     );
                 }
               }
@@ -227,7 +227,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
                 (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
               )
                 throw Error(
-                  `Coudn\'t load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
+                  `Coudn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
                 );
             }
           } catch (reason) {
@@ -496,7 +496,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     if (lastEventArrivedAt === undefined) {
       this._shared.log.errorS('_recursiveHandleFile: lastEventArrivedAt');
-      debugger;
+      debugger; // eslint-disable-line
       return;
     }
 
@@ -558,7 +558,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     if (lastEventArrivedAt === undefined) {
       this._shared.log.errorS('_recursiveHandleRunnable: lastEventArrivedAt');
-      debugger;
+      debugger; // eslint-disable-line
       return;
     }
 

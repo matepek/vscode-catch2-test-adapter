@@ -6,8 +6,7 @@ import { Spawner, SpawnOptionsWithoutStdio } from '../Spawner';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { DebugConfigData } from '../DebugConfigType';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const hash = require('object-hash');
+const hash = require('object-hash'); // eslint-disable-line
 
 export class SharedVarOfExec {
   constructor(

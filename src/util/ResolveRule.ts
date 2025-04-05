@@ -185,7 +185,7 @@ export async function resolveVariablesAsync<T>(value: T, varValue: readonly Reso
       } else {
         const ruleF = rule as (m: RegExpMatchArray) => Promise<string>;
         // resolve as RegExp && rule as Function
-        // eslint-disable-next-line
+
         if (rule.length > 1) {
           throw Error('resolveVariables regex func should expect 1 argument');
         }
@@ -307,7 +307,7 @@ export function createPythonIndexerForPathVariable(varName: string, pathStr: str
     rule: (m: RegExpMatchArray): string => {
       try {
         return pathlib.normalize(rule(m));
-      } catch (e) {
+      } catch (_e) {
         return m[0];
       }
     },
