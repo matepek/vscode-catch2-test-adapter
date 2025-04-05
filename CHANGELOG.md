@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.13.1]
+
+### Added
+
+- better support for multiple configuration: `prependTestListingArgs`, `prependTestRunningArgs`. [related](https://github.com/matepek/vscode-catch2-test-adapter/issues/459)
+
 ## [4.13.0] - 2025-04-05
 
 ### Added

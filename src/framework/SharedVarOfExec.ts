@@ -27,7 +27,15 @@ export class SharedVarOfExec {
     readonly resolvedSourceFileMap: Record<string, string>,
   ) {
     this.parallelizationPool = new TaskPool(_parallelizationLimit);
-    this.optionsHash = hash.MD5(options.env).substring(0, 6);
+    this.optionsHash = hash
+      .MD5({
+        ...options.env,
+        ...{
+          prependTestRunningArgs: this._frameworkSpecific.prependTestRunningArgs,
+          prependTestListingArgs: this._frameworkSpecific.prependTestListingArgs,
+        },
+      })
+      .substring(0, 6);
   }
 
   readonly parallelizationPool: TaskPool;
