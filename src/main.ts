@@ -189,7 +189,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         };
         requests.set(trr.profile, req);
       }
-      if (req.include === undefined || trr.include === undefined) {
+      if (trr.include === undefined) {
         for (const exec of executables) {
           const execTestItem = exec.getExecTestItem();
           if (execTestItem) req.include.push(execTestItem);
@@ -213,7 +213,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           }
           return false;
         };
-        for (const item of trr.include ?? []) {
+        for (const item of trr.include) {
           const isItemRelevant = isRelevant(item, false);
           if (isItemRelevant === true) req.include.push(item);
           // in case of using grouping, has to go deeper
@@ -221,7 +221,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             const recursiveCheckDescendants = (item: vscode.TestItem) => {
               for (const [_, childItem] of item.children) {
                 const isRelevantChild = isRelevant(childItem, true);
-                if (isRelevantChild) req.include?.push(childItem);
+                if (isRelevantChild) req!.include.push(childItem);
                 else if (isRelevantChild === null) recursiveCheckDescendants(childItem);
               }
             };
@@ -229,8 +229,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           }
         }
       }
-      if (req.exclude !== undefined || trr.exclude !== undefined) {
-        req.exclude = [...(req.exclude ?? []), ...(trr.exclude ?? [])];
+      if (trr.exclude !== undefined) {
+        req.exclude.push(...trr.exclude);
       }
     }
     for (const [profile, req] of requests) {
