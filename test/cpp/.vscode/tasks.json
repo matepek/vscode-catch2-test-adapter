@@ -20,6 +20,14 @@
             "group": "build",
             "problemMatcher": [],
             "detail": "CMake template build task"
+        },
+        {
+            "label": "make build-tests",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Paths:", "${absPathConcatWithSpace}", "${absPathArrayFlat}", "..."
+            ],
         }
     ]
 }

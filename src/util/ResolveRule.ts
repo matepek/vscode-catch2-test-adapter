@@ -302,7 +302,7 @@ export function createPythonIndexerForPathVariable(varName: string, pathStr: str
     pathlib.sep,
   );
 
-  return {
+  const r: ResolveRegexRule = {
     resolve,
     rule: (m: RegExpMatchArray): string => {
       try {
@@ -312,6 +312,9 @@ export function createPythonIndexerForPathVariable(varName: string, pathStr: str
       }
     },
   };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (r as any)._pathStr = pathStr;
+  return r;
 }
 
 export function cloneRecursively<T>(value: T): T {

@@ -154,7 +154,7 @@ export abstract class AbstractTest {
   public hasSubTestItem(item: vscode.TestItem): boolean {
     if (this._subTests === undefined) return false;
     const found = this._subTests.get(item.id);
-    if (found?.item === item) return true;
+    if (found?.item.id === item.id) return true;
     for (const subTest of this._subTests.values()) {
       const found = subTest.hasSubTestItem(item);
       if (found) return true;

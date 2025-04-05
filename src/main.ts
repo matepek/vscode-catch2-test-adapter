@@ -14,7 +14,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const workspace2manager = new Map<vscode.WorkspaceFolder, WorkspaceManager>();
   const testItemManager = new TestItemManager(controller);
   const executableChangedEmitter = new vscode.EventEmitter<Iterable<AbstractExecutable>>();
-  const executableChanged = (e: Iterable<AbstractExecutable>): void => executableChangedEmitter.fire(e);
+  const executableChanged = (e: Iterable<AbstractExecutable>): void => {
+    executableChangedEmitter.fire(e);
+  };
 
   ///
 
@@ -171,32 +173,80 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     controller.invalidateTestResults(changedItems);
   });
 
+  const continousRunThese = new Set<vscode.TestRunRequest>();
+  const continousRunHandler = executableChangedEmitter.event(executables => {
+    if (continousRunThese.size === 0) return;
+    const requests = new Map<
+      vscode.TestRunProfile | undefined,
+      { include: vscode.TestItem[]; exclude: vscode.TestItem[] }
+    >();
+    for (const trr of continousRunThese) {
+      let req = requests.get(trr.profile);
+      if (req === undefined) {
+        req = {
+          include: [],
+          exclude: [],
+        };
+        requests.set(trr.profile, req);
+      }
+      if (req.include === undefined || trr.include === undefined) {
+        for (const exec of executables) {
+          const execTestItem = exec.getExecTestItem();
+          if (execTestItem) req.include.push(execTestItem);
+          else {
+            for (const test of exec.getTests()) {
+              if (!test.skipped) req.include.push(test.item);
+            }
+          }
+        }
+      } else {
+        const isRelevant = (item: vscode.TestItem, skipSkiped: boolean): boolean | null => {
+          const atest = testItemManager.map(item);
+          if (atest === undefined)
+            // null in case we cannot decide because children might relevant
+            return null;
+          if (skipSkiped && atest.skipped) {
+            return false;
+          }
+          for (const e of executables) {
+            if (atest.exec === e) return true;
+          }
+          return false;
+        };
+        for (const item of trr.include ?? []) {
+          const isItemRelevant = isRelevant(item, false);
+          if (isItemRelevant === true) req.include.push(item);
+          // in case of using grouping, has to go deeper
+          else if (isItemRelevant === null) {
+            const recursiveCheckDescendants = (item: vscode.TestItem) => {
+              for (const [_, childItem] of item.children) {
+                const isRelevantChild = isRelevant(childItem, true);
+                if (isRelevantChild) req.include?.push(childItem);
+                else if (isRelevantChild === null) recursiveCheckDescendants(childItem);
+              }
+            };
+            recursiveCheckDescendants(item);
+          }
+        }
+      }
+      if (req.exclude !== undefined || trr.exclude !== undefined) {
+        req.exclude = [...(req.exclude ?? []), ...(trr.exclude ?? [])];
+      }
+    }
+    for (const [profile, req] of requests) {
+      if (req.include === undefined || req.include.length > 0) {
+        startTestRun(new vscode.TestRunRequest(req.include, req.exclude, profile, true));
+      }
+    }
+  });
+
   const runProfile = controller.createRunProfile(
     'Run Test',
     vscode.TestRunProfileKind.Run,
     async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken): Promise<void> => {
       if (request.continuous) {
-        const l = executableChangedEmitter.event(executables => {
-          const include: vscode.TestItem[] = [];
-          if (request.include === undefined) {
-            for (const e of executables) {
-              const eit = e.getExecTestItem();
-              if (eit) include.push(eit);
-              else for (const t of e.getTests()) include.push(t.item);
-            }
-          } else {
-            for (const item of request.include) {
-              for (const e of executables) {
-                if (e.hasTestItem(item)) {
-                  include.push(item);
-                  break;
-                }
-              }
-            }
-          }
-          startTestRun(new vscode.TestRunRequest(include, request.exclude, request.profile, true));
-        });
-        cancellation.onCancellationRequested(() => l.dispose());
+        continousRunThese.add(request);
+        cancellation.onCancellationRequested(() => continousRunThese.delete(request));
       } else {
         return startTestRun(request);
       }
@@ -283,6 +333,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
       log.info('Disposing controller');
       testResultInvalidator.dispose();
+      continousRunHandler.dispose();
       runProfile.dispose();
       debugProfile.dispose();
       controller.dispose();

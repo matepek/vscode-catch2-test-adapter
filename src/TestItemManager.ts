@@ -101,4 +101,13 @@ export class TestItemManager {
       return item;
     }
   }
+
+  *enumerateDescendants(item: vscode.TestItem): IterableIterator<vscode.TestItem> {
+    for (const [_, c] of item.children) {
+      yield c;
+      for (const cc of this.enumerateDescendants(c)) {
+        yield cc;
+      }
+    }
+  }
 }

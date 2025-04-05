@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.13.0]
+
+### Fixed
+
+- major refactoring on how the test "Continous Run" works.
+
 ## [4.12.4] - 2025-03-30
 
 ### Fixed

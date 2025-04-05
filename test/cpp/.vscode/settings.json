@@ -2,28 +2,26 @@
     "cmake.configureOnOpen": true,
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern":"build/**/*gtest*",
-            "runTask": {
-                // "before": ["build_all"]
-            },
-            "testGrouping": {
-                "groupByLabel": {
-                    "label": "alma",
-                    "groupByExecutable": {}
-                },
-            }
+            "pattern": "build/**/gtest*.exe",
+            // "testGrouping": {
+            //     "groupByExecutable": {
+            //         "groupByLabel": {
+            //             "label": "x",
+            //             "groupByTags": {"tags": [], "tagFormat": "${tag}"}
+            //         },
+            //     },
+            // }
         },
         {
-            "pattern":"build/**/*suite*",
-            "runTask": {
-                // "before": ["build_all"]
-            },
-            "testGrouping": {
-                "groupByLabel": {
-                    "label": "korte",
-                    "groupByExecutable": {}
-                },
-            }
+            "pattern": "build/**/suite*.exe",
+            // "testGrouping": {
+            //     "groupByExecutable": {
+            //         "groupByLabel": {
+            //             "label": "x",
+            //             "groupByTags": {"tags": [], "tagFormat": "${tag}"}
+            //         },
+            //     },
+            // }
         }
     ],
     "files.exclude": {

@@ -88,9 +88,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
   }
 
   public hasTestItem(item: vscode.TestItem): boolean {
-    if (this._execItem.getItem() === item) return true;
+    if (this._execItem.getItem()?.id === item.id) return true;
     const found = this._tests.get(item.id);
-    if (found?.item === item) return true;
+    if (found?.item.id === item.id) return true;
     for (const test of this._tests.values()) {
       const found = test.hasSubTestItem(item);
       if (found) return true;
