@@ -221,7 +221,8 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
       }
     }
 
-    const args = this.shared.prependTestListingArgs.concat(['[.],*', '--verbosity', 'high', '--list-tests']);
+    const prependTestListingArgs = await Promise.all(this.shared.prependTestListingArgs.map(x => this.resolveText(x)));
+    const args = prependTestListingArgs.concat(['[.],*', '--verbosity', 'high', '--list-tests']);
 
     if (this._catch2Version && this._catch2Version.major >= 3) args.push('--reporter', 'xml');
     else args.push('--use-colour', 'no');

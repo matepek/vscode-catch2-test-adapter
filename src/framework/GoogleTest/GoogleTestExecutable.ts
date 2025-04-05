@@ -160,7 +160,8 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
       }
     }
 
-    const args = this.shared.prependTestListingArgs.concat([
+    const prependTestListingArgs = await Promise.all(this.shared.prependTestListingArgs.map(x => this.resolveText(x)));
+    const args = prependTestListingArgs.concat([
       `--${this._argumentPrefix}list_tests`,
       `--${this._argumentPrefix}output=xml:${cacheFile}`,
     ]);

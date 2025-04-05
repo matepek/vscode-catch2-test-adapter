@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [4.13.0]
 
+### Added
+
+- variable resolution for `prependTestListingArgs` and `prependTestRunningArgs`. [related](https://github.com/matepek/vscode-catch2-test-adapter/issues/460)
+
 ### Fixed
 
 - major refactoring on how the test "Continous Run" works.

@@ -518,8 +518,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
   protected abstract _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
 
-  private _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
-    return this.shared.prependTestRunningArgs.concat(this._getRunParamsInner(childrenToRun));
+  private async _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): Promise<string[]> {
+    const prependTestRunningArgs = await Promise.all(this.shared.prependTestRunningArgs.map(x => this.resolveText(x)));
+    return prependTestRunningArgs.concat(this._getRunParamsInner(childrenToRun));
   }
 
   protected abstract _handleProcess(testRun: vscode.TestRun, runInfo: RunningExecutable): Promise<HandleProcessResult>;
@@ -536,8 +537,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return [tests];
   }
 
-  getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
-    return this.shared.prependTestRunningArgs.concat(this._getDebugParamsInner(childrenToRun, breakOnFailure));
+  async getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): Promise<string[]> {
+    const prependTestRunningArgs = await Promise.all(this.shared.prependTestRunningArgs.map(x => this.resolveText(x)));
+    return prependTestRunningArgs.concat(this._getDebugParamsInner(childrenToRun, breakOnFailure));
   }
 
   reloadTests(taskPool: TaskPool, cancellationToken: CancellationToken, lastModiTime?: number): Promise<void> {
@@ -675,7 +677,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
   }
 
   private async _runProcess(testRun: vscode.TestRun, childrenToRun: readonly AbstractTest[]): Promise<void> {
-    const execParams = this._getRunParams(childrenToRun);
+    const execParams = await this._getRunParams(childrenToRun);
 
     const pathForExecution = await this._getPathForExecution();
     this.shared.log.info('proc starting', pathForExecution, execParams, this.shared.path);

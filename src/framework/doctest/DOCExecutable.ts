@@ -114,7 +114,8 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
       }
     }
 
-    const args = this.shared.prependTestListingArgs.concat([
+    const prependTestListingArgs = await Promise.all(this.shared.prependTestListingArgs.map(x => this.resolveText(x)));
+    const args = prependTestListingArgs.concat([
       '--list-test-cases',
       '--reporters=xml',
       '--no-skip=true',
