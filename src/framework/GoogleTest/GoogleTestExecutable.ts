@@ -357,7 +357,7 @@ class TestSuiteListingProcessor implements XmlTagProcessor {
 ///
 
 // Remark: not necessarily starts like this so do not use: ^
-const testBeginRe = /\[ RUN      \] ((.+)\.(.*))$/m;
+const testBeginRe = /\[ RUN {6}\] ((.+)\.(.*))$/m;
 // Ex: "Is True[       OK ] TestCas1.test5 (0 ms)"
 // m[1] == '[       '
 // m[2] == 'OK'

@@ -67,13 +67,13 @@ export class Logger {
     this.error(m, ...msg);
   }
 
-  //eslint-disable-next-line
+   
   exception(e: unknown, ...msg: unknown[]): void {
     debugBreak();
     this._logger.error(e, ...msg);
   }
 
-  //eslint-disable-next-line
+   
   exceptionS(e: unknown, ...msg: unknown[]): void {
     debugBreak();
     this._logger.error(e, ...msg);

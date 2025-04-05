@@ -13,7 +13,7 @@ export class BuildProcessChecker {
     /(^|[/\\])(bazel|cmake|make|ninja|cl|c\+\+|ld|clang|clang\+\+|gcc|g\+\+|link|icc|armcc|armclang)(-[^/\\]+)?(\.exe)?$/;
   private _lastChecked = 0;
   private _finishedP = Promise.resolve();
-  private _finishedResolver = (): void => {}; // eslint-disable-line
+  private _finishedResolver = (): void => {};  
   private _timerId: NodeJS.Timeout | undefined = undefined; // number if have running build process
 
   dispose(): void {

@@ -44,7 +44,7 @@ export interface CancellationToken {
   /**
    * An [event](#Event) which fires upon cancellation.
    */
-  readonly onCancellationRequested: Event<void>; // eslint-disable-line
+  readonly onCancellationRequested: Event<void>;  
 }
 
 ///

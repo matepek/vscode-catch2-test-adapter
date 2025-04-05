@@ -355,8 +355,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
           if (
             g.tags === undefined ||
-            (Array.isArray(g.tags) &&
-              g.tags.every(v => typeof Array.isArray(v) && v.every(vv => typeof vv === 'string')))
+            (Array.isArray(g.tags) && g.tags.every(v => Array.isArray(v) && v.every(vv => typeof vv === 'string')))
           ) {
             if (g.tags === undefined || g.tags.length === 0 || g.tags.every(t => t.length == 0)) {
               if (tags.length > 0) {

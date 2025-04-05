@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-const { Gaze } = require('gaze'); // eslint-disable-line
+const { Gaze } = require('gaze');
 
 export interface FSWatcher extends vscode.Disposable {
   ready: () => Promise<void>;
@@ -117,7 +117,6 @@ export class VSCFSWatcherWrapper implements FSWatcher {
     this._disposables.push(this._vscWatcher.onDidDelete((uri: vscode.Uri) => handler(uri.fsPath)));
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onError(_handler: (err: Error) => void): void {
     return undefined;
   }
