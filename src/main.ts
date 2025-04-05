@@ -299,8 +299,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           const testsToRun = [...executables.values()][0];
 
           if (testsToRun.direct.length != 1) {
-            vscode.window.showWarningMessage('You should only run 1 test case, no group.');
-            return;
+            // workaround for https://github.com/matepek/vscode-catch2-test-adapter/issues/464
+            if (new Set(testsToRun.direct.map(x => x.id)).size != 1) {
+              vscode.window.showWarningMessage('You should only run 1 test case, no group.');
+              return;
+            }
           }
           const test = testsToRun.direct[0];
           runQueue.push(

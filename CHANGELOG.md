@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.13.2]
+
+### Added
+
+- workaround for 'debug test at cursor'. [related](https://github.com/matepek/vscode-catch2-test-adapter/issues/464)
+
 ## [4.13.1] - 2025-04-05
 
 ### Added
