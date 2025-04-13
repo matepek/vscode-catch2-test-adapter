@@ -504,7 +504,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       const testIdLength = test.id.length;
       if (testIdLength > limit) {
         this.shared.log.warn(
-          'Test ID is longer than configured limit, test will be executed but may result in unexpected behaviour. ID:',
+          'Test ID is longer than configured limit! Test will be executed regardless. ID:',
           test.id,
         );
       }
