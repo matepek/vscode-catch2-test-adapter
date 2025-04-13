@@ -102,4 +102,8 @@ export class SharedVarOfExec {
   get googleTestGMockVerbose(): 'default' | 'info' | 'warning' | 'error' {
     return this.shared.googleTestGMockVerbose;
   }
+
+  get testNameCharLimit(): number {
+    return this.shared.testNameCharLimit;
+  }
 }

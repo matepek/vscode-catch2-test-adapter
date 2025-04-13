@@ -157,6 +157,7 @@ export class WorkspaceManager implements vscode.Disposable {
       configuration.getGoogleTestTreatGMockWarningAs(),
       configuration.getGoogleTestGMockVerbose(),
       false,
+      configuration.getTestNameCharLimit(),
     );
 
     this._disposables.push(
@@ -200,6 +201,9 @@ export class WorkspaceManager implements vscode.Disposable {
           }
           if (changeEvent.affects('gtest.gmockVerbose')) {
             this._shared.googleTestGMockVerbose = config.getGoogleTestGMockVerbose();
+          }
+          if (changeEvent.affects('test.testNameCharLimit')) {
+            this._shared.testNameCharLimit = config.getTestNameCharLimit();
           }
           if (changeEvent.affectsAny('test.randomGeneratorSeed', 'gtest.treatGmockWarningAs', 'gtest.gmockVerbose')) {
             this._executableConfig.forEach(i => i.sendRetireAllExecutables());

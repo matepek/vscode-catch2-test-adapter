@@ -498,16 +498,24 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     let lastSet: AbstractTest[] = [];
     const subsets: AbstractTest[][] = [lastSet];
     let charCount = 0;
-    const limit = 30000;
+    const limit = this.shared.testNameCharLimit;
 
     for (const test of tests) {
-      if (charCount + test.id.length >= limit) {
+      const testIdLength = test.id.length;
+      if (testIdLength > limit) {
+        this.shared.log.warn(
+          'Test ID is longer than configured limit, test will be executed but may result in unexpected behaviour. ID:',
+          test.id,
+        );
+      }
+
+      if (charCount + testIdLength >= limit && lastSet.length > 0) {
         lastSet = [];
         subsets.push(lastSet);
         charCount = 0;
       }
       lastSet.push(test);
-      charCount += test.id.length;
+      charCount += testIdLength;
     }
 
     return subsets;
