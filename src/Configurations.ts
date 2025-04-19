@@ -36,7 +36,7 @@ export type Config =
   | 'test.randomGeneratorSeed'
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
-  | 'test.testNameCharLimit'
+  | 'test.testNameLengthLimit'
   | 'discovery.loadOnStartup'
   | 'discovery.gracePeriodForMissing'
   | 'discovery.runtimeLimit'
@@ -432,8 +432,8 @@ export class Configurations {
     return r * 1000;
   }
 
-  getTestNameCharLimit(): number {
-    return this._getD<number>('test.testNameCharLimit', 30000);
+  getTestNameLengthLimit(): number {
+    return this._getD<number>('test.testNameLengthLimit', 30000);
   }
 
   getEnableTestListCaching(): boolean {

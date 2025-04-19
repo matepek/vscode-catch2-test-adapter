@@ -1842,8 +1842,8 @@
           "default": 1,
           "minimum": 1
         },
-        "testMate.cpp.test.testNameCharLimit": {
-          "markdownDescription": "Maximum character count for combined test names before the extension will split the test run into multiple executions. Helps avoid command line length limits imposed by the operating systems or development frameworks. Having test names that are longer than the configured limit will not result in that test being skipped but instead will result in it being ran alone.",
+        "testMate.cpp.test.testNameLengthLimit": {
+          "markdownDescription": "Maximum character count of combined test names for the extension to split the test run into multiple executions. Helps avoid issues coming from command line length limits imposed by the operating systems (`ENAMETOOLONG`) or development frameworks. Note: The actual executable arguments' lenght depends on the framework and other settings like `prependTestRunningArgs`. Recommended checking the logs to determine the actual lenght of the arguments.",
           "scope": "resource",
           "type": "integer",
           "default": 30000,

@@ -30,7 +30,7 @@ export class WorkspaceShared {
     public googleTestTreatGMockWarningAs: 'nothing' | 'failure',
     public googleTestGMockVerbose: 'default' | 'info' | 'warning' | 'error',
     public hideUninterestingOutput: boolean,
-    public testNameCharLimit: number,
+    public testNameLengthLimit: number,
   ) {
     this.taskPool = new TaskPool(workerMaxNumber);
     this.buildProcessChecker = new BuildProcessChecker(log);
