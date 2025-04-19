@@ -1842,6 +1842,13 @@
           "default": 1,
           "minimum": 1
         },
+        "testMate.cpp.test.testNameLengthLimit": {
+          "markdownDescription": "Maximum character count of combined test names for the extension to split the test run into multiple executions. Helps avoid issues coming from command line length limits imposed by the operating systems (`ENAMETOOLONG`) or development frameworks. Note: The actual executable arguments' lenght depends on the framework and other settings like `prependTestRunningArgs`. Recommended checking the logs to determine the actual lenght of the arguments.",
+          "scope": "resource",
+          "type": "integer",
+          "default": 30000,
+          "minimum": 1
+        },
         "testMate.cpp.discovery.loadOnStartup": {
           "markdownDescription": "If true, the extension will try to load all the tests after the startup. Otherwise the user has to click on the Test icon on the sidebar to trigger the process.",
           "scope": "window",

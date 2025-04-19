@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.14.0]
+
+### Added
+
+- `testMate.cpp.test.testNameLengthLimit` to allow configuring the max char length of combined test names when splitting test executions.
+
 ## [4.13.3] - 2025-04-05
 
 Dev environment and NPM update.

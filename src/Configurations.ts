@@ -36,6 +36,7 @@ export type Config =
   | 'test.randomGeneratorSeed'
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
+  | 'test.testNameLengthLimit'
   | 'discovery.loadOnStartup'
   | 'discovery.gracePeriodForMissing'
   | 'discovery.runtimeLimit'
@@ -429,6 +430,10 @@ export class Configurations {
   getExecParsingTimeout(): number {
     const r = this._getD<number>('discovery.runtimeLimit', 5);
     return r * 1000;
+  }
+
+  getTestNameLengthLimit(): number {
+    return this._getD<number>('test.testNameLengthLimit', 30000);
   }
 
   getEnableTestListCaching(): boolean {
