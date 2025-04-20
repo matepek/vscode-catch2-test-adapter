@@ -517,10 +517,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
           ),
         );
       } else {
-        if (
-          subsets.length == 0 /*for the case when only one test is run*/ ||
-          charCount + test.id.length > this.shared.testNameLengthLimit
-        ) {
+        if (subsets.length == 0 || charCount + test.id.length > this.shared.testNameLengthLimit) {
           subsets.push([]);
           charCount = 0;
         }
