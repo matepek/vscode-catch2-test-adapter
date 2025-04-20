@@ -494,20 +494,36 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     }
   }
 
-  private _splitTestsToSmallEnoughSubsets(tests: readonly AbstractTest[]): AbstractTest[][] {
-    let lastSet: AbstractTest[] = [];
-    const subsets: AbstractTest[][] = [lastSet];
+  private _splitTestsToSmallEnoughSubsetsAndRemoveLooLongIds(
+    tests: readonly AbstractTest[],
+    testRun: vscode.TestRun,
+  ): AbstractTest[][] {
+    const subsets: AbstractTest[][] = [];
     let charCount = 0;
-    const limit = 30000;
 
     for (const test of tests) {
-      if (charCount + test.id.length >= limit) {
-        lastSet = [];
-        subsets.push(lastSet);
-        charCount = 0;
+      if (test.id.length > this.shared.testNameLengthLimit) {
+        this.shared.log.warnS(
+          'Test name/ID is longer than configured limit.',
+          test.id,
+          this.shared.testNameLengthLimit,
+        );
+        testRun.errored(
+          test.item,
+          new vscode.TestMessage(
+            new vscode.MarkdownString(
+              `Test name "\`${test.id}\`" exceeds lenght limit "\`${this.shared.testNameLengthLimit}\`".\n\nCheck "\`testMate.cpp.test.testNameLengthLimit\`" in settings for more information.`,
+            ),
+          ),
+        );
+      } else {
+        if (subsets.length == 0 || charCount + test.id.length > this.shared.testNameLengthLimit) {
+          subsets.push([]);
+          charCount = 0;
+        }
+        subsets[subsets.length - 1].push(test);
+        charCount += test.id.length;
       }
-      lastSet.push(test);
-      charCount += test.id.length;
     }
 
     return subsets;
@@ -602,7 +618,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     const splittedForFramework = this._splitTests(testsToRunFinal);
     const splittedForMultirun = splittedForFramework.flatMap(v => this._splitTestSetForMultirunIfEnabled(v));
-    const splittedFinal = splittedForMultirun.flatMap(b => this._splitTestsToSmallEnoughSubsets(b)); //TODO:future merge with _splitTestSetForMultirunIfEnabled
+    const splittedFinal = splittedForMultirun.flatMap(b =>
+      this._splitTestsToSmallEnoughSubsetsAndRemoveLooLongIds(b, testRun),
+    ); //TODO:future merge with _splitTestSetForMultirunIfEnabled
 
     const runningBucketPromises = splittedFinal.map(b =>
       this._runInner(testRun, b, taskPool).catch(err => {
