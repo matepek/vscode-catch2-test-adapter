@@ -6,7 +6,7 @@ FetchContent_Declare(doctest
 
 FetchContent_GetProperties(doctest)
 if(NOT doctest_POPULATED)
-  FetchContent_Populate(doctest)
+  FetchContent_MakeAvailable(doctest)
 endif()
 
 #

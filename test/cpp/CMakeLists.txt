@@ -31,7 +31,6 @@ add_custom_target(
 #
 
 add_subdirectory("catch2")
-add_subdirectory("gunit")
 add_subdirectory("gtest")
 add_subdirectory("doctest")
 add_subdirectory("gbenchmark")

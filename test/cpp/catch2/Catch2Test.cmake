@@ -6,7 +6,7 @@ FetchContent_Declare(catch2test
 
 FetchContent_GetProperties(catch2test)
 if(NOT catch2test_POPULATED)
-  FetchContent_Populate(catch2test)
+  FetchContent_MakeAvailable(catch2test)
 endif()
 
 #

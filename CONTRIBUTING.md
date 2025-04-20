@@ -68,6 +68,14 @@ Issues are tipically related to file operations:
 - [GoogleTestExecutable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/GoogleTest/GoogleTestExecutable.ts)
 - [Catch2Executable.ts](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/src/framework/Catch2/Catch2Executable.ts)
 
+#### Compiling C++ tests
+
+```sh
+mkdir test/cpp/build
+cd test/cpp/build
+cmake -G Ninja .. # or just cmake ..
+```
+
 ### Publishing to market
 
 If you think your changes worth of a release add a new version entry to `CHANGELOG.md` file without a date. CI will publish it automatically.
