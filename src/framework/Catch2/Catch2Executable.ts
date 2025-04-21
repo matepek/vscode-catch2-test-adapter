@@ -173,7 +173,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
   }
 
   private readonly _createAndAddTest = async (
-    testName: string,
+    testId: string,
     tagsStr: string | undefined,
     file: string | undefined,
     line: string | undefined,
@@ -189,13 +189,23 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
 
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
-      testName,
+      testId,
       resolvedFile,
       line,
       tags,
       description,
-      (parent: vscode.TestItem | undefined) =>
-        new Catch2Test(this, parent, this._catch2Version, testName, resolvedFile, line, tags, description),
+      (parent: vscode.TestItem | undefined, testName: string | undefined) =>
+        new Catch2Test(
+          this,
+          parent,
+          this._catch2Version,
+          testId,
+          testName ?? testId,
+          resolvedFile,
+          line,
+          tags,
+          description,
+        ),
       (test: Catch2Test) => test.update2(resolvedFile, line, tags, description),
     );
   };

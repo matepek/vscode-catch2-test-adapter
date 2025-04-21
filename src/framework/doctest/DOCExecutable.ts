@@ -71,26 +71,26 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
   }
 
   private readonly _createAndAddTest = async (
-    testName: string,
-    suiteName: string | undefined,
+    testId: string,
+    suiteId: string | undefined,
     file: string | undefined,
     line: string | undefined,
     description: string | undefined,
     skipped: string | undefined,
   ): Promise<DOCTest> => {
-    const id = getTestId(file, line, testName);
-    const tags: string[] = suiteName ? [suiteName] : [];
+    const id = getTestId(file, line, testId);
+    const tags: string[] = suiteId ? [suiteId] : [];
     const skippedB = skipped === 'true';
     const resolvedFile = this.findSourceFilePath(file);
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
-      testName,
+      testId,
       resolvedFile,
       line,
       tags,
       description,
-      (parent: TestItemParent) =>
-        new DOCTest(this, parent, id, testName, suiteName, tags, resolvedFile, line, description, skippedB),
+      (parent: TestItemParent, testName: string | undefined) =>
+        new DOCTest(this, parent, id, testName ?? testId, suiteId, tags, resolvedFile, line, description, skippedB),
       (test: DOCTest) => test.update2(resolvedFile, line, tags, skippedB, description),
     );
   };
@@ -195,7 +195,6 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     return execParams;
   }
 
-   
   protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
     const execParams: string[] = this._getDocTestRunParams(childrenToRun);
     execParams.push('--reporters=console');

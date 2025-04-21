@@ -104,39 +104,62 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
   }
 
   private readonly _createAndAddTest = async (
-    testName: string,
-    suiteName: string,
+    testId: string,
+    suiteId: string,
     file: string | undefined,
     line: string | undefined,
     typeParam: string | undefined,
     valueParam: string | undefined,
   ): Promise<GoogleTestTest> => {
     const resolvedFile = this.findSourceFilePath(file);
-    const id = suiteName + '.' + testName;
+    const id = suiteId + '.' + testId;
+    const isSkipped = GoogleTestTest.isSkipped(testId, suiteId);
     // gunit
-    if (testName === '') {
+    if (testId === '') {
+      const testId_ = '<GUnit>';
       return this._createTreeAndAddTest(
         this.getTestGrouping(),
-        '<GUnit>',
+        testId_,
         resolvedFile,
         line,
-        [suiteName],
+        [suiteId],
         undefined,
-        (parent: TestItemParent) =>
-          new GoogleTestTest(this, parent, id, '<GUnit>', suiteName, typeParam, valueParam, resolvedFile, line),
-        (test: GoogleTestTest) => test.update2('<GUnit>', suiteName, resolvedFile, line, typeParam, valueParam),
+        (parent: TestItemParent, testName: string | undefined) =>
+          new GoogleTestTest(
+            this,
+            parent,
+            id,
+            testName ?? testId_,
+            isSkipped,
+            typeParam,
+            valueParam,
+            resolvedFile,
+            line,
+          ),
+        (test: GoogleTestTest) => test.update2(testId_, isSkipped, resolvedFile, line, typeParam, valueParam),
       );
     } else {
+      const testId_ = GoogleTestTest.calcLabel(testId);
       return this._createTreeAndAddTest(
         this.getTestGrouping(),
-        testName,
+        testId_,
         resolvedFile,
         line,
-        [suiteName],
+        [suiteId],
         undefined,
-        (parent: TestItemParent) =>
-          new GoogleTestTest(this, parent, id, testName, suiteName, typeParam, valueParam, resolvedFile, line),
-        (test: GoogleTestTest) => test.update2(testName, suiteName, resolvedFile, line, typeParam, valueParam),
+        (parent: TestItemParent, testName: string | undefined) =>
+          new GoogleTestTest(
+            this,
+            parent,
+            id,
+            testName ?? testId_,
+            isSkipped,
+            typeParam,
+            valueParam,
+            resolvedFile,
+            line,
+          ),
+        (test: GoogleTestTest) => test.update2(testId_, isSkipped, resolvedFile, line, typeParam, valueParam),
       );
     }
   };

@@ -32,9 +32,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (this.addBeginEndMsg) {
       const locStr = this.getLocationAtStr(this.test.file, this.test.line, true);
       if (this.level === 0) {
-        this.addReindentedOutput(0, ansi.bold(`[ RUN      ] \`${ansi.italic(this.test.label)}\``) + `${locStr}`);
+        this.addReindentedOutput(0, ansi.bold(`[ RUN      ] \`${ansi.italic(this.test.id)}\``) + `${locStr}`);
       } else {
-        this.addReindentedOutput(-1, ansi.dim('├') + '`' + ansi.italic(this.test.label) + '`' + locStr);
+        this.addReindentedOutput(-1, ansi.dim('├') + '`' + ansi.italic(this.test.id) + '`' + locStr);
       }
     }
   }
@@ -205,7 +205,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
       const d = this._duration ? ansi.dim(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
 
       if (this.level === 0) {
-        this.addReindentedOutput(0, `${this.coloredResult()} \`${ansi.italic(this.test.label)}\`` + `${d}`, '');
+        this.addReindentedOutput(0, `${this.coloredResult()} \`${ansi.italic(this.test.id)}\`` + `${d}`, '');
       }
     }
   }

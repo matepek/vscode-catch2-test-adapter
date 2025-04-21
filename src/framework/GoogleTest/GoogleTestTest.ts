@@ -9,7 +9,7 @@ export class GoogleTestTest extends AbstractTest {
     parent: TestItemParent,
     testNameAsId: string,
     testName: string,
-    suiteName: string,
+    isSkipped: boolean,
     typeParam: string | undefined,
     valueParam: string | undefined,
     file: string | undefined,
@@ -19,10 +19,10 @@ export class GoogleTestTest extends AbstractTest {
       executable,
       parent,
       testNameAsId,
-      GoogleTestTest.calcLabel(testName),
+      testName,
       file,
       line,
-      GoogleTestTest.isSkipped(testName, suiteName),
+      isSkipped,
       undefined,
       AbstractTest.calcDescription(undefined, typeParam, valueParam, undefined),
       [],
@@ -32,27 +32,27 @@ export class GoogleTestTest extends AbstractTest {
 
   update2(
     testName: string,
-    suiteName: string,
+    isSkipped: boolean,
     file: string | undefined,
     line: string | undefined,
     typeParam: string | undefined,
     valueParam: string | undefined,
   ): void {
     this.update(
-      GoogleTestTest.calcLabel(testName),
+      testName,
       file,
       line,
-      GoogleTestTest.isSkipped(testName, suiteName),
+      isSkipped,
       AbstractTest.calcDescription(undefined, typeParam, valueParam, undefined),
       [],
     );
   }
 
-  private static calcLabel(testName: string): string {
-    return testName.startsWith('DISABLED_') ? testName.substr(9) : testName;
+  public static calcLabel(testName: string): string {
+    return testName.startsWith('DISABLED_') ? testName.substring(9) : testName;
   }
 
-  private static isSkipped(testName: string, suiteName: string): boolean {
+  public static isSkipped(testName: string, suiteName: string): boolean {
     return suiteName.startsWith('DISABLED_') || testName.startsWith('DISABLED_');
   }
 }

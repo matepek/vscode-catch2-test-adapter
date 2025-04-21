@@ -40,15 +40,16 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
     }
   }
 
-  private readonly _createAndAddTest = (testName: string): Promise<GoogleBenchmarkTest> => {
+  private readonly _createAndAddTest = (testId: string): Promise<GoogleBenchmarkTest> => {
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
-      testName,
+      testId,
       undefined,
       undefined,
       [],
       undefined,
-      (parent: TestItemParent) => new GoogleBenchmarkTest(this, parent, testName, this.shared.failIfExceedsLimitNs),
+      (parent: TestItemParent, testName: string | undefined) =>
+        new GoogleBenchmarkTest(this, parent, testId, testName ?? testId, this.shared.failIfExceedsLimitNs),
       (test: GoogleBenchmarkTest) => test.update2(this.shared.failIfExceedsLimitNs),
     );
   };

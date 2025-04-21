@@ -196,7 +196,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     lineInFile: string | undefined,
     tags: string[], // in case of google test it is the TestCase
     _description: string | undefined, // currently we don't use it for subtree creation
-    createTest: (parent: TestItemParent) => TestT,
+    createTest: (parent: TestItemParent, testName: string | undefined) => TestT,
     updateTest: (test: TestT) => void,
   ): Promise<TestT> {
     this.shared.log.info('testGrouping', { testId, resolvedFile, tags, testGrouping });
@@ -221,6 +221,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     // undefined means root
     let itemOfLevel: vscode.TestItem | undefined = undefined;
+    let testName: string | undefined = undefined;
 
     try {
       const groupByTagRegexOrRegex = async (
@@ -292,6 +293,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
       await testGroupingForEach(testGrouping, {
         groupByLabel: async (g: GroupByLabel): Promise<void> => {
+          if (g.testName) testName = g.testName;
           const label = g.label ?? '${filename}';
           const id = label;
           const description = g.description ?? '${relDirpath}${osPathSep}';
@@ -425,7 +427,10 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       this._addTest(test.id, test);
       return test;
     } else {
-      const test = createTest(itemOfLevel);
+      if (testName) {
+        testName = await this.resolveText(testName, ...varsToResolve);
+      }
+      const test = createTest(itemOfLevel, testName);
       this._addTest(test.id, test);
       return test;
     }

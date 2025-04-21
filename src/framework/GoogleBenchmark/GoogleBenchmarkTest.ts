@@ -8,13 +8,14 @@ export class GoogleBenchmarkTest extends AbstractTest {
     executable: AbstractExecutable,
     parent: TestItemParent,
     testNameAsId: string,
+    testName: string,
     public failIfExceedsLimitNs: number | undefined,
   ) {
     super(
       executable,
       parent,
       testNameAsId,
-      testNameAsId,
+      testName,
       undefined,
       undefined,
       false,

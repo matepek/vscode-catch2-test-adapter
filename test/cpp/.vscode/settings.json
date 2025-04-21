@@ -2,25 +2,26 @@
     "testMate.cpp.test.advancedExecutables": [
         {
             "pattern": "build/**/gtest*.exe",
-            "testGrouping": {
-                "groupByExecutable": {
-                    "groupByTags": {
-                        "groupByLabel": {
-                            "label": "${testName`(te(st))\\d+`$2`}",
-                            "groupByLabel": {
-                                "label": "${testName`((te)st)\\d+`$2`}"
-                            }
-                        }
-                    },
-                },
-            }
+            // "testGrouping": {
+            //     "groupByExecutable": {
+            //         "groupByTags": {
+            //             "groupByLabel": {
+            //                 "label": "${testName`(te(st))\\d+`$2`}",
+            //                 "groupByLabel": {
+            //                     "label": "${testName`((te)st)\\d+`$2`}"
+            //                 }
+            //             }
+            //         },
+            //     },
+            // }
         },
         {
             "pattern": "build/**/suite*.exe",
             "testGrouping": {
                 "groupByExecutable": {
                     "groupByLabel": {
-                        "label": "${testName`(.+) - (.*)`$1`}"
+                        "label": "${testName`(.+) - (.*)`$1`}",
+                        "testName": "${testName`(.+) - (.*)`$2`}"
                     },
                 },
             },
