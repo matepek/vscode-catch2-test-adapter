@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.14.1]
+
 ### Added
 
 - (experimental) `groupByLabel`.`testName` to rename tests
