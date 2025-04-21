@@ -10,6 +10,7 @@ import { ExecutableRunResultValue, RunningExecutable } from '../RunningExecutabl
 import { promisify } from 'util';
 import { Version, getAbsolutePath, CancellationToken, reindentStr, parseLine, getModiTime } from '../Util';
 import {
+  createRegexReplaceForStringVariable,
   createPythonIndexerForPathVariable,
   resolveAllAsync,
   ResolveRuleAsync,
@@ -212,8 +213,10 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     const varsToResolve = [
       tagsResolveRule,
-      createPythonIndexerForPathVariable('sourceRelPath', sourceRelPath),
       createPythonIndexerForPathVariable('sourceAbsPath', resolvedFile ? resolvedFile : ''),
+      createPythonIndexerForPathVariable('sourceRelPath', sourceRelPath),
+      createRegexReplaceForStringVariable(this.log, 'sourceRelPath', sourceRelPath), // TODO: add to documentation, regex
+      createRegexReplaceForStringVariable(this.log, 'testName', testId), // TODO: add to documentation, regex
     ];
 
     // undefined means root

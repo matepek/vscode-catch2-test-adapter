@@ -1,4 +1,5 @@
 import * as pathlib from 'path';
+import { Logger } from '../Logger';
 
 ///
 
@@ -262,7 +263,7 @@ export async function resolveAllAsync<T>(
   else return resolveAllAsync(resolved, varValue, strictAllowed, availableRecursionCount - 1);
 }
 
-export const PythonIndexerRegexStr = '(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])';
+const PythonIndexerRegexStr = '(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])';
 
 export function processArrayWithPythonIndexer<T>(arr: readonly T[], match: RegExpMatchArray): T[] {
   if (match[1]) {
@@ -314,6 +315,36 @@ export function createPythonIndexerForPathVariable(varName: string, pathStr: str
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (r as any)._pathStr = pathStr;
+  return r;
+}
+
+const RegexExpression = '`([^`]+)`(?:([^`]+)`)?';
+
+function processRegexReplace(log: Logger, value: string, match: RegExpMatchArray): string {
+  const regex = new RegExp(match[1]);
+  if (match[2]) {
+    const replaced = value.replace(regex, match[2]);
+    log.debug('resolved', value, replaced);
+    return replaced;
+  } else {
+    const m = value.match(regex);
+    if (m) {
+      log.debug('resolved', value, m[0]);
+      return m[0];
+    } else {
+      log.info('no match for regex variable resolution', value, match[0], match[1]);
+      return value;
+    }
+  }
+}
+
+export function createRegexReplaceForStringVariable(log: Logger, varName: string, value: string): ResolveRegexRule {
+  const resolve = new RegExp('\\$\\{' + varName + RegexExpression + '?\\}');
+
+  const r: ResolveRegexRule = {
+    resolve,
+    rule: (m: RegExpMatchArray): string => processRegexReplace(log, value, m),
+  };
   return r;
 }
 

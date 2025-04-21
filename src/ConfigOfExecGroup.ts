@@ -9,6 +9,7 @@ import {
   createPythonIndexerForStringVariable,
   ResolveRuleAsync,
   resolveAllAsync,
+  createRegexReplaceForStringVariable,
 } from './util/ResolveRule';
 import { ExecutableFactory } from './framework/ExecutableFactory';
 import { WorkspaceShared } from './WorkspaceShared';
@@ -330,7 +331,9 @@ export class ConfigOfExecGroup implements vscode.Disposable {
         { resolve: '${filename}', rule: filename }, // redundant but might faster
         { resolve: '${relDirpath}', rule: relDirpath }, // redundant but might faster
         createPythonIndexerForStringVariable('filename', filename, '.', '.'),
+        createRegexReplaceForStringVariable(this._shared.log, 'filename', filename),
         createPythonIndexerForPathVariable('relPath', relPath),
+        createRegexReplaceForStringVariable(this._shared.log, 'relPath', relPath),
         createPythonIndexerForPathVariable('absPath', filePath),
         createPythonIndexerForPathVariable('relDirpath', relDirpath),
         createPythonIndexerForPathVariable('absDirpath', pathlib.dirname(filePath)),

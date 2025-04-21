@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- (experimental) regex resolution for a couple of variables:
+
+  - `filename`
+  - `relPath`
+  - `absPath`
+  - `testName`
+  - `sourceRelPath`
+
+  Examples:
+
+  ```txt
+  ${filename`(f|c)at`} -> will result in two subgroups 'fat' and 'cat'
+  ${filename`useless_prefix(captured)useless_suffix`$1`} -> will result in subgroup 'captured'
+  ```
+
 ## [4.14.0] - 2025-04-20
 
 ### Added
