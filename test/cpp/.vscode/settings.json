@@ -15,17 +15,26 @@
             //     },
             // }
         },
-        {
-            "pattern": "build/**/suite*.exe",
-            "testGrouping": {
-                "groupByExecutable": {
-                    "groupByLabel": {
-                        "label": "${testName`(.+) - (.*)`$1`}",
-                        "testName": "${testName`(.+) - (.*)`$2`}"
-                    },
-                },
-            },
-        }
+        // {
+        //     "pattern": "build/**/suite*.exe",
+        //     "testGrouping": {
+        //         "groupByExecutable": {
+        //             "groupByLabel": {
+        //                 "label": "${testName`(.+) - (.*)`$1`}",
+        //                 "testName": "${testName`(.+) - (.*)`$2`}"
+        //             },
+        //         },
+        //     },
+        // },
+        // {
+        //     "pattern": "build/*.exe",
+        //     // "testGrouping": {
+        //     //     "groupByExecutable": {
+        //     //         "groupBySplittedTestName": {
+        //     //         },
+        //     //     },
+        //     // },
+        // }
     ],
     "files.exclude": {
         "**/sub/**": false,

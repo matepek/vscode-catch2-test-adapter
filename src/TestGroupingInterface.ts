@@ -17,6 +17,10 @@ export interface GroupBySource extends TestGroupingConfig {
   groupUngroupedTo?: string;
 }
 
+export interface GroupBySplittedTestName extends TestGroupingConfig {
+  splitBy?: string;
+}
+
 export interface GroupByTags extends TestGroupingConfig {
   tags?: string[][];
 
@@ -43,6 +47,7 @@ export type TestGroupingType =
   | 'groupByLabel'
   | 'groupByExecutable'
   | 'groupBySource'
+  | 'groupBySplittedTestName'
   | 'groupByTags'
   | 'groupByTagRegex'
   | 'groupByRegex';
@@ -53,6 +58,8 @@ export interface TestGroupingConfig extends Partial<Record<TestGroupingType, Tes
   groupByExecutable?: GroupByExecutable;
 
   groupBySource?: GroupBySource;
+
+  groupBySplittedTestName?: GroupBySplittedTestName;
 
   groupByTags?: GroupByTags;
 
@@ -76,6 +83,9 @@ export function* testGroupIterator(
     } else if (testGrouping.groupBySource) {
       testGrouping = testGrouping.groupBySource;
       yield ['groupBySource', testGrouping];
+    } else if (testGrouping.groupBySplittedTestName) {
+      testGrouping = testGrouping.groupBySplittedTestName;
+      yield ['groupBySource', testGrouping];
     } else if (testGrouping.groupByTags) {
       testGrouping = testGrouping.groupByTags;
       yield ['groupByTags', testGrouping];
@@ -97,6 +107,7 @@ export async function testGroupingForEach(
     groupByLabel: (g: GroupByLabel) => Promise<void>;
     groupByExecutable: (g: GroupByExecutable) => Promise<void>;
     groupBySource: (g: GroupBySource) => Promise<void>;
+    groupBySplittedTestName: (g: GroupBySplittedTestName) => Promise<void>;
     groupByTags: (g: GroupByTags) => Promise<void>;
     groupByTagRegex: (g: GroupByTagRegex) => Promise<void>;
     groupByRegex: (g: GroupByRegex) => Promise<void>;
@@ -112,6 +123,10 @@ export async function testGroupingForEach(
     } else if (testGrouping.groupBySource) {
       testGrouping = testGrouping.groupBySource;
       await callbacks.groupBySource(testGrouping);
+    } else if (testGrouping.groupBySplittedTestName) {
+      testGrouping = testGrouping.groupBySplittedTestName;
+      await callbacks.groupBySplittedTestName(testGrouping);
+      return; // because this should be a leaf
     } else if (testGrouping.groupByTags) {
       testGrouping = testGrouping.groupByTags;
       await callbacks.groupByTags(testGrouping);

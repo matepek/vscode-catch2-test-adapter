@@ -25,6 +25,7 @@ import {
   GroupBySource,
   GroupByTags,
   GroupByLabel,
+  GroupBySplittedTestName,
 } from '../TestGroupingInterface';
 import { isSpawnBusyError } from '../util/FSWrapper';
 import { TestResultBuilder } from '../TestResultBuilder';
@@ -352,6 +353,27 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
               g.groupUngroupedTo,
               undefined,
               varsToResolve,
+            );
+          }
+        },
+        groupBySplittedTestName: async (g: GroupBySplittedTestName): Promise<void> => {
+          let splitBy: string | RegExp = g.splitBy ?? '.';
+          splitBy = splitBy.startsWith('`') ? new RegExp(splitBy.substring(1)) : splitBy;
+          const parts = testId.split(splitBy);
+          this.log.debug('groupBySplittedTestName', splitBy, parts);
+          testName = parts.pop();
+          if (testName === undefined) {
+            throw Error(`assert, we always shou.ld have at least 1 part`);
+          }
+          for (const partAsLabel of parts) {
+            itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
+              itemOfLevel,
+              undefined,
+              partAsLabel,
+              undefined,
+              varsToResolve,
+              undefined,
+              undefined,
             );
           }
         },
