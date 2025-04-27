@@ -490,6 +490,9 @@
                       "groupBySource": {
                         "type": "object"
                       },
+                      "groupBySplittedTestName": {
+                        "type": "object"
+                      },
                       "groupByTags": {
                         "type": "object"
                       },
@@ -528,6 +531,9 @@
                       "groupBySource": {
                         "type": "object"
                       },
+                      "groupBySplittedTestName": {
+                        "type": "object"
+                      },
                       "groupByTags": {
                         "type": "object"
                       },
@@ -536,6 +542,17 @@
                       },
                       "groupByRegex": {
                         "type": "object"
+                      }
+                    }
+                  },
+                  "groupBySplittedTestName": {
+                    "markdownDescription": "Groups the tests by the parts of the test name splitted by '.' or the given string or regex. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "splitBy": {
+                        "markdownDescription": "string or if starts with '`' then a regex to split the test name",
+                        "type": "string"
                       }
                     }
                   },
@@ -571,6 +588,9 @@
                         "type": "object"
                       },
                       "groupBySource": {
+                        "type": "object"
+                      },
+                      "groupBySplittedTestName": {
                         "type": "object"
                       },
                       "groupByTags": {
@@ -615,6 +635,9 @@
                         "type": "object"
                       },
                       "groupBySource": {
+                        "type": "object"
+                      },
+                      "groupBySplittedTestName": {
                         "type": "object"
                       },
                       "groupByTags": {
@@ -662,6 +685,9 @@
                         "type": "object"
                       },
                       "groupBySource": {
+                        "type": "object"
+                      },
+                      "groupBySplittedTestName": {
                         "type": "object"
                       },
                       "groupByTags": {
@@ -776,6 +802,9 @@
                           "groupBySource": {
                             "type": "object"
                           },
+                          "groupBySplittedTestName": {
+                            "type": "object"
+                          },
                           "groupByTags": {
                             "type": "object"
                           },
@@ -814,6 +843,9 @@
                           "groupBySource": {
                             "type": "object"
                           },
+                          "groupBySplittedTestName": {
+                            "type": "object"
+                          },
                           "groupByTags": {
                             "type": "object"
                           },
@@ -822,6 +854,17 @@
                           },
                           "groupByRegex": {
                             "type": "object"
+                          }
+                        }
+                      },
+                      "groupBySplittedTestName": {
+                        "markdownDescription": "Groups the tests by the parts of the test name splitted by '.' or the given string or regex. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "splitBy": {
+                            "markdownDescription": "string or if starts with '`' then a regex to split the test name",
+                            "type": "string"
                           }
                         }
                       },
@@ -857,6 +900,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {
@@ -901,6 +947,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {
@@ -948,6 +997,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {
@@ -1049,6 +1101,9 @@
                           "groupBySource": {
                             "type": "object"
                           },
+                          "groupBySplittedTestName": {
+                            "type": "object"
+                          },
                           "groupByTags": {
                             "type": "object"
                           },
@@ -1087,6 +1142,9 @@
                           "groupBySource": {
                             "type": "object"
                           },
+                          "groupBySplittedTestName": {
+                            "type": "object"
+                          },
                           "groupByTags": {
                             "type": "object"
                           },
@@ -1095,6 +1153,17 @@
                           },
                           "groupByRegex": {
                             "type": "object"
+                          }
+                        }
+                      },
+                      "groupBySplittedTestName": {
+                        "markdownDescription": "Groups the tests by the parts of the test name splitted by '.' or the given string or regex. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "splitBy": {
+                            "markdownDescription": "string or if starts with '`' then a regex to split the test name",
+                            "type": "string"
                           }
                         }
                       },
@@ -1130,6 +1199,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {
@@ -1174,6 +1246,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {
@@ -1221,6 +1296,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {
@@ -1322,6 +1400,9 @@
                           "groupBySource": {
                             "type": "object"
                           },
+                          "groupBySplittedTestName": {
+                            "type": "object"
+                          },
                           "groupByTags": {
                             "type": "object"
                           },
@@ -1360,6 +1441,9 @@
                           "groupBySource": {
                             "type": "object"
                           },
+                          "groupBySplittedTestName": {
+                            "type": "object"
+                          },
                           "groupByTags": {
                             "type": "object"
                           },
@@ -1368,6 +1452,17 @@
                           },
                           "groupByRegex": {
                             "type": "object"
+                          }
+                        }
+                      },
+                      "groupBySplittedTestName": {
+                        "markdownDescription": "Groups the tests by the parts of the test name splitted by '.' or the given string or regex. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "splitBy": {
+                            "markdownDescription": "string or if starts with '`' then a regex to split the test name",
+                            "type": "string"
                           }
                         }
                       },
@@ -1403,6 +1498,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {
@@ -1447,6 +1545,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {
@@ -1494,6 +1595,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {
@@ -1595,6 +1699,9 @@
                           "groupBySource": {
                             "type": "object"
                           },
+                          "groupBySplittedTestName": {
+                            "type": "object"
+                          },
                           "groupByTags": {
                             "type": "object"
                           },
@@ -1633,6 +1740,9 @@
                           "groupBySource": {
                             "type": "object"
                           },
+                          "groupBySplittedTestName": {
+                            "type": "object"
+                          },
                           "groupByTags": {
                             "type": "object"
                           },
@@ -1641,6 +1751,17 @@
                           },
                           "groupByRegex": {
                             "type": "object"
+                          }
+                        }
+                      },
+                      "groupBySplittedTestName": {
+                        "markdownDescription": "Groups the tests by the parts of the test name splitted by '.' or the given string or regex. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "splitBy": {
+                            "markdownDescription": "string or if starts with '`' then a regex to split the test name",
+                            "type": "string"
                           }
                         }
                       },
@@ -1676,6 +1797,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {
@@ -1720,6 +1844,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {
@@ -1767,6 +1894,9 @@
                             "type": "object"
                           },
                           "groupBySource": {
+                            "type": "object"
+                          },
+                          "groupBySplittedTestName": {
                             "type": "object"
                           },
                           "groupByTags": {

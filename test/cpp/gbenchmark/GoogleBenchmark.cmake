@@ -3,6 +3,7 @@ include(FetchContent)
 set(HAVE_STD_REGEX ON)
 set(HAVE_POSIX_REGEX ON)
 set(HAVE_STEADY_CLOCK ON)
+set(BENCHMARK_ENABLE_TESTING OFF)
 
 FetchContent_Declare(googlebenchmark
                      GIT_REPOSITORY https://github.com/google/benchmark.git
