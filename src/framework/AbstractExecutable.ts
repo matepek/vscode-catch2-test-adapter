@@ -328,6 +328,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
           // special item handling for exec
           this._execItem.setItem(itemOfLevel);
+          this.shared.testController.setDirectExec(itemOfLevel, this);
         },
         groupBySource: async (g: GroupBySource): Promise<void> => {
           this._updateVarsWithTags(g, tags, tagsResolveRule);
@@ -630,7 +631,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       } else testsToRunFinal.push(t);
     }
 
-    if (testsToRunFinal.length == 0) return;
+    if (testsToRunFinal.length == 0 && !testsToRun.implicitAll) return;
 
     try {
       await this.runTasks('beforeEach', taskPool, testRun.token);
@@ -1014,6 +1015,7 @@ class ExecutableGroup {
 export class TestsToRun {
   readonly direct: AbstractTest[] = []; // test is drectly included, should be run even if it is skipped
   readonly parent: AbstractTest[] = []; // tests included because one of the ascendant was directly included
+  implicitAll: boolean = false;
 
   *[Symbol.iterator](): Iterator<AbstractTest> {
     for (const i of this.direct) yield i;

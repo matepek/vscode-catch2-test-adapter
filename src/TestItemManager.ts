@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { AbstractTest } from './framework/AbstractTest';
 import { parseLine } from './Util';
+import { AbstractExecutable } from './framework/AbstractExecutable';
 
 ///
 
@@ -109,5 +110,16 @@ export class TestItemManager {
         yield cc;
       }
     }
+  }
+
+  // maps only if the TestItem explicitly represents the executable. relates to groupByExecuable
+  private readonly testItem2ExecDirectly = new WeakMap<vscode.TestItem, AbstractExecutable>();
+
+  setDirectExec(item: vscode.TestItem, exec: AbstractExecutable): void {
+    this.testItem2ExecDirectly.set(item, exec);
+  }
+
+  getDirectExec(item: vscode.TestItem): AbstractExecutable | undefined {
+    return this.testItem2ExecDirectly.get(item);
   }
 }
