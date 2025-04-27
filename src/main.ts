@@ -103,6 +103,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (request.exclude?.includes(item)) return;
 
       const test = testItemManager.map(item);
+      const directExec = test ? undefined : testItemManager.getDirectExec(item);
 
       if (test) {
         const executable = test.exec;
@@ -118,6 +119,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           executables.set(executable, tests);
         }
         tests[type].push(test);
+      } else if (directExec && directExec.shared.enableRunExecutableTestsImplicitly) {
+        const executable = directExec;
+        const manager = workspace2manager.get(executable.shared.workspaceFolder)!;
+        let executables = managers.get(manager);
+        if (!executables) {
+          executables = new Map<AbstractExecutable, TestsToRun>();
+          managers.set(manager, executables);
+        }
+        let tests = executables.get(executable);
+        if (!tests) {
+          tests = new TestsToRun();
+          executables.set(executable, tests);
+        }
+        tests.implicitAll = true;
       } else if (item.children.size) {
         item.children.forEach(enumerator('parent'));
       }
