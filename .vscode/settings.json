@@ -116,7 +116,16 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "todo-tree.general.tags": ["BUG", "HACK", "FIXME", "TODO", "TODO:future", "TODO:nice", "TODO:release", "XXX"],
+  "todo-tree.general.tags": [
+    "BUG",
+    "HACK",
+    "FIXME",
+    "TODO",
+    "TODO:future",
+    "TODO:nice",
+    "TODO:release",
+    "XXX"
+  ],
   "todo-tree.highlights.customHighlight": {
     "TODO:future": {
       "type": "none"
@@ -138,5 +147,7 @@
     "**/bower_components": true,
     "**/*.code-search": true,
     "/package-lock.json": true
-  }
+  },
+  "cmake.sourceDirectory": "/Users/matepek/repo/vscode-catch2-test-adapter/test/cpp",
+  "testMate.cpp.test.executables": "test/cpp/build/**/*{test,Test,TEST}*"
 }

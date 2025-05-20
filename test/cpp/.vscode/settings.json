@@ -26,15 +26,15 @@
         //         },
         //     },
         // },
-        {
-            "pattern": "build/*.exe",
-            // "testGrouping": {
-            //     "groupByExecutable": {
-            //         "groupBySplittedTestName": {
-            //         },
-            //     },
-            // },
-        }
+        // {
+        //     "pattern": "build/*.exe",
+        //     // "testGrouping": {
+        //     //     "groupByExecutable": {
+        //     //         "groupBySplittedTestName": {
+        //     //         },
+        //     //     },
+        //     // },
+        // }
     ],
     "files.exclude": {
         "**/sub/**": false,
