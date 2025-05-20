@@ -65,6 +65,10 @@ export class SharedVarOfExec {
     return this._frameworkSpecific.failIfExceedsLimitNs;
   }
 
+  get enableRunExecutableTestsImplicitly(): boolean {
+    return true; //TODO
+  }
+
   /// accessors for shared
 
   readonly log = this.shared.log;

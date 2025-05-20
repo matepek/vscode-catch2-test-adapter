@@ -511,6 +511,14 @@ export class WorkspaceManager implements vscode.Disposable {
         });
       });
 
+      vscode.debug.onDidReceiveDebugSessionCustomEvent((_e: vscode.DebugSessionCustomEvent) => {
+        this._shared.log.info('TODO');
+      });
+
+      vscode.debug.onDidChangeActiveDebugSession((_e: vscode.DebugSession | undefined) => {
+        this._shared.log.info('TODO');
+      });
+
       const terminated = new Promise<void>(resolve => {
         vscode.debug.onDidTerminateDebugSession((session: vscode.DebugSession) => {
           const session2 = session as unknown as { configuration: { [prop: string]: string } };
