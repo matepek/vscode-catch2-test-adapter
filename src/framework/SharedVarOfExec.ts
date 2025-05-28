@@ -61,6 +61,10 @@ export class SharedVarOfExec {
     return this._frameworkSpecific['debug.enableOutputColouring'] === true;
   }
 
+  get showStderrArrows(): boolean {
+    return this.shared.showStderrArrows;
+  }
+
   get failIfExceedsLimitNs(): number | undefined {
     return this._frameworkSpecific.failIfExceedsLimitNs;
   }

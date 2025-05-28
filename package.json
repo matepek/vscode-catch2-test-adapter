@@ -1979,6 +1979,12 @@
           "default": 30000,
           "minimum": 1
         },
+        "testMate.cpp.test.showStderrArrows": {
+          "markdownDescription": "Controls whether to show arrow indicators (`⬇ std::cerr:` and `⬆ std::cerr`) when displaying stderr output in test runs.",
+          "scope": "resource",
+          "type": "boolean",
+          "default": true
+        },
         "testMate.cpp.discovery.loadOnStartup": {
           "markdownDescription": "If true, the extension will try to load all the tests after the startup. Otherwise the user has to click on the Test icon on the sidebar to trigger the process.",
           "scope": "window",

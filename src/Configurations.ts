@@ -49,6 +49,7 @@ export type Config =
   | 'log.logfile'
   | 'log.logSentry'
   | 'log.userId'
+  | 'test.showStderrArrows'
   | 'gtest.treatGmockWarningAs'
   | 'gtest.gmockVerbose';
 
@@ -450,6 +451,10 @@ export class Configurations {
 
   getGoogleTestGMockVerbose(): 'default' | 'info' | 'warning' | 'error' {
     return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
+  }
+
+  getShowStderrArrows(): boolean {
+    return this._getD<boolean>('test.showStderrArrows', true);
   }
 
   getExecutableConfigs(shared: WorkspaceShared): ConfigOfExecGroup[] {
