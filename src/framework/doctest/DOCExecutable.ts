@@ -498,7 +498,8 @@ class TestCaseTagProcessor extends TagProcessorBase {
       let result: undefined | 'passed' | 'failed' = undefined;
 
       if (tag.attribs.test_case_success !== undefined) {
-        result = tag.attribs.test_case_success === 'true' ? 'passed' : 'failed';
+        if (tag.attribs.test_case_success === 'true') this.builder.passed(true);
+        else this.builder.failed();
       } else {
         const mayFail = this.attribs.may_fail === 'true';
         const shouldFail = this.attribs.should_fail === 'true';
@@ -518,6 +519,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
           if (expectedFailures !== failures || hasException || hasTimedOut) result = 'failed';
           else result = 'passed';
         }
+        this.builder[result]();
       }
 
       // if has no modifier
@@ -535,8 +537,6 @@ class TestCaseTagProcessor extends TagProcessorBase {
           resultTag: tag,
         });
       }
-
-      this.builder[result]();
 
       // if a subtest is run then we don't expect all the sections to arrive so we assume the missing ones weren't run.
       if (this.runInfo.childrenToRun.length !== 1 || !(this.runInfo.childrenToRun[0] instanceof SubTest)) {
@@ -619,9 +619,11 @@ class ExpressionProcessor implements XmlTagProcessor {
 
   private original?: string;
   private expanded?: string;
-  private other = new Map<string, string>();
+  private messages: string[] = [];
+  private unknowns = new Map<string, string>();
 
   ontext(dataTrimmed: string, parentTag: XmlTag): void {
+    // https://github.com/doctest/doctest/blob/1da23a3e8119ec5cce4f9388e91b065e20bf06f5/doctest/doctest.h#L5628-L5646
     switch (parentTag.name) {
       case 'Original':
         this.original = dataTrimmed;
@@ -629,8 +631,16 @@ class ExpressionProcessor implements XmlTagProcessor {
       case 'Expanded':
         this.expanded = dataTrimmed;
         break;
+      case 'Exception':
+      case 'ExpectedException':
+      case 'ExpectedExceptionString':
+        this.messages.push(parentTag.name + ': ' + dataTrimmed);
+        break;
+      case 'Info':
+        this.messages.push(dataTrimmed);
+        break;
       default:
-        this.other.set(parentTag.name, dataTrimmed);
+        this.unknowns.set(parentTag.name, dataTrimmed);
         break;
     }
   }
@@ -638,9 +648,10 @@ class ExpressionProcessor implements XmlTagProcessor {
   end(): void {
     assert(this.original);
 
-    if (this.other.size) {
-      if (this.expanded) this._shared.log.errorS('unknown doctest expression with expanded', this.expanded, this.other);
-      const exps = [...this.other.entries()].map(e => `${e[0]}: ${e[1]}`);
+    if (this.unknowns.size) {
+      if (this.expanded)
+        this._shared.log.warnS('unknown doctest expression with expanded', this.expanded, this.unknowns);
+      const exps = [...this.unknowns.entries()].map(e => `${e[0]}: ${e[1]}`);
       const first = exps.shift()!;
       this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, first, ...exps);
     } else if (this.expanded) {
@@ -650,6 +661,7 @@ class ExpressionProcessor implements XmlTagProcessor {
         this.original!,
         this.expanded!,
         this.attribs.type,
+        ...this.messages,
       );
     } else {
       this._shared.log.errorS('unhandled doctest Expression', this);
@@ -684,14 +696,20 @@ class MessageProcessor implements XmlTagProcessor {
   end(): void {
     assert(this.text !== undefined);
 
-    if (this.attribs.type === 'FATAL ERROR') {
-      this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, this.attribs.type, this.text!);
+    if (this.attribs.type === 'FATAL ERROR' || this.attribs.type === 'ERROR') {
+      this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, 'failed', this.text);
       this.caseData.hasFailedExpression = true;
       this.builder.failed();
     } else if (this.attribs.type === 'WARNING') {
-      this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, this.attribs.type, this.text!);
+      this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, 'warning', this.text);
     } else {
       debugBreak();
+      this.builder.addMessageWithOutput(
+        this.attribs.filename,
+        this.attribs.line,
+        this.attribs.type,
+        '!! Unhandled case, contact: https://github.com/matepek/vscode-catch2-test-adapter/issues; ' + this.text,
+      );
       this._shared.log.errorS('doctest: unexpected message type', this.attribs);
     }
   }

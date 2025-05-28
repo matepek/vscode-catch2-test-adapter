@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.16.0]
+
+### Fixed
+
+- improved test outputs
+- fixed doctest testing framework processing
+  [related1](https://github.com/matepek/vscode-catch2-test-adapter/issues/473)
+  [related2](https://github.com/matepek/vscode-catch2-test-adapter/issues/474)
+
 ## [4.15.0] - 2025-04-27
 
 ### Added

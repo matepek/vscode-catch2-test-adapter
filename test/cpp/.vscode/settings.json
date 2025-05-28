@@ -1,7 +1,7 @@
 {
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/**/gtest*.exe",
+            "pattern": "build/**/doc*.exe",
             // "testGrouping": {
             //     "groupByExecutable": {
             //         "groupByTags": {

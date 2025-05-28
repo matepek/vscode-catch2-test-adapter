@@ -39,8 +39,8 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     }
   }
 
-  passed(): void {
-    if (this._result === undefined) this._result = 'passed';
+  passed(force: boolean = false): void {
+    if (this._result === undefined || force) this._result = 'passed';
   }
 
   failed(): void {
@@ -133,15 +133,31 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     line: string | undefined,
     original: string,
     expanded: string,
-    _type: string | undefined,
+    type: string | undefined,
+    ...message: string[]
   ): void {
     file = this.test.exec.findSourceFilePath(file);
-    this.addMessage(file, line, 'Expanded: `' + expanded + '`');
+    if (original !== expanded) {
+      this.addMessage(file, line, '`' + expanded + '`', ...message);
+    } else {
+      this.addMessage(file, line, 'failed', ...message);
+    }
 
     const loc = this.getLocationAtStr(file, line, false);
-    this.addReindentedOutput(1, 'Expression ' + ansi.red('failed') + loc + ':');
-    this.addReindentedOutput(2, '❕Original:  ' + original);
-    this.addReindentedOutput(2, '❗️Expanded:  ' + expanded);
+    if (type === undefined) {
+      this.addReindentedOutput(1, `Expression ${ansi.red('failed')}${loc}:`);
+    } else {
+      this.addReindentedOutput(1, `Expression ${type}(...) ${ansi.red('failed')}${loc}:`);
+    }
+    if (original !== expanded) {
+      this.addReindentedOutput(2, '❕Original:  ' + original);
+      this.addReindentedOutput(2, '❗️Expanded:  ' + expanded);
+    } else {
+      this.addReindentedOutput(2, '❗️Evaluated: ' + expanded);
+    }
+    for (const m of message) {
+      this.addReindentedOutput(2, m);
+    }
   }
 
   addMessageWithOutput(
