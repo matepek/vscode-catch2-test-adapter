@@ -37,6 +37,7 @@ export type Config =
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
   | 'test.testNameLengthLimit'
+  | 'test.stderrDecorator'
   | 'discovery.loadOnStartup'
   | 'discovery.gracePeriodForMissing'
   | 'discovery.runtimeLimit'
@@ -450,6 +451,10 @@ export class Configurations {
 
   getGoogleTestGMockVerbose(): 'default' | 'info' | 'warning' | 'error' {
     return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
+  }
+
+  getStderrDecorator(): boolean {
+    return this._getD<boolean>('test.stderrDecorator', true);
   }
 
   getExecutableConfigs(shared: WorkspaceShared): ConfigOfExecGroup[] {
