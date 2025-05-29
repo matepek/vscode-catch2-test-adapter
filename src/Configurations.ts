@@ -37,6 +37,7 @@ export type Config =
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
   | 'test.testNameLengthLimit'
+  | 'test.stderrDecorator'
   | 'discovery.loadOnStartup'
   | 'discovery.gracePeriodForMissing'
   | 'discovery.runtimeLimit'
@@ -49,7 +50,6 @@ export type Config =
   | 'log.logfile'
   | 'log.logSentry'
   | 'log.userId'
-  | 'test.showStderrArrows'
   | 'gtest.treatGmockWarningAs'
   | 'gtest.gmockVerbose';
 
@@ -453,8 +453,8 @@ export class Configurations {
     return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
-  getShowStderrArrows(): boolean {
-    return this._getD<boolean>('test.showStderrArrows', true);
+  getStderrDecorator(): boolean {
+    return this._getD<boolean>('test.stderrDecorator', true);
   }
 
   getExecutableConfigs(shared: WorkspaceShared): ConfigOfExecGroup[] {

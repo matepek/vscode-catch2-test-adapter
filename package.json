@@ -1979,8 +1979,8 @@
           "default": 30000,
           "minimum": 1
         },
-        "testMate.cpp.test.showStderrArrows": {
-          "markdownDescription": "Controls whether to show arrow indicators (`⬇ std::cerr:` and `⬆ std::cerr`) when displaying stderr output in test runs.",
+        "testMate.cpp.test.stderrDecorator": {
+          "markdownDescription": "Controls whether to show decorators around stderr output (`⬇ std::cerr:` and `⬆ std::cerr`).",
           "scope": "resource",
           "type": "boolean",
           "default": true

@@ -61,8 +61,8 @@ export class SharedVarOfExec {
     return this._frameworkSpecific['debug.enableOutputColouring'] === true;
   }
 
-  get showStderrArrows(): boolean {
-    return this.shared.showStderrArrows;
+  get stderrDecorator(): boolean {
+    return this.shared.stderrDecorator;
   }
 
   get failIfExceedsLimitNs(): number | undefined {
