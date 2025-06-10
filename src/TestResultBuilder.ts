@@ -107,10 +107,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
       parseLine(line, l => (lineSuffix = `:${l + (lineIsZeroBased ? 1 : 0)}`));
       const wp = this.test.exec.shared.workspacePath + '/';
       if (file.startsWith(wp)) {
-        return ansi.dim(' @ ./' + file.substring(wp.length) + lineSuffix);
-      } else {
-        return ansi.dim(` @ ${file}${lineSuffix}`);
+        file = file.substring(wp.length);
       }
+      return ansi.dim(` @ ${file}${lineSuffix}`);
     }
     return '';
   }
