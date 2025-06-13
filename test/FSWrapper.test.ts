@@ -94,8 +94,8 @@ describe('fs.spawn vs FsWrapper.spawnAsync', function () {
     assert.strictEqual(fsRes.signal, null);
     assert.strictEqual(fsRes.status, null);
     assert.strictEqual(fsRes.output, null);
-    assert.strictEqual(fsRes.stdout, null);
-    assert.strictEqual(fsRes.stderr, null);
+    assert.strictEqual(fsRes.stdout, undefined);
+    assert.strictEqual(fsRes.stderr, undefined);
     assert.ok(fsRes.error instanceof Error, fsRes.error);
 
     return spawner.spawnAsync('fnksdlfnlskfdn', [''], {}).then(
