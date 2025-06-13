@@ -71,7 +71,7 @@
     "@types/request-promise": "4.1.51",
     "@types/sinon": "^17.0.4",
     "@types/source-map-support": "^0.5.10",
-    "@types/vscode": "1.82.0",
+    "@types/vscode": "1.92.0",
     "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^2.19.0",
     "bent": "^7.3.12",

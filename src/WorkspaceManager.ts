@@ -530,7 +530,9 @@ export class WorkspaceManager implements vscode.Disposable {
 
       run.started(test.item);
 
-      const debugSessionStarted = await vscode.debug.startDebugging(this.workspaceFolder, debugConfig);
+      const debugSessionStarted = await vscode.debug.startDebugging(this.workspaceFolder, debugConfig, {
+        testRun: run,
+      });
 
       if (debugSessionStarted) {
         this._shared.log.info('debugSessionStarted');
