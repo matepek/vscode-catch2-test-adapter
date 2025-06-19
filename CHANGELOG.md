@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.17.1]
+
+### Changed
+
+- test outputs does not append `./` in case of workspace files
+
 ## [4.17.0] - 2025-06-13
 
 ### Added
