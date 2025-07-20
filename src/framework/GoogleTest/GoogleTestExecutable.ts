@@ -519,7 +519,7 @@ class TestCaseProcessor implements LineProcessor {
 // m[7] == ' bla bla'
 const failureRe = /^((.+)[:(]([0-9]+)\)?)(: )((Failure|EXPECT_CALL|error)(.*))$/;
 type FailureType = 'Failure' | 'EXPECT_CALL' | 'error';
-
+const actualMsgPrefix = '  Actual:';
 ///
 
 class FailureProcessor implements LineProcessor {
@@ -532,6 +532,7 @@ class FailureProcessor implements LineProcessor {
 
   private treatRemainingAsPart: boolean = false;
   private lines: string[] = [];
+  private promotedMsg: string | null = null;
 
   online(line: string): void | false {
     if (this.treatRemainingAsPart) {
@@ -551,6 +552,9 @@ class FailureProcessor implements LineProcessor {
           this.lines.push(line);
         }
       } else {
+        if (line.startsWith(actualMsgPrefix)) {
+          this.promotedMsg = line.trim();
+        }
         this.lines.push(line);
       }
     } else if (acceptedPrefixes.some(prefix => line.startsWith(prefix))) {
@@ -578,7 +582,7 @@ class FailureProcessor implements LineProcessor {
         ...this.lines,
       );
     } else {
-      this.testCaseShared.builder.addMessage(this.file, this.line, `# ${this.fullMsg}:`, ...this.lines);
+      this.testCaseShared.builder.addMessage(this.file, this.line, this.promotedMsg ?? this.fullMsg, ...this.lines);
     }
   }
 }
@@ -587,7 +591,7 @@ const isDecorationEnabled = false;
 
 const acceptedAndDecoratedPrefixes = [
   'Expected:',
-  '  Actual:',
+  actualMsgPrefix,
   'Value of:',
   'Which is:',
   '    Function call:',

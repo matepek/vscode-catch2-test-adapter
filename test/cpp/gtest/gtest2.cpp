@@ -9,6 +9,7 @@
 #include <chrono>
 #include <thread>
 
+#include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
 // static struct X{ X(){
@@ -48,6 +49,16 @@ GTEST_TEST(TestCas3, test5) {
 GTEST_TEST(TestCas3, test6) {
   std::vector<int> v({5, 10});
   ASSERT_THAT(v, ::testing::ElementsAre(5, 10, 15)) << "extra message";
+}
+
+GTEST_TEST(TestExpectThat, Eq) {
+  int one = 1;
+  EXPECT_THAT(one, ::testing::Eq(2));
+}
+
+GTEST_TEST(TestExpectThat, StartsWith) {
+  std::string text = "HelloWorld";
+  EXPECT_THAT(text, ::testing::StartsWith("Hellx"));
 }
 
 // with custom matcher
