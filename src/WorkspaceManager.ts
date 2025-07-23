@@ -418,7 +418,7 @@ export class WorkspaceManager implements vscode.Disposable {
       const configuration = this._getConfiguration(this._shared.log);
 
       const argsArray = await executable.getDebugParams([test], configuration.getDebugBreakOnFailure());
-      setDebugArgs(executable.shared.path, argsArray);
+      setDebugArgs(executable.shared.path, argsArray); // must be before runTasks('before..
 
       const argsArrayFunc = async (): Promise<string[]> => argsArray;
 

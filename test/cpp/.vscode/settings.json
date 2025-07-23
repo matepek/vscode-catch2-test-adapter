@@ -2,6 +2,7 @@
     "testMate.cpp.test.advancedExecutables": [
         {
             "pattern": "build/**/gtest*.exe",
+            "runTask": {"beforeEach": ["echo-testmate"]}
             // "testGrouping": {
             //     "groupByExecutable": {
             //         "groupByTags": {

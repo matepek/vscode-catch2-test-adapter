@@ -28,6 +28,14 @@
             "args": [
                 "Paths:", "${absPathConcatWithSpace}", "${absPathArrayFlat}", "..."
             ],
+        },
+        {
+            "label": "echo-testmate",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "x", "${command:testMate.cmd.get-debug-exec}"
+            ],
         }
     ]
 }

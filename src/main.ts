@@ -312,7 +312,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               .catch(e => {
                 vscode.window.showErrorMessage('Unexpected error from debug: ' + e);
               })
-              .finally(() => (currentDebugArgs = [])),
+              .finally(() => setCurrentDebugVars('', [])),
           );
         }
 
