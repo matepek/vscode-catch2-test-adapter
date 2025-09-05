@@ -618,6 +618,13 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Info', dataTrimmed);
       },
     ],
+    [
+      'Skip',
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        builder.addMessage(parentTag.attribs.filename, parentTag.attribs.line, 'Skip', dataTrimmed);
+        builder.skipped();
+      },
+    ],
   ]);
 }
 
