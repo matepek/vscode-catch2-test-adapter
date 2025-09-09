@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- `waitForBuildProcess` no longer spawns more than one subprocess to get the list of running processes, and is more efficient on Windows
 - `testMate.cmd.get-debug-exec` is cleared after debug is finished.
 
 ## [4.17.2] - 2025-07-20
