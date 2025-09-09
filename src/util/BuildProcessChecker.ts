@@ -15,7 +15,9 @@ export class BuildProcessChecker {
   private _lastChecked = 0;
   private _finishedP = Promise.resolve();
   private _finishedResolver = (): void => {};
-  private _timerId: NodeJS.Timeout | undefined = undefined; // number if have running build process
+  private _timerId: NodeJS.Timeout | undefined = undefined;
+  private _psListInFlight = false;
+  private _pendingRefresh = false;
 
   dispose(): void {
     if (this._timerId) clearInterval(this._timerId);
@@ -41,13 +43,18 @@ export class BuildProcessChecker {
 
     const patternToUse = typeof pattern == 'string' ? RegExp(pattern) : this._defaultPattern;
     this._log.info('Checking running build related processes', patternToUse);
-    this._timerId = global.setInterval(this._refresh.bind(this, patternToUse), this._checkIntervalMillis);
+    this._timerId = setInterval(() => this._refresh(patternToUse), this._checkIntervalMillis);
     this._refresh(patternToUse);
 
     return this._finishedP;
   }
 
   private async _refresh(pattern: RegExp): Promise<void> {
+    if (this._psListInFlight) {
+      this._pendingRefresh = true;
+      return;
+    }
+    this._psListInFlight = true;
     try {
       const allProcesses = await psList();
       const processes = allProcesses.filter((proc: { name: string }) => pattern.test(proc.name));
@@ -70,6 +77,13 @@ export class BuildProcessChecker {
       if (this._timerId) clearInterval(this._timerId);
       this._timerId = undefined;
       this._finishedResolver();
+    } finally {
+      this._psListInFlight = false;
+      if (this._pendingRefresh) {
+        this._pendingRefresh = false;
+        // Immediately retry
+        this._refresh(pattern);
+      }
     }
   }
 }
