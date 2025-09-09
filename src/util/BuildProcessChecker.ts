@@ -1,5 +1,6 @@
+/// <reference types="node" />
 import { Logger } from '../Logger';
-import find_process = require('find-process'); // eslint-disable-line
+import psList from 'ps-list';
 
 ///
 
@@ -48,23 +49,25 @@ export class BuildProcessChecker {
 
   private async _refresh(pattern: RegExp): Promise<void> {
     try {
-      const processes = await find_process('name', pattern);
+      const allProcesses = await psList();
+      const processes = allProcesses.filter((proc: { name: string }) => pattern.test(proc.name));
 
       this._lastChecked = Date.now();
 
       if (processes.length > 0) {
         this._log.info(
-          'Found running build related processes: ' + processes.map(x => JSON.stringify(x, undefined, 0)).join(', '),
+          'Found running build related processes: ' +
+            processes.map((x: { name: string }) => JSON.stringify(x, undefined, 0)).join(', '),
         );
       } else {
         this._log.info('Not found running build related process');
         this._finishedResolver();
-        clearInterval(this._timerId!);
+        if (this._timerId) clearInterval(this._timerId);
         this._timerId = undefined;
       }
     } catch (reason) {
       this._log.exceptionS(reason);
-      clearInterval(this._timerId!);
+      if (this._timerId) clearInterval(this._timerId);
       this._timerId = undefined;
       this._finishedResolver();
     }
