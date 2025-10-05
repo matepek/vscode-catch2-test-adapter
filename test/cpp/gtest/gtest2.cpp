@@ -91,7 +91,7 @@ GTEST_TEST(TestExpectThat, StartsWith) {
 //     ASSERT_THAT(input, containsTokens(expected));
 // }
 
-TEST(Foo, Bar)
+TEST(Threading, cerr)
 {
     std::vector<std::string> t = { "Foo", "Bar", "Baz" };
     for (int i = 0; i < 8; i++) {
@@ -103,4 +103,17 @@ TEST(Foo, Bar)
         }
     }
     EXPECT_FALSE(true);
+}
+
+void Sub1(int n) {
+  EXPECT_FALSE(true);
+}
+
+TEST(Misc, scoped_trace) {
+  {
+    SCOPED_TRACE("A");
+    Sub1(1);
+  }
+  // Now it won't.
+  Sub1(9);
 }

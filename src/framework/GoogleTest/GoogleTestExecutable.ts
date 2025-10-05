@@ -505,6 +505,10 @@ class TestCaseProcessor implements LineProcessor {
       }
     }
 
+    if (line === 'Google Test trace:') {
+      return new TraceInfoProcessor(this.testCaseShared);
+    }
+
     this.testCaseShared.builder.addOutput(1, line);
   }
 }
@@ -654,5 +658,31 @@ class ExpectCallProcessor implements LineProcessor {
     this.testCaseShared.builder.addReindentedOutput(2, ...this.lines);
 
     this.testCaseShared.builder.addMessage(this.file, this.line, this.expected, ...this.actual);
+  }
+}
+
+// // '/.../gtest2.cpp:114: A'
+const _traceInfoRe = /^((.+)[:(]([0-9]+)\)?)(: )(.*)$/;
+
+class TraceInfoProcessor implements LineProcessor {
+  constructor(private readonly testCaseShared: TestCaseSharedData) {}
+
+  private _firstLine = '';
+
+  begin(line: string): void {
+    this._firstLine = line;
+  }
+
+  online(line: string): void | true {
+    const m = _traceInfoRe.exec(line);
+    if (m) {
+      const file = m[2];
+      const lineNo = m[3];
+      const msg = m[5];
+      this.testCaseShared.builder.addMessageWithOutput(file, lineNo, `Trace: '${msg}'`, this._firstLine, line);
+    } else {
+      this.testCaseShared.shared.log.errorS(`unprocessable line: '${line}'`);
+    }
+    return true;
   }
 }
