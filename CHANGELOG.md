@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.17.5]
+
 ### Added
 
 - handling `SCOPED_TRACE` ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/484))
