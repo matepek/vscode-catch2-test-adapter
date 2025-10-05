@@ -927,6 +927,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     if (this.shared.stderrDecorator) {
       testRun.appendOutput(runPrefix + '⬇ std::cerr:\r\n');
     }
+    if (str.startsWith('\n')) str = str.substring(1);
+    if (str.endsWith('\n')) str = str.substring(0, str.length - 1);
     const indented = reindentStr(0, 2, str);
     testRun.appendOutput(indented.map(x => runPrefix + x + '\r\n').join(''));
     if (this.shared.stderrDecorator) {
