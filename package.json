@@ -64,7 +64,7 @@
     "chokidar": "^5.0.0",
     "dotenv": "^17.4.1",
     "find-process": "^2.1.1",
-    "ps-list": "^8.1.1",
+    "ps-list": "^9.0.0",
     "tslib": "^2.8.1",
     "vscode-test-adapter-util": "^0.7.1"
   },
