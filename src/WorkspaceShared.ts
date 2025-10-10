@@ -2,7 +2,7 @@ import { Logger } from './Logger';
 import * as vscode from 'vscode';
 import { TaskPool } from './util/TaskPool';
 import { ResolveRuleAsync } from './util/ResolveRule';
-import { BuildProcessChecker, FindProcessChecker } from './util/BuildProcessChecker';
+import { BuildProcessChecker, FindProcessChecker, PSListProcessChecker } from './util/BuildProcessChecker';
 import { CancellationToken } from './Util';
 import { TestItemManager } from './TestItemManager';
 import { AbstractExecutable } from './framework/AbstractExecutable';
@@ -34,7 +34,12 @@ export class WorkspaceShared {
     public stderrDecorator: boolean,
   ) {
     this.taskPool = new TaskPool(workerMaxNumber);
-    this.buildProcessChecker = new FindProcessChecker(log);
+
+    // https://www.npmjs.com/package/ps-list : "Works on macOS, Linux, and Windows. Windows ARM64 is not supported yet."
+    this.buildProcessChecker =
+      process.platform === 'win32' && process.arch == 'arm64'
+        ? new FindProcessChecker(log)
+        : new PSListProcessChecker(log);
   }
 
   readonly taskPool: TaskPool;
