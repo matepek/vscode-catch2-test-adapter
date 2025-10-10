@@ -866,9 +866,13 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
           for (const taskName of this.shared.runTask[type] || []) {
             const exitCode = await this.shared.executeTask(taskName, this.shared.varToValue, cancellationToken);
 
-            if (exitCode !== undefined) {
-              if (exitCode !== 0) {
-                throw Error(`Task "${taskName}" has returned with exitCode(${exitCode}) != 0.`);
+            if (exitCode !== undefined && exitCode !== 0) {
+              throw Error(`Task "${taskName}" has returned with exitCode(${exitCode}) != 0.`);
+            } else {
+              try {
+                await vscode.commands.executeCommand<string>('workbench.panel.testResults.view.focus');
+              } catch (e) {
+                this.shared.log.errorS('command:workbench.panel.testResults.view.focus', e);
               }
             }
           }

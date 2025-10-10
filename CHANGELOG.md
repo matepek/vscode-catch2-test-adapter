@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- in case of a successful run (exit code == 0) of `before`, `after`, `beforeEach` and `afterEach` custom tasks the UI will change back to test result view automatically. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/491))
+
 ## [4.17.6] - 2025-10-05
 
 npm package version bumps
