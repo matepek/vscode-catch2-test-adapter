@@ -3,7 +3,7 @@
         {
             "pattern": "build/*.exe",
             "runTask": {
-                "beforeEach": [
+                "before": [
                     // "exit-1",
                     "echo-testmate"
                 ]

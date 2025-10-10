@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- `waitForBuildProcess` is faster on Windows ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/488))
+- `waitForBuildProcess` now uses `ps-list` to be faster on Windows ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/488))
 
 ## [4.18.0] - 2025-10-10
 
