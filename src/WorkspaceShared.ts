@@ -2,7 +2,7 @@ import { Logger } from './Logger';
 import * as vscode from 'vscode';
 import { TaskPool } from './util/TaskPool';
 import { ResolveRuleAsync } from './util/ResolveRule';
-import { BuildProcessChecker } from './util/BuildProcessChecker';
+import { BuildProcessChecker, FindProcessChecker } from './util/BuildProcessChecker';
 import { CancellationToken } from './Util';
 import { TestItemManager } from './TestItemManager';
 import { AbstractExecutable } from './framework/AbstractExecutable';
@@ -34,7 +34,7 @@ export class WorkspaceShared {
     public stderrDecorator: boolean,
   ) {
     this.taskPool = new TaskPool(workerMaxNumber);
-    this.buildProcessChecker = new BuildProcessChecker(log);
+    this.buildProcessChecker = new FindProcessChecker(log);
   }
 
   readonly taskPool: TaskPool;
