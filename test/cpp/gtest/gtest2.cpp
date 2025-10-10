@@ -90,3 +90,30 @@ GTEST_TEST(TestExpectThat, StartsWith) {
 
 //     ASSERT_THAT(input, containsTokens(expected));
 // }
+
+TEST(Threading, cerr)
+{
+    std::vector<std::string> t = { "Foo", "Bar", "Baz" };
+    for (int i = 0; i < 8; i++) {
+        for (auto const& e : t) {
+            std::cerr << e << std::endl;
+            if (i % 2 == 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
+            }
+        }
+    }
+    EXPECT_FALSE(true);
+}
+
+void Sub1(int n) {
+  EXPECT_FALSE(true);
+}
+
+TEST(Misc, scoped_trace) {
+  {
+    SCOPED_TRACE("A");
+    Sub1(1);
+  }
+  // Now it won't.
+  Sub1(9);
+}

@@ -36,6 +36,14 @@
             "args": [
                 "x", "${command:testMate.cmd.get-debug-exec}"
             ],
+        },
+        {
+            "label": "exit-1",
+            "type": "shell",
+            "command": "exit",
+            "args": [
+                "1"
+            ],
         }
     ]
 }

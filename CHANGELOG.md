@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- `waitForBuildProcess` is faster on Windows ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/488))
+
+## [4.18.0] - 2025-10-10
+
+### Changed
+
+- in case of a successful run (exit code == 0) of `before`, `after`, `beforeEach` and `afterEach` custom tasks the UI will change back to test result view automatically. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/491))
+
+## [4.17.6] - 2025-10-05
+
+npm package version bumps
+
+## [4.17.5] - 2025-10-05
+
+### Added
+
+- handling `SCOPED_TRACE` ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/484))
+
+### Changed
+
+- improved stderr logging ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/485))
+
+## [4.17.4] - 2025-09-11
+
 ### Added
 
 - Catch2 supports `SKIP` macro. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/487))
@@ -14,7 +40,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
-- `waitForBuildProcess` no longer spawns more than one subprocess to get the list of running processes, and is more efficient on Windows
 - `testMate.cmd.get-debug-exec` is cleared after debug is finished.
 
 ## [4.17.2] - 2025-07-20

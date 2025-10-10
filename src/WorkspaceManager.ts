@@ -378,11 +378,15 @@ export class WorkspaceManager implements vscode.Disposable {
       for (const taskName of runTasks) {
         const exitCode = await this._shared.executeTask(taskName, varToValue, cancellationToken);
 
-        if (exitCode !== undefined) {
-          if (exitCode !== 0) {
-            throw Error(
-              `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.${type}\`)`,
-            );
+        if (exitCode !== undefined && exitCode !== 0) {
+          throw Error(
+            `Task "${taskName}" has returned with exitCode(${exitCode}) != 0. (\`testMate.test.advancedExecutables:runTask.${type}\`)`,
+          );
+        } else {
+          try {
+            await vscode.commands.executeCommand('workbench.panel.testResults.view.focus');
+          } catch (e) {
+            this._shared.log.errorS('command:workbench.panel.testResults.view.focus', e);
           }
         }
       }
