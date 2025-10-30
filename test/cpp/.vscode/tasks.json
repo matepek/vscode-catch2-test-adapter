@@ -30,12 +30,21 @@
             ],
         },
         {
+            "label": "echo-testmate2",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "x2", "${command:testMate.cmd.get-debug-exec}"
+            ],
+        },
+        {
             "label": "echo-testmate",
             "type": "shell",
             "command": "echo",
             "args": [
                 "x", "${command:testMate.cmd.get-debug-exec}"
             ],
+            "dependsOn": ["echo-testmate2"]
         },
         {
             "label": "exit-1",

@@ -583,8 +583,10 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
   }
 
   async getDebugParams(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): Promise<string[]> {
-    const prependTestRunningArgs = await Promise.all(this.shared.prependTestRunningArgs.map(x => this.resolveText(x)));
-    return prependTestRunningArgs.concat(this._getDebugParamsInner(childrenToRun, breakOnFailure));
+    const prependTestDebuggingArgs = await Promise.all(
+      this.shared.prependTestDebuggingArgs.map(x => this.resolveText(x)),
+    );
+    return prependTestDebuggingArgs.concat(this._getDebugParamsInner(childrenToRun, breakOnFailure));
   }
 
   reloadTests(taskPool: TaskPool, cancellationToken: CancellationToken, lastModiTime?: number): Promise<void> {

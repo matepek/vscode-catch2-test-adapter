@@ -31,6 +31,7 @@ export class SharedVarOfExec {
         ...options.env,
         ...{
           prependTestRunningArgs: this._frameworkSpecific.prependTestRunningArgs,
+          prependTestDebuggingArgs: this._frameworkSpecific.prependTestDebuggingArgs,
           prependTestListingArgs: this._frameworkSpecific.prependTestListingArgs,
         },
       })
@@ -46,11 +47,15 @@ export class SharedVarOfExec {
   }
 
   get prependTestRunningArgs(): string[] {
-    return this._frameworkSpecific.prependTestRunningArgs ? this._frameworkSpecific.prependTestRunningArgs : [];
+    return this._frameworkSpecific.prependTestRunningArgs ?? [];
+  }
+
+  get prependTestDebuggingArgs(): string[] {
+    return this._frameworkSpecific.prependTestDebuggingArgs ?? this.prependTestRunningArgs;
   }
 
   get prependTestListingArgs(): string[] {
-    return this._frameworkSpecific.prependTestListingArgs ? this._frameworkSpecific.prependTestListingArgs : [];
+    return this._frameworkSpecific.prependTestListingArgs ?? [];
   }
 
   get ignoreTestEnumerationStdErr(): boolean {

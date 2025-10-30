@@ -671,6 +671,9 @@ export class Configurations {
       if (Array.isArray(obj.prependTestRunningArgs) && obj.prependTestRunningArgs.every(x => typeof x === 'string'))
         r.prependTestRunningArgs = obj.prependTestRunningArgs;
 
+      if (Array.isArray(obj.prependTestDebuggingArgs) && obj.prependTestDebuggingArgs.every(x => typeof x === 'string'))
+        r.prependTestDebuggingArgs = obj.prependTestDebuggingArgs;
+
       if (Array.isArray(obj.prependTestListingArgs) && obj.prependTestListingArgs.every(x => typeof x === 'string'))
         r.prependTestListingArgs = obj.prependTestListingArgs;
 

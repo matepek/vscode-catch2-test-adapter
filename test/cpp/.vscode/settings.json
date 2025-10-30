@@ -2,8 +2,12 @@
     "testMate.cpp.test.advancedExecutables": [
         {
             "pattern": "build/*.exe",
+            "gtest": {
+                "prependTestRunningArgs": ["aa"],
+                "prependTestDebuggingArgs": ["xx"]
+            },
             "runTask": {
-                "beforeEach": [
+                "before": [
                     // "exit-1",
                     "echo-testmate"
                 ]
