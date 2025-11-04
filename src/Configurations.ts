@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import vscodeVariables from 'vscode-variables';
 import { Logger } from './Logger';
 import { ConfigOfExecGroup } from './ConfigOfExecGroup';
 import { WorkspaceShared } from './WorkspaceShared';
@@ -464,7 +465,7 @@ export class Configurations {
     const createExecutableConfigFromPattern = (pattern: string): ConfigOfExecGroup => {
       return new ConfigOfExecGroup(
         shared,
-        pattern,
+        vscodeVariables(pattern),
         undefined,
         undefined,
         undefined,
@@ -547,14 +548,14 @@ export class Configurations {
 
         let pattern = '';
         {
-          if (typeof obj.pattern == 'string') pattern = obj.pattern;
+          if (typeof obj.pattern == 'string') pattern = vscodeVariables(obj.pattern);
           else {
             this._log.warn('pattern property is required', obj);
             throw Error('"pattern" property is required in advancedExecutables.');
           }
         }
 
-        const exclude: string | null | undefined = obj.exclude;
+        const exclude: string | undefined = typeof obj.exclude === 'string' ? vscodeVariables(obj.exclude) : undefined;
 
         const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : defaultCwd;
 

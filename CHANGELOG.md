@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- support for variable substituion in "pattern" and "exclude" options
+
 ## [4.19.0] - 2025-10-30
 
 ### Added
