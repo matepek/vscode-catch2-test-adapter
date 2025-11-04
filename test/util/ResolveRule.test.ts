@@ -1,7 +1,12 @@
 import * as assert from 'assert';
 import * as path from 'path';
 
-import { resolveVariablesAsync, ResolveRuleAsync } from '../../src/util/ResolveRule';
+import {
+  resolveVariablesAsync,
+  ResolveRuleAsync,
+  createWorkspaceFolderResolvers,
+  WorkspaceFolderInfo,
+} from '../../src/util/ResolveRule';
 
 describe(path.basename(__filename), function () {
   it('resolveVariablesAsync', async function () {
@@ -137,6 +142,60 @@ describe(path.basename(__filename), function () {
       b: expected,
     });
     assert.deepStrictEqual(await resolveVariablesAsync([input, input], varsToResolve), [expected, expected]);
+  });
+
+  describe('createWorkspaceFolderResolvers', function () {
+    const mockWorkspaces: WorkspaceFolderInfo[] = [
+      { name: 'project1', uri: { fsPath: '/workspace/project1' } },
+      { name: 'project2', uri: { fsPath: '/workspace/project2' } },
+      { name: 'MyApp', uri: { fsPath: '/workspace/MyApp' } },
+    ];
+
+    it('should resolve ${workspaceFolder} to current workspace (first in array)', async function () {
+      const resolvers = createWorkspaceFolderResolvers('workspaceFolder', mockWorkspaces);
+      const result = await resolveVariablesAsync('${workspaceFolder}', resolvers);
+      assert.strictEqual(result, path.normalize('/workspace/project1'));
+    });
+
+    it('should resolve ${workspaceFolder:name} to named workspace', async function () {
+      const resolvers = createWorkspaceFolderResolvers('workspaceFolder', mockWorkspaces);
+      assert.strictEqual(await resolveVariablesAsync('${workspaceFolder:project2}', resolvers), path.normalize('/workspace/project2'));
+      assert.strictEqual(await resolveVariablesAsync('${workspaceFolder:MyApp}', resolvers), path.normalize('/workspace/MyApp'));
+    });
+
+    it('should return empty string for non-existent or mismatched case workspace names', async function () {
+      const resolvers = createWorkspaceFolderResolvers('workspaceFolder', mockWorkspaces);
+      assert.strictEqual(await resolveVariablesAsync('${workspaceFolder:nonExistent}', resolvers), '');
+      assert.strictEqual(await resolveVariablesAsync('${workspaceFolder:myapp}', resolvers), '');
+      assert.strictEqual(await resolveVariablesAsync('${workspaceFolder:MYAPP}', resolvers), '');
+    });
+
+    it('should handle workspace name with whitespace', async function () {
+      const resolvers = createWorkspaceFolderResolvers('workspaceFolder', [
+        { name: 'my project', uri: { fsPath: '/workspace/my project' } },
+      ]);
+      assert.strictEqual(await resolveVariablesAsync('${workspaceFolder:my project}', resolvers), path.normalize('/workspace/my project'));
+    });
+
+    it('should work in object and array contexts', async function () {
+      const resolvers = createWorkspaceFolderResolvers('workspaceFolder', mockWorkspaces);
+      
+      assert.deepStrictEqual(
+        await resolveVariablesAsync({ path1: '${workspaceFolder}', path2: '${workspaceFolder:project2}' }, resolvers),
+        { path1: path.normalize('/workspace/project1'), path2: path.normalize('/workspace/project2') }
+      );
+      
+      assert.deepStrictEqual(
+        await resolveVariablesAsync(['${workspaceFolder}', '${workspaceFolder:MyApp}'], resolvers),
+        [path.normalize('/workspace/project1'), path.normalize('/workspace/MyApp')]
+      );
+    });
+
+    it('should handle empty workspace folders array', async function () {
+      const resolvers = createWorkspaceFolderResolvers('workspaceFolder', []);
+      assert.strictEqual(await resolveVariablesAsync('${workspaceFolder}', resolvers), '');
+      assert.strictEqual(await resolveVariablesAsync('${workspaceFolder:anyName}', resolvers), '');
+    });
   });
 
   context.skip('AdvancedII playground', function () {

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- support for multi-root workspaces in variable resolution using the `${workspaceFolder:name}` syntax.
+
 ## [4.19.0] - 2025-10-30
 
 ### Added

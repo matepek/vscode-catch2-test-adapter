@@ -318,6 +318,36 @@ export function createPythonIndexerForPathVariable(varName: string, pathStr: str
   return r;
 }
 
+export interface WorkspaceFolderInfo {
+  readonly name: string;
+  readonly uri: { readonly fsPath: string };
+}
+
+/**
+ * Creates resolvers for ${varName} and ${varName:name} workspace folder variables.
+ * The first element in allWorkspaceFolders is treated as the current workspace.
+ */
+export function createWorkspaceFolderResolvers(
+  varName: string,
+  allWorkspaceFolders: readonly WorkspaceFolderInfo[],
+): ResolveRuleAsync[] {
+  return [
+    // Named workspace lookup
+    {
+      resolve: new RegExp('\\$\\{' + varName + ':([^}]+)\\}'),
+      rule: (m: RegExpMatchArray): string => {
+        const workspace = allWorkspaceFolders.find(wf => wf.name === m[1].trim());
+        return workspace ? pathlib.normalize(workspace.uri.fsPath) : '';
+      },
+    },
+    // Default workspace folder
+    {
+      resolve: '${' + varName + '}',
+      rule: allWorkspaceFolders[0] ? pathlib.normalize(allWorkspaceFolders[0].uri.fsPath) : '',
+    },
+  ];
+}
+
 const RegexExpression = '`([^`]+)`(?:([^`]+)`)?';
 
 function processRegexReplace(log: Logger, value: string, match: RegExpMatchArray): string {
