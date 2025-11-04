@@ -4,6 +4,7 @@ import { Logger } from './Logger';
 import {
   createPythonIndexerForArray,
   createPythonIndexerForPathVariable,
+  createWorkspaceFolderResolvers,
   ResolveRuleAsync,
   resolveVariablesAsync,
 } from './util/ResolveRule';
@@ -33,7 +34,10 @@ export class WorkspaceManager implements vscode.Disposable {
     );
 
     const variableToValue = [
-      createPythonIndexerForPathVariable('workspaceFolder', this.workspaceFolder.uri.fsPath),
+      ...createWorkspaceFolderResolvers('workspaceFolder', [
+        this.workspaceFolder,
+        ...(vscode.workspace.workspaceFolders?.filter(wf => wf !== this.workspaceFolder) ?? []),
+      ]),
       createPythonIndexerForPathVariable('workspaceDirectory', this.workspaceFolder.uri.fsPath),
       workspaceNameRes,
       {
