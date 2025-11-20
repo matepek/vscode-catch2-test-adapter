@@ -125,7 +125,7 @@ export async function resolveSymlinksInPattern(pattern: string, logger: Logger):
         resolvedSegments.push(segment);
       }
     } catch (err) {
-      logger.error('Error resolving symlink:', currentPath, err);
+      logger.error('Error resolving path:', currentPath, err);
       resolvedSegments.push(segment);
     }
   }
