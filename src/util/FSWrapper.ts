@@ -91,6 +91,7 @@ export function resolveSymlinksInPattern(pattern: string): string {
   if (!pattern) return pattern;
 
   const isAbsolute = path.isAbsolute(pattern);
+  const startsWithSep = pattern.startsWith(path.sep); // Handle difference between '/' and 'C:\' in absolute paths
   const segments = pattern.split(path.sep).filter(s => s.length > 0);
 
   if (segments.length === 0) return pattern;
@@ -132,8 +133,8 @@ export function resolveSymlinksInPattern(pattern: string): string {
   }
 
   let result = resolvedSegments.join(path.sep);
-  // Restore leading slash for absolute paths if needed
-  if (isAbsolute && !result.startsWith(path.sep)) {
+  // Restore leading separator if original pattern had it
+  if (startsWithSep && !result.startsWith(path.sep)) {
     result = path.sep + result;
   }
 
