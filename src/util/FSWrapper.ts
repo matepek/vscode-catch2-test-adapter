@@ -69,3 +69,73 @@ export function getLastModiTime(filePath: string): Promise<number> {
     return stat.mtimeMs;
   });
 }
+
+///
+
+/**
+ * Resolves symlinks in a file pattern while preserving glob patterns.
+ *
+ * This function walks through the path components and resolves any symlinks
+ * in the concrete (non-glob) parts of the path. Allowing one to use symlinks
+ * in file patterns without losing the globbing functionality.
+ *
+ * @param pattern - A file path or glob pattern that may contain symlinks
+ * @returns The pattern with symlinks resolved
+ *
+ * @example
+ * // If 'build-out' is a symlink to '/tmp/build-cache'
+ * resolveSymlinksInPattern('/src/build-out/**\/*test*')
+ * // Returns: '/tmp/build-cache/**\/*test*'
+ */
+export function resolveSymlinksInPattern(pattern: string): string {
+  if (!pattern) return pattern;
+
+  const isAbsolute = path.isAbsolute(pattern);
+  const segments = pattern.split(path.sep).filter(s => s.length > 0);
+
+  if (segments.length === 0) return pattern;
+
+  const resolvedSegments: string[] = [];
+  let currentPath = isAbsolute ? path.sep : '';
+
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i];
+
+    const hasGlob = /[*?[\]{}!]/.test(segment);
+    if (hasGlob) {
+      // Stop resolution at first glob
+      resolvedSegments.push(...segments.slice(i));
+      break;
+    }
+
+    currentPath = path.join(currentPath, segment);
+    try {
+      const stats = fs.lstatSync(currentPath);
+      if (stats.isSymbolicLink()) {
+        // Resolve the symlink
+        const realPath = fs.realpathSync(currentPath);
+        currentPath = realPath;
+
+        // Update resolved segments with the real path components
+        const realSegments = realPath.split(path.sep).filter(s => s.length > 0);
+        resolvedSegments.length = 0; // Clear previous segments
+        resolvedSegments.push(...realSegments);
+      } else {
+        // Not a symlink, just add the segment
+        resolvedSegments.push(segment);
+      }
+    } catch (_err) {
+      // Path doesn't exist yet or we can't access it
+      // We can't resolve non-existing paths, so return as-is
+      resolvedSegments.push(segment);
+    }
+  }
+
+  let result = resolvedSegments.join(path.sep);
+  // Restore leading slash for absolute paths if needed
+  if (isAbsolute && !result.startsWith(path.sep)) {
+    result = path.sep + result;
+  }
+
+  return result;
+}
