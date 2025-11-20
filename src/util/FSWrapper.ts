@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 import * as cp from 'child_process';
+import { Logger } from '../Logger';
 
 ///
 
@@ -80,14 +81,15 @@ export function getLastModiTime(filePath: string): Promise<number> {
  * in file patterns without losing the globbing functionality.
  *
  * @param pattern - A file path or glob pattern that may contain symlinks
+ * @param logger - Logger to log errors during symlink resolution
  * @returns The pattern with symlinks resolved
  *
  * @example
  * // If 'build-out' is a symlink to '/tmp/build-cache'
- * resolveSymlinksInPattern('/src/build-out/**\/*test*')
+ * await resolveSymlinksInPattern('/src/build-out/**\/*test*', logger)
  * // Returns: '/tmp/build-cache/**\/*test*'
  */
-export function resolveSymlinksInPattern(pattern: string): string {
+export async function resolveSymlinksInPattern(pattern: string, logger: Logger): Promise<string> {
   if (!pattern) return pattern;
 
   const isAbsolute = path.isAbsolute(pattern);
@@ -104,17 +106,15 @@ export function resolveSymlinksInPattern(pattern: string): string {
 
     const hasGlob = /[*?[\]{}!]/.test(segment);
     if (hasGlob) {
-      // Stop resolution at first glob
       resolvedSegments.push(...segments.slice(i));
       break;
     }
 
     currentPath = path.join(currentPath, segment);
     try {
-      const stats = fs.lstatSync(currentPath);
+      const stats = await promisify(fs.lstat)(currentPath);
       if (stats.isSymbolicLink()) {
-        // Resolve the symlink
-        const realPath = fs.realpathSync(currentPath);
+        const realPath = await promisify(fs.realpath)(currentPath);
         currentPath = realPath;
 
         // Update resolved segments with the real path components
@@ -122,12 +122,10 @@ export function resolveSymlinksInPattern(pattern: string): string {
         resolvedSegments.length = 0; // Clear previous segments
         resolvedSegments.push(...realSegments);
       } else {
-        // Not a symlink, just add the segment
         resolvedSegments.push(segment);
       }
-    } catch (_err) {
-      // Path doesn't exist yet or we can't access it
-      // We can't resolve non-existing paths, so return as-is
+    } catch (err) {
+      logger.error('Error resolving symlink:', currentPath, err);
       resolvedSegments.push(segment);
     }
   }

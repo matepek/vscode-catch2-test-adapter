@@ -289,7 +289,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     relativeToWsPosix: string;
   }> {
     path = await this._resolveVariables(path, false, moreVarsToResolve);
-    path = c2fs.resolveSymlinksInPattern(path);
+    path = await c2fs.resolveSymlinksInPattern(path, this._shared.log);
 
     const normPattern = path.replace(/\\/g, '/');
     const isAbsolute = pathlib.posix.isAbsolute(normPattern) || pathlib.win32.isAbsolute(normPattern);
