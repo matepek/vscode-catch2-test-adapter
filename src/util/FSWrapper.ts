@@ -1,8 +1,8 @@
 import * as fs from 'fs';
+import * as fsp from 'fs/promises';
 import * as path from 'path';
 import { promisify } from 'util';
 import * as cp from 'child_process';
-import { Logger } from '../Logger';
 
 ///
 
@@ -32,15 +32,10 @@ export function isSpawnBusyError(err: any /*eslint-disable-line*/): boolean {
 
 ///
 
-const ExecutableFlag = fs.constants.X_OK;
+const ExecutableFlag = fsp.constants.X_OK;
 
 function accessAsync(filePath: string, flag: number): Promise<void> {
-  return new Promise((resolve, reject) => {
-    fs.access(filePath, flag, (err: Error | null) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
+  return fsp.access(filePath, flag);
 }
 
 export function isNativeExecutableAsync(
@@ -73,68 +68,32 @@ export function getLastModiTime(filePath: string): Promise<number> {
 
 ///
 
-/**
- * Resolves symlinks in a file pattern while preserving glob patterns.
- *
- * This function walks through the path components and resolves any symlinks
- * in the concrete (non-glob) parts of the path. Allowing one to use symlinks
- * in file patterns without losing the globbing functionality.
- *
- * @param pattern - A file path or glob pattern that may contain symlinks
- * @param logger - Logger to log errors during symlink resolution
- * @returns The pattern with symlinks resolved
- *
- * @example
- * // If 'build-out' is a symlink to '/tmp/build-cache'
- * await resolveSymlinksInPattern('/src/build-out/**\/*test*', logger)
- * // Returns: '/tmp/build-cache/**\/*test*'
- */
-export async function resolveSymlinksInPattern(pattern: string, logger: Logger): Promise<string> {
-  if (!pattern) return pattern;
-
-  const isAbsolute = path.isAbsolute(pattern);
-  const startsWithSep = pattern.startsWith(path.sep); // Handle difference between '/' and 'C:\' in absolute paths
-  const segments = pattern.split(path.sep).filter(s => s.length > 0);
-
-  if (segments.length === 0) return pattern;
-
-  const resolvedSegments: string[] = [];
-  let currentPath = isAbsolute ? path.sep : '';
-
-  for (let i = 0; i < segments.length; i++) {
-    const segment = segments[i];
-
-    const hasGlob = /[*?[\]{}!]/.test(segment);
-    if (hasGlob) {
-      resolvedSegments.push(...segments.slice(i));
-      break;
-    }
-
-    currentPath = path.join(currentPath, segment);
+export async function resolveFirstSymlink(
+  absPath: string,
+): Promise<{ resolvedAbsPath: string; symlinkAbsPath: string | null }> {
+  if (!path.isAbsolute(absPath)) throw Error('absPath is expected');
+  const segments = absPath.split(path.sep);
+  let idx = 1; // either it's drive or root folder, we skip it
+  const potentialSymlinkSegments: string[] = [segments[0]];
+  while (idx < segments.length) {
+    potentialSymlinkSegments.push(segments[idx++]);
+    const potentialSymlinkPath = potentialSymlinkSegments.join(path.sep);
     try {
-      const stats = await promisify(fs.lstat)(currentPath);
-      if (stats.isSymbolicLink()) {
-        const realPath = await promisify(fs.realpath)(currentPath);
-        currentPath = realPath;
-
-        // Update resolved segments with the real path components
-        const realSegments = realPath.split(path.sep).filter(s => s.length > 0);
-        resolvedSegments.length = 0; // Clear previous segments
-        resolvedSegments.push(...realSegments);
-      } else {
-        resolvedSegments.push(segment);
+      const stat = await fsp.lstat(potentialSymlinkPath);
+      if (stat.isSymbolicLink()) {
+        const realPath = await fsp.realpath(potentialSymlinkPath);
+        const resolvedAbsPath = path.join(realPath, ...segments.slice(idx));
+        return { resolvedAbsPath, symlinkAbsPath: potentialSymlinkPath };
+      }
+      if (!stat.isDirectory()) {
+        return { resolvedAbsPath: absPath, symlinkAbsPath: null };
       }
     } catch (err) {
-      logger.error('Error resolving path:', currentPath, err);
-      resolvedSegments.push(segment);
+      if (err.code === 'ENOENT') {
+        return { resolvedAbsPath: absPath, symlinkAbsPath: null };
+      }
+      throw err;
     }
   }
-
-  let result = resolvedSegments.join(path.sep);
-  // Restore leading separator if original pattern had it
-  if (startsWithSep && !result.startsWith(path.sep)) {
-    result = path.sep + result;
-  }
-
-  return result;
+  return { resolvedAbsPath: absPath, symlinkAbsPath: null };
 }

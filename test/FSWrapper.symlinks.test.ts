@@ -2,19 +2,16 @@ import * as assert from 'assert';
 import * as path from 'path';
 import * as fse from 'fs-extra';
 
-import { resolveSymlinksInPattern } from '../src/util/FSWrapper';
+import { resolveFirstSymlink } from '../src/util/FSWrapper';
 import { settings, isWin } from './Common';
-import { Logger } from '../src/Logger';
 
 describe(path.basename(__filename), function () {
   let tempDir: string;
-  let logger: Logger;
 
   beforeEach(async function () {
     // Create temporary directory for symlink tests
     tempDir = path.join(settings.workspaceFolderUri.fsPath, '.test-symlinks');
     await fse.ensureDir(tempDir);
-    logger = new Logger();
   });
 
   afterEach(async function () {
@@ -36,9 +33,10 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlinkDir);
 
       const pattern = path.join(symlinkDir, '**', '*test*');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
-      assert.strictEqual(result, path.join(realDir, '**', '*test*'));    });
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, '**', '*test*'));
+    });
 
     it('should resolve nested symlinks', async function () {
       if (isWin) {
@@ -54,10 +52,11 @@ describe(path.basename(__filename), function () {
       await fse.symlink(intermediateSymlink, finalSymlink);
 
       const pattern = path.join(finalSymlink, '**', '*test*');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
       // Should resolve to the ultimate real path
-      assert.strictEqual(result, path.join(realDir, '**', '*test*'));    });
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, '**', '*test*'));
+    });
 
     it('should resolve symlink at the root of pattern', async function () {
       if (isWin) {
@@ -71,9 +70,10 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlinkDir);
 
       const pattern = path.join(symlinkDir, '**', '*test*');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
-      assert.strictEqual(result, path.join(realDir, '**', '*test*'));    });
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, '**', '*test*'));
+    });
 
     it('should resolve symlink in the middle of path', async function () {
       if (isWin) {
@@ -88,9 +88,10 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlinkDir);
 
       const pattern = path.join(subDir, '**', '*test*');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
-      assert.strictEqual(result, path.join(realDir, 'subdirectory', '**', '*test*'));    });
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, 'subdirectory', '**', '*test*'));
+    });
   });
 
   describe('glob pattern preservation', function () {
@@ -106,9 +107,10 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlink);
 
       const pattern = path.join(symlink, '**', '*');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
-      assert.strictEqual(result, path.join(realDir, '**', '*'));    });
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, '**', '*'));
+    });
 
     it('should preserve * wildcards', async function () {
       if (isWin) {
@@ -122,9 +124,10 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlink);
 
       const pattern = path.join(symlink, '*test*');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
-      assert.strictEqual(result, path.join(realDir, '*test*'));    });
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, '*test*'));
+    });
 
     it('should preserve ? wildcards', async function () {
       if (isWin) {
@@ -138,9 +141,10 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlink);
 
       const pattern = path.join(symlink, 'test??.exe');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
-      assert.strictEqual(result, path.join(realDir, 'test??.exe'));    });
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, 'test??.exe'));
+    });
 
     it('should preserve [] character ranges', async function () {
       if (isWin) {
@@ -154,9 +158,10 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlink);
 
       const pattern = path.join(symlink, 'test[0-9].exe');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
-      assert.strictEqual(result, path.join(realDir, 'test[0-9].exe'));    });
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, 'test[0-9].exe'));
+    });
 
     it('should preserve {} brace expansions', async function () {
       if (isWin) {
@@ -170,9 +175,10 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlink);
 
       const pattern = path.join(symlink, '{test,Test,TEST}*');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
-      assert.strictEqual(result, path.join(realDir, '{test,Test,TEST}*'));    });
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, '{test,Test,TEST}*'));
+    });
 
     it('should preserve complex glob patterns', async function () {
       if (isWin) {
@@ -186,33 +192,27 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlink);
 
       const pattern = path.join(symlink, '{build,Build,BUILD}', '**', '*{test,Test,TEST}*');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
-      assert.strictEqual(result, path.join(realDir, '{build,Build,BUILD}', '**', '*{test,Test,TEST}*'));    });
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, '{build,Build,BUILD}', '**', '*{test,Test,TEST}*'));
+    });
 
     it('should return pattern unchanged when no symlinks exist', async function () {
       const regularDir = path.join(tempDir, 'regular-dir');
       await fse.ensureDir(regularDir);
 
       const pattern = path.join(regularDir, '**', '*test*');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
-      assert.strictEqual(result, pattern);    });
+      assert.strictEqual(result.resolvedAbsPath, pattern);
+    });
 
     it('should handle non-existent paths gracefully', async function () {
       const nonExistentPath = path.join(tempDir, 'does-not-exist', '**', '*test*');
-      const result = await resolveSymlinksInPattern(nonExistentPath, logger);
+      const result = await resolveFirstSymlink(nonExistentPath);
 
-      assert.strictEqual(result, nonExistentPath);    });
-
-    it('should handle empty pattern', async function () {
-      const result = await resolveSymlinksInPattern('', logger);
-      assert.strictEqual(result, '');    });
-
-    it('should handle pattern with only glob characters', async function () {
-      const pattern = '**/*test*';
-      const result = await resolveSymlinksInPattern(pattern, logger);
-      assert.strictEqual(result, pattern);    });
+      assert.strictEqual(result.resolvedAbsPath, nonExistentPath);
+    });
 
     it('should return absolute paths', async function () {
       if (isWin) {
@@ -226,10 +226,11 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlinkDir);
 
       const pattern = path.join(symlinkDir, '**', '*');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
-      assert.ok(path.isAbsolute(result), 'Resolved path should be absolute');
-      assert.strictEqual(result, path.join(realDir, '**', '*'));    });
+      assert.ok(path.isAbsolute(result.resolvedAbsPath), 'Resolved path should be absolute');
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, '**', '*'));
+    });
 
     it('should stop resolving at first glob pattern', async function () {
       if (isWin) {
@@ -244,9 +245,10 @@ describe(path.basename(__filename), function () {
 
       // Pattern has glob early, then more path components
       const pattern = path.join(symlink, '*', 'subdir', 'file.txt');
-      const result = await resolveSymlinksInPattern(pattern, logger);
+      const result = await resolveFirstSymlink(pattern);
 
       // Should resolve up to the symlink, then keep the rest as-is
-      assert.strictEqual(result, path.join(realDir, '*', 'subdir', 'file.txt'));    });
+      assert.strictEqual(result.resolvedAbsPath, path.join(realDir, '*', 'subdir', 'file.txt'));
+    });
   });
 });

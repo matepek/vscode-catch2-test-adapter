@@ -1,7 +1,7 @@
 {
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/*.exe",
+            "pattern": "**/*.exe",
             "gtest": {
                 "prependTestRunningArgs": ["aa"],
                 "prependTestDebuggingArgs": ["xx"]
