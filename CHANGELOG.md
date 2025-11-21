@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.20.0]
+
+### Added
+
+- Symlink resolution (first occurence only) for `pattern`. Meant to work for `bazel-bin` and similar use cases.
+  Symlink deletion is handled but recreation NOT.
+  [Upvote the feature here](https://github.com/matepek/vscode-catch2-test-adapter/issues/499) if interested.
+
 ## [4.19.0] - 2025-10-30
 
 ### Added

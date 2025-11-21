@@ -112,7 +112,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     this._shared.log.info('pattern', this._pattern, this._shared.workspaceFolder.uri.fsPath, pattern);
 
-    if (pattern.isAbsolute && pattern.isPartOfWs)
+    if (pattern.isAbsolute && pattern.absPath.isPartOfWs)
       this._shared.log.info('Absolute path is used for workspace directory. This is unnecessary, but it should work.');
 
     if (this._pattern.indexOf('\\') != -1)
@@ -150,24 +150,17 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     let execWatcher: FSWatcher | undefined = undefined;
     try {
-      if (pattern.isPartOfWs) {
-        execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.relativeToWsPosix, enabledExcludes);
+      if (pattern.resolved.isPartOfWs) {
+        execWatcher = new VSCFSWatcherWrapper(
+          this._shared.workspaceFolder,
+          pattern.resolved.relativeToWsPosix,
+          enabledExcludes,
+        );
       } else {
-        execWatcher = new GazeWrapper([pattern.absPath]);
+        execWatcher = new GazeWrapper([pattern.resolved.absPath]);
       }
 
       filePaths = await execWatcher.watched();
-
-      // TODO: we could figure out that it is a symlink and add extra
-      // filePaths.forEach(f => {
-      //   try {
-      //     if (fs.readlinkSync(f)) {
-      //       console.log(`sym ${f}`);
-      //     }
-      //   } catch (e) {
-      //     console.log(`not sym ${f}`);
-      //   }
-      // });
 
       execWatcher.onError((err: Error) => {
         // eslint-disable-next-line
@@ -245,49 +238,83 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     if (errors.length > 0) return errors;
 
-    if (this._dependsOn.length > 0) {
-      try {
-        // gaze can handle more patterns at once
-        const absPatterns: string[] = [];
+    try {
+      // gaze can handle more patterns at once
+      const absPatterns: string[] = [];
 
-        for (const pattern of this._dependsOn) {
-          const p = await this._pathProcessor(pattern);
-          if (p.isPartOfWs) {
-            const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.relativeToWsPosix, []);
-            this._disposables.push(w);
-
-            w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, p));
-
-            w.onAll((fsPath: string): void => {
-              this._shared.log.info('dependsOn watcher event:', fsPath);
-              getModiTime(fsPath).then(modiTime => {
-                for (const exec of this._executables.values())
-                  exec.reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime);
-              });
-              this.sendRetireAllExecutables();
-            });
-          } else {
-            absPatterns.push(p.absPath);
-          }
-        }
-
-        if (absPatterns.length > 0) {
-          const w = new GazeWrapper(absPatterns);
+      if (pattern.symlink) {
+        if (pattern.symlink.isPartOfWs) {
+          const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.symlink.relativeToWsPosix, []);
           this._disposables.push(w);
-
-          w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, absPatterns));
-
+          w.onError((e: Error): void => this._shared.log.error('symlink watcher:', e, pattern.symlink));
           w.onAll((fsPath: string): void => {
-            this._shared.log.info('dependsOn watcher event:', fsPath);
+            this._shared.log.info('symlink watcher event:', fsPath);
+            getModiTime(fsPath).then(modiTime => {
+              if (modiTime === undefined) {
+                for (const [filePath, exec] of this._executables)
+                  if (exec) {
+                    exec.dispose();
+                    this._executables.delete(filePath);
+                  }
+                this._shared.log.infoS('Symlink was removed', pattern);
+              } else {
+                this._shared.log.infoS(
+                  'Symlink was created, but no discovery will happen. Usser must initiat reload via UI or command.',
+                  pattern,
+                );
+              }
+            });
             this.sendRetireAllExecutables();
           });
+        } else {
+          absPatterns.push(pattern.symlink.absPath);
         }
-      } catch (e) {
-        this._shared.log.error('dependsOn error:', e);
       }
+
+      for (const pattern of this._dependsOn) {
+        const p = await this._pathProcessor(pattern);
+        if (p.resolved.isPartOfWs) {
+          const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.resolved.relativeToWsPosix, []);
+          this._disposables.push(w);
+          w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, p));
+          w.onAll((fsPath: string): void => {
+            this._shared.log.info('dependsOn watcher event:', fsPath);
+            getModiTime(fsPath).then(modiTime => {
+              for (const exec of this._executables.values())
+                exec.reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime);
+            });
+            this.sendRetireAllExecutables();
+          });
+        } else {
+          absPatterns.push(p.resolved.absPath);
+        }
+      }
+
+      if (absPatterns.length > 0) {
+        const w = new GazeWrapper(absPatterns);
+        this._disposables.push(w);
+
+        w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, absPatterns));
+
+        w.onAll((fsPath: string): void => {
+          this._shared.log.info('dependsOn watcher event:', fsPath);
+          this.sendRetireAllExecutables();
+        });
+      }
+    } catch (e) {
+      this._shared.log.error('dependsOn error:', e);
     }
 
     return [];
+  }
+
+  private _pathInfo(absPath: string) {
+    const relativeToWs = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, absPath);
+    return {
+      absPath,
+      isPartOfWs: !relativeToWs.startsWith('..') && relativeToWs !== absPath, // pathlib.relative('B:\wp', 'C:\a\b') == 'C:\a\b'
+      relativeToWsPosix: relativeToWs.replace(/\\/g, '/'),
+    };
   }
 
   private async _pathProcessor(
@@ -295,9 +322,9 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     moreVarsToResolve?: readonly ResolveRuleAsync[],
   ): Promise<{
     isAbsolute: boolean;
-    absPath: string;
-    isPartOfWs: boolean;
-    relativeToWsPosix: string;
+    absPath: { absPath: string; isPartOfWs: boolean; relativeToWsPosix: string };
+    resolved: { absPath: string; isPartOfWs: boolean; relativeToWsPosix: string };
+    symlink: { absPath: string; isPartOfWs: boolean; relativeToWsPosix: string } | null;
   }> {
     path = await this._resolveVariables(path, false, moreVarsToResolve);
 
@@ -306,13 +333,14 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     const absPath = isAbsolute
       ? vscode.Uri.file(pathlib.normalize(path)).fsPath
       : vscode.Uri.file(pathlib.join(this._shared.workspaceFolder.uri.fsPath, normPattern)).fsPath;
-    const relativeToWs = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, absPath);
+
+    const { resolvedAbsPath, symlinkAbsPath } = await c2fs.resolveFirstSymlink(absPath);
 
     return {
       isAbsolute,
-      absPath: absPath,
-      isPartOfWs: !relativeToWs.startsWith('..') && relativeToWs !== absPath, // pathlib.relative('B:\wp', 'C:\a\b') == 'C:\a\b'
-      relativeToWsPosix: relativeToWs.replace(/\\/g, '/'),
+      absPath: this._pathInfo(absPath),
+      resolved: this._pathInfo(resolvedAbsPath),
+      symlink: symlinkAbsPath ? this._pathInfo(symlinkAbsPath) : null,
     };
   }
 
@@ -371,10 +399,10 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       const resolvedEnvFile = await this._pathProcessor(this._envFile, varToValue);
       try {
         let envFromFile: Record<string, string> | undefined = undefined;
-        if (resolvedEnvFile.absPath.endsWith('.json')) {
-          envFromFile = readJSONSync(resolvedEnvFile.absPath);
-        } else if (resolvedEnvFile.absPath.indexOf('.env') !== -1) {
-          const content = readFileSync(resolvedEnvFile.absPath).toString();
+        if (resolvedEnvFile.resolved.absPath.endsWith('.json')) {
+          envFromFile = readJSONSync(resolvedEnvFile.resolved.absPath);
+        } else if (resolvedEnvFile.resolved.absPath.indexOf('.env') !== -1) {
+          const content = readFileSync(resolvedEnvFile.resolved.absPath).toString();
           envFromFile = {};
           const lines = content.split(/\r?\n/).filter(x => {
             const t = x.trim();
@@ -419,7 +447,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       try {
         const resolvedPath = await this._pathProcessor(this._executionWrapper.path, varToValue);
         const resolvedArgs = await this._resolveVariables(this._executionWrapper.args, false, varToValue);
-        spawner = new SpawnWithExecutor(resolvedPath.absPath, resolvedArgs);
+        spawner = new SpawnWithExecutor(resolvedPath.resolved.absPath, resolvedArgs);
         this._shared.log.info('executionWrapper was specified', resolvedPath, resolvedArgs);
       } catch (e) {
         this._shared.log.warn('Unable to apply executionWrapper', e);
