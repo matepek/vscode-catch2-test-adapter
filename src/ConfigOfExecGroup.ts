@@ -238,72 +238,83 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     if (errors.length > 0) return errors;
 
-    if (pattern.symlink || this._dependsOn.length > 0) {
-      try {
-        // gaze can handle more patterns at once
-        const absPatterns: string[] = [];
+    try {
+      // gaze can handle more patterns at once
+      const absPatterns: string[] = [];
 
-        if (pattern.symlink) {
-          if (pattern.symlink.isPartOfWs) {
-            const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.symlink.relativeToWsPosix, []);
-            this._disposables.push(w);
-            w.onError((e: Error): void => this._shared.log.error('symlink watcher:', e, pattern.symlink));
-            w.onAll((fsPath: string): void => {
-              this._shared.log.info('symlink watcher event:', fsPath);
-              getModiTime(fsPath).then(modiTime => {
-                if (modiTime === undefined) {
-                  for (const [filePath, exec] of this._executables)
-                    if (exec) {
-                      exec.dispose();
-                      this._executables.delete(filePath);
-                    }
-                } else {
-                  //TODO reload
-                }
-              });
-              this.sendRetireAllExecutables();
-            });
-          } else {
-            absPatterns.push(pattern.symlink.absPath);
-          }
-        }
-
-        for (const pattern of this._dependsOn) {
-          const p = await this._pathProcessor(pattern);
-          if (p.resolved.isPartOfWs) {
-            const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.resolved.relativeToWsPosix, []);
-            this._disposables.push(w);
-            w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, p));
-            w.onAll((fsPath: string): void => {
-              this._shared.log.info('dependsOn watcher event:', fsPath);
-              getModiTime(fsPath).then(modiTime => {
-                for (const exec of this._executables.values())
-                  exec.reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime);
-              });
-              this.sendRetireAllExecutables();
-            });
-          } else {
-            absPatterns.push(p.resolved.absPath);
-          }
-        }
-
-        if (absPatterns.length > 0) {
-          const w = new GazeWrapper(absPatterns);
+      if (pattern.symlink) {
+        if (pattern.symlink.isPartOfWs) {
+          const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.symlink.relativeToWsPosix, []);
           this._disposables.push(w);
-
-          w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, absPatterns));
-
+          w.onError((e: Error): void => this._shared.log.error('symlink watcher:', e, pattern.symlink));
           w.onAll((fsPath: string): void => {
-            this._shared.log.info('dependsOn watcher event:', fsPath);
+            this._shared.log.info('symlink watcher event:', fsPath);
+            getModiTime(fsPath).then(modiTime => {
+              if (modiTime === undefined) {
+                for (const [filePath, exec] of this._executables)
+                  if (exec) {
+                    exec.dispose();
+                    this._executables.delete(filePath);
+                  }
+                this._shared.log.infoS('Symlink was removed', pattern);
+              } else {
+                this._shared.log.infoS(
+                  'Symlink was created, but no discovery will happen. Usser must initiat reload via UI or command.',
+                  pattern,
+                );
+              }
+            });
             this.sendRetireAllExecutables();
           });
+        } else {
+          absPatterns.push(pattern.symlink.absPath);
         }
-      } catch (e) {
-        this._shared.log.error('dependsOn error:', e);
       }
+
+      for (const pattern of this._dependsOn) {
+        const p = await this._pathProcessor(pattern);
+        if (p.resolved.isPartOfWs) {
+          const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.resolved.relativeToWsPosix, []);
+          this._disposables.push(w);
+          w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, p));
+          w.onAll((fsPath: string): void => {
+            this._shared.log.info('dependsOn watcher event:', fsPath);
+            getModiTime(fsPath).then(modiTime => {
+              for (const exec of this._executables.values())
+                exec.reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime);
+            });
+            this.sendRetireAllExecutables();
+          });
+        } else {
+          absPatterns.push(p.resolved.absPath);
+        }
+      }
+
+      if (absPatterns.length > 0) {
+        const w = new GazeWrapper(absPatterns);
+        this._disposables.push(w);
+
+        w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, absPatterns));
+
+        w.onAll((fsPath: string): void => {
+          this._shared.log.info('dependsOn watcher event:', fsPath);
+          this.sendRetireAllExecutables();
+        });
+      }
+    } catch (e) {
+      this._shared.log.error('dependsOn error:', e);
     }
 
     return [];
+  }
+
+  private _pathInfo(absPath: string) {
+    const relativeToWs = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, absPath);
+    return {
+      absPath,
+      isPartOfWs: !relativeToWs.startsWith('..') && relativeToWs !== absPath, // pathlib.relative('B:\wp', 'C:\a\b') == 'C:\a\b'
+      relativeToWsPosix: relativeToWs.replace(/\\/g, '/'),
+    };
   }
 
   private async _pathProcessor(
@@ -325,20 +336,11 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     const { resolvedAbsPath, symlinkAbsPath } = await c2fs.resolveFirstSymlink(absPath);
 
-    const pathInfo = (absPath: string) => {
-      const relativeToWs = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, absPath);
-      return {
-        absPath,
-        isPartOfWs: !relativeToWs.startsWith('..') && relativeToWs !== absPath, // pathlib.relative('B:\wp', 'C:\a\b') == 'C:\a\b'
-        relativeToWsPosix: relativeToWs.replace(/\\/g, '/'),
-      };
-    };
-
     return {
       isAbsolute,
-      absPath: pathInfo(absPath),
-      resolved: pathInfo(resolvedAbsPath),
-      symlink: symlinkAbsPath ? pathInfo(symlinkAbsPath) : null,
+      absPath: this._pathInfo(absPath),
+      resolved: this._pathInfo(resolvedAbsPath),
+      symlink: symlinkAbsPath ? this._pathInfo(symlinkAbsPath) : null,
     };
   }
 
