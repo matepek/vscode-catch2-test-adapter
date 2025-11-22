@@ -30,7 +30,7 @@ interface Info {
 
 async function spawn(command: string, ...args: (string | { arg: string; mask?: string })[]): Promise<string> {
   console.log(
-    '$ ' + command + ' ' + args.map(a => (typeof a === 'string' ? `"${a}"` : a.mask ?? '<masked>')).join(' '),
+    '$ ' + command + ' ' + args.map(a => (typeof a === 'string' ? `"${a}"` : (a.mask ?? '<masked>'))).join(' '),
   );
   const result = await new Promise<string>((resolve, reject) => {
     const c = cp.spawn(
@@ -43,7 +43,8 @@ async function spawn(command: string, ...args: (string | { arg: string; mask?: s
       output += chunk.toString();
     });
     c.on('exit', (code: number) => {
-      code == 0 ? resolve(output) : reject(new Error('Process exited with: ' + code));
+      if (code == 0) resolve(output);
+      else reject(new Error('Process exited with: ' + code));
     });
   });
 
@@ -301,7 +302,7 @@ async function createGithubRelease(info: Info, packagePath: string): Promise<voi
   )(
     `/repos/${githubRepoFullId}/releases`,
     {
-      tag_name: info.vver, // eslint-disable-line
+      tag_name: info.vver,
       name: info.full,
       body: 'See [CHANGELOG.md](CHANGELOG.md) for details.',
     },
