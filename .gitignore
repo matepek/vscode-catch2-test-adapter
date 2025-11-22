@@ -5,6 +5,7 @@ node_modules
 out
 
 /test/cpp/build
+/test/cpp/build-symlink
 /test/cpp/.vscode/
 
 *.vsix
