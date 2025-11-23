@@ -1,7 +1,7 @@
 {
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/**/*.exe",
+            "pattern": "build-symlink/**/*.exe",
             "gtest": {
                 "prependTestRunningArgs": ["aa"],
                 "prependTestDebuggingArgs": ["xx"]
@@ -9,7 +9,7 @@
             "runTask": {
                 "before": [
                     // "exit-1",
-                    "echo-testmate"
+                    // "echo-testmate"
                 ]
             }
             // "testGrouping": {

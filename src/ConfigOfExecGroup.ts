@@ -99,10 +99,11 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
   dispose(): void {
     this._disposables.forEach(d => d.dispose());
-
+    this._disposables = [];
     for (const exec of this._executables.values()) {
       exec.dispose();
     }
+    this._executables.clear();
   }
 
   private readonly _executables: Map<string /*fsPath*/, AbstractExecutable> = new Map();
@@ -238,53 +239,62 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     if (errors.length > 0) return errors;
 
-    try {
-      // gaze can handle more patterns at once
-      const absPatterns: string[] = [];
+    if (pattern.symlink) {
+      try {
+        const cb = (fsPath: string): void => {
+          this._shared.log.info('symlink watcher event:', fsPath);
+          getModiTime(fsPath).then(modiTime => {
+            if (modiTime === undefined) {
+              for (const [filePath, exec] of this._executables)
+                if (exec) {
+                  exec.dispose();
+                  this._executables.delete(filePath);
+                }
+              this._shared.log.infoS('Symlink was removed', pattern);
+            } else {
+              this._shared.log.infoS('Symlink was created/changed, reloading tests', pattern);
+              vscode.commands.executeCommand('testMate.cmd.reload-tests');
+            }
+          });
+        };
+        const cb_err = (e: Error): void => this._shared.log.error('symlink watcher:', e, pattern.symlink);
 
-      if (pattern.symlink) {
         if (pattern.symlink.isPartOfWs) {
           const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.symlink.relativeToWsPosix, []);
           this._disposables.push(w);
-          w.onError((e: Error): void => this._shared.log.error('symlink watcher:', e, pattern.symlink));
-          w.onAll((fsPath: string): void => {
-            this._shared.log.info('symlink watcher event:', fsPath);
-            getModiTime(fsPath).then(modiTime => {
-              if (modiTime === undefined) {
-                for (const [filePath, exec] of this._executables)
-                  if (exec) {
-                    exec.dispose();
-                    this._executables.delete(filePath);
-                  }
-                this._shared.log.infoS('Symlink was removed', pattern);
-              } else {
-                this._shared.log.infoS(
-                  'Symlink was created, but no discovery will happen. Usser must initiat reload via UI or command.',
-                  pattern,
-                );
-              }
-            });
-            this.sendRetireAllExecutables();
-          });
+          w.onError(cb_err);
+          w.onAll(cb);
         } else {
-          absPatterns.push(pattern.symlink.absPath);
+          const w = new GazeWrapper([pattern.symlink.absPath]);
+          this._disposables.push(w);
+          w.onError(cb_err);
+          w.onAll(cb);
         }
+      } catch (e) {
+        this._shared.log.error('symlink error:', e, pattern.symlink);
       }
+    }
+
+    try {
+      // gaze can handle more patterns at once
+      const absPatterns: string[] = [];
+      const cb = (fsPath: string): void => {
+        this._shared.log.info('dependsOn watcher event:', fsPath);
+        getModiTime(fsPath).then(modiTime => {
+          for (const exec of this._executables.values())
+            exec.reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime);
+        });
+        this.sendRetireAllExecutables();
+      };
+      const cb_err = (e: Error): void => this._shared.log.error('dependsOn watcher:', e);
 
       for (const pattern of this._dependsOn) {
         const p = await this._pathProcessor(pattern);
         if (p.resolved.isPartOfWs) {
           const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.resolved.relativeToWsPosix, []);
           this._disposables.push(w);
-          w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, p));
-          w.onAll((fsPath: string): void => {
-            this._shared.log.info('dependsOn watcher event:', fsPath);
-            getModiTime(fsPath).then(modiTime => {
-              for (const exec of this._executables.values())
-                exec.reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime);
-            });
-            this.sendRetireAllExecutables();
-          });
+          w.onError(cb_err);
+          w.onAll(cb);
         } else {
           absPatterns.push(p.resolved.absPath);
         }
@@ -293,13 +303,8 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       if (absPatterns.length > 0) {
         const w = new GazeWrapper(absPatterns);
         this._disposables.push(w);
-
-        w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, absPatterns));
-
-        w.onAll((fsPath: string): void => {
-          this._shared.log.info('dependsOn watcher event:', fsPath);
-          this.sendRetireAllExecutables();
-        });
+        w.onError(cb_err);
+        w.onAll(cb);
       }
     } catch (e) {
       this._shared.log.error('dependsOn error:', e);

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.20.2]
+
+### Changed
+
+- Improved symlink handling. Now it reloads if symlink is recreated but still doesn't handle if no symlink at load time: Since we don't know which part of the path to watch to be symlink in the future.
+
 ## [4.20.1] - 2025-11-22
 
 Just dependency upgrades.
