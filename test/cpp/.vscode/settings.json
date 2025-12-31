@@ -3,8 +3,12 @@
         {
             "pattern": "build-symlink/**/*.exe",
             "gtest": {
-                "prependTestRunningArgs": ["aa"],
-                "prependTestDebuggingArgs": ["xx"]
+                "prependTestRunningArgs": [
+                    "aa"
+                ],
+                "prependTestDebuggingArgs": [
+                    "xx"
+                ]
             },
             "runTask": {
                 "before": [

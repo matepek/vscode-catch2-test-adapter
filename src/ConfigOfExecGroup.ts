@@ -1,6 +1,7 @@
 import * as pathlib from 'path';
 import { promisify } from 'util';
 import * as vscode from 'vscode';
+import * as dotenv from 'dotenv';
 
 import { AbstractExecutable } from './framework/AbstractExecutable';
 import * as c2fs from './util/FSWrapper';
@@ -408,22 +409,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
           envFromFile = readJSONSync(resolvedEnvFile.resolved.absPath);
         } else if (resolvedEnvFile.resolved.absPath.indexOf('.env') !== -1) {
           const content = readFileSync(resolvedEnvFile.resolved.absPath).toString();
-          envFromFile = {};
-          const lines = content.split(/\r?\n/).filter(x => {
-            const t = x.trim();
-            return t.length > 0 && !t.startsWith('#') && !t.startsWith('//');
-          });
-          lines.forEach((line: string) => {
-            const eqChar = line.indexOf('=');
-            if (eqChar !== -1) {
-              let value = line.substring(eqChar + 1);
-              if (value.startsWith('"') || value.startsWith("'")) value = value.substring(1);
-              if (value.endsWith('"') || value.endsWith("'")) value = value.substring(0, value.length - 1);
-              envFromFile![line.substring(0, eqChar)] = line.substring(eqChar + 1);
-            } else {
-              throw Error('line missing "=" in: "' + resolvedEnvFile.absPath + '"' + line);
-            }
-          });
+          envFromFile = dotenv.parse(content)
         } else {
           throw Error('Unsupported file format: "' + resolvedEnvFile.absPath + '". Use only .json or .env');
         }

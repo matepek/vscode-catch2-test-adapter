@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.21.0]
+
+### Fixed
+
+- `.env` file parser. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/501))
+
 ## [4.20.2]
 
 ### Changed
