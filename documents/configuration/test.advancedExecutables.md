@@ -54,7 +54,7 @@ If it is an object it can contains the following properties:
 | `env`                       | Environment variables for the test executable. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                              |
 | `envFile`                   | File containing environment variables for the test executable. (JSON object or .env file) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                                                                                                                     |
 | `executionWrapper`          | Specifies an executor which wraps the executions. Useful for emulators. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                                                                                                                                       |
-| `sourceFileMap`             | Replaces the key with the value in the souce file path. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                                                                                                                                                       |
+| `sourceFileMap`             | Replaces the key with the value in the souce file path. Can be configured with `$strategy`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#sourceFileMap)                                                                                                                                                                     |
 | `dependsOn`                 | Array of (relative / absolute) _paths_ / [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) (string[]). If a related file is _changed/created/deleted_ and autorun is enabled in "..." menu it will run the related executables. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) |
 | `runTask`                   | Tasks to run before running/debugging tests. The task should be defined like any other task in vscode (e.g. in tasks.json). If the task exits with a non-zero code, execution of tests will be halted. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                        |
 | `parallelizationLimit`      | The variable maximize the number of the parallel execution of one executable instance. Note: `testMate.cpp.test.parallelExecutionLimit` is a global limit. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                                                    |
@@ -95,17 +95,39 @@ I suggest to have a stricter file-name convention and a corresponding pattern li
 Applies a simple search and replace for the file paths.
 It resolves variables
 
+Can have a special property `$strategy`:
+
+- "legacy": (default) Matches anywhere in the map, applies all rules.
+- "starts-with": Matches only if the path starts with the same. Applies the first substitution only.
+- "replace-first": Matches anywhere in the path. Applies the first substitution only.
+- "regex-relative": Matches the regexp in the relative path. Applies the first substitution only. Substitution can use `$0`, `$1`, ...
+- "regex-absolute": Matches the regexp in the given(not necessarily absoluteq) path. Applies the first substitution only. Substitution can use `$0`, `$1`, ...
+
 Examples:
 
 ```json
   "testMate.test.advancedExecutables": [{
     "pattern": "<default pattern>",
     "sourceFileMap": {
+      "$strategy": "starts-with", // optional, defaults to "legacy"
       "/path/to/be/replaced/": "/path/I/want/to/use/",
       "/other-path-to-resolve/": "${workspaceFolder}/"
     }
   }]
 ```
+
+```json
+  "testMate.test.advancedExecutables": [{
+    "pattern": "<default pattern>",
+    "sourceFileMap": {
+      "$strategy": "regex-relative",
+      "(src/)(f1|f2)/(.*)": "build/$1$3",
+      "/other-path-to-resolve/.*": "$0" // -> no substitution, just matching, NOTE: .* at the end is important for ful path match, pla around here: https://regex101.com/
+    }
+  }]
+```
+
+See extension's output for debug informations.
 
 ## `dependsOn`
 

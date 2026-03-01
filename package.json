@@ -294,8 +294,28 @@
                 ]
               },
               "sourceFileMap": {
-                "markdownDescription": "Replaces the key with the value in the souce file path. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "markdownDescription": "Replaces the key with the value in the souce file path. Can be configured with `$strategy`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#sourceFileMap)",
                 "type": "object",
+                "properties": {
+                  "$strategy": {
+                    "type": "string",
+                    "default": "legacy",
+                    "enum": [
+                      "legacy",
+                      "starts-with",
+                      "replace-first",
+                      "regex-relative",
+                      "regex-absolute"
+                    ],
+                    "enumDescriptions": [
+                      "Matches anywhere in the map, applies all rules.",
+                      "Matches only if the path starts with the same. Applies the first substitution only.",
+                      "Matches anywhere in the path. Applies the first substitution only.",
+                      "Matches the regexp in the relative path. Applies the first substitution only. Substitution can use `$0`, `$1`, ...",
+                      "Matches the regexp in the absolute path. Applies the first substitution only. Substitution can use `$0`, `$1`, ..."
+                    ]
+                  }
+                },
                 "additionalProperties": {
                   "type": "string"
                 }

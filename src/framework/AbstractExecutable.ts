@@ -8,7 +8,15 @@ import { AbstractTest } from './AbstractTest';
 import { TaskPool } from '../util/TaskPool';
 import { ExecutableRunResultValue, RunningExecutable } from '../RunningExecutable';
 import { promisify } from 'util';
-import { Version, getAbsolutePath, CancellationToken, reindentStr, parseLine, getModiTime } from '../Util';
+import {
+  Version,
+  getAbsolutePath,
+  CancellationToken,
+  reindentStr,
+  parseLine,
+  getModiTime,
+  applyRegexpWithSubstitution,
+} from '../Util';
 import {
   createRegexReplaceForStringVariable,
   createPythonIndexerForPathVariable,
@@ -891,11 +899,88 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     if (typeof file != 'string') return undefined;
 
     // normalize before apply resolvedSourceFileMap because it is normalize too
-    // this is for better platfrom independent resolution
-    let resolved = pathlib.normalize(file);
+    // this is for better platform independent resolution
+    const normalizedFileInput = pathlib.normalize(file);
+    let resolved = normalizedFileInput;
+    const keys = Object.keys(this.shared.resolvedSourceFileMap);
+    if (keys.length > 0) {
+      // REMARK: this logic dos not guarantee that the `normalizedFileInput` is actually absolute
+      // we just assume that most ofe the cases it is relative.
+      let relativeFileInput = normalizedFileInput;
+      let absoluteFileInput = normalizedFileInput;
+      if (pathlib.isAbsolute(normalizedFileInput)) {
+        relativeFileInput = pathlib.relative(this.shared.workspacePath, normalizedFileInput);
+      } else {
+        absoluteFileInput = pathlib.join(this.shared.workspacePath, normalizedFileInput);
+      }
 
-    for (const m in this.shared.resolvedSourceFileMap) {
-      resolved = resolved.replace(m, this.shared.resolvedSourceFileMap[m]); // Note: it just replaces the first occurence
+      const strategyKey = '$strategy';
+      const strategy = this.shared.resolvedSourceFileMap[strategyKey] ?? 'legacy';
+      if (strategy === 'legacy') {
+        resolved = normalizedFileInput;
+        for (const m of keys) {
+          if (m === strategyKey) continue;
+          resolved = resolved.replace(m, this.shared.resolvedSourceFileMap[m]); // Note: it just replaces the first occurence
+        }
+      } else if (strategy === 'starts-with') {
+        for (const m of keys) {
+          if (m === strategyKey) continue;
+          if (pathlib.isAbsolute(m)) {
+            if (absoluteFileInput.startsWith(m)) {
+              resolved = absoluteFileInput.replace(m, this.shared.resolvedSourceFileMap[m]); // Note: it just replaces the first occurence
+              break;
+            }
+          } else {
+            if (relativeFileInput.startsWith(m)) {
+              resolved = relativeFileInput.replace(m, this.shared.resolvedSourceFileMap[m]); // Note: it just replaces the first occurence
+              break;
+            }
+          }
+        }
+      } else if (strategy === 'replace-first') {
+        for (const m of keys) {
+          if (m === strategyKey) continue;
+          if (pathlib.isAbsolute(m)) {
+            if (absoluteFileInput.includes(m)) {
+              resolved = absoluteFileInput.replace(m, this.shared.resolvedSourceFileMap[m]); // Note: it just replaces the first occurence
+              break;
+            }
+          } else {
+            if (relativeFileInput.includes(m)) {
+              resolved = relativeFileInput.replace(m, this.shared.resolvedSourceFileMap[m]); // Note: it just replaces the first occurence
+              break;
+            }
+          }
+        }
+      } else if (strategy === 'regex-relative') {
+        for (const m of keys) {
+          if (m === strategyKey) continue;
+          const match = applyRegexpWithSubstitution(
+            new RegExp(m),
+            relativeFileInput,
+            this.shared.resolvedSourceFileMap[m],
+          );
+          if (match !== null) {
+            resolved = match;
+            break;
+          }
+        }
+      } else if (strategy === 'regex-absolute') {
+        for (const m of keys) {
+          if (m === strategyKey) continue;
+          const match = applyRegexpWithSubstitution(
+            new RegExp(m),
+            absoluteFileInput,
+            this.shared.resolvedSourceFileMap[m],
+          );
+          if (match !== null) {
+            resolved = match;
+            break;
+          }
+        }
+      } else {
+        this.log.errorS('unexpected strategy', strategy);
+      }
     }
 
     resolved = this._findFilePath(resolved);

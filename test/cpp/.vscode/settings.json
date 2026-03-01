@@ -1,7 +1,7 @@
 {
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build-symlink/**/*.exe",
+            "pattern": "build/*.exe",
             "gtest": {
                 "prependTestRunningArgs": [
                     "aa"
@@ -9,6 +9,9 @@
                 "prependTestDebuggingArgs": [
                     "xx"
                 ]
+            },
+            "sourceFileMap": {
+                "$strategy": "regex-absolute",
             },
             "runTask": {
                 "before": [

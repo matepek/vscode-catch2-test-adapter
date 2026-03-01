@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.22.0]
+
+### Changed
+
+- `sourceFileMap` now uses new resolution strategy by default. Still can use `"$strategy": "legacy"` if needed. [See new options.](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#sourceFileMap). ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/503))
+
 ## [4.21.0] - 2025-12-31
 
 ### Fixed
