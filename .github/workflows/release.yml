@@ -28,7 +28,7 @@ jobs:
         run: npm install
 
       - name: Audit
-        envs:
+        env:
           NODE_ENV: production
         run: npm audit
 
