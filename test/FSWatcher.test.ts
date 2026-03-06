@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as path from 'path';
 import * as fse from 'fs-extra';
 
-import { GazeWrapper, VSCFSWatcherWrapper } from '../src/util/FSWatcher';
+import { ChokidarWrapper, VSCFSWatcherWrapper } from '../src/util/FSWatcher';
 import { settings, isWin } from './Common';
 
 describe(path.basename(__filename), function () {
@@ -38,7 +38,7 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlinkDir);
 
       const pattern = path.join(symlinkDir, '*');
-      const watcher = new GazeWrapper([pattern]);
+      const watcher = new ChokidarWrapper([pattern]);
 
       try {
         await watcher.ready();
@@ -76,7 +76,7 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir2, link2);
 
       const patterns = [path.join(link1, '*'), path.join(link2, '*')];
-      const watcher = new GazeWrapper(patterns);
+      const watcher = new ChokidarWrapper(patterns);
 
       try {
         await watcher.ready();
@@ -114,7 +114,7 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlinkDir);
 
       const pattern = path.join(symlinkDir, '**', '*test*');
-      const watcher = new GazeWrapper([pattern]);
+      const watcher = new ChokidarWrapper([pattern]);
 
       try {
         await watcher.ready();
@@ -142,7 +142,7 @@ describe(path.basename(__filename), function () {
       await fse.symlink('/nonexistent/path', brokenLink);
 
       const pattern = path.join(brokenLink, '*');
-      const watcher = new GazeWrapper([pattern]);
+      const watcher = new ChokidarWrapper([pattern]);
 
       try {
         await watcher.ready();
@@ -171,7 +171,7 @@ describe(path.basename(__filename), function () {
       await fse.symlink(realDir, symlinkDir);
 
       const pattern = path.join(symlinkDir, '*');
-      const watcher = new GazeWrapper([pattern]);
+      const watcher = new ChokidarWrapper([pattern]);
 
       const changes: string[] = [];
       watcher.onAll((fsPath: string) => {

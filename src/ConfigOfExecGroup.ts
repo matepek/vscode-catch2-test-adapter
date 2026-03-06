@@ -14,7 +14,7 @@ import {
 } from './util/ResolveRule';
 import { ExecutableFactory } from './framework/ExecutableFactory';
 import { WorkspaceShared } from './WorkspaceShared';
-import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
+import { ChokidarWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
 import { readJSONSync } from 'fs-extra';
 import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
 import { RunTaskConfig, ExecutionWrapperConfig, FrameworkSpecificConfig } from './AdvancedExecutableInterface';
@@ -159,7 +159,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
           enabledExcludes,
         );
       } else {
-        execWatcher = new GazeWrapper([pattern.resolved.absPath]);
+        execWatcher = new ChokidarWrapper([pattern.resolved.absPath]);
       }
 
       filePaths = await execWatcher.watched();
@@ -258,7 +258,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
             }
           });
         };
-        const cb_err = (e: Error): void => this._shared.log.error('symlink watcher:', e, pattern.symlink);
+        const cb_err = (e: unknown): void => this._shared.log.error('symlink watcher:', e, pattern.symlink);
 
         if (pattern.symlink.isPartOfWs) {
           const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.symlink.relativeToWsPosix, []);
@@ -266,7 +266,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
           w.onError(cb_err);
           w.onAll(cb);
         } else {
-          const w = new GazeWrapper([pattern.symlink.absPath]);
+          const w = new ChokidarWrapper([pattern.symlink.absPath]);
           this._disposables.push(w);
           w.onError(cb_err);
           w.onAll(cb);
@@ -287,7 +287,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
         });
         this.sendRetireAllExecutables();
       };
-      const cb_err = (e: Error): void => this._shared.log.error('dependsOn watcher:', e);
+      const cb_err = (e: unknown): void => this._shared.log.error('dependsOn watcher:', e);
 
       for (const pattern of this._dependsOn) {
         const p = await this._pathProcessor(pattern);
@@ -302,7 +302,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       }
 
       if (absPatterns.length > 0) {
-        const w = new GazeWrapper(absPatterns);
+        const w = new ChokidarWrapper(absPatterns);
         this._disposables.push(w);
         w.onError(cb_err);
         w.onAll(cb);

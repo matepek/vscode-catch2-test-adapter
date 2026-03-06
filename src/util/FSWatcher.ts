@@ -25,7 +25,7 @@ function longestCommonPath(paths: string[]): [string, string[]] {
   return [path.join(...x[0].slice(0, firstDiff)), x.map(p => p.slice(firstDiff)).map(p => path.join(...p))];
 }
 
-export class GazeWrapper implements FSWatcher {
+export class ChokidarWrapper implements FSWatcher {
   constructor(patterns: string[]) {
     const [cwd, children] = longestCommonPath(patterns);
     this._cwd = cwd;
