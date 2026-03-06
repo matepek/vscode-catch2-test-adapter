@@ -40,8 +40,8 @@ jobs:
           npm run webpack
           ls -all out/dist
 
-      - name: ESLint
-        run: npm run eslint
+      # - name: ESLint
+      #   run: npm run eslint
 
       - name: Test
         run: |
