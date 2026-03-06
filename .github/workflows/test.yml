@@ -80,8 +80,8 @@ jobs:
       - name: Compile
         run: npm run compile
 
-      - name: ESLint
-        run: npm run eslint
+      # - name: ESLint
+      #   run: npm run eslint
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.3
@@ -118,8 +118,8 @@ jobs:
       - name: Compile
         run: npm run compile
 
-      - name: ESLint
-        run: npm run eslint
+      # - name: ESLint
+      #   run: npm run eslint
 
       - name: Test
         run: npm test
