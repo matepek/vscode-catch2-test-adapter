@@ -29,11 +29,14 @@ export class ChokidarWrapper implements FSWatcher {
   constructor(patterns: string[]) {
     const [cwd, children] = longestCommonPath(patterns);
     this._cwd = cwd;
-    this._impl = new chokidar.FSWatcher({ cwd, awaitWriteFinish: true });
+    this._impl = new chokidar.FSWatcher({ cwd, awaitWriteFinish: true, followSymlinks: true });
     this._readyP = Promise.resolve().then(async () => {
-      const arr = await glob(children, { cwd });
-      this._impl.add(arr);
-      return new Promise(r => this._impl.once('ready', r));
+      const arr = await glob(children, { cwd, follow: true });
+      if (arr.length > 0) {
+        const ready = new Promise<void>(r => this._impl.once('ready', r));
+        this._impl.add(arr);
+        return ready;
+      }
     });
   }
 

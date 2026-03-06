@@ -20,7 +20,7 @@ describe(path.basename(__filename), function () {
     }
   });
 
-  describe('GazeWrapper with symlinks', function () {
+  describe('ChokidarWrapper with symlinks', function () {
     it('should watch files through symlinked directories', async function () {
       if (isWin) {
         this.skip();
