@@ -62,7 +62,10 @@ export class ExecutableFactory {
         regex = frameworkData.regex;
       }
 
-      const match = runWithHelpRes.stdout.match(regex);
+      let match = runWithHelpRes.stdout.match(regex);
+      if (!match && frameworkSpecific.helpRegex) {
+        match = runWithHelpRes.stderr.match(regex);
+      }
 
       if (match) {
         const sharedVarOfExec = new SharedVarOfExec(
