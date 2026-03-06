@@ -164,7 +164,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
       filePaths = await execWatcher.watched();
 
-      execWatcher.onError((err: Error) => {
+      execWatcher.onError((err: unknown) => {
         // eslint-disable-next-line
         if ((err as any).code == 'ENOENT') this._shared.log.info('watcher error', err);
         else this._shared.log.error('watcher error', err);
@@ -409,7 +409,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
           envFromFile = readJSONSync(resolvedEnvFile.resolved.absPath);
         } else if (resolvedEnvFile.resolved.absPath.indexOf('.env') !== -1) {
           const content = readFileSync(resolvedEnvFile.resolved.absPath).toString();
-          envFromFile = dotenv.parse(content)
+          envFromFile = dotenv.parse(content);
         } else {
           throw Error('Unsupported file format: "' + resolvedEnvFile.absPath + '". Use only .json or .env');
         }
