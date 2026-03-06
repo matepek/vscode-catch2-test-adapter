@@ -22,13 +22,15 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: '22.x'
 
       - name: Install
         run: npm install
 
       - name: Audit
-        run: npm audit --production
+        envs:
+          NODE_ENV: production
+        run: npm audit
 
       - name: Compile
         run: npm run compile
