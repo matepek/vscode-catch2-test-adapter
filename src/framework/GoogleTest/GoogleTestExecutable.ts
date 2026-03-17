@@ -165,7 +165,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
   };
 
   protected async _reloadChildren(cancellationToken: CancellationToken): Promise<void> {
-    const cacheFile = this.shared.path + '.TestMate.testListCache.xml';
+    const cacheFile = this.shared.path + `.TestMate.testListCache.${this.shared.optionsHash}.xml`;
 
     if (this.shared.enabledTestListCaching) {
       try {

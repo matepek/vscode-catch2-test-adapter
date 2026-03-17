@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.22.1]
+
+### Changed
+
+- google test framework test listing cache file name now includes a hash to make test listing working as it is expected. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/507))
+
 ## [4.22.0] - 2026-03-06
 
 ### Changed
