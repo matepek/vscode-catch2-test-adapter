@@ -86,6 +86,21 @@ export class WorkspaceManager implements vscode.Disposable {
           throw Error(msg);
         }
 
+        // {
+        //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        //   const foundAsAny = found as any;
+        //   if (
+        //     Object.hasOwn(foundAsAny, '_execution') &&
+        //     Object.hasOwn(foundAsAny._execution, '_command') &&
+        //     Object.hasOwn(foundAsAny._execution, '_args')
+        //   ) {
+        //     foundAsAny.execution.command = await resolveVariablesAsync(foundAsAny.execution.command, varToValue);
+        //     foundAsAny.execution.args = await resolveVariablesAsync(foundAsAny.execution.args, varToValue);
+        //   } else {
+        //     this.log.error('task api has changed, contact the developer', found.name, foundAsAny._execution);
+        //   }
+        // }
+        // const resolvedTask = found;
         const resolvedTask = new vscode.Task(
           found.definition,
           found.scope ?? vscode.TaskScope.Workspace,
@@ -390,9 +405,10 @@ export class WorkspaceManager implements vscode.Disposable {
           }
         }
       }
-    } catch (e) {
-      throw Error(
-        `One of the tasks of the \`testMate.test.advancedExecutables:runTask.${type}\` array has failed: ` + e,
+    } catch (cause) {
+      throw new Error(
+        `One of the tasks of the \`testMate.test.advancedExecutables:runTask.${type}\` array has failed`,
+        { cause },
       );
     }
   }

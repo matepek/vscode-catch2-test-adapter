@@ -76,13 +76,27 @@ export class SharedVarOfExec {
 
   /// accessors for shared
 
-  readonly log = this.shared.log;
-  readonly workspaceFolder = this.shared.workspaceFolder;
-  readonly workspacePath = this.workspaceFolder.uri.fsPath;
-  readonly testController = this.shared.testController;
-  readonly cancellationToken = this.shared.cancellationToken;
-  readonly taskPool = this.shared.taskPool;
-  readonly executeTask = this.shared.executeTask;
+  get log() {
+    return this.shared.log;
+  }
+  get workspaceFolder() {
+    return this.shared.workspaceFolder;
+  }
+  get workspacePath() {
+    return this.workspaceFolder.uri.fsPath;
+  }
+  get testController() {
+    return this.shared.testController;
+  }
+  get cancellationToken() {
+    return this.shared.cancellationToken;
+  }
+  get taskPool() {
+    return this.shared.taskPool;
+  }
+  get executeTask() {
+    return this.shared.executeTask;
+  }
 
   get rngSeed(): 'time' | number | null {
     return this.shared.rngSeed;

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { AbstractExecutable } from './AbstractExecutable';
 import { debugAssert } from '../util/DevelopmentHelper';
 import { SharedTestTags } from './SharedTestTags';
+import { Logger } from '../Logger';
 
 ///
 
@@ -34,9 +35,10 @@ export abstract class AbstractTest {
     }
 
     this._item.tags = this._calcTags();
+    this.log = this.exec.log;
   }
 
-  readonly log = this.exec.log;
+  readonly log: Logger;
 
   get item(): Readonly<vscode.TestItem> {
     return this._item;

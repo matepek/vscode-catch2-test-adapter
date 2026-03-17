@@ -4,6 +4,7 @@ import * as ansi from 'ansi-colors';
 import { parseLine } from './Util';
 import { AbstractTest, SubTest } from './framework/AbstractTest';
 import { debugBreak } from './util/DevelopmentHelper';
+import { Logger } from './Logger';
 
 type TestResult = 'skipped' | 'failed' | 'errored' | 'passed';
 
@@ -17,9 +18,11 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     private readonly runPrefix: string,
     private readonly addBeginEndMsg: boolean,
     readonly level = 0,
-  ) {}
+  ) {
+    this.log = this.test.log;
+  }
 
-  readonly log = this.test.log;
+  readonly log: Logger;
 
   private readonly _messages: vscode.TestMessage[] = [];
   private _result: TestResult | undefined = undefined;

@@ -212,7 +212,8 @@ export class ConfigOfExecGroup implements vscode.Disposable {
                     (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
                   )
                     throw Error(
-                      `Coudn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
+                      `Coudn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}`,
+                      { cause: reason },
                     );
                 }
               }
@@ -223,7 +224,8 @@ export class ConfigOfExecGroup implements vscode.Disposable {
                 (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
               )
                 throw Error(
-                  `Coudn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
+                  `Coudn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}`,
+                  { cause: reason },
                 );
             }
           } catch (reason) {

@@ -42,6 +42,7 @@ import { SpawnBuilder } from '../Spawner';
 import { SharedTestTags } from './SharedTestTags';
 import { Disposable } from '../Util';
 import { FilePathResolver, TestItemParent } from '../TestItemManager';
+import { Logger } from '../Logger';
 
 ///
 
@@ -61,9 +62,10 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     shared.log.setTags(tags);
 
     AbstractExecutable._reportedFrameworks.push(frameworkName);
+    this.log = this.shared.log;
   }
 
-  readonly log = this.shared.log;
+  readonly log: Logger;
 
   dispose(): void {
     for (const test of this._tests.values()) {
@@ -886,9 +888,10 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
               }
             }
           }
-        } catch (e) {
+        } catch (cause) {
           throw Error(
-            `One of the tasks of the \`testMate.test.advancedExecutables:runTask.${type}\` array has failed: ` + e,
+            `One of the tasks of the \`testMate.test.advancedExecutables:runTask.${type}\` array has failed: `,
+            { cause },
           );
         }
       });

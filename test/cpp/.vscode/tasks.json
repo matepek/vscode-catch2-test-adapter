@@ -34,7 +34,7 @@
             "type": "shell",
             "command": "echo",
             "args": [
-                "x2", "${command:testMate.cmd.get-debug-exec}"
+                "x2", "${command:testMate.cmd.get-debug-exec}", "${workspaceDirectory}"
             ],
         },
         {
@@ -42,7 +42,7 @@
             "type": "shell",
             "command": "echo",
             "args": [
-                "x", "${command:testMate.cmd.get-debug-exec}"
+                "x", "${command:testMate.cmd.get-debug-exec}", "${workspaceDirectory}"
             ],
             "dependsOn": ["echo-testmate2"]
         },
