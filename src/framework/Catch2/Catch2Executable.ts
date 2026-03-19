@@ -211,7 +211,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
   };
 
   protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<void> {
-    const cacheFile = this.shared.path + '.TestMate.testListCache.txt';
+    const cacheFile = this.shared.path + `.TestMate.testListCache.${this.shared.optionsHash}.txt`;
 
     if (this.shared.enabledTestListCaching) {
       try {

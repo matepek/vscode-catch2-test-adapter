@@ -459,7 +459,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       filePath,
       {
         cwd: resolvedCwd,
-        env: Object.assign({}, process.env, resolvedEnv),
+        env: resolvedEnv,
       },
       varToValue,
       this._parallelizationLimit,

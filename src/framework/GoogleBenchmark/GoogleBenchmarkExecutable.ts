@@ -55,7 +55,7 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
   };
 
   protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<void> {
-    const cacheFile = this.shared.path + '.TestMate.testListCache.xml';
+    const cacheFile = this.shared.path + `.TestMate.testListCache.${this.shared.optionsHash}.xml`;
 
     if (this.shared.enabledTestListCaching) {
       try {
