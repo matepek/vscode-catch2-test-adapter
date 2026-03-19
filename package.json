@@ -81,7 +81,6 @@
     "glob": "^13.0.6",
     "globals": "^17.4.0",
     "mocha": "^11.7.5",
-    "object-hash": "^3.0.0",
     "prettier": "^3.8.1",
     "raw-loader": "^4.0.2",
     "sinon": "^21.0.3",

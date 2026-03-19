@@ -5,8 +5,7 @@ import { TaskPool } from '../util/TaskPool';
 import { Spawner, SpawnOptionsWithoutStdio } from '../Spawner';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { DebugConfigData } from '../DebugConfigType';
-
-const hash = require('object-hash'); // eslint-disable-line
+import { createHash } from 'node:crypto';
 
 export class SharedVarOfExec {
   constructor(
@@ -26,16 +25,23 @@ export class SharedVarOfExec {
     readonly resolvedSourceFileMap: Record<string, string>,
   ) {
     this.parallelizationPool = new TaskPool(_parallelizationLimit);
-    this.optionsHash = hash
-      .MD5({
-        ...options.env,
-        ...{
-          prependTestRunningArgs: this._frameworkSpecific.prependTestRunningArgs,
-          prependTestDebuggingArgs: this._frameworkSpecific.prependTestDebuggingArgs,
-          prependTestListingArgs: this._frameworkSpecific.prependTestListingArgs,
-        },
-      })
-      .substring(0, 6);
+    const h = createHash('md5');
+    {
+      const env = options?.env ?? {};
+      Object.keys(env)
+        .sort()
+        .forEach(k => h.update(`${k}=${env[k]}`));
+      if (this._frameworkSpecific.prependTestRunningArgs) {
+        h.update('prependTestRunningArgs=' + this._frameworkSpecific.prependTestRunningArgs.join('|'));
+      }
+      if (this._frameworkSpecific.prependTestDebuggingArgs) {
+        h.update('prependTestDebuggingArgs=' + this._frameworkSpecific.prependTestDebuggingArgs.join('|'));
+      }
+      if (this._frameworkSpecific.prependTestListingArgs) {
+        h.update('prependTestListingArgs=' + this._frameworkSpecific.prependTestListingArgs.join('|'));
+      }
+    }
+    this.optionsHash = h.digest('hex').substring(0, 6);
   }
 
   readonly parallelizationPool: TaskPool;
