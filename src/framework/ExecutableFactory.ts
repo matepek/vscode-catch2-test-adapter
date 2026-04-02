@@ -19,7 +19,7 @@ export class ExecutableFactory {
     private readonly _execName: string | undefined,
     private readonly _execDescription: string | undefined,
     private readonly _execPath: string,
-    execOptions: SpawnOptionsWithoutStdio,
+    private readonly _execOptions: SpawnOptionsWithoutStdio,
     private readonly _varToValue: ResolveRuleAsync[],
     private readonly _parallelizationLimit: number,
     private readonly _markAsSkipped: boolean,
@@ -31,11 +31,7 @@ export class ExecutableFactory {
     private readonly _spawner: Spawner,
     private readonly _resolvedSourceFileMap: Record<string, string>,
     private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecificConfig>,
-  ) {
-    this._execOptions = { ...execOptions, env: { ...process.env, ...execOptions.env } };
-  }
-
-  private readonly _execOptions: SpawnOptionsWithoutStdio;
+  ) {}
 
   async create(checkIsNativeExecutable: boolean): Promise<AbstractExecutable | undefined> {
     const runWithHelpRes = await this._shared.taskPool.scheduleTask(async () => {

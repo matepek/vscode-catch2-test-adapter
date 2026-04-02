@@ -14,9 +14,9 @@ export class SharedVarOfExec {
     readonly description: string | undefined,
     readonly varToValue: readonly ResolveRuleAsync[],
     readonly path: string,
-    readonly options: SpawnOptionsWithoutStdio,
+    options: SpawnOptionsWithoutStdio,
     private readonly _frameworkSpecific: FrameworkSpecificConfig,
-    _parallelizationLimit: number,
+    parallelizationLimit: number,
     readonly markAsSkipped: boolean,
     readonly executableCloning: boolean,
     readonly debugConfigData: DebugConfigData | undefined,
@@ -24,9 +24,9 @@ export class SharedVarOfExec {
     readonly spawner: Spawner,
     readonly resolvedSourceFileMap: Record<string, string>,
   ) {
-    this.parallelizationPool = new TaskPool(_parallelizationLimit);
-    const h = createHash('md5');
+    this.parallelizationPool = new TaskPool(parallelizationLimit);
     {
+      const h = createHash('md5');
       const env = options?.env ?? {};
       Object.keys(env)
         .sort()
@@ -40,12 +40,22 @@ export class SharedVarOfExec {
       if (this._frameworkSpecific.prependTestListingArgs) {
         h.update('prependTestListingArgs=' + this._frameworkSpecific.prependTestListingArgs.join('|'));
       }
+      this.optionsHash = h.digest('hex').substring(0, 6);
     }
-    this.optionsHash = h.digest('hex').substring(0, 6);
+    this.shared.log.debug(
+      'exec hash',
+      path,
+      this.optionsHash,
+      options.env,
+      this._frameworkSpecific.prependTestRunningArgs,
+      this._frameworkSpecific.prependTestDebuggingArgs,
+      this._frameworkSpecific.prependTestListingArgs,
+    );
+    this.options = { ...options, env: { ...process.env, ...options.env } };
   }
 
   readonly parallelizationPool: TaskPool;
-
+  readonly options: SpawnOptionsWithoutStdio;
   readonly optionsHash: string;
 
   get testGrouping(): TestGroupingConfig | undefined {

@@ -1,7 +1,11 @@
 {
+    "testMate.cpp.discovery.testListCaching": true,
+    "testMate.cpp.test.parallelExecutionLimit": 4,
+    "testMate.cpp.test.parallelExecutionOfExecutableLimit": 4,
+    "testMate.cpp.log.logpanel": true,
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/*.exe",
+            "pattern": "build/gtest1.exe",
             "gtest": {
                 "prependTestRunningArgs": [
                     "aa"
