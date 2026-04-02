@@ -2,7 +2,7 @@ import { FrameworkSpecificConfig, RunTaskConfig } from '../AdvancedExecutableInt
 import { TestGroupingConfig } from '../TestGroupingInterface';
 import { ResolveRuleAsync } from '../util/ResolveRule';
 import { TaskPool } from '../util/TaskPool';
-import { Spawner, SpawnOptionsWithoutStdio } from '../Spawner';
+import { Spawner, SpawnOptionsWithoutStdioEx } from '../Spawner';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { DebugConfigData } from '../DebugConfigType';
 import { createHash } from 'node:crypto';
@@ -14,7 +14,7 @@ export class SharedVarOfExec {
     readonly description: string | undefined,
     readonly varToValue: readonly ResolveRuleAsync[],
     readonly path: string,
-    options: SpawnOptionsWithoutStdio,
+    readonly options: SpawnOptionsWithoutStdioEx,
     private readonly _frameworkSpecific: FrameworkSpecificConfig,
     parallelizationLimit: number,
     readonly markAsSkipped: boolean,
@@ -27,7 +27,7 @@ export class SharedVarOfExec {
     this.parallelizationPool = new TaskPool(parallelizationLimit);
     {
       const h = createHash('md5');
-      const env = options?.env ?? {};
+      const env = options.customEnv;
       Object.keys(env)
         .sort()
         .forEach(k => h.update(`${k}=${env[k]}`));
@@ -46,16 +46,14 @@ export class SharedVarOfExec {
       'exec hash',
       path,
       this.optionsHash,
-      options.env,
+      this.options.customEnv,
       this._frameworkSpecific.prependTestRunningArgs,
       this._frameworkSpecific.prependTestDebuggingArgs,
       this._frameworkSpecific.prependTestListingArgs,
     );
-    this.options = { ...options, env: { ...process.env, ...options.env } };
   }
 
   readonly parallelizationPool: TaskPool;
-  readonly options: SpawnOptionsWithoutStdio;
   readonly optionsHash: string;
 
   get testGrouping(): TestGroupingConfig | undefined {

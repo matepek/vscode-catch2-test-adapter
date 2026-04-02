@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.22.5]
+
+### Fixed
+
+- cache file name generation's algo. (related: [1](https://github.com/matepek/vscode-catch2-test-adapter/issues/510), [2](https://github.com/matepek/vscode-catch2-test-adapter/issues/516))
+
 ## [4.22.4] - 2026-04-02
 
 ### Fixed

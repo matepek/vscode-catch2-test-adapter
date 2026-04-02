@@ -77,7 +77,7 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
     const args = prependTestListingArgs.concat([`--benchmark_list_tests=true`]);
 
     const pathForExecution = await this._getPathForExecution();
-    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options.cwd);
+    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
     const listOutput = await this.shared.spawner.spawnAsync(pathForExecution, args, this.shared.options, 30000);
 
     if (listOutput.stderr && !this.shared.ignoreTestEnumerationStdErr) {

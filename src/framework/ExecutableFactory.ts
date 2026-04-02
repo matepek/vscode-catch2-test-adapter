@@ -6,7 +6,7 @@ import { GoogleTestExecutable } from './GoogleTest/GoogleTestExecutable';
 import { DOCExecutable } from './doctest/DOCExecutable';
 import { FrameworkSpecificConfig, RunTaskConfig } from '../AdvancedExecutableInterface';
 import { Version } from '../Util';
-import { Spawner, SpawnOptionsWithoutStdio } from '../Spawner';
+import { Spawner, SpawnOptionsWithoutStdioEx } from '../Spawner';
 import { GoogleBenchmarkExecutable } from './GoogleBenchmark/GoogleBenchmarkExecutable';
 import { ResolveRuleAsync } from '../util/ResolveRule';
 import { WorkspaceShared } from '../WorkspaceShared';
@@ -19,7 +19,7 @@ export class ExecutableFactory {
     private readonly _execName: string | undefined,
     private readonly _execDescription: string | undefined,
     private readonly _execPath: string,
-    private readonly _execOptions: SpawnOptionsWithoutStdio,
+    private readonly _execOptions: SpawnOptionsWithoutStdioEx,
     private readonly _varToValue: ResolveRuleAsync[],
     private readonly _parallelizationLimit: number,
     private readonly _markAsSkipped: boolean,

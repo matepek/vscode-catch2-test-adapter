@@ -238,7 +238,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     else args.push('--use-colour', 'no');
 
     const pathForExecution = await this._getPathForExecution();
-    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options.cwd);
+    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
     const catch2TestListingProcess = await this.shared.spawner.spawn(pathForExecution, args, this.shared.options);
 
     const result =

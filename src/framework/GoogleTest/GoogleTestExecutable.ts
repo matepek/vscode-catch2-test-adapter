@@ -190,7 +190,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     ]);
 
     const pathForExecution = await this._getPathForExecution();
-    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options.cwd);
+    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
     const googleTestListProcess = await this.shared.spawner.spawn(pathForExecution, args, this.shared.options);
 
     const loadFromFileIfHas = async (): Promise<boolean> => {
