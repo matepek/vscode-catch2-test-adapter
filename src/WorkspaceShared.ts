@@ -47,7 +47,6 @@ export class WorkspaceShared {
     this._cancellationTokenSource.cancel();
     this.buildProcessChecker.dispose();
     this._execRunningTimeoutChangeEmitter.dispose();
-    this.log.dispose();
   }
 
   get execRunningTimeout(): number | null {

@@ -341,6 +341,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       debugProfile.dispose();
       controller.dispose();
       log.info('Deactivating finished');
+      log.dispose();
     },
   });
 
