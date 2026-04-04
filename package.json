@@ -372,6 +372,19 @@
                 "default": 1,
                 "minimum": 1
               },
+              "maxTestsPerExecutable": {
+                "markdownDescription": "The variable maximizes the number of test(s) inluded in one run/execution instance/process. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "default": null,
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
               "strictPattern": {
                 "markdownDescription": "Test loading fails if one of the files matched by `pattern` is not a test executable. (Helps noticing unexpected crashes/problems under test loading.)",
                 "type": "boolean",

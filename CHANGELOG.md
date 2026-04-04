@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.23.0]
+
+### Added
+
+- exeprimental _num of test per process_ feature. Run the same executable multiple times. See config: [maxTestsPerExecutable](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md). ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/509))
+
 ## [4.22.6] - 2026-04-02
 
 ### Fixed

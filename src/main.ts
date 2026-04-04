@@ -361,6 +361,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     ),
   );
 
+  context.subscriptions.push(
+    vscode.commands.registerCommand('testMate.cmd.get-debug-arguments', () =>
+      currentDebugArgs.map(a => a.replaceAll('"', '\\"')).map(a => `"${a}"`),
+    ),
+  );
+
   addOpenedWorkspaces();
 
   log.info('Activation finished');

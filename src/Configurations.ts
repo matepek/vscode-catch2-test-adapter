@@ -460,6 +460,7 @@ export class Configurations {
   getExecutableConfigs(shared: WorkspaceShared): ConfigOfExecGroup[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultParallelExecutionOfExecLimit = this.getParallelExecutionOfExecutableLimit() || 1;
+    const defaultMaxTestsPerExecutable = null;
 
     const createExecutableConfigFromPattern = (pattern: string): ConfigOfExecGroup => {
       return new ConfigOfExecGroup(
@@ -582,6 +583,11 @@ export class Configurations {
             ? Math.max(1, obj.parallelizationLimit)
             : defaultParallelExecutionOfExecLimit;
 
+        const maxTestsPerExecutable: number | null =
+          typeof obj.maxTestsPerExecutable === 'number' && !Number.isNaN(obj.maxTestsPerExecutable)
+            ? Math.max(1, obj.maxTestsPerExecutable)
+            : defaultMaxTestsPerExecutable;
+
         const strictPattern: boolean | undefined = obj.strictPattern;
 
         const markAsSkipped: boolean | undefined = obj.markAsSkipped;
@@ -624,6 +630,7 @@ export class Configurations {
           dependsOn,
           runTask,
           parallelizationLimit,
+          maxTestsPerExecutable,
           strictPattern,
           markAsSkipped,
           executableCloning,

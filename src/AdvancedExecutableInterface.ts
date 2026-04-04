@@ -17,6 +17,7 @@ export type AdvancedExecutableConfig = {
   dependsOn?: Array<ResolvableString>;
   runTask?: RunTaskConfig;
   parallelizationLimit?: number;
+  maxTestsPerExecutable?: number | null;
   strictPattern?: boolean;
   markAsSkipped?: boolean;
   executableCloning?: boolean;

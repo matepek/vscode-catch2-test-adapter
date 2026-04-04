@@ -17,6 +17,7 @@ export class SharedVarOfExec {
     readonly options: SpawnOptionsWithoutStdioEx,
     private readonly _frameworkSpecific: FrameworkSpecificConfig,
     parallelizationLimit: number,
+    readonly maxTestsPerExecutable: number | null,
     readonly markAsSkipped: boolean,
     readonly executableCloning: boolean,
     readonly debugConfigData: DebugConfigData | undefined,

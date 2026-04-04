@@ -505,17 +505,17 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
   private _splitTestSetForMultirunIfEnabled(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
     const parallelizationLimit = this.shared.parallelizationPool.maxTaskCount;
 
-    if (parallelizationLimit > 1) {
+    if (parallelizationLimit > 1 || this.shared.maxTestsPerExecutable !== null) {
       // user intention?
-      const testPerTask = Math.max(1, Math.round(this._tests.size / parallelizationLimit));
+      let testPerTask = Math.max(1, Math.round(tests.length / parallelizationLimit));
+
+      if (this.shared.maxTestsPerExecutable !== null) {
+        testPerTask = Math.min(testPerTask, this.shared.maxTestsPerExecutable);
+      }
 
       const targetTaskCount = Math.min(tests.length, Math.max(1, Math.round(tests.length / testPerTask)));
 
-      const buckets: AbstractTest[][] = [];
-
-      for (let i = 0; i < targetTaskCount; ++i) {
-        buckets.push([]);
-      }
+      const buckets: AbstractTest[][] = Array.from({ length: targetTaskCount }, () => []);
 
       for (let i = 0; i < tests.length; ++i) {
         buckets[i % buckets.length].push(tests[i]);
