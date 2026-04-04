@@ -86,29 +86,26 @@ export class WorkspaceManager implements vscode.Disposable {
           throw Error(msg);
         }
 
-        // {
-        //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        //   const foundAsAny = found as any;
-        //   if (
-        //     Object.hasOwn(foundAsAny, '_execution') &&
-        //     Object.hasOwn(foundAsAny._execution, '_command') &&
-        //     Object.hasOwn(foundAsAny._execution, '_args')
-        //   ) {
-        //     foundAsAny.execution.command = await resolveVariablesAsync(foundAsAny.execution.command, varToValue);
-        //     foundAsAny.execution.args = await resolveVariablesAsync(foundAsAny.execution.args, varToValue);
-        //   } else {
-        //     this.log.error('task api has changed, contact the developer', found.name, foundAsAny._execution);
-        //   }
-        // }
-        // const resolvedTask = found;
-        const resolvedTask = new vscode.Task(
-          found.definition,
-          found.scope ?? vscode.TaskScope.Workspace,
-          found.name,
-          found.source,
-          await resolveVariablesAsync(found.execution, varToValue),
-          found.problemMatchers,
-        );
+        let resolvedTask = found;
+        if (
+          found.execution instanceof vscode.ShellExecution &&
+          (found.execution.command.toString().indexOf('${') !== -1 ||
+            found.execution.args.some(v => v.toString().indexOf('${') !== -1))
+        ) {
+          this._shared.log.info(
+            'task is overwritten because contains `${`, (this means `dependsOn` tasks are ignored)',
+            'if you must use some vscode variable not related to the extension just create a wrapper/bridge task',
+            found.name,
+          );
+          resolvedTask = new vscode.Task(
+            found.definition,
+            found.scope ?? vscode.TaskScope.Workspace,
+            found.name,
+            found.source,
+            await resolveVariablesAsync(found.execution, varToValue),
+            found.problemMatchers,
+          );
+        }
 
         if (Version.from(vscode.version)?.smaller(new Version(1, 72))) {
           // Task.name setter needs to be triggered in order for the task to clear its __id field

@@ -10,18 +10,6 @@
             "problemMatcher": []
         },
         {
-            "type": "cmake",
-            "label": "build_all",
-            "command": "build",
-            "targets": [
-                "all"
-            ],
-            "preset": "${command:cmake.activeBuildPresetName}",
-            "group": "build",
-            "problemMatcher": [],
-            "detail": "CMake template build task"
-        },
-        {
             "label": "make build-tests",
             "type": "shell",
             "command": "echo",

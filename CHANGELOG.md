@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.23.1]
+
+### Changed
+
+- `testMate.test.advancedExecutables` - `runTask`'s tasks now respect `dependsOn` tasks if the task does not have `${` string in the args and command. If you need to have some vscode (not extension related) variable use a wrapper/bridge task. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/494))
+
 ## [4.23.0] - 2026-04-04
 
 ### Added
