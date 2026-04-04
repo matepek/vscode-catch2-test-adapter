@@ -475,7 +475,7 @@ export class Configurations {
         [],
         { before: [], beforeEach: [], after: [], afterEach: [] },
         defaultParallelExecutionOfExecLimit,
-        null,
+        defaultMaxTestsPerExecutable,
         undefined,
         undefined,
         undefined,
