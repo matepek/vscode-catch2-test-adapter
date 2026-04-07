@@ -468,19 +468,23 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     }
   }
 
-  private removeWithLeafAscendants(testItem: vscode.TestItem, evenIfHasChildren = false): void {
-    if (!evenIfHasChildren && testItem.children.size > 0) return;
+  private rescursiveRemoveIfLeaf(testItem: vscode.TestItem | undefined): void {
+    if (testItem === undefined) return;
+    if (testItem.children.size > 0) return;
 
-    const parent = testItem.parent;
-    this.shared.testController.getChildCollection(parent).delete(testItem.id);
-
-    if (parent) {
-      this.removeWithLeafAscendants(parent);
-    }
+    this.shared.testController.removeFromParent(testItem);
+    this.rescursiveRemoveIfLeaf(testItem.parent);
   }
 
   private removeTest(test: AbstractTest): void {
-    this.removeWithLeafAscendants(test.item, true);
+    const toProcess: vscode.TestItem[] = [test.item];
+    while (toProcess.length > 0) {
+      const curr = toProcess.pop()!;
+      this.shared.testController.removeFromParent(curr);
+      curr.children.forEach(c => toProcess.push(c));
+    }
+
+    this.rescursiveRemoveIfLeaf(test.item.parent);
   }
 
   protected async _createAndAddError(label: string, message: string): Promise<void> {

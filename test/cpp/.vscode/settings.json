@@ -17,7 +17,7 @@
             "runTask": {
                 "before": [
                     // "exit-1",
-                    "echo-testmate"
+                    // "echo-testmate"
                 ]
             }
             // "testGrouping": {

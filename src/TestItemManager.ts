@@ -56,6 +56,11 @@ export class TestItemManager {
     return this.testItem2test.get(item);
   }
 
+  removeFromParent(item: vscode.TestItem): void {
+    this.getChildCollection(item.parent).delete(item.id);
+    this.testItem2test.delete(item);
+  }
+
   async update(
     item: vscode.TestItem,
     file: string | undefined,
