@@ -133,7 +133,7 @@ const execute = async (cmd: string, args: string[], token: vscode.CancellationTo
 class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
   constructor(
     private readonly testRun: TMA.TestMateTestRun,
-    private readonly workspaceFolder: vscode.WorkspaceFolder,
+    _workspaceFolder: vscode.WorkspaceFolder,
   ) {}
 
   private readonly exec = new Map<string, string[]>();
