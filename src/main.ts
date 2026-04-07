@@ -4,10 +4,11 @@ import { Logger } from './Logger';
 import { WorkspaceManager } from './WorkspaceManager';
 import { SharedTestTags } from './framework/SharedTestTags';
 import { TestItemManager } from './TestItemManager';
+import * as TMA from './TestMateApi';
 
 ///
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<TMA.TestMateAPI> {
   const log = new Logger();
   log.info('Activating extension');
   const controller = vscode.tests.createTestController('testmatecpp', 'TestMate C++');
@@ -132,7 +133,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   let runCount = 0;
   let debugCount = 0;
 
-  const startTestRun = async (request: vscode.TestRunRequest) => {
+  const startTestRun = async (request: vscode.TestRunRequest, profile?: TMA.TestMateTestRunProfile) => {
     if (debugCount) {
       vscode.window.showWarningMessage('Cannot run new tests while debugging.');
       return;
@@ -144,17 +145,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     try {
       const managers = collectExecutablesForRun(request);
 
-      const runQueue: Thenable<void>[] = [];
+      const profileRunHandler = profile?.createTestRunHandler(testRun);
+      if (profileRunHandler?.init) {
+        await profileRunHandler.init().catch(e => log.error('profileRunHandler.init', e));
+      }
 
+      const runQueue: Thenable<void>[] = [];
       for (const [manager, executables] of managers) {
         runQueue.push(
-          manager.run(executables, testRun).catch(e => {
+          manager.run(executables, testRun, profileRunHandler).catch(e => {
             vscode.window.showErrorMessage('Unexpected error from run: ' + e);
           }),
         );
       }
-
       await Promise.allSettled(runQueue);
+
+      if (profileRunHandler?.finalise) {
+        await profileRunHandler.finalise().catch(e => log.error('profileRunHandler.finalise', e));
+      }
     } catch (e) {
       log.errorS('runHandler errored. never should be here', e);
     } finally {
@@ -372,4 +380,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   log.info('Activation finished');
 
   [...workspace2manager.values()].forEach(manager => manager.initAtStartupIfRequestes());
+
+  const registerTestRunProfile = (adapter: TMA.TestMateTestRunProfile) => {
+    const profile = controller.createRunProfile(
+      adapter.label,
+      adapter.kind,
+      async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken): Promise<void> => {
+        if (request.continuous) {
+          continousRunThese.add(request);
+          cancellation.onCancellationRequested(() => continousRunThese.delete(request));
+        } else {
+          return startTestRun(request, adapter);
+        }
+      },
+      false,
+      SharedTestTags.runnable,
+      false,
+    );
+    context.subscriptions.push(profile, adapter);
+  };
+
+  return {
+    registerTestRunProfile,
+  };
 }

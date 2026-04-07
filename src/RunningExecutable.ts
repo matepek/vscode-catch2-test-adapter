@@ -11,10 +11,10 @@ import { assert } from './util/DevelopmentHelper';
 ///
 
 export enum ExecutableRunResultValue {
-  OK,
-  CancelledByUser,
-  TimeoutByUser,
-  Errored,
+  OK = 'OK',
+  CancelledByUser = 'CancelledByUser',
+  TimeoutByUser = 'TimeoutByUser',
+  Errored = 'Errored',
 }
 
 ///
