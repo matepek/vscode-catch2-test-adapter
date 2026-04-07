@@ -1,8 +1,8 @@
 {
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/gtest1.exe",
-            "maxTestsPerExecutable": 1,
+            "pattern": "build/*.exe",
+            // "maxTestsPerExecutable": 1,
             "gtest": {
                 "prependTestRunningArgs": [
                     "aa"

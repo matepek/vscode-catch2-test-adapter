@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.23.2]
+
+### Fixed
+
+- Google Test framework reload related improvements
+- some continous run related issue ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/502))
+
 ## [4.23.1] - 2026-04-04
 
 ### Changed

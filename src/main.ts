@@ -200,11 +200,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           }
         }
       } else {
-        const isRelevant = (item: vscode.TestItem, skipSkiped: boolean): boolean | null => {
+        const isRelevant = (item: vscode.TestItem, skipSkiped: boolean): boolean | null | undefined => {
           const atest = testItemManager.map(item);
           if (atest === undefined)
-            // null in case we cannot decide because children might relevant
-            return null;
+            if (testItemManager.isParent(item)) return null;
+            else {
+              // missing, can happen when removed and reloaded. vscode doesnt clear up continous run
+              throw Error('missing continous item');
+            }
           if (skipSkiped && atest.skipped) {
             return false;
           }
@@ -213,18 +216,35 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           }
           return false;
         };
-        for (const item of trr.include) {
+
+        const recursiveCheckDescendants = (item: vscode.TestItem) => {
+          for (const [_, childItem] of item.children) {
+            const isRelevantChild = isRelevant(childItem, true);
+            if (isRelevantChild) req!.include.push(childItem);
+            else if (isRelevantChild === null) recursiveCheckDescendants(childItem);
+          }
+        };
+
+        for (const itemOrig of trr.include) {
+          let item: vscode.TestItem | undefined = itemOrig;
+          if (!testItemManager.has(item)) {
+            // missing, can happen when removed and reloaded. vscode doesnt clear up continous run items
+            const path = [item.id];
+            let c = item.parent;
+            while (c) {
+              path.unshift(c.id);
+              c = c.parent;
+            }
+            item = testItemManager.findPath(path);
+            if (item === undefined) {
+              log.infoS('continous wan to run some non-existing tests, ignoring it', itemOrig.id);
+              continue;
+            }
+          }
           const isItemRelevant = isRelevant(item, false);
           if (isItemRelevant === true) req.include.push(item);
           // in case of using grouping, has to go deeper
           else if (isItemRelevant === null) {
-            const recursiveCheckDescendants = (item: vscode.TestItem) => {
-              for (const [_, childItem] of item.children) {
-                const isRelevantChild = isRelevant(childItem, true);
-                if (isRelevantChild) req!.include.push(childItem);
-                else if (isRelevantChild === null) recursiveCheckDescendants(childItem);
-              }
-            };
             recursiveCheckDescendants(item);
           }
         }
