@@ -16,10 +16,11 @@ import { generateId, Version } from './Util';
 import { AbstractTest } from './framework/AbstractTest';
 import { TestItemManager } from './TestItemManager';
 import { ProgressReporter } from './util/ProgressReporter';
+import * as TMA from './TestMateApi';
 
 export class WorkspaceManager implements vscode.Disposable {
   constructor(
-    private readonly workspaceFolder: vscode.WorkspaceFolder,
+    readonly workspaceFolder: vscode.WorkspaceFolder,
     private readonly log: Logger,
     testItemManager: TestItemManager,
     executableChanged: (e: Iterable<AbstractExecutable>) => void,
@@ -309,16 +310,24 @@ export class WorkspaceManager implements vscode.Disposable {
     return new Configurations(log, this.workspaceFolder.uri);
   }
 
-  run(executables: Map<AbstractExecutable, TestsToRun>, run: vscode.TestRun): Promise<void> {
+  run(
+    executables: Map<AbstractExecutable, TestsToRun>,
+    run: vscode.TestRun,
+    profileRunHandler?: TMA.TestMateTestRunHandler,
+  ): Promise<void> {
     for (const exec of executables.values()) for (const test of exec) run.enqueued(test.item);
 
-    return this._runInner(executables, run).catch(e => {
+    return this._runInner(executables, run, profileRunHandler).catch(e => {
       this.log.errorS('error during run', e);
       throw e;
     });
   }
 
-  private async _runInner(executables: Map<AbstractExecutable, TestsToRun>, testRun: vscode.TestRun): Promise<void> {
+  private async _runInner(
+    executables: Map<AbstractExecutable, TestsToRun>,
+    testRun: vscode.TestRun,
+    profileRunHandler?: TMA.TestMateTestRunHandler,
+  ): Promise<void> {
     try {
       await this._runTasks('before', executables.keys(), testRun.token);
       //TODO: future: test list might changes: executables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
@@ -335,17 +344,33 @@ export class WorkspaceManager implements vscode.Disposable {
       return;
     }
 
+    if (profileRunHandler?.init) {
+      try {
+        await profileRunHandler.init();
+      } catch (e) {
+        this.log.error('profileRunHandler.init', e);
+      }
+    }
+
     const ps: Promise<void>[] = [];
 
     for (const [exec, toRun] of executables) {
       ps.push(
         exec
-          .run(testRun, toRun, this._shared.taskPool)
+          .run(testRun, toRun, this._shared.taskPool, profileRunHandler)
           .catch(err => this._shared.log.error('RootTestSuite.run.for.child', exec.shared.path, err)),
       );
     }
 
     await Promise.allSettled(ps);
+
+    if (profileRunHandler?.finalise) {
+      try {
+        await profileRunHandler.finalise();
+      } catch (e) {
+        this.log.error('profileRunHandler.finalise', e);
+      }
+    }
 
     try {
       await this._runTasks('after', executables.keys(), testRun.token);

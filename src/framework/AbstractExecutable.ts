@@ -43,6 +43,7 @@ import { SharedTestTags } from './SharedTestTags';
 import { Disposable } from '../Util';
 import { FilePathResolver, TestItemParent } from '../TestItemManager';
 import { Logger } from '../Logger';
+import * as TMA from '../TestMateApi';
 
 ///
 
@@ -634,7 +635,12 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     });
   }
 
-  async run(testRun: vscode.TestRun, testsToRun: TestsToRun, taskPool: TaskPool): Promise<void> {
+  async run(
+    testRun: vscode.TestRun,
+    testsToRun: TestsToRun,
+    taskPool: TaskPool,
+    profileRunHandler?: TMA.TestMateTestRunHandler,
+  ): Promise<void> {
     const testsToRunFinal: AbstractTest[] = [];
 
     for (const t of testsToRun.direct) {
@@ -669,7 +675,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     ); //TODO:future merge with _splitTestSetForMultirunIfEnabled
 
     const runningBucketPromises = splittedFinal.map(b =>
-      this._runInner(testRun, b, taskPool).catch(err => {
+      this._runInner(testRun, b, taskPool, profileRunHandler).catch(err => {
         vscode.window.showWarningMessage(err.toString());
       }),
     );
@@ -689,14 +695,19 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     }
   }
 
-  private _runInner(testRun: vscode.TestRun, testsToRun: readonly AbstractTest[], taskPool: TaskPool): Promise<void> {
+  private _runInner(
+    testRun: vscode.TestRun,
+    testsToRun: readonly AbstractTest[],
+    taskPool: TaskPool,
+    profileRunHandler?: TMA.TestMateTestRunHandler,
+  ): Promise<void> {
     return this.shared.parallelizationPool.scheduleTask(async () => {
       const runIfNotCancelled = (): Promise<void> => {
         if (testRun.token.isCancellationRequested) {
           this.shared.log.info('test was canceled:', this);
           return Promise.resolve();
         }
-        return this._runProcess(testRun, testsToRun);
+        return this._runProcess(testRun, testsToRun, profileRunHandler);
       };
 
       try {
@@ -739,17 +750,45 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return clonePath;
   }
 
-  private async _runProcess(testRun: vscode.TestRun, childrenToRun: readonly AbstractTest[]): Promise<void> {
+  private async _runProcess(
+    testRun: vscode.TestRun,
+    childrenToRun: readonly AbstractTest[],
+    profileRunHandler?: TMA.TestMateTestRunHandler,
+  ): Promise<void> {
     const execParams = await this._getRunParams(childrenToRun);
-
     const pathForExecution = await this._getPathForExecution();
+
+    let builderProps: TMA.TestMateProcessBuilder = {
+      cmd: pathForExecution,
+      args: execParams,
+      cwd: this.shared.options.cwd,
+      env: this.shared.options.env,
+    };
+
+    if (profileRunHandler?.mapTestRunProcessBuilder) {
+      builderProps = await profileRunHandler.mapTestRunProcessBuilder(builderProps);
+      this.shared.log.info('mapTestRunProcessBuilder', builderProps);
+    }
+
+    const builder = new SpawnBuilder(
+      this.shared.spawner,
+      builderProps.cmd,
+      builderProps.args,
+      { ...this.shared.options, cwd: builderProps.cwd, env: builderProps.env },
+      undefined,
+    );
+
+    if (profileRunHandler?.beginProcess) {
+      try {
+        await profileRunHandler.beginProcess(builderProps);
+      } catch (e) {
+        this.shared.log.error('profileRunHandler.beginProcess', e);
+      }
+    }
+
     this.shared.log.info('proc starting', pathForExecution, execParams, this.shared.path);
 
-    const runInfo = await RunningExecutable.create(
-      new SpawnBuilder(this.shared.spawner, pathForExecution, execParams, this.shared.options, undefined),
-      childrenToRun,
-      testRun.token,
-    );
+    const runInfo = await RunningExecutable.create(builder, childrenToRun, testRun.token);
 
     testRun.appendOutput(runInfo.getProcStartLine());
 
@@ -861,6 +900,14 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
           // Suite possibly deleted: It is a dead suite but this should have been handled elsewhere
           this.shared.log.error('reloading-error: ', reason);
         });
+      }
+
+      if (profileRunHandler?.endProcess) {
+        try {
+          await profileRunHandler.endProcess(builderProps, result.value);
+        } catch (e) {
+          this.shared.log.error('profileRunHandler.endProcess.beginProcess', e);
+        }
       }
     } catch (e) {
       debugBreak(); // we really shouldnt be here

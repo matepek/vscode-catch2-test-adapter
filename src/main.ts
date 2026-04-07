@@ -4,12 +4,14 @@ import { Logger } from './Logger';
 import { WorkspaceManager } from './WorkspaceManager';
 import { SharedTestTags } from './framework/SharedTestTags';
 import { TestItemManager } from './TestItemManager';
+import * as TMA from './TestMateApi';
+import * as Lcov from './lcov';
 
 ///
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<TMA.TestMateAPI> {
   const log = new Logger();
-  log.info('Activating extension');
+  log.info('Activating extension', context.extension.id);
   const controller = vscode.tests.createTestController('testmatecpp', 'TestMate C++');
   const workspace2manager = new Map<vscode.WorkspaceFolder, WorkspaceManager>();
   const testItemManager = new TestItemManager(controller);
@@ -132,7 +134,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   let runCount = 0;
   let debugCount = 0;
 
-  const startTestRun = async (request: vscode.TestRunRequest) => {
+  const startTestRun = async (request: vscode.TestRunRequest, profile?: TMA.TestMateTestRunProfile) => {
     if (debugCount) {
       vscode.window.showWarningMessage('Cannot run new tests while debugging.');
       return;
@@ -145,15 +147,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       const managers = collectExecutablesForRun(request);
 
       const runQueue: Thenable<void>[] = [];
-
       for (const [manager, executables] of managers) {
         runQueue.push(
-          manager.run(executables, testRun).catch(e => {
-            vscode.window.showErrorMessage('Unexpected error from run: ' + e);
-          }),
+          manager
+            .run(executables, testRun, profile?.createTestRunHandler(testRun, manager.workspaceFolder))
+            .catch(e => {
+              vscode.window.showErrorMessage('Unexpected error from run: ' + e);
+            }),
         );
       }
-
       await Promise.allSettled(runQueue);
     } catch (e) {
       log.errorS('runHandler errored. never should be here', e);
@@ -392,4 +394,47 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   log.info('Activation finished');
 
   [...workspace2manager.values()].forEach(manager => manager.initAtStartupIfRequestes());
+
+  const registerTestRunProfile = (adapter: TMA.TestMateTestRunProfile) => {
+    log.info('Registering TestRunProfile', adapter.label, adapter.kind);
+    const profile = controller.createRunProfile(
+      adapter.label,
+      adapter.kind,
+      async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken): Promise<void> => {
+        if (request.continuous) {
+          continousRunThese.add(request);
+          cancellation.onCancellationRequested(() => continousRunThese.delete(request));
+        } else {
+          return startTestRun(request, adapter);
+        }
+      },
+      false,
+      SharedTestTags.runnable,
+      false,
+    );
+    profile.loadDetailedCoverage = async (
+      _testRun: vscode.TestRun,
+      fileCoverage: vscode.FileCoverage,
+      token: vscode.CancellationToken,
+    ): Promise<vscode.FileCoverageDetail[]> => {
+      if (adapter.loadDetailedCoverage) {
+        try {
+          return await adapter.loadDetailedCoverage(fileCoverage, token);
+        } catch (e) {
+          log.error('loadDetailedCoverage', e);
+          return [];
+        }
+      } else return [];
+    };
+    context.subscriptions.push(profile, adapter);
+  };
+
+  const lcovEnabled = vscode.workspace.getConfiguration('testMate.cpp.test.experimental').get<boolean>('lcov') ?? false;
+  if (lcovEnabled) {
+    Lcov._activate({ registerTestRunProfile });
+  }
+
+  return {
+    registerTestRunProfile,
+  };
 }

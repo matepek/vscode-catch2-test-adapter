@@ -9,7 +9,7 @@ export interface SpawnReturns extends fsw.SpawnSyncReturns<string> {
 
 export type SpawnOptionsWithoutStdio = fsw.SpawnOptionsWithoutStdio;
 export interface SpawnOptionsWithoutStdioEx extends fsw.SpawnOptionsWithoutStdio {
-  cwd: string | URL;
+  cwd: string;
   env: NodeJS.ProcessEnv;
   customEnv: Record<string, string>;
 }

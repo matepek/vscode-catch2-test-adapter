@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_OSX_ARCHITECTURES "x86_64")
+option(USE_COVERAGE "Enable code coverage instrumentation" OFF)
 
 project(Tests CXX)
 
@@ -27,6 +28,18 @@ add_custom_target(
   "settings.json" ALL
   DEPENDS ".vscode/settings.json"
 )
+
+#
+
+if(USE_COVERAGE)
+    message(STATUS "Code coverage enabled.")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang")
+        add_compile_options("-fprofile-instr-generate" "-fcoverage-mapping")
+        add_link_options("-fprofile-instr-generate" "-fcoverage-mapping")
+    else()
+        message(FATAL_ERROR "Coverage flags are Clang-specific. Current compiler: ${CMAKE_CXX_COMPILER_ID}")
+    endif()
+endif()
 
 #
 

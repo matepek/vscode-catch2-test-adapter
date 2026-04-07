@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.23.3]
+
+### Added
+
+- experimental Test Coverage API. Not visible but available for developers. [details](https://github.com/matepek/vscode-catch2-test-adapter/issues/519)
+
 ## [4.23.2] - 2026-04-07
 
 ### Fixed
