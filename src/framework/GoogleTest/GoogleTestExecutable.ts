@@ -142,7 +142,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
       const testId_ = GoogleTestTest.calcLabel(testId);
       return this._createTreeAndAddTest(
         this.getTestGrouping(),
-        testId_,
+        id,
         resolvedFile,
         line,
         [suiteId],

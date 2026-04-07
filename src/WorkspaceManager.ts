@@ -297,7 +297,8 @@ export class WorkspaceManager implements vscode.Disposable {
       },
     );
 
-    return this.initP;
+    await this.initP;
+    return;
   }
 
   public initAtStartupIfRequestes(): void {
