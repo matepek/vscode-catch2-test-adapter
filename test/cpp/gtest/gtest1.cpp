@@ -8,7 +8,17 @@
 
 #include "gmock/gmock.h"
 
-//GTEST_TEST(TestCas1, test1ss) {}
+GTEST_TEST(TestCas1, test0) {
+  volatile bool b1 = true;
+  volatile bool b2 = true;
+  if(b1) {
+    if (b2) {
+      std::cout << "b2";
+    } else {
+      std::cout << "!b2";
+    }
+  } 
+}
 
 GTEST_TEST(TestCas1, test1) {
   //

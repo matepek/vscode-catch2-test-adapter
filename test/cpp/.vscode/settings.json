@@ -1,4 +1,6 @@
 {
+    "testMate.cpp.test.experimental.lcov.enabled": true,
+    "testMate.cpp.test.experimental.lcov.logpanel": true,
     "testMate.cpp.test.advancedExecutables": [
         {
             "pattern": "build/*.exe",
