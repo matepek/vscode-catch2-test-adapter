@@ -3,10 +3,12 @@
     "testMate.cpp.test.experimental.lcov.logpanel": true,
     "testMate.cpp.test.experimental.gcov.enabled": true,
     "testMate.cpp.test.experimental.gcov.logpanel": true,
+    "testMate.cpp.test.parallelExecutionLimit": 10,
+    "testMate.cpp.test.parallelExecutionOfExecutableLimit": 10,
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/gtest{1,3}.exe",
-            // "maxTestsPerExecutable": 1,
+            "pattern": "build/*.exe",
+            "maxTestsPerExecutable": 3,
             "gtest": {
                 "prependTestRunningArgs": [
                     "aa"

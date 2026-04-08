@@ -258,104 +258,114 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       // fs.exists
       this.data.argsProfrawsFile.writeFile(builder.env[ENV_LLVM_PROFILE_FILE]! + '\n');
 
-      if (this.data.argsObjectsFileFirst) this.data.argsObjectsFileFirst = false;
-      else this.data.argsObjectsFile.writeFile('-object\n');
-      this.data.argsObjectsFile.writeFile(builder.cmd + '\n');
+      if (this.data.argsObjectsFileFirst) {
+        this.data.argsObjectsFileFirst = false;
+        await this.data.argsObjectsFile.writeFile(builder.cmd + '\n');
+      } else await this.data.argsObjectsFile.writeFile('-object\n' + builder.cmd + '\n');
     }
   }
 
   async finalise(): Promise<void> {
     if (!this.data) throw Error('assert:data');
-
     try {
-      const mergedProfdataPath = pathlib.join(this.data.tmpDir.path, 'merged.profdata');
-      await this.data.argsProfrawsFile.close();
-      // Use LLVM Response files to bypass OS ARG_MAX limits for profdata
-      const mergeArgs = ['merge', '-sparse', `@${this.data.argsProfrawsPath}`, '-o', mergedProfdataPath];
-
-      try {
-        await executeWithPlatformToolchain('llvm-profdata', mergeArgs, this.testRun.token);
-      } catch (e) {
-        this.log.error('Failed to merge profdata. Ensure llvm-profdata is in PATH.', e);
-        return;
-      }
-
-      const objectsPattern = vscode.workspace
-        .getConfiguration(configSection)
-        .get<string[]>('objects', ['**/*.{dylib,so,dll}']);
-      try {
-        for (const pattern of objectsPattern) {
-          const sharedLibs = await vscode.workspace.findFiles(
-            new vscode.RelativePattern(this.workspaceFolder, pattern),
-            '**/{node_modules,_deps}/**',
-          );
-          for (const l of sharedLibs) {
-            this.data.argsObjectsFile.writeFile('\n-object\n');
-            this.data.argsObjectsFile.writeFile(l.fsPath);
-          }
-        }
-      } finally {
-        await this.data.argsObjectsFile.close().catch(e => this.log.error('closing file', e));
-      }
-
-      const exportArgs = [
-        'export',
-        `@${this.data.argsObjectsPath}`,
-        '-instr-profile',
-        mergedProfdataPath,
-        '-format=text',
-      ];
-
-      let dataArr;
-      try {
-        const [outputStr] = await executeWithPlatformToolchain('llvm-cov', exportArgs, this.testRun.token);
-        try {
-          const coverageJson = JSON.parse(outputStr);
-          const covType = coverageJson['type'] as string;
-          const covVersion = coverageJson['version'] as string;
-          if (covType !== 'llvm.coverage.json.export') throw Error(`wrong type: ${covType}`);
-          if (!covVersion.startsWith('3.')) throw Error(`wrong version: ${covVersion}`);
-          if (!Array.isArray(coverageJson['data'])) throw Error(`assert: data json array`);
-          else dataArr = coverageJson['data'];
-        } catch (e) {
-          this.log.error('Failed to parse coverage JSON:', e);
-          return;
-        }
-      } catch (e) {
-        this.log.error('Failed to export coverage. Ensure llvm-cov is in PATH.', e);
-        return;
-      }
-
-      for (const data of dataArr) {
-        if (this.testRun.token.isCancellationRequested) throw Error('canceled');
-        if (!Array.isArray(data['files'])) continue;
-
-        const functionsList = Array.isArray(data['functions']) ? data['functions'] : [];
-
-        for (const file of data['files']) {
-          if (this.testRun.token.isCancellationRequested) throw Error('canceled');
-
-          const uri = vscode.Uri.file(file['filename']);
-          const statementCov = new vscode.TestCoverageCount(
-            file['summary']['lines']['covered'],
-            file['summary']['lines']['count'],
-          );
-          const branchCov = new vscode.TestCoverageCount(
-            file['summary']['branches']['covered'],
-            file['summary']['branches']['count'],
-          );
-          const declCov = new vscode.TestCoverageCount(
-            file['summary']['functions']['covered'],
-            file['summary']['functions']['count'],
-          );
-
-          this.testRun.addCoverage(
-            new FileCoverage(uri, statementCov, branchCov, declCov, this.log, file, functionsList),
-          );
-        }
+      if (!this.testRun.token.isCancellationRequested) {
+        await this.finaliseInner();
       }
     } finally {
       await this.data.dispose();
+    }
+  }
+
+  private async finaliseInner(): Promise<void> {
+    if (!this.data) throw Error('assert:data');
+
+    const mergedProfdataPath = pathlib.join(this.data.tmpDir.path, 'merged.profdata');
+    await this.data.argsProfrawsFile.close().catch(e => this.log.error('closing file', e));
+    // Use LLVM Response files to bypass OS ARG_MAX limits for profdata
+    const mergeArgs = ['merge', '-sparse', `@${this.data.argsProfrawsPath}`, '-o', mergedProfdataPath];
+
+    try {
+      this.log.debug('llvm-profdata', mergeArgs);
+      await executeWithPlatformToolchain('llvm-profdata', mergeArgs, this.testRun.token);
+    } catch (e) {
+      this.log.error('Failed to merge profdata. Ensure llvm-profdata is in PATH.', e);
+      return;
+    }
+
+    const objectsPattern = vscode.workspace
+      .getConfiguration(configSection)
+      .get<string[]>('objects', ['**/*.{dylib,so,dll}']);
+    try {
+      for (const pattern of objectsPattern) {
+        const sharedLibs = await vscode.workspace.findFiles(
+          new vscode.RelativePattern(this.workspaceFolder, pattern),
+          '**/{node_modules,_deps}/**',
+        );
+        for (const l of sharedLibs) {
+          if (this.data.argsObjectsFileFirst) throw Error('assert argsObjectsFileFirst');
+          await this.data.argsObjectsFile.writeFile('-object\n' + l.fsPath + '\n');
+        }
+      }
+    } finally {
+      await this.data.argsObjectsFile.close().catch(e => this.log.error('closing file', e));
+    }
+
+    const exportArgs = [
+      'export',
+      `@${this.data.argsObjectsPath}`,
+      '-instr-profile',
+      mergedProfdataPath,
+      '-format=text',
+    ];
+
+    let dataArr;
+    try {
+      this.log.debug('llvm-cov', exportArgs);
+      const [outputStr] = await executeWithPlatformToolchain('llvm-cov', exportArgs, this.testRun.token);
+      try {
+        const coverageJson = JSON.parse(outputStr);
+        const covType = coverageJson['type'] as string;
+        const covVersion = coverageJson['version'] as string;
+        if (covType !== 'llvm.coverage.json.export') throw Error(`wrong type: ${covType}`);
+        if (!covVersion.startsWith('3.')) throw Error(`wrong version: ${covVersion}`);
+        if (!Array.isArray(coverageJson['data'])) throw Error(`assert: data json array`);
+        else dataArr = coverageJson['data'];
+      } catch (e) {
+        this.log.error('Failed to parse coverage JSON:', e);
+        return;
+      }
+    } catch (e) {
+      this.log.error('Failed to export coverage. Ensure llvm-cov is in PATH.', e);
+      return;
+    }
+
+    for (const data of dataArr) {
+      if (this.testRun.token.isCancellationRequested) throw Error('canceled');
+      if (!Array.isArray(data['files'])) continue;
+
+      const functionsList = Array.isArray(data['functions']) ? data['functions'] : [];
+
+      for (const file of data['files']) {
+        if (this.testRun.token.isCancellationRequested) throw Error('canceled');
+
+        const uri = vscode.Uri.file(file['filename']);
+        const statementCov = new vscode.TestCoverageCount(
+          file['summary']['lines']['covered'],
+          file['summary']['lines']['count'],
+        );
+        const branchCov = new vscode.TestCoverageCount(
+          file['summary']['branches']['covered'],
+          file['summary']['branches']['count'],
+        );
+        const declCov = new vscode.TestCoverageCount(
+          file['summary']['functions']['covered'],
+          file['summary']['functions']['count'],
+        );
+
+        this.testRun.addCoverage(
+          new FileCoverage(uri, statementCov, branchCov, declCov, this.log, file, functionsList),
+        );
+      }
     }
   }
 

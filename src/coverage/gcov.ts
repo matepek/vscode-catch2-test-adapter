@@ -201,115 +201,122 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
 
   async finalise(): Promise<void> {
     if (!this.data) throw Error('assert:data');
-
     try {
-      const gcdaFiles = await this.getGcdaPath();
-
-      if (gcdaFiles.length === 0) {
-        this.log.warn('No .gcda files found. Ensure code is compiled with --coverage and executed successfully.');
-        return;
-      }
-
-      const fileCoverageMap = new Map<string, AggregatedFileCoverage>();
-
-      for (const file of gcdaFiles) {
-        if (this.testRun.token.isCancellationRequested) throw Error('canceled');
-
-        try {
-          // TODO: file names can collide
-          await execute('gcov', ['--json-format', file.fsPath], this.data.tmpDir.path, this.testRun.token);
-        } catch (e) {
-          this.log.error(`Failed to execute gcov on ${file.fsPath}`, e);
-          continue;
-        }
-      }
-
-      const gcovOutputFiles = await fs.readdir(this.data.tmpDir.path);
-      const jsonGzFiles = gcovOutputFiles.filter(f => f.endsWith('.gcov.json.gz'));
-
-      for (const gzFile of jsonGzFiles) {
-        if (this.testRun.token.isCancellationRequested) throw Error('canceled');
-        const filePath = pathlib.join(this.data.tmpDir.path, gzFile);
-
-        let jsonStr: string;
-        try {
-          const buffer = await fs.readFile(filePath);
-          jsonStr = zlib.gunzipSync(buffer).toString('utf8');
-        } catch (e) {
-          this.log.error(`Failed to decompress ${gzFile}`, e);
-          continue;
-        }
-
-        let coverageJson;
-        try {
-          coverageJson = JSON.parse(jsonStr);
-        } catch (e) {
-          this.log.error(`Failed to parse JSON from ${gzFile}`, e);
-          continue;
-        }
-
-        if (!Array.isArray(coverageJson['files'])) continue;
-
-        const cwd = coverageJson['current_working_directory'] || this.workspaceFolder.uri.fsPath;
-
-        for (const sourceFile of coverageJson['files']) {
-          const rawFilePath = sourceFile['file'];
-          const absoluteFilePath = pathlib.isAbsolute(rawFilePath) ? rawFilePath : pathlib.resolve(cwd, rawFilePath);
-
-          if (!fileCoverageMap.has(absoluteFilePath)) {
-            fileCoverageMap.set(absoluteFilePath, new AggregatedFileCoverage());
-          }
-
-          const aggregated = fileCoverageMap.get(absoluteFilePath)!;
-
-          if (Array.isArray(sourceFile['lines'])) {
-            for (const line of sourceFile['lines']) {
-              aggregated.mergeLine(line as GcovLine);
-            }
-          }
-
-          if (Array.isArray(sourceFile['functions'])) {
-            for (const func of sourceFile['functions']) {
-              aggregated.mergeFunction(func as GcovFunction);
-            }
-          }
-        }
-      }
-
-      // Convert map to vscode.FileCoverage objects
-      for (const [filePath, aggregated] of fileCoverageMap.entries()) {
-        let linesTotal = 0,
-          linesCovered = 0;
-        let branchesTotal = 0,
-          branchesCovered = 0;
-        let funcsTotal = 0,
-          funcsCovered = 0;
-
-        for (const line of aggregated.lines.values()) {
-          linesTotal++;
-          if (line.count > 0) linesCovered++;
-
-          for (const branch of line.branches) {
-            branchesTotal++;
-            if (branch.count > 0) branchesCovered++;
-          }
-        }
-
-        for (const func of aggregated.functions.values()) {
-          funcsTotal++;
-          if (func.execution_count > 0) funcsCovered++;
-        }
-
-        const uri = vscode.Uri.file(filePath);
-        const statementCov = new vscode.TestCoverageCount(linesCovered, linesTotal);
-        const branchCov = new vscode.TestCoverageCount(branchesCovered, branchesTotal);
-        const declCov = new vscode.TestCoverageCount(funcsCovered, funcsTotal);
-
-        this.testRun.addCoverage(new FileCoverage(uri, statementCov, branchCov, declCov, this.log, aggregated));
+      if (!this.testRun.token.isCancellationRequested) {
+        await this.finaliseInner();
       }
     } finally {
       await this.data.dispose();
       await this.cleanupGcda();
+    }
+  }
+
+  async finaliseInner(): Promise<void> {
+    if (!this.data) throw Error('assert:data');
+
+    const gcdaFiles = await this.getGcdaPath();
+
+    if (gcdaFiles.length === 0) {
+      this.log.warn('No .gcda files found. Ensure code is compiled with --coverage and executed successfully.');
+      return;
+    }
+
+    const fileCoverageMap = new Map<string, AggregatedFileCoverage>();
+
+    for (const file of gcdaFiles) {
+      if (this.testRun.token.isCancellationRequested) throw Error('canceled');
+
+      try {
+        // TODO: file names can collide
+        await execute('gcov', ['--json-format', file.fsPath], this.data.tmpDir.path, this.testRun.token);
+      } catch (e) {
+        this.log.error(`Failed to execute gcov on ${file.fsPath}`, e);
+        continue;
+      }
+    }
+
+    const gcovOutputFiles = await fs.readdir(this.data.tmpDir.path);
+    const jsonGzFiles = gcovOutputFiles.filter(f => f.endsWith('.gcov.json.gz'));
+
+    for (const gzFile of jsonGzFiles) {
+      if (this.testRun.token.isCancellationRequested) throw Error('canceled');
+      const filePath = pathlib.join(this.data.tmpDir.path, gzFile);
+
+      let jsonStr: string;
+      try {
+        const buffer = await fs.readFile(filePath);
+        jsonStr = zlib.gunzipSync(buffer).toString('utf8');
+      } catch (e) {
+        this.log.error(`Failed to decompress ${gzFile}`, e);
+        continue;
+      }
+
+      let coverageJson;
+      try {
+        coverageJson = JSON.parse(jsonStr);
+      } catch (e) {
+        this.log.error(`Failed to parse JSON from ${gzFile}`, e);
+        continue;
+      }
+
+      if (!Array.isArray(coverageJson['files'])) continue;
+
+      const cwd = coverageJson['current_working_directory'] || this.workspaceFolder.uri.fsPath;
+
+      for (const sourceFile of coverageJson['files']) {
+        const rawFilePath = sourceFile['file'];
+        const absoluteFilePath = pathlib.isAbsolute(rawFilePath) ? rawFilePath : pathlib.resolve(cwd, rawFilePath);
+
+        if (!fileCoverageMap.has(absoluteFilePath)) {
+          fileCoverageMap.set(absoluteFilePath, new AggregatedFileCoverage());
+        }
+
+        const aggregated = fileCoverageMap.get(absoluteFilePath)!;
+
+        if (Array.isArray(sourceFile['lines'])) {
+          for (const line of sourceFile['lines']) {
+            aggregated.mergeLine(line as GcovLine);
+          }
+        }
+
+        if (Array.isArray(sourceFile['functions'])) {
+          for (const func of sourceFile['functions']) {
+            aggregated.mergeFunction(func as GcovFunction);
+          }
+        }
+      }
+    }
+
+    // Convert map to vscode.FileCoverage objects
+    for (const [filePath, aggregated] of fileCoverageMap.entries()) {
+      let linesTotal = 0,
+        linesCovered = 0;
+      let branchesTotal = 0,
+        branchesCovered = 0;
+      let funcsTotal = 0,
+        funcsCovered = 0;
+
+      for (const line of aggregated.lines.values()) {
+        linesTotal++;
+        if (line.count > 0) linesCovered++;
+
+        for (const branch of line.branches) {
+          branchesTotal++;
+          if (branch.count > 0) branchesCovered++;
+        }
+      }
+
+      for (const func of aggregated.functions.values()) {
+        funcsTotal++;
+        if (func.execution_count > 0) funcsCovered++;
+      }
+
+      const uri = vscode.Uri.file(filePath);
+      const statementCov = new vscode.TestCoverageCount(linesCovered, linesTotal);
+      const branchCov = new vscode.TestCoverageCount(branchesCovered, branchesTotal);
+      const declCov = new vscode.TestCoverageCount(funcsCovered, funcsTotal);
+
+      this.testRun.addCoverage(new FileCoverage(uri, statementCov, branchCov, declCov, this.log, aggregated));
     }
   }
 }
