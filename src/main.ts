@@ -429,7 +429,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     context.subscriptions.push(profile, adapter);
   };
 
-  const lcovEnabled = vscode.workspace.getConfiguration('testMate.cpp.test.experimental').get<boolean>('lcov') ?? false;
+  const lcovEnabled =
+    vscode.workspace.getConfiguration('testMate.cpp.test.experimental.lcov').get<boolean>('enabled') ?? false;
   if (lcovEnabled) {
     Lcov._activate({ registerTestRunProfile });
   }
