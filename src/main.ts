@@ -5,7 +5,8 @@ import { WorkspaceManager } from './WorkspaceManager';
 import { SharedTestTags } from './framework/SharedTestTags';
 import { TestItemManager } from './TestItemManager';
 import * as TMA from './TestMateApi';
-import * as Lcov from './lcov';
+import * as Lcov from './coverage/lcov';
+import * as Gcov from './coverage/gcov';
 
 ///
 
@@ -429,10 +430,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     context.subscriptions.push(profile, adapter);
   };
 
-  const lcovEnabled =
-    vscode.workspace.getConfiguration('testMate.cpp.test.experimental.lcov').get<boolean>('enabled') ?? false;
-  if (lcovEnabled) {
+  if (vscode.workspace.getConfiguration('testMate.cpp.test.experimental.lcov').get('enabled', false)) {
     Lcov._activate({ registerTestRunProfile });
+  }
+  if (vscode.workspace.getConfiguration('testMate.cpp.test.experimental.gcov').get('enabled', false)) {
+    Gcov._activate({ registerTestRunProfile });
   }
 
   return {

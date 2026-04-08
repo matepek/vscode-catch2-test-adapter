@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as TMA from './TestMateApi';
+import * as TMA from '../TestMateApi';
 import * as cp from 'child_process';
 import * as fs from 'fs/promises';
 import pathlib from 'node:path';
@@ -287,7 +287,7 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
         for (const pattern of objectsPattern) {
           const sharedLibs = await vscode.workspace.findFiles(
             new vscode.RelativePattern(this.workspaceFolder, pattern),
-            '**/node_modules/**',
+            '**/{node_modules,_deps}/**',
           );
           for (const l of sharedLibs) {
             this.data.argsObjectsFile.writeFile('\n-object\n');
@@ -406,7 +406,7 @@ export function activate(_context: vscode.ExtensionContext) {
 }
 
 export function _activate(testMate: { registerTestRunProfile: (adapter: TMA.TestMateTestRunProfile) => void }) {
-  if (process.platform === 'darwin' || process.platform === 'linux') {
+  if (process.platform === 'darwin') {
     const log = new Log(configSection, undefined, label, { depth: 3 }, false);
     testMate.registerTestRunProfile(new LcovTestMateAdapter(log));
   }
