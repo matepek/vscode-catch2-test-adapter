@@ -3,7 +3,7 @@
     "testMate.cpp.test.experimental.lcov.logpanel": true,
     "testMate.cpp.test.experimental.gcov.enabled": true,
     "testMate.cpp.test.experimental.gcov.logpanel": true,
-    "testMate.cpp.test.parallelExecutionLimit": 10,
+    "testMate.cpp.test.parallelExecutionLimit": 5,
     "testMate.cpp.test.parallelExecutionOfExecutableLimit": 10,
     "testMate.cpp.test.advancedExecutables": [
         {

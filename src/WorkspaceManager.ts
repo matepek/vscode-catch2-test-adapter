@@ -16,7 +16,7 @@ import { generateId, Version } from './Util';
 import { AbstractTest } from './framework/AbstractTest';
 import { TestItemManager } from './TestItemManager';
 import { ProgressReporter } from './util/ProgressReporter';
-import * as TMA from './TestMateApi';
+import { TestRunData } from './TestRunData';
 
 export class WorkspaceManager implements vscode.Disposable {
   constructor(
@@ -310,43 +310,35 @@ export class WorkspaceManager implements vscode.Disposable {
     return new Configurations(log, this.workspaceFolder.uri);
   }
 
-  run(
-    executables: Map<AbstractExecutable, TestsToRun>,
-    run: vscode.TestRun,
-    profileRunHandler?: TMA.TestMateTestRunHandler,
-  ): Promise<void> {
-    for (const exec of executables.values()) for (const test of exec) run.enqueued(test.item);
+  run(executables: Map<AbstractExecutable, TestsToRun>, data: TestRunData): Promise<void> {
+    for (const exec of executables.values()) for (const test of exec) data.testRun.enqueued(test.item);
 
-    return this._runInner(executables, run, profileRunHandler).catch(e => {
+    return this._runInner(executables, data).catch(e => {
       this.log.errorS('error during run', e);
       throw e;
     });
   }
 
-  private async _runInner(
-    executables: Map<AbstractExecutable, TestsToRun>,
-    testRun: vscode.TestRun,
-    profileRunHandler?: TMA.TestMateTestRunHandler,
-  ): Promise<void> {
+  private async _runInner(executables: Map<AbstractExecutable, TestsToRun>, data: TestRunData): Promise<void> {
     try {
-      await this._runTasks('before', executables.keys(), testRun.token);
+      await this._runTasks('before', executables.keys(), data.testRun.token);
       //TODO: future: test list might changes: executables = this._collectRunnables(tests, isParentIn); // might changed due to tasks
     } catch (e) {
       const msg = e.toString();
-      testRun.appendOutput(msg);
+      data.testRun.appendOutput(msg);
       const errorMsg = new vscode.TestMessage(msg);
       for (const testsToRun of executables.values()) {
         for (const test of testsToRun) {
-          testRun.errored(test.item, errorMsg);
+          data.testRun.errored(test.item, errorMsg);
         }
       }
 
       return;
     }
 
-    if (profileRunHandler?.init) {
+    if (data.profileRunHandler?.init) {
       try {
-        await profileRunHandler.init();
+        await data.profileRunHandler.init();
       } catch (e) {
         this.log.error('profileRunHandler.init', e);
       }
@@ -357,30 +349,30 @@ export class WorkspaceManager implements vscode.Disposable {
     for (const [exec, toRun] of executables) {
       ps.push(
         exec
-          .run(testRun, toRun, this._shared.taskPool, profileRunHandler)
+          .run(data, toRun, this._shared.taskPool)
           .catch(err => this._shared.log.error('RootTestSuite.run.for.child', exec.shared.path, err)),
       );
     }
 
     await Promise.allSettled(ps);
 
-    if (profileRunHandler?.finalise) {
+    if (data.profileRunHandler?.finalise) {
       try {
-        await profileRunHandler.finalise();
+        await data.profileRunHandler.finalise();
       } catch (e) {
         this.log.error('profileRunHandler.finalise', e);
       }
     }
 
     try {
-      await this._runTasks('after', executables.keys(), testRun.token);
+      await this._runTasks('after', executables.keys(), data.testRun.token);
     } catch (e) {
       const msg = e.toString();
-      testRun.appendOutput(msg);
+      data.testRun.appendOutput(msg);
       const errorMsg = new vscode.TestMessage(msg);
       for (const testsToRun of executables.values()) {
         for (const test of testsToRun) {
-          testRun.errored(test.item, errorMsg);
+          data.testRun.errored(test.item, errorMsg);
         }
       }
     }

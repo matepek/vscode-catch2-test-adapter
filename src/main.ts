@@ -7,6 +7,7 @@ import { TestItemManager } from './TestItemManager';
 import * as TMA from './TestMateApi';
 import * as Lcov from './coverage/lcov';
 import * as Gcov from './coverage/gcov';
+import { noLimitTaskPoolMap, TaskPoolMap } from './util/TaskPool';
 
 ///
 
@@ -135,11 +136,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
   let runCount = 0;
   let debugCount = 0;
 
-  const startTestRun = async (request: vscode.TestRunRequest, profile?: TMA.TestMateTestRunProfile) => {
+  const oneTask_PoolForExecutables = new TaskPoolMap(1);
+
+  const startTestRun = async (request: vscode.TestRunRequest, profile: TMA.TestMateTestRunProfile | undefined) => {
     if (debugCount) {
       vscode.window.showWarningMessage('Cannot run new tests while debugging.');
       return;
     }
+    const taskPoolForExecutables =
+      (profile?.allowExecutableConcurrentInvocations ?? true) ? noLimitTaskPoolMap : oneTask_PoolForExecutables;
 
     const testRun = controller.createTestRun(request);
     ++runCount;
@@ -151,7 +156,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
       for (const [manager, executables] of managers) {
         runQueue.push(
           manager
-            .run(executables, testRun, profile?.createTestRunHandler(testRun, manager.workspaceFolder))
+            .run(executables, {
+              testRun,
+              taskPoolForExecutables,
+              profileRunHandler: profile?.createTestRunHandler(testRun, manager.workspaceFolder),
+            })
             .catch(e => {
               vscode.window.showErrorMessage('Unexpected error from run: ' + e);
             }),
@@ -258,7 +267,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     }
     for (const [profile, req] of requests) {
       if (req.include === undefined || req.include.length > 0) {
-        startTestRun(new vscode.TestRunRequest(req.include, req.exclude, profile, true));
+        startTestRun(new vscode.TestRunRequest(req.include, req.exclude, profile, true), undefined);
       }
     }
   });
@@ -271,7 +280,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
         continousRunThese.add(request);
         cancellation.onCancellationRequested(() => continousRunThese.delete(request));
       } else {
-        return startTestRun(request);
+        return startTestRun(request, undefined);
       }
     },
     true,

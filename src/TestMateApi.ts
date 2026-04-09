@@ -1,6 +1,13 @@
 import * as vscode from 'vscode';
 
-///
+//////////////////////////////////
+/* Guide:
+ * Be aware that an executable can be run parallel so the coverage information might be generated parallel. Are the sharing some resources?
+ * Use the token and check cancellation!
+ * Check `endProcess` for `result` status, maybe only successful run should be handled. Depends on your case and intetions.
+ * Use `finalise` and/or `onDidDispose` to clean things up / free up memory.
+ */
+///////////////////////////////////
 
 export interface TestMateTestRun {
   /**
@@ -15,6 +22,7 @@ export interface TestMateTestRun {
   addCoverage(fileCoverage: vscode.FileCoverage): void;
 
   /**
+   * Probably don't need to use it but just in case...
    * Appends raw output from the test runner. On the user's request, the
    * output will be displayed in a terminal. ANSI escape sequences,
    * such as colors and text styles, are supported. New lines must be given
@@ -105,7 +113,17 @@ export interface TestMateTestRunProfile {
   /**
    * You probably want to use `vscode.TestRunProfileKind.Coverage`
    */
-  kind: vscode.TestRunProfileKind;
+  readonly kind: vscode.TestRunProfileKind;
+  /**
+   * The same executable can be run parallel so the coverage information might be generated parallel.
+   * Or they might sharing some resources exclusively? In that case: `false`
+   * Can be dynamic:
+   * ```
+   * get allowExecutableConcurrentInvocations() { return vscode.workspace.getConfiguration(configSection).get<boolean>('allowExecutableConcurrentInvocations', false); }
+   * ```
+   * Limitation applies for `TestMateTestRunProfile` instance, so other profile/Coverage tool can be run parallel with this.
+   */
+  readonly allowExecutableConcurrentInvocations: boolean;
 
   /**
    * TestMate will call this when user initiates a test run

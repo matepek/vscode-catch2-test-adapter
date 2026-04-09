@@ -5,7 +5,7 @@ import { EOL } from 'os';
 
 import { SharedVarOfExec } from './SharedVarOfExec';
 import { AbstractTest } from './AbstractTest';
-import { TaskPool } from '../util/TaskPool';
+import { combine, TaskPool } from '../util/TaskPool';
 import { ExecutableRunResultValue, RunningExecutable } from '../RunningExecutable';
 import { promisify } from 'util';
 import {
@@ -43,6 +43,7 @@ import { SharedTestTags } from './SharedTestTags';
 import { Disposable } from '../Util';
 import { FilePathResolver, TestItemParent } from '../TestItemManager';
 import { Logger } from '../Logger';
+import { TestRunData } from '../TestRunData';
 import * as TMA from '../TestMateApi';
 
 ///
@@ -635,19 +636,14 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     });
   }
 
-  async run(
-    testRun: vscode.TestRun,
-    testsToRun: TestsToRun,
-    taskPool: TaskPool,
-    profileRunHandler?: TMA.TestMateTestRunHandler,
-  ): Promise<void> {
+  async run(data: TestRunData, testsToRun: TestsToRun, workspaceTaskPool: TaskPool): Promise<void> {
     const testsToRunFinal: AbstractTest[] = [];
 
     for (const t of testsToRun.direct) {
       if (!t.hasStaticError) testsToRunFinal.push(t);
     }
     for (const t of testsToRun.parent) {
-      if (t.hasStaticError || t.reportIfSkippedFirstOnly(testRun)) {
+      if (t.hasStaticError || t.reportIfSkippedFirstOnly(data.testRun)) {
         /* skip */
       } else testsToRunFinal.push(t);
     }
@@ -655,15 +651,15 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     if (testsToRunFinal.length == 0) return;
 
     try {
-      await this.runTasks('beforeEach', taskPool, testRun.token);
-      //TODO:future: test list might changes: await this.reloadTests(taskPool, testRun.token);
+      await this.runTasks('beforeEach', workspaceTaskPool, data.testRun.token);
+      // TODO:future: test list might changes: await this.reloadTests(taskPool, data.testRun.token);
       // that case the testsToRunFinal should be after this block
     } catch (e) {
       const msg = e.toString();
-      testRun.appendOutput(msg);
+      data.testRun.appendOutput(msg);
       const errorMsg = new vscode.TestMessage(msg);
       for (const test of testsToRun) {
-        testRun.errored(test.item, errorMsg);
+        data.testRun.errored(test.item, errorMsg);
       }
       return;
     }
@@ -671,11 +667,11 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     const splittedForFramework = this._splitTests(testsToRunFinal);
     const splittedForMultirun = splittedForFramework.flatMap(v => this._splitTestSetForMultirunIfEnabled(v));
     const splittedFinal = splittedForMultirun.flatMap(b =>
-      this._splitTestsToSmallEnoughSubsetsAndRemoveLooLongIds(b, testRun),
+      this._splitTestsToSmallEnoughSubsetsAndRemoveLooLongIds(b, data.testRun),
     ); //TODO:future merge with _splitTestSetForMultirunIfEnabled
 
     const runningBucketPromises = splittedFinal.map(b =>
-      this._runInner(testRun, b, taskPool, profileRunHandler).catch(err => {
+      this._runInner(data, b, workspaceTaskPool).catch(err => {
         vscode.window.showWarningMessage(err.toString());
       }),
     );
@@ -683,41 +679,40 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     await Promise.allSettled(runningBucketPromises);
 
     try {
-      await this.runTasks('afterEach', taskPool, testRun.token);
+      await this.runTasks('afterEach', workspaceTaskPool, data.testRun.token);
     } catch (e) {
       const msg = e.toString();
-      testRun.appendOutput(msg);
+      data.testRun.appendOutput(msg);
       const errorMsg = new vscode.TestMessage(msg);
       for (const test of testsToRun) {
-        testRun.errored(test.item, errorMsg);
+        data.testRun.errored(test.item, errorMsg);
       }
       return;
     }
   }
 
   private _runInner(
-    testRun: vscode.TestRun,
+    data: TestRunData,
     testsToRun: readonly AbstractTest[],
-    taskPool: TaskPool,
-    profileRunHandler?: TMA.TestMateTestRunHandler,
+    workspaceTaskPool: TaskPool,
   ): Promise<void> {
-    return this.shared.parallelizationPool.scheduleTask(async () => {
+    return combine(data.taskPoolForExecutables.get(this), this.shared.parallelizationPool).scheduleTask(async () => {
       const runIfNotCancelled = (): Promise<void> => {
-        if (testRun.token.isCancellationRequested) {
+        if (data.testRun.token.isCancellationRequested) {
           this.shared.log.info('test was canceled:', this);
           return Promise.resolve();
         }
-        return this._runProcess(testRun, testsToRun, profileRunHandler);
+        return this._runProcess(data, testsToRun);
       };
 
       try {
-        return await taskPool.scheduleTask(runIfNotCancelled);
+        return await workspaceTaskPool.scheduleTask(runIfNotCancelled);
       } catch (err) {
         if (isSpawnBusyError(err)) {
           this.shared.log.info('executable is busy, rescheduled: 2sec', err);
 
           return promisify(setTimeout)(2000).then(() => {
-            taskPool.scheduleTask(runIfNotCancelled);
+            workspaceTaskPool.scheduleTask(runIfNotCancelled);
           });
         } else {
           throw err;
@@ -750,11 +745,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return clonePath;
   }
 
-  private async _runProcess(
-    testRun: vscode.TestRun,
-    childrenToRun: readonly AbstractTest[],
-    profileRunHandler?: TMA.TestMateTestRunHandler,
-  ): Promise<void> {
+  private async _runProcess(data: TestRunData, childrenToRun: readonly AbstractTest[]): Promise<void> {
     const execParams = await this._getRunParams(childrenToRun);
     const pathForExecution = await this._getPathForExecution();
 
@@ -765,8 +756,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       env: this.shared.options.env,
     };
 
-    if (profileRunHandler?.mapTestRunProcessBuilder) {
-      builderProps = await profileRunHandler.mapTestRunProcessBuilder(builderProps);
+    if (data.profileRunHandler?.mapTestRunProcessBuilder) {
+      builderProps = await data.profileRunHandler.mapTestRunProcessBuilder(builderProps);
       this.shared.log.info('mapTestRunProcessBuilder', builderProps);
     }
 
@@ -778,9 +769,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       undefined,
     );
 
-    if (profileRunHandler?.beginProcess) {
+    if (data.profileRunHandler?.beginProcess) {
       try {
-        await profileRunHandler.beginProcess(builderProps);
+        await data.profileRunHandler.beginProcess(builderProps);
       } catch (e) {
         this.shared.log.error('profileRunHandler.beginProcess', e);
       }
@@ -788,9 +779,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     this.shared.log.info('proc starting', pathForExecution, execParams, this.shared.path);
 
-    const runInfo = await RunningExecutable.create(builder, childrenToRun, testRun.token);
+    const runInfo = await RunningExecutable.create(builder, childrenToRun, data.testRun.token);
 
-    testRun.appendOutput(runInfo.getProcStartLine());
+    data.testRun.appendOutput(runInfo.getProcStartLine());
 
     this.shared.log.info('proc started', runInfo.process.pid, pathForExecution, this.shared, execParams);
 
@@ -841,17 +832,17 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     try {
       const { unexpectedTests, expectedToRunAndFoundTests, leftBehindBuilder } = await this._handleProcess(
-        testRun,
+        data.testRun,
         runInfo,
       );
       const result = await runInfo.result;
 
-      testRun.appendOutput(runInfo.getProcStopLine(result));
+      data.testRun.appendOutput(runInfo.getProcStopLine(result));
 
       if (result.value === ExecutableRunResultValue.Errored) {
         this.shared.log.warn(result.toString(), result, runInfo, this);
-        testRun.appendOutput(runInfo.runPrefix + '❌ Executable run is finished with error.');
-        testRun.appendOutput(
+        data.testRun.appendOutput(runInfo.runPrefix + '❌ Executable run is finished with error.');
+        data.testRun.appendOutput(
           runInfo.runPrefix + [runInfo.spawnBuilder.cmd, ...runInfo.spawnBuilder.args].map(x => `"${x}""`).join(' '),
         );
       }
@@ -902,9 +893,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
         });
       }
 
-      if (profileRunHandler?.endProcess) {
+      if (data.profileRunHandler?.endProcess) {
         try {
-          await profileRunHandler.endProcess(builderProps, result.value);
+          await data.profileRunHandler.endProcess(builderProps, result.value);
         } catch (e) {
           this.shared.log.error('profileRunHandler.endProcess.beginProcess', e);
         }

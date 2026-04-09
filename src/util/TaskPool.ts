@@ -1,4 +1,24 @@
-export class TaskPool {
+export interface TaskPoolI {
+  scheduleTask<TResult>(task: () => TResult | PromiseLike<TResult>): Promise<TResult>;
+}
+
+export const combine = (pool1: TaskPoolI, pool2: TaskPoolI): TaskPoolI => {
+  return {
+    scheduleTask<TResult>(task: () => TResult | PromiseLike<TResult>): Promise<TResult> {
+      return pool1.scheduleTask(() => pool2.scheduleTask(task));
+    },
+  };
+};
+
+class NoLimitTaskPool implements TaskPoolI {
+  async scheduleTask<TResult>(task: () => TResult | PromiseLike<TResult>): Promise<TResult> {
+    return task();
+  }
+}
+
+export const noLimitTaskPool = new NoLimitTaskPool();
+
+export class TaskPool implements TaskPoolI {
   /**
    * @param maxTaskCount Has to be bigger than 0 or `undefined`.
    */
@@ -55,3 +75,34 @@ export class TaskPool {
     }
   }
 }
+
+export interface TaskPoolMapI {
+  get(key: object): TaskPoolI;
+}
+
+// basically its a dynamic semaphore
+export class TaskPoolMap implements TaskPoolMapI {
+  /**
+   * @param maxTaskCount Has to be bigger than 0 or `undefined`.
+   */
+  constructor(private _maxTaskCount: number) {
+    if (_maxTaskCount < 1) throw Error('invalid maxTaskCount: ' + _maxTaskCount);
+  }
+
+  private readonly _pools = new WeakMap<object, TaskPoolI>();
+
+  get(key: object): TaskPoolI {
+    let p = this._pools.get(key);
+    if (p === undefined) {
+      p = new TaskPool(this._maxTaskCount);
+      this._pools.set(key, p);
+    }
+    return p;
+  }
+}
+
+export const noLimitTaskPoolMap: TaskPoolMapI = {
+  get(_key: object): TaskPoolI {
+    return noLimitTaskPool;
+  },
+};

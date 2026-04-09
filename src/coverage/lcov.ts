@@ -371,6 +371,7 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
 
   async mapTestRunProcessBuilder(builder: TMA.TestMateProcessBuilder): Promise<TMA.TestMateProcessBuilder> {
     if (!this.data) throw Error('assert:data');
+    // every process will have different file so they can run parallel: "testMate.cpp.test.parallelExecutionOfExecutableLimit" > 1
     const profrawPath = pathlib.join(this.data.tmpDir.path, crypto.randomBytes(16).toString('hex') + '.profraw');
     return {
       ...builder,
@@ -384,6 +385,10 @@ class LcovTestMateAdapter implements TMA.TestMateTestRunProfile {
 
   label = label;
   kind = vscode.TestRunProfileKind.Coverage;
+
+  get allowExecutableConcurrentInvocations() {
+    return true; // can be vscode.workspace.getConfiguration(configSection).get(...)
+  }
 
   createTestRunHandler(
     testRun: TMA.TestMateTestRun,

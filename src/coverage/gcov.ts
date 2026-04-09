@@ -326,6 +326,7 @@ class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
 
   label = label;
   kind = vscode.TestRunProfileKind.Coverage;
+  allowExecutableConcurrentInvocations = false;
 
   createTestRunHandler(
     testRun: TMA.TestMateTestRun,
