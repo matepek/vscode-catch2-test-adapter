@@ -756,8 +756,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       env: this.shared.options.env,
     };
 
-    if (data.profileRunHandler?.mapTestRunProcessBuilder) {
-      builderProps = await data.profileRunHandler.mapTestRunProcessBuilder(builderProps);
+    if (data.testRunHandler?.mapTestRunProcessBuilder) {
+      builderProps = await data.testRunHandler.mapTestRunProcessBuilder(builderProps);
       this.shared.log.info('mapTestRunProcessBuilder', builderProps);
     }
 
@@ -769,9 +769,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       undefined,
     );
 
-    if (data.profileRunHandler?.beginProcess) {
+    if (data.testRunHandler?.beginProcess) {
       try {
-        await data.profileRunHandler.beginProcess(builderProps);
+        await data.testRunHandler.beginProcess(builderProps);
       } catch (e) {
         this.shared.log.error('profileRunHandler.beginProcess', e);
       }
@@ -893,9 +893,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
         });
       }
 
-      if (data.profileRunHandler?.endProcess) {
+      if (data.testRunHandler?.endProcess) {
         try {
-          await data.profileRunHandler.endProcess(builderProps, result.value);
+          await data.testRunHandler.endProcess(builderProps, result.value);
         } catch (e) {
           this.shared.log.error('profileRunHandler.endProcess.beginProcess', e);
         }

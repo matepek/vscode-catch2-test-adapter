@@ -155,6 +155,8 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     private readonly log: Log,
   ) {}
 
+  allowExecutableConcurrentInvocations = false;
+
   private data:
     | {
         tmpDir: fs.DisposableTempDir;
@@ -326,7 +328,6 @@ class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
 
   label = label;
   kind = vscode.TestRunProfileKind.Coverage;
-  allowExecutableConcurrentInvocations = false;
 
   createTestRunHandler(
     testRun: TMA.TestMateTestRun,
@@ -346,17 +347,23 @@ class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
   dispose(): void {}
 }
 
-export function activate(_context: vscode.ExtensionContext) {
+/**
+ * this is how your main.ts could look like
+ */
+export async function activate(_context: vscode.ExtensionContext) {
   if (process.platform !== 'linux') return;
 
   const log = new Log(configSection, undefined, label, { depth: 3 }, false);
   const testMateExtension = vscode.extensions.getExtension<TMA.TestMateAPI>('matepek.vscode-catch2-test-adapter');
   if (testMateExtension) {
-    const testMate = testMateExtension.exports;
+    const testMate = await testMateExtension.activate();
     testMate.registerTestRunProfile(new GcovTestMateAdapter(log));
   }
 }
 
+/**
+ * you don't need this
+ */
 export function _activate(testMate: { registerTestRunProfile: (adapter: TMA.TestMateTestRunProfile) => void }) {
   if (process.platform === 'linux') {
     const log = new Log(configSection, undefined, label, { depth: 3 }, false);

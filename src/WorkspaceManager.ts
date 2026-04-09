@@ -336,9 +336,9 @@ export class WorkspaceManager implements vscode.Disposable {
       return;
     }
 
-    if (data.profileRunHandler?.init) {
+    if (data.testRunHandler?.init) {
       try {
-        await data.profileRunHandler.init();
+        await data.testRunHandler.init();
       } catch (e) {
         this.log.error('profileRunHandler.init', e);
       }
@@ -356,9 +356,9 @@ export class WorkspaceManager implements vscode.Disposable {
 
     await Promise.allSettled(ps);
 
-    if (data.profileRunHandler?.finalise) {
+    if (data.testRunHandler?.finalise) {
       try {
-        await data.profileRunHandler.finalise();
+        await data.testRunHandler.finalise();
       } catch (e) {
         this.log.error('profileRunHandler.finalise', e);
       }

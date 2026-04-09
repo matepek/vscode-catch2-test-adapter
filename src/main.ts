@@ -143,8 +143,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
       vscode.window.showWarningMessage('Cannot run new tests while debugging.');
       return;
     }
-    const taskPoolForExecutables =
-      (profile?.allowExecutableConcurrentInvocations ?? true) ? noLimitTaskPoolMap : oneTask_PoolForExecutables;
 
     const testRun = controller.createTestRun(request);
     ++runCount;
@@ -154,12 +152,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
 
       const runQueue: Thenable<void>[] = [];
       for (const [manager, executables] of managers) {
+        const testRunHandler = profile?.createTestRunHandler(testRun, manager.workspaceFolder);
+        const taskPoolForExecutables =
+          (testRunHandler?.allowExecutableConcurrentInvocations ?? true)
+            ? noLimitTaskPoolMap
+            : oneTask_PoolForExecutables;
         runQueue.push(
           manager
             .run(executables, {
               testRun,
               taskPoolForExecutables,
-              profileRunHandler: profile?.createTestRunHandler(testRun, manager.workspaceFolder),
+              testRunHandler,
             })
             .catch(e => {
               vscode.window.showErrorMessage('Unexpected error from run: ' + e);

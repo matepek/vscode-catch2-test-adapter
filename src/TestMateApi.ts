@@ -50,6 +50,17 @@ export interface TestMateProcessBuilder {
 
 export interface TestMateTestRunHandler {
   /**
+   * The same executable can be run parallel so the coverage information might be generated parallel.
+   * Or they might sharing some resources exclusively? In that case: `false`
+   * Can be dynamic:
+   * ```
+   * get allowExecutableConcurrentInvocations() { return vscode.workspace.getConfiguration(configSection).get<boolean>('allowExecutableConcurrentInvocations', false); }
+   * ```
+   * Limitation applies for `TestMateTestRunProfile` instance, so other profile/Coverage tool can be run parallel with this.
+   */
+  readonly allowExecutableConcurrentInvocations: boolean;
+
+  /**
    * During this callback, one can do the global init part.
    * Use `testRun.token` !!!
    */
@@ -108,22 +119,12 @@ export interface TestMateTestRunProfile {
   /**
    * Will be used to create coverage profile. Example: "gcov (by ...)"
    */
-  label: string;
+  readonly label: string;
 
   /**
    * You probably want to use `vscode.TestRunProfileKind.Coverage`
    */
   readonly kind: vscode.TestRunProfileKind;
-  /**
-   * The same executable can be run parallel so the coverage information might be generated parallel.
-   * Or they might sharing some resources exclusively? In that case: `false`
-   * Can be dynamic:
-   * ```
-   * get allowExecutableConcurrentInvocations() { return vscode.workspace.getConfiguration(configSection).get<boolean>('allowExecutableConcurrentInvocations', false); }
-   * ```
-   * Limitation applies for `TestMateTestRunProfile` instance, so other profile/Coverage tool can be run parallel with this.
-   */
-  readonly allowExecutableConcurrentInvocations: boolean;
 
   /**
    * TestMate will call this when user initiates a test run

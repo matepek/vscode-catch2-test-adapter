@@ -206,7 +206,12 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     private readonly testRun: TMA.TestMateTestRun,
     private readonly workspaceFolder: vscode.WorkspaceFolder,
     private readonly log: Log,
-  ) {}
+  ) {
+    const config = vscode.workspace.getConfiguration(configSection);
+    this.allowExecutableConcurrentInvocations = config.get<boolean>('allowExecutableConcurrentInvocations', true);
+  }
+
+  allowExecutableConcurrentInvocations: boolean;
 
   private data:
     | {
@@ -386,10 +391,6 @@ class LcovTestMateAdapter implements TMA.TestMateTestRunProfile {
   label = label;
   kind = vscode.TestRunProfileKind.Coverage;
 
-  get allowExecutableConcurrentInvocations() {
-    return true; // can be vscode.workspace.getConfiguration(configSection).get(...)
-  }
-
   createTestRunHandler(
     testRun: TMA.TestMateTestRun,
     workspaceFolder: vscode.WorkspaceFolder,
@@ -409,17 +410,20 @@ class LcovTestMateAdapter implements TMA.TestMateTestRunProfile {
 }
 
 /**
- * this is just an example how your main.ts could look like
+ * this is how your main.ts could look like
  */
-export function activate(_context: vscode.ExtensionContext) {
+export async function activate(_context: vscode.ExtensionContext) {
   const log = new Log(configSection, undefined, label, { depth: 3 }, false);
   const testMateExtension = vscode.extensions.getExtension<TMA.TestMateAPI>('matepek.vscode-catch2-test-adapter');
   if (testMateExtension) {
-    const testMate = testMateExtension.exports;
+    const testMate = await testMateExtension.activate();
     testMate.registerTestRunProfile(new LcovTestMateAdapter(log));
   }
 }
 
+/**
+ * you don't need this
+ */
 export function _activate(testMate: { registerTestRunProfile: (adapter: TMA.TestMateTestRunProfile) => void }) {
   if (process.platform === 'darwin') {
     const log = new Log(configSection, undefined, label, { depth: 3 }, false);

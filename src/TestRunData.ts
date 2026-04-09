@@ -5,5 +5,5 @@ import * as TMA from './TestMateApi';
 export interface TestRunData {
   testRun: vscode.TestRun;
   taskPoolForExecutables: TaskPoolMapI;
-  profileRunHandler?: TMA.TestMateTestRunHandler;
+  testRunHandler?: TMA.TestMateTestRunHandler;
 }
