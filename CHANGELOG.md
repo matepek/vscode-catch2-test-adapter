@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [4.23.7]
+## [4.23.7] - 2026-04-09
 
 only experimental Test Coverage API improvements.
 
