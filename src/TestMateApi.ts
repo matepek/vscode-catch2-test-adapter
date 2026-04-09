@@ -58,13 +58,14 @@ export interface TestMateTestRunHandler {
    * ```
    * Limitation applies for `TestMateTestRunProfile` instance, so other profile/Coverage tool can be run parallel with this.
    */
-  readonly allowExecutableConcurrentInvocations: boolean;
+  readonly allowExecutableConcurrentInvocations?: boolean;
 
   /**
    * During this callback, one can do the global init part.
    * Use `testRun.token` !!!
+   * @param progress Same as in case of {@linkcode vscode.window.withProgress}
    */
-  init?: () => void | Promise<void>;
+  init?: (progress: vscode.Progress<{ message?: string; increment?: number }>) => void | Promise<void>;
 
   /**
    * Called before the executable's process is spawned.
@@ -76,7 +77,7 @@ export interface TestMateTestRunHandler {
   /**
    * Called after the executable's process is spawned.
    * Use `testRun.token` !!!
-   * @param builder if `mapTestRunProcessBuilder` is defined the the its result value
+   * @param builder if {@linkcode mapTestRunProcessBuilder} is defined the the its result value
    */
   endProcess?: (
     builder: TestMateProcessBuilder,
@@ -90,8 +91,9 @@ export interface TestMateTestRunHandler {
    *
    * Note: Do not dispose your detailed coverage, `loadDetailedCoverage` still can be called.
    *       Can use WeakMap<vscode.FileCoverage, MyCoverageDetails> or subclassing. See vscode api docs
+   * @param progress Same as in case of {@linkcode vscode.window.withProgress}
    */
-  finalise?: () => void | Promise<void>;
+  finalise?: (progress: vscode.Progress<{ message?: string; increment?: number }>) => void | Promise<void>;
 
   /**
    * If you need to change something for the call of the exec, return with the modifed.
@@ -137,6 +139,7 @@ export interface TestMateTestRunProfile {
    * @param token Must be used!
    */
   loadDetailedCoverage?: (
+    testRun: TestMateTestRun,
     fileCoverage: vscode.FileCoverage,
     token: vscode.CancellationToken,
   ) => Promise<vscode.FileCoverageDetail[]>;

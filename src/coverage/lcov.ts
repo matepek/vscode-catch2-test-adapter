@@ -270,25 +270,25 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     }
   }
 
-  async finalise(): Promise<void> {
+  async finalise(progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<void> {
     if (!this.data) throw Error('assert:data');
     try {
       if (!this.testRun.token.isCancellationRequested) {
-        await this.finaliseInner();
+        await this.finaliseInner(progress);
       }
     } finally {
       await this.data.dispose();
     }
   }
 
-  private async finaliseInner(): Promise<void> {
+  private async finaliseInner(progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<void> {
     if (!this.data) throw Error('assert:data');
 
+    progress.report({ message: 'llvm-profdata' });
     const mergedProfdataPath = pathlib.join(this.data.tmpDir.path, 'merged.profdata');
     await this.data.argsProfrawsFile.close().catch(e => this.log.error('closing file', e));
     // Use LLVM Response files to bypass OS ARG_MAX limits for profdata
     const mergeArgs = ['merge', '-sparse', `@${this.data.argsProfrawsPath}`, '-o', mergedProfdataPath];
-
     try {
       this.log.debug('llvm-profdata', mergeArgs);
       await executeWithPlatformToolchain('llvm-profdata', mergeArgs, this.testRun.token);
@@ -297,6 +297,7 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       return;
     }
 
+    progress.report({ message: 'collecting object files' });
     const objectsPattern = vscode.workspace
       .getConfiguration(configSection)
       .get<string[]>('objects', ['**/*.{dylib,so,dll}']);
@@ -315,6 +316,7 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       await this.data.argsObjectsFile.close().catch(e => this.log.error('closing file', e));
     }
 
+    progress.report({ message: 'llvm-cov' });
     const exportArgs = [
       'export',
       `@${this.data.argsObjectsPath}`,
@@ -322,7 +324,6 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       mergedProfdataPath,
       '-format=text',
     ];
-
     let dataArr;
     try {
       this.log.debug('llvm-cov', exportArgs);
@@ -344,6 +345,7 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       return;
     }
 
+    progress.report({ message: 'reporting' });
     for (const data of dataArr) {
       if (this.testRun.token.isCancellationRequested) throw Error('canceled');
       if (!Array.isArray(data['files'])) continue;
@@ -399,6 +401,7 @@ class LcovTestMateAdapter implements TMA.TestMateTestRunProfile {
   }
 
   loadDetailedCoverage(
+    _testRun: TMA.TestMateTestRun,
     fileCoverage: vscode.FileCoverage,
     token: vscode.CancellationToken,
   ): Promise<vscode.FileCoverageDetail[]> {

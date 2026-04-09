@@ -3,7 +3,7 @@ import { TaskPoolMapI } from './util/TaskPool';
 import * as TMA from './TestMateApi';
 
 export interface TestRunData {
-  testRun: vscode.TestRun;
-  taskPoolForExecutables: TaskPoolMapI;
-  testRunHandler?: TMA.TestMateTestRunHandler;
+  readonly testRun: vscode.TestRun;
+  readonly taskPoolForExecutables: TaskPoolMapI;
+  readonly testRunHandler?: TMA.TestMateTestRunHandler;
 }

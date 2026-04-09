@@ -154,7 +154,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
       for (const [manager, executables] of managers) {
         const testRunHandler = profile?.createTestRunHandler(testRun, manager.workspaceFolder);
         const taskPoolForExecutables =
-          (testRunHandler?.allowExecutableConcurrentInvocations ?? true)
+          (testRunHandler?.allowExecutableConcurrentInvocations ?? false)
             ? noLimitTaskPoolMap
             : oneTask_PoolForExecutables;
         runQueue.push(
@@ -426,15 +426,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
       false,
     );
     profile.loadDetailedCoverage = async (
-      _testRun: vscode.TestRun,
+      testRun: vscode.TestRun,
       fileCoverage: vscode.FileCoverage,
       token: vscode.CancellationToken,
     ): Promise<vscode.FileCoverageDetail[]> => {
       if (adapter.loadDetailedCoverage) {
+        log.debug('coverate:loadDetailedCoverage', profile.label, 'loadDetailedCoverage', fileCoverage.uri);
         try {
-          return await adapter.loadDetailedCoverage(fileCoverage, token);
+          return await adapter.loadDetailedCoverage(testRun, fileCoverage, token);
         } catch (e) {
-          log.error('loadDetailedCoverage', e);
+          log.error('coverate:loadDetailedCoverage', profile.label, e, fileCoverage.uri);
           return [];
         }
       } else return [];

@@ -201,11 +201,11 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     await this.cleanupGcda();
   }
 
-  async finalise(): Promise<void> {
+  async finalise(progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<void> {
     if (!this.data) throw Error('assert:data');
     try {
       if (!this.testRun.token.isCancellationRequested) {
-        await this.finaliseInner();
+        await this.finaliseInner(progress);
       }
     } finally {
       await this.data.dispose();
@@ -213,7 +213,7 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     }
   }
 
-  async finaliseInner(): Promise<void> {
+  async finaliseInner(progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<void> {
     if (!this.data) throw Error('assert:data');
 
     const gcdaFiles = await this.getGcdaPath();
@@ -223,8 +223,8 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       return;
     }
 
+    progress.report({ message: 'gcov' });
     const fileCoverageMap = new Map<string, AggregatedFileCoverage>();
-
     for (const file of gcdaFiles) {
       if (this.testRun.token.isCancellationRequested) throw Error('canceled');
 
@@ -240,6 +240,7 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     const gcovOutputFiles = await fs.readdir(this.data.tmpDir.path);
     const jsonGzFiles = gcovOutputFiles.filter(f => f.endsWith('.gcov.json.gz'));
 
+    progress.report({ message: 'aggregating' });
     for (const gzFile of jsonGzFiles) {
       if (this.testRun.token.isCancellationRequested) throw Error('canceled');
       const filePath = pathlib.join(this.data.tmpDir.path, gzFile);
@@ -289,6 +290,7 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       }
     }
 
+    progress.report({ message: 'reporting' });
     // Convert map to vscode.FileCoverage objects
     for (const [filePath, aggregated] of fileCoverageMap.entries()) {
       let linesTotal = 0,
@@ -337,6 +339,7 @@ class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
   }
 
   loadDetailedCoverage(
+    _testRun: TMA.TestMateTestRun,
     fileCoverage: vscode.FileCoverage,
     token: vscode.CancellationToken,
   ): Promise<vscode.FileCoverageDetail[]> {

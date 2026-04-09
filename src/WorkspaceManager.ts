@@ -337,11 +337,21 @@ export class WorkspaceManager implements vscode.Disposable {
     }
 
     if (data.testRunHandler?.init) {
-      try {
-        await data.testRunHandler.init();
-      } catch (e) {
-        this.log.error('profileRunHandler.init', e);
-      }
+      await vscode.window.withProgress(
+        { title: 'Coverage: Init', location: vscode.ProgressLocation.Window },
+        async (
+          progress: vscode.Progress<{ message?: string; increment?: number }>,
+          _token: vscode.CancellationToken,
+        ): Promise<void> => {
+          if (!data.testRunHandler?.init) return;
+          try {
+            this.log.debug('testRunHandler.init');
+            await data.testRunHandler?.init(progress); // Cannot invoke an object which is possibly 'undefined'.ts(2722)
+          } catch (e) {
+            this.log.error('profileRunHandler.init', e);
+          }
+        },
+      );
     }
 
     const ps: Promise<void>[] = [];
@@ -357,11 +367,21 @@ export class WorkspaceManager implements vscode.Disposable {
     await Promise.allSettled(ps);
 
     if (data.testRunHandler?.finalise) {
-      try {
-        await data.testRunHandler.finalise();
-      } catch (e) {
-        this.log.error('profileRunHandler.finalise', e);
-      }
+      await vscode.window.withProgress(
+        { title: 'Coverage: Finalizing', location: vscode.ProgressLocation.Window },
+        async (
+          progress: vscode.Progress<{ message?: string; increment?: number }>,
+          _token: vscode.CancellationToken,
+        ): Promise<void> => {
+          if (!data.testRunHandler?.finalise) return;
+          try {
+            this.log.debug('testRunHandler.finalise');
+            await data.testRunHandler?.finalise(progress);
+          } catch (e) {
+            this.log.error('profileRunHandler.finalise', e);
+          }
+        },
+      );
     }
 
     try {
