@@ -5,8 +5,12 @@ import * as fs from 'fs/promises';
 import pathlib from 'node:path';
 import os from 'node:os';
 import zlib from 'node:zlib';
+import { promisify } from 'node:util';
 import { Log } from 'vscode-test-adapter-util';
 
+const gunzip = promisify(zlib.gunzip);
+
+const testMateExtensionId = 'matepek.vscode-catch2-test-adapter';
 const configSection = 'testMate.cpp.experimental.gcov';
 const label = 'GCov (TestMate C++)';
 
@@ -26,33 +30,18 @@ const execute = async (
   const closeP = new Promise<void>((res, rej) => {
     proc.on('close', (code: number) => {
       if (code === 0) res();
-      else rej(Error(`Command '${cmd}' failed with exit code: ${code}; ${stderr.join('')}`));
+      else rej(new Error(`Command '${cmd}' failed with exit code: ${code}; ${stderr.join('')}`));
     });
     proc.on('error', err => rej(err));
 
     token.onCancellationRequested(() => {
       proc.kill();
-      rej(Error('Cancelled by user'));
+      rej(new Error('Cancelled by user'));
     });
   });
 
   await closeP;
   return [stdout.join(''), stderr.join('')];
-};
-
-const executeWithPlatformToolchain = async (
-  cmd: string,
-  args: string[],
-  cwd: string | undefined,
-  token: vscode.CancellationToken,
-): Promise<[string, string]> => {
-  if (process.platform === 'darwin' || process.platform === 'linux') {
-    return await execute(cmd, args, cwd, token);
-  } else if (process.platform === 'win32') {
-    return await execute(cmd + '.exe', args, cwd, token);
-  } else {
-    throw Error('assert platform toolchain');
-  }
 };
 
 interface GcovBranch {
@@ -64,7 +53,7 @@ interface GcovBranch {
 interface GcovLine {
   line_number: number;
   count: number;
-  branches: GcovBranch[];
+  branches?: GcovBranch[];
 }
 
 interface GcovFunction {
@@ -81,23 +70,31 @@ class AggregatedFileCoverage {
   functions = new Map<string, GcovFunction>();
 
   mergeLine(l: GcovLine) {
+    if (typeof l.line_number !== 'number' || typeof l.count !== 'number') return;
+
     if (!this.lines.has(l.line_number)) {
       this.lines.set(l.line_number, { line_number: l.line_number, count: 0, branches: [] });
     }
     const target = this.lines.get(l.line_number)!;
     target.count += l.count;
 
-    if (l.branches && Array.isArray(l.branches)) {
+    if (Array.isArray(l.branches)) {
+      target.branches = target.branches || [];
       for (let i = 0; i < l.branches.length; i++) {
+        const branch = l.branches[i];
+        if (typeof branch.count !== 'number') continue;
+
         if (!target.branches[i]) {
-          target.branches[i] = { count: 0, fallthrough: l.branches[i].fallthrough, throw: l.branches[i].throw };
+          target.branches[i] = { count: 0, fallthrough: !!branch.fallthrough, throw: !!branch.throw };
         }
-        target.branches[i].count += l.branches[i].count;
+        target.branches[i].count += branch.count;
       }
     }
   }
 
   mergeFunction(f: GcovFunction) {
+    if (typeof f.name !== 'string' || typeof f.execution_count !== 'number') return;
+
     if (!this.functions.has(f.name)) {
       this.functions.set(f.name, { ...f, execution_count: 0 });
     }
@@ -105,7 +102,7 @@ class AggregatedFileCoverage {
   }
 }
 
-class FileCoverage extends vscode.FileCoverage {
+class GcovFileCoverage extends vscode.FileCoverage {
   constructor(
     uri: vscode.Uri,
     statementCoverage: vscode.TestCoverageCount,
@@ -135,8 +132,10 @@ class FileCoverage extends vscode.FileCoverage {
         const range = new vscode.Range(lineIdx, 0, lineIdx, 1);
 
         const branchCovs: vscode.BranchCoverage[] = [];
-        for (const b of line.branches) {
-          branchCovs.push(new vscode.BranchCoverage(b.count, range));
+        if (line.branches) {
+          for (const b of line.branches) {
+            branchCovs.push(new vscode.BranchCoverage(b.count, range));
+          }
         }
 
         details.push(new vscode.StatementCoverage(line.count, range, branchCovs.length > 0 ? branchCovs : undefined));
@@ -188,9 +187,7 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
 
   async cleanupGcda() {
     const gcdaFiles = await this.getGcdaPath();
-    for (const f of gcdaFiles) {
-      await fs.unlink(f.fsPath).catch(e => this.log.error('unlink', e, f.fsPath));
-    }
+    await Promise.all(gcdaFiles.map(f => fs.unlink(f.fsPath).catch(e => this.log.error('unlink', e, f.fsPath))));
   }
 
   async init(): Promise<void> {
@@ -200,7 +197,7 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
         path,
         remove: async () => fs.rm(path, { recursive: true, force: true }),
         [Symbol.asyncDispose]: async function () {
-          this.remove();
+          await this.remove();
         },
       },
       async dispose() {
@@ -213,19 +210,22 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
   }
 
   async finalise(progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<void> {
-    if (!this.data) throw Error('assert:data');
+    if (!this.data) throw new Error('assert:data');
     try {
       if (!this.testRun.token.isCancellationRequested) {
         await this.finaliseInner(progress);
       }
+    } catch (e) {
+      this.log.error('gcov.finalise:', e);
     } finally {
       await this.data.dispose();
       await this.cleanupGcda();
     }
+    this.testRun.appendOutput('gcov processed');
   }
 
   async finaliseInner(progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<void> {
-    if (!this.data) throw Error('assert:data');
+    if (!this.data) throw new Error('assert:data');
 
     const gcdaFiles = await this.getGcdaPath();
 
@@ -236,20 +236,24 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
 
     progress.report({ message: 'gcov' });
     const fileCoverageMap = new Map<string, AggregatedFileCoverage>();
+
+    // Sequential process execution prevents OS EMFILE limits
     for (const file of gcdaFiles) {
-      if (this.testRun.token.isCancellationRequested) throw Error('canceled');
+      if (this.testRun.token.isCancellationRequested) return;
 
       try {
-        // TODO: file names can collide
-        await executeWithPlatformToolchain(
+        await execute(
           'gcov',
-          ['--json-format', file.fsPath],
+          [
+            '--preserve-paths', //to resolve filename collisions
+            '--json-format',
+            file.fsPath,
+          ],
           this.data.tmpDir.path,
           this.testRun.token,
         );
       } catch (e) {
         this.log.error(`Failed to execute gcov on ${file.fsPath}`, e);
-        continue;
       }
     }
 
@@ -257,17 +261,19 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     const jsonGzFiles = gcovOutputFiles.filter(f => f.endsWith('.gcov.json.gz'));
 
     progress.report({ message: 'aggregating' });
-    for (const gzFile of jsonGzFiles) {
-      if (this.testRun.token.isCancellationRequested) throw Error('canceled');
-      const filePath = pathlib.join(this.data.tmpDir.path, gzFile);
+
+    // Execute decompression and parsing concurrently mapping over all generated files
+    const parsePromises = jsonGzFiles.map(async gzFile => {
+      if (this.testRun.token.isCancellationRequested) return;
+      const filePath = pathlib.join(this.data!.tmpDir.path, gzFile);
 
       let jsonStr: string;
       try {
         const buffer = await fs.readFile(filePath);
-        jsonStr = zlib.gunzipSync(buffer).toString('utf8');
+        jsonStr = (await gunzip(buffer)).toString('utf8');
       } catch (e) {
         this.log.error(`Failed to decompress ${gzFile}`, e);
-        continue;
+        return;
       }
 
       let coverageJson;
@@ -275,15 +281,17 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
         coverageJson = JSON.parse(jsonStr);
       } catch (e) {
         this.log.error(`Failed to parse JSON from ${gzFile}`, e);
-        continue;
+        return;
       }
 
-      if (!Array.isArray(coverageJson['files'])) continue;
+      if (!Array.isArray(coverageJson['files'])) return;
 
       const cwd = coverageJson['current_working_directory'] || this.workspaceFolder.uri.fsPath;
 
       for (const sourceFile of coverageJson['files']) {
         const rawFilePath = sourceFile['file'];
+        if (!rawFilePath || typeof rawFilePath !== 'string') continue;
+
         const absoluteFilePath = pathlib.isAbsolute(rawFilePath) ? rawFilePath : pathlib.resolve(cwd, rawFilePath);
 
         if (!fileCoverageMap.has(absoluteFilePath)) {
@@ -304,10 +312,13 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
           }
         }
       }
-    }
+    });
+
+    await Promise.all(parsePromises);
+    if (this.testRun.token.isCancellationRequested) return;
 
     progress.report({ message: 'reporting' });
-    // Convert map to vscode.FileCoverage objects
+
     for (const [filePath, aggregated] of fileCoverageMap.entries()) {
       let linesTotal = 0,
         linesCovered = 0;
@@ -320,9 +331,11 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
         linesTotal++;
         if (line.count > 0) linesCovered++;
 
-        for (const branch of line.branches) {
-          branchesTotal++;
-          if (branch.count > 0) branchesCovered++;
+        if (line.branches) {
+          for (const branch of line.branches) {
+            branchesTotal++;
+            if (branch.count > 0) branchesCovered++;
+          }
         }
       }
 
@@ -336,14 +349,13 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       const branchCov = new vscode.TestCoverageCount(branchesCovered, branchesTotal);
       const declCov = new vscode.TestCoverageCount(funcsCovered, funcsTotal);
 
-      this.testRun.addCoverage(new FileCoverage(uri, statementCov, branchCov, declCov, this.log, aggregated));
+      this.testRun.addCoverage(new GcovFileCoverage(uri, statementCov, branchCov, declCov, this.log, aggregated));
     }
   }
 }
 
 class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
   constructor(private readonly log: Log) {
-    // these configs need reload to be effective
     const config = vscode.workspace.getConfiguration(configSection);
     const tag = config.get<string>('tag');
     if (tag) this.tag = new vscode.TestTag(tag);
@@ -365,8 +377,8 @@ class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
     fileCoverage: vscode.FileCoverage,
     token: vscode.CancellationToken,
   ): Promise<vscode.FileCoverageDetail[]> {
-    if (fileCoverage instanceof FileCoverage) return fileCoverage.load(token);
-    else throw Error('expected FileCoverage');
+    if (fileCoverage instanceof GcovFileCoverage) return fileCoverage.load(token);
+    else throw new Error('expected FileCoverage');
   }
 
   dispose(): void {}
@@ -377,9 +389,12 @@ class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
  */
 export async function activate(_context: vscode.ExtensionContext) {
   const log = new Log(configSection, undefined, label, { depth: 3 }, false);
-  const testMateExtension = vscode.extensions.getExtension<TMA.TestMateAPI>('matepek.vscode-catch2-test-adapter');
+  const testMateExtension = vscode.extensions.getExtension<TMA.TestMateAPI>(testMateExtensionId);
   if (testMateExtension) {
     const testMate = await testMateExtension.activate();
     testMate.registerTestRunProfile(new GcovTestMateAdapter(log));
+    log.info('registered GcovTestMateAdapter', testMateExtensionId);
+  } else {
+    log.info('missing extension', testMateExtensionId);
   }
 }

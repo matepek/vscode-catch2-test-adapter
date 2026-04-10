@@ -97,8 +97,8 @@ export interface TestMateTestRunHandler {
 
   /**
    * If you need to change something for the call of the exec, return with the modifed.
-   * IMPORTANT: Whatever is the result of this mapping the process's output should not change to remain parsable!!
-   * IMPORTANT: ONLY test run will apply the mapped value, discover and test listing WONT.
+   * IMPORTANT: Whatever is the result of this mapping the spawned process's output should not be change, it should remain parsable!!
+   * IMPORTANT: ONLY test-run will use this mapped values, discover and test listing WON'T.
    * Example:
    * ```
    *   return {
@@ -128,9 +128,10 @@ export interface TestMateTestRunProfile {
    */
   readonly kind: vscode.TestRunProfileKind;
 
-  /*
+  /**
    * Profile test tag. If specified, only the tests having the same tag can be used with this profile.
    * Best practice to give an option to your users to set this tag and they can also set `testMate.cpp.test.advancedExecutables[].testTags` as well.
+   * This way it Coverage will only on those executables.
    */
   readonly tag?: vscode.TestTag;
 

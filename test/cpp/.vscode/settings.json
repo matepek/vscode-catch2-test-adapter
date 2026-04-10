@@ -6,7 +6,8 @@
     },
     "testMate.cpp.experimental.gcov": {
         "enabled": true,
-        "logpanel": true
+        "logpanel": true,
+        "tag": "gcov"
     },
     "testMate.cpp.test.parallelExecutionLimit": 5,
     "testMate.cpp.test.parallelExecutionOfExecutableLimit": 10,
@@ -18,7 +19,13 @@
             ]
         },
         {
-            "pattern": "build/clang/*.exe",
+            "pattern": "build/gcc/gtest1.exe",
+            "testTags": [
+                "gcov"
+            ]
+        },
+        {
+            "pattern": "xbuild/clang/*.exe",
             "maxTestsPerExecutable": 3,
             "gtest": {
                 "prependTestRunningArgs": [

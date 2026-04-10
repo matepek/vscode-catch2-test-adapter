@@ -7,9 +7,10 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import { Log } from 'vscode-test-adapter-util';
 
-const ENV_LLVM_PROFILE_FILE = 'LLVM_PROFILE_FILE';
+const testMateExtensionId = 'matepek.vscode-catch2-test-adapter';
 const configSection = 'testMate.cpp.experimental.lcov';
 const label = 'LCov (TestMate C++)';
+const ENV_LLVM_PROFILE_FILE = 'LLVM_PROFILE_FILE';
 
 ///
 
@@ -29,13 +30,13 @@ const execute = async (
   const closeP = new Promise<void>((res, rej) => {
     proc.on('close', (code: number) => {
       if (code === 0) res();
-      else rej(Error(`Command '${cmd}' failed with exit code: ${code}; ${stderr.join('')}`));
+      else rej(new Error(`Command '${cmd}' failed with exit code: ${code}; ${stderr.join('')}`));
     });
     proc.on('error', err => rej(err));
 
     token.onCancellationRequested(() => {
       proc.kill();
-      rej(Error('Cancelled by user'));
+      rej(new Error('Cancelled by user'));
     });
   });
 
@@ -51,17 +52,17 @@ const executeWithPlatformToolchain = async (
 ): Promise<[string, string]> => {
   if (process.platform === 'darwin') {
     return await execute('xcrun', [cmd, ...args], cwd, token);
-  } else if (process.platform === 'linux') {
+  } else if (process.platform === 'linux' || process.platform === 'win32') {
     return await execute(cmd, args, cwd, token);
-  } else if (process.platform === 'win32') {
-    return await execute(cmd + '.exe', args, cwd, token);
   } else {
     throw Error('assert platform toolchain');
   }
+  return await execute(cmd, args, cwd, token);
 };
+
 ///
 
-class FileCoverage extends vscode.FileCoverage {
+class LcovFileCoverage extends vscode.FileCoverage {
   constructor(
     uri: vscode.Uri,
     statementCoverage: vscode.TestCoverageCount,
@@ -209,6 +210,16 @@ class FileCoverage extends vscode.FileCoverage {
   }
 }
 
+interface TestRunData {
+  tmpDir: fs.DisposableTempDir;
+  argsProfrawsPath: string;
+  argsProfrawsFile: fs.FileHandle;
+  argsObjectsPath: string;
+  argsObjectsFile: fs.FileHandle;
+  argsObjectsFileFirst: boolean;
+  dispose: () => void;
+}
+
 class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
   constructor(
     private readonly testRun: TMA.TestMateTestRun,
@@ -221,31 +232,23 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
   }
 
   allowExecutableConcurrentInvocations: boolean;
-
-  private data:
-    | {
-        tmpDir: fs.DisposableTempDir;
-        argsProfrawsPath: string;
-        argsProfrawsFile: fs.FileHandle;
-        argsObjectsPath: string;
-        argsObjectsFile: fs.FileHandle;
-        argsObjectsFileFirst: boolean;
-        dispose: () => void;
-      }
-    | undefined = undefined;
+  private data: TestRunData | undefined = undefined;
 
   async init(): Promise<void> {
-    const path = await fs.mkdtemp(pathlib.join(os.tmpdir(), 'lcov-'));
-    const argsProfrawsPath = pathlib.join(path, 'profraws.args.txt');
+    const tmpDirPath = await fs.mkdtemp(pathlib.join(os.tmpdir(), 'lcov-'));
+    const argsProfrawsPath = pathlib.join(tmpDirPath, 'profraws.args.txt');
     const argsProfrawsFile = await fs.open(argsProfrawsPath, 'w');
-    const argsObjectsPath = pathlib.join(path, 'objects.args.txt');
+    const argsObjectsPath = pathlib.join(tmpDirPath, 'objects.args.txt');
     const argsObjectsFile = await fs.open(argsObjectsPath, 'w');
+
     this.data = {
       tmpDir: {
-        path,
-        remove: async () => fs.rm(path, { recursive: true, force: true }),
+        path: tmpDirPath,
+        remove: async function () {
+          await fs.rm(this.path, { recursive: true, force: true });
+        },
         [Symbol.asyncDispose]: async function () {
-          this.remove();
+          await this.remove();
         },
       },
       argsProfrawsPath,
@@ -288,6 +291,7 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     } finally {
       await this.data.dispose();
     }
+    this.testRun.appendOutput('lcov processed');
   }
 
   private async finaliseInner(progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<void> {
@@ -384,7 +388,7 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
         );
 
         this.testRun.addCoverage(
-          new FileCoverage(uri, statementCov, branchCov, declCov, this.log, file, functionsList),
+          new LcovFileCoverage(uri, statementCov, branchCov, declCov, this.log, file, functionsList),
         );
       }
     }
@@ -392,7 +396,10 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
 
   async mapTestRunProcessBuilder(builder: TMA.TestMateProcessBuilder): Promise<TMA.TestMateProcessBuilder> {
     if (!this.data) throw Error('assert:data');
-    // every process will have different file so they can run parallel: "testMate.cpp.test.parallelExecutionOfExecutableLimit" > 1
+    // every process will have different file so they can run parallel.
+    // Relates:
+    // - `testMate.cpp.test.parallelExecutionOfExecutableLimit` > 1
+    // - `allowExecutableConcurrentInvocations`
     const profrawPath = pathlib.join(this.data.tmpDir.path, crypto.randomBytes(16).toString('hex') + '.profraw');
     return {
       ...builder,
@@ -425,7 +432,7 @@ class LcovTestMateAdapter implements TMA.TestMateTestRunProfile {
     fileCoverage: vscode.FileCoverage,
     token: vscode.CancellationToken,
   ): Promise<vscode.FileCoverageDetail[]> {
-    if (fileCoverage instanceof FileCoverage) return fileCoverage.load(token);
+    if (fileCoverage instanceof LcovFileCoverage) return fileCoverage.load(token);
     else throw Error('expected FileCoverage');
   }
 
@@ -437,9 +444,12 @@ class LcovTestMateAdapter implements TMA.TestMateTestRunProfile {
  */
 export async function activate(_context: vscode.ExtensionContext) {
   const log = new Log(configSection, undefined, label, { depth: 3 }, false);
-  const testMateExtension = vscode.extensions.getExtension<TMA.TestMateAPI>('matepek.vscode-catch2-test-adapter');
+  const testMateExtension = vscode.extensions.getExtension<TMA.TestMateAPI>(testMateExtensionId);
   if (testMateExtension) {
     const testMate = await testMateExtension.activate();
     testMate.registerTestRunProfile(new LcovTestMateAdapter(log));
+    log.info('registered GcovTestMateAdapter', testMateExtensionId);
+  } else {
+    log.info('missing extension', testMateExtensionId);
   }
 }
