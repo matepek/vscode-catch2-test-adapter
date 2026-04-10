@@ -779,7 +779,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     this.shared.log.info('proc starting', pathForExecution, execParams, this.shared.path);
 
-    const runInfo = await RunningExecutable.create(builder, childrenToRun, data.testRun.token);
+    const runInfo = await RunningExecutable.create(builder, childrenToRun, data.testRun.token, this.shared);
 
     data.testRun.appendOutput(runInfo.getProcStartLine());
 
