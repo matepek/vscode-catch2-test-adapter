@@ -70,7 +70,7 @@ describe(path.basename(__filename), function () {
           key === 'testMate.cpp.log.logfile' ||
           key === 'testMate.cpp.log.userId' ||
           key.startsWith('catch2TestExplorer') ||
-          key.startsWith('experimental.')
+          key.startsWith('testMate.cpp.experimental.')
         ) {
           // skip: not documented
         } else {

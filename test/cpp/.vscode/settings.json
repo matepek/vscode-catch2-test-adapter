@@ -1,7 +1,8 @@
 {
     "testMate.cpp.experimental.lcov": {
         "enabled": true,
-        "logpanel": true
+        "logpanel": true,
+        "tag": "lcov"
     },
     "testMate.cpp.experimental.gcov": {
         "enabled": true,
