@@ -137,6 +137,7 @@ export abstract class AbstractTest {
 
   private _calcTags(): vscode.TestTag[] {
     const tags = [
+      ...this.exec.shared.testTags,
       this._frameworkTag,
       new vscode.TestTag(`level.` + this.subLevel),
       ...this._tags.map(x => new vscode.TestTag(`tag."${x}"`)),

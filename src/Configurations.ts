@@ -559,7 +559,7 @@ export class Configurations {
 
         const exclude: string | null | undefined = obj.exclude;
 
-        const tags: string[] = Array.isArray(obj.tags) ? obj.tags.filter(v => typeof v === 'string') : [];
+        const testTags: string[] = Array.isArray(obj.testTags) ? obj.testTags.filter(v => typeof v === 'string') : [];
 
         const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : defaultCwd;
 
@@ -628,7 +628,7 @@ export class Configurations {
           exclude,
           name,
           description,
-          tags,
+          testTags,
           cwd,
           env,
           envFile,

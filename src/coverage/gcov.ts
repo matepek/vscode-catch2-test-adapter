@@ -7,7 +7,7 @@ import os from 'node:os';
 import zlib from 'node:zlib';
 import { Log } from 'vscode-test-adapter-util';
 
-const configSection = 'testMate.cpp.test.experimental.gcov';
+const configSection = 'testMate.cpp.experimental.gcov';
 const label = 'GCov (TestMate C++)';
 
 const execute = async (
@@ -346,7 +346,6 @@ class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
 
   label = label;
   kind = vscode.TestRunProfileKind.Coverage;
-  // tag = new vscode.TestTag('gcov');
 
   createTestRunHandler(
     testRun: TMA.TestMateTestRun,

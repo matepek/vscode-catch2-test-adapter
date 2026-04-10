@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `testMate.test.advancedExecutables` -> `testTags`: Tags to be added to all the executables and its children. Can be used for filtering.
+
 ## [4.23.9] - 2026-04-09
 
 only experimental Test Coverage API improvements.

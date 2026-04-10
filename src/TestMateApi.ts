@@ -130,7 +130,7 @@ export interface TestMateTestRunProfile {
 
   /*
    * Profile test tag. If specified, only the tests having the same tag can be used with this profile.
-   * See also `testMate.cpp.test.advancedExecutables[].tags`.
+   * Best practice to give an option to your users to set this tag and they can also set `testMate.cpp.test.advancedExecutables[].testTags` as well.
    */
   readonly tag?: vscode.TestTag;
 

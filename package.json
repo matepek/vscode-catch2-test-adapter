@@ -206,6 +206,13 @@
                   }
                 ]
               },
+              "testTags": {
+                "markdownDescription": "Test Tags to be added to all the executables and its children. Can be used for filtering.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
               "cwd": {
                 "markdownDescription": "The current working directory for the test executable. If it isn't provided and `test.workingDirectory` does then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "anyOf": [

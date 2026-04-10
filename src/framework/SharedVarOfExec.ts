@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import { FrameworkSpecificConfig, RunTaskConfig } from '../AdvancedExecutableInterface';
 import { TestGroupingConfig } from '../TestGroupingInterface';
 import { ResolveRuleAsync } from '../util/ResolveRule';
@@ -12,6 +13,7 @@ export class SharedVarOfExec {
     readonly shared: WorkspaceShared,
     readonly name: string | undefined,
     readonly description: string | undefined,
+    readonly testTags: readonly vscode.TestTag[],
     readonly varToValue: readonly ResolveRuleAsync[],
     readonly path: string,
     readonly options: SpawnOptionsWithoutStdioEx,

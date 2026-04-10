@@ -8,7 +8,7 @@ import crypto from 'node:crypto';
 import { Log } from 'vscode-test-adapter-util';
 
 const ENV_LLVM_PROFILE_FILE = 'LLVM_PROFILE_FILE';
-const configSection = 'testMate.cpp.test.experimental.lcov';
+const configSection = 'testMate.cpp.experimental.lcov';
 const label = 'LCov (TestMate C++)';
 
 ///
@@ -215,6 +215,7 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     private readonly workspaceFolder: vscode.WorkspaceFolder,
     private readonly log: Log,
   ) {
+    // these configs don't need reload, will be applied for future runs
     const config = vscode.workspace.getConfiguration(configSection);
     this.allowExecutableConcurrentInvocations = config.get<boolean>('allowExecutableConcurrentInvocations', true);
   }
@@ -401,11 +402,16 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
 }
 
 class LcovTestMateAdapter implements TMA.TestMateTestRunProfile {
-  constructor(private readonly log: Log) {}
+  constructor(private readonly log: Log) {
+    // these configs need reload to be effective
+    const config = vscode.workspace.getConfiguration(configSection);
+    const tag = config.get<string>('tag');
+    if (tag) this.tag = new vscode.TestTag(tag);
+  }
 
   label = label;
   kind = vscode.TestRunProfileKind.Coverage;
-  // tag = new vscode.TestTag('lcov');
+  tag?: vscode.TestTag;
 
   createTestRunHandler(
     testRun: TMA.TestMateTestRun,

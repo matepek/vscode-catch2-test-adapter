@@ -135,7 +135,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
         undefined,
       );
       testItem.description = description;
-      testItem.tags = SharedTestTags.groupArray;
+      testItem.tags = [SharedTestTags.runnable, ...this.shared.testTags];
       return testItem;
     }
   }

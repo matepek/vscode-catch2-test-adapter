@@ -100,10 +100,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     }),
   );
 
-  const collectExecutablesForRun = (request: vscode.TestRunRequest) => {
+  const collectExecutablesForRun = (request: vscode.TestRunRequest, testTag: vscode.TestTag | undefined) => {
     const managers = new Map<WorkspaceManager, Map<AbstractExecutable, TestsToRun>>();
 
     const enumerator = (type: 'direct' | 'parent') => (item: vscode.TestItem) => {
+      if (testTag && !item.tags.some(t => t.id === testTag.id)) return;
       if (request.exclude?.includes(item)) return;
 
       const test = testItemManager.map(item);
@@ -148,7 +149,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     ++runCount;
 
     try {
-      const managers = collectExecutablesForRun(request);
+      const managers = collectExecutablesForRun(request, profile?.tag);
 
       const runQueue: Thenable<void>[] = [];
       for (const [manager, executables] of managers) {
@@ -317,7 +318,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
       ++debugCount;
 
       try {
-        const managers = collectExecutablesForRun(request);
+        const managers = collectExecutablesForRun(request, undefined);
 
         if (managers.size != 1) {
           vscode.window.showWarningMessage('You should only run 1 test case, no group.');
@@ -410,7 +411,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
   [...workspace2manager.values()].forEach(manager => manager.initAtStartupIfRequestes());
 
   // TODO: config for default coverage profile
-  // TODO: tag to attach to some advanced pattern and also tag for the profile from API
   const registerTestRunProfile = (adapter: TMA.TestMateTestRunProfile) => {
     log.info('Registering TestRunProfile', adapter.label, adapter.kind);
     const profile = controller.createRunProfile(
@@ -463,7 +463,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     }
   };
 
-  const expCfg = vscode.workspace.getConfiguration('testMate.cpp.test.experimental');
+  const expCfg = vscode.workspace.getConfiguration('testMate.cpp.experimental');
   if (expCfg.get('lcov.enabled', false)) {
     Lcov.activate(context);
   }

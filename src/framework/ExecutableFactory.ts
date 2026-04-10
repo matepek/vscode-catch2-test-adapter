@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import * as c2fs from '../util/FSWrapper';
 import { SharedVarOfExec } from './SharedVarOfExec';
 import { AbstractExecutable } from './AbstractExecutable';
@@ -18,6 +19,7 @@ export class ExecutableFactory {
     private readonly _shared: WorkspaceShared,
     private readonly _execName: string | undefined,
     private readonly _execDescription: string | undefined,
+    private readonly _testTags: readonly vscode.TestTag[],
     private readonly _execPath: string,
     private readonly _execOptions: SpawnOptionsWithoutStdioEx,
     private readonly _varToValue: ResolveRuleAsync[],
@@ -73,6 +75,7 @@ export class ExecutableFactory {
           this._shared,
           this._execName,
           this._execDescription,
+          this._testTags,
           this._varToValue,
           this._execPath,
           this._execOptions,
