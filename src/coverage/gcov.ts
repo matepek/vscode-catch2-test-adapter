@@ -13,7 +13,7 @@ const label = 'GCov (TestMate C++)';
 const execute = async (
   cmd: string,
   args: string[],
-  cwd: string,
+  cwd: string | undefined,
   token: vscode.CancellationToken,
 ): Promise<[string, string]> => {
   const proc = cp.spawn(cmd, args, { stdio: 'pipe', cwd });
@@ -38,6 +38,21 @@ const execute = async (
 
   await closeP;
   return [stdout.join(''), stderr.join('')];
+};
+
+const executeWithPlatformToolchain = async (
+  cmd: string,
+  args: string[],
+  cwd: string | undefined,
+  token: vscode.CancellationToken,
+): Promise<[string, string]> => {
+  if (process.platform === 'darwin' || process.platform === 'linux') {
+    return await execute(cmd, args, cwd, token);
+  } else if (process.platform === 'win32') {
+    return await execute(cmd + '.exe', args, cwd, token);
+  } else {
+    throw Error('assert platform toolchain');
+  }
 };
 
 interface GcovBranch {
@@ -179,10 +194,6 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
   }
 
   async init(): Promise<void> {
-    if (process.platform !== 'linux') {
-      throw new Error('This gcov adapter is configured for Linux environments only.');
-    }
-
     const path = await fs.mkdtemp(pathlib.join(os.tmpdir(), 'gcov-'));
     this.data = {
       tmpDir: {
@@ -230,7 +241,12 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
 
       try {
         // TODO: file names can collide
-        await execute('gcov', ['--json-format', file.fsPath], this.data.tmpDir.path, this.testRun.token);
+        await executeWithPlatformToolchain(
+          'gcov',
+          ['--json-format', file.fsPath],
+          this.data.tmpDir.path,
+          this.testRun.token,
+        );
       } catch (e) {
         this.log.error(`Failed to execute gcov on ${file.fsPath}`, e);
         continue;
@@ -330,6 +346,7 @@ class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
 
   label = label;
   kind = vscode.TestRunProfileKind.Coverage;
+  // tag = new vscode.TestTag('gcov');
 
   createTestRunHandler(
     testRun: TMA.TestMateTestRun,
@@ -354,22 +371,10 @@ class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
  * this is how your main.ts could look like
  */
 export async function activate(_context: vscode.ExtensionContext) {
-  if (process.platform !== 'linux') return;
-
   const log = new Log(configSection, undefined, label, { depth: 3 }, false);
   const testMateExtension = vscode.extensions.getExtension<TMA.TestMateAPI>('matepek.vscode-catch2-test-adapter');
   if (testMateExtension) {
     const testMate = await testMateExtension.activate();
-    testMate.registerTestRunProfile(new GcovTestMateAdapter(log));
-  }
-}
-
-/**
- * you don't need this
- */
-export function _activate(testMate: { registerTestRunProfile: (adapter: TMA.TestMateTestRunProfile) => void }) {
-  if (process.platform === 'linux') {
-    const log = new Log(configSection, undefined, label, { depth: 3 }, false);
     testMate.registerTestRunProfile(new GcovTestMateAdapter(log));
   }
 }

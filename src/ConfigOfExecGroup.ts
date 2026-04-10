@@ -36,6 +36,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     private readonly _exclude: string | undefined,
     private readonly _name: string | undefined,
     private readonly _description: string | undefined,
+    _tags: string[], // TODO: pass down to tests and set on them if speficied
     private readonly _cwd: string,
     private readonly _env: { [prop: string]: string },
     private readonly _envFile: string | undefined,

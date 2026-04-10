@@ -42,9 +42,9 @@ export interface TestMateTestRun {
 ///
 
 export interface TestMateProcessBuilder {
+  cwd: string;
   cmd: string;
   args: string[];
-  cwd: string;
   env: Record<string, string | undefined>;
 }
 
@@ -128,6 +128,12 @@ export interface TestMateTestRunProfile {
    */
   readonly kind: vscode.TestRunProfileKind;
 
+  /*
+   * Profile test tag. If specified, only the tests having the same tag can be used with this profile.
+   * See also `testMate.cpp.test.advancedExecutables[].tags`.
+   */
+  readonly tag?: vscode.TestTag;
+
   /**
    * TestMate will call this when user initiates a test run
    */
@@ -143,6 +149,14 @@ export interface TestMateTestRunProfile {
     fileCoverage: vscode.FileCoverage,
     token: vscode.CancellationToken,
   ) => Promise<vscode.FileCoverageDetail[]>;
+
+  /**
+   * If this method is present, a configuration gear will be present in the
+   * UI, and this method will be invoked when it's clicked. When called,
+   * you can take other editor actions, such as showing a quick pick or
+   * opening a configuration file.
+   */
+  configureHandler?: () => void;
 
   dispose(): void;
 }

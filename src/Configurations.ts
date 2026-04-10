@@ -469,6 +469,7 @@ export class Configurations {
         undefined,
         undefined,
         undefined,
+        [],
         defaultCwd,
         this.getTerminalIntegratedEnv(),
         undefined,
@@ -558,6 +559,8 @@ export class Configurations {
 
         const exclude: string | null | undefined = obj.exclude;
 
+        const tags: string[] = Array.isArray(obj.tags) ? obj.tags.filter(v => typeof v === 'string') : [];
+
         const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : defaultCwd;
 
         const env: { [prop: string]: string } = typeof obj.env === 'object' ? obj.env : {};
@@ -625,6 +628,7 @@ export class Configurations {
           exclude,
           name,
           description,
+          tags,
           cwd,
           env,
           envFile,

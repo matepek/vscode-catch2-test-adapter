@@ -8,5 +8,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     cppcheck \
     valgrind \
     ninja-build \
+    clang libclang-rt-19-dev \
+    llvm \
     nodejs \
     npm

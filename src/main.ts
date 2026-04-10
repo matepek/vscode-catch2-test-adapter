@@ -138,7 +138,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
 
   const oneTask_PoolForExecutables = new TaskPoolMap(1);
 
-  const startTestRun = async (request: vscode.TestRunRequest, profile: TMA.TestMateTestRunProfile | undefined) => {
+  const startTestRun = async (request: vscode.TestRunRequest, profile: TMA.TestMateTestRunProfile | null) => {
     if (debugCount) {
       vscode.window.showWarningMessage('Cannot run new tests while debugging.');
       return;
@@ -188,19 +188,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     controller.invalidateTestResults(changedItems);
   });
 
-  const continousRunThese = new Set<vscode.TestRunRequest>();
+  const continousRunThese = new Map<vscode.TestRunRequest, TMA.TestMateTestRunProfile | null>();
   const continousRunHandler = executableChangedEmitter.event(executables => {
     if (continousRunThese.size === 0) return;
     const requests = new Map<
       vscode.TestRunProfile | undefined,
-      { include: vscode.TestItem[]; exclude: vscode.TestItem[] }
+      { include: vscode.TestItem[]; exclude: vscode.TestItem[]; tmaProfile: TMA.TestMateTestRunProfile | null }
     >();
-    for (const trr of continousRunThese) {
+    for (const [trr, tmaProfile] of continousRunThese.entries()) {
       let req = requests.get(trr.profile);
       if (req === undefined) {
         req = {
           include: [],
           exclude: [],
+          tmaProfile,
         };
         requests.set(trr.profile, req);
       }
@@ -270,7 +271,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     }
     for (const [profile, req] of requests) {
       if (req.include === undefined || req.include.length > 0) {
-        startTestRun(new vscode.TestRunRequest(req.include, req.exclude, profile, true), undefined);
+        startTestRun(new vscode.TestRunRequest(req.include, req.exclude, profile, true), req.tmaProfile);
       }
     }
   });
@@ -280,10 +281,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     vscode.TestRunProfileKind.Run,
     async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken): Promise<void> => {
       if (request.continuous) {
-        continousRunThese.add(request);
+        continousRunThese.set(request, null);
         cancellation.onCancellationRequested(() => continousRunThese.delete(request));
       } else {
-        return startTestRun(request, undefined);
+        return startTestRun(request, null);
       }
     },
     true,
@@ -408,46 +409,66 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
 
   [...workspace2manager.values()].forEach(manager => manager.initAtStartupIfRequestes());
 
+  // TODO: config for default coverage profile
+  // TODO: tag to attach to some advanced pattern and also tag for the profile from API
   const registerTestRunProfile = (adapter: TMA.TestMateTestRunProfile) => {
     log.info('Registering TestRunProfile', adapter.label, adapter.kind);
     const profile = controller.createRunProfile(
       adapter.label,
       adapter.kind,
       async (request: vscode.TestRunRequest, cancellation: vscode.CancellationToken): Promise<void> => {
+        log.debug('Using RunProfile', adapter.label, adapter.kind);
         if (request.continuous) {
-          continousRunThese.add(request);
+          continousRunThese.set(request, adapter);
           cancellation.onCancellationRequested(() => continousRunThese.delete(request));
         } else {
           return startTestRun(request, adapter);
         }
       },
       false,
-      SharedTestTags.runnable,
-      false,
+      adapter.tag ?? SharedTestTags.runnable,
+      true,
     );
-    profile.loadDetailedCoverage = async (
-      testRun: vscode.TestRun,
-      fileCoverage: vscode.FileCoverage,
-      token: vscode.CancellationToken,
-    ): Promise<vscode.FileCoverageDetail[]> => {
+    try {
+      if (adapter.configureHandler) {
+        profile.configureHandler = async () => {
+          log.debug('coverate:configureHandler', profile.label);
+          try {
+            return await adapter.configureHandler!();
+          } catch (e) {
+            log.error('coverate:configureHandler', profile.label, e);
+            return [];
+          }
+        };
+      }
       if (adapter.loadDetailedCoverage) {
-        log.debug('coverate:loadDetailedCoverage', profile.label, 'loadDetailedCoverage', fileCoverage.uri);
-        try {
-          return await adapter.loadDetailedCoverage(testRun, fileCoverage, token);
-        } catch (e) {
-          log.error('coverate:loadDetailedCoverage', profile.label, e, fileCoverage.uri);
-          return [];
-        }
-      } else return [];
-    };
-    context.subscriptions.push(profile, adapter);
+        profile.loadDetailedCoverage = async (
+          testRun: vscode.TestRun,
+          fileCoverage: vscode.FileCoverage,
+          token: vscode.CancellationToken,
+        ): Promise<vscode.FileCoverageDetail[]> => {
+          log.debug('coverate:loadDetailedCoverage', profile.label, fileCoverage.uri);
+          try {
+            return await adapter.loadDetailedCoverage!(testRun, fileCoverage, token);
+          } catch (e) {
+            log.error('coverate:loadDetailedCoverage', profile.label, e, fileCoverage.uri);
+            return [];
+          }
+        };
+      }
+      context.subscriptions.push(profile, adapter);
+    } catch (e) {
+      profile.dispose();
+      log.error('Registering TestRunProfile', adapter.label, e);
+    }
   };
 
-  if (vscode.workspace.getConfiguration('testMate.cpp.test.experimental.lcov').get('enabled', false)) {
-    Lcov._activate({ registerTestRunProfile });
+  const expCfg = vscode.workspace.getConfiguration('testMate.cpp.test.experimental');
+  if (expCfg.get('lcov.enabled', false)) {
+    Lcov.activate(context);
   }
-  if (vscode.workspace.getConfiguration('testMate.cpp.test.experimental.gcov').get('enabled', false)) {
-    Gcov._activate({ registerTestRunProfile });
+  if (expCfg.get('gcov.enabled', false)) {
+    Gcov.activate(context);
   }
 
   return {

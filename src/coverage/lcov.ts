@@ -13,8 +13,13 @@ const label = 'LCov (TestMate C++)';
 
 ///
 
-const execute = async (cmd: string, args: string[], token: vscode.CancellationToken): Promise<[string, string]> => {
-  const proc = cp.spawn(cmd, args, { stdio: 'pipe' });
+const execute = async (
+  cmd: string,
+  args: string[],
+  cwd: string | undefined,
+  token: vscode.CancellationToken,
+): Promise<[string, string]> => {
+  const proc = cp.spawn(cmd, args, { stdio: 'pipe', cwd });
   const stdout: string[] = [];
   const stderr: string[] = [];
 
@@ -41,12 +46,15 @@ const execute = async (cmd: string, args: string[], token: vscode.CancellationTo
 const executeWithPlatformToolchain = async (
   cmd: string,
   args: string[],
+  cwd: string | undefined,
   token: vscode.CancellationToken,
 ): Promise<[string, string]> => {
   if (process.platform === 'darwin') {
-    return await execute('xcrun', [cmd, ...args], token);
+    return await execute('xcrun', [cmd, ...args], cwd, token);
   } else if (process.platform === 'linux') {
-    return await execute(cmd, args, token);
+    return await execute(cmd, args, cwd, token);
+  } else if (process.platform === 'win32') {
+    return await execute(cmd + '.exe', args, cwd, token);
   } else {
     throw Error('assert platform toolchain');
   }
@@ -291,7 +299,7 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     const mergeArgs = ['merge', '-sparse', `@${this.data.argsProfrawsPath}`, '-o', mergedProfdataPath];
     try {
       this.log.debug('llvm-profdata', mergeArgs);
-      await executeWithPlatformToolchain('llvm-profdata', mergeArgs, this.testRun.token);
+      await executeWithPlatformToolchain('llvm-profdata', mergeArgs, this.data.tmpDir.path, this.testRun.token);
     } catch (e) {
       this.log.error('Failed to merge profdata. Ensure llvm-profdata is in PATH.', e);
       return;
@@ -327,13 +335,18 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     let dataArr;
     try {
       this.log.debug('llvm-cov', exportArgs);
-      const [outputStr] = await executeWithPlatformToolchain('llvm-cov', exportArgs, this.testRun.token);
+      const [outputStr] = await executeWithPlatformToolchain(
+        'llvm-cov',
+        exportArgs,
+        this.data.tmpDir.path,
+        this.testRun.token,
+      );
       try {
         const coverageJson = JSON.parse(outputStr);
         const covType = coverageJson['type'] as string;
         const covVersion = coverageJson['version'] as string;
         if (covType !== 'llvm.coverage.json.export') throw Error(`wrong type: ${covType}`);
-        if (!covVersion.startsWith('3.')) throw Error(`wrong version: ${covVersion}`);
+        if (!covVersion.startsWith('2.') && !covVersion.startsWith('3.')) throw Error(`wrong version: ${covVersion}`);
         if (!Array.isArray(coverageJson['data'])) throw Error(`assert: data json array`);
         else dataArr = coverageJson['data'];
       } catch (e) {
@@ -392,6 +405,7 @@ class LcovTestMateAdapter implements TMA.TestMateTestRunProfile {
 
   label = label;
   kind = vscode.TestRunProfileKind.Coverage;
+  // tag = new vscode.TestTag('lcov');
 
   createTestRunHandler(
     testRun: TMA.TestMateTestRun,
@@ -420,16 +434,6 @@ export async function activate(_context: vscode.ExtensionContext) {
   const testMateExtension = vscode.extensions.getExtension<TMA.TestMateAPI>('matepek.vscode-catch2-test-adapter');
   if (testMateExtension) {
     const testMate = await testMateExtension.activate();
-    testMate.registerTestRunProfile(new LcovTestMateAdapter(log));
-  }
-}
-
-/**
- * you don't need this
- */
-export function _activate(testMate: { registerTestRunProfile: (adapter: TMA.TestMateTestRunProfile) => void }) {
-  if (process.platform === 'darwin') {
-    const log = new Log(configSection, undefined, label, { depth: 3 }, false);
     testMate.registerTestRunProfile(new LcovTestMateAdapter(log));
   }
 }

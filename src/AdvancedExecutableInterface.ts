@@ -11,6 +11,7 @@ export type AdvancedExecutableConfig = {
   name?: ResolvableString;
   description?: ResolvableString;
   comment?: string;
+  tags?: string[];
   cwd?: ResolvableString;
   env?: Record<string, ResolvableString>;
   envFile?: ResolvableString;

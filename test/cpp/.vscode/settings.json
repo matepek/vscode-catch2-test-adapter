@@ -7,7 +7,7 @@
     "testMate.cpp.test.parallelExecutionOfExecutableLimit": 10,
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/*.exe",
+            "pattern": "build/clang/*.exe",
             "maxTestsPerExecutable": 3,
             "gtest": {
                 "prependTestRunningArgs": [
