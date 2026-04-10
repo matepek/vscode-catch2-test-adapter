@@ -170,7 +170,7 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     private readonly log: Log,
   ) {}
 
-  allowExecutableConcurrentInvocations = false;
+  readonly allowExecutableConcurrentInvocations = false;
 
   private data:
     | {
@@ -342,10 +342,16 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
 }
 
 class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
-  constructor(private readonly log: Log) {}
+  constructor(private readonly log: Log) {
+    // these configs need reload to be effective
+    const config = vscode.workspace.getConfiguration(configSection);
+    const tag = config.get<string>('tag');
+    if (tag) this.tag = new vscode.TestTag(tag);
+  }
 
   label = label;
   kind = vscode.TestRunProfileKind.Coverage;
+  tag?: vscode.TestTag;
 
   createTestRunHandler(
     testRun: TMA.TestMateTestRun,

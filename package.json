@@ -2215,6 +2215,49 @@
             "Google Mock will print both warnings and errors (less verbose). This is the default.",
             "Google Mock will print errors only (least verbose)."
           ]
+        },
+        "testMate.cpp.experimental.lcov": {
+          "markdownDescription": "Proof of concept LCov implementation just for fun. Experimental: will be removed when it finds its home.",
+          "scope": "resource",
+          "type": "object",
+          "default": null,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "logpanel": {
+              "type": "boolean",
+              "default": true
+            },
+            "tag": {
+              "type": "string"
+            },
+            "allowExecutableConcurrentInvocations": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "testMate.cpp.experimental.gcov": {
+          "markdownDescription": "Proof of concept GCov implementation just for fun. Experimental: will be removed when it finds its home.",
+          "scope": "resource",
+          "type": "object",
+          "default": null,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "logpanel": {
+              "type": "boolean",
+              "default": true
+            },
+            "tag": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         }
       }
     }

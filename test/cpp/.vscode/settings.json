@@ -1,9 +1,14 @@
 {
-    "testMate.cpp.experimental.lcov.enabled": true,
-    "testMate.cpp.experimental.lcov.logpanel": true,
-    "testMate.cpp.experimental.lcov.tag": "lcov",
-    "testMate.cpp.experimental.gcov.enabled": true,
-    "testMate.cpp.experimental.gcov.logpanel": true,
+    "testMate.cpp.experimental.lcov": {
+        "enabled": true,
+        "logpanel": true,
+        "tag": "lcov"
+    },
+    "testMate.cpp.experimental.gcov": {
+        "enabled": true,
+        "logpanel": true,
+        "tag": "lcov"
+    },
     "testMate.cpp.test.parallelExecutionLimit": 5,
     "testMate.cpp.test.parallelExecutionOfExecutableLimit": 10,
     "testMate.cpp.test.advancedExecutables": [
