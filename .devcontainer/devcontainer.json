@@ -8,7 +8,10 @@
       "extensions": [
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools",
-        "esbenp.prettier-vscode"
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "pflannery.vscode-versionlens",
+        "gruntfuggly.todo-tree"
       ]
     }
   },
