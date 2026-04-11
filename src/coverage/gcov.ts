@@ -12,7 +12,7 @@ const gunzip = promisify(zlib.gunzip);
 
 const testMateExtensionId = 'matepek.vscode-catch2-test-adapter';
 const configSection = 'testMate.cpp.experimental.gcov';
-const label = 'GCov by TestMate C++';
+const label = 'gcov by TestMate C++';
 
 const execute = async (
   cmd: string,
@@ -221,7 +221,6 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       await this.data.dispose();
       await this.cleanupGcda();
     }
-    this.testRun.appendOutput('gcov processed');
   }
 
   async finaliseInner(progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<void> {

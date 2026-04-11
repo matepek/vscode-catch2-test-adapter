@@ -23,10 +23,17 @@
     "c++",
     "test",
     "testing",
+    "coverage",
+    "llvm coverage",
+    "clang coverage",
+    "clang++ coverage",
+    "gcov",
+    "gcc coverage",
+    "g++ coverage",
     "unit test",
     "catch2",
-    "catchorg",
     "gtest",
+    "catchorg",
     "googletest",
     "google test",
     "gmock",
@@ -2221,8 +2228,8 @@
           "scope": "resource",
           "type": "string"
         },
-        "testMate.cpp.experimental.lcov": {
-          "markdownDescription": "Proof of concept LCov implementation just for fun. Experimental: will be removed when it finds its home.",
+        "testMate.cpp.experimental.llvm-cov": {
+          "markdownDescription": "Proof of concept _llvm coverage_ implementation just for fun. Experimental: will be removed when it finds its home.",
           "scope": "resource",
           "type": "object",
           "default": {
@@ -2250,7 +2257,7 @@
           "additionalProperties": false
         },
         "testMate.cpp.experimental.gcov": {
-          "markdownDescription": "Proof of concept GCov implementation just for fun. Experimental: will be removed when it finds its home.",
+          "markdownDescription": "Proof of concept _gcov coverage_ implementation just for fun. Experimental: will be removed when it finds its home.",
           "scope": "resource",
           "type": "object",
           "default": {

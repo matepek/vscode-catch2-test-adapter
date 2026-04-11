@@ -5,8 +5,8 @@ import { WorkspaceManager } from './WorkspaceManager';
 import { SharedTestTags } from './framework/SharedTestTags';
 import { TestItemManager } from './TestItemManager';
 import * as TMA from './TestMateApi';
-import * as Lcov from './coverage/lcov';
-import * as Gcov from './coverage/gcov';
+import * as llvm_cov from './coverage/llvm-cov';
+import * as gcov from './coverage/gcov';
 import { noLimitTaskPoolMap, TaskPoolMap } from './util/TaskPool';
 
 ///
@@ -454,8 +454,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     return profile;
   };
 
-  Lcov.advanced_activate(context);
-  Gcov.advanced_activate(context);
+  llvm_cov.advanced_activate(context);
+  gcov.advanced_activate(context);
 
   return {
     createTestRunProfile,

@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.23.13]
+
+### Added
+
+- experimental coverage tool for fun (no guarantees):
+  Build your code with _g++_ or _clang++_ with _coverage flags_
+  Enable:
+  - `testMate.cpp.experimental.llvm-cov` or
+  - `testMate.cpp.experimental.gcov`
+
 ## [4.23.12] - 2026-04-11
 
 ### Changed

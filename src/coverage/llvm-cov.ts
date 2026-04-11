@@ -8,8 +8,8 @@ import crypto from 'node:crypto';
 import { Log } from 'vscode-test-adapter-util';
 
 const testMateExtensionId = 'matepek.vscode-catch2-test-adapter';
-const configSection = 'testMate.cpp.experimental.lcov';
-const label = 'LCov by TestMate C++';
+const configSection = 'testMate.cpp.experimental.llvm-cov';
+const label = 'llvm-cov by TestMate C++';
 const ENV_LLVM_PROFILE_FILE = 'LLVM_PROFILE_FILE';
 
 ///
@@ -61,7 +61,7 @@ const executeWithPlatformToolchain = async (
 
 ///
 
-class LcovFileCoverage extends vscode.FileCoverage {
+class LlvmCovFileCoverage extends vscode.FileCoverage {
   constructor(
     uri: vscode.Uri,
     statementCoverage: vscode.TestCoverageCount,
@@ -203,7 +203,7 @@ class LcovFileCoverage extends vscode.FileCoverage {
       delete this.data.fileDetailsJson;
       delete this.data.fileFunctionsJson;
     } catch (e) {
-      this.log.error('Error loading detailed coverage in lcov.ts:', e, this.data);
+      this.log.error('Error loading detailed coverage:', e, this.data);
     }
     return details;
   }
@@ -219,7 +219,7 @@ interface TestRunData {
   dispose: () => void;
 }
 
-class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
+class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
   constructor(
     private readonly testRun: TMA.TestMateTestRun,
     private readonly workspaceFolder: vscode.WorkspaceFolder,
@@ -234,7 +234,7 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
   private data: TestRunData | undefined = undefined;
 
   async init(): Promise<void> {
-    const tmpDirPath = await fs.mkdtemp(pathlib.join(os.tmpdir(), 'lcov-'));
+    const tmpDirPath = await fs.mkdtemp(pathlib.join(os.tmpdir(), 'llvm-cov_'));
     const argsProfrawsPath = pathlib.join(tmpDirPath, 'profraws.args.txt');
     const argsProfrawsFile = await fs.open(argsProfrawsPath, 'w');
     const argsObjectsPath = pathlib.join(tmpDirPath, 'objects.args.txt');
@@ -290,7 +290,6 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     } finally {
       await this.data.dispose();
     }
-    this.testRun.appendOutput('lcov processed');
   }
 
   private async finaliseInner(progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<void> {
@@ -387,7 +386,7 @@ class LcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
         );
 
         this.testRun.addCoverage(
-          new LcovFileCoverage(uri, statementCov, branchCov, declCov, this.log, file, functionsList),
+          new LlvmCovFileCoverage(uri, statementCov, branchCov, declCov, this.log, file, functionsList),
         );
       }
     }
@@ -418,7 +417,7 @@ class TestMateAdapter implements TMA.TestMateTestRunProfileAdapter {
     testRun: TMA.TestMateTestRun,
     workspaceFolder: vscode.WorkspaceFolder,
   ): TMA.TestMateTestRunHandler {
-    return new LcovTestMateTestRunHandler(testRun, workspaceFolder, this.log);
+    return new LlvmCovTestMateTestRunHandler(testRun, workspaceFolder, this.log);
   }
 
   async loadDetailedCoverage(
@@ -426,7 +425,7 @@ class TestMateAdapter implements TMA.TestMateTestRunProfileAdapter {
     fileCoverage: vscode.FileCoverage,
     token: vscode.CancellationToken,
   ): Promise<vscode.FileCoverageDetail[]> {
-    if (fileCoverage instanceof LcovFileCoverage) {
+    if (fileCoverage instanceof LlvmCovFileCoverage) {
       try {
         return await fileCoverage.load(token);
       } catch (e) {

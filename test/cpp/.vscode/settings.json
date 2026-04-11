@@ -1,15 +1,15 @@
 {
-    "testMate.cpp.experimental.lcov": {
+    "testMate.cpp.experimental.llvm-cov": {
         "enabled": true,
         "logpanel": true,
-        "tag": "lcov"
+        "tag": "llvm-cov"
     },
     "testMate.cpp.experimental.gcov": {
         "enabled": false,
         "logpanel": true,
         // "tag": "gcov"
     },
-    "testMate.cpp.coverage.profile.default": "LCov by TestMate C++",
+    "testMate.cpp.coverage.profile.default": "llvm-cov by TestMate C++",
     "testMate.cpp.test.parallelExecutionLimit": 5,
     "testMate.cpp.test.parallelExecutionOfExecutableLimit": 10,
     "testMate.cpp.test.advancedExecutables": [
@@ -19,7 +19,7 @@
         {
             "pattern": "build/clang/gtest1.exe",
             "testTags": [
-                "lcov"
+                "llvm-cov"
             ]
         },
         {

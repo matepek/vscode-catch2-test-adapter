@@ -1,5 +1,12 @@
 # C++ TestMate
 
+Announcment: Looking for contributors to polish:
+
+- llvm coverage tool: `testMate.cpp.experimental.llvm-cov` and
+- g++ coverage tool: `testMate.cpp.experimental.gcov`.
+
+(current implementation is not tested. [more info](https://github.com/matepek/vscode-catch2-test-adapter/issues/519))
+
 ## A **Catch2**, **GoogleTest**, **doctest** and **GoogleBenchmark** Explorer for VSCode
 
 [![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
