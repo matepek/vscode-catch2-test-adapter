@@ -183,3 +183,26 @@ TEST(ThisTest, FailsWithEmpty) {
 TEST(ThisTest, AlsoFailsWithContext) {
   ASSERT_EQ(1, 2) << "Value of [" << 1 << "] is not equal to [" << 2 << "]";
 }
+
+TEST(audetto, Test_Output)
+{
+  // ADD_FAILURE() << "some diagnostic info here";
+  std::cout << "some output" << std::endl;
+  EXPECT_EQ(1, 2) << "1 is not 2";
+  EXPECT_EQ(2, 3) << "2 is not 3";
+}
+
+TEST(audetto, Test_Output2)
+{
+  ADD_FAILURE() << "some diagnostic info here";
+  std::cout << "some output" << std::endl;
+  EXPECT_EQ(1, 2) << "1 is not 2";
+  EXPECT_EQ(2, 3);
+  std::cout<< "new stuff"<<std::endl;
+}
+
+TEST(audetto, Test_Output3)
+{
+  EXPECT_EQ(1, 2) << "  1 is not 2";
+}
+

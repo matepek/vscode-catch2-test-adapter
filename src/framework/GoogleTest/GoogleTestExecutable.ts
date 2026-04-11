@@ -538,10 +538,13 @@ class FailureProcessor implements LineProcessor {
   private lines: string[] = [];
   private promotedMsg: string | null = null;
 
-  online(line: string): void | false {
+  online(line: string): void | boolean {
     if (this.treatRemainingAsPart) {
       if (line.startsWith('[')) {
         return false;
+      }
+      if (line === '') {
+        return true;
       }
       this.lines.push(line);
     } else if (acceptedAndDecoratedPrefixes.some(prefix => line.startsWith(prefix))) {
@@ -570,8 +573,10 @@ class FailureProcessor implements LineProcessor {
     } else if (line.startsWith('Failed')) {
       this.lines.push(line);
       this.treatRemainingAsPart = true;
+    } else if (line === '') {
+      return true;
     } else {
-      return false;
+      this.lines.push(line);
     }
   }
 

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.23.12]
+
+### Changed
+
+- Google Test output parsing strategy ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/515))
+
 ## [4.23.11] - 2026-04-11
 
 only experimental Test Coverage API improvements.
