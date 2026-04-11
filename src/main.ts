@@ -13,6 +13,8 @@ import { noLimitTaskPoolMap, TaskPoolMap } from './util/TaskPool';
 
 export async function activate(context: vscode.ExtensionContext): Promise<TMA.TestMateAPI> {
   const log = new Logger();
+  context.subscriptions.push(log);
+
   log.info('Activating extension', context.extension.id);
   const controller = vscode.tests.createTestController('testmatecpp', 'TestMate C++');
   const workspace2manager = new Map<vscode.WorkspaceFolder, WorkspaceManager>();
@@ -139,7 +141,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
 
   const oneTask_PoolForExecutables = new TaskPoolMap(1);
 
-  const startTestRun = async (request: vscode.TestRunRequest, profile: TMA.TestMateTestRunProfile | null) => {
+  const startTestRun = async (
+    request: vscode.TestRunRequest,
+    testTag: vscode.TestTag | undefined,
+    profileAdapter: TMA.TestMateTestRunProfileAdapter | null,
+  ) => {
     if (debugCount) {
       vscode.window.showWarningMessage('Cannot run new tests while debugging.');
       return;
@@ -149,11 +155,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     ++runCount;
 
     try {
-      const managers = collectExecutablesForRun(request, profile?.tag);
+      const managers = collectExecutablesForRun(request, testTag);
 
       const runQueue: Thenable<void>[] = [];
       for (const [manager, executables] of managers) {
-        const testRunHandler = profile?.createTestRunHandler(testRun, manager.workspaceFolder);
+        const testRunHandler = profileAdapter?.createTestRunHandler(testRun, manager.workspaceFolder);
         const taskPoolForExecutables =
           (testRunHandler?.allowExecutableConcurrentInvocations ?? false)
             ? noLimitTaskPoolMap
@@ -189,12 +195,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     controller.invalidateTestResults(changedItems);
   });
 
-  const continousRunThese = new Map<vscode.TestRunRequest, TMA.TestMateTestRunProfile | null>();
+  const continousRunThese = new Map<vscode.TestRunRequest, TMA.TestMateTestRunProfileAdapter | null>();
   const continousRunHandler = executableChangedEmitter.event(executables => {
     if (continousRunThese.size === 0) return;
     const requests = new Map<
       vscode.TestRunProfile | undefined,
-      { include: vscode.TestItem[]; exclude: vscode.TestItem[]; tmaProfile: TMA.TestMateTestRunProfile | null }
+      { include: vscode.TestItem[]; exclude: vscode.TestItem[]; tmaProfile: TMA.TestMateTestRunProfileAdapter | null }
     >();
     for (const [trr, tmaProfile] of continousRunThese.entries()) {
       let req = requests.get(trr.profile);
@@ -272,7 +278,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     }
     for (const [profile, req] of requests) {
       if (req.include === undefined || req.include.length > 0) {
-        startTestRun(new vscode.TestRunRequest(req.include, req.exclude, profile, true), req.tmaProfile);
+        startTestRun(new vscode.TestRunRequest(req.include, req.exclude, profile, true), profile?.tag, req.tmaProfile);
       }
     }
   });
@@ -285,7 +291,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
         continousRunThese.set(request, null);
         cancellation.onCancellationRequested(() => continousRunThese.delete(request));
       } else {
-        return startTestRun(request, null);
+        return startTestRun(request, SharedTestTags.runnable, null);
       }
     },
     true,
@@ -410,9 +416,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
 
   [...workspace2manager.values()].forEach(manager => manager.initAtStartupIfRequestes());
 
-  // TODO: config for default coverage profile
-  const registerTestRunProfile = (adapter: TMA.TestMateTestRunProfile) => {
-    log.info('Registering TestRunProfile', adapter.label, adapter.kind);
+  const cfgCoverageProfile = 'testMate.cpp.coverage.profile';
+  const cfgCoverageProfileDefaultSection = 'default';
+  const getCfgCoverageProfileSectionDefault = () =>
+    vscode.workspace.getConfiguration(cfgCoverageProfile).get<string>(cfgCoverageProfileDefaultSection);
+  let defaultProfile = getCfgCoverageProfileSectionDefault();
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(event => {
+      if (event.affectsConfiguration(`${cfgCoverageProfile}.${cfgCoverageProfileDefaultSection}`)) {
+        defaultProfile = getCfgCoverageProfileSectionDefault();
+      }
+    }),
+  );
+
+  const createTestRunProfile = (adapter: TMA.TestMateTestRunProfileAdapter) => {
+    log.info('TestRunProfile: creating', adapter.label, adapter.kind);
     const profile = controller.createRunProfile(
       adapter.label,
       adapter.kind,
@@ -422,56 +440,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
           continousRunThese.set(request, adapter);
           cancellation.onCancellationRequested(() => continousRunThese.delete(request));
         } else {
-          return startTestRun(request, adapter);
+          return startTestRun(request, profile.tag ?? SharedTestTags.runnable, adapter);
         }
       },
-      false,
-      adapter.tag ?? SharedTestTags.runnable,
+      adapter.kind === vscode.TestRunProfileKind.Coverage && adapter.label === defaultProfile,
+      adapter.tag ?? SharedTestTags.runnable, // works with undefined, runs all but maybe better like this
       true,
     );
-    try {
-      if (adapter.configureHandler) {
-        profile.configureHandler = async () => {
-          log.debug('coverate:configureHandler', profile.label);
-          try {
-            return await adapter.configureHandler!();
-          } catch (e) {
-            log.error('coverate:configureHandler', profile.label, e);
-            return [];
-          }
-        };
-      }
-      if (adapter.loadDetailedCoverage) {
-        profile.loadDetailedCoverage = async (
-          testRun: vscode.TestRun,
-          fileCoverage: vscode.FileCoverage,
-          token: vscode.CancellationToken,
-        ): Promise<vscode.FileCoverageDetail[]> => {
-          log.debug('coverate:loadDetailedCoverage', profile.label, fileCoverage.uri);
-          try {
-            return await adapter.loadDetailedCoverage!(testRun, fileCoverage, token);
-          } catch (e) {
-            log.error('coverate:loadDetailedCoverage', profile.label, e, fileCoverage.uri);
-            return [];
-          }
-        };
-      }
-      context.subscriptions.push(profile, adapter);
-    } catch (e) {
-      profile.dispose();
-      log.error('Registering TestRunProfile', adapter.label, e);
-    }
+
+    profile.configureHandler = adapter.configureHandler;
+    profile.loadDetailedCoverage = adapter.loadDetailedCoverage;
+
+    return profile;
   };
 
-  const expCfg = vscode.workspace.getConfiguration('testMate.cpp.experimental');
-  if (expCfg.get('lcov.enabled', false)) {
-    Lcov.activate(context);
-  }
-  if (expCfg.get('gcov.enabled', false)) {
-    Gcov.activate(context);
-  }
+  Lcov.advanced_activate(context);
+  Gcov.advanced_activate(context);
 
   return {
-    registerTestRunProfile,
+    createTestRunProfile,
   };
 }

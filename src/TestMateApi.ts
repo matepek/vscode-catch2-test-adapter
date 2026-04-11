@@ -117,7 +117,7 @@ export interface TestMateTestRunHandler {
   ) => TestMateProcessBuilder | Promise<TestMateProcessBuilder>;
 }
 
-export interface TestMateTestRunProfile {
+export interface TestMateTestRunProfileAdapter {
   /**
    * Will be used to create coverage profile. Example: "gcov (by ...)"
    */
@@ -162,9 +162,33 @@ export interface TestMateTestRunProfile {
   dispose(): void;
 }
 
+export interface TestMateTestRunProfile {
+  /**
+   * Label shown to the user in the UI.
+   *
+   * Note that the label has some significance if the user requests that
+   * tests be re-run in a certain way. For example, if tests were run
+   * normally and the user requests to re-run them in debug mode, the editor
+   * will attempt use a configuration with the same label of the `Debug`
+   * kind. If there is no such configuration, the default will be used.
+   */
+  label: string;
+
+  /**
+   * Associated tag for the profile. If this is set, only {@link vscode.TestItem}
+   * instances with the same tag will be eligible to execute in this profile.
+   */
+  tag: vscode.TestTag | undefined;
+
+  dispose(): void;
+}
+
 export interface TestMateAPI {
   /**
-   * Call this to register your Coverage Adapter. Can be called multiple times if has multiple profiles. (See vscode api for more info)
+   * Call this to register your (Coverage) Profile Adapter.
+   * To change / refresh an existing profile: dispose and recreate.
+   * User is responsible to dispose the `adapter` and the `profile`: `context.subscriptions.push(adapter, profile)`
+   * Profile will depend on the adapter so first the profile should be disposed then the adapter.
    */
-  registerTestRunProfile(adapter: TestMateTestRunProfile): void;
+  createTestRunProfile(adapter: TestMateTestRunProfileAdapter): TestMateTestRunProfile;
 }

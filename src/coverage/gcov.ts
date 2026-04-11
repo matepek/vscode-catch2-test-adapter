@@ -12,7 +12,7 @@ const gunzip = promisify(zlib.gunzip);
 
 const testMateExtensionId = 'matepek.vscode-catch2-test-adapter';
 const configSection = 'testMate.cpp.experimental.gcov';
-const label = 'GCov (TestMate C++)';
+const label = 'GCov by TestMate C++';
 
 const execute = async (
   cmd: string,
@@ -354,16 +354,12 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
   }
 }
 
-class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
-  constructor(private readonly log: Log) {
-    const config = vscode.workspace.getConfiguration(configSection);
-    const tag = config.get<string>('tag');
-    if (tag) this.tag = new vscode.TestTag(tag);
-  }
+class TestMateAdapter implements TMA.TestMateTestRunProfileAdapter {
+  constructor(private readonly log: Log) {}
 
   label = label;
   kind = vscode.TestRunProfileKind.Coverage;
-  tag?: vscode.TestTag;
+  tag?: vscode.TestTag = undefined;
 
   createTestRunHandler(
     testRun: TMA.TestMateTestRun,
@@ -372,13 +368,19 @@ class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
     return new GcovTestMateTestRunHandler(testRun, workspaceFolder, this.log);
   }
 
-  loadDetailedCoverage(
+  async loadDetailedCoverage(
     _testRun: TMA.TestMateTestRun,
     fileCoverage: vscode.FileCoverage,
     token: vscode.CancellationToken,
   ): Promise<vscode.FileCoverageDetail[]> {
-    if (fileCoverage instanceof GcovFileCoverage) return fileCoverage.load(token);
-    else throw new Error('expected FileCoverage');
+    if (fileCoverage instanceof GcovFileCoverage) {
+      try {
+        return await fileCoverage.load(token);
+      } catch (e) {
+        this.log.error('loadDetailedCoverage', e, fileCoverage.uri);
+        return [];
+      }
+    } else throw Error('expected FileCoverage');
   }
 
   dispose(): void {}
@@ -387,13 +389,74 @@ class GcovTestMateAdapter implements TMA.TestMateTestRunProfile {
 /**
  * this is how your main.ts could look like
  */
-export async function activate(_context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   const log = new Log(configSection, undefined, label, { depth: 3 }, false);
+  context.subscriptions.push(log);
+
   const testMateExtension = vscode.extensions.getExtension<TMA.TestMateAPI>(testMateExtensionId);
   if (testMateExtension) {
     const testMate = await testMateExtension.activate();
-    testMate.registerTestRunProfile(new GcovTestMateAdapter(log));
-    log.info('registered GcovTestMateAdapter', testMateExtensionId);
+    const adapter = new TestMateAdapter(log);
+    const profile = testMate.createTestRunProfile(adapter);
+    context.subscriptions.push(adapter, profile);
+    log.info('created adapter', adapter.label, adapter.kind, testMateExtensionId);
+  } else {
+    log.info('missing extension', testMateExtensionId);
+  }
+}
+
+/**
+ * advanced example
+ */
+export async function advanced_activate(context: vscode.ExtensionContext) {
+  const log = new Log(configSection, undefined, label, { depth: 3 }, false);
+  context.subscriptions.push(log);
+  const testMateExtension = vscode.extensions.getExtension<TMA.TestMateAPI>(testMateExtensionId);
+  if (testMateExtension) {
+    let adapter: TestMateAdapter | null = null;
+    let profile: TMA.TestMateTestRunProfile | null = null;
+
+    const dispose = () => {
+      if (profile) {
+        profile.dispose();
+        profile = null;
+      }
+      if (adapter) {
+        log.info('disposed profile', adapter.label, adapter.kind, testMateExtensionId);
+        adapter.dispose();
+        adapter = null;
+      }
+    };
+    context.subscriptions.push({ dispose });
+
+    const create = async () => {
+      if (!adapter) {
+        const testMate = await testMateExtension.activate();
+        adapter = new TestMateAdapter(log);
+        profile = testMate.createTestRunProfile(adapter);
+        log.info('created profile', adapter?.label, adapter?.kind, testMateExtensionId);
+      }
+    };
+
+    const applyCfg = async (cfg: vscode.WorkspaceConfiguration) => {
+      if (cfg.get('enabled', false)) await create();
+      else dispose();
+
+      if (profile) {
+        const tag = cfg.get<string>('tag');
+        profile.tag = typeof tag === 'string' ? new vscode.TestTag(tag) : undefined;
+      }
+    };
+
+    vscode.workspace.onDidChangeConfiguration(async event => {
+      if (event.affectsConfiguration(configSection)) {
+        const cfg = vscode.workspace.getConfiguration(configSection);
+        await applyCfg(cfg);
+      }
+    });
+
+    const cfg = vscode.workspace.getConfiguration(configSection);
+    await applyCfg(cfg);
   } else {
     log.info('missing extension', testMateExtensionId);
   }
