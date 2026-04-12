@@ -13,7 +13,6 @@ import {
   getAbsolutePath,
   CancellationToken,
   reindentStr,
-  parseLine,
   getModiTime,
   applyRegexpWithSubstitution,
 } from '../Util';
@@ -218,7 +217,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     testGrouping: TestGroupingConfig,
     testId: string,
     resolvedFile: string | undefined,
-    lineInFile: string | undefined,
+    _lineInFile: string | undefined, // currently we don't use it for subtree creation
     tags: string[], // in case of google test it is the TestCase
     _description: string | undefined, // currently we don't use it for subtree creation
     createTest: (parent: TestItemParent, testName: string | undefined) => TestT,
@@ -227,8 +226,6 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     this.shared.log.info('testGrouping', { testId, resolvedFile, tags, testGrouping });
 
     tags.sort();
-
-    const aboveLineInFile = parseLine(lineInFile, undefined, -1);
 
     const tagsResolveRule: ResolveRuleAsync<string> = {
       resolve: AbstractExecutable._tagVar,
@@ -297,7 +294,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
                 description,
                 varsToResolve,
                 resolvedFile,
-                aboveLineInFile,
+                undefined,
               );
             } else if (g.groupUngroupedTo) {
               itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
@@ -368,7 +365,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
               description,
               varsToResolve,
               resolvedFile,
-              aboveLineInFile,
+              undefined,
             );
           } else if (g.groupUngroupedTo) {
             itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
@@ -417,7 +414,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
                   g.description,
                   varsToResolve,
                   resolvedFile,
-                  aboveLineInFile,
+                  undefined,
                 );
               } else if (g.groupUngroupedTo) {
                 itemOfLevel = await this._resolveAndGetOrCreateChildGroup(
@@ -441,7 +438,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
                   g.description,
                   varsToResolve,
                   resolvedFile,
-                  aboveLineInFile,
+                  undefined,
                 );
               } else if (g.groupUngroupedTo) {
                 itemOfLevel = await this._resolveAndGetOrCreateChildGroup(

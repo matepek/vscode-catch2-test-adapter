@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- grouping test items does not specify line anymore so no gutters will be added.
+  (before it was putting 1 line above the "first" test) ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/513))
+
 ## [4.23.13] - 2026-04-11
 
 ### Added
