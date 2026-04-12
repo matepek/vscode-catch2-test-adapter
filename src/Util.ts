@@ -49,6 +49,19 @@ export interface CancellationToken {
 
 ///
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export function Lazy<T extends {} | null>(fn: () => T): { _: T } {
+  let v: T | undefined = undefined;
+  return {
+    get _(): T {
+      if (v == undefined) v = fn();
+      return v;
+    },
+  };
+}
+
+///
+
 export function concatU(left: string | undefined, right: string | undefined, sep = ''): string | undefined {
   if (!right) return left;
   else if (!left) return right;

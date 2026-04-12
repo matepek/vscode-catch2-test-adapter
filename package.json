@@ -2233,25 +2233,26 @@
           "scope": "resource",
           "type": "object",
           "default": {
-            "enabled": true,
-            "logpanel": true,
+            "enabled": false,
+            "logpanel": false,
             "allowExecutableConcurrentInvocations": true
           },
           "properties": {
             "enabled": {
               "type": "boolean",
-              "default": true
+              "default": false
             },
             "logpanel": {
               "type": "boolean",
-              "default": true
+              "default": false
             },
             "tag": {
               "description": "See `advancedExecutabes[].testTags` for details",
               "type": "string"
             },
             "allowExecutableConcurrentInvocations": {
-              "type": "boolean"
+              "type": "boolean",
+              "default": "true"
             }
           },
           "additionalProperties": false
@@ -2261,17 +2262,17 @@
           "scope": "resource",
           "type": "object",
           "default": {
-            "enabled": true,
-            "logpanel": true
+            "enabled": false,
+            "logpanel": false
           },
           "properties": {
             "enabled": {
               "type": "boolean",
-              "default": true
+              "default": false
             },
             "logpanel": {
               "type": "boolean",
-              "default": true
+              "default": false
             },
             "tag": {
               "description": "See `advancedExecutabes[].testTags` for details",

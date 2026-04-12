@@ -149,9 +149,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     resolvedFile?: string | undefined,
     line?: undefined | string | number,
   ): Promise<vscode.TestItem> {
-    const resolvedId = id !== undefined ? await this.resolveText(id, ...varsToResolve) : undefined;
-    const resolvedLabel = await this.resolveText(label, ...varsToResolve);
-    const resolvedDescr = description !== undefined ? await this.resolveText(description, ...varsToResolve) : '';
+    const resolvedId = id !== undefined ? await this.resolveTextEx(id, varsToResolve) : undefined;
+    const resolvedLabel = await this.resolveTextEx(label, varsToResolve);
+    const resolvedDescr = description !== undefined ? await this.resolveTextEx(description, varsToResolve) : '';
 
     return this._getOrCreateChildGroup(resolvedId, resolvedLabel, resolvedDescr, itemOfLevel, resolvedFile, line);
   }
@@ -174,11 +174,23 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
   private static readonly _variableRe = /\$\{[^ ]*\}/;
 
-  async resolveText(text: string, ...additionalVarToValue: readonly ResolveRuleAsync[]): Promise<string> {
+  async resolveText(text: string): Promise<string> {
     let resolvedText = text;
     try {
-      const varToValue =
-        additionalVarToValue.length > 0 ? [...this.shared.varToValue, ...additionalVarToValue] : this.shared.varToValue;
+      resolvedText = await resolveAllAsync(resolvedText, this.shared.varToValue, false);
+
+      if (resolvedText.match(AbstractExecutable._variableRe))
+        this.shared.log.warn('Possibly unresolved variable', resolvedText, text, this);
+    } catch (e) {
+      this.shared.log.error('resolveText', text, e, this);
+    }
+    return resolvedText;
+  }
+
+  async resolveTextEx(text: string, additionalVarToValue: readonly ResolveRuleAsync[]): Promise<string> {
+    let resolvedText = text;
+    try {
+      const varToValue = [...this.shared.varToValue, ...additionalVarToValue];
       resolvedText = await resolveAllAsync(resolvedText, varToValue, false);
 
       if (resolvedText.match(AbstractExecutable._variableRe))
@@ -462,7 +474,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       return test;
     } else {
       if (testName) {
-        testName = await this.resolveText(testName, ...varsToResolve);
+        testName = await this.resolveTextEx(testName, varsToResolve);
       }
       const test = createTest(itemOfLevel, testName);
       this._addTest(test.id, test);
