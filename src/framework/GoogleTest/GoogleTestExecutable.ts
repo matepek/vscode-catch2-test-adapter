@@ -232,15 +232,16 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     }
   }
 
-  private _getRunParamsCommon(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  private _getRunParamsCommon(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     const execParams: string[] = [];
 
-    const testNames = childrenToRun.map(c => c.id);
-
-    execParams.push(`--${this._argumentPrefix}filter=` + testNames.join(':'));
-
-    execParams.push(`--${this._argumentPrefix}also_run_disabled_tests`);
-
+    if (childrenToRun === null) {
+      // nothing to add, run all
+    } else {
+      const testNames = childrenToRun.map(c => c.id);
+      execParams.push(`--${this._argumentPrefix}filter=` + testNames.join(':'));
+      execParams.push(`--${this._argumentPrefix}also_run_disabled_tests`);
+    }
     if (this.shared.rngSeed !== null) {
       execParams.push(`--${this._argumentPrefix}shuffle`);
       execParams.push(
@@ -256,7 +257,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     return execParams;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     return [`--${this._argumentPrefix}color=no`, ...this._getRunParamsCommon(childrenToRun)];
   }
 

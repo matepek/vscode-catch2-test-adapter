@@ -148,10 +148,12 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     return result;
   }
 
-  private _getDocTestRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  private _getDocTestRunParams(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     const params: string[] = [];
 
-    if (childrenToRun.length == 1 && childrenToRun[0] instanceof SubTest) {
+    if (childrenToRun === null) {
+      // nothing to add, run all
+    } else if (childrenToRun.length == 1 && childrenToRun[0] instanceof SubTest) {
       const subTests: SubTest[] = [childrenToRun[0]];
       let p = childrenToRun[0].parentTest;
       while (p instanceof SubTest) {
@@ -189,7 +191,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     return params;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     const execParams: string[] = this._getDocTestRunParams(childrenToRun);
     execParams.push('--reporters=xml');
     return execParams;
@@ -538,9 +540,11 @@ class TestCaseTagProcessor extends TagProcessorBase {
         });
       }
 
-      // if a subtest is run then we don't expect all the sections to arrive so we assume the missing ones weren't run.
-      if (this.runInfo.childrenToRun.length !== 1 || !(this.runInfo.childrenToRun[0] instanceof SubTest)) {
-        this.builder.test.removeMissingSubTests(this.subCases);
+      if (this.runInfo.childrenToRun) {
+        // if a subtest is run then we don't expect all the sections to arrive so we assume the missing ones weren't run.
+        if (this.runInfo.childrenToRun.length !== 1 || !(this.runInfo.childrenToRun[0] instanceof SubTest)) {
+          this.builder.test.removeMissingSubTests(this.subCases);
+        }
       }
 
       this.builder.build();

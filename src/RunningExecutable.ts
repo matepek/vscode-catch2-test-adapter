@@ -83,7 +83,7 @@ export class ExecutableRunResult {
 export class RunningExecutable {
   static async create(
     spawnBuilder: SpawnBuilder,
-    childrenToRun: readonly AbstractTest[],
+    childrenToRun: readonly AbstractTest[] | null,
     cancellationToken: CancellationToken,
     shared: SharedVarOfExec,
   ): Promise<RunningExecutable> {
@@ -94,7 +94,7 @@ export class RunningExecutable {
   private constructor(
     readonly spawnBuilder: SpawnBuilder,
     readonly process: ChildProcessWithoutNullStreams,
-    readonly childrenToRun: readonly AbstractTest[],
+    readonly childrenToRun: readonly AbstractTest[] | null,
     readonly cancellationToken: CancellationToken,
     readonly shared: SharedVarOfExec,
   ) {

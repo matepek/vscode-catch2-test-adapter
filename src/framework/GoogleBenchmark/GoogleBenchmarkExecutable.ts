@@ -101,17 +101,19 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
     }
   }
 
-  private _getRunParamsCommon(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  private _getRunParamsCommon(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     const execParams: string[] = [];
 
-    const testNames = childrenToRun.map(c => c.id);
-
-    execParams.push(`--benchmark_filter=` + testNames.join('|'));
-
+    if (childrenToRun === null) {
+      // nothing to add, run all
+    } else {
+      const testNames = childrenToRun.map(c => c.id);
+      execParams.push(`--benchmark_filter=` + testNames.join('|'));
+    }
     return execParams;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     return [`--benchmark_color=false`, '--benchmark_format=json', ...this._getRunParamsCommon(childrenToRun)];
   }
 
@@ -124,8 +126,10 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
   }
 
   protected async _handleProcess(testRun: vscode.TestRun, runInfo: RunningExecutable): Promise<HandleProcessResult> {
-    // at first it's good enough
-    runInfo.childrenToRun.forEach(test => testRun.started(test.item));
+    if (runInfo.childrenToRun) {
+      // at first it's good enough
+      runInfo.childrenToRun.forEach(test => testRun.started(test.item));
+    }
 
     const unexpectedTests: GoogleBenchmarkTest[] = [];
     const expectedToRunAndFoundTests: GoogleBenchmarkTest[] = [];

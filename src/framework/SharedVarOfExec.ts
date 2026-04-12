@@ -21,6 +21,7 @@ export class SharedVarOfExec {
     parallelizationLimit: number,
     readonly maxTestsPerExecutable: number | null,
     readonly markAsSkipped: boolean,
+    readonly executableRunAsImplicitAll: boolean,
     readonly executableCloning: boolean,
     readonly debugConfigData: DebugConfigData | undefined,
     readonly runTask: RunTaskConfig,
@@ -89,10 +90,6 @@ export class SharedVarOfExec {
 
   get failIfExceedsLimitNs(): number | undefined {
     return this._frameworkSpecific.failIfExceedsLimitNs;
-  }
-
-  get enableRunExecutableTestsImplicitly(): boolean {
-    return true; //TODO
   }
 
   /// accessors for shared
