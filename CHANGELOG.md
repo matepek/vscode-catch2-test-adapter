@@ -6,6 +6,223 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- grouping test items does not specify line anymore so no gutters will be added.
+  (before it was putting 1 line above the "first" test) ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/513))
+
+## [4.23.13] - 2026-04-11
+
+### Added
+
+- experimental coverage tool for fun (no guarantees):
+  Build your code with _g++_ or _clang++_ with _coverage flags_
+  Enable:
+  - `testMate.cpp.experimental.llvm-cov` or
+  - `testMate.cpp.experimental.gcov`
+
+## [4.23.12] - 2026-04-11
+
+### Changed
+
+- Google Test output parsing strategy ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/515))
+
+## [4.23.11] - 2026-04-11
+
+only experimental Test Coverage API improvements.
+
+## [4.23.10] - 2026-04-10
+
+### Added
+
+- `testMate.test.advancedExecutables` -> `testTags`: Tags to be added to all the executables and its children. Can be used for filtering.
+
+## [4.23.9] - 2026-04-09
+
+only experimental Test Coverage API improvements.
+
+## [4.23.8] - 2026-04-09
+
+only experimental Test Coverage API improvements.
+
+## [4.23.7] - 2026-04-09
+
+only experimental Test Coverage API improvements.
+
+## [4.23.6] - 2026-04-08
+
+only experimental Test Coverage API improvements.
+
+## [4.23.5] - 2026-04-08
+
+only experimental Test Coverage API improvements.
+
+## [4.23.4] - 2026-04-08
+
+only experimental Test Coverage API improvements.
+
+## [4.23.3] - 2026-04-07
+
+### Added
+
+- experimental Test Coverage API. Not visible but available for developers. [details](https://github.com/matepek/vscode-catch2-test-adapter/issues/519)
+
+## [4.23.2] - 2026-04-07
+
+### Fixed
+
+- Google Test framework reload related improvements
+- some continous run related issue ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/502))
+
+## [4.23.1] - 2026-04-04
+
+### Changed
+
+- `testMate.test.advancedExecutables` - `runTask`'s tasks now respect `dependsOn` tasks if the task does not have `${` string in the args and command. If you need to have some vscode (not extension related) variable use a wrapper/bridge task. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/494))
+
+## [4.23.0] - 2026-04-04
+
+### Added
+
+- exeprimental _num of test per process_ feature. Run the same executable multiple times. See config: [maxTestsPerExecutable](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md). ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/509))
+
+## [4.22.6] - 2026-04-02
+
+### Fixed
+
+- disappearing extension output. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/517))
+
+## [4.22.5] - 2026-04-02
+
+### Fixed
+
+- cache file name generation's algo. (related: [1](https://github.com/matepek/vscode-catch2-test-adapter/issues/510), [2](https://github.com/matepek/vscode-catch2-test-adapter/issues/516))
+
+## [4.22.4] - 2026-04-02
+
+### Fixed
+
+- cache file name generation's algo. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/510))
+
+## [4.22.3] - 2026-03-19
+
+### Changed
+
+- made cache file name generation's algo simpler. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/507))
+
+## [4.22.2] - 2026-03-19
+
+### Changed
+
+- all test frameworks test listing cache file name now includes a more stable hash to make test listing working as it is expected. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/507))
+
+## [4.22.1] - 2026-03-17
+
+### Changed
+
+- google test framework test listing cache file name now includes a hash to make test listing working as it is expected. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/507))
+
+## [4.22.0] - 2026-03-06
+
+### Changed
+
+- `sourceFileMap` now uses new resolution strategy by default. Still can use `"$strategy": "legacy"` if needed. [See new options.](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#sourceFileMap). ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/503))
+- replaced `Gaze` with `chokidar`. Gaze was not supported, constant security issues..
+
+### Added
+
+- `helperRegex` for test discovery now checks the `stderr` as well. ([relate](https://github.com/matepek/vscode-catch2-test-adapter/issues/505))
+
+## [4.21.0] - 2025-12-31
+
+### Fixed
+
+- `.env` file parser. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/501))
+
+## [4.20.2]
+
+### Changed
+
+- Improved symlink handling. Now it reloads if symlink is recreated but still doesn't handle if no symlink at load time: Since we don't know which part of the path to watch to be symlink in the future.
+
+## [4.20.1] - 2025-11-22
+
+Just dependency upgrades.
+
+## [4.20.0] - 2025-11-21
+
+### Added
+
+- Symlink resolution (first occurence only) for `pattern`. Meant to work for `bazel-bin` and similar use cases.
+  Symlink deletion is handled but recreation NOT.
+  [Upvote the feature here](https://github.com/matepek/vscode-catch2-test-adapter/issues/499) if interested.
+
+## [4.19.0] - 2025-10-30
+
+### Added
+
+- better support for multiple configuration: `prependTestDebuggingArgs`. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/482))
+
+## [4.18.0] - 2025-10-10
+
+### Changed
+
+- in case of a successful run (exit code == 0) of `before`, `after`, `beforeEach` and `afterEach` custom tasks the UI will change back to test result view automatically. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/491))
+
+## [4.17.6] - 2025-10-05
+
+npm package version bumps
+
+## [4.17.5] - 2025-10-05
+
+### Added
+
+- handling `SCOPED_TRACE` ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/484))
+
+### Changed
+
+- improved stderr logging ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/485))
+
+## [4.17.4] - 2025-09-11
+
+### Added
+
+- Catch2 supports `SKIP` macro. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/487))
+
+## [4.17.3] - 2025-07-23
+
+### Fixed
+
+- `testMate.cmd.get-debug-exec` is cleared after debug is finished.
+
+## [4.17.2] - 2025-07-20
+
+### Changed
+
+- minor gtest output formatting
+
+## [4.17.1] - 2025-06-19
+
+### Changed
+
+- test outputs does not append `./` in case of workspace files
+
+## [4.17.0] - 2025-06-13
+
+### Added
+
+- Option to control stderr decorators `test.stderrDecorator`
+- Adjusted debug API. [related](https://github.com/matepek/vscode-catch2-test-adapter/issues/472)
+
+## [4.16.0] - 2025-05-28
+
+### Fixed
+
+- improved test outputs
+- fixed doctest testing framework processing
+  [related1](https://github.com/matepek/vscode-catch2-test-adapter/issues/473)
+  [related2](https://github.com/matepek/vscode-catch2-test-adapter/issues/474)
+
 ## [4.15.0] - 2025-04-27
 
 ### Added
@@ -18,7 +235,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - (experimental) `groupByLabel`.`testName` to rename tests
 - (experimental) regex resolution for a couple of variables:
-
   - `filename`
   - `relPath`
   - `absPath`
@@ -1670,7 +1886,6 @@ Lot of things new under the hood, but lets talk about the 'API' change.
 ### Changed ⚠️
 
 - Renamed `defaultExecWatchTimeout` --> `defaultWatchTimeoutSec`.
-
   - Also the unit has changed from millisecond to **second**.
 
 - Renamed `debugConfigurationTemplate` --> `debugConfigTemplate`.
@@ -1680,7 +1895,6 @@ Lot of things new under the hood, but lets talk about the 'API' change.
   Now it can understand "VSCode patterns". ([Details](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options)) - These work for only path's inside the _workspace directory_. Paths outside of it can be used
   with absolute path or with relative to _working directory_ (ex.: `../build/test.exe`), but
   without patterns (and without file-watch).
-
   - `*` to match one or more characters in a path segment
   - `?` to match on one character in a path segment
   - `**` to match any number of path segments, including none

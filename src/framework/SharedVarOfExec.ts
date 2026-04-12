@@ -1,23 +1,25 @@
+import * as vscode from 'vscode';
 import { FrameworkSpecificConfig, RunTaskConfig } from '../AdvancedExecutableInterface';
 import { TestGroupingConfig } from '../TestGroupingInterface';
 import { ResolveRuleAsync } from '../util/ResolveRule';
 import { TaskPool } from '../util/TaskPool';
-import { Spawner, SpawnOptionsWithoutStdio } from '../Spawner';
+import { Spawner, SpawnOptionsWithoutStdioEx } from '../Spawner';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { DebugConfigData } from '../DebugConfigType';
-
-const hash = require('object-hash'); // eslint-disable-line
+import { createHash } from 'node:crypto';
 
 export class SharedVarOfExec {
   constructor(
     readonly shared: WorkspaceShared,
     readonly name: string | undefined,
     readonly description: string | undefined,
+    readonly testTags: readonly vscode.TestTag[],
     readonly varToValue: readonly ResolveRuleAsync[],
     readonly path: string,
-    readonly options: SpawnOptionsWithoutStdio,
+    readonly options: SpawnOptionsWithoutStdioEx,
     private readonly _frameworkSpecific: FrameworkSpecificConfig,
-    _parallelizationLimit: number,
+    parallelizationLimit: number,
+    readonly maxTestsPerExecutable: number | null,
     readonly markAsSkipped: boolean,
     readonly executableCloning: boolean,
     readonly debugConfigData: DebugConfigData | undefined,
@@ -25,20 +27,36 @@ export class SharedVarOfExec {
     readonly spawner: Spawner,
     readonly resolvedSourceFileMap: Record<string, string>,
   ) {
-    this.parallelizationPool = new TaskPool(_parallelizationLimit);
-    this.optionsHash = hash
-      .MD5({
-        ...options.env,
-        ...{
-          prependTestRunningArgs: this._frameworkSpecific.prependTestRunningArgs,
-          prependTestListingArgs: this._frameworkSpecific.prependTestListingArgs,
-        },
-      })
-      .substring(0, 6);
+    this.parallelizationPool = new TaskPool(parallelizationLimit);
+    {
+      const h = createHash('md5');
+      const env = options.customEnv;
+      Object.keys(env)
+        .sort()
+        .forEach(k => h.update(`${k}=${env[k]}`));
+      if (this._frameworkSpecific.prependTestRunningArgs) {
+        h.update('prependTestRunningArgs=' + this._frameworkSpecific.prependTestRunningArgs.join('|'));
+      }
+      if (this._frameworkSpecific.prependTestDebuggingArgs) {
+        h.update('prependTestDebuggingArgs=' + this._frameworkSpecific.prependTestDebuggingArgs.join('|'));
+      }
+      if (this._frameworkSpecific.prependTestListingArgs) {
+        h.update('prependTestListingArgs=' + this._frameworkSpecific.prependTestListingArgs.join('|'));
+      }
+      this.optionsHash = h.digest('hex').substring(0, 6);
+    }
+    this.shared.log.debug(
+      'exec hash',
+      path,
+      this.optionsHash,
+      this.options.customEnv,
+      this._frameworkSpecific.prependTestRunningArgs,
+      this._frameworkSpecific.prependTestDebuggingArgs,
+      this._frameworkSpecific.prependTestListingArgs,
+    );
   }
 
   readonly parallelizationPool: TaskPool;
-
   readonly optionsHash: string;
 
   get testGrouping(): TestGroupingConfig | undefined {
@@ -46,11 +64,15 @@ export class SharedVarOfExec {
   }
 
   get prependTestRunningArgs(): string[] {
-    return this._frameworkSpecific.prependTestRunningArgs ? this._frameworkSpecific.prependTestRunningArgs : [];
+    return this._frameworkSpecific.prependTestRunningArgs ?? [];
+  }
+
+  get prependTestDebuggingArgs(): string[] {
+    return this._frameworkSpecific.prependTestDebuggingArgs ?? this.prependTestRunningArgs;
   }
 
   get prependTestListingArgs(): string[] {
-    return this._frameworkSpecific.prependTestListingArgs ? this._frameworkSpecific.prependTestListingArgs : [];
+    return this._frameworkSpecific.prependTestListingArgs ?? [];
   }
 
   get ignoreTestEnumerationStdErr(): boolean {
@@ -59,6 +81,10 @@ export class SharedVarOfExec {
 
   get enableDebugColouring(): boolean {
     return this._frameworkSpecific['debug.enableOutputColouring'] === true;
+  }
+
+  get stderrDecorator(): boolean {
+    return this.shared.stderrDecorator;
   }
 
   get failIfExceedsLimitNs(): number | undefined {
@@ -71,13 +97,27 @@ export class SharedVarOfExec {
 
   /// accessors for shared
 
-  readonly log = this.shared.log;
-  readonly workspaceFolder = this.shared.workspaceFolder;
-  readonly workspacePath = this.workspaceFolder.uri.fsPath;
-  readonly testController = this.shared.testController;
-  readonly cancellationToken = this.shared.cancellationToken;
-  readonly taskPool = this.shared.taskPool;
-  readonly executeTask = this.shared.executeTask;
+  get log() {
+    return this.shared.log;
+  }
+  get workspaceFolder() {
+    return this.shared.workspaceFolder;
+  }
+  get workspacePath() {
+    return this.workspaceFolder.uri.fsPath;
+  }
+  get testController() {
+    return this.shared.testController;
+  }
+  get cancellationToken() {
+    return this.shared.cancellationToken;
+  }
+  get taskPool() {
+    return this.shared.taskPool;
+  }
+  get executeTask() {
+    return this.shared.executeTask;
+  }
 
   get rngSeed(): 'time' | number | null {
     return this.shared.rngSeed;

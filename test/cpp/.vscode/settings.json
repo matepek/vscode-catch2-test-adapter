@@ -1,7 +1,53 @@
 {
+    "testMate.cpp.experimental.llvm-cov": {
+        "enabled": true,
+        "logpanel": true,
+        "tag": "llvm-cov"
+    },
+    "testMate.cpp.experimental.gcov": {
+        "enabled": false,
+        "logpanel": true,
+        // "tag": "gcov"
+    },
+    "testMate.cpp.coverage.profile.default": "llvm-cov by TestMate C++",
+    "testMate.cpp.test.parallelExecutionLimit": 5,
+    "testMate.cpp.test.parallelExecutionOfExecutableLimit": 10,
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/**/gtest*.exe",
+            "pattern": "build/clang/suite1.exe"
+        },
+        {
+            "pattern": "build/clang/gtest1.exe",
+            "testTags": [
+                "llvm-cov"
+            ]
+        },
+        {
+            "pattern": "build/gcc/gtest1.exe",
+            "testTags": [
+                "gcov"
+            ]
+        },
+        {
+            "pattern": "x build/clang/*.exe",
+            "maxTestsPerExecutable": 3,
+            "gtest": {
+                "prependTestRunningArgs": [
+                    "aa"
+                ],
+                "prependTestDebuggingArgs": [
+                    "xx"
+                ]
+            },
+            "sourceFileMap": {
+                "$strategy": "regex-absolute",
+            },
+            "runTask": {
+                "before": [
+                    // "exit-1",
+                    // "echo-testmate"
+                ]
+            }
             // "testGrouping": {
             //     "groupByExecutable": {
             //         "groupByTags": {

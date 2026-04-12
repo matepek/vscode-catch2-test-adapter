@@ -6,7 +6,7 @@
 #include "doctest/doctest.h"
 using namespace std;
 
-TEST_CASE("lots of nested subcases") {
+TEST_CASE("lots of nested subcases - fail") {
   cout << endl << "root" << endl;
   SUBCASE("") {
     cout << "1" << endl;
@@ -39,12 +39,12 @@ static void call_func() {
   }
 }
 
-TEST_CASE("subcases can be used in a separate function as well") {
+TEST_CASE("subcases can be used in a separate function as well - succ") {
   call_func();
   MESSAGE("lala");
 }
 
-SCENARIO("vectors can be sized and resized") {
+SCENARIO("vectors can be sized and resized - fail") {
   GIVEN("A vector with some items") {
     std::vector<int> v(5);
 
@@ -88,13 +88,13 @@ SCENARIO("vectors can be sized and resized") {
   }
 }
 
-TEST_CASE("test case should fail even though the last subcase passes") {
+TEST_CASE("test case should fail even though the last subcase passes - fail") {
   SUBCASE("one") { CHECK(false); }
   SUBCASE("two") { CHECK(true); }
 }
 
 TEST_CASE(
-    "fails from an exception but gets re-entered to traverse all subcases") {
+    "fails from an exception but gets re-entered to traverse all subcases - fail") {
   SUBCASE("level zero") {
     SUBCASE("one") { CHECK(false); }
     SUBCASE("two") { CHECK(false); }
@@ -106,7 +106,7 @@ static void checks(int data) {
   DOCTEST_SUBCASE("check data 2") { REQUIRE(data % 4 == 0); }
 }
 
-TEST_CASE("Nested - related to https://github.com/doctest/doctest/issues/282") {
+TEST_CASE("nested - related to https://github.com/doctest/doctest/issues/282 - succ") {
   DOCTEST_SUBCASE("generate data variant 1") {
     int data(44);
 
@@ -125,15 +125,15 @@ TEST_CASE("Nested - related to https://github.com/doctest/doctest/issues/282") {
 
 TEST_SUITE_BEGIN("suite1");
 
-TEST_CASE("suite1t1") {}
+TEST_CASE("suite1t1 - succ") {}
 
 TEST_SUITE_BEGIN("suite11");  // double nesting doesnt count
 
-TEST_CASE("suite11t1") {}
+TEST_CASE("suite11t1 - succ") {}
 
 TEST_SUITE_END();
 
-TEST_CASE("with desc" * doctest::description("shouldn't take more than 500ms") *
+TEST_CASE("with desc - succ" * doctest::description("shouldn't take more than 500ms") *
           doctest::timeout(0.5)) {
   // asserts
 }
@@ -146,12 +146,12 @@ TEST_CASE(
     "really long test name really long test name really long test name really "
     "long test name really long test name really long test name really long "
     "test name really long test name really long test name really long test "
-    "name really long test name really long test name really long test name ") {
+    "name really long test name really long test name really long test name - succ") {
 }
 
 TEST_CASE("  starts with double space and ends with 2 more ") {}
 
-TEST_CASE("exception1") { throw std::runtime_error("exeception msg"); }
+TEST_CASE("exception1 - fail") { throw std::runtime_error("exeception msg"); }
 
 TEST_CASE("testwith,char") { CHECK(false); }
 
@@ -167,6 +167,8 @@ TEST_CASE("test should_fail:exception - succ" * doctest::should_fail()) { throw 
 
 TEST_CASE("test expected_failures(1):true - fail" * doctest::expected_failures(1)) { CHECK(true); }
 TEST_CASE("test expected_failures(1):false - succ" * doctest::expected_failures(1)) { CHECK(false); }
+TEST_CASE("test expected_failures(1):false false - fail" * doctest::expected_failures(1)) { CHECK(false); CHECK(false); }
+TEST_CASE("test expected_failures(2):false false - succ" * doctest::expected_failures(2)) { CHECK(false); CHECK(false); }
 TEST_CASE("test expected_failures(1):exception - fail" * doctest::expected_failures(1)) { throw std::runtime_error("exeception msg"); }
 
 TEST_CASE("test mix: may_fail & should_fail:exception - succ" * doctest::may_fail() * doctest::should_fail() ) { throw std::runtime_error("exeception msg"); }
@@ -184,12 +186,29 @@ TEST_CASE("test mix: may_fail & should_fail & expected_failures(1): false false 
 TEST_CASE("test timeout: ok - succ" * doctest::timeout(0.1)) { CHECK(true); }
 TEST_CASE("test timeout: fails - fail" * doctest::timeout(0.1)) { std::this_thread::sleep_for(std::chrono::milliseconds(200)); CHECK(true); }
 
-TEST_SUITE("First")
+TEST_SUITE("suite First")
 {
-  TEST_CASE("MyTest") { FAIL(""); }
+  TEST_CASE("MyTest - fail") { FAIL(""); }
 }
 
-TEST_SUITE("Second")
+TEST_SUITE("suite Second")
 {
-  TEST_CASE("MyTest") { FAIL(""); }
+  TEST_CASE("MyTest - fail") { FAIL("msg"); }
+}
+
+DOCTEST_TEST_CASE("fails messages are handled by the plugin - fail") {
+    DOCTEST_MESSAGE("message");
+    DOCTEST_FAIL_CHECK("fail_check");
+    DOCTEST_FAIL("fail");
+}
+
+DOCTEST_TEST_CASE("info and capture are handled by the plugin - fail") {
+    DOCTEST_CHECK(1 == 2);
+    DOCTEST_INFO("INFO: " << __LINE__);
+    DOCTEST_CAPTURE(__LINE__);
+    DOCTEST_CHECK(3 == 4);
+}
+
+TEST_CASE("expected failure - succ" * doctest::expected_failures(1)) {
+    CHECK_EQ(1, 2);
 }

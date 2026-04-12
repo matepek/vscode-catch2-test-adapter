@@ -56,7 +56,7 @@ export const pipeOutputStreams2String = async (
 
   stdout.on('data', (chunk: Uint8Array) => stdoutBuffer.push(chunk.toLocaleString()));
 
-  if (stderr) stderr.on('data', (chunk: Uint8Array) => stderrBuffer?.push(chunk.toLocaleString()));
+  if (stderr) stderr.on('data', (chunk: Uint8Array) => stderrBuffer.push(chunk.toLocaleString()));
 
   await stderrClosed;
   await stdoutClosed;

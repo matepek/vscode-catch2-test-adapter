@@ -4,6 +4,7 @@ import * as ansi from 'ansi-colors';
 import { parseLine } from './Util';
 import { AbstractTest, SubTest } from './framework/AbstractTest';
 import { debugBreak } from './util/DevelopmentHelper';
+import { Logger } from './Logger';
 
 type TestResult = 'skipped' | 'failed' | 'errored' | 'passed';
 
@@ -17,9 +18,11 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     private readonly runPrefix: string,
     private readonly addBeginEndMsg: boolean,
     readonly level = 0,
-  ) {}
+  ) {
+    this.log = this.test.log;
+  }
 
-  readonly log = this.test.log;
+  readonly log: Logger;
 
   private readonly _messages: vscode.TestMessage[] = [];
   private _result: TestResult | undefined = undefined;
@@ -39,8 +42,8 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     }
   }
 
-  passed(): void {
-    if (this._result === undefined) this._result = 'passed';
+  passed(force: boolean = false): void {
+    if (this._result === undefined || force) this._result = 'passed';
   }
 
   failed(): void {
@@ -107,10 +110,9 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
       parseLine(line, l => (lineSuffix = `:${l + (lineIsZeroBased ? 1 : 0)}`));
       const wp = this.test.exec.shared.workspacePath + '/';
       if (file.startsWith(wp)) {
-        return ansi.dim(' @ ./' + file.substring(wp.length) + lineSuffix);
-      } else {
-        return ansi.dim(` @ ${file}${lineSuffix}`);
+        file = file.substring(wp.length);
       }
+      return ansi.dim(` @ ${file}${lineSuffix}`);
     }
     return '';
   }
@@ -133,15 +135,31 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     line: string | undefined,
     original: string,
     expanded: string,
-    _type: string | undefined,
+    type: string | undefined,
+    ...message: string[]
   ): void {
     file = this.test.exec.findSourceFilePath(file);
-    this.addMessage(file, line, 'Expanded: `' + expanded + '`');
+    if (original !== expanded) {
+      this.addMessage(file, line, '`' + expanded + '`', ...message);
+    } else {
+      this.addMessage(file, line, 'failed', ...message);
+    }
 
     const loc = this.getLocationAtStr(file, line, false);
-    this.addReindentedOutput(1, 'Expression ' + ansi.red('failed') + loc + ':');
-    this.addReindentedOutput(2, '❕Original:  ' + original);
-    this.addReindentedOutput(2, '❗️Expanded:  ' + expanded);
+    if (type === undefined) {
+      this.addReindentedOutput(1, `Expression ${ansi.red('failed')}${loc}:`);
+    } else {
+      this.addReindentedOutput(1, `Expression ${type}(...) ${ansi.red('failed')}${loc}:`);
+    }
+    if (original !== expanded) {
+      this.addReindentedOutput(2, '❕Original:  ' + original);
+      this.addReindentedOutput(2, '❗️Expanded:  ' + expanded);
+    } else {
+      this.addReindentedOutput(2, '❗️Evaluated: ' + expanded);
+    }
+    for (const m of message) {
+      this.addReindentedOutput(2, m);
+    }
   }
 
   addMessageWithOutput(

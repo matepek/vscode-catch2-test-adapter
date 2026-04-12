@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { AbstractExecutable } from './AbstractExecutable';
 import { debugAssert } from '../util/DevelopmentHelper';
 import { SharedTestTags } from './SharedTestTags';
+import { Logger } from '../Logger';
 
 ///
 
@@ -34,9 +35,10 @@ export abstract class AbstractTest {
     }
 
     this._item.tags = this._calcTags();
+    this.log = this.exec.log;
   }
 
-  readonly log = this.exec.log;
+  readonly log: Logger;
 
   get item(): Readonly<vscode.TestItem> {
     return this._item;
@@ -135,6 +137,7 @@ export abstract class AbstractTest {
 
   private _calcTags(): vscode.TestTag[] {
     const tags = [
+      ...this.exec.shared.testTags,
       this._frameworkTag,
       new vscode.TestTag(`level.` + this.subLevel),
       ...this._tags.map(x => new vscode.TestTag(`tag."${x}"`)),

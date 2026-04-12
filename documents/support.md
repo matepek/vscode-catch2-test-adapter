@@ -18,6 +18,7 @@ BUT before that read ALL this document.
 > In version `4.8.0` a new filtering was introduced.
 > Searching for executables respects `files.watcherExclude` vscode config.
 > One can try removing their executable files' pattern from this config.
+> Read: [vscode watcher doc](https://github.com/microsoft/vscode/wiki/File-Watcher-Internals)
 
 ### Link / Build process fails because the executable is locked by this extension.
 

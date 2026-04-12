@@ -45,3 +45,25 @@ TEMPLATE_TEST_CASE( "vectors can be sized and resized", "[vector][template]", in
       REQUIRE( v.capacity() >= 5 );
   }
 }
+
+
+TEST_CASE("Table allows pre-computed test inputs and outputs", "[example][generator]") {
+    SECTION("This section is run for each row in the table") {
+        auto [test_input, expected_output] =
+            GENERATE(table<std::string, size_t>(
+                {
+                    { "one",   3 },
+                    { "two",   3 },
+                    { "three", 5 },
+                    { "four",  4 },
+                } ) );
+
+        CAPTURE(test_input, expected_output);
+
+        // run the test
+        auto result = expected_output;
+
+        // check it matches the pre-calculated data
+        REQUIRE(result == expected_output);
+    }
+}

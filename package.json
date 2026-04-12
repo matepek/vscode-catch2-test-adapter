@@ -5,7 +5,7 @@
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "4.15.0",
+  "version": "4.23.13",
   "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -23,10 +23,17 @@
     "c++",
     "test",
     "testing",
+    "coverage",
+    "llvm coverage",
+    "clang coverage",
+    "clang++ coverage",
+    "gcov",
+    "gcc coverage",
+    "g++ coverage",
     "unit test",
     "catch2",
-    "catchorg",
     "gtest",
+    "catchorg",
     "googletest",
     "google test",
     "gmock",
@@ -54,47 +61,46 @@
   "extensionDependencies": [],
   "dependencies": {
     "ansi-colors": "^4.1.3",
-    "find-process": "^1.4.10",
-    "gaze": "^1.1.3",
+    "chokidar": "^5.0.0",
+    "dotenv": "^17.4.1",
+    "find-process": "^2.1.1",
     "tslib": "^2.8.1",
     "vscode-test-adapter-util": "^0.7.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.24.0",
+    "@eslint/js": "^10.0.1",
     "@types/bent": "^7.3.8",
-    "@types/chai": "^5.2.1",
+    "@types/chai": "^5.2.3",
     "@types/deep-equal": "^1.0.4",
     "@types/fs-extra": "^11.0.4",
-    "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^22.14.0",
+    "@types/node": "^25.6.0",
     "@types/request-promise": "4.1.51",
-    "@types/sinon": "^17.0.4",
+    "@types/sinon": "^21.0.1",
     "@types/source-map-support": "^0.5.10",
-    "@types/vscode": "1.82.0",
-    "@vscode/test-electron": "^2.4.1",
-    "@vscode/vsce": "^2.19.0",
+    "@types/vscode": "1.92.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
     "bent": "^7.3.12",
     "deep-equal": "^2.2.3",
-    "eslint": "^9.24.0",
-    "fs-extra": "^11.3.0",
-    "glob": "^11.0.1",
-    "globals": "^16.0.0",
-    "mocha": "^11.1.0",
-    "object-hash": "^3.0.0",
-    "prettier": "^3.5.3",
+    "eslint": "^10.2.0",
+    "fs-extra": "^11.3.4",
+    "glob": "^13.0.6",
+    "globals": "^17.4.0",
+    "mocha": "^11.7.5",
+    "prettier": "^3.8.2",
     "raw-loader": "^4.0.2",
-    "sinon": "^20.0.0",
+    "sinon": "^21.1.1",
     "source-map-support": "^0.5.21",
-    "ts-loader": "^9.5.2",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.29.0",
-    "webpack": "^5.98.0",
-    "webpack-bundle-analyzer": "^4.10.2",
-    "webpack-cli": "^6.0.1"
+    "ts-loader": "^9.5.7",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.1",
+    "webpack": "^5.106.1",
+    "webpack-bundle-analyzer": "^5.3.0",
+    "webpack-cli": "^7.0.2"
   },
   "engines": {
-    "vscode": "^1.82.0"
+    "vscode": "^1.92.0"
   },
   "activationEvents": [
     "onStartupFinished"
@@ -207,6 +213,13 @@
                   }
                 ]
               },
+              "testTags": {
+                "markdownDescription": "Test Tags to be added to all the executables and its children. Can be used for filtering.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
               "cwd": {
                 "markdownDescription": "The current working directory for the test executable. If it isn't provided and `test.workingDirectory` does then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "anyOf": [
@@ -294,8 +307,28 @@
                 ]
               },
               "sourceFileMap": {
-                "markdownDescription": "Replaces the key with the value in the souce file path. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "markdownDescription": "Replaces the key with the value in the souce file path. Can be configured with `$strategy`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#sourceFileMap)",
                 "type": "object",
+                "properties": {
+                  "$strategy": {
+                    "type": "string",
+                    "default": "legacy",
+                    "enum": [
+                      "legacy",
+                      "starts-with",
+                      "replace-first",
+                      "regex-relative",
+                      "regex-absolute"
+                    ],
+                    "enumDescriptions": [
+                      "Matches anywhere in the map, applies all rules.",
+                      "Matches only if the path starts with the same. Applies the first substitution only.",
+                      "Matches anywhere in the path. Applies the first substitution only.",
+                      "Matches the regexp in the relative path. Applies the first substitution only. Substitution can use `$0`, `$1`, ...",
+                      "Matches the regexp in the absolute path. Applies the first substitution only. Substitution can use `$0`, `$1`, ..."
+                    ]
+                  }
+                },
                 "additionalProperties": {
                   "type": "string"
                 }
@@ -352,6 +385,19 @@
                 "type": "integer",
                 "default": 1,
                 "minimum": 1
+              },
+              "maxTestsPerExecutable": {
+                "markdownDescription": "The variable maximizes the number of test(s) inluded in one run/execution instance/process. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "default": null,
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "strictPattern": {
                 "markdownDescription": "Test loading fails if one of the files matched by `pattern` is not a test executable. (Helps noticing unexpected crashes/problems under test loading.)",
@@ -738,6 +784,13 @@
                       "type": "string"
                     }
                   },
+                  "prependTestDebuggingArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
                   "prependTestListingArgs": {
                     "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
@@ -1032,6 +1085,13 @@
                   },
                   "prependTestRunningArgs": {
                     "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "prependTestDebuggingArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -1336,6 +1396,13 @@
                       "type": "string"
                     }
                   },
+                  "prependTestDebuggingArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
                   "prependTestListingArgs": {
                     "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
@@ -1630,6 +1697,13 @@
                   },
                   "prependTestRunningArgs": {
                     "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "prependTestDebuggingArgs": {
+                    "markdownDescription": "Additinal argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -1979,6 +2053,12 @@
           "default": 30000,
           "minimum": 1
         },
+        "testMate.cpp.test.stderrDecorator": {
+          "markdownDescription": "Controls whether to show decorators around stderr output (`⬇ std::cerr:` and `⬆ std::cerr`).",
+          "scope": "resource",
+          "type": "boolean",
+          "default": true
+        },
         "testMate.cpp.discovery.loadOnStartup": {
           "markdownDescription": "If true, the extension will try to load all the tests after the startup. Otherwise the user has to click on the Test icon on the sidebar to trigger the process.",
           "scope": "window",
@@ -2142,6 +2222,64 @@
             "Google Mock will print both warnings and errors (less verbose). This is the default.",
             "Google Mock will print errors only (least verbose)."
           ]
+        },
+        "testMate.cpp.coverage.profile.default": {
+          "markdownDescription": "In case multiple Coverage profiles were registered though API, one can set the default with this option by its _ID_. UI can override this selection, this is just a default.",
+          "scope": "resource",
+          "type": "string"
+        },
+        "testMate.cpp.experimental.llvm-cov": {
+          "markdownDescription": "Proof of concept _llvm coverage_ implementation just for fun. Experimental: will be removed when it finds its home.",
+          "scope": "resource",
+          "type": "object",
+          "default": {
+            "enabled": false,
+            "logpanel": false,
+            "allowExecutableConcurrentInvocations": true
+          },
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "logpanel": {
+              "type": "boolean",
+              "default": false
+            },
+            "tag": {
+              "description": "See `advancedExecutabes[].testTags` for details",
+              "type": "string"
+            },
+            "allowExecutableConcurrentInvocations": {
+              "type": "boolean",
+              "default": "true"
+            }
+          },
+          "additionalProperties": false
+        },
+        "testMate.cpp.experimental.gcov": {
+          "markdownDescription": "Proof of concept _gcov coverage_ implementation just for fun. Experimental: will be removed when it finds its home.",
+          "scope": "resource",
+          "type": "object",
+          "default": {
+            "enabled": false,
+            "logpanel": false
+          },
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "logpanel": {
+              "type": "boolean",
+              "default": false
+            },
+            "tag": {
+              "description": "See `advancedExecutabes[].testTags` for details",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         }
       }
     }

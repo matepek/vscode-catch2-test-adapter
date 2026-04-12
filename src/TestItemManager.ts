@@ -38,7 +38,10 @@ export class TestItemManager {
       parseLine(line, l => (item.range = new vscode.Range(l - 1, 0, l, 0)));
     }
     if (testData) this.testItem2test.set(item, testData);
-    else this.testItem2test.delete(item);
+    else {
+      this.testItem2test.delete(item);
+      this.parents.add(item);
+    }
 
     if (parent) {
       parent.children.delete(item.id);
@@ -52,9 +55,33 @@ export class TestItemManager {
   }
 
   private readonly testItem2test = new WeakMap<vscode.TestItem, AbstractTest>();
+  private readonly parents = new WeakSet<vscode.TestItem>();
+
+  has(item: vscode.TestItem): boolean {
+    return this.testItem2test.has(item) || this.parents.has(item);
+  }
+
+  isParent(item: vscode.TestItem): boolean {
+    return this.parents.has(item);
+  }
 
   map(item: vscode.TestItem): AbstractTest | undefined {
     return this.testItem2test.get(item);
+  }
+
+  removeFromParent(item: vscode.TestItem): void {
+    if (!this.testItem2test.delete(item)) this.parents.delete(item);
+    this.getChildCollection(item.parent).delete(item.id);
+  }
+
+  findPath(path: string[]): vscode.TestItem | undefined {
+    let curr = undefined;
+    for (const p of path) {
+      const currNext = this.getChildCollection(curr).get(p);
+      if (currNext === undefined) return undefined;
+      curr = currNext;
+    }
+    return curr;
   }
 
   async update(

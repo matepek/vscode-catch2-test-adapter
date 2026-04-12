@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
-    "target": "es2021",
-    "lib": ["es2021"],
+    "target": "es2022",
+    "lib": [
+      "es2022"
+    ],
     "module": "commonjs",
     "outDir": "out",
     "importHelpers": true,
@@ -20,8 +22,16 @@
     "experimentalDecorators": true,
     "useUnknownInCatchVariables": false,
     "allowSyntheticDefaultImports": true,
-    "typeRoots": ["node_modules/@types", "src/@types"]
+    "typeRoots": [
+      "node_modules/@types",
+      "src/@types"
+    ]
   },
-  "include": ["src/main.ts", "test/**/*.ts"],
-  "exclude": ["test/disabled_TODO"] //TODO:future
+  "include": [
+    "src/main.ts",
+    "test/**/*.ts"
+  ],
+  "exclude": [
+    "test/disabled_TODO"
+  ] //TODO:future
 }

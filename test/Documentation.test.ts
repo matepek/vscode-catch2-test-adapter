@@ -69,7 +69,8 @@ describe(path.basename(__filename), function () {
           key === 'testMate.cpp.log.logSentry' ||
           key === 'testMate.cpp.log.logfile' ||
           key === 'testMate.cpp.log.userId' ||
-          key.startsWith('catch2TestExplorer')
+          key.startsWith('catch2TestExplorer') ||
+          key.startsWith('testMate.cpp.experimental.')
         ) {
           // skip: not documented
         } else {

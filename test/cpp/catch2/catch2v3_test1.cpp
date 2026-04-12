@@ -95,3 +95,9 @@ TEST_CASE("log macros test") {
   INFO("Logging some INFO");
   FAIL("fail msg");
 }
+
+TEST_CASE("skip_macro") {
+  //
+  SKIP("skipping this test");
+  //
+}

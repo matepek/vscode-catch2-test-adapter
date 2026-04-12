@@ -148,6 +148,6 @@
     "**/*.code-search": true,
     "/package-lock.json": true
   },
-  "cmake.sourceDirectory": "/Users/matepek/repo/vscode-catch2-test-adapter/test/cpp",
-  "testMate.cpp.test.executables": "test/cpp/build/**/*{test,Test,TEST}*"
+  "cmake.configureOnOpen": false,
+  "cmake.configureOnEdit": false
 }

@@ -1,5 +1,5 @@
 import { Logger } from '../Logger';
-import find_process = require('find-process'); // eslint-disable-line
+import find from 'find-process';
 
 ///
 
@@ -48,7 +48,8 @@ export class BuildProcessChecker {
 
   private async _refresh(pattern: RegExp): Promise<void> {
     try {
-      const processes = await find_process('name', pattern);
+      // wrong type definition for find habdles RegExp: https://github.com/yibn2008/find-process/compare/1.4.11...2.0.0#diff-81b33228621820bded04ffbd7d49375fc742662fde6b7111ddb10457ceef7ae9R11
+      const processes = await find('name', pattern as unknown as string);
 
       this._lastChecked = Date.now();
 

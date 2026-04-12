@@ -37,6 +37,7 @@ export type Config =
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
   | 'test.testNameLengthLimit'
+  | 'test.stderrDecorator'
   | 'discovery.loadOnStartup'
   | 'discovery.gracePeriodForMissing'
   | 'discovery.runtimeLimit'
@@ -452,9 +453,14 @@ export class Configurations {
     return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
+  getStderrDecorator(): boolean {
+    return this._getD<boolean>('test.stderrDecorator', true);
+  }
+
   getExecutableConfigs(shared: WorkspaceShared): ConfigOfExecGroup[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultParallelExecutionOfExecLimit = this.getParallelExecutionOfExecutableLimit() || 1;
+    const defaultMaxTestsPerExecutable = null;
 
     const createExecutableConfigFromPattern = (pattern: string): ConfigOfExecGroup => {
       return new ConfigOfExecGroup(
@@ -463,12 +469,14 @@ export class Configurations {
         undefined,
         undefined,
         undefined,
+        [],
         defaultCwd,
         this.getTerminalIntegratedEnv(),
         undefined,
         [],
         { before: [], beforeEach: [], after: [], afterEach: [] },
         defaultParallelExecutionOfExecLimit,
+        defaultMaxTestsPerExecutable,
         undefined,
         undefined,
         undefined,
@@ -551,6 +559,8 @@ export class Configurations {
 
         const exclude: string | null | undefined = obj.exclude;
 
+        const testTags: string[] = Array.isArray(obj.testTags) ? obj.testTags.filter(v => typeof v === 'string') : [];
+
         const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : defaultCwd;
 
         const env: { [prop: string]: string } = typeof obj.env === 'object' ? obj.env : {};
@@ -576,6 +586,11 @@ export class Configurations {
           typeof obj.parallelizationLimit === 'number' && !Number.isNaN(obj.parallelizationLimit)
             ? Math.max(1, obj.parallelizationLimit)
             : defaultParallelExecutionOfExecLimit;
+
+        const maxTestsPerExecutable: number | null =
+          typeof obj.maxTestsPerExecutable === 'number' && !Number.isNaN(obj.maxTestsPerExecutable)
+            ? Math.max(1, obj.maxTestsPerExecutable)
+            : defaultMaxTestsPerExecutable;
 
         const strictPattern: boolean | undefined = obj.strictPattern;
 
@@ -613,12 +628,14 @@ export class Configurations {
           exclude,
           name,
           description,
+          testTags,
           cwd,
           env,
           envFile,
           dependsOn,
           runTask,
           parallelizationLimit,
+          maxTestsPerExecutable,
           strictPattern,
           markAsSkipped,
           executableCloning,
@@ -665,6 +682,9 @@ export class Configurations {
 
       if (Array.isArray(obj.prependTestRunningArgs) && obj.prependTestRunningArgs.every(x => typeof x === 'string'))
         r.prependTestRunningArgs = obj.prependTestRunningArgs;
+
+      if (Array.isArray(obj.prependTestDebuggingArgs) && obj.prependTestDebuggingArgs.every(x => typeof x === 'string'))
+        r.prependTestDebuggingArgs = obj.prependTestDebuggingArgs;
 
       if (Array.isArray(obj.prependTestListingArgs) && obj.prependTestListingArgs.every(x => typeof x === 'string'))
         r.prependTestListingArgs = obj.prependTestListingArgs;

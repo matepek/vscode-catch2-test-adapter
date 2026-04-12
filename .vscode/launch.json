@@ -12,7 +12,9 @@
         "--extensionTestsPath=${workspaceFolder}/out/test",
         "${workspaceFolder}/out/tmp/workspaceFolder"
       ],
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "env": {
         "TESTMATE_DEBUG": "true",
         "C2_INTEGRATIONFROMVSCODE": "true"
@@ -24,11 +26,17 @@
       "request": "launch",
       "name": "Manual test/cpp",
       "runtimeExecutable": "${execPath}",
-      "args": ["${workspaceFolder}/test/cpp", "--extensionDevelopmentPath=${workspaceFolder}", "--disable-extensions"],
+      "args": [
+        "${workspaceFolder}/test/cpp",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--disable-extensions"
+      ],
       "env": {
         "TESTMATE_DEBUG": "true"
       },
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "preLaunchTask": "preDebug",
       "postDebugTask": "postDebug",
       "sourceMaps": true
@@ -38,28 +46,17 @@
       "request": "launch",
       "name": "Manual cpp",
       "runtimeExecutable": "${execPath}",
-      "args": ["${workspaceFolder}/test/cpp", "--extensionDevelopmentPath=${workspaceFolder}", "--disable-extensions"],
-      "env": {
-        "TESTMATE_DEBUG": "true"
-      },
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
-      "preLaunchTask": "preDebug",
-      "postDebugTask": "postDebug"
-    },
-    {
-      "type": "extensionHost",
-      "request": "launch",
-      "name": "tmp",
-      "runtimeExecutable": "${execPath}",
       "args": [
-        "/Users/matepek/Downloads/testmate",
+        "${workspaceFolder}/test/cpp",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--disable-extensions"
       ],
       "env": {
         "TESTMATE_DEBUG": "true"
       },
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "preLaunchTask": "preDebug",
       "postDebugTask": "postDebug"
     },
@@ -68,11 +65,16 @@
       "request": "launch",
       "name": "Manual cpp + extensions",
       "runtimeExecutable": "${execPath}",
-      "args": ["${workspaceFolder}/test/cpp", "--extensionDevelopmentPath=${workspaceFolder}"],
+      "args": [
+        "${workspaceFolder}/test/cpp",
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
       "env": {
         "TESTMATE_DEBUG": "true"
       },
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "preLaunchTask": "preDebug",
       "postDebugTask": "postDebug"
     }

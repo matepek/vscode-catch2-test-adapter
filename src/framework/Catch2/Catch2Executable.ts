@@ -211,7 +211,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
   };
 
   protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<void> {
-    const cacheFile = this.shared.path + '.TestMate.testListCache.txt';
+    const cacheFile = this.shared.path + `.TestMate.testListCache.${this.shared.optionsHash}.txt`;
 
     if (this.shared.enabledTestListCaching) {
       try {
@@ -238,7 +238,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     else args.push('--use-colour', 'no');
 
     const pathForExecution = await this._getPathForExecution();
-    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options.cwd);
+    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
     const catch2TestListingProcess = await this.shared.spawner.spawn(pathForExecution, args, this.shared.options);
 
     const result =
@@ -616,6 +616,13 @@ abstract class TagProcessorBase implements XmlTagProcessor {
       'Info',
       (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
         builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Info', dataTrimmed);
+      },
+    ],
+    [
+      'Skip',
+      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        builder.addMessage(parentTag.attribs.filename, parentTag.attribs.line, 'Skip', dataTrimmed);
+        builder.skipped();
       },
     ],
   ]);

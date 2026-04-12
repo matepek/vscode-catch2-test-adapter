@@ -10,23 +10,36 @@
             "problemMatcher": []
         },
         {
-            "type": "cmake",
-            "label": "build_all",
-            "command": "build",
-            "targets": [
-                "all"
-            ],
-            "preset": "${command:cmake.activeBuildPresetName}",
-            "group": "build",
-            "problemMatcher": [],
-            "detail": "CMake template build task"
-        },
-        {
             "label": "make build-tests",
             "type": "shell",
             "command": "echo",
             "args": [
                 "Paths:", "${absPathConcatWithSpace}", "${absPathArrayFlat}", "..."
+            ],
+        },
+        {
+            "label": "echo-testmate2",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "x2", "${command:testMate.cmd.get-debug-exec}", "${workspaceDirectory}"
+            ],
+        },
+        {
+            "label": "echo-testmate",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "x", "${command:testMate.cmd.get-debug-exec}", "${workspaceDirectory}"
+            ],
+            "dependsOn": ["echo-testmate2"]
+        },
+        {
+            "label": "exit-1",
+            "type": "shell",
+            "command": "exit",
+            "args": [
+                "1"
             ],
         }
     ]

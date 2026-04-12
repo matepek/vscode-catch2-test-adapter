@@ -142,7 +142,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
       const testId_ = GoogleTestTest.calcLabel(testId);
       return this._createTreeAndAddTest(
         this.getTestGrouping(),
-        testId_,
+        id,
         resolvedFile,
         line,
         [suiteId],
@@ -165,7 +165,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
   };
 
   protected async _reloadChildren(cancellationToken: CancellationToken): Promise<void> {
-    const cacheFile = this.shared.path + '.TestMate.testListCache.xml';
+    const cacheFile = this.shared.path + `.TestMate.testListCache.${this.shared.optionsHash}.xml`;
 
     if (this.shared.enabledTestListCaching) {
       try {
@@ -190,7 +190,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     ]);
 
     const pathForExecution = await this._getPathForExecution();
-    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options.cwd);
+    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
     const googleTestListProcess = await this.shared.spawner.spawn(pathForExecution, args, this.shared.options);
 
     const loadFromFileIfHas = async (): Promise<boolean> => {
@@ -505,6 +505,10 @@ class TestCaseProcessor implements LineProcessor {
       }
     }
 
+    if (line === 'Google Test trace:') {
+      return new TraceInfoProcessor(this.testCaseShared);
+    }
+
     this.testCaseShared.builder.addOutput(1, line);
   }
 }
@@ -519,7 +523,7 @@ class TestCaseProcessor implements LineProcessor {
 // m[7] == ' bla bla'
 const failureRe = /^((.+)[:(]([0-9]+)\)?)(: )((Failure|EXPECT_CALL|error)(.*))$/;
 type FailureType = 'Failure' | 'EXPECT_CALL' | 'error';
-
+const actualMsgPrefix = '  Actual:';
 ///
 
 class FailureProcessor implements LineProcessor {
@@ -532,11 +536,15 @@ class FailureProcessor implements LineProcessor {
 
   private treatRemainingAsPart: boolean = false;
   private lines: string[] = [];
+  private promotedMsg: string | null = null;
 
-  online(line: string): void | false {
+  online(line: string): void | boolean {
     if (this.treatRemainingAsPart) {
       if (line.startsWith('[')) {
         return false;
+      }
+      if (line === '') {
+        return true;
       }
       this.lines.push(line);
     } else if (acceptedAndDecoratedPrefixes.some(prefix => line.startsWith(prefix))) {
@@ -551,6 +559,9 @@ class FailureProcessor implements LineProcessor {
           this.lines.push(line);
         }
       } else {
+        if (line.startsWith(actualMsgPrefix)) {
+          this.promotedMsg = line.trim();
+        }
         this.lines.push(line);
       }
     } else if (acceptedPrefixes.some(prefix => line.startsWith(prefix))) {
@@ -562,8 +573,10 @@ class FailureProcessor implements LineProcessor {
     } else if (line.startsWith('Failed')) {
       this.lines.push(line);
       this.treatRemainingAsPart = true;
+    } else if (line === '') {
+      return true;
     } else {
-      return false;
+      this.lines.push(line);
     }
   }
 
@@ -578,7 +591,7 @@ class FailureProcessor implements LineProcessor {
         ...this.lines,
       );
     } else {
-      this.testCaseShared.builder.addMessage(this.file, this.line, `# ${this.fullMsg}:`, ...this.lines);
+      this.testCaseShared.builder.addMessage(this.file, this.line, this.promotedMsg ?? this.fullMsg, ...this.lines);
     }
   }
 }
@@ -587,7 +600,7 @@ const isDecorationEnabled = false;
 
 const acceptedAndDecoratedPrefixes = [
   'Expected:',
-  '  Actual:',
+  actualMsgPrefix,
   'Value of:',
   'Which is:',
   '    Function call:',
@@ -650,5 +663,31 @@ class ExpectCallProcessor implements LineProcessor {
     this.testCaseShared.builder.addReindentedOutput(2, ...this.lines);
 
     this.testCaseShared.builder.addMessage(this.file, this.line, this.expected, ...this.actual);
+  }
+}
+
+// // '/.../gtest2.cpp:114: A'
+const _traceInfoRe = /^((.+)[:(]([0-9]+)\)?)(: )(.*)$/;
+
+class TraceInfoProcessor implements LineProcessor {
+  constructor(private readonly testCaseShared: TestCaseSharedData) {}
+
+  private _firstLine = '';
+
+  begin(line: string): void {
+    this._firstLine = line;
+  }
+
+  online(line: string): void | true {
+    const m = _traceInfoRe.exec(line);
+    if (m) {
+      const file = m[2];
+      const lineNo = m[3];
+      const msg = m[5];
+      this.testCaseShared.builder.addMessageWithOutput(file, lineNo, `Trace: '${msg}'`, this._firstLine, line);
+    } else {
+      this.testCaseShared.shared.log.errorS(`unprocessable line: '${line}'`);
+    }
+    return true;
   }
 }

@@ -49,6 +49,19 @@ export interface CancellationToken {
 
 ///
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export function Lazy<T extends {} | null>(fn: () => T): { _: T } {
+  let v: T | undefined = undefined;
+  return {
+    get _(): T {
+      if (v == undefined) v = fn();
+      return v;
+    },
+  };
+}
+
+///
+
 export function concatU(left: string | undefined, right: string | undefined, sep = ''): string | undefined {
   if (!right) return left;
   else if (!left) return right;
@@ -302,4 +315,14 @@ export function waitWithTimout<T>(f: Promise<T>, timeoutMs: number, errMsg?: str
     f,
     new Promise<T>((_r, rej) => setTimeout(() => rej(Error(errMsg ?? `Timeout ${timeoutMs} has expired`)), timeoutMs)),
   ]);
+}
+
+export function applyRegexpWithSubstitution(regex: RegExp, input: string, replaceWith: string): string | null {
+  const match = regex.exec(input);
+  if (match === null) return null;
+  let result = input.substring(0, match.index) + replaceWith + input.substring(match.index + match[0].length);
+  for (let i = 0; i < match.length; ++i) {
+    result = result.replaceAll(`$${i}`, match[i]);
+  }
+  return result;
 }

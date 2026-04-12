@@ -11,12 +11,14 @@ export type AdvancedExecutableConfig = {
   name?: ResolvableString;
   description?: ResolvableString;
   comment?: string;
+  testTags?: string[];
   cwd?: ResolvableString;
   env?: Record<string, ResolvableString>;
   envFile?: ResolvableString;
   dependsOn?: Array<ResolvableString>;
   runTask?: RunTaskConfig;
   parallelizationLimit?: number;
+  maxTestsPerExecutable?: number | null;
   strictPattern?: boolean;
   markAsSkipped?: boolean;
   executableCloning?: boolean;
@@ -51,6 +53,7 @@ export interface FrameworkSpecificConfig {
   testGrouping?: TestGroupingConfig;
   helpRegex?: string;
   prependTestRunningArgs?: Array<string>;
+  prependTestDebuggingArgs?: Array<string>;
   prependTestListingArgs?: Array<string>;
   ignoreTestEnumerationStdErr?: boolean;
   'debug.enableOutputColouring'?: boolean;

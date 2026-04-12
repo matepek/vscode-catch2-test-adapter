@@ -1,0 +1,25 @@
+{
+  "name": "C++ Dev Environment",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "pflannery.vscode-versionlens",
+        "gruntfuggly.todo-tree"
+      ]
+    }
+  },
+  "remoteUser": "vscode",
+  "mounts": [
+    "source=my-project-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
+    "source=my-project-out,target=${containerWorkspaceFolder}/out,type=volume",
+    "source=my-project-cpp_build,target=${containerWorkspaceFolder}/test/cpp/build,type=volume"
+  ],
+  "postCreateCommand": "sudo chown -R $(whoami) node_modules out test/cpp/build"
+}
