@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `testMate.test.advancedExecutables` -> `executableRunAsImplicitAll`: If the enabled executables will be run without filter option (ex.: no `--gtest_filter=...`). NOTE: depends on grouping; prevents parallel running of executable. ([relates](https://github.com/matepek/vscode-catch2-test-adapter/issues/423))
+
 ### Changed
 
 - grouping test items does not specify line anymore so no gutters will be added.

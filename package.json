@@ -409,6 +409,11 @@
                 "type": "boolean",
                 "default": false
               },
+              "executableRunAsImplicitAll": {
+                "markdownDescription": "If the enabled executables will be run without filter option (ex.: no `--gtest_filter=...`). NOTE: depends on grouping; prevents parallel running of executable.",
+                "type": "boolean",
+                "default": false
+              },
               "executableCloning": {
                 "markdownDescription": "If enabled it creates a copy of the test executable before listing or running the tests. NOTE: discovery (`--help`) still uses the original file.",
                 "type": "boolean",

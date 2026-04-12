@@ -21,6 +21,7 @@ export type AdvancedExecutableConfig = {
   maxTestsPerExecutable?: number | null;
   strictPattern?: boolean;
   markAsSkipped?: boolean;
+  executableRunAsImplicitAll?: boolean;
   executableCloning?: boolean;
   executableSuffixToInclude?: string[];
   waitForBuildProcess?: boolean | string;

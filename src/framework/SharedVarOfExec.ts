@@ -21,6 +21,7 @@ export class SharedVarOfExec {
     parallelizationLimit: number,
     readonly maxTestsPerExecutable: number | null,
     readonly markAsSkipped: boolean,
+    readonly executableRunAsImplicitAll: boolean,
     readonly executableCloning: boolean,
     readonly debugConfigData: DebugConfigData | undefined,
     readonly runTask: RunTaskConfig,

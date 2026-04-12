@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { AbstractTest } from './framework/AbstractTest';
 import { parseLine } from './Util';
+import { AbstractExecutable } from './framework/AbstractExecutable';
 
 ///
 
@@ -39,7 +40,7 @@ export class TestItemManager {
     if (testData) this.testItem2test.set(item, testData);
     else {
       this.testItem2test.delete(item);
-      this.parents.add(item);
+      if (!this.parents.has(item)) this.parents.set(item, undefined);
     }
 
     if (parent) {
@@ -54,7 +55,7 @@ export class TestItemManager {
   }
 
   private readonly testItem2test = new WeakMap<vscode.TestItem, AbstractTest>();
-  private readonly parents = new WeakSet<vscode.TestItem>();
+  private readonly parents = new WeakMap<vscode.TestItem, AbstractExecutable | undefined>();
 
   has(item: vscode.TestItem): boolean {
     return this.testItem2test.has(item) || this.parents.has(item);
@@ -64,8 +65,20 @@ export class TestItemManager {
     return this.parents.has(item);
   }
 
-  map(item: vscode.TestItem): AbstractTest | undefined {
+  setParent(item: vscode.TestItem, exec: AbstractExecutable | undefined): void {
+    this.parents.set(item, exec);
+  }
+
+  mapToTest(item: vscode.TestItem): AbstractTest | undefined {
     return this.testItem2test.get(item);
+  }
+
+  mapToTestOrExec(item: vscode.TestItem): [AbstractTest | undefined, undefined | AbstractExecutable] {
+    const t = this.testItem2test.get(item);
+    if (t) return [t, undefined];
+    const p = this.parents.get(item);
+    if (p) return [undefined, p];
+    return [undefined, undefined];
   }
 
   removeFromParent(item: vscode.TestItem): void {
@@ -102,7 +115,7 @@ export class TestItemManager {
         label !== null ? label : item.label,
         file,
         line,
-        this.map(item),
+        this.mapToTest(item),
       );
 
       item.children.forEach(c => newItem.children.add(c));

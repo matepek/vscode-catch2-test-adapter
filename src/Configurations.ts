@@ -484,6 +484,7 @@ export class Configurations {
         undefined,
         undefined,
         undefined,
+        undefined,
         {},
         {
           catch2: {},
@@ -596,6 +597,8 @@ export class Configurations {
 
         const markAsSkipped: boolean | undefined = obj.markAsSkipped;
 
+        const executableRunAsImplicitAll: boolean | undefined = obj.executableRunAsImplicitAll;
+
         const executableCloning: boolean | undefined = obj.executableCloning;
 
         const executableSuffixToInclude: string[] | undefined = obj.executableSuffixToInclude;
@@ -638,6 +641,7 @@ export class Configurations {
           maxTestsPerExecutable,
           strictPattern,
           markAsSkipped,
+          executableRunAsImplicitAll,
           executableCloning,
           executableSuffixToInclude,
           waitForBuildProcess,

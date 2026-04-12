@@ -257,10 +257,12 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     return result;
   }
 
-  private _getCatch2RunParams(childrenToRun: readonly AbstractTest[]): string[] {
+  private _getCatch2RunParams(childrenToRun: readonly AbstractTest[] | null): string[] {
     const params: string[] = [];
 
-    if (childrenToRun.length == 1 && childrenToRun[0] instanceof SubTest) {
+    if (childrenToRun === null) {
+      // nothing to add, run all
+    } else if (childrenToRun.length == 1 && childrenToRun[0] instanceof SubTest) {
       const subTests: SubTest[] = [childrenToRun[0]];
       let p = childrenToRun[0].parentTest;
       while (p instanceof SubTest) {
@@ -281,7 +283,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     return params;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly AbstractTest[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly AbstractTest[] | null): string[] {
     const execParams = this._getCatch2RunParams(childrenToRun);
 
     execParams.push('--reporter');
@@ -648,9 +650,11 @@ class TestCaseTagProcessor extends TagProcessorBase {
   }
 
   end(): void {
-    // if a subtest is run then we don't expect all the sections to arrive so we assume the missing ones weren't run.
-    if (this.runInfo.childrenToRun.length !== 1 || !(this.runInfo.childrenToRun[0] instanceof SubTest)) {
-      this.builder.test.removeMissingSubTests(this.sections);
+    if (this.runInfo.childrenToRun) {
+      // if a subtest is run then we don't expect all the sections to arrive so we assume the missing ones weren't run.
+      if (this.runInfo.childrenToRun.length !== 1 || !(this.runInfo.childrenToRun[0] instanceof SubTest)) {
+        this.builder.test.removeMissingSubTests(this.sections);
+      }
     }
     this.builder.build();
   }

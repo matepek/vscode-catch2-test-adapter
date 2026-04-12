@@ -464,7 +464,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     const found = this.shared.testController.getChildCollection(itemOfLevel).get(testId);
 
     if (found) {
-      const test = this.shared.testController.map(found) as TestT;
+      const test = this.shared.testController.mapToTest(found) as TestT;
       if (!test) throw Error('missing test for item');
       updateTest(test);
       this._addTest(test.id, test);
@@ -586,9 +586,9 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
   protected abstract _reloadChildren(cancellationToken: CancellationToken): Promise<void>;
 
-  protected abstract _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[];
+  protected abstract _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[];
 
-  private async _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): Promise<string[]> {
+  private async _getRunParams(childrenToRun: readonly Readonly<AbstractTest>[] | null): Promise<string[]> {
     const prependTestRunningArgs = await Promise.all(this.shared.prependTestRunningArgs.map(x => this.resolveText(x)));
     return prependTestRunningArgs.concat(this._getRunParamsInner(childrenToRun));
   }
@@ -657,7 +657,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       } else testsToRunFinal.push(t);
     }
 
-    if (testsToRunFinal.length == 0) return;
+    if (testsToRunFinal.length == 0 && !testsToRun.implicitAll) return;
 
     try {
       await this.runTasks('beforeEach', workspaceTaskPool, data.testRun.token);
@@ -673,19 +673,27 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       return;
     }
 
-    const splittedForFramework = this._splitTests(testsToRunFinal);
-    const splittedForMultirun = splittedForFramework.flatMap(v => this._splitTestSetForMultirunIfEnabled(v));
-    const splittedFinal = splittedForMultirun.flatMap(b =>
-      this._splitTestsToSmallEnoughSubsetsAndRemoveLooLongIds(b, data.testRun),
-    ); //TODO:future merge with _splitTestSetForMultirunIfEnabled
+    try {
+      if (!testsToRun.implicitAll) {
+        const splittedForFramework = this._splitTests(testsToRunFinal);
+        const splittedForMultirun = splittedForFramework.flatMap(v => this._splitTestSetForMultirunIfEnabled(v));
+        const splittedFinal = splittedForMultirun.flatMap(b =>
+          this._splitTestsToSmallEnoughSubsetsAndRemoveLooLongIds(b, data.testRun),
+        ); //TODO:future merge with _splitTestSetForMultirunIfEnabled
 
-    const runningBucketPromises = splittedFinal.map(b =>
-      this._runInner(data, b, workspaceTaskPool).catch(err => {
-        vscode.window.showWarningMessage(err.toString());
-      }),
-    );
+        const runningBucketPromises = splittedFinal.map(b =>
+          this._runInner(data, b, workspaceTaskPool).catch(err => {
+            vscode.window.showWarningMessage(err.toString());
+          }),
+        );
 
-    await Promise.allSettled(runningBucketPromises);
+        await Promise.allSettled(runningBucketPromises);
+      } else {
+        await this._runInner(data, null, workspaceTaskPool);
+      }
+    } catch (err) {
+      vscode.window.showWarningMessage(err.toString());
+    }
 
     try {
       await this.runTasks('afterEach', workspaceTaskPool, data.testRun.token);
@@ -702,7 +710,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
   private _runInner(
     data: TestRunData,
-    testsToRun: readonly AbstractTest[],
+    testsToRun: readonly AbstractTest[] | null,
     workspaceTaskPool: TaskPool,
   ): Promise<void> {
     return combine(data.taskPoolForExecutables.get(this), this.shared.parallelizationPool).scheduleTask(async () => {
@@ -754,7 +762,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return clonePath;
   }
 
-  private async _runProcess(data: TestRunData, childrenToRun: readonly AbstractTest[]): Promise<void> {
+  private async _runProcess(data: TestRunData, childrenToRun: readonly AbstractTest[] | null): Promise<void> {
     const execParams = await this._getRunParams(childrenToRun);
     const pathForExecution = await this._getPathForExecution();
 
@@ -891,7 +899,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
         leftBehindBuilder.build();
       }
 
-      const hasMissingTest = expectedToRunAndFoundTests.length < runInfo.childrenToRun.length && result.Ok;
+      const hasMissingTest =
+        runInfo.childrenToRun && expectedToRunAndFoundTests.length < runInfo.childrenToRun.length && result.Ok;
       const hasNewTest = unexpectedTests.length > 0;
 
       if (hasMissingTest || hasNewTest) {
@@ -1103,11 +1112,14 @@ class ExecutableGroup {
 
   setItem(item: vscode.TestItem) {
     if (this._item !== undefined) {
+      // multiple items for the same exec: advanced grouping case
       if (this._item !== null && this._item !== item) {
+        this.executable.shared.testController.setParent(this._item, undefined);
         this._item = null;
       }
     } else {
       this._item = item;
+      this.executable.shared.testController.setParent(this._item, this.executable);
       if (this._busyCounter > 0) this._item.busy = true;
     }
   }
@@ -1165,6 +1177,7 @@ class ExecutableGroup {
 export class TestsToRun {
   readonly direct: AbstractTest[] = []; // test is drectly included, should be run even if it is skipped
   readonly parent: AbstractTest[] = []; // tests included because one of the ascendant was directly included
+  implicitAll: boolean = false;
 
   *[Symbol.iterator](): Iterator<AbstractTest> {
     for (const i of this.direct) yield i;

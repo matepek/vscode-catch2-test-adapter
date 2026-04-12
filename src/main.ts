@@ -69,7 +69,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
 
   controller.resolveHandler = (item: vscode.TestItem | undefined): Thenable<void> => {
     if (item) {
-      const testData = testItemManager.map(item);
+      const testData = testItemManager.mapToTest(item);
       if (testData) {
         //testData.resolve();
         return Promise.resolve();
@@ -103,28 +103,34 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
   );
 
   const collectExecutablesForRun = (request: vscode.TestRunRequest, testTag: vscode.TestTag | undefined) => {
-    const managers = new Map<WorkspaceManager, Map<AbstractExecutable, TestsToRun>>();
+    const managersToRun = new Map<WorkspaceManager, Map<AbstractExecutable, TestsToRun>>();
+    const getTestsToRun = (executable: AbstractExecutable) => {
+      const manager = workspace2manager.get(executable.shared.workspaceFolder)!;
+      let executables = managersToRun.get(manager);
+      if (!executables) {
+        executables = new Map<AbstractExecutable, TestsToRun>();
+        managersToRun.set(manager, executables);
+      }
+      let tests = executables.get(executable);
+      if (!tests) {
+        tests = new TestsToRun();
+        executables.set(executable, tests);
+      }
+      return tests;
+    };
 
     const enumerator = (type: 'direct' | 'parent') => (item: vscode.TestItem) => {
       if (testTag && !item.tags.some(t => t.id === testTag.id)) return;
       if (request.exclude?.includes(item)) return;
 
-      const test = testItemManager.map(item);
+      const [test, exec] = testItemManager.mapToTestOrExec(item);
 
       if (test) {
-        const executable = test.exec;
-        const manager = workspace2manager.get(executable.shared.workspaceFolder)!;
-        let executables = managers.get(manager);
-        if (!executables) {
-          executables = new Map<AbstractExecutable, TestsToRun>();
-          managers.set(manager, executables);
-        }
-        let tests = executables.get(executable);
-        if (!tests) {
-          tests = new TestsToRun();
-          executables.set(executable, tests);
-        }
+        const tests = getTestsToRun(test.exec);
         tests[type].push(test);
+      } else if (exec?.shared.executableRunAsImplicitAll) {
+        const tests = getTestsToRun(exec);
+        tests.implicitAll = true;
       } else if (item.children.size) {
         item.children.forEach(enumerator('parent'));
       }
@@ -133,7 +139,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     if (request.include) request.include.forEach(enumerator('direct'));
     else controller.items.forEach(enumerator('parent'));
 
-    return managers;
+    return managersToRun;
   };
 
   let runCount = 0;
@@ -224,7 +230,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
         }
       } else {
         const isRelevant = (item: vscode.TestItem, skipSkiped: boolean): boolean | null | undefined => {
-          const atest = testItemManager.map(item);
+          const atest = testItemManager.mapToTest(item);
           if (atest === undefined)
             if (testItemManager.isParent(item)) return null;
             else {
