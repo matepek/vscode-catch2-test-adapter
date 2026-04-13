@@ -6,10 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.23.14]
+
 ### Changed
 
 - grouping test items does not specify line anymore so no gutters will be added.
   (before it was putting 1 line above the "first" test) ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/513))
+
+### Fixed
+
+- an issue related to `testMate.cpp.test.parallelExecutionOfExecutableLimit`. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/521))
 
 ## [4.23.13] - 2026-04-11
 

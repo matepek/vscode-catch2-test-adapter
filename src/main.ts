@@ -166,10 +166,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
       const runQueue: Thenable<void>[] = [];
       for (const [manager, executables] of managers) {
         const testRunHandler = profileAdapter?.createTestRunHandler(testRun, manager.workspaceFolder);
-        const taskPoolForExecutables =
-          (testRunHandler?.allowExecutableConcurrentInvocations ?? false)
-            ? noLimitTaskPoolMap
-            : oneTask_PoolForExecutables;
+        const taskPoolForExecutables = (
+          testRunHandler ? (testRunHandler?.allowExecutableConcurrentInvocations ?? false) : true
+        )
+          ? noLimitTaskPoolMap
+          : oneTask_PoolForExecutables;
         runQueue.push(
           manager
             .run(executables, {
