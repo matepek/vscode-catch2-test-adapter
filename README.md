@@ -9,9 +9,8 @@ Announcment: Looking for contributors to polish:
 
 ## A **Catch2**, **GoogleTest**, **doctest** and **GoogleBenchmark** Explorer for VSCode
 
-[![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
+[![Visual Studio Marketplace](https://img.shields.io/github/v/release/matepek/vscode-catch2-test-adapter)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 [![GitHub issues](https://img.shields.io/github/issues/matepek/vscode-catch2-test-adapter?color=green)](https://github.com/matepek/vscode-catch2-test-adapter/issues)
-[![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/d/matepek.vscode-catch2-test-adapter.svg)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 
 This extension allows you to run your
 [Catch2](https://github.com/catchorg/Catch2),
@@ -19,6 +18,11 @@ This extension allows you to run your
 and [DOCtest](https://github.com/doctest/doctest)
 tests using the native testing vscode-api.
 It also have basic support for [Google Benchmark](https://github.com/google/benchmark).
+
+## Screenshots
+
+![Screenshot1](resources/SCR-20260414-light.png#gh-light-mode-only)
+![Screenshot1](resources/SCR-20260414-dark.png#gh-dark-mode-only)
 
 ## Features / Show-Off
 
@@ -29,10 +33,6 @@ It also have basic support for [Google Benchmark](https://github.com/google/benc
 - Sorts tests and suites (_testExplorer.sort_).
 - Supports popular **debuggers** such as `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools` out of the box.
 - Retire tests and "Autorun" them.
-
-### Screenshots
-
-![Screenshot1](resources/Screenshot_2022-12-25.png)
 
 ### More features
 
