@@ -482,7 +482,7 @@ export class Configurations {
         undefined,
         undefined,
         undefined,
-        undefined,
+        false,
         undefined,
         undefined,
         {},
@@ -603,7 +603,7 @@ export class Configurations {
 
         const executableSuffixToInclude: string[] | undefined = obj.executableSuffixToInclude;
 
-        const waitForBuildProcess: boolean | string | undefined = obj.waitForBuildProcess;
+        const waitForBuildProcess: boolean | string = obj.waitForBuildProcess ?? false;
 
         const debugConfigData: DebugConfigData | undefined = obj['debug.configTemplate']
           ? this._getDebugConfigData(obj['debug.configTemplate'])

@@ -49,7 +49,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     private readonly _executableRunAsImplicitAll: boolean | undefined,
     private readonly _executableCloning: boolean | undefined,
     executableSuffixToInclude: string[] | undefined,
-    private readonly _waitForBuildProcess: boolean | string | undefined,
+    private readonly _waitForBuildProcess: boolean | string,
     private readonly _debugConfigData: DebugConfigData | undefined,
     private readonly _executionWrapper: ExecutionWrapperConfig | undefined,
     private readonly _sourceFileMap: Record<string, string>,

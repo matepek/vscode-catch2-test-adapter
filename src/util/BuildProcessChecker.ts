@@ -21,7 +21,9 @@ export class BuildProcessChecker {
     this._finishedResolver();
   }
 
-  resolveAtFinish(pattern: string | boolean | undefined): Promise<void> {
+  private _patternToUseCache: { patternToUse: RegExp; pattern: string } | undefined = undefined;
+
+  resolveAtFinish(pattern: string | boolean): Promise<void> {
     if (pattern === false) return Promise.resolve();
 
     if (this._timerId !== undefined) {
@@ -38,7 +40,17 @@ export class BuildProcessChecker {
       this._finishedResolver = r;
     });
 
-    const patternToUse = typeof pattern == 'string' ? RegExp(pattern) : this._defaultPattern;
+    let patternToUse;
+    if (typeof pattern === 'string') {
+      if (this._patternToUseCache?.pattern === pattern) {
+        patternToUse = this._patternToUseCache.patternToUse;
+      } else {
+        patternToUse = new RegExp(pattern);
+        this._patternToUseCache = { pattern, patternToUse };
+      }
+    } else {
+      patternToUse = this._defaultPattern;
+    }
     this._log.info('Checking running build related processes', patternToUse);
     this._timerId = global.setInterval(this._refresh.bind(this, patternToUse), this._checkIntervalMillis);
     this._refresh(patternToUse);
@@ -48,8 +60,7 @@ export class BuildProcessChecker {
 
   private async _refresh(pattern: RegExp): Promise<void> {
     try {
-      // wrong type definition for find habdles RegExp: https://github.com/yibn2008/find-process/compare/1.4.11...2.0.0#diff-81b33228621820bded04ffbd7d49375fc742662fde6b7111ddb10457ceef7ae9R11
-      const processes = await find('name', pattern as unknown as string);
+      const processes = await find('name', pattern);
 
       this._lastChecked = Date.now();
 
