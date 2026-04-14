@@ -592,7 +592,15 @@ class FailureProcessor implements LineProcessor {
         ...this.lines,
       );
     } else {
-      this.testCaseShared.builder.addMessage(this.file, this.line, this.promotedMsg ?? this.fullMsg, ...this.lines);
+      let firstLine = this.promotedMsg ?? this.fullMsg;
+      const restLines = [...this.lines];
+
+      if (firstLine === 'Failure') {
+        if (restLines.length >= 1 && restLines[0] === 'Failed') restLines.shift();
+        if (restLines.length >= 1) firstLine = restLines.shift()!;
+      }
+
+      this.testCaseShared.builder.addMessage(this.file, this.line, firstLine, ...restLines);
     }
   }
 }

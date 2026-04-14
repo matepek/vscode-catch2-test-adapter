@@ -175,6 +175,11 @@ TEST(ThisTest, FailsWithContext) {
   FAIL() << "This test fails with context";
 }
 
+TEST(ThisTest, FailsWithContext2) {
+  FAIL() << "This test fails with context"<< std::endl << "second line";
+  std::cout << "not related";
+}
+
 TEST(ThisTest, FailsWithEmpty) {
   FAIL();
   std::cout << "not related";
