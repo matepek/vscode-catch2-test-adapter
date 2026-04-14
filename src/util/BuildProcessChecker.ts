@@ -59,7 +59,7 @@ export abstract class BuildProcessCheckerBase {
         this._patternToUseCache = { pattern, patternToUse };
       }
     } else {
-      patternToUse = this._defaultPattern;
+      patternToUse = _defaultPattern;
     }
     this._log.info('Checking running build related processes', patternToUse);
     this._timerId = global.setInterval(this._refresh.bind(this, patternToUse), _checkIntervalMillis);
