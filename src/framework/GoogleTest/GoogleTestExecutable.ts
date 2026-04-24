@@ -497,7 +497,7 @@ class TestCaseProcessor implements LineProcessor {
       switch (type) {
         case 'Failure':
         case 'error':
-          return new FailureProcessor(this.testCaseShared, file, line, fullMsg);
+          return new FailureProcessor(this.testCaseShared, file, line, fullMsg, this.testEndRe);
         case 'EXPECT_CALL':
           return new ExpectCallProcessor(this.testCaseShared, file, line, fullMsg);
         default:
@@ -533,6 +533,7 @@ class FailureProcessor implements LineProcessor {
     private readonly file: string | undefined,
     private readonly line: string | undefined,
     private readonly fullMsg: string,
+    private readonly testEndRe: RegExp,
   ) {}
 
   private treatRemainingAsPart: boolean = false;
@@ -540,6 +541,9 @@ class FailureProcessor implements LineProcessor {
   private promotedMsg: string | null = null;
 
   online(line: string): void | boolean {
+    if (this.testEndRe.exec(line)) {
+      return false;
+    }
     if (this.treatRemainingAsPart) {
       if (line.startsWith('[')) {
         return false;

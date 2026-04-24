@@ -211,3 +211,9 @@ TEST(audetto, Test_Output3)
   EXPECT_EQ(1, 2) << "  1 is not 2";
 }
 
+TEST(Tomeamis, fails) {
+	FAIL();
+}
+
+TEST(Tomeamis, empty) {
+}

@@ -11,7 +11,6 @@
     },
     "testMate.cpp.coverage.profile.default": "llvm-cov by TestMate C++",
     "testMate.cpp.test.parallelExecutionLimit": 5,
-    "testMate.cpp.test.parallelExecutionOfExecutableLimit": 10,
     "testMate.cpp.test.advancedExecutables": [
         {
             "pattern": "build/clang/suite1.exe"
@@ -30,7 +29,7 @@
         },
         {
             "pattern": "x build/clang/*.exe",
-            "maxTestsPerExecutable": 3,
+            //"maxTestsPerExecutable": 3,
             "gtest": {
                 "prependTestRunningArgs": [
                     "aa"
