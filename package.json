@@ -300,11 +300,110 @@
                       ]
                     },
                     "minItems": 2
+                  },
+                  "test-discovery": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "description": "The path of the executor",
+                        "type": "string"
+                      },
+                      "args": {
+                        "description": "An array wich specifies the arguments of the executor. It should contain '${cmd}', '${argsFlat}' and '${argsStr}' too. Default: ['${cmd}', '${argsFlat}'].",
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "${cmd}",
+                                "${argsFlat}",
+                                "${argsStr}"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "minLength": 0
+                            }
+                          ]
+                        },
+                        "minItems": 2
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  },
+                  "test-listing": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "description": "The path of the executor",
+                        "type": "string"
+                      },
+                      "args": {
+                        "description": "An array wich specifies the arguments of the executor. It should contain '${cmd}', '${argsFlat}' and '${argsStr}' too. Default: ['${cmd}', '${argsFlat}'].",
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "${cmd}",
+                                "${argsFlat}",
+                                "${argsStr}"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "minLength": 0
+                            }
+                          ]
+                        },
+                        "minItems": 2
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  },
+                  "test-execution": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "description": "The path of the executor",
+                        "type": "string"
+                      },
+                      "args": {
+                        "description": "An array wich specifies the arguments of the executor. It should contain '${cmd}', '${argsFlat}' and '${argsStr}' too. Default: ['${cmd}', '${argsFlat}'].",
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "${cmd}",
+                                "${argsFlat}",
+                                "${argsStr}"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "minLength": 0
+                            }
+                          ]
+                        },
+                        "minItems": 2
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
                   }
-                },
-                "required": [
-                  "path"
-                ]
+                }
               },
               "sourceFileMap": {
                 "markdownDescription": "Replaces the key with the value in the souce file path. Can be configured with `$strategy`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#sourceFileMap)",

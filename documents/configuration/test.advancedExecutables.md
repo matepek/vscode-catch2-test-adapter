@@ -437,18 +437,37 @@ Note: This example overused it.
 
 ## `executionWrapper`
 
+Type:
+
+```ts
+  'test-discovery'?: EW | false;
+  'test-listing'  ?: EW | false;
+  'test-execution'?: EW | false;
+```
+
+where `EW`:
+
+```ts
+{
+  path: string;
+  args?: string[];
+}
+```
+
+And some variables must be used in `args`:
+
 - `${cmd}`
 - `${argsFlat}`: Example: `["pre", "${argsFlat}", "post"]` -> `["pre", "$1", "$2", ..., "$x", "post"]`
 - `${argsStr}`: Example: `["pre", "pre ${argsStr} post", "post"]` -> `["pre", " pre \"$1\" \"$2\" ... \"$x\" post", "post"]`
 
 Examples:
 
-This is useful if stderr/std::cerr is missing:
-
 ```json
 "executionWrapper": {
-  "path": "/bin/sh",
-  "args": [ "-c", "\"${cmd}\" ${argsStr} 2>&1" ]
+  "test-execution": {
+    "path": "valgrind",
+    "args": [ "--", "${cmd}", "${argsFlat}" ]
+  }
 }
 ```
 
@@ -456,6 +475,15 @@ This is useful if stderr/std::cerr is missing:
 "executionWrapper": {
   "path": "emulator.exe",
   "args": [ "${cmd}", "${argsFlat}" ]
+}
+```
+
+This is useful if stderr/std::cerr is missing:
+
+```json
+"executionWrapper": {
+  "path": "/bin/sh",
+  "args": [ "-c", "\"${cmd}\" ${argsStr} 2>&1" ]
 }
 ```
 

@@ -13,53 +13,59 @@
     "testMate.cpp.test.parallelExecutionLimit": 5,
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/clang/suite1.exe"
-        },
-        {
-            "pattern": "build/clang/gtest1.exe",
-            "testTags": [
-                "llvm-cov"
-            ]
-        },
-        {
-            "pattern": "build/gcc/gtest1.exe",
-            "testTags": [
-                "gcov"
-            ]
-        },
-        {
-            "pattern": "x build/clang/*.exe",
-            //"maxTestsPerExecutable": 3,
-            "gtest": {
-                "prependTestRunningArgs": [
-                    "aa"
-                ],
-                "prependTestDebuggingArgs": [
-                    "xx"
-                ]
-            },
-            "sourceFileMap": {
-                "$strategy": "regex-absolute",
-            },
-            "runTask": {
-                "before": [
-                    // "exit-1",
-                    // "echo-testmate"
-                ]
+            "pattern": "build/clang/suite1.exe",
+            "executionWrapper": {
+                "test-execution": {
+                    "path": "/bin/sh",
+                    "args": ["-c", "\"${cmd}\" ${argsStr}"]
+                }
             }
-            // "testGrouping": {
-            //     "groupByExecutable": {
-            //         "groupByTags": {
-            //             "groupByLabel": {
-            //                 "label": "${testName`(te(st))\\d+`$2`}",
-            //                 "groupByLabel": {
-            //                     "label": "${testName`((te)st)\\d+`$2`}"
-            //                 }
-            //             }
-            //         },
-            //     },
-            // }
         },
+        // {
+        //     "pattern": "build/clang/gtest1.exe",
+        //     "testTags": [
+        //         "llvm-cov"
+        //     ]
+        // },
+        // {
+        //     "pattern": "build/gcc/gtest1.exe",
+        //     "testTags": [
+        //         "gcov"
+        //     ]
+        // },
+        // {
+        //     "pattern": "x build/clang/*.exe",
+        //     //"maxTestsPerExecutable": 3,
+        //     "gtest": {
+        //         "prependTestRunningArgs": [
+        //             "aa"
+        //         ],
+        //         "prependTestDebuggingArgs": [
+        //             "xx"
+        //         ]
+        //     },
+        //     "sourceFileMap": {
+        //         "$strategy": "regex-absolute",
+        //     },
+        //     "runTask": {
+        //         "before": [
+        //             // "exit-1",
+        //             // "echo-testmate"
+        //         ]
+        //     }
+        //     // "testGrouping": {
+        //     //     "groupByExecutable": {
+        //     //         "groupByTags": {
+        //     //             "groupByLabel": {
+        //     //                 "label": "${testName`(te(st))\\d+`$2`}",
+        //     //                 "groupByLabel": {
+        //     //                     "label": "${testName`((te)st)\\d+`$2`}"
+        //     //                 }
+        //     //             }
+        //     //         },
+        //     //     },
+        //     // }
+        // },
         // {
         //     "pattern": "build/**/suite*.exe",
         //     "testGrouping": {

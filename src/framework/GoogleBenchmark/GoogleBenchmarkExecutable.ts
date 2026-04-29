@@ -78,7 +78,12 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
 
     const pathForExecution = await this._getPathForExecution();
     this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
-    const listOutput = await this.shared.spawner.spawnAsync(pathForExecution, args, this.shared.options, 30000);
+    const listOutput = await this.shared.spawnerForListing.spawnAsync(
+      pathForExecution,
+      args,
+      this.shared.options,
+      30000,
+    );
 
     if (listOutput.stderr && !this.shared.ignoreTestEnumerationStdErr) {
       this.shared.log.warn('reloadChildren -> googleBenchmarkTestListOutput.stderr: ', listOutput);

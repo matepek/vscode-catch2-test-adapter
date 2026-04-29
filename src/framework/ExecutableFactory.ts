@@ -32,7 +32,9 @@ export class ExecutableFactory {
     private readonly _executableSuffixToInclude: Set<string> | undefined,
     private readonly _executableSuffixToExclude: Set<string> | undefined,
     private readonly _runTask: RunTaskConfig,
-    private readonly _spawner: Spawner,
+    private readonly _spawnerForDiscovery: Spawner,
+    private readonly _spawnerForListing: Spawner,
+    private readonly _spawnerForExecution: Spawner,
     private readonly _resolvedSourceFileMap: Record<string, string>,
     private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecificConfig>,
   ) {}
@@ -46,7 +48,12 @@ export class ExecutableFactory {
           this._executableSuffixToExclude,
         );
 
-      return this._spawner.spawnAsync(this._execPath, ['--help'], this._execOptions, this._shared.execParsingTimeout);
+      return this._spawnerForDiscovery.spawnAsync(
+        this._execPath,
+        ['--help'],
+        this._execOptions,
+        this._shared.execParsingTimeout,
+      );
     });
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
     // s: dotAll
@@ -88,7 +95,8 @@ export class ExecutableFactory {
           this._executableCloning,
           this._debugConfigData,
           this._runTask,
-          this._spawner,
+          this._spawnerForListing,
+          this._spawnerForExecution,
           this._resolvedSourceFileMap,
         );
 
@@ -97,7 +105,7 @@ export class ExecutableFactory {
     }
 
     this._shared.log.debug('Not a supported test executable', {
-      spawner: this._spawner,
+      spawner: this._spawnerForDiscovery,
       execPath: this._execPath,
       stdout: runWithHelpRes.stdout,
       stderr: runWithHelpRes.stderr,

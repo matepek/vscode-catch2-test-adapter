@@ -45,9 +45,17 @@ export interface RunTaskConfig {
   afterEach?: Array<TaskName>;
 }
 
-export interface ExecutionWrapperConfig {
+interface ExecutionWrapperConfigBase {
   path: ResolvableString;
   args?: Array<ResolvableString>;
+}
+
+export interface ExecutionWrapperConfig {
+  path?: ResolvableString;
+  args?: Array<ResolvableString>;
+  'test-discovery'?: boolean | ExecutionWrapperConfigBase;
+  'test-listing'?: boolean | ExecutionWrapperConfigBase;
+  'test-execution'?: boolean | ExecutionWrapperConfigBase;
 }
 
 export interface FrameworkSpecificConfig {

@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `testMate.test.advancedExecutables` -> `executionWrapper` ->
+  - `test-discovery`
+  - `test-listing`
+  - `test-execution`
+    properties to control when the wrapper should be applied. This was simpler wrappers can be setup. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/523#nc))
+
 ## [4.23.15] - 2026-04-24
 
 ### Fixed

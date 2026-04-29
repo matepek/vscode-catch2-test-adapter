@@ -16,7 +16,7 @@ import { ExecutableFactory } from './framework/ExecutableFactory';
 import { WorkspaceShared } from './WorkspaceShared';
 import { ChokidarWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
 import { readJSONSync } from 'fs-extra';
-import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
+import { Spawner, SpawnWithExecutor, defaultSpawner } from './Spawner';
 import { RunTaskConfig, ExecutionWrapperConfig, FrameworkSpecificConfig } from './AdvancedExecutableInterface';
 import { Logger } from './Logger';
 import { debugBreak } from './util/DevelopmentHelper';
@@ -438,15 +438,49 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     checkEnvForPath(resolvedEnv, this._shared.log);
 
-    let spawner: Spawner = new DefaultSpawner();
+    let spawnerForDiscovery: Spawner = defaultSpawner;
+    let spawnerForListing: Spawner = defaultSpawner;
+    let spawnerForExecution: Spawner = defaultSpawner;
     if (this._executionWrapper) {
       try {
-        const resolvedPath = await this._pathProcessor(this._executionWrapper.path, varToValue);
-        const resolvedArgs = await this._resolveVariables(this._executionWrapper.args, false, varToValue);
-        spawner = new SpawnWithExecutor(resolvedPath.resolved.absPath, resolvedArgs);
-        this._shared.log.info('executionWrapper was specified', resolvedPath, resolvedArgs);
+        if (this._executionWrapper.path) {
+          const resolvedPath = await this._pathProcessor(this._executionWrapper.path, varToValue);
+          const resolvedArgs = await this._resolveVariables(this._executionWrapper.args, false, varToValue);
+          const spawner = new SpawnWithExecutor(resolvedPath.resolved.absPath, resolvedArgs);
+          spawnerForDiscovery = spawner;
+          spawnerForListing = spawner;
+          spawnerForExecution = spawner;
+          this._shared.log.info('executionWrapper was specified', 'root/for all', resolvedPath, resolvedArgs);
+        }
+        if (typeof this._executionWrapper['test-discovery'] === 'object') {
+          const ew = this._executionWrapper['test-discovery'];
+          const resolvedPath = await this._pathProcessor(ew.path, varToValue);
+          const resolvedArgs = await this._resolveVariables(ew.args, false, varToValue);
+          spawnerForDiscovery = new SpawnWithExecutor(resolvedPath.resolved.absPath, resolvedArgs);
+          this._shared.log.info('executionWrapper was specified', 'discovery', resolvedPath, resolvedArgs);
+        } else if (this._executionWrapper['test-discovery'] === false) {
+          spawnerForDiscovery = defaultSpawner;
+        }
+        if (typeof this._executionWrapper['test-listing'] === 'object') {
+          const ew = this._executionWrapper['test-listing'];
+          const resolvedPath = await this._pathProcessor(ew.path, varToValue);
+          const resolvedArgs = await this._resolveVariables(ew.args, false, varToValue);
+          spawnerForListing = new SpawnWithExecutor(resolvedPath.resolved.absPath, resolvedArgs);
+          this._shared.log.info('executionWrapper was specified', 'listing', resolvedPath, resolvedArgs);
+        } else if (this._executionWrapper['test-listing'] === false) {
+          spawnerForListing = defaultSpawner;
+        }
+        if (typeof this._executionWrapper['test-execution'] === 'object') {
+          const ew = this._executionWrapper['test-execution'];
+          const resolvedPath = await this._pathProcessor(ew.path, varToValue);
+          const resolvedArgs = await this._resolveVariables(ew.args, false, varToValue);
+          spawnerForExecution = new SpawnWithExecutor(resolvedPath.resolved.absPath, resolvedArgs);
+          this._shared.log.info('executionWrapper was specified', 'excecution', resolvedPath, resolvedArgs);
+        } else if (this._executionWrapper['test-execution'] === false) {
+          spawnerForExecution = defaultSpawner;
+        }
       } catch (e) {
-        this._shared.log.warn('Unable to apply executionWrapper', e);
+        this._shared.log.warn('Unable to apply executionWrapper', e, this._executionWrapper);
       }
     }
 
@@ -476,7 +510,9 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       this._executableSuffixToInclude,
       this._executableSuffixToExclude,
       this._runTask,
-      spawner,
+      spawnerForDiscovery,
+      spawnerForListing,
+      spawnerForExecution,
       resolvedSourceFileMap,
       this._frameworkSpecific,
     );

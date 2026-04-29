@@ -612,12 +612,7 @@ export class Configurations {
         const defaultTestGrouping = obj.testGrouping;
 
         const spawnerConfig: ExecutionWrapperConfig | undefined =
-          typeof obj.executionWrapper === 'object' &&
-          typeof obj.executionWrapper.path === 'string' &&
-          (obj.executionWrapper.args === undefined ||
-            (Array.isArray(obj.executionWrapper.args) && obj.executionWrapper.args.every(x => typeof x === 'string')))
-            ? obj.executionWrapper
-            : undefined;
+          typeof obj.executionWrapper === 'object' ? obj.executionWrapper : undefined;
 
         const sourceFileMap: Record<string, string> =
           typeof obj.sourceFileMap === 'object' &&
