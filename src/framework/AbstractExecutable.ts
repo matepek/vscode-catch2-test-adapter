@@ -1063,7 +1063,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     const cwd = this.shared.options.cwd?.toString();
 
     if (cwd && !this.shared.path.startsWith(cwd)) {
-      directoriesToCheck.push(cwd);
+      directoriesToCheck.unshift(cwd);
     }
 
     if (
