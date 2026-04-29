@@ -77,6 +77,26 @@
       ],
       "preLaunchTask": "preDebug",
       "postDebugTask": "postDebug"
-    }
+    },
+    {
+      "type": "extensionHost",
+      "request": "launch",
+      "name": "Manual cpp bazel",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "${workspaceFolder}/test/bazel",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--disable-extensions"
+      ],
+      "env": {
+        "TESTMATE_DEBUG": "true"
+      },
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
+      "preLaunchTask": "preDebug",
+      "postDebugTask": "postDebug",
+      "sourceMaps": true
+    },
   ]
 }

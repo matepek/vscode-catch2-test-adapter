@@ -1,0 +1,25 @@
+{
+    "testMate.cpp.test.parallelExecutionLimit": 5,
+    "testMate.cpp.test.parallelExecutionOfExecutableLimit": 10,
+    "testMate.cpp.log.logpanel": true,
+    "testMate.cpp.test.advancedExecutables": [
+        {
+            "pattern": "bazel-bin/**/*{test,Test,TEST}*",
+            "strictPattern": true,
+            "exclude": "files.watcherExclude",
+            "cwd": "${workspaceFolder}",
+            "sourceFileMap": {
+                "$strategy": "replace-first",
+                "**/bazel-bin": "${workspaceFolder}"
+            }
+        }
+    ],
+    "files.watcherExclude": {
+        // "**/sub/**": true,
+        // "**/watcherExclude/**": true,
+        "**/*.runfiles/**": true,
+        // "**/*.params": true,
+        // "**/*.d": true,
+        // "**/*.o": true,
+    }
+}
