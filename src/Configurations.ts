@@ -13,8 +13,9 @@ import {
   ExecutionWrapperConfig,
 } from './AdvancedExecutableInterface';
 import { platformUtil } from './util/Platform';
-import { cloneRecursively } from './util/ResolveRule';
+import { cloneRecursively, resolveAllAsync } from './util/ResolveRule';
 import { DebugConfigData } from './DebugConfigType';
+import { readJSON } from 'fs-extra';
 
 type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
 
@@ -457,7 +458,7 @@ export class Configurations {
     return this._getD<boolean>('test.stderrDecorator', true);
   }
 
-  getExecutableConfigs(shared: WorkspaceShared): ConfigOfExecGroup[] {
+  async getExecutableConfigs(shared: WorkspaceShared): Promise<ConfigOfExecGroup[]> {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultParallelExecutionOfExecLimit = this.getParallelExecutionOfExecutableLimit() || 1;
     const defaultMaxTestsPerExecutable = null;
@@ -539,7 +540,7 @@ export class Configurations {
       this._log.setContext('executables', advanced);
 
       const createExecutableConfigFromObj = (origObj: AdvancedExecutableConfig): ConfigOfExecGroup => {
-        const obj: AdvancedExecutableConfig = Object.assign({}, origObj);
+        const obj: AdvancedExecutableConfig = { ...origObj };
 
         // we are cheating here: it will work for other os but that is undocumented
         const platformSpecificProperty = platformUtil.getPlatformProperty(obj);
@@ -549,12 +550,11 @@ export class Configurations {
 
         const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
 
-        let pattern = '';
+        const pattern = obj.pattern;
         {
-          if (typeof obj.pattern == 'string') pattern = obj.pattern;
-          else {
+          if (typeof pattern !== 'string') {
             this._log.warn('pattern property is required', obj);
-            throw Error('"pattern" property is required in advancedExecutables.');
+            throw new Error('"pattern" property is required in advancedExecutables.');
           }
         }
 
@@ -654,10 +654,38 @@ export class Configurations {
 
       for (const conf of advanced) {
         if (typeof conf === 'string') {
-          // this is not supported in the package.json but working
+          shared.log.warn('advancedExecutabes should contains objects only, strings are deprecated', conf);
           executables.push(createExecutableConfigFromPattern(conf));
+        } else if (typeof conf === 'object') {
+          if (conf.configBaseFromFile) {
+            const configFromFilePath = await resolveAllAsync(conf.configBaseFromFile, shared.varToValue, false);
+            shared.log.debug('loading config from configFromFile', conf, configFromFilePath);
+            let configFromFile: unknown;
+            try {
+              configFromFile = await readJSON(configFromFilePath);
+            } catch (cause) {
+              shared.log.error('Loading configFromFile', cause);
+              throw new Error('during configBaseFromFile loading', { cause });
+            }
+            if (Array.isArray(configFromFile)) {
+              for (const cfgItem of configFromFile) {
+                if (typeof cfgItem === 'object') {
+                  executables.push(createExecutableConfigFromObj(Object.assign(cfgItem, conf)));
+                } else {
+                  shared.log.error('unexpected cfgItem type', conf.configBaseFromFile, typeof cfgItem, cfgItem);
+                  throw new Error('unexpected configBaseFromFile format');
+                }
+              }
+            } else if (typeof configFromFile === 'object') {
+              executables.push(
+                createExecutableConfigFromObj(Object.assign(configFromFile as AdvancedExecutableConfig, conf)),
+              );
+            }
+          } else {
+            executables.push(createExecutableConfigFromObj(conf));
+          }
         } else {
-          executables.push(createExecutableConfigFromObj(conf));
+          shared.log.error('unexpected conf type', typeof conf, conf);
         }
       }
 

@@ -15,13 +15,12 @@ import {
 import { ExecutableFactory } from './framework/ExecutableFactory';
 import { WorkspaceShared } from './WorkspaceShared';
 import { ChokidarWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
-import { readJSONSync } from 'fs-extra';
+import { readJSON, readFile } from 'fs-extra';
 import { Spawner, SpawnWithExecutor, defaultSpawner } from './Spawner';
 import { RunTaskConfig, ExecutionWrapperConfig, FrameworkSpecificConfig } from './AdvancedExecutableInterface';
 import { Logger } from './Logger';
 import { debugBreak } from './util/DevelopmentHelper';
 import { FrameworkType } from './framework/Framework';
-import { readFileSync } from 'fs';
 import { getModiTime } from './Util';
 import { SubProgressReporter } from './util/ProgressReporter';
 import { ExecCloner } from './framework/AbstractExecutable';
@@ -411,9 +410,9 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       try {
         let envFromFile: Record<string, string> | undefined = undefined;
         if (resolvedEnvFile.resolved.absPath.endsWith('.json')) {
-          envFromFile = readJSONSync(resolvedEnvFile.resolved.absPath);
+          envFromFile = await readJSON(resolvedEnvFile.resolved.absPath);
         } else if (resolvedEnvFile.resolved.absPath.indexOf('.env') !== -1) {
-          const content = readFileSync(resolvedEnvFile.resolved.absPath).toString();
+          const content = await readFile(resolvedEnvFile.resolved.absPath).toString();
           envFromFile = dotenv.parse(content);
         } else {
           throw Error('Unsupported file format: "' + resolvedEnvFile.absPath + '". Use only .json or .env');

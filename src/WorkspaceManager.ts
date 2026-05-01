@@ -284,7 +284,7 @@ export class WorkspaceManager implements vscode.Disposable {
         await new Promise<void>(r => setTimeout(r, 500)); // there are some race condition, this fixes it: maybe async dispose would fix it too?
 
         const configuration = this._getConfiguration(this.log);
-        const executableConfig = configuration.getExecutableConfigs(this._shared);
+        const executableConfig = await configuration.getExecutableConfigs(this._shared);
         this._executableConfig = executableConfig;
         const progressReporter = new ProgressReporter(progress);
 

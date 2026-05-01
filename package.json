@@ -142,6 +142,10 @@
                 "markdownDescription": "One can wite comments here about the config just like using $comment",
                 "type": "string"
               },
+              "configBaseFromFile": {
+                "markdownDescription": "A path of a JSON file which contains the same structure as `advancedExecutables`. Other properties of this object will act as override for the file's properties",
+                "type": "string"
+              },
               "pattern": {
                 "markdownDescription": "A relative (to workspace directory) or an absolute path or [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options). ⚠️**Avoid backslash!**: NO `\\\\`; (required) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "anyOf": [
