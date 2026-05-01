@@ -1,4 +1,4 @@
-# C++ TestMate
+# TestMate C++
 
 Announcment: Looking for contributors to polish:
 

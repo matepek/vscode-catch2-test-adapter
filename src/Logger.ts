@@ -5,7 +5,7 @@ import { debugBreak } from './util/DevelopmentHelper';
 
 export class Logger {
   constructor() {
-    this._logger = new util.Log('testMate.cpp.log', undefined, 'C++ TestMate', { depth: 3 }, false);
+    this._logger = new util.Log('testMate.cpp.log', undefined, 'TestMate C++', { depth: 3 }, false);
   }
 
   private _logger: util.Log;

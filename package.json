@@ -1,6 +1,6 @@
 {
   "name": "vscode-catch2-test-adapter",
-  "displayName": "C++ TestMate",
+  "displayName": "TestMate C++",
   "description": "Run GoogleTest, Catch2 and DOCtest tests from VSCode",
   "icon": "resources/icon.png",
   "author": "Mate Pek",
@@ -109,18 +109,18 @@
     "commands": [
       {
         "command": "testMate.cmd.reload-tests",
-        "title": "Reload tests by C++ TestMate",
+        "title": "Reload tests by TestMate C++",
         "category": "Test"
       },
       {
         "command": "testMate.cmd.reload-workspaces",
-        "title": "Reload workspaces (in case of an issue) by C++ TestMate",
+        "title": "Reload workspaces (in case of an issue) by TestMate C++",
         "category": "Test"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "C++ TestMate",
+      "title": "TestMate C++",
       "$comment": "Enums will cause that the vscode will offer auto-completion.",
       "properties": {
         "testMate.cpp.test.executables": {

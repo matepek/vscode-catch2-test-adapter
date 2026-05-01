@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+Renamed remaining `C++ TestMate` to `TestMate C++`.
+
 ### Added
 
 - `testMate.test.advancedExecutables` -> `executionWrapper` ->
