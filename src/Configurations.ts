@@ -16,7 +16,7 @@ import { platformUtil } from './util/Platform';
 import { cloneRecursively } from './util/ResolveRule';
 import { DebugConfigData } from './DebugConfigType';
 
-type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
+type TelemetryValue = 'question' | 'enabled' | 'disabled_1';
 
 const ConfigSectionBase = 'testMate.cpp';
 
@@ -48,7 +48,7 @@ export type Config =
   | 'debug.noThrow'
   | 'log.logpanel'
   | 'log.logfile'
-  | 'log.logSentry'
+  | 'log.telemetry'
   | 'log.userId'
   | 'gtest.treatGmockWarningAs'
   | 'gtest.gmockVerbose';
@@ -314,24 +314,24 @@ export class Configurations {
   //   return decrypted.toString('utf8');
   // }
 
-  isSentryEnabled(): boolean {
-    const val = this._get('log.logSentry');
+  isTelemetryEnabled(): boolean {
+    const val = this._get('log.telemetry');
     return val === 'enable' || val === 'enabled';
   }
 
-  askSentryConsent(): void {
-    const envAskSentry = process.env['TESTMATE_CPP_ASKSENTRYCONSENT'];
-    if (envAskSentry === 'disabled_3') {
+  askTelemetryConsent(): void {
+    const envAsk = process.env['TESTMATE_CPP_ASK_TELEMETRY_CONSENT'];
+    if (envAsk === 'disabled_1') {
       return;
-      //const decrypted = Configurations.decrypt(process.env['TESTMATE_CPP_LOGSENTRY']);
+      //const decrypted = Configurations.decrypt(process.env['TESTMATE_CPP_ASK_TELEMETRY_CONSENT']);
       //if (decrypted === 'disable_3') return;
     }
 
-    const logSentryConfig: Config = 'log.logSentry';
+    const logTelemetryConfig: Config = 'log.telemetry';
 
-    const logSentry = this._getD<SentryValue>(logSentryConfig, 'question');
+    const logTelemetry = this._getD<TelemetryValue>(logTelemetryConfig, 'question');
 
-    if (logSentry === 'question' || logSentry === 'disable' || logSentry === 'disable_1' || logSentry === 'disable_2') {
+    if (logTelemetry === 'question' || logTelemetry === 'enabled' || logTelemetry === 'disabled_1') {
       const options = [
         'Sure! I love this extension and happy to help.',
         'Yes, but exclude current workspace',
@@ -339,7 +339,7 @@ export class Configurations {
       ];
       vscode.window
         .showInformationMessage(
-          'Hey there! TestMate C++ has [sentry.io](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md) integration to ' +
+          'Hey there! TestMate C++ has [telemetry](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md) integration to ' +
             'improve the stability and the development. 🤩 For this I want to send logs and errors ' +
             'but I would NEVER do it without your consent. ' +
             'Please be understandable and allow it. 🙏',
@@ -350,18 +350,18 @@ export class Configurations {
 
           if (value === options[0]) {
             this._cfg
-              .update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global)
+              .update(logTelemetryConfig, 'enable', vscode.ConfigurationTarget.Global)
               .then(undefined, e => this._log.exceptionS(e));
           } else if (value === options[1]) {
             this._cfg
-              .update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global)
+              .update(logTelemetryConfig, 'enable', vscode.ConfigurationTarget.Global)
               .then(undefined, e => this._log.exceptionS(e));
             this._cfg
-              .update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.WorkspaceFolder)
+              .update(logTelemetryConfig, 'disable_3', vscode.ConfigurationTarget.WorkspaceFolder)
               .then(undefined, e => this._log.exceptionS(e));
           } else if (value === options[2]) {
             this._cfg
-              .update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.Global)
+              .update(logTelemetryConfig, 'disable_3', vscode.ConfigurationTarget.Global)
               .then(undefined, e => this._log.exceptionS(e));
           }
         });
