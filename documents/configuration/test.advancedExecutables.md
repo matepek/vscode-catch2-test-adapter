@@ -440,18 +440,16 @@ Note: This example overused it.
 Type:
 
 ```ts
-  'test-discovery'?: EW | false;
-  'test-listing'  ?: EW | false;
-  'test-execution'?: EW | false;
-```
-
-where `EW`:
-
-```ts
-{
+type EW = {
   path: string;
   args?: string[];
-}
+};
+
+type executionWrapper = {
+  'test-discovery'?: EW | false;
+  'test-listing'?: EW | false;
+  'test-execution'?: EW | false;
+};
 ```
 
 And some variables must be used in `args`:
@@ -466,7 +464,29 @@ Examples:
 "executionWrapper": {
   "test-execution": {
     "path": "valgrind",
-    "args": [ "--", "${cmd}", "${argsFlat}" ]
+    "args": [
+      "--leak-check=full",
+      "--errors-for-leak-kinds=definite,possible",
+      "--show-leak-kinds=definite,possible",
+      "--track-origins=yes",
+      "--keep-debuginfo=yes",
+      "--error-exitcode=1",
+      "--show-realloc-size-zero=no",
+      "--num-callers=50",
+      "--suppressions=${workspaceFolder}/valgrind.supp",
+      "--",
+      "${cmd}",
+      "${argsFlat}"
+    ]
+  }
+}
+```
+
+```json
+"executionWrapper": {
+  "test-execution": {
+    "path": "/usr/bin/leaks",
+    "args": ["-atExit", "--", "${cmd}", "${argsFlat}"]
   }
 }
 ```

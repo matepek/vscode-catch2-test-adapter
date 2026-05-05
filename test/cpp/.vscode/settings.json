@@ -13,11 +13,11 @@
     "testMate.cpp.test.parallelExecutionLimit": 5,
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/clang/suite1.exe",
+            "pattern": "build/clang/*.exe",
             "executionWrapper": {
                 "test-execution": {
-                    "path": "/bin/sh",
-                    "args": ["-c", "\"${cmd}\" ${argsStr}"]
+                    "path": "/usr/bin/leaks",
+                    "args": ["-atExit", "--", "${cmd}", "${argsFlat}"]
                 }
             }
         },

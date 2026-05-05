@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Renamed remaining `C++ TestMate` to `TestMate C++`.
 
+### Changed
+
+- Catch2 and DocTest XML parsers, improved to keep output after the XMLs. Useful for `/usr/bin/leaks`.
+
 ### Added
 
 - `testMate.test.advancedExecutables` -> `executionWrapper` ->

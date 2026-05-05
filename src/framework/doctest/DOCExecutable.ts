@@ -11,7 +11,7 @@ import { CancellationFlag, Version } from '../../Util';
 import { TestGroupingConfig } from '../../TestGroupingInterface';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../../util/XmlParser';
 import { assert, debugBreak } from '../../util/DevelopmentHelper';
-import { TestResultBuilder } from '../../TestResultBuilder';
+import { addOutputForTestRun, TestResultBuilder } from '../../TestResultBuilder';
 import { TestItemParent } from '../../TestItemManager';
 import { AbstractTest, SubTest, SubTestTree } from '../AbstractTest';
 import { pipeProcess2Parser } from '../../util/ParserInterface';
@@ -265,6 +265,9 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
                 options,
               );
           }
+        },
+        ontext: (text: string) => {
+          addOutputForTestRun(testRun, runInfo.runPrefix, 0, 0, false, text);
         },
       },
       (error: Error) => {
