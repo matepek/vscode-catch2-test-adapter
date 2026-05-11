@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.25.1]
+
+### Changed
+
+- `waitForBuildProcess` NOT uses `ps-list` anymore. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/524))
+
 ## [4.25.0] - 2026-05-11
 
 ### Added

@@ -1,7 +1,6 @@
 import { Logger } from '../Logger';
 import findProcess from 'find-process';
 import { promisify } from 'node:util';
-import psList, { ProcessDescriptor } from 'ps-list';
 import { CancellationToken } from '../Util';
 
 ///
@@ -98,26 +97,28 @@ export class FindProcessChecker extends BuildProcessCheckerBase {
 
 ///
 
-export class PSListProcessChecker extends BuildProcessCheckerBase {
-  private runningFind: Promise<ProcessDescriptor[]> | undefined = undefined;
+// import psList, { ProcessDescriptor } from 'ps-list';
+// export class PSListProcessChecker extends BuildProcessCheckerBase {
+//   private runningFind: Promise<ProcessDescriptor[]> | undefined = undefined;
 
-  protected override async _find(pattern: RegExp): Promise<string[]> {
-    if (this.runningFind) {
-      const ps = await this.runningFind;
-      return ps.filter(p => p.name.match(pattern)).map(p => p.name);
-    }
-    this.runningFind = psList({ all: false });
-    const ps = await this.runningFind;
-    this.runningFind = undefined;
-    return ps.filter(p => p.name.match(pattern)).map(p => p.name);
-  }
-}
+//   protected override async _find(pattern: RegExp): Promise<string[]> {
+//     throw Error('https://github.com/matepek/vscode-catch2-test-adapter/issues/524');
+//     if (this.runningFind) {
+//       const ps = await this.runningFind;
+//       return ps.filter(p => p.name.match(pattern)).map(p => p.name);
+//     }
+//     this.runningFind = psList({ all: false });
+//     const ps = await this.runningFind;
+//     this.runningFind = undefined;
+//     return ps.filter(p => p.name.match(pattern)).map(p => p.name);
+//   }
+// }
 
 export const buildProcessCheckerFactory = {
   // https://www.npmjs.com/package/ps-list : "Works on macOS, Linux, and Windows. Windows ARM64 is not supported yet."
   create: (log: Logger) => {
-    return process.platform === 'win32' && process.arch == 'x64'
-      ? new PSListProcessChecker(log)
-      : new FindProcessChecker(log);
+    return /*process.platform === 'win32' && process.arch == 'x64' ? new PSListProcessChecker(log) : */ new FindProcessChecker(
+      log,
+    );
   },
 };
