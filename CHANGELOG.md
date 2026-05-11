@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.25.0]
+
+### Added
+
+- `waitForBuildProcess` now uses `ps-list` on Windows ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/488))
+
 ## [4.24.0] - 2026-05-05
 
 Renamed remaining `C++ TestMate` to `TestMate C++`.
