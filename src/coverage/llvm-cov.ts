@@ -210,7 +210,10 @@ class LlvmCovFileCoverage extends vscode.FileCoverage {
 }
 
 interface TestRunData {
-  tmpDir: fs.DisposableTempDir;
+  tmpDir: {
+    path: string;
+    remove(): Promise<void>;
+  };
   argsProfrawsPath: string;
   argsProfrawsFile: fs.FileHandle;
   argsObjectsPath: string;
@@ -245,9 +248,6 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
         path: tmpDirPath,
         remove: async function () {
           await fs.rm(this.path, { recursive: true, force: true });
-        },
-        [Symbol.asyncDispose]: async function () {
-          await this.remove();
         },
       },
       argsProfrawsPath,

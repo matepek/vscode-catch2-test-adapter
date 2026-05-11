@@ -173,7 +173,10 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
 
   private data:
     | {
-        tmpDir: fs.DisposableTempDir;
+        tmpDir: {
+          path: string;
+          remove(): Promise<void>;
+        };
         dispose: () => void;
       }
     | undefined = undefined;
@@ -196,9 +199,6 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       tmpDir: {
         path,
         remove: async () => fs.rm(path, { recursive: true, force: true }),
-        [Symbol.asyncDispose]: async function () {
-          await this.remove();
-        },
       },
       async dispose() {
         await this.tmpDir.remove();

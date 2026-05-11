@@ -505,6 +505,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
       if (durationSec === undefined) this.shared.log.errorS('doctest: duration is NaN: ' + tag.attribs.duration);
       else this.builder.setDurationMilisec(durationSec * 1000);
 
+      // eslint-disable-next-line no-useless-assignment
       let result: undefined | 'passed' | 'failed' = undefined;
 
       if (tag.attribs.test_case_success !== undefined) {

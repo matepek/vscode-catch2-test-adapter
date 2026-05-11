@@ -549,6 +549,7 @@ export class Configurations {
 
         const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
 
+        // eslint-disable-next-line no-useless-assignment
         let pattern = '';
         {
           if (typeof obj.pattern == 'string') pattern = obj.pattern;

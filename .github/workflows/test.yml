@@ -26,7 +26,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install
@@ -40,8 +40,8 @@ jobs:
           npm run webpack
           ls -all out/dist
 
-      # - name: ESLint
-      #   run: npm run eslint
+      - name: ESLint
+        run: npm run eslint
 
       - name: Test
         run: |
@@ -71,7 +71,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install
@@ -84,7 +84,7 @@ jobs:
       #   run: npm run eslint
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.3
+        uses: microsoft/setup-msbuild@v3
 
       - name: Test
         run: npm test
@@ -109,7 +109,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install
