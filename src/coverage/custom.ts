@@ -11,8 +11,8 @@ const label = 'custom by TestMate C++';
 
 class CustomTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
   constructor(
-    private readonly testRun: TMA.TestMateTestRun,
-    private readonly workspaceFolder: vscode.WorkspaceFolder,
+    _testRun: TMA.TestMateTestRun,
+    _workspaceFolder: vscode.WorkspaceFolder,
     private readonly log: Log,
   ) {
     // these configs don't need reload, will be applied for future runs
