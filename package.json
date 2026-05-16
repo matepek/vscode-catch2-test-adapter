@@ -2385,6 +2385,53 @@
             }
           },
           "additionalProperties": false
+        },
+        "testMate.cpp.experimental.custom-adapter": {
+          "markdownDescription": "Proof of concept _custom adapter_ implementation just for fun. Experimental: will be removed when it finds its home.",
+          "scope": "resource",
+          "type": "object",
+          "default": {
+            "enabled": false,
+            "logpanel": false,
+            "args": [
+              "${argsFlat}"
+            ]
+          },
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "logpanel": {
+              "type": "boolean",
+              "default": false
+            },
+            "tag": {
+              "description": "See `advancedExecutabes[].testTags` for details",
+              "type": "string"
+            },
+            "cwd": {
+              "type": "string"
+            },
+            "cmd": {
+              "type": "string"
+            },
+            "args": {
+              "description": "Can use `${argsFlat}` to insert the arguments",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "env": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "cmd",
+            "args"
+          ],
+          "additionalProperties": false
         }
       }
     }

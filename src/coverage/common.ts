@@ -87,16 +87,15 @@ export const create_advanced_activate =
           profile = testMate.createTestRunProfile(adapter);
           log.info('created profile', adapter?.label, adapter?.kind, testMateExtensionId);
         }
+        if (profile) {
+          const tag = cfg.get<string>('tag');
+          profile.tag = typeof tag === 'string' ? new vscode.TestTag(tag) : undefined;
+        }
       };
 
       const applyCfg = async (cfg: vscode.WorkspaceConfiguration) => {
         if (cfg.get('enabled', false)) await create();
         else dispose();
-
-        if (profile) {
-          const tag = cfg.get<string>('tag');
-          profile.tag = typeof tag === 'string' ? new vscode.TestTag(tag) : undefined;
-        }
       };
 
       vscode.workspace.onDidChangeConfiguration(async event => {
