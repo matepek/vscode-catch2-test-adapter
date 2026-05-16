@@ -1,63 +1,16 @@
 import * as vscode from 'vscode';
 import * as TMA from '../TestMateApi';
-import * as cp from 'child_process';
 import * as fs from 'fs/promises';
 import pathlib from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
 import { Log } from 'vscode-test-adapter-util';
+import { create_advanced_activate, executeWithPlatformToolchain } from './common';
 
 const testMateExtensionId = 'matepek.vscode-catch2-test-adapter';
 const configSection = 'testMate.cpp.experimental.llvm-cov';
 const label = 'llvm-cov by TestMate C++';
 const ENV_LLVM_PROFILE_FILE = 'LLVM_PROFILE_FILE';
-
-///
-
-const execute = async (
-  cmd: string,
-  args: string[],
-  cwd: string | undefined,
-  token: vscode.CancellationToken,
-): Promise<[string, string]> => {
-  const proc = cp.spawn(cmd, args, { stdio: 'pipe', cwd });
-  const stdout: string[] = [];
-  const stderr: string[] = [];
-
-  proc.stdout.on('data', o => stdout.push(o.toString('utf8')));
-  proc.stderr.on('data', o => stderr.push(o.toString('utf8')));
-
-  const closeP = new Promise<void>((res, rej) => {
-    proc.on('close', (code: number) => {
-      if (code === 0) res();
-      else rej(new Error(`Command '${cmd}' failed with exit code: ${code}; ${stderr.join('')}`));
-    });
-    proc.on('error', err => rej(err));
-
-    token.onCancellationRequested(() => {
-      proc.kill();
-      rej(new Error('Cancelled by user'));
-    });
-  });
-
-  await closeP;
-  return [stdout.join(''), stderr.join('')];
-};
-
-const executeWithPlatformToolchain = async (
-  cmd: string,
-  args: string[],
-  cwd: string | undefined,
-  token: vscode.CancellationToken,
-): Promise<[string, string]> => {
-  if (process.platform === 'darwin') {
-    return await execute('xcrun', [cmd, ...args], cwd, token);
-  } else if (process.platform === 'linux' || process.platform === 'win32') {
-    return await execute(cmd, args, cwd, token);
-  } else {
-    throw Error('assert platform toolchain');
-  }
-};
 
 ///
 
@@ -460,56 +413,4 @@ export async function activate(context: vscode.ExtensionContext) {
 /**
  * advanced example
  */
-export async function advanced_activate(context: vscode.ExtensionContext) {
-  const log = new Log(configSection, undefined, label, { depth: 3 }, false);
-  context.subscriptions.push(log);
-  const testMateExtension = vscode.extensions.getExtension<TMA.TestMateAPI>(testMateExtensionId);
-  if (testMateExtension) {
-    let adapter: TestMateAdapter | null = null;
-    let profile: TMA.TestMateTestRunProfile | null = null;
-
-    const dispose = () => {
-      if (profile) {
-        profile.dispose();
-        profile = null;
-      }
-      if (adapter) {
-        log.info('disposed profile', adapter.label, adapter.kind, testMateExtensionId);
-        adapter.dispose();
-        adapter = null;
-      }
-    };
-    context.subscriptions.push({ dispose });
-
-    const create = async () => {
-      if (!adapter) {
-        const testMate = await testMateExtension.activate();
-        adapter = new TestMateAdapter(log);
-        profile = testMate.createTestRunProfile(adapter);
-        log.info('created profile', adapter?.label, adapter?.kind, testMateExtensionId);
-      }
-    };
-
-    const applyCfg = async (cfg: vscode.WorkspaceConfiguration) => {
-      if (cfg.get('enabled', false)) await create();
-      else dispose();
-
-      if (profile) {
-        const tag = cfg.get<string>('tag');
-        profile.tag = typeof tag === 'string' ? new vscode.TestTag(tag) : undefined;
-      }
-    };
-
-    vscode.workspace.onDidChangeConfiguration(async event => {
-      if (event.affectsConfiguration(configSection)) {
-        const cfg = vscode.workspace.getConfiguration(configSection);
-        await applyCfg(cfg);
-      }
-    });
-
-    const cfg = vscode.workspace.getConfiguration(configSection);
-    await applyCfg(cfg);
-  } else {
-    log.info('missing extension', testMateExtensionId);
-  }
-}
+export const advanced_activate = create_advanced_activate(configSection, label, log => new TestMateAdapter(log));
