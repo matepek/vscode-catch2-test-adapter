@@ -12,11 +12,13 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['stable', 'minimum']
+        VSCODE_VERSION:
+          - stable
+          # - minimum <-- disabled because no relevant test running now
         experimental: [false]
-        include:
-          - VSCODE_VERSION: 'insiders'
-            experimental: true
+        # include: <-- disabled because no relevant test running now
+        #   - VSCODE_VERSION: 'insiders'
+        #     experimental: true
     continue-on-error: ${{ matrix.experimental }}
 
     steps:
@@ -57,11 +59,13 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['stable', 'minimum']
+        VSCODE_VERSION:
+          - stable
+          # - minimum <-- disabled because no relevant test running now
         experimental: [false]
-        include:
-          - VSCODE_VERSION: 'insiders'
-            experimental: true
+        # include: <-- disabled because no relevant test running now
+        #   - VSCODE_VERSION: 'insiders'
+        #     experimental: true
     continue-on-error: ${{ matrix.experimental }}
 
     steps:
@@ -95,11 +99,13 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['stable', 'minimum']
+        VSCODE_VERSION:
+          - stable
+          # - minimum <-- disabled because no relevant test running now
         experimental: [false]
-        include:
-          - VSCODE_VERSION: 'insiders'
-            experimental: true
+        # include: <-- disabled because no relevant test running now
+        #   - VSCODE_VERSION: 'insiders'
+        #     experimental: true
     continue-on-error: ${{ matrix.experimental }}
 
     steps:
