@@ -129,7 +129,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
         // skip
       } else if (typeof this._exclude === 'string') {
         const excludeObj = vscode.workspace.getConfiguration().get<Record<string, boolean>>(this._exclude);
-        if (typeof excludeObj === 'object') {
+        if (typeof excludeObj === 'object' && excludeObj !== null) {
           enabledExcludes = Object.entries(excludeObj)
             .filter(i => i[1])
             .map(i => i[0]);
@@ -175,7 +175,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
       execWatcher.onAll(fsPath => {
         this._shared.log.info('watcher event:', fsPath);
-        this._handleEverything(fsPath);
+        this._handleEverything(fsPath); // do not await for this
       });
 
       this._disposables.push(execWatcher);
@@ -186,7 +186,8 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       this._shared.log.exceptionS(e, "Couldn't watch pattern");
     }
 
-    progressReporter.setMax(filePaths.length);
+    const uniqueFilePaths = new Set(filePaths);
+    progressReporter.setMax(uniqueFilePaths.size);
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];
 
     for (const file of filePaths) {
@@ -194,12 +195,10 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
       if (this._shouldIgnorePath(file)) continue;
 
-      if (this._isDuplicate(file)) continue;
-
       suiteCreationAndLoadingTasks.push(
-        (async (): Promise<void> => {
+        (async () => {
           try {
-            await c2fs.isNativeExecutableAsync(file, this._executableSuffixToInclude, this._executableSuffixToExclude);
+            await c2fs.checkIsNativeExecutable(file, this._executableSuffixToInclude, this._executableSuffixToExclude);
             try {
               const factory = await this._createSuiteByUri(file);
               const suite = await factory.create(false);
@@ -215,19 +214,23 @@ export class ConfigOfExecGroup implements vscode.Disposable {
                     (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
                   )
                     throw Error(
-                      `Coudn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}`,
+                      `Couldn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}`,
                       { cause: reason },
                     );
                 }
               }
             } catch (reason) {
+              if (reason instanceof Error && reason.message.includes('strictPattern')) {
+                throw reason; // Prevent double wrapping of the exact same error
+              }
+
               this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
               if (
                 this._strictPattern === true ||
                 (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
               )
                 throw Error(
-                  `Coudn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}`,
+                  `Couldn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}`,
                   { cause: reason },
                 );
             }
@@ -251,11 +254,10 @@ export class ConfigOfExecGroup implements vscode.Disposable {
           this._shared.log.info('symlink watcher event:', fsPath);
           getModiTime(fsPath).then(modiTime => {
             if (modiTime === undefined) {
-              for (const [filePath, exec] of this._executables)
-                if (exec) {
-                  exec.dispose();
-                  this._executables.delete(filePath);
-                }
+              for (const exec of this._executables.values()) {
+                if (exec) exec.dispose();
+              }
+              this._executables.clear();
               this._shared.log.infoS('Symlink was removed', pattern);
             } else {
               this._shared.log.infoS('Symlink was created/changed, reloading tests', pattern);
@@ -287,8 +289,11 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       const cb = (fsPath: string): void => {
         this._shared.log.info('dependsOn watcher event:', fsPath);
         getModiTime(fsPath).then(modiTime => {
-          for (const exec of this._executables.values())
-            exec.reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime);
+          for (const exec of this._executables.values()) {
+            exec
+              .reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime)
+              .catch(err => this._shared.log.error('Failed to reload tests on dependsOn change', err));
+          }
         });
         this.sendRetireAllExecutables();
       };
@@ -384,7 +389,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       this._shared.log.exceptionS(e);
     }
 
-    const variableRe = /\$\{[^ ]*\}/;
+    const variableRe = /\$\{[^}]+\}/;
 
     let resolvedCwd = '.';
     try {
@@ -533,26 +538,22 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     const runnable = this._executables.get(filePath);
 
-    if (runnable !== undefined) {
-      this._recursiveHandleRunnable(runnable)
-        .catch(reject => {
+    try {
+      if (runnable !== undefined) {
+        await this._recursiveHandleRunnable(runnable).catch(reject => {
           this._shared.log.errorS(`_recursiveHandleRunnable errors should be handled inside`, reject);
-        })
-        .finally(() => {
-          this._lastEventArrivedAt.delete(filePath);
         });
-    } else {
-      if (this._shouldIgnorePath(filePath)) return;
+      } else {
+        if (this._shouldIgnorePath(filePath)) return;
 
-      this._shared.log.info('possibly new suite: ' + filePath);
+        this._shared.log.info('possibly new suite: ' + filePath);
 
-      this._recursiveHandleFile(filePath)
-        .catch(reject => {
+        await this._recursiveHandleFile(filePath).catch(reject => {
           this._shared.log.errorS(`_recursiveHandleFile errors should be handled inside`, reject);
-        })
-        .finally(() => {
-          this._lastEventArrivedAt.delete(filePath);
         });
+      }
+    } finally {
+      this._lastEventArrivedAt.delete(filePath);
     }
   }
 
@@ -573,7 +574,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     }
 
     const isExec = await c2fs
-      .isNativeExecutableAsync(filePath, this._executableSuffixToInclude, this._executableSuffixToExclude)
+      .checkIsNativeExecutable(filePath, this._executableSuffixToInclude, this._executableSuffixToExclude)
       .then(
         () => true,
         () => false,
@@ -585,7 +586,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
         const runnable = await factory.create(true);
 
         if (runnable) {
-          return this._recursiveHandleRunnable(runnable).catch(reject => {
+          return await this._recursiveHandleRunnable(runnable).catch(reject => {
             this._shared.log.errorS(
               `_recursiveHandleFile._recursiveHandleFile errors should be handled inside`,
               reject,
@@ -608,7 +609,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
         await promisify(setTimeout)(delay);
 
-        return this._recursiveHandleFile(filePath, nextDelay, tryCount + 1);
+        return await this._recursiveHandleFile(filePath, nextDelay, tryCount + 1);
       }
     }
   }
@@ -652,7 +653,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       await promisify(setTimeout)(delay);
 
       const isExec = await c2fs
-        .isNativeExecutableAsync(filePath, this._executableSuffixToInclude, this._executableSuffixToExclude)
+        .checkIsNativeExecutable(filePath, this._executableSuffixToInclude, this._executableSuffixToExclude)
         .then(
           () => true,
           () => false,
@@ -677,10 +678,6 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     } else {
       return false;
     }
-  }
-
-  private _isDuplicate(filePath: string): boolean {
-    return this._executables.has(filePath);
   }
 
   private async _resolveVariables<T>(

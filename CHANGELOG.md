@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.25.2]
+
+- file wathcher/change related improvements
+
 ## [4.25.1] - 2026-05-11
 
 ### Changed

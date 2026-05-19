@@ -66,7 +66,6 @@ describe(path.basename(__filename), function () {
 
       keys.forEach(key => {
         if (
-          key === 'testMate.cpp.log.logSentry' ||
           key === 'testMate.cpp.log.logfile' ||
           key === 'testMate.cpp.log.userId' ||
           key.startsWith('catch2TestExplorer') ||

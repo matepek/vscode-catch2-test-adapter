@@ -124,7 +124,7 @@
       "$comment": "Enums will cause that the vscode will offer auto-completion.",
       "properties": {
         "testMate.cpp.test.executables": {
-          "markdownDescription": "A [glob pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) to find test executables. (Relative to the workspace folder or absolute path.) Empty string means disabled. For more option set [testMate.cpp.test.advancedExecutables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) instead of this. NOTE: if `testMate.cpp.test.advancedExecutables` is set then this is ignored.",
+          "markdownDescription": "A [glob pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) to find test executables. (Relative to the workspace folder or absolute path.) Empty string means disabled. For more options set [testMate.cpp.test.advancedExecutables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) instead of this. NOTE: if `testMate.cpp.test.advancedExecutables` is set then this is ignored.",
           "scope": "resource",
           "type": "string",
           "default": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*"
@@ -2283,12 +2283,6 @@
           "type": "string",
           "default": ""
         },
-        "testMate.cpp.log.logSentry": {
-          "markdownDescription": "Errors/Exceptions will be logged and sent automatically for further analysis. ([More](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md))",
-          "scope": "resource",
-          "type": "string",
-          "default": "question"
-        },
         "testMate.cpp.log.userId": {
           "markdownDescription": "A locally generated identifier which is used to group the errors/events. Not used for anything evil. Anonymity is preserved.",
           "scope": "application",
@@ -2428,7 +2422,6 @@
             }
           },
           "required": [
-            "cmd",
             "args"
           ],
           "additionalProperties": false

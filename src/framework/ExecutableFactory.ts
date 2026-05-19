@@ -42,7 +42,7 @@ export class ExecutableFactory {
   async create(checkIsNativeExecutable: boolean): Promise<AbstractExecutable | undefined> {
     const runWithHelpRes = await this._shared.taskPool.scheduleTask(async () => {
       if (checkIsNativeExecutable)
-        await c2fs.isNativeExecutableAsync(
+        await c2fs.checkIsNativeExecutable(
           this._execPath,
           this._executableSuffixToInclude,
           this._executableSuffixToExclude,

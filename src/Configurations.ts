@@ -16,8 +16,6 @@ import { platformUtil } from './util/Platform';
 import { cloneRecursively } from './util/ResolveRule';
 import { DebugConfigData } from './DebugConfigType';
 
-type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
-
 const ConfigSectionBase = 'testMate.cpp';
 
 const enum Section {
@@ -48,7 +46,6 @@ export type Config =
   | 'debug.noThrow'
   | 'log.logpanel'
   | 'log.logfile'
-  | 'log.logSentry'
   | 'log.userId'
   | 'gtest.treatGmockWarningAs'
   | 'gtest.gmockVerbose';
@@ -313,60 +310,6 @@ export class Configurations {
   //   const decrypted = crypto.privateDecrypt(Configurations.Key, buffer);
   //   return decrypted.toString('utf8');
   // }
-
-  isSentryEnabled(): boolean {
-    const val = this._get('log.logSentry');
-    return val === 'enable' || val === 'enabled';
-  }
-
-  askSentryConsent(): void {
-    const envAskSentry = process.env['TESTMATE_CPP_ASKSENTRYCONSENT'];
-    if (envAskSentry === 'disabled_3') {
-      return;
-      //const decrypted = Configurations.decrypt(process.env['TESTMATE_CPP_LOGSENTRY']);
-      //if (decrypted === 'disable_3') return;
-    }
-
-    const logSentryConfig: Config = 'log.logSentry';
-
-    const logSentry = this._getD<SentryValue>(logSentryConfig, 'question');
-
-    if (logSentry === 'question' || logSentry === 'disable' || logSentry === 'disable_1' || logSentry === 'disable_2') {
-      const options = [
-        'Sure! I love this extension and happy to help.',
-        'Yes, but exclude current workspace',
-        'Over my dead body (No)',
-      ];
-      vscode.window
-        .showInformationMessage(
-          'Hey there! TestMate C++ has [sentry.io](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md) integration to ' +
-            'improve the stability and the development. 🤩 For this I want to send logs and errors ' +
-            'but I would NEVER do it without your consent. ' +
-            'Please be understandable and allow it. 🙏',
-          ...options,
-        )
-        .then((value: string | undefined) => {
-          this._log.info('Sentry consent', value);
-
-          if (value === options[0]) {
-            this._cfg
-              .update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global)
-              .then(undefined, e => this._log.exceptionS(e));
-          } else if (value === options[1]) {
-            this._cfg
-              .update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global)
-              .then(undefined, e => this._log.exceptionS(e));
-            this._cfg
-              .update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.WorkspaceFolder)
-              .then(undefined, e => this._log.exceptionS(e));
-          } else if (value === options[2]) {
-            this._cfg
-              .update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.Global)
-              .then(undefined, e => this._log.exceptionS(e));
-          }
-        });
-    }
-  }
 
   getLoadAtStartup(): boolean {
     return this._getD<boolean>('discovery.loadOnStartup', false);
