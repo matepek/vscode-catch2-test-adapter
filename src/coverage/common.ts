@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import { Log } from 'vscode-test-adapter-util';
 import * as TMA from '../TestMateApi';
+import { SharedTestTags } from '../framework/SharedTestTags';
 
 export const testMateExtensionId = 'matepek.vscode-catch2-test-adapter';
 
@@ -21,7 +22,7 @@ export const execute = async (
   const closeP = new Promise<void>((res, rej) => {
     proc.on('close', (code: number) => {
       if (code === 0) res();
-      else rej(new Error(`Command '${cmd}' failed with exit code: ${code}; ${stderr.join('')}`));
+      else rej(new Error(`Command '${cmd} ${args}' (${cwd}) failed with exit code: ${code}; ${stderr.join('')}`));
     });
     proc.on('error', err => rej(err));
 
@@ -89,7 +90,7 @@ export const create_advanced_activate =
         }
         if (profile) {
           const tag = cfg.get<string>('tag');
-          profile.tag = typeof tag === 'string' ? new vscode.TestTag(tag) : undefined;
+          profile.tag = typeof tag === 'string' ? new vscode.TestTag(tag) : SharedTestTags.runnable;
         }
       };
 
@@ -98,14 +99,26 @@ export const create_advanced_activate =
         else dispose();
       };
 
+      const getFirstEnabledWorkspaceConfig = () => {
+        if (vscode.workspace.workspaceFolders) {
+          for (const workspaceFolder of vscode.workspace.workspaceFolders) {
+            const cfg = vscode.workspace.getConfiguration(configSection, workspaceFolder);
+            if (cfg.get('enabled', false)) {
+              return cfg;
+            }
+          }
+        }
+        return vscode.workspace.getConfiguration(configSection);
+      };
+
       vscode.workspace.onDidChangeConfiguration(async event => {
         if (event.affectsConfiguration(configSection)) {
-          const cfg = vscode.workspace.getConfiguration(configSection);
+          const cfg = getFirstEnabledWorkspaceConfig();
           await applyCfg(cfg);
         }
       });
 
-      const cfg = vscode.workspace.getConfiguration(configSection);
+      const cfg = getFirstEnabledWorkspaceConfig();
       await applyCfg(cfg);
     } else {
       log.info('missing extension', testMateExtensionId);

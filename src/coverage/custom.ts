@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as TMA from '../TestMateApi';
 import { Log } from 'vscode-test-adapter-util';
 import { resolveVariablesAsync } from '../util/ResolveRule';
+import { SharedTestTags } from '../framework/SharedTestTags';
 
 const testMateExtensionId = 'matepek.vscode-catch2-test-adapter';
 const configSection = 'testMate.cpp.experimental.custom-adapter';
@@ -112,7 +113,7 @@ export async function advanced_activate(context: vscode.ExtensionContext) {
 
       if (profile) {
         const tag = cfg.get<string>('tag');
-        profile.tag = typeof tag === 'string' ? new vscode.TestTag(tag) : undefined;
+        profile.tag = typeof tag === 'string' ? new vscode.TestTag(tag) : SharedTestTags.runnable;
       }
     };
 

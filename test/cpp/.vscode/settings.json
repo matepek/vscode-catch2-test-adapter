@@ -2,7 +2,7 @@
     "testMate.cpp.experimental.llvm-cov": {
         "enabled": true,
         "logpanel": true,
-        "tag": "llvm-cov"
+        // "tag": "llvm-cov"
     },
     "testMate.cpp.experimental.gcov": {
         "enabled": false,
@@ -10,7 +10,7 @@
         // "tag": "gcov"
     },
     "testMate.cpp.experimental.custom-adapter": {
-        "enabled": true,
+        "enabled": false,
         "logpanel": false,
         "args": [
             "${argsFlat}"
@@ -20,7 +20,7 @@
     "testMate.cpp.test.parallelExecutionLimit": 5,
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/clang/*.exe",
+            "pattern": "build/clang/gtest1.exe",
             // "executionWrapper": {
             //     "test-execution": {
             //         "path": "/usr/bin/leaks",
