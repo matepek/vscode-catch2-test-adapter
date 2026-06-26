@@ -1,5 +1,5 @@
 cc_test(
-    name = "hello_test",
+    name = "hello-test",
     size = "small",
     srcs = ["hello_test.cpp"],
     deps = [

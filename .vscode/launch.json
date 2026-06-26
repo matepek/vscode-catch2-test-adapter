@@ -44,26 +44,6 @@
     {
       "type": "extensionHost",
       "request": "launch",
-      "name": "Manual cpp",
-      "runtimeExecutable": "${execPath}",
-      "args": [
-        "${workspaceFolder}/test/cpp",
-        "${workspaceFolder}/test/cpp2",
-        "--extensionDevelopmentPath=${workspaceFolder}",
-        "--disable-extensions"
-      ],
-      "env": {
-        "TESTMATE_DEBUG": "true"
-      },
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js"
-      ],
-      "preLaunchTask": "preDebug",
-      "postDebugTask": "postDebug"
-    },
-    {
-      "type": "extensionHost",
-      "request": "launch",
       "name": "Manual cpp + extensions",
       "runtimeExecutable": "${execPath}",
       "args": [
@@ -82,7 +62,7 @@
     {
       "type": "extensionHost",
       "request": "launch",
-      "name": "Manual cpp bazel",
+      "name": "Manual test/bazel",
       "runtimeExecutable": "${execPath}",
       "args": [
         "${workspaceFolder}/test/bazel",
