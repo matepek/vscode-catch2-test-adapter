@@ -1,0 +1,3 @@
+# depends on .devcontainer/Dockerfile
+# https://registry.bazel.build/modules/googletest only supports v8.x now
+8.7.0 

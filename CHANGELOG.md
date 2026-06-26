@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.25.3]
+
+### Changed
+
+- cpp file resolution to find more relevant files. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/529))
+
 ## [4.25.2] - 2026-05-25
 
 - file wathcher/change related improvements

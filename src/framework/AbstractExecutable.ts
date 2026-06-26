@@ -1058,7 +1058,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
   private _findFilePath(path: string): string {
     if (pathlib.isAbsolute(path)) return path;
 
-    const directoriesToCheck: string[] = [pathlib.dirname(this.shared.path)];
+    const directoriesToCheck: string[] = [];
 
     const cwd = this.shared.options.cwd?.toString();
 
@@ -1069,8 +1069,11 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     if (
       !this.shared.path.startsWith(this.shared.workspaceFolder.uri.fsPath) &&
       (!cwd || !cwd.startsWith(this.shared.workspaceFolder.uri.fsPath))
-    )
+    ) {
       directoriesToCheck.push(this.shared.workspaceFolder.uri.fsPath);
+    }
+
+    directoriesToCheck.push(pathlib.dirname(this.shared.path));
 
     const found = getAbsolutePath(path, directoriesToCheck);
 
