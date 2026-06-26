@@ -800,6 +800,8 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     data.testRun.appendOutput(runInfo.getProcStartLine());
 
+    data.testRun.appendOutput(runInfo.generatePrompt());
+
     this.shared.log.info('proc started', runInfo.process.pid, pathForExecution, this.shared, execParams);
 
     runInfo.setPriorityAsync(this.shared.log);

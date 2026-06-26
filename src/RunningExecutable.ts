@@ -181,6 +181,34 @@ export class RunningExecutable {
     promisify(setTimeout)(2000).then(setPriorityInner);
   }
 
+  generatePrompt(): string {
+    const env = Object.fromEntries(
+      Object.entries(this.spawnBuilder.options.env ?? {}).filter(([key]) => !(key in process.env)),
+    );
+    const args = this.process.spawnargs.filter((_, i) => i > 0);
+    if (process.platform === 'win32') {
+      return '';
+    } else {
+      return ansi.dim(
+        this.runPrefix +
+          'Prompt: >>>\r\n' +
+          this.runPrefix +
+          Object.entries(env)
+            .map(kv => `${kv[0]}='${(kv[1] ?? '').replaceAll("'", `'"'"'`)}'`)
+            .join(' ') +
+          " '" +
+          this.spawnfile.replaceAll("'", `'"'"'`) +
+          "' " +
+          args.map(x => `'${x.replaceAll("'", `'"'"'`)}'`).join(' ') +
+          '\r\n' +
+          this.runPrefix +
+          '<<< Prompt\r\n' +
+          this.runPrefix +
+          '\r\n',
+      );
+    }
+  }
+
   getProcStartLine(): string {
     return (
       this.runPrefix + ansi.dim(`Started PID#${this.process.pid} - '${this.spawnfile}'\r\n`) + this.runPrefix + '\r\n'
