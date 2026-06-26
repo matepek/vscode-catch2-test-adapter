@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [4.25.4]
+## [4.25.4] - 2026-06-26
 
 Improved file resolver: async.
 
