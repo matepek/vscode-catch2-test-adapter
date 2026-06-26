@@ -93,40 +93,39 @@ jobs:
       - name: Test
         run: npm test
 
-  # TODO: broken by vscode now
-  # test-mac:
-  #   name: MacOS
-  #   runs-on: macos-latest
-  #   strategy:
-  #     fail-fast: true
-  #     matrix:
-  #       VSCODE_VERSION:
-  #         - stable
-  #         # - minimum <-- disabled because no relevant test running now
-  #       experimental: [false]
-  #       # include: <-- disabled because no relevant test running now
-  #       #   - VSCODE_VERSION: 'insiders'
-  #       #     experimental: true
-  #   continue-on-error: ${{ matrix.experimental }}
+  test-mac:
+    name: MacOS
+    runs-on: macos-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        VSCODE_VERSION:
+          - stable
+          # - minimum <-- disabled because no relevant test running now
+        experimental: [false]
+        # include: <-- disabled because no relevant test running now
+        #   - VSCODE_VERSION: 'insiders'
+        #     experimental: true
+    continue-on-error: ${{ matrix.experimental }}
 
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v6
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
 
-  #     - name: Use Node.js
-  #       uses: actions/setup-node@v6
-  #       with:
-  #         node-version: '22.x'
-  #         cache: 'npm'
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22.x'
+          cache: 'npm'
 
-  #     - name: Install
-  #       run: npm install
+      - name: Install
+        run: npm install
 
-  #     - name: Compile
-  #       run: npm run compile
+      - name: Compile
+        run: npm run compile
 
-  #     # - name: ESLint
-  #     #   run: npm run eslint
+      # - name: ESLint
+      #   run: npm run eslint
 
-  #     - name: Test
-  #       run: npm test
+      - name: Test
+        run: npm test
