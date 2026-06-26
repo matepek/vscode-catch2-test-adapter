@@ -593,6 +593,28 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return prependTestRunningArgs.concat(this._getRunParamsInner(childrenToRun));
   }
 
+  async generateExecutionPrompt(testsToRun: TestsToRun): Promise<string> {
+    const tests = this._testsFromTestsToRun(testsToRun);
+    const execParams = await this._getRunParams(tests);
+    const execEnvs = this.shared.options.customEnv;
+    const pathForExecution = await this._getPathForExecution();
+    const wp = this.shared.workspacePath + '/';
+    const pathForExecutionRelative = pathForExecution.startsWith(wp)
+      ? pathForExecution.substring(wp.length)
+      : pathForExecution;
+    // TODO: win32
+    // TODO: spawner
+    return (
+      Object.entries(execEnvs)
+        .map(kv => `${kv[0]}='${(kv[1] ?? '').replaceAll("'", `'"'"'`)}'`)
+        .join(' ') +
+      " '" +
+      pathForExecutionRelative.replaceAll("'", `'"'"'`) +
+      "' " +
+      execParams.map(x => `'${x.replaceAll("'", `'"'"'`)}'`).join(' ')
+    );
+  }
+
   protected abstract _handleProcess(testRun: vscode.TestRun, runInfo: RunningExecutable): Promise<HandleProcessResult>;
 
   protected abstract _getDebugParamsInner(
@@ -643,6 +665,23 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
         }
       });
     });
+  }
+
+  private _testsFromTestsToRun(testsToRun: TestsToRun): AbstractTest[] | null {
+    const testsToRunFinal: AbstractTest[] = [];
+
+    for (const t of testsToRun.direct) {
+      if (!t.hasStaticError) testsToRunFinal.push(t);
+    }
+    for (const t of testsToRun.parent) {
+      if (t.hasStaticError || t.skipped) {
+        /* skip */
+      } else testsToRunFinal.push(t);
+    }
+
+    if (testsToRunFinal.length == 0 && !testsToRun.implicitAll) return null;
+
+    return testsToRun.implicitAll ? null : testsToRunFinal;
   }
 
   async run(data: TestRunData, testsToRun: TestsToRun, workspaceTaskPool: TaskPool): Promise<void> {

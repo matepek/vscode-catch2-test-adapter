@@ -20,7 +20,11 @@
     "testMate.cpp.test.parallelExecutionLimit": 5,
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "build/clang/gtest1.exe",
+            "pattern": "build/clang/gtest*.exe",
+            "env": {
+                "A":"a",
+                "B":"''b'"
+            }
             // "executionWrapper": {
             //     "test-execution": {
             //         "path": "/usr/bin/leaks",

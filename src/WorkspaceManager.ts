@@ -310,6 +310,15 @@ export class WorkspaceManager implements vscode.Disposable {
     return new Configurations(log, this.workspaceFolder.uri);
   }
 
+  async generateExecutionPrompts(executables: Map<AbstractExecutable, TestsToRun>): Promise<string[]> {
+    const prompts: string[] = [];
+    for (const [exec, tests] of executables) {
+      const runParams = await exec.generateExecutionPrompt(tests);
+      prompts.push(runParams);
+    }
+    return prompts;
+  }
+
   run(executables: Map<AbstractExecutable, TestsToRun>, data: TestRunData): Promise<void> {
     for (const exec of executables.values()) for (const test of exec) data.testRun.enqueued(test.item);
 

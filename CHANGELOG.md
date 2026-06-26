@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.25.4]
+
 Improved file resolver: async.
+
+### Added
+
+- context menu option for tests to get something similar to what would be executed. NOT perfect, logs are still the source of truth. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/528))
 
 ## [4.25.3] - 2026-06-26
 

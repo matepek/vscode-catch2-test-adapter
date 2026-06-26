@@ -103,7 +103,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     }),
   );
 
-  const collectExecutablesForRun = (request: vscode.TestRunRequest, testTag: vscode.TestTag | undefined) => {
+  const collectExecutablesForRun = (
+    include: readonly vscode.TestItem[] | undefined,
+    exclude: readonly vscode.TestItem[] | undefined,
+    testTag: vscode.TestTag | undefined,
+  ) => {
     const managersToRun = new Map<WorkspaceManager, Map<AbstractExecutable, TestsToRun>>();
     const getTestsToRun = (executable: AbstractExecutable) => {
       const manager = workspace2manager.get(executable.shared.workspaceFolder)!;
@@ -122,7 +126,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
 
     const enumerator = (type: 'direct' | 'parent') => (item: vscode.TestItem) => {
       if (testTag && !item.tags.some(t => t.id === testTag.id)) return;
-      if (request.exclude?.includes(item)) return;
+      if (exclude?.includes(item)) return;
 
       const [test, exec] = testItemManager.mapToTestOrExec(item);
 
@@ -137,7 +141,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
       }
     };
 
-    if (request.include) request.include.forEach(enumerator('direct'));
+    if (include) include.forEach(enumerator('direct'));
     else controller.items.forEach(enumerator('parent'));
 
     return managersToRun;
@@ -162,7 +166,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
     ++runCount;
 
     try {
-      const managers = collectExecutablesForRun(request, testTag);
+      const managers = collectExecutablesForRun(request.include, request.exclude, testTag);
 
       const runQueue: Thenable<void>[] = [];
       for (const [manager, executables] of managers) {
@@ -332,7 +336,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
       ++debugCount;
 
       try {
-        const managers = collectExecutablesForRun(request, undefined);
+        const managers = collectExecutablesForRun(request.include, request.exclude, undefined);
 
         if (managers.size != 1) {
           vscode.window.showWarningMessage('You should only run 1 test case, no group.');
@@ -402,6 +406,25 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
 
   context.subscriptions.push(
     vscode.commands.registerCommand('testMate.cmd.reload-workspaces', commandReloadWorkspaces),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'testMate.test.copyToClipboardExecutionPrompt',
+      async (...items: vscode.TestItem[]) => {
+        const managers = collectExecutablesForRun(items, undefined, undefined);
+        const prompts: string[] = [];
+        for (const [manager, executables] of managers) {
+          prompts.push(...(await manager.generateExecutionPrompts(executables)));
+        }
+        try {
+          await vscode.env.clipboard.writeText(prompts.join(';\n'));
+          vscode.window.showInformationMessage('Text successfully copied to clipboard.');
+        } catch (error) {
+          vscode.window.showErrorMessage(`Clipboard write operation failed: ${error}`);
+        }
+      },
+    ),
   );
 
   context.subscriptions.push(vscode.commands.registerCommand('testMate.cmd.get-debug-exec', () => currentDebugExec));
