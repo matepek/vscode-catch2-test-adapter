@@ -81,7 +81,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     const id = getTestId(file, line, testId);
     const tags: string[] = suiteId ? [suiteId] : [];
     const skippedB = skipped === 'true';
-    const resolvedFile = this.findSourceFilePath(file);
+    const resolvedFile = await this.findSourceFilePath(file);
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
       testId,
@@ -390,11 +390,11 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     }
   }
 
-  ontext(dataTrimmed: string, parentTag: XmlTag): void {
+  async ontext(dataTrimmed: string, parentTag: XmlTag): Promise<void> {
     const processor = TagProcessorBase.textProcessorMap.get(parentTag.name);
     if (processor) {
       try {
-        return processor(dataTrimmed, parentTag, this.builder, this.caseData, this.shared);
+        return await processor(dataTrimmed, parentTag, this.builder, this.caseData, this.shared);
       } catch (e) {
         this.shared.log.exceptionS(e);
         this.builder.addReindentedOutput(1, 'Unknown fatal error: ' + inspect(e));
@@ -407,8 +407,8 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     }
   }
 
-  onstderr(data: string, _parentTag: XmlTag | undefined): void {
-    this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
+  async onstderr(data: string, _parentTag: XmlTag | undefined): Promise<void> {
+    await this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
   }
 
   private static readonly openTagProcessorMap: Map<
@@ -456,18 +456,18 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         builder: TestResultBuilder,
         caseData: CaseData,
         shared: SharedVarOfExec,
-      ) => void)
+      ) => void | Promise<void>)
   > = new Map([
     [
       'Exception',
-      (
+      async (
         dataTrimmed: string,
         parentTag: XmlTag,
         builder: TestResultBuilder,
         caseData: CaseData,
         _shared: SharedVarOfExec,
       ) => {
-        builder.addMessageWithOutput(
+        await builder.addMessageWithOutput(
           parentTag.attribs.filename,
           parentTag.attribs.line,
           'Exception (crash=' + parentTag.attribs.crash + '): `' + dataTrimmed + '`',
@@ -495,7 +495,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
 
   async begin(): Promise<void> {
     this.builder.started();
-    const file = this.test.exec.findSourceFilePath(this.attribs.filename);
+    const file = await this.test.exec.findSourceFilePath(this.attribs.filename);
     await this.test.updateFL(file, this.attribs.line);
   }
 
@@ -658,7 +658,7 @@ class ExpressionProcessor implements XmlTagProcessor {
     }
   }
 
-  end(): void {
+  async end(): Promise<void> {
     assert(this.original);
 
     if (this.unknowns.size) {
@@ -666,9 +666,9 @@ class ExpressionProcessor implements XmlTagProcessor {
         this._shared.log.warnS('unknown doctest expression with expanded', this.expanded, this.unknowns);
       const exps = [...this.unknowns.entries()].map(e => `${e[0]}: ${e[1]}`);
       const first = exps.shift()!;
-      this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, first, ...exps);
+      await this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, first, ...exps);
     } else if (this.expanded) {
-      this.builder.addExpressionMsg(
+      await this.builder.addExpressionMsg(
         this.attribs.filename,
         this.attribs.line,
         this.original!,
@@ -706,18 +706,18 @@ class MessageProcessor implements XmlTagProcessor {
     }
   }
 
-  end(): void {
+  async end(): Promise<void> {
     assert(this.text !== undefined);
 
     if (this.attribs.type === 'FATAL ERROR' || this.attribs.type === 'ERROR') {
-      this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, 'failed', this.text);
+      await this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, 'failed', this.text);
       this.caseData.hasFailedExpression = true;
       this.builder.failed();
     } else if (this.attribs.type === 'WARNING') {
-      this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, 'warning', this.text);
+      await this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, 'warning', this.text);
     } else {
       debugBreak();
-      this.builder.addMessageWithOutput(
+      await this.builder.addMessageWithOutput(
         this.attribs.filename,
         this.attribs.line,
         this.attribs.type,

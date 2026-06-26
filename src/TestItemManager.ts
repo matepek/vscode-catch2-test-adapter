@@ -13,7 +13,7 @@ export interface FilePathResolver {
    * @param file don't have to be normalized
    * @returns normalized file path
    */
-  findSourceFilePath(file: string | undefined): string | undefined;
+  findSourceFilePath(file: string | undefined): Promise<string | undefined>;
 }
 
 export class TestItemManager {
@@ -105,7 +105,7 @@ export class TestItemManager {
     description: string | undefined | null,
     tags: vscode.TestTag[] | null,
   ): Promise<vscode.TestItem> {
-    const resolvedFile = fileResolver.findSourceFilePath(file);
+    const resolvedFile = await fileResolver.findSourceFilePath(file);
     const resolvedFileUri = resolvedFile ? vscode.Uri.file(resolvedFile) : undefined;
 
     if (item.uri?.fsPath !== resolvedFileUri?.fsPath) {

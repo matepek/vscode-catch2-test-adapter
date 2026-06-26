@@ -35,7 +35,7 @@ export class XmlParser implements ParserInterface {
               const prevTag = this.tagStack[this.tagStack.length - 1];
               if (this.topTagProcessor.processor.ontext) {
                 const trimmedText = prevTag._text.trim();
-                if (trimmedText) this.topTagProcessor.processor.ontext(trimmedText, prevTag);
+                if (trimmedText) await this.topTagProcessor.processor.ontext(trimmedText, prevTag);
               }
               prevTag._text = '';
             }
@@ -71,7 +71,7 @@ export class XmlParser implements ParserInterface {
             // flush ontext
             if (this.topTagProcessor.processor.ontext) {
               const trimmedText = tag._text.trim();
-              if (trimmedText) this.topTagProcessor.processor.ontext(trimmedText, tag);
+              if (trimmedText) await this.topTagProcessor.processor.ontext(trimmedText, tag);
             }
 
             if (this.topTagProcessor.tag.name === name && --this.topTagProcessor.nesting < 0) {
@@ -102,7 +102,7 @@ export class XmlParser implements ParserInterface {
 
               if (this.topTagProcessor.processor.ontext) {
                 const trimmedText = this.rootTag._text.trim();
-                if (trimmedText) this.topTagProcessor.processor.ontext(trimmedText, this.rootTag);
+                if (trimmedText) await this.topTagProcessor.processor.ontext(trimmedText, this.rootTag);
               }
               if (this.topTagProcessor.processor.end) await this.topTagProcessor.processor.end();
             })
@@ -130,14 +130,14 @@ export class XmlParser implements ParserInterface {
   }
 
   writeStdErr(data: string): Promise<boolean> {
-    const p = this.sequentialP.then(() => {
+    const p = this.sequentialP.then(async () => {
       let tag = this.topTagProcessor;
       for (let i = this.xmlTagProcessorStack.length - 1; tag.processor.onstderr === undefined && i >= 0; --i) {
         tag = this.xmlTagProcessorStack[i];
       }
 
       if (tag.processor.onstderr) {
-        tag.processor.onstderr(data, this.tagStack[this.tagStack.length - 1]);
+        await tag.processor.onstderr(data, this.tagStack[this.tagStack.length - 1]);
         return true;
       } else {
         return false;
@@ -177,6 +177,6 @@ export interface XmlTagProcessor {
   onopentag?(tag: XmlTag): void | XmlTagProcessor | PromiseLike<void | XmlTagProcessor>;
   onclosetag?(tag: XmlTag): void;
 
-  ontext?(dataTrimmed: string, parentTag: XmlTag): void;
-  onstderr?(data: string, parentTag: XmlTag): void;
+  ontext?(dataTrimmed: string, parentTag: XmlTag): void | Promise<void>;
+  onstderr?(data: string, parentTag: XmlTag): void | Promise<void>;
 }

@@ -96,7 +96,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
 
     if (typeof stdout === 'string') {
       parser.write(stdout);
-      parser.writeStdErr(stderr as string);
+      await parser.writeStdErr(stderr as string);
       await parser.end();
     } else {
       await pipeOutputStreams2Parser(stdout, stderr as Readable, parser, undefined);
@@ -111,7 +111,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     typeParam: string | undefined,
     valueParam: string | undefined,
   ): Promise<GoogleTestTest> => {
-    const resolvedFile = this.findSourceFilePath(file);
+    const resolvedFile = await this.findSourceFilePath(file);
     const id = suiteId + '.' + testId;
     const isSkipped = GoogleTestTest.isSkipped(testId, suiteId);
     // gunit
@@ -439,7 +439,7 @@ class TestCaseProcessor implements LineProcessor {
     this.testCaseShared.builder.addReindentedOutput(0, ansi.bold(line) + loc);
   }
 
-  online(line: string): void | true | LineProcessor {
+  async online(line: string): Promise<void | true | LineProcessor> {
     const testEndMatch = this.testEndRe.exec(line);
 
     if (testEndMatch) {
@@ -488,7 +488,7 @@ class TestCaseProcessor implements LineProcessor {
     const failureMatch = failureRe.exec(line);
     if (failureMatch) {
       const type = failureMatch[6] as FailureType;
-      const file = this.testCaseShared.builder.test.exec.findSourceFilePath(failureMatch[2]);
+      const file = await this.testCaseShared.builder.test.exec.findSourceFilePath(failureMatch[2]);
       const line = failureMatch[3];
       const fullMsg = failureMatch[5];
       const failureMsg = failureMatch[7];
@@ -589,11 +589,11 @@ class FailureProcessor implements LineProcessor {
     }
   }
 
-  end(): void {
+  async end(): Promise<void> {
     this.testCaseShared.builder.addReindentedOutput(2, ...this.lines);
 
     if (isDecorationEnabled) {
-      this.testCaseShared.builder.addMarkdownMsg(
+      await this.testCaseShared.builder.addMarkdownMsg(
         this.file,
         this.line,
         `${isDecorationEnabled ? '### ' : ''}${this.fullMsg}:`,
@@ -608,7 +608,7 @@ class FailureProcessor implements LineProcessor {
         if (restLines.length >= 1) firstLine = restLines.shift()!;
       }
 
-      this.testCaseShared.builder.addMessage(this.file, this.line, firstLine, ...restLines);
+      await this.testCaseShared.builder.addMessage(this.file, this.line, firstLine, ...restLines);
     }
   }
 }
@@ -676,10 +676,10 @@ class ExpectCallProcessor implements LineProcessor {
     this.lines.push(line);
   }
 
-  end(): void {
+  async end(): Promise<void> {
     this.testCaseShared.builder.addReindentedOutput(2, ...this.lines);
 
-    this.testCaseShared.builder.addMessage(this.file, this.line, this.expected, ...this.actual);
+    await this.testCaseShared.builder.addMessage(this.file, this.line, this.expected, ...this.actual);
   }
 }
 
@@ -695,13 +695,13 @@ class TraceInfoProcessor implements LineProcessor {
     this._firstLine = line;
   }
 
-  online(line: string): void | true {
+  async online(line: string): Promise<void | true> {
     const m = _traceInfoRe.exec(line);
     if (m) {
       const file = m[2];
       const lineNo = m[3];
       const msg = m[5];
-      this.testCaseShared.builder.addMessageWithOutput(file, lineNo, `Trace: '${msg}'`, this._firstLine, line);
+      await this.testCaseShared.builder.addMessageWithOutput(file, lineNo, `Trace: '${msg}'`, this._firstLine, line);
     } else {
       this.testCaseShared.shared.log.errorS(`unprocessable line: '${line}'`);
     }

@@ -56,8 +56,11 @@ export function checkIsNativeExecutable(
   return accessAsync(filePath, ExecutableFlag);
 }
 
-export function existsSync(filePath: string): boolean {
-  return fs.existsSync(filePath);
+export async function exists(filePath: string): Promise<boolean> {
+  return promisify(fs.access)(filePath, fs.constants.R_OK).then(
+    () => true,
+    () => false,
+  );
 }
 
 export function getLastModiTime(filePath: string): Promise<number> {

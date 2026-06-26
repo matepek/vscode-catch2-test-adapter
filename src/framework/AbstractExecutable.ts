@@ -958,7 +958,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     }
   }
 
-  findSourceFilePath(file: string | undefined): string | undefined {
+  async findSourceFilePath(file: string | undefined): Promise<string | undefined> {
     if (typeof file != 'string') return undefined;
 
     // normalize before apply resolvedSourceFileMap because it is normalize too
@@ -1046,7 +1046,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
       }
     }
 
-    resolved = this._findFilePath(resolved);
+    resolved = await this._findFilePath(resolved);
 
     this.shared.log.debug('findSourceFilePath:', file, '=>', resolved);
 
@@ -1055,7 +1055,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     return resolved;
   }
 
-  private _findFilePath(path: string): string {
+  private async _findFilePath(path: string): Promise<string> {
     if (pathlib.isAbsolute(path)) return path;
 
     const directoriesToCheck: string[] = [];
@@ -1075,7 +1075,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
 
     directoriesToCheck.push(pathlib.dirname(this.shared.path));
 
-    const found = getAbsolutePath(path, directoriesToCheck);
+    const found = await getAbsolutePath(path, directoriesToCheck);
 
     return found || path;
   }

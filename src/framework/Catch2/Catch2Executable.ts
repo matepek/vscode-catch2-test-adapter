@@ -185,7 +185,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
       if (matches) matches.forEach((t: string) => tags.push(t.substring(1, t.length - 1)));
     }
 
-    const resolvedFile = this.findSourceFilePath(file);
+    const resolvedFile = await this.findSourceFilePath(file);
 
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
@@ -488,8 +488,8 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     }
   }
 
-  onstderr(data: string, _parentTag: XmlTag | undefined): void {
-    this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
+  async onstderr(data: string, _parentTag: XmlTag | undefined): Promise<void> {
+    await this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
   }
 
   private static readonly openTagProcessorMap: Map<
@@ -578,20 +578,30 @@ abstract class TagProcessorBase implements XmlTagProcessor {
   > = new Map([
     [
       'StdOut',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'std::cout', dataTrimmed);
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addQuoteWithLocation(
+          parentTag.attribs.filename,
+          parentTag.attribs.line,
+          'std::cout',
+          dataTrimmed,
+        );
       },
     ],
     [
       'StdErr',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'std::cerr', dataTrimmed);
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addQuoteWithLocation(
+          parentTag.attribs.filename,
+          parentTag.attribs.line,
+          'std::cerr',
+          dataTrimmed,
+        );
       },
     ],
     [
       'Exception',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addMessageWithOutput(
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addMessageWithOutput(
           parentTag.attribs.filename,
           parentTag.attribs.line,
           'Exception: `' + dataTrimmed + '`',
@@ -600,8 +610,8 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'FatalErrorCondition',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addMessageWithOutput(
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addMessageWithOutput(
           parentTag.attribs.filename,
           parentTag.attribs.line,
           'FatalErrorCondition',
@@ -611,26 +621,26 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'Failure',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addMessageWithOutput(parentTag.attribs.filename, parentTag.attribs.line, 'Failure', dataTrimmed);
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addMessageWithOutput(parentTag.attribs.filename, parentTag.attribs.line, 'Failure', dataTrimmed);
       },
     ],
     [
       'Warning',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Warning', dataTrimmed);
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Warning', dataTrimmed);
       },
     ],
     [
       'Info',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Info', dataTrimmed);
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Info', dataTrimmed);
       },
     ],
     [
       'Skip',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addMessage(parentTag.attribs.filename, parentTag.attribs.line, 'Skip', dataTrimmed);
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addMessage(parentTag.attribs.filename, parentTag.attribs.line, 'Skip', dataTrimmed);
         builder.skipped();
       },
     ],
@@ -739,23 +749,23 @@ class ExpressionProcessor implements XmlTagProcessor {
     }
   }
 
-  end(): void {
+  async end(): Promise<void> {
     assert(this.original && this.expanded);
     if (this.fatalErrorCondition) {
-      this.builder.addMessageWithOutput(
+      await this.builder.addMessageWithOutput(
         this.attribs.filename,
         this.attribs.line,
         `FatalErrorCondition: \`${this.fatalErrorCondition}\``,
       );
     } else if (this.exception) {
-      this.builder.addMessageWithOutput(
+      await this.builder.addMessageWithOutput(
         this.attribs.filename,
         this.attribs.line,
         (this.attribs.type ?? `Expression`) + ` threw an exception \`${this.exception}\``,
         this.original ?? '',
       );
     } else {
-      this.builder.addExpressionMsg(
+      await this.builder.addExpressionMsg(
         this.attribs.filename,
         this.attribs.line,
         this.original!,

@@ -282,7 +282,7 @@ export function unique<T>(array: readonly T[]): readonly T[] {
   return array.filter((v, i, a) => a.indexOf(v) === i);
 }
 
-export function getAbsolutePath(filePath: string, directories: Iterable<string>): string {
+export async function getAbsolutePath(filePath: string, directories: Iterable<string>): Promise<string> {
   if (pathlib.isAbsolute(filePath)) return filePath;
 
   for (const dir of directories) {
@@ -292,7 +292,7 @@ export function getAbsolutePath(filePath: string, directories: Iterable<string>)
       do {
         const f = pathlib.join(current, filePath);
 
-        if (c2fs.existsSync(f)) return f;
+        if (await c2fs.exists(f)) return f;
 
         current = parent;
         parent = pathlib.dirname(current);

@@ -124,32 +124,32 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     return '';
   }
 
-  addDiffMessage(
+  async addDiffMessage(
     file: string | undefined,
     line: number | string | undefined,
     message: string,
     expected: string,
     actual: string,
-  ): void {
-    file = this.test.exec.findSourceFilePath(file);
+  ): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
     const msg = vscode.TestMessage.diff(message, expected, actual);
     msg.location = TestResultBuilder._getLocation(file, line);
     this._messages.push(msg);
   }
 
-  addExpressionMsg(
+  async addExpressionMsg(
     file: string | undefined,
     line: string | undefined,
     original: string,
     expanded: string,
     type: string | undefined,
     ...message: string[]
-  ): void {
-    file = this.test.exec.findSourceFilePath(file);
+  ): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
     if (original !== expanded) {
-      this.addMessage(file, line, '`' + expanded + '`', ...message);
+      await this.addMessage(file, line, '`' + expanded + '`', ...message);
     } else {
-      this.addMessage(file, line, 'failed', ...message);
+      await this.addMessage(file, line, 'failed', ...message);
     }
 
     const loc = this.getLocationAtStr(file, line, false);
@@ -169,40 +169,44 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     }
   }
 
-  addMessageWithOutput(
+  async addMessageWithOutput(
     file: string | undefined,
     line: number | string | undefined,
     title: string,
     ...message: string[]
-  ): void {
-    file = this.test.exec.findSourceFilePath(file);
-    this.addMessage(file, line, [`${title}`, ...message].join('\r\n'));
+  ): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
+    await this.addMessage(file, line, [`${title}`, ...message].join('\r\n'));
     const loc = this.getLocationAtStr(file, line, false);
     this.addReindentedOutput(1, `${title}${loc}`);
     this.addReindentedOutput(2, ...message);
   }
 
-  addMessage(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
-    file = this.test.exec.findSourceFilePath(file);
+  async addMessage(file: string | undefined, line: number | string | undefined, ...message: string[]): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
     const msg = new vscode.TestMessage(message.join('\r\n'));
     msg.location = TestResultBuilder._getLocation(file, line);
     this._messages.push(msg);
   }
 
-  addMarkdownMsg(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
-    file = this.test.exec.findSourceFilePath(file);
+  async addMarkdownMsg(
+    file: string | undefined,
+    line: number | string | undefined,
+    ...message: string[]
+  ): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
     const msg = new vscode.TestMessage(new vscode.MarkdownString(message.join('\r\n\n')));
     msg.location = TestResultBuilder._getLocation(file, line);
     this._messages.push(msg);
   }
 
-  addQuoteWithLocation(
+  async addQuoteWithLocation(
     file: string | undefined,
     line: number | string | undefined,
     title: string,
     ...message: string[]
-  ): void {
-    file = this.test.exec.findSourceFilePath(file);
+  ): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
     const loc = this.getLocationAtStr(file, line, false);
     this.addReindentedOutput(1, `${title}${loc}${message.length ? ':' : ''}`);
     this.addReindentedOutput(2, ...message);

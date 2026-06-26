@@ -28,11 +28,11 @@ export class TextStreamParser implements ParserInterface {
 
     await this.sequentialP;
 
-    if (this.topProcessor.end) this.topProcessor.end();
+    if (this.topProcessor.end) await this.topProcessor.end();
 
     while (this.processorStack.length) {
       const p = this.processorStack.pop()!;
-      if (p.end) p.end();
+      if (p.end) await p.end();
     }
   }
 
@@ -64,7 +64,7 @@ export class TextStreamParser implements ParserInterface {
 
           if (typeof result === 'boolean') {
             if (this.processorStack.length) {
-              if (this.topProcessor.end) this.topProcessor.end();
+              if (this.topProcessor.end) await this.topProcessor.end();
               this.topProcessor = this.processorStack.pop()!;
               if (!result) {
                 // putting back because the popped processor should process it too
@@ -79,7 +79,7 @@ export class TextStreamParser implements ParserInterface {
           } else {
             this.processorStack.push(this.topProcessor);
             this.topProcessor = result;
-            if (result.begin) result.begin(line);
+            if (result.begin) await result.begin(line);
           }
         }
       })
@@ -88,9 +88,9 @@ export class TextStreamParser implements ParserInterface {
 }
 
 export interface LineProcessor {
-  begin?(line: string): void;
+  begin?(line: string): void | Promise<void>;
 
-  end?(): void;
+  end?(): void | Promise<void>;
 
   /**
    * @returns `LineProcessor` the control is passed to the new processor
