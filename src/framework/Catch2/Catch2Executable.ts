@@ -10,7 +10,7 @@ import { RunningExecutable } from '../../RunningExecutable';
 import { AbstractTest, SubTest, SubTestTree } from '../AbstractTest';
 import { CancellationFlag, Version } from '../../Util';
 import { TestGroupingConfig } from '../../TestGroupingInterface';
-import { TestResultBuilder } from '../../TestResultBuilder';
+import { addOutputForTestRun, TestResultBuilder } from '../../TestResultBuilder';
 import { assert, debugBreak } from '../../util/DevelopmentHelper';
 import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../../util/ParserInterface';
 import { Readable } from 'stream';
@@ -239,7 +239,11 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
 
     const pathForExecution = await this._getPathForExecution();
     this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
-    const catch2TestListingProcess = await this.shared.spawner.spawn(pathForExecution, args, this.shared.options);
+    const catch2TestListingProcess = await this.shared.spawnerForListing.spawn(
+      pathForExecution,
+      args,
+      this.shared.options,
+    );
 
     const result =
       this._catch2Version && this._catch2Version.major >= 3
@@ -361,6 +365,9 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
               return new TestCaseTagProcessor(executable.shared, builder, runInfo, test, tag.attribs);
             }
           }
+        },
+        ontext: (text: string) => {
+          addOutputForTestRun(testRun, runInfo.runPrefix, 0, 0, false, text);
         },
       },
       (error: Error) => {

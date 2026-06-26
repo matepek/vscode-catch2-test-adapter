@@ -7,6 +7,7 @@ import { TestItemManager } from './TestItemManager';
 import * as TMA from './TestMateApi';
 import * as llvm_cov from './coverage/llvm-cov';
 import * as gcov from './coverage/gcov';
+import * as custom from './coverage/custom';
 import { noLimitTaskPoolMap, TaskPoolMap } from './util/TaskPool';
 
 ///
@@ -185,7 +186,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
       }
       await Promise.allSettled(runQueue);
     } catch (e) {
-      log.errorS('runHandler errored. never should be here', e);
+      log.errorS('runHandler errored', e);
     } finally {
       testRun.end();
       --runCount;
@@ -463,6 +464,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<TMA.Te
 
   llvm_cov.advanced_activate(context);
   gcov.advanced_activate(context);
+  custom.advanced_activate(context);
 
   return {
     createTestRunProfile,

@@ -12,21 +12,23 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['stable', 'minimum']
+        VSCODE_VERSION:
+          - stable
+          # - minimum <-- disabled because no relevant test running now
         experimental: [false]
-        include:
-          - VSCODE_VERSION: 'insiders'
-            experimental: true
+        # include: <-- disabled because no relevant test running now
+        #   - VSCODE_VERSION: 'insiders'
+        #     experimental: true
     continue-on-error: ${{ matrix.experimental }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: '18.x'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install
@@ -40,8 +42,8 @@ jobs:
           npm run webpack
           ls -all out/dist
 
-      # - name: ESLint
-      #   run: npm run eslint
+      - name: ESLint
+        run: npm run eslint
 
       - name: Test
         run: |
@@ -57,21 +59,23 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['stable', 'minimum']
+        VSCODE_VERSION:
+          - stable
+          # - minimum <-- disabled because no relevant test running now
         experimental: [false]
-        include:
-          - VSCODE_VERSION: 'insiders'
-            experimental: true
+        # include: <-- disabled because no relevant test running now
+        #   - VSCODE_VERSION: 'insiders'
+        #     experimental: true
     continue-on-error: ${{ matrix.experimental }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: '18.x'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install
@@ -84,7 +88,7 @@ jobs:
       #   run: npm run eslint
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.3
+        uses: microsoft/setup-msbuild@v3
 
       - name: Test
         run: npm test
@@ -95,21 +99,23 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        VSCODE_VERSION: ['stable', 'minimum']
+        VSCODE_VERSION:
+          - stable
+          # - minimum <-- disabled because no relevant test running now
         experimental: [false]
-        include:
-          - VSCODE_VERSION: 'insiders'
-            experimental: true
+        # include: <-- disabled because no relevant test running now
+        #   - VSCODE_VERSION: 'insiders'
+        #     experimental: true
     continue-on-error: ${{ matrix.experimental }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: '18.x'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install

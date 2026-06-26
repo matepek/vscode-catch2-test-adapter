@@ -6,6 +6,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.25.2] - 2026-05-25
+
+- file wathcher/change related improvements
+
+## [4.25.1] - 2026-05-11
+
+### Changed
+
+- `waitForBuildProcess` NOT uses `ps-list` anymore. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/524))
+
+## [4.25.0] - 2026-05-11
+
+### Added
+
+- `waitForBuildProcess` now uses `ps-list` on Windows ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/488))
+
+## [4.24.0] - 2026-05-05
+
+Renamed remaining `C++ TestMate` to `TestMate C++`.
+
+### Changed
+
+- Catch2 and DocTest XML parsers, improved to keep output after the XMLs. Useful for `/usr/bin/leaks`.
+
+### Added
+
+- `testMate.test.advancedExecutables` -> `executionWrapper` ->
+  - `test-discovery`
+  - `test-listing`
+  - `test-execution`
+    properties to control when the wrapper should be applied. This was simpler wrappers can be setup. ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/523#nc))
+
+## [4.23.15] - 2026-04-24
+
+### Fixed
+
+- gtest parser ([related](https://github.com/matepek/vscode-catch2-test-adapter/issues/522))
+
+### Changed
+
+- improved gtest output parser
+
+### Deprecated
+
+- `testMate.cpp.test.parallelExecutionOfExecutableLimit` and will be removed
+
 ## [4.23.14] - 2026-04-13
 
 ### Changed

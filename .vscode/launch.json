@@ -48,6 +48,7 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "${workspaceFolder}/test/cpp",
+        "${workspaceFolder}/test/cpp2",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--disable-extensions"
       ],

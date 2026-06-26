@@ -175,6 +175,11 @@ TEST(ThisTest, FailsWithContext) {
   FAIL() << "This test fails with context";
 }
 
+TEST(ThisTest, FailsWithContext2) {
+  FAIL() << "This test fails with context"<< std::endl << "second line";
+  std::cout << "not related";
+}
+
 TEST(ThisTest, FailsWithEmpty) {
   FAIL();
   std::cout << "not related";
@@ -206,3 +211,9 @@ TEST(audetto, Test_Output3)
   EXPECT_EQ(1, 2) << "  1 is not 2";
 }
 
+TEST(Tomeamis, fails) {
+	FAIL();
+}
+
+TEST(Tomeamis, empty) {
+}

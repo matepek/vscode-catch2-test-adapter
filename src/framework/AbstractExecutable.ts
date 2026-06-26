@@ -779,7 +779,7 @@ export abstract class AbstractExecutable<TestT extends AbstractTest = AbstractTe
     }
 
     const builder = new SpawnBuilder(
-      this.shared.spawner,
+      this.shared.spawnerForExecution,
       builderProps.cmd,
       builderProps.args,
       { ...this.shared.options, cwd: builderProps.cwd, env: builderProps.env },

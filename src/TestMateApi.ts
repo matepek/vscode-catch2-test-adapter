@@ -175,10 +175,12 @@ export interface TestMateTestRunProfile {
   label: string;
 
   /**
-   * Associated tag for the profile. If this is set, only {@link vscode.TestItem}
-   * instances with the same tag will be eligible to execute in this profile.
+   * Associated tag for the profile. If this is set, only tests with same {@link vscode.TestItem}
+   * tag instances will be eligible to be executed in this profile.
+   * Default: `new vscode.TestTag("can-be-run")` which is a special value for this extension,
+   * indicating that the item can be run. BEWARE: only set it if you know what you are doing.
    */
-  tag: vscode.TestTag | undefined;
+  tag?: vscode.TestTag;
 
   dispose(): void;
 }

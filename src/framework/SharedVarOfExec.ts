@@ -25,7 +25,8 @@ export class SharedVarOfExec {
     readonly executableCloning: boolean,
     readonly debugConfigData: DebugConfigData | undefined,
     readonly runTask: RunTaskConfig,
-    readonly spawner: Spawner,
+    readonly spawnerForListing: Spawner,
+    readonly spawnerForExecution: Spawner,
     readonly resolvedSourceFileMap: Record<string, string>,
   ) {
     this.parallelizationPool = new TaskPool(parallelizationLimit);

@@ -105,6 +105,8 @@ export class DefaultSpawner implements Spawner {
   }
 }
 
+export const defaultSpawner = new DefaultSpawner();
+
 ///
 
 export class SpawnWithExecutor extends DefaultSpawner {

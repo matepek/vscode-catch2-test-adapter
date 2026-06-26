@@ -1,11 +1,11 @@
 {
   "name": "vscode-catch2-test-adapter",
-  "displayName": "C++ TestMate",
+  "displayName": "TestMate C++",
   "description": "Run GoogleTest, Catch2 and DOCtest tests from VSCode",
   "icon": "resources/icon.png",
   "author": "Mate Pek",
   "publisher": "matepek",
-  "version": "4.23.14",
+  "version": "4.25.2",
   "license": "MIT",
   "homepage": "https://github.com/matepek/vscode-catch2-test-adapter",
   "repository": {
@@ -62,7 +62,7 @@
   "dependencies": {
     "ansi-colors": "^4.1.3",
     "chokidar": "^5.0.0",
-    "dotenv": "^17.4.1",
+    "dotenv": "^17.4.2",
     "find-process": "^2.1.1",
     "tslib": "^2.8.1",
     "vscode-test-adapter-util": "^0.7.1"
@@ -74,28 +74,28 @@
     "@types/deep-equal": "^1.0.4",
     "@types/fs-extra": "^11.0.4",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^25.6.0",
+    "@types/node": "^22.19.19",
     "@types/request-promise": "4.1.51",
     "@types/sinon": "^21.0.1",
     "@types/source-map-support": "^0.5.10",
     "@types/vscode": "1.92.0",
     "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.7.1",
+    "@vscode/vsce": "^3.9.1",
     "bent": "^7.3.12",
     "deep-equal": "^2.2.3",
-    "eslint": "^10.2.0",
-    "fs-extra": "^11.3.4",
+    "eslint": "^10.4.0",
+    "fs-extra": "^11.3.5",
     "glob": "^13.0.6",
-    "globals": "^17.4.0",
+    "globals": "^17.6.0",
     "mocha": "^11.7.5",
-    "prettier": "^3.8.2",
+    "prettier": "^3.8.3",
     "raw-loader": "^4.0.2",
-    "sinon": "^21.1.1",
+    "sinon": "^22.0.0",
     "source-map-support": "^0.5.21",
     "ts-loader": "^9.5.7",
-    "typescript": "^6.0.2",
-    "typescript-eslint": "^8.58.1",
-    "webpack": "^5.106.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.3",
+    "webpack": "^5.106.2",
     "webpack-bundle-analyzer": "^5.3.0",
     "webpack-cli": "^7.0.2"
   },
@@ -109,22 +109,22 @@
     "commands": [
       {
         "command": "testMate.cmd.reload-tests",
-        "title": "Reload tests by C++ TestMate",
+        "title": "Reload tests by TestMate C++",
         "category": "Test"
       },
       {
         "command": "testMate.cmd.reload-workspaces",
-        "title": "Reload workspaces (in case of an issue) by C++ TestMate",
+        "title": "Reload workspaces (in case of an issue) by TestMate C++",
         "category": "Test"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "C++ TestMate",
+      "title": "TestMate C++",
       "$comment": "Enums will cause that the vscode will offer auto-completion.",
       "properties": {
         "testMate.cpp.test.executables": {
-          "markdownDescription": "A [glob pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) to find test executables. (Relative to the workspace folder or absolute path.) Empty string means disabled. For more option set [testMate.cpp.test.advancedExecutables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) instead of this. NOTE: if `testMate.cpp.test.advancedExecutables` is set then this is ignored.",
+          "markdownDescription": "A [glob pattern](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options) to find test executables. (Relative to the workspace folder or absolute path.) Empty string means disabled. For more options set [testMate.cpp.test.advancedExecutables](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) instead of this. NOTE: if `testMate.cpp.test.advancedExecutables` is set then this is ignored.",
           "scope": "resource",
           "type": "string",
           "default": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*"
@@ -300,11 +300,110 @@
                       ]
                     },
                     "minItems": 2
+                  },
+                  "test-discovery": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "description": "The path of the executor",
+                        "type": "string"
+                      },
+                      "args": {
+                        "description": "An array wich specifies the arguments of the executor. It should contain '${cmd}', '${argsFlat}' and '${argsStr}' too. Default: ['${cmd}', '${argsFlat}'].",
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "${cmd}",
+                                "${argsFlat}",
+                                "${argsStr}"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "minLength": 0
+                            }
+                          ]
+                        },
+                        "minItems": 2
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  },
+                  "test-listing": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "description": "The path of the executor",
+                        "type": "string"
+                      },
+                      "args": {
+                        "description": "An array wich specifies the arguments of the executor. It should contain '${cmd}', '${argsFlat}' and '${argsStr}' too. Default: ['${cmd}', '${argsFlat}'].",
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "${cmd}",
+                                "${argsFlat}",
+                                "${argsStr}"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "minLength": 0
+                            }
+                          ]
+                        },
+                        "minItems": 2
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  },
+                  "test-execution": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "description": "The path of the executor",
+                        "type": "string"
+                      },
+                      "args": {
+                        "description": "An array wich specifies the arguments of the executor. It should contain '${cmd}', '${argsFlat}' and '${argsStr}' too. Default: ['${cmd}', '${argsFlat}'].",
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "${cmd}",
+                                "${argsFlat}",
+                                "${argsStr}"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "minLength": 0
+                            }
+                          ]
+                        },
+                        "minItems": 2
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
                   }
-                },
-                "required": [
-                  "path"
-                ]
+                }
               },
               "sourceFileMap": {
                 "markdownDescription": "Replaces the key with the value in the souce file path. Can be configured with `$strategy`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#sourceFileMap)",
@@ -2046,6 +2145,7 @@
         },
         "testMate.cpp.test.parallelExecutionOfExecutableLimit": {
           "markdownDescription": "Maximum number of execution of the same executable. With this config it can be allowed that one executable is running at the same time as multiple processes and those processes _'running a set of tests'_ parallel. Useful if one executable has a lot of tests which can be run parallel. It won't have effect unless the `test.parallelExecutionLimit` is adjusted too. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. NOTE: if your **test cases** depend on the **same resource** exclusively then this **could cause a problem**.",
+          "deprecationMessage": "Use `advancedExecutables[].parallelizationLimit` instead. This will be removed in the future.",
           "scope": "resource",
           "type": "integer",
           "default": 1,
@@ -2183,12 +2283,6 @@
           "type": "string",
           "default": ""
         },
-        "testMate.cpp.log.logSentry": {
-          "markdownDescription": "Errors/Exceptions will be logged and sent automatically for further analysis. ([More](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md))",
-          "scope": "resource",
-          "type": "string",
-          "default": "question"
-        },
         "testMate.cpp.log.userId": {
           "markdownDescription": "A locally generated identifier which is used to group the errors/events. Not used for anything evil. Anonymity is preserved.",
           "scope": "application",
@@ -2284,6 +2378,52 @@
               "type": "string"
             }
           },
+          "additionalProperties": false
+        },
+        "testMate.cpp.experimental.custom-adapter": {
+          "markdownDescription": "Proof of concept _custom adapter_ implementation just for fun. Experimental: will be removed when it finds its home.",
+          "scope": "resource",
+          "type": "object",
+          "default": {
+            "enabled": false,
+            "logpanel": false,
+            "args": [
+              "${argsFlat}"
+            ]
+          },
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "logpanel": {
+              "type": "boolean",
+              "default": false
+            },
+            "tag": {
+              "description": "See `advancedExecutabes[].testTags` for details",
+              "type": "string"
+            },
+            "cwd": {
+              "type": "string"
+            },
+            "cmd": {
+              "type": "string"
+            },
+            "args": {
+              "description": "Can use `${argsFlat}` to insert the arguments",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "env": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "args"
+          ],
           "additionalProperties": false
         }
       }

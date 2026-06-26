@@ -11,7 +11,7 @@ import { CancellationFlag, Version } from '../../Util';
 import { TestGroupingConfig } from '../../TestGroupingInterface';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../../util/XmlParser';
 import { assert, debugBreak } from '../../util/DevelopmentHelper';
-import { TestResultBuilder } from '../../TestResultBuilder';
+import { addOutputForTestRun, TestResultBuilder } from '../../TestResultBuilder';
 import { TestItemParent } from '../../TestItemManager';
 import { AbstractTest, SubTest, SubTestTree } from '../AbstractTest';
 import { pipeProcess2Parser } from '../../util/ParserInterface';
@@ -124,7 +124,12 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
 
     const pathForExecution = await this._getPathForExecution();
     this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
-    const docTestListOutput = await this.shared.spawner.spawnAsync(pathForExecution, args, this.shared.options, 30000);
+    const docTestListOutput = await this.shared.spawnerForListing.spawnAsync(
+      pathForExecution,
+      args,
+      this.shared.options,
+      30000,
+    );
 
     if (docTestListOutput.stderr && !this.shared.ignoreTestEnumerationStdErr) {
       this.shared.log.warn(
@@ -260,6 +265,9 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
                 options,
               );
           }
+        },
+        ontext: (text: string) => {
+          addOutputForTestRun(testRun, runInfo.runPrefix, 0, 0, false, text);
         },
       },
       (error: Error) => {
@@ -497,6 +505,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
       if (durationSec === undefined) this.shared.log.errorS('doctest: duration is NaN: ' + tag.attribs.duration);
       else this.builder.setDurationMilisec(durationSec * 1000);
 
+      // eslint-disable-next-line no-useless-assignment
       let result: undefined | 'passed' | 'failed' = undefined;
 
       if (tag.attribs.test_case_success !== undefined) {

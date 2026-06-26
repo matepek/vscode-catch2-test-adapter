@@ -8,6 +8,21 @@ import { Logger } from './Logger';
 
 type TestResult = 'skipped' | 'failed' | 'errored' | 'passed';
 
+export const addOutputForTestRun = (
+  testRun: vscode.TestRun,
+  runPrefix: string,
+  level: number,
+  indent: number,
+  reindent: boolean,
+  ...msgs: string[]
+): void => {
+  const lines = formatStr(level + indent, reindent, ...msgs);
+
+  //this._outputLines.push(...lines);
+
+  testRun.appendOutput(lines.map(x => runPrefix + x + '\r\n').join(''));
+};
+
 // TODO:shared variable to control and colorization  vscode.window.activeColorTheme.kind;
 // also gtest could be colorized if we change the processor
 
@@ -74,19 +89,11 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   }
 
   addReindentedOutput(indent: number, ...msgs: string[]): void {
-    const lines = formatStr(this.level + indent, true, ...msgs);
-
-    //this._outputLines.push(...lines);
-
-    this.testRun.appendOutput(lines.map(x => this.runPrefix + x + '\r\n').join(''));
+    return addOutputForTestRun(this.testRun, this.runPrefix, this.level, indent, true, ...msgs);
   }
 
   addOutput(indent: number, ...msgs: string[]): void {
-    const lines = formatStr(this.level + indent, false, ...msgs);
-
-    //this._outputLines.push(...lines);
-
-    this.testRun.appendOutput(lines.map(x => this.runPrefix + x + '\r\n').join(''));
+    return addOutputForTestRun(this.testRun, this.runPrefix, this.level, indent, false, ...msgs);
   }
 
   ///

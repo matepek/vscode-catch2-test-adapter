@@ -32,10 +32,6 @@ and
 
 > Please check the documentation of [debug.configTemplate](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/debug.configTemplate.md).
 
-### Wanna see the test run results in the status bar too.
-
-> Check this extension: [Test Explorer Status Bar](https://marketplace.visualstudio.com/items?itemName=connorshea.vscode-test-explorer-status-bar)
-
 ### Custom scripts and **environment** variables
 
 Check
@@ -88,12 +84,18 @@ If you want dynamically set enviranment variables generate a file which contains
 >
 > This will remove the `build/` from the beggining of the relative path of the executable.
 
-### My tests are fine from command line but running fails using this extension.
+### My tests are fine from command line but running fails using this extension
 
-> What are the values of `testMate.cpp.test.parallelExecutionLimit`, `testMate.cpp.test.parallelExecutionOfExecutableLimit` or `testMate.cpp.test.advancedExecutables`'s `parallelizationLimit`?
+> What are the values of
+>
+> - `testMate.cpp.test.parallelExecutionLimit`,
+> - `testMate.cpp.test.advancedExecutables`'s
+>   - `parallelizationLimit` or
+>   - `maxTestsPerExecutable` ?
+>
 > These values can make a mess if your excutable/executables depending on the same resource(s).
 
-### Loading takes a lot of time:
+### Loading takes a lot of time
 
 > Enable `testMate.cpp.discovery.testListCaching`.
 

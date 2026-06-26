@@ -437,18 +437,57 @@ Note: This example overused it.
 
 ## `executionWrapper`
 
+Type:
+
+```ts
+type EW = {
+  path: string;
+  args?: string[];
+};
+
+type executionWrapper = {
+  'test-discovery'?: EW | false;
+  'test-listing'?: EW | false;
+  'test-execution'?: EW | false;
+};
+```
+
+And some variables must be used in `args`:
+
 - `${cmd}`
 - `${argsFlat}`: Example: `["pre", "${argsFlat}", "post"]` -> `["pre", "$1", "$2", ..., "$x", "post"]`
 - `${argsStr}`: Example: `["pre", "pre ${argsStr} post", "post"]` -> `["pre", " pre \"$1\" \"$2\" ... \"$x\" post", "post"]`
 
 Examples:
 
-This is useful if stderr/std::cerr is missing:
+```json
+"executionWrapper": {
+  "test-execution": {
+    "path": "valgrind",
+    "args": [
+      "--leak-check=full",
+      "--errors-for-leak-kinds=definite,possible",
+      "--show-leak-kinds=definite,possible",
+      "--track-origins=yes",
+      "--keep-debuginfo=yes",
+      "--error-exitcode=1",
+      "--show-realloc-size-zero=no",
+      "--num-callers=50",
+      "--suppressions=${workspaceFolder}/valgrind.supp",
+      "--",
+      "${cmd}",
+      "${argsFlat}"
+    ]
+  }
+}
+```
 
 ```json
 "executionWrapper": {
-  "path": "/bin/sh",
-  "args": [ "-c", "\"${cmd}\" ${argsStr} 2>&1" ]
+  "test-execution": {
+    "path": "/usr/bin/leaks",
+    "args": ["-atExit", "--", "${cmd}", "${argsFlat}"]
+  }
 }
 ```
 
@@ -456,6 +495,15 @@ This is useful if stderr/std::cerr is missing:
 "executionWrapper": {
   "path": "emulator.exe",
   "args": [ "${cmd}", "${argsFlat}" ]
+}
+```
+
+This is useful if stderr/std::cerr is missing:
+
+```json
+"executionWrapper": {
+  "path": "/bin/sh",
+  "args": [ "-c", "\"${cmd}\" ${argsStr} 2>&1" ]
 }
 ```
 

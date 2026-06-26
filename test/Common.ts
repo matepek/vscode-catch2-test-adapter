@@ -183,8 +183,7 @@ export const settings = new (class {
       if (key.startsWith('testMate.cpp.')) {
         const k = key.substr('testMate.cpp.'.length);
         // don't want to override these
-        if (k !== 'log.logfile' && k !== 'log.logSentry' && k !== 'log.userId')
-          updatePs.push(config.update(k, undefined));
+        if (k !== 'log.logfile' && k !== 'log.userId') updatePs.push(config.update(k, undefined));
       } else if (key.startsWith('catch2TestExplorer.')) {
         const k = key.substr('catch2TestExplorer.'.length);
         updatePs.push(oldConfig.update(k, undefined));
@@ -198,7 +197,7 @@ export const settings = new (class {
 export async function waitFor(context: Mocha.Context, condition: () => boolean, timeout?: number): Promise<void> {
   if (timeout === undefined) timeout = context.timeout() - 1000 /*need some time for error handling*/;
   const start = Date.now();
-  let c = await condition();
+  let c: boolean;
   while (
     !(c = await condition()) &&
     (Date.now() - start < timeout || (context.enableTimeouts && !context.enableTimeouts()))

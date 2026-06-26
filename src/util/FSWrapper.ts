@@ -38,7 +38,7 @@ function accessAsync(filePath: string, flag: number): Promise<void> {
   return fsp.access(filePath, flag);
 }
 
-export function isNativeExecutableAsync(
+export function checkIsNativeExecutable(
   filePath: string,
   extensionIncludeFilter: Set<string> | undefined,
   extensionExcludeFilter: Set<string> | undefined,
@@ -47,7 +47,7 @@ export function isNativeExecutableAsync(
   if (extensionIncludeFilter) {
     if (!extensionIncludeFilter.has(ext)) return Promise.reject(new Error('Not included by filter: ' + filePath));
   } else if (extensionExcludeFilter) {
-    if (extensionExcludeFilter.has(ext)) return Promise.reject(new Error('Excluded by fitler: ' + filePath));
+    if (extensionExcludeFilter.has(ext)) return Promise.reject(new Error('Excluded by filter: ' + filePath));
   }
   if (process.platform !== 'win32' && filePath.endsWith('/')) {
     // noted that we got ".../CMakeFiles/" a lot. I assume the slash means directory.

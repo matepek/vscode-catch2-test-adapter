@@ -191,7 +191,11 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
 
     const pathForExecution = await this._getPathForExecution();
     this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
-    const googleTestListProcess = await this.shared.spawner.spawn(pathForExecution, args, this.shared.options);
+    const googleTestListProcess = await this.shared.spawnerForListing.spawn(
+      pathForExecution,
+      args,
+      this.shared.options,
+    );
 
     const loadFromFileIfHas = async (): Promise<boolean> => {
       const hasXmlFile = await promisify(fs.exists)(cacheFile);
@@ -497,7 +501,7 @@ class TestCaseProcessor implements LineProcessor {
       switch (type) {
         case 'Failure':
         case 'error':
-          return new FailureProcessor(this.testCaseShared, file, line, fullMsg);
+          return new FailureProcessor(this.testCaseShared, file, line, fullMsg, this.testEndRe);
         case 'EXPECT_CALL':
           return new ExpectCallProcessor(this.testCaseShared, file, line, fullMsg);
         default:
@@ -533,6 +537,7 @@ class FailureProcessor implements LineProcessor {
     private readonly file: string | undefined,
     private readonly line: string | undefined,
     private readonly fullMsg: string,
+    private readonly testEndRe: RegExp,
   ) {}
 
   private treatRemainingAsPart: boolean = false;
@@ -540,6 +545,9 @@ class FailureProcessor implements LineProcessor {
   private promotedMsg: string | null = null;
 
   online(line: string): void | boolean {
+    if (this.testEndRe.exec(line)) {
+      return false;
+    }
     if (this.treatRemainingAsPart) {
       if (line.startsWith('[')) {
         return false;
@@ -592,7 +600,15 @@ class FailureProcessor implements LineProcessor {
         ...this.lines,
       );
     } else {
-      this.testCaseShared.builder.addMessage(this.file, this.line, this.promotedMsg ?? this.fullMsg, ...this.lines);
+      let firstLine = this.promotedMsg ?? this.fullMsg;
+      const restLines = [...this.lines];
+
+      if (firstLine === 'Failure') {
+        if (restLines.length >= 1 && restLines[0] === 'Failed') restLines.shift();
+        if (restLines.length >= 1) firstLine = restLines.shift()!;
+      }
+
+      this.testCaseShared.builder.addMessage(this.file, this.line, firstLine, ...restLines);
     }
   }
 }

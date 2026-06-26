@@ -86,8 +86,8 @@ async function updateChangelog(): Promise<Info | undefined> {
     const nextM = releaseContent.match(re);
     if (nextM) releaseContent = releaseContent.substring(0, nextM.index!).trimRight();
 
-    const issueRe = new RegExp(`https://github\\.com/${githubRepoFullId}/issues/(\\d+)`, 'g');
-    mentionedIssues.push(...[...releaseContent.matchAll(issueRe)].map(x => x[1]));
+    const issueRe = new RegExp(`https://github\\.com/${githubRepoFullId}/issues/(\\d+)(#nc)?`, 'g');
+    mentionedIssues.push(...[...releaseContent.matchAll(issueRe)].filter(x => x[2] === undefined).map(x => x[1]));
   }
 
   const now = new Date();

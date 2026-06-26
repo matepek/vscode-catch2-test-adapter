@@ -11,7 +11,8 @@ export class XmlParser implements ParserInterface {
   private sequentialP = Promise.resolve();
   private readonly endP: Promise<void>;
   private readonly endPResolver: () => void;
-  private readonly tagStack: XmlTagFrame[] = [];
+  private readonly rootTag = { name: '<root>', attribs: {}, _text: '' };
+  private readonly tagStack: XmlTagFrame[] = [this.rootTag];
   private readonly xmlTagProcessorStack: ProcessorFrame[] = [];
   private topTagProcessor: ProcessorFrame;
 
@@ -99,6 +100,10 @@ export class XmlParser implements ParserInterface {
                 this.log.warn('onend should not have more processors unless the parser was abandoned', this);
               }
 
+              if (this.topTagProcessor.processor.ontext) {
+                const trimmedText = this.rootTag._text.trim();
+                if (trimmedText) this.topTagProcessor.processor.ontext(trimmedText, this.rootTag);
+              }
               if (this.topTagProcessor.processor.end) await this.topTagProcessor.processor.end();
             })
             .catch(reason => this.log.errorS(reason))
@@ -109,8 +114,8 @@ export class XmlParser implements ParserInterface {
             const dataTrimmed = dataStr.trim();
             if (dataTrimmed === '') return;
             this.log.trace('ontext', dataTrimmed);
-
-            this.tagStack[this.tagStack.length - 1]._text += dataStr;
+            const currTag = this.tagStack[this.tagStack.length - 1];
+            currTag._text += dataStr;
           });
         },
         onerror: (error: Error): void => {
@@ -121,8 +126,7 @@ export class XmlParser implements ParserInterface {
       { xmlMode: true },
     );
 
-    this.topTagProcessor = { tag: { name: '<root>', attribs: {} }, processor, nesting: 0 };
-    this.tagStack.push({ name: '<root>', attribs: {}, _text: '' });
+    this.topTagProcessor = { tag: this.rootTag, processor, nesting: 0 };
   }
 
   writeStdErr(data: string): Promise<boolean> {
