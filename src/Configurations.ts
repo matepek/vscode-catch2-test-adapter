@@ -462,7 +462,7 @@ export class Configurations {
       this._log.info('`test.advancedExecutables` is not defined. trying to use `test.executables`');
 
       if (simple === undefined) {
-        return [createExecutableConfigFromPattern('{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*')];
+        return [createExecutableConfigFromPattern('{build,Build,BUILD,builddir,out,Out,OUT}/**/*{test,Test,TEST}*')];
       } else if (typeof simple === 'string') {
         if (simple.length === 0) {
           // disabled

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.27.0]
+
+### Changed
+
+- default `test.executables`/`test.advancedExecutables` pattern to also match `builddir` (the [Meson](https://mesonbuild.com/) build system's conventional directory name), so Meson projects are discovered out of the box
+
 ## [4.26.0] - 2026-07-03
 
 ### Added

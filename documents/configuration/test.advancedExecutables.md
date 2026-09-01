@@ -12,9 +12,9 @@ The location of your test executables (relative to the workspace folder or absol
 
 he extension is \*_pre-configured_ and it should find executables inside the working directory which match the following [_glob pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options):
 
-`"testMate.cpp.test.advancedExecutables": [ "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*" ]`
+`"testMate.cpp.test.advancedExecutables": [ "{build,Build,BUILD,builddir,out,Out,OUT}/**/*{test,Test,TEST}*" ]`
 
-This basically means executables inside the `build` and `out` directories (recursive `/**/`) which contain the `test` word in their name (including extensions).
+This basically means executables inside the `build`, `builddir` (the [Meson](https://mesonbuild.com/) convention) and `out` directories (recursive `/**/`) which contain the `test` word in their name (including extensions).
 
 (Examples [here](#Examples))
 
@@ -25,7 +25,7 @@ The first example (`.vscode/settings.json` or hit _Ctr/Cmd + ,_):
 ```json
 "testMate.cpp.test.advancedExecutables": [
   {
-    "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+    "pattern": "{build,Build,BUILD,builddir,out,Out,OUT}/**/*{test,Test,TEST}*",
     "cwd": "${absDirpath}",
     "env": {
       "ExampleENV1": "You can use variables here too, like ${relPath}",
@@ -207,7 +207,7 @@ Example:
 "testMate.cpp.test.advancedExecutables": {
   "name": "${filename}",
   "description": "${relDirpath}/",
-  "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+  "pattern": "{build,Build,BUILD,builddir,out,Out,OUT}/**/*{test,Test,TEST}*",
   "cwd": "${absDirpath}",
   "env": {
     "ExampleENV1": "You can use variables here too, like ${absPath}",
@@ -308,7 +308,7 @@ Ex.:
 {
   "testMate.cpp.test.advancedExecutables": [
     {
-      "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+      "pattern": "{build,Build,BUILD,builddir,out,Out,OUT}/**/*{test,Test,TEST}*",
       "gtest":   { "ignoreTestEnumerationStdErr": true }
     }
    ]
@@ -326,7 +326,7 @@ It is undocumented. Contact me by opening an issue or read the code a bit.
 {
   "testMate.cpp.test.advancedExecutables": [
     {
-      "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+      "pattern": "{build,Build,BUILD,builddir,out,Out,OUT}/**/*{test,Test,TEST}*",
       "catch2": {
         "testGrouping": {
           "groupByExecutable": {
@@ -358,7 +358,7 @@ Note: This example overused it.
 {
   "testMate.cpp.test.advancedExecutables": [
     {
-      "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+      "pattern": "{build,Build,BUILD,builddir,out,Out,OUT}/**/*{test,Test,TEST}*",
       "catch2": {
         "testGrouping": {
           "groupByExecutable": {
@@ -410,7 +410,7 @@ Note: This example overused it.
 ```json
 "testMate.cpp.test.advancedExecutables": [
   {
-    "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+    "pattern": "{build,Build,BUILD,builddir,out,Out,OUT}/**/*{test,Test,TEST}*",
     "catch2": {
       "testGrouping": {
         "groupBySource": "[-3:]",
@@ -517,7 +517,7 @@ This is useful if stderr/std::cerr is missing:
 ```json
 "testMate.cpp.test.advancedExecutables": [
   {
-    "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+    "pattern": "{build,Build,BUILD,builddir,out,Out,OUT}/**/*{test,Test,TEST}*",
     "runTask": {
       "before": [ "taskName in tasks.json" ]
     }
@@ -531,12 +531,12 @@ This is useful if stderr/std::cerr is missing:
 "testMate.cpp.test.advancedExecutables": [
   {
     "name": "${filename} [APPLE=1]",
-    "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+    "pattern": "{build,Build,BUILD,builddir,out,Out,OUT}/**/*{test,Test,TEST}*",
     "env":{ "APPLE": "1" }
   },
   {
     "name": "${filename} [APPLE=2]",
-    "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
+    "pattern": "{build,Build,BUILD,builddir,out,Out,OUT}/**/*{test,Test,TEST}*",
     "env":{ "APPLE": "2" }
   }
 ]
