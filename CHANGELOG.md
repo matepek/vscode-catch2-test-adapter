@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- [Boost.Test](https://www.boost.org/doc/libs/release/libs/test/doc/html/index.html) support with framework specific settings: `catchSystemErrors`, `detectFpExceptions`, `detectMemoryLeaks` and `logPassedAssertions` (`testMate.cpp.test.advancedExecutables` → `boosttest`)
+
 ## [4.26.2] - 2026-10-16
 
 ### Added

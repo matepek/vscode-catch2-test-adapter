@@ -30,6 +30,7 @@ export type AdvancedExecutableConfig = {
   gtest?: FrameworkSpecificConfig;
   doctest?: FrameworkSpecificConfig;
   gbenchmark?: FrameworkSpecificConfig;
+  boosttest?: FrameworkSpecificConfig;
   testGrouping?: TestGroupingConfig;
   executionWrapper?: ExecutionWrapperConfig;
   sourceFileMap?: Record<string, ResolvableString>;
@@ -67,6 +68,10 @@ export interface FrameworkSpecificConfig {
   ignoreTestEnumerationStdErr?: boolean;
   'debug.enableOutputColouring'?: boolean;
   failIfExceedsLimitNs?: number;
+  catchSystemErrors?: boolean;
+  detectFpExceptions?: boolean;
+  detectMemoryLeaks?: number;
+  logPassedAssertions?: boolean;
 }
 
 type ResolvableString = string;
