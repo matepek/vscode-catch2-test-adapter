@@ -31,7 +31,7 @@ jobs:
       - name: Review
         uses: anthropics/claude-code-action@v1
         with:
-          # show_full_output: true
+          show_full_output: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
