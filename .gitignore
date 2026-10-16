@@ -10,4 +10,4 @@ out
 
 .vscode/ipch
 
-CLAUDE.local.md
+*.local.*
