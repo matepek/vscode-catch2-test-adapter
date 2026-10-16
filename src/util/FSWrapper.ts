@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as fsp from 'fs/promises';
 import * as path from 'path';
 import { promisify } from 'util';
 import * as cp from 'child_process';
@@ -31,79 +32,71 @@ export function isSpawnBusyError(err: any /*eslint-disable-line*/): boolean {
 
 ///
 
-const ExecutableFlag = fs.constants.X_OK;
+const ExecutableFlag = fsp.constants.X_OK;
 
 function accessAsync(filePath: string, flag: number): Promise<void> {
-  return new Promise((resolve, reject) => {
-    fs.access(filePath, flag, (err: Error | null) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
+  return fsp.access(filePath, flag);
 }
 
-// https://askubuntu.com/questions/156392/what-is-the-equivalent-of-an-exe-file
-const nativeExecutableExtensionFilter = new Set([
-  '.a',
-  '.bat',
-  '.c',
-  '.cc',
-  '.cmake',
-  '.cpp',
-  '.cxx',
-  '.deb',
-  '.dir',
-  '.gz',
-  '.h',
-  '.hpp',
-  '.hxx',
-  '.in',
-  '.input',
-  '.ko',
-  '.log',
-  '.md',
-  '.mm',
-  '.ninja',
-  '.o',
-  '.obj',
-  '.pc',
-  '.php',
-  '.pyc',
-  '.rpm',
-  '.so',
-  '.stamp',
-  '.tar',
-  '.txt',
-  '.vcxproj.user',
-  '.xml',
-]);
-
-const win32NativeExecutableExtensionFilter = new Set(['.exe', '.cmd', '.bat']);
-
-export function isNativeExecutableAsync(filePath: string): Promise<void> {
+export function checkIsNativeExecutable(
+  filePath: string,
+  extensionIncludeFilter: Set<string> | undefined,
+  extensionExcludeFilter: Set<string> | undefined,
+): Promise<void> {
   const ext = path.extname(filePath);
-  if (process.platform === 'win32') {
-    if (win32NativeExecutableExtensionFilter.has(ext)) return accessAsync(filePath, ExecutableFlag);
-    else return Promise.reject(new Error('Not a native executable extension on win32: ' + filePath));
-  } else {
-    if (filePath.endsWith('/')) {
-      // noted that we got ".../CMakeFiles/" a lot. I assume the slash means directory.
-      return Promise.reject(new Error('It is a directory, not a native executable: ' + filePath));
-    }
-    if (nativeExecutableExtensionFilter.has(ext)) {
-      return Promise.reject(new Error('Not a native executable (filtered because of its extension): ' + filePath));
-    } else {
-      return accessAsync(filePath, ExecutableFlag);
-    }
+  if (extensionIncludeFilter) {
+    if (!extensionIncludeFilter.has(ext)) return Promise.reject(new Error('Not included by filter: ' + filePath));
+  } else if (extensionExcludeFilter) {
+    if (extensionExcludeFilter.has(ext)) return Promise.reject(new Error('Excluded by filter: ' + filePath));
   }
+  if (process.platform !== 'win32' && filePath.endsWith('/')) {
+    // noted that we got ".../CMakeFiles/" a lot. I assume the slash means directory.
+    return Promise.reject(new Error('It is a directory, not a native executable: ' + filePath));
+  }
+  return accessAsync(filePath, ExecutableFlag);
 }
 
-export function existsSync(filePath: string): boolean {
-  return fs.existsSync(filePath);
+export async function exists(filePath: string): Promise<boolean> {
+  return promisify(fs.access)(filePath, fs.constants.R_OK).then(
+    () => true,
+    () => false,
+  );
 }
 
 export function getLastModiTime(filePath: string): Promise<number> {
   return promisify(fs.stat)(filePath).then((stat: fs.Stats) => {
     return stat.mtimeMs;
   });
+}
+
+///
+
+export async function resolveFirstSymlink(
+  absPath: string,
+): Promise<{ resolvedAbsPath: string; symlinkAbsPath: string | null }> {
+  if (!path.isAbsolute(absPath)) throw Error('absPath is expected');
+  const segments = absPath.split(path.sep);
+  let idx = 1; // either it's drive or root folder, we skip it
+  const potentialSymlinkSegments: string[] = [segments[0]];
+  while (idx < segments.length) {
+    potentialSymlinkSegments.push(segments[idx++]);
+    const potentialSymlinkPath = potentialSymlinkSegments.join(path.sep);
+    try {
+      const stat = await fsp.lstat(potentialSymlinkPath);
+      if (stat.isSymbolicLink()) {
+        const realPath = await fsp.realpath(potentialSymlinkPath);
+        const resolvedAbsPath = path.join(realPath, ...segments.slice(idx));
+        return { resolvedAbsPath, symlinkAbsPath: potentialSymlinkPath };
+      }
+      if (!stat.isDirectory()) {
+        return { resolvedAbsPath: absPath, symlinkAbsPath: null };
+      }
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        return { resolvedAbsPath: absPath, symlinkAbsPath: null };
+      }
+      throw err;
+    }
+  }
+  return { resolvedAbsPath: absPath, symlinkAbsPath: null };
 }

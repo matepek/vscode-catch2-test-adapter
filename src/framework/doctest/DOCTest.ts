@@ -7,7 +7,9 @@ export class DOCTest extends AbstractTest {
   constructor(
     executable: AbstractExecutable,
     parent: TestItemParent,
-    testNameAsId: string,
+    id: string,
+    private readonly testName: string,
+    public readonly suiteName: string | undefined,
     tags: string[],
     file: string | undefined,
     line: string | undefined,
@@ -17,8 +19,8 @@ export class DOCTest extends AbstractTest {
     super(
       executable,
       parent,
-      testNameAsId,
-      testNameAsId.startsWith('  Scenario:') ? testNameAsId.trimStart() : testNameAsId,
+      id,
+      testName.startsWith('  Scenario:') ? testName.trimStart() : testName,
       file,
       line,
       skipped,
@@ -42,6 +44,6 @@ export class DOCTest extends AbstractTest {
 
   getEscapedTestName(): string {
     /* ',' has special meaning */
-    return this.id.replace(/,/g, '?');
+    return this.testName.replace(/,/g, '?');
   }
 }

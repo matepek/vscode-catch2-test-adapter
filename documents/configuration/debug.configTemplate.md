@@ -73,7 +73,7 @@ For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) 
 | Variable name         | Value meaning                                                             | Type                            |
 | --------------------- | ------------------------------------------------------------------------- | ------------------------------- |
 | `${label}`            | The name of the test. Same as in the Test Explorer.                       | string                          |
-| `${suiteLabel}`       | The name of parent suites of the test. Same as in the Test Explorer.      | string                          |
+| `${parentLabel}`      | The name of parent suites of the test. Same as in the Test Explorer.      | string                          |
 | `${exec}`             | The path of the executable.                                               | string                          |
 | `${argsArray}`        | The arguments for the executable.                                         | string[]                        |
 | `${argsArrayFlat}`    | The arguments for the executable.                                         | string[]                        |
@@ -81,6 +81,8 @@ For [`vadimcn.vscode-lldb`](https://github.com/vadimcn/vscode-lldb#quick-start) 
 | `${cwd}`              | The current working directory for execution.                              | string                          |
 | `${envObj}`           | The environment variables as object properties.                           | { [prop: string]: string }      |
 | `${envObjArray}`      | The environment variables as array of objects. (for `ms-vscode.cpptools`) | { name:string, value:string }[] |
+| `${sourceFile}`       | The file path of the source file where the code resides or empty string.  | string                          |
+| `${sourceFileLine}`   | The line in the source file where the code resides or empty string.       | string                          |
 | `${sourceFileMapObj}` | The file path mapping object added to `advancedExecutables.sourceFileMap` | { [prop: string]: string }      |
 
 These variables will be substituted when a DebugConfiguration is created.

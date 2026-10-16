@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import * as c2fs from '../util/FSWrapper';
 import { SharedVarOfExec } from './SharedVarOfExec';
 import { AbstractExecutable } from './AbstractExecutable';
@@ -6,33 +7,53 @@ import { GoogleTestExecutable } from './GoogleTest/GoogleTestExecutable';
 import { DOCExecutable } from './doctest/DOCExecutable';
 import { FrameworkSpecificConfig, RunTaskConfig } from '../AdvancedExecutableInterface';
 import { Version } from '../Util';
-import { Spawner, SpawnOptionsWithoutStdio } from '../Spawner';
+import { Spawner, SpawnOptionsWithoutStdioEx } from '../Spawner';
 import { GoogleBenchmarkExecutable } from './GoogleBenchmark/GoogleBenchmarkExecutable';
 import { ResolveRuleAsync } from '../util/ResolveRule';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { Framework, FrameworkId, FrameworkType } from './Framework';
+import { DebugConfigData } from '../DebugConfigType';
 
 export class ExecutableFactory {
   constructor(
     private readonly _shared: WorkspaceShared,
     private readonly _execName: string | undefined,
     private readonly _execDescription: string | undefined,
+    private readonly _testTags: readonly vscode.TestTag[],
     private readonly _execPath: string,
-    private readonly _execOptions: SpawnOptionsWithoutStdio,
+    private readonly _execOptions: SpawnOptionsWithoutStdioEx,
     private readonly _varToValue: ResolveRuleAsync[],
     private readonly _parallelizationLimit: number,
+    private readonly _maxTestsPerExecutable: number | null,
     private readonly _markAsSkipped: boolean,
+    private readonly _executableRunAsImplicitAll: boolean,
+    private readonly _executableCloning: boolean,
+    private readonly _debugConfigData: DebugConfigData | undefined,
+    private readonly _executableSuffixToInclude: Set<string> | undefined,
+    private readonly _executableSuffixToExclude: Set<string> | undefined,
     private readonly _runTask: RunTaskConfig,
-    private readonly _spawner: Spawner,
+    private readonly _spawnerForDiscovery: Spawner,
+    private readonly _spawnerForListing: Spawner,
+    private readonly _spawnerForExecution: Spawner,
     private readonly _resolvedSourceFileMap: Record<string, string>,
     private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecificConfig>,
   ) {}
 
   async create(checkIsNativeExecutable: boolean): Promise<AbstractExecutable | undefined> {
     const runWithHelpRes = await this._shared.taskPool.scheduleTask(async () => {
-      if (checkIsNativeExecutable) await c2fs.isNativeExecutableAsync(this._execPath);
+      if (checkIsNativeExecutable)
+        await c2fs.checkIsNativeExecutable(
+          this._execPath,
+          this._executableSuffixToInclude,
+          this._executableSuffixToExclude,
+        );
 
-      return this._spawner.spawnAsync(this._execPath, ['--help'], this._execOptions, this._shared.execParsingTimeout);
+      return this._spawnerForDiscovery.spawnAsync(
+        this._execPath,
+        ['--help'],
+        this._execOptions,
+        this._shared.execParsingTimeout,
+      );
     });
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
     // s: dotAll
@@ -52,21 +73,30 @@ export class ExecutableFactory {
         regex = frameworkData.regex;
       }
 
-      const match = runWithHelpRes.stdout.match(regex);
+      let match = runWithHelpRes.stdout.match(regex);
+      if (!match && frameworkSpecific.helpRegex) {
+        match = runWithHelpRes.stderr.match(regex);
+      }
 
       if (match) {
         const sharedVarOfExec = new SharedVarOfExec(
           this._shared,
           this._execName,
           this._execDescription,
+          this._testTags,
           this._varToValue,
           this._execPath,
           this._execOptions,
           frameworkSpecific,
           this._parallelizationLimit,
+          this._maxTestsPerExecutable,
           this._markAsSkipped,
+          this._executableRunAsImplicitAll,
+          this._executableCloning,
+          this._debugConfigData,
           this._runTask,
-          this._spawner,
+          this._spawnerForListing,
+          this._spawnerForExecution,
           this._resolvedSourceFileMap,
         );
 
@@ -75,7 +105,7 @@ export class ExecutableFactory {
     }
 
     this._shared.log.debug('Not a supported test executable', {
-      spawner: this._spawner,
+      spawner: this._spawnerForDiscovery,
       execPath: this._execPath,
       stdout: runWithHelpRes.stdout,
       stderr: runWithHelpRes.stderr,
@@ -128,8 +158,11 @@ const frameworkIdsSorted = Object.keys(frameworkDatas).sort(
 ) as ReadonlyArray<FrameworkId>;
 
 function parseVersion123(match: RegExpMatchArray): Version | undefined {
-  if (match && match.length === 4 && Number(match[1]) !== NaN && Number(match[2]) !== NaN && Number(match[3]) !== NaN) {
-    return new Version(Number(match[1]), Number(match[2]), Number(match[3]));
+  const major = parseInt(match[1]);
+  const minor = parseInt(match[2]);
+  const patch = parseInt(match[3]);
+  if (match && match.length === 4 && !Number.isNaN(major) && !Number.isNaN(minor) && !Number.isNaN(patch)) {
+    return new Version(major, minor, patch);
   } else {
     return undefined;
   }

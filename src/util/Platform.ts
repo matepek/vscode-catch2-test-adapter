@@ -15,7 +15,7 @@ class Platform {
   }
 
   getPlatformProperty<T>(obj: T): T | undefined {
-    if (typeof obj !== 'object') throw Error('assert');
+    if (typeof obj !== 'object' || obj === null) throw Error('assert');
 
     if (process.platform in obj) {
       // eslint-disable-next-line

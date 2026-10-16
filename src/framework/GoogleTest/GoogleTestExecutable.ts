@@ -12,14 +12,17 @@ import { CancellationToken } from '../../Util';
 import { TestGroupingConfig } from '../../TestGroupingInterface';
 import { TestResultBuilder } from '../../TestResultBuilder';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../../util/XmlParser';
-import { LineProcessor, TextStreamParser } from '../../util/TextStreamParser';
+import { LambdaLineProcessor, LineProcessor, NoOpLineProcessor, TextStreamParser } from '../../util/TextStreamParser';
 import { assert, debugBreak } from '../../util/DevelopmentHelper';
 import { TestItemParent } from '../../TestItemManager';
 import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../../util/ParserInterface';
 import { Readable } from 'stream';
 
 export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
-  constructor(sharedVarOfExec: SharedVarOfExec, private readonly _argumentPrefix: string) {
+  constructor(
+    sharedVarOfExec: SharedVarOfExec,
+    private readonly _argumentPrefix: string,
+  ) {
     super(sharedVarOfExec, 'GoogleTest', undefined);
   }
 
@@ -57,8 +60,8 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     await pipeOutputStreams2Parser(xmlStream, undefined, parser, undefined);
   }
 
-  private static readonly testGroupRe = /^([A-z][\/A-z0-9_\-]*)\.(?:\s+(#\s+TypeParam(?:\(\))?\s+=\s*(.+)))?$/;
-  private static readonly testRe = /^\s+([A-z0-9][\/A-z0-9_\-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
+  private static readonly testGroupRe = /^([A-z][/A-z0-9_-]*)\.(?:\s+(#\s+TypeParam(?:\(\))?\s+=\s*(.+)))?$/;
+  private static readonly testRe = /^\s+([A-z0-9][/A-z0-9_-]*)(?:\s+(#\s+GetParam(?:\(\))?\s+=\s*(.+)))?$/;
 
   private async _reloadFromString(
     stdout: Readable | string,
@@ -93,7 +96,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
 
     if (typeof stdout === 'string') {
       parser.write(stdout);
-      parser.writeStdErr(stderr as string);
+      await parser.writeStdErr(stderr as string);
       await parser.end();
     } else {
       await pipeOutputStreams2Parser(stdout, stderr as Readable, parser, undefined);
@@ -101,45 +104,68 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
   }
 
   private readonly _createAndAddTest = async (
-    testName: string,
-    suiteName: string,
+    testId: string,
+    suiteId: string,
     file: string | undefined,
     line: string | undefined,
     typeParam: string | undefined,
     valueParam: string | undefined,
   ): Promise<GoogleTestTest> => {
-    const resolvedFile = this.findSourceFilePath(file);
-    const id = suiteName + '.' + testName;
+    const resolvedFile = await this.findSourceFilePath(file);
+    const id = suiteId + '.' + testId;
+    const isSkipped = GoogleTestTest.isSkipped(testId, suiteId);
     // gunit
-    if (testName === '') {
+    if (testId === '') {
+      const testId_ = '<GUnit>';
       return this._createTreeAndAddTest(
         this.getTestGrouping(),
-        '<GUnit>',
+        testId_,
         resolvedFile,
         line,
-        [suiteName],
+        [suiteId],
         undefined,
-        (parent: TestItemParent) =>
-          new GoogleTestTest(this, parent, id, '<GUnit>', suiteName, typeParam, valueParam, resolvedFile, line),
-        (test: GoogleTestTest) => test.update2('<GUnit>', suiteName, resolvedFile, line, typeParam, valueParam),
+        (parent: TestItemParent, testName: string | undefined) =>
+          new GoogleTestTest(
+            this,
+            parent,
+            id,
+            testName ?? testId_,
+            isSkipped,
+            typeParam,
+            valueParam,
+            resolvedFile,
+            line,
+          ),
+        (test: GoogleTestTest) => test.update2(testId_, isSkipped, resolvedFile, line, typeParam, valueParam),
       );
     } else {
+      const testId_ = GoogleTestTest.calcLabel(testId);
       return this._createTreeAndAddTest(
         this.getTestGrouping(),
-        testName,
+        id,
         resolvedFile,
         line,
-        [suiteName],
+        [suiteId],
         undefined,
-        (parent: TestItemParent) =>
-          new GoogleTestTest(this, parent, id, testName, suiteName, typeParam, valueParam, resolvedFile, line),
-        (test: GoogleTestTest) => test.update2(testName, suiteName, resolvedFile, line, typeParam, valueParam),
+        (parent: TestItemParent, testName: string | undefined) =>
+          new GoogleTestTest(
+            this,
+            parent,
+            id,
+            testName ?? testId_,
+            isSkipped,
+            typeParam,
+            valueParam,
+            resolvedFile,
+            line,
+          ),
+        (test: GoogleTestTest) => test.update2(testId_, isSkipped, resolvedFile, line, typeParam, valueParam),
       );
     }
   };
 
   protected async _reloadChildren(cancellationToken: CancellationToken): Promise<void> {
-    const cacheFile = this.shared.path + '.TestMate.testListCache.xml';
+    const cacheFile = this.shared.path + `.TestMate.testListCache.${this.shared.optionsHash}.xml`;
 
     if (this.shared.enabledTestListCaching) {
       try {
@@ -157,14 +183,19 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
       }
     }
 
-    const args = this.shared.prependTestListingArgs.concat([
+    const prependTestListingArgs = await Promise.all(this.shared.prependTestListingArgs.map(x => this.resolveText(x)));
+    const args = prependTestListingArgs.concat([
       `--${this._argumentPrefix}list_tests`,
       `--${this._argumentPrefix}output=xml:${cacheFile}`,
     ]);
 
-    this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
-
-    const googleTestListProcess = await this.shared.spawner.spawn(this.shared.path, args, this.shared.options);
+    const pathForExecution = await this._getPathForExecution();
+    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
+    const googleTestListProcess = await this.shared.spawnerForListing.spawn(
+      pathForExecution,
+      args,
+      this.shared.options,
+    );
 
     const loadFromFileIfHas = async (): Promise<boolean> => {
       const hasXmlFile = await promisify(fs.exists)(cacheFile);
@@ -176,7 +207,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
 
         if (!this.shared.enabledTestListCaching) {
           fs.unlink(cacheFile, (err: Error | null) => {
-            err && this.shared.log.warn("Couldn't remove: ", cacheFile, err);
+            if (err) this.shared.log.warn("Couldn't remove: ", cacheFile, err);
           });
         }
 
@@ -205,15 +236,16 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     }
   }
 
-  private _getRunParamsCommon(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  private _getRunParamsCommon(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     const execParams: string[] = [];
 
-    const testNames = childrenToRun.map(c => c.id);
-
-    execParams.push(`--${this._argumentPrefix}filter=` + testNames.join(':'));
-
-    execParams.push(`--${this._argumentPrefix}also_run_disabled_tests`);
-
+    if (childrenToRun === null) {
+      // nothing to add, run all
+    } else {
+      const testNames = childrenToRun.map(c => c.id);
+      execParams.push(`--${this._argumentPrefix}filter=` + testNames.join(':'));
+      execParams.push(`--${this._argumentPrefix}also_run_disabled_tests`);
+    }
     if (this.shared.rngSeed !== null) {
       execParams.push(`--${this._argumentPrefix}shuffle`);
       execParams.push(
@@ -229,7 +261,7 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
     return execParams;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     return [`--${this._argumentPrefix}color=no`, ...this._getRunParamsCommon(childrenToRun)];
   }
 
@@ -275,7 +307,9 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
             data.lastBuilder = new TestResultBuilder(test, testRun, runInfo.runPrefix, false);
             return new TestCaseProcessor(executable.shared, testEndRe(test.id), data.lastBuilder);
           } else if (line.startsWith('[----------] Global test environment tear-down')) {
-            return new NoOpLineProcessor();
+            return executable.shared.shared.hideUninterestingOutput
+              ? new NoOpLineProcessor()
+              : new LambdaLineProcessor(l => testRun.appendOutput(runInfo.runPrefix + l + '\r\n'));
           } else {
             if (
               line === '' ||
@@ -283,7 +317,8 @@ export class GoogleTestExecutable extends AbstractExecutable<GoogleTestTest> {
                 line.startsWith(x),
               )
             ) {
-              //skip
+              if (executable.shared.shared.hideUninterestingOutput == false)
+                testRun.appendOutput(runInfo.runPrefix + line + '\r\n');
             } else {
               testRun.appendOutput(runInfo.runPrefix + line + '\r\n');
             }
@@ -350,7 +385,7 @@ class TestSuiteListingProcessor implements XmlTagProcessor {
 ///
 
 // Remark: not necessarily starts like this so do not use: ^
-const testBeginRe = /\[ RUN      \] ((.+)\.(.*))$/m;
+const testBeginRe = /\[ RUN {6}\] ((.+)\.(.*))$/m;
 // Ex: "Is True[       OK ] TestCas1.test5 (0 ms)"
 // m[1] == '[       '
 // m[2] == 'OK'
@@ -373,7 +408,10 @@ const testEndRe = (testId: string) =>
 ///
 
 class TestCaseSharedData {
-  constructor(readonly shared: SharedVarOfExec, readonly builder: TestResultBuilder) {}
+  constructor(
+    readonly shared: SharedVarOfExec,
+    readonly builder: TestResultBuilder,
+  ) {}
 
   gMockWarningCount = 0;
 }
@@ -398,10 +436,10 @@ class TestCaseProcessor implements LineProcessor {
       this.testCaseShared.builder.test.line,
       true,
     );
-    this.testCaseShared.builder.addOutputLine(0, ansi.bold(line) + loc);
+    this.testCaseShared.builder.addReindentedOutput(0, ansi.bold(line) + loc);
   }
 
-  online(line: string): void | true | LineProcessor {
+  async online(line: string): Promise<void | true | LineProcessor> {
     const testEndMatch = this.testEndRe.exec(line);
 
     if (testEndMatch) {
@@ -425,7 +463,7 @@ class TestCaseProcessor implements LineProcessor {
       }
 
       if (this.testCaseShared.gMockWarningCount) {
-        this.testCaseShared.builder.addOutputLine(
+        this.testCaseShared.builder.addReindentedOutput(
           1,
           '⚠️' + this.testCaseShared.gMockWarningCount + ' GMock warning(s) in the output!',
         );
@@ -433,7 +471,7 @@ class TestCaseProcessor implements LineProcessor {
 
       this.testCaseShared.builder.build();
 
-      this.testCaseShared.builder.addOutputLine(
+      this.testCaseShared.builder.addReindentedOutput(
         0,
         testEndMatch[1] +
           styleFunc(testEndMatch[2]) +
@@ -450,12 +488,12 @@ class TestCaseProcessor implements LineProcessor {
     const failureMatch = failureRe.exec(line);
     if (failureMatch) {
       const type = failureMatch[6] as FailureType;
-      const file = this.testCaseShared.builder.test.exec.findSourceFilePath(failureMatch[2]);
+      const file = await this.testCaseShared.builder.test.exec.findSourceFilePath(failureMatch[2]);
       const line = failureMatch[3];
       const fullMsg = failureMatch[5];
       const failureMsg = failureMatch[7];
 
-      this.testCaseShared.builder.addOutputLine(
+      this.testCaseShared.builder.addReindentedOutput(
         1,
         ansi.red(type) + failureMsg + this.builder.getLocationAtStr(file, line, false),
       );
@@ -463,7 +501,7 @@ class TestCaseProcessor implements LineProcessor {
       switch (type) {
         case 'Failure':
         case 'error':
-          return new FailureProcessor(this.testCaseShared, file, line, fullMsg);
+          return new FailureProcessor(this.testCaseShared, file, line, fullMsg, this.testEndRe);
         case 'EXPECT_CALL':
           return new ExpectCallProcessor(this.testCaseShared, file, line, fullMsg);
         default:
@@ -472,7 +510,11 @@ class TestCaseProcessor implements LineProcessor {
       }
     }
 
-    this.testCaseShared.builder.addOutputLine(1, line);
+    if (line === 'Google Test trace:') {
+      return new TraceInfoProcessor(this.testCaseShared);
+    }
+
+    this.testCaseShared.builder.addOutput(1, line);
   }
 }
 
@@ -484,9 +526,9 @@ class TestCaseProcessor implements LineProcessor {
 // m[5] == 'Failure bla bla'
 // m[6] == 'Failure'
 // m[7] == ' bla bla'
-const failureRe = /^((.+)[:\(]([0-9]+)\)?)(: )((Failure|EXPECT_CALL|error)(.*))$/;
+const failureRe = /^((.+)[:(]([0-9]+)\)?)(: )((Failure|EXPECT_CALL|error)(.*))$/;
 type FailureType = 'Failure' | 'EXPECT_CALL' | 'error';
-
+const actualMsgPrefix = '  Actual:';
 ///
 
 class FailureProcessor implements LineProcessor {
@@ -495,12 +537,26 @@ class FailureProcessor implements LineProcessor {
     private readonly file: string | undefined,
     private readonly line: string | undefined,
     private readonly fullMsg: string,
+    private readonly testEndRe: RegExp,
   ) {}
 
+  private treatRemainingAsPart: boolean = false;
   private lines: string[] = [];
+  private promotedMsg: string | null = null;
 
-  online(line: string): void | false {
-    if (acceptedAndDecoratedPrefixes.some(prefix => line.startsWith(prefix))) {
+  online(line: string): void | boolean {
+    if (this.testEndRe.exec(line)) {
+      return false;
+    }
+    if (this.treatRemainingAsPart) {
+      if (line.startsWith('[')) {
+        return false;
+      }
+      if (line === '') {
+        return true;
+      }
+      this.lines.push(line);
+    } else if (acceptedAndDecoratedPrefixes.some(prefix => line.startsWith(prefix))) {
       if (isDecorationEnabled) {
         const first = line.indexOf(':');
         if (first != -1) {
@@ -512,6 +568,9 @@ class FailureProcessor implements LineProcessor {
           this.lines.push(line);
         }
       } else {
+        if (line.startsWith(actualMsgPrefix)) {
+          this.promotedMsg = line.trim();
+        }
         this.lines.push(line);
       }
     } else if (acceptedPrefixes.some(prefix => line.startsWith(prefix))) {
@@ -520,23 +579,36 @@ class FailureProcessor implements LineProcessor {
       this.lines.push(line);
     } else if (line.startsWith('  ')) {
       this.lines.push(line); /* special prefix. This might cause some issue */
+    } else if (line.startsWith('Failed')) {
+      this.lines.push(line);
+      this.treatRemainingAsPart = true;
+    } else if (line === '') {
+      return true;
     } else {
-      return false;
+      this.lines.push(line);
     }
   }
 
-  end(): void {
-    this.testCaseShared.builder.addOutputLine(2, ...this.lines);
+  async end(): Promise<void> {
+    this.testCaseShared.builder.addReindentedOutput(2, ...this.lines);
 
     if (isDecorationEnabled) {
-      this.testCaseShared.builder.addMarkdownMsg(
+      await this.testCaseShared.builder.addMarkdownMsg(
         this.file,
         this.line,
         `${isDecorationEnabled ? '### ' : ''}${this.fullMsg}:`,
         ...this.lines,
       );
     } else {
-      this.testCaseShared.builder.addMessage(this.file, this.line, `# ${this.fullMsg}:`, ...this.lines);
+      let firstLine = this.promotedMsg ?? this.fullMsg;
+      const restLines = [...this.lines];
+
+      if (firstLine === 'Failure') {
+        if (restLines.length >= 1 && restLines[0] === 'Failed') restLines.shift();
+        if (restLines.length >= 1) firstLine = restLines.shift()!;
+      }
+
+      await this.testCaseShared.builder.addMessage(this.file, this.line, firstLine, ...restLines);
     }
   }
 }
@@ -545,7 +617,7 @@ const isDecorationEnabled = false;
 
 const acceptedAndDecoratedPrefixes = [
   'Expected:',
-  '  Actual:',
+  actualMsgPrefix,
   'Value of:',
   'Which is:',
   '    Function call:',
@@ -604,17 +676,35 @@ class ExpectCallProcessor implements LineProcessor {
     this.lines.push(line);
   }
 
-  end(): void {
-    this.testCaseShared.builder.addOutputLine(2, ...this.lines);
+  async end(): Promise<void> {
+    this.testCaseShared.builder.addReindentedOutput(2, ...this.lines);
 
-    this.testCaseShared.builder.addMessage(this.file, this.line, this.expected, ...this.actual);
+    await this.testCaseShared.builder.addMessage(this.file, this.line, this.expected, ...this.actual);
   }
 }
 
-///
+// // '/.../gtest2.cpp:114: A'
+const _traceInfoRe = /^((.+)[:(]([0-9]+)\)?)(: )(.*)$/;
 
-class NoOpLineProcessor implements LineProcessor {
-  constructor() {}
+class TraceInfoProcessor implements LineProcessor {
+  constructor(private readonly testCaseShared: TestCaseSharedData) {}
 
-  online(_line: string): void {}
+  private _firstLine = '';
+
+  begin(line: string): void {
+    this._firstLine = line;
+  }
+
+  async online(line: string): Promise<void | true> {
+    const m = _traceInfoRe.exec(line);
+    if (m) {
+      const file = m[2];
+      const lineNo = m[3];
+      const msg = m[5];
+      await this.testCaseShared.builder.addMessageWithOutput(file, lineNo, `Trace: '${msg}'`, this._firstLine, line);
+    } else {
+      this.testCaseShared.shared.log.errorS(`unprocessable line: '${line}'`);
+    }
+    return true;
+  }
 }

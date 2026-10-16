@@ -3,18 +3,12 @@ include(FetchContent)
 set(HAVE_STD_REGEX ON)
 set(HAVE_POSIX_REGEX ON)
 set(HAVE_STEADY_CLOCK ON)
+set(BENCHMARK_ENABLE_TESTING OFF)
 
 FetchContent_Declare(googlebenchmark
                      GIT_REPOSITORY https://github.com/google/benchmark.git
-                     GIT_TAG v1.5.2)
-
-FetchContent_GetProperties(googlebenchmark)
-if(NOT googlebenchmark_POPULATED)
-  FetchContent_Populate(googlebenchmark)
-  add_subdirectory(${googlebenchmark_SOURCE_DIR} ${googlebenchmark_BINARY_DIR}
-                   EXCLUDE_FROM_ALL)
-endif()
-
+                     GIT_TAG v1.9.2)
+FetchContent_MakeAvailable(googlebenchmark)
 
 add_library(ThirdParty.GoogleBenchmark INTERFACE)
 

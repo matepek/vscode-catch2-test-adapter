@@ -1,15 +1,14 @@
-import { LoggerWrapper } from '../LoggerWrapper';
+import { Logger } from '../Logger';
 import { debugBreak } from './DevelopmentHelper';
 import { ParserInterface } from './ParserInterface';
 
 export class TextStreamParser implements ParserInterface {
   constructor(
-    private readonly log: LoggerWrapper,
+    private readonly log: Logger,
     rootProcessor: RootLineProcessor,
     private readonly handleStdErr = true,
   ) {
     this.topProcessor = rootProcessor;
-    this.alwaysonlineCb = rootProcessor.alwaysonline;
   }
 
   private readonly lines: string[] = [];
@@ -18,12 +17,9 @@ export class TextStreamParser implements ParserInterface {
   private sequentialP = Promise.resolve();
   private readonly processorStack: LineProcessor[] = [];
   private topProcessor: LineProcessor;
-  private readonly alwaysonlineCb: ((line: string) => void) | undefined = undefined;
 
   async end(): Promise<void> {
     if (this.lastLine) {
-      if (this.alwaysonlineCb) this.alwaysonlineCb(this.lastLine);
-
       this.lines.push(this.lastLine);
     }
     this.lastLine = '';
@@ -32,11 +28,11 @@ export class TextStreamParser implements ParserInterface {
 
     await this.sequentialP;
 
-    this.topProcessor.end && this.topProcessor.end();
+    if (this.topProcessor.end) await this.topProcessor.end();
 
     while (this.processorStack.length) {
       const p = this.processorStack.pop()!;
-      if (p.end) p.end();
+      if (p.end) await p.end();
     }
   }
 
@@ -47,8 +43,6 @@ export class TextStreamParser implements ParserInterface {
       lines[0] = this.lastLine + lines[0];
 
       this.lastLine = lines.pop()!; // has at least 1 element
-
-      if (this.alwaysonlineCb) lines.forEach(l => this.alwaysonlineCb!(l));
 
       this.lines.push(...lines);
 
@@ -70,7 +64,7 @@ export class TextStreamParser implements ParserInterface {
 
           if (typeof result === 'boolean') {
             if (this.processorStack.length) {
-              if (this.topProcessor.end) this.topProcessor.end();
+              if (this.topProcessor.end) await this.topProcessor.end();
               this.topProcessor = this.processorStack.pop()!;
               if (!result) {
                 // putting back because the popped processor should process it too
@@ -85,7 +79,7 @@ export class TextStreamParser implements ParserInterface {
           } else {
             this.processorStack.push(this.topProcessor);
             this.topProcessor = result;
-            if (result.begin) result.begin(line);
+            if (result.begin) await result.begin(line);
           }
         }
       })
@@ -94,9 +88,9 @@ export class TextStreamParser implements ParserInterface {
 }
 
 export interface LineProcessor {
-  begin?(line: string): void;
+  begin?(line: string): void | Promise<void>;
 
-  end?(): void;
+  end?(): void | Promise<void>;
 
   /**
    * @returns `LineProcessor` the control is passed to the new processor
@@ -110,13 +104,22 @@ export interface LineProcessor {
   online(line: string): void | boolean | LineProcessor | Promise<void | boolean | LineProcessor>;
 }
 
-export interface RootLineProcessor {
+export interface RootLineProcessor extends LineProcessor {
   end?(): void;
 
   online(line: string): void | LineProcessor | Promise<void | LineProcessor>;
+}
 
-  /**
-   * Called for every line regardless of the active processor
-   */
-  alwaysonline?(line: string): void;
+export class NoOpLineProcessor implements LineProcessor {
+  constructor() {}
+
+  online(_line: string): void {}
+}
+
+export class LambdaLineProcessor implements LineProcessor {
+  constructor(private readonly _processor: (line: string) => void) {}
+
+  online(line: string): void {
+    this._processor(line);
+  }
 }

@@ -16,7 +16,7 @@ about: Create a report to help us improve
 **Checklist**
 
 - [ ] The issue is about this extension and NOT about a fork.
-- [ ] Check the [known issues](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/support.md#known-issues) list.
+- [ ] Checked the [ALL the SUPPORT](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/support.md) document.
 - [ ] The latest version of the extension was used.
 - [ ] It is not related to remote-vscode or I checked the following [issue](https://github.com/matepek/vscode-catch2-test-adapter/issues/201)
 - [ ] Imagine yourself into my position and think how hard to debug the issue without insufficient information.
@@ -69,7 +69,14 @@ about: Create a report to help us improve
 
 - Last extension version in which the feature were working:
 
-**Log** (optional but recommended)
+<details>
+  <summary>**Log** (optional but recommended)</summary>
+
+```js
+  <paste logs here>
+```
+
+</details>
 
 <!--
   PLEASE attach an EXTENSIVE log. A lot of times reportes just select what they think it is important and those logs sometime not sufficient.

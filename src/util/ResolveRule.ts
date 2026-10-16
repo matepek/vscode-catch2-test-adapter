@@ -1,13 +1,9 @@
 import * as pathlib from 'path';
+import { Logger } from '../Logger';
 
 ///
 
-function _mapAllStrings(
-  value: any /*eslint-disable-line*/,
-  parent: any /*eslint-disable-line*/,
-  mapperFunc: (s: string, parent: any) => any /*eslint-disable-line*/,
-): any /*eslint-disable-line*/ {
-  if (value === null) return null;
+function _mapAllStrings(value: unknown, parent: unknown, mapperFunc: (s: string, parent: unknown) => unknown): unknown {
   switch (typeof value) {
     case 'bigint':
     case 'boolean':
@@ -20,8 +16,10 @@ function _mapAllStrings(
       return mapperFunc(value, parent);
     }
     case 'object': {
-      if (Array.isArray(value)) {
-        const newValue: any[] = []; /*eslint-disable-line*/
+      if (value === null) {
+        return null;
+      } else if (Array.isArray(value)) {
+        const newValue: unknown[] = [];
         for (const v of value) {
           const res = _mapAllStrings(v, value, mapperFunc);
           if (res !== undefined) newValue.push(res);
@@ -31,7 +29,7 @@ function _mapAllStrings(
         const newValue = Object.create(Object.getPrototypeOf(value));
         Object.defineProperties(newValue, Object.getOwnPropertyDescriptors(value));
         for (const prop in value) {
-          const res = _mapAllStrings(value[prop], value, mapperFunc);
+          const res = _mapAllStrings((value as Record<string, unknown>)[prop], value, mapperFunc);
           if (res !== undefined) newValue[prop] = res;
         }
         return newValue;
@@ -43,11 +41,10 @@ function _mapAllStrings(
 const _flatResolved = Symbol('special value which means that the veriable was flat resolved');
 
 async function _mapAllStringsAsync(
-  value: Readonly<any> /*eslint-disable-line*/,
-  parent: any /*eslint-disable-line*/,
-  mapperFunc: (s: string, parent: any) => Promise<any> /*eslint-disable-line*/,
-): Promise<any> /*eslint-disable-line*/ {
-  if (value === null) return null;
+  value: unknown,
+  parent: unknown,
+  mapperFunc: (s: string, parent: unknown) => Promise<unknown>,
+): Promise<unknown> {
   switch (typeof value) {
     case 'bigint':
     case 'boolean':
@@ -60,8 +57,10 @@ async function _mapAllStringsAsync(
       return mapperFunc(value, parent);
     }
     case 'object': {
-      if (Array.isArray(value)) {
-        const newValue: any[] = []; /*eslint-disable-line*/
+      if (value === null) {
+        return null;
+      } else if (Array.isArray(value)) {
+        const newValue: unknown[] = [];
         for (const v of value) {
           const res = await _mapAllStringsAsync(v, newValue, mapperFunc);
           if (res !== _flatResolved) newValue.push(res);
@@ -71,7 +70,7 @@ async function _mapAllStringsAsync(
         const newValue = Object.create(Object.getPrototypeOf(value));
         Object.defineProperties(newValue, Object.getOwnPropertyDescriptors(value));
         for (const prop in value) {
-          const res = await _mapAllStringsAsync(value[prop], newValue, mapperFunc);
+          const res = await _mapAllStringsAsync((value as Record<string, unknown>)[prop], newValue, mapperFunc);
           if (res !== _flatResolved) newValue[prop] = res;
           else delete newValue[prop];
         }
@@ -102,13 +101,13 @@ async function replaceAllRegExp(
   const newStr: string[] = [];
 
   while (m && m.index !== undefined) {
-    newStr.push(remainingStr.substr(0, m.index));
+    newStr.push(remainingStr.substring(0, m.index));
 
     const ruleV = await rule(m);
     if (typeof ruleV !== 'string') throw Error('resolveVariables regex func return type should be string');
     newStr.push(ruleV);
 
-    remainingStr = remainingStr.substr(m.index + m[0].length);
+    remainingStr = remainingStr.substring(m.index + m[0].length);
     m = remainingStr.match(resolve);
   }
 
@@ -121,10 +120,16 @@ interface ResolveStrRuleStr {
   isFlat?: boolean;
 }
 
-interface ResolveStrRuleAsync<R> {
+interface ResolveStrRule<R> {
   resolve: string;
-  rule: () => Promise<R>;
+  rule: () => R | Promise<R>;
   isFlat?: boolean;
+}
+
+interface ResolveRegexRule {
+  resolve: RegExp;
+  rule: (m: RegExpMatchArray) => string;
+  isFlat?: never;
 }
 
 interface ResolveRegexRuleAsync {
@@ -134,76 +139,81 @@ interface ResolveRegexRuleAsync {
 }
 
 // eslint-disable-next-line
-export type ResolveRuleAsync<R = any> = ResolveStrRuleStr | ResolveStrRuleAsync<R> | ResolveRegexRuleAsync;
+export type ResolveRuleAsync<R = any> =
+  | ResolveStrRuleStr
+  | ResolveStrRule<R>
+  | ResolveRegexRule
+  | ResolveRegexRuleAsync;
 
-// eslint-disable-next-line
-export function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRuleAsync<any>[]): Promise<T> {
-  return _mapAllStringsAsync(
-    value,
-    undefined,
-    // eslint-disable-next-line
-    async (s: string, parent: any): Promise<any> => {
-      for (let i = 0; i < varValue.length; ++i) {
-        const { resolve, rule, isFlat } = varValue[i];
+export async function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRuleAsync<unknown>[]): Promise<T> {
+  const mapper = async (s: string, parent: unknown): Promise<unknown> => {
+    for (let i = 0; i < varValue.length; ++i) {
+      const { resolve, rule, isFlat } = varValue[i];
 
-        if (typeof resolve == 'string') {
-          if (s === resolve) {
-            if (typeof rule == 'string') {
-              return rule;
-            } else {
-              const ruleV = await (rule as () => Promise<any>)(); // eslint-disable-line
-              if (isFlat) {
-                if (Array.isArray(parent)) {
-                  if (Array.isArray(ruleV)) {
-                    parent.push(...ruleV);
-                    return _flatResolved;
-                  }
-                } else if (typeof parent === 'object') {
-                  if (typeof ruleV === 'object') {
-                    Object.assign(parent, ruleV);
-                    return _flatResolved;
-                  }
+      if (typeof resolve == 'string') {
+        if (s === resolve) {
+          if (typeof rule == 'string') {
+            return rule;
+          } /* rule is callable */ else {
+            const ruleV = await (rule as () => Promise<unknown>)();
+            if (isFlat) {
+              if (Array.isArray(parent)) {
+                if (Array.isArray(ruleV)) {
+                  parent.push(...ruleV);
+                  return _flatResolved;
                 }
-                throw Error(
-                  `resolveVariablesAsync: coudn't flat-resolve because ${typeof parent} != ${typeof ruleV} for ${s}`,
-                );
-              } else {
-                return ruleV;
+              } else if (typeof parent === 'object' && parent !== null) {
+                if (typeof ruleV === 'object') {
+                  Object.assign(parent, ruleV);
+                  return _flatResolved;
+                }
               }
-            }
-          } else if (typeof rule == 'string') {
-            s = replaceAllString(s, resolve, rule);
-          } else {
-            // rule as Function
-            if (s.indexOf(resolve) != -1) {
-              const ruleV = await (rule as () => Promise<any>)(); // eslint-disable-line
-              s = replaceAllString(s, resolve, ruleV);
+              throw Error(
+                `resolveVariablesAsync: coudn't flat-resolve because ${typeof parent} != ${typeof ruleV} for ${s}`,
+              );
+            } else {
+              return ruleV;
             }
           }
-        } else {
-          const ruleF = rule as (m: RegExpMatchArray) => Promise<string>;
-          // resolve as RegExp && rule as Function
-          // eslint-disable-next-line
-          if (rule.length > 1) {
-            throw Error('resolveVariables regex func should expect 1 argument');
-          }
-
-          const match = s.match(resolve);
-
-          if (match) {
-            // whole input matches
-            if (match.index === 0 && match[0].length === s.length) {
-              return ruleF(match);
-            }
-
-            s = await replaceAllRegExp(s, resolve, ruleF, match);
+        } else if (typeof rule == 'string') {
+          s = replaceAllString(s, resolve, rule);
+        } /* rule is callable */ else {
+          if (s.indexOf(resolve) != -1) {
+            const ruleV = await (rule as () => Promise<string>)();
+            s = replaceAllString(s, resolve, ruleV);
           }
         }
-      }
+      } else {
+        const ruleF = rule as (m: RegExpMatchArray) => Promise<string>;
+        // resolve as RegExp && rule as Function
 
-      return Promise.resolve(s);
-    },
-  );
+        if (rule.length > 1) {
+          throw Error('resolveVariables regex func should expect 1 argument');
+        }
+
+        const match = s.match(resolve);
+
+        if (match) {
+          // whole input matches
+          if (match.index === 0 && match[0].length === s.length) {
+            return ruleF(match);
+          }
+
+          s = await replaceAllRegExp(s, resolve, ruleF, match);
+        }
+      }
+    }
+
+    return s;
+  };
+
+  let resolved = await _mapAllStringsAsync(value, undefined, mapper);
+
+  // adding an extra level resolution
+  if (typeof resolved === 'string' && resolved.indexOf('$') !== -1)
+    resolved = await _mapAllStringsAsync(resolved, undefined, mapper);
+
+  return resolved as T;
 }
 
 const _normalizedEnvCache: Record<string, string | undefined> =
@@ -215,7 +225,7 @@ export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolea
   return _mapAllStrings(value, undefined, (s: string): string | undefined => {
     let replacedS = '';
     while (true) {
-      const match = s.match(/\$\{(os_env|os_env_strict):([A-z_][A-z0-9_]*)\}/);
+      const match = s.match(/\$\{(env|os_env|os_env_strict):([A-z_][A-z0-9_]*)\}/);
 
       if (!match) return replacedS + s;
 
@@ -238,10 +248,22 @@ export function resolveOSEnvironmentVariables<T>(value: T, strictAllowed: boolea
 
       s = s.substring(match.index! + match[0].length);
     }
-  });
+  }) as T;
 }
 
-export const PythonIndexerRegexStr = '(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])';
+export async function resolveAllAsync<T>(
+  value: T,
+  varValue: readonly ResolveRuleAsync<unknown>[],
+  strictAllowed: boolean,
+  availableRecursionCount = 3,
+): Promise<T> {
+  let resolved = await resolveVariablesAsync(value, varValue);
+  resolved = resolveOSEnvironmentVariables(resolved, strictAllowed);
+  if (value === resolved || availableRecursionCount == 0) return resolved;
+  else return resolveAllAsync(resolved, varValue, strictAllowed, availableRecursionCount - 1);
+}
+
+const PythonIndexerRegexStr = '(?:\\[(?:(-?[0-9]+)|(-?[0-9]+)?:(-?[0-9]+)?)\\])';
 
 export function processArrayWithPythonIndexer<T>(arr: readonly T[], match: RegExpMatchArray): T[] {
   if (match[1]) {
@@ -255,38 +277,77 @@ export function processArrayWithPythonIndexer<T>(arr: readonly T[], match: RegEx
   }
 }
 
+export function createPythonIndexerForArray(varName: string, array: string[], join: string): ResolveRegexRule {
+  const resolve = new RegExp('\\$\\{' + varName + PythonIndexerRegexStr + '?\\}');
+
+  return {
+    resolve,
+    rule: (m: RegExpMatchArray): string => processArrayWithPythonIndexer(array, m).join(join),
+  };
+}
+
 export function createPythonIndexerForStringVariable(
   varName: string,
   value: string,
   separator: string | RegExp,
   join: string,
-): ResolveRegexRuleAsync {
-  const resolve = new RegExp('\\$\\{' + varName + PythonIndexerRegexStr + '?\\}');
-  const array = value.split(separator);
-
-  return {
-    resolve,
-    rule: async (m: RegExpMatchArray): Promise<string> => processArrayWithPythonIndexer(array, m).join(join),
-  };
+): ResolveRegexRule {
+  return createPythonIndexerForArray(varName, value.split(separator), join);
 }
 
-export function createPythonIndexerForPathVariable(valName: string, pathStr: string): ResolveRegexRuleAsync {
+export function createPythonIndexerForPathVariable(varName: string, pathStr: string): ResolveRegexRule {
   const { resolve, rule } = createPythonIndexerForStringVariable(
-    valName,
+    varName,
     pathlib.normalize(pathStr),
     /\/|\\/,
     pathlib.sep,
   );
 
-  return {
+  const r: ResolveRegexRule = {
     resolve,
-    rule: async (m: RegExpMatchArray): Promise<string> => {
+    rule: (m: RegExpMatchArray): string => {
       try {
-        const ruleV = await rule(m);
-        return pathlib.normalize(ruleV);
-      } catch (e) {
+        return pathlib.normalize(rule(m));
+      } catch (_e) {
         return m[0];
       }
     },
   };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (r as any)._pathStr = pathStr;
+  return r;
+}
+
+const RegexExpression = '`([^`]+)`(?:([^`]+)`)?';
+
+function processRegexReplace(log: Logger, value: string, match: RegExpMatchArray): string {
+  const regex = new RegExp(match[1]);
+  if (match[2]) {
+    const replaced = value.replace(regex, match[2]);
+    log.debug('resolved', value, replaced);
+    return replaced;
+  } else {
+    const m = value.match(regex);
+    if (m) {
+      log.debug('resolved', value, m[0]);
+      return m[0];
+    } else {
+      log.info('no match for regex variable resolution', value, match[0], match[1]);
+      return value;
+    }
+  }
+}
+
+export function createRegexReplaceForStringVariable(log: Logger, varName: string, value: string): ResolveRegexRule {
+  const resolve = new RegExp('\\$\\{' + varName + RegexExpression + '?\\}');
+
+  const r: ResolveRegexRule = {
+    resolve,
+    rule: (m: RegExpMatchArray): string => processRegexReplace(log, value, m),
+  };
+  return r;
+}
+
+export function cloneRecursively<T>(value: T): T {
+  return _mapAllStrings(value, undefined, x => x) as T;
 }

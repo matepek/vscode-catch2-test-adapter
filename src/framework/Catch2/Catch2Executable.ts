@@ -10,13 +10,16 @@ import { RunningExecutable } from '../../RunningExecutable';
 import { AbstractTest, SubTest, SubTestTree } from '../AbstractTest';
 import { CancellationFlag, Version } from '../../Util';
 import { TestGroupingConfig } from '../../TestGroupingInterface';
-import { TestResultBuilder } from '../../TestResultBuilder';
+import { addOutputForTestRun, TestResultBuilder } from '../../TestResultBuilder';
 import { assert, debugBreak } from '../../util/DevelopmentHelper';
 import { pipeOutputStreams2Parser, pipeOutputStreams2String, pipeProcess2Parser } from '../../util/ParserInterface';
 import { Readable } from 'stream';
 
 export class Catch2Executable extends AbstractExecutable<Catch2Test> {
-  constructor(sharedVarOfExec: SharedVarOfExec, private readonly _catch2Version: Version | undefined) {
+  constructor(
+    sharedVarOfExec: SharedVarOfExec,
+    private readonly _catch2Version: Version | undefined,
+  ) {
     super(sharedVarOfExec, 'Catch2', _catch2Version);
   }
 
@@ -170,7 +173,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
   }
 
   private readonly _createAndAddTest = async (
-    testName: string,
+    testId: string,
     tagsStr: string | undefined,
     file: string | undefined,
     line: string | undefined,
@@ -178,27 +181,37 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
   ): Promise<Catch2Test> => {
     const tags: string[] = [];
     if (tagsStr) {
-      const matches = tagsStr.match(/\[[^\[\]]+\]/g);
+      const matches = tagsStr.match(/\[[^[\]]+\]/g);
       if (matches) matches.forEach((t: string) => tags.push(t.substring(1, t.length - 1)));
     }
 
-    const resolvedFile = this.findSourceFilePath(file);
+    const resolvedFile = await this.findSourceFilePath(file);
 
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
-      testName,
+      testId,
       resolvedFile,
       line,
       tags,
       description,
-      (parent: vscode.TestItem | undefined) =>
-        new Catch2Test(this, parent, this._catch2Version, testName, resolvedFile, line, tags, description),
+      (parent: vscode.TestItem | undefined, testName: string | undefined) =>
+        new Catch2Test(
+          this,
+          parent,
+          this._catch2Version,
+          testId,
+          testName ?? testId,
+          resolvedFile,
+          line,
+          tags,
+          description,
+        ),
       (test: Catch2Test) => test.update2(resolvedFile, line, tags, description),
     );
   };
 
   protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<void> {
-    const cacheFile = this.shared.path + '.TestMate.testListCache.txt';
+    const cacheFile = this.shared.path + `.TestMate.testListCache.${this.shared.optionsHash}.txt`;
 
     if (this.shared.enabledTestListCaching) {
       try {
@@ -218,16 +231,19 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
       }
     }
 
-    const args = this.shared.prependTestListingArgs.concat(['[.],*', '--verbosity', 'high', '--list-tests']);
+    const prependTestListingArgs = await Promise.all(this.shared.prependTestListingArgs.map(x => this.resolveText(x)));
+    const args = prependTestListingArgs.concat(['[.],*', '--verbosity', 'high', '--list-tests']);
 
     if (this._catch2Version && this._catch2Version.major >= 3) args.push('--reporter', 'xml');
     else args.push('--use-colour', 'no');
 
-    this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
-
-    //const process = await this.sharedVarOfExec.spawner.spawn(this.sharedVarOfExec.path, args, this.sharedVarOfExec.options);
-
-    const catch2TestListingProcess = await this.shared.spawner.spawn(this.shared.path, args, this.shared.options);
+    const pathForExecution = await this._getPathForExecution();
+    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
+    const catch2TestListingProcess = await this.shared.spawnerForListing.spawn(
+      pathForExecution,
+      args,
+      this.shared.options,
+    );
 
     const result =
       this._catch2Version && this._catch2Version.major >= 3
@@ -245,10 +261,12 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     return result;
   }
 
-  private _getCatch2RunParams(childrenToRun: readonly AbstractTest[]): string[] {
+  private _getCatch2RunParams(childrenToRun: readonly AbstractTest[] | null): string[] {
     const params: string[] = [];
 
-    if (childrenToRun.length == 1 && childrenToRun[0] instanceof SubTest) {
+    if (childrenToRun === null) {
+      // nothing to add, run all
+    } else if (childrenToRun.length == 1 && childrenToRun[0] instanceof SubTest) {
       const subTests: SubTest[] = [childrenToRun[0]];
       let p = childrenToRun[0].parentTest;
       while (p instanceof SubTest) {
@@ -269,7 +287,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     return params;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly AbstractTest[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly AbstractTest[] | null): string[] {
     const execParams = this._getCatch2RunParams(childrenToRun);
 
     execParams.push('--reporter');
@@ -347,6 +365,9 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
               return new TestCaseTagProcessor(executable.shared, builder, runInfo, test, tag.attribs);
             }
           }
+        },
+        ontext: (text: string) => {
+          addOutputForTestRun(testRun, runInfo.runPrefix, 0, 0, false, text);
         },
       },
       (error: Error) => {
@@ -436,7 +457,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         // known tag, do nothing
       } else {
         this.shared.log.errorS('unhandled tag:' + tag.name);
-        this.builder.addOutputLine(1, `Unknown XML tag: ${tag.name} with ${JSON.stringify(tag.attribs)}`);
+        this.builder.addReindentedOutput(1, `Unknown XML tag: ${tag.name} with ${JSON.stringify(tag.attribs)}`);
       }
     }
   }
@@ -448,7 +469,7 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         return processor(dataTrimmed, parentTag, this.builder, this.shared);
       } catch (e) {
         this.shared.log.exceptionS(e);
-        this.builder.addOutputLine(1, 'Unknown fatal error: ' + inspect(e));
+        this.builder.addReindentedOutput(1, 'Unknown fatal error: ' + inspect(e));
         this.builder.errored();
       }
     } else if (processor === null) {
@@ -459,13 +480,16 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         // known tag, do nothing
       } else {
         this.shared.log.errorS('unhandled tag:' + parentTag.name, parentTag);
-        this.builder.addOutputLine(1, `Unknown XML tag: ${parentTag.name} with ${JSON.stringify(parentTag.attribs)}`);
+        this.builder.addReindentedOutput(
+          1,
+          `Unknown XML tag: ${parentTag.name} with ${JSON.stringify(parentTag.attribs)}`,
+        );
       }
     }
   }
 
-  onstderr(data: string, _parentTag: XmlTag | undefined): void {
-    this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
+  async onstderr(data: string, _parentTag: XmlTag | undefined): Promise<void> {
+    await this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
   }
 
   private static readonly openTagProcessorMap: Map<
@@ -491,6 +515,17 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'OverallResults',
+      (tag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        builder.setDurationMilisec(parseFloat(tag.attribs.durationInSeconds) * 1000);
+        if (tag.attribs.failures !== '0') {
+          builder.failed();
+        } else {
+          builder.passed();
+        }
+      },
+    ],
+    [
+      'OverallResultsCases',
       (tag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
         builder.setDurationMilisec(parseFloat(tag.attribs.durationInSeconds) * 1000);
         if (tag.attribs.failures !== '0') {
@@ -543,20 +578,30 @@ abstract class TagProcessorBase implements XmlTagProcessor {
   > = new Map([
     [
       'StdOut',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'std::cout', dataTrimmed);
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addQuoteWithLocation(
+          parentTag.attribs.filename,
+          parentTag.attribs.line,
+          'std::cout',
+          dataTrimmed,
+        );
       },
     ],
     [
       'StdErr',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'std::cerr', dataTrimmed);
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addQuoteWithLocation(
+          parentTag.attribs.filename,
+          parentTag.attribs.line,
+          'std::cerr',
+          dataTrimmed,
+        );
       },
     ],
     [
       'Exception',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addMessageWithOutput(
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addMessageWithOutput(
           parentTag.attribs.filename,
           parentTag.attribs.line,
           'Exception: `' + dataTrimmed + '`',
@@ -565,8 +610,8 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'FatalErrorCondition',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addMessageWithOutput(
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addMessageWithOutput(
           parentTag.attribs.filename,
           parentTag.attribs.line,
           'FatalErrorCondition',
@@ -576,20 +621,27 @@ abstract class TagProcessorBase implements XmlTagProcessor {
     ],
     [
       'Failure',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addMessageWithOutput(parentTag.attribs.filename, parentTag.attribs.line, 'Failure', dataTrimmed);
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addMessageWithOutput(parentTag.attribs.filename, parentTag.attribs.line, 'Failure', dataTrimmed);
       },
     ],
     [
       'Warning',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Warning', dataTrimmed);
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Warning', dataTrimmed);
       },
     ],
     [
       'Info',
-      (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
-        builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Info', dataTrimmed);
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addQuoteWithLocation(parentTag.attribs.filename, parentTag.attribs.line, 'Info', dataTrimmed);
+      },
+    ],
+    [
+      'Skip',
+      async (dataTrimmed: string, parentTag: XmlTag, builder: TestResultBuilder, _shared: SharedVarOfExec) => {
+        await builder.addMessage(parentTag.attribs.filename, parentTag.attribs.line, 'Skip', dataTrimmed);
+        builder.skipped();
       },
     ],
   ]);
@@ -615,9 +667,11 @@ class TestCaseTagProcessor extends TagProcessorBase {
   }
 
   end(): void {
-    // if a subtest is run then we don't expect all the sections to arrive so we assume the missing ones weren't run.
-    if (this.runInfo.childrenToRun.length !== 1 || !(this.runInfo.childrenToRun[0] instanceof SubTest)) {
-      this.builder.test.removeMissingSubTests(this.sections);
+    if (this.runInfo.childrenToRun) {
+      // if a subtest is run then we don't expect all the sections to arrive so we assume the missing ones weren't run.
+      if (this.runInfo.childrenToRun.length !== 1 || !(this.runInfo.childrenToRun[0] instanceof SubTest)) {
+        this.builder.test.removeMissingSubTests(this.sections);
+      }
     }
     this.builder.build();
   }
@@ -695,23 +749,23 @@ class ExpressionProcessor implements XmlTagProcessor {
     }
   }
 
-  end(): void {
+  async end(): Promise<void> {
     assert(this.original && this.expanded);
     if (this.fatalErrorCondition) {
-      this.builder.addMessageWithOutput(
+      await this.builder.addMessageWithOutput(
         this.attribs.filename,
         this.attribs.line,
         `FatalErrorCondition: \`${this.fatalErrorCondition}\``,
       );
     } else if (this.exception) {
-      this.builder.addMessageWithOutput(
+      await this.builder.addMessageWithOutput(
         this.attribs.filename,
         this.attribs.line,
-        `${this.attribs.type} threw an exception: \`${this.exception}\``,
-        'Original:  ' + this.original,
+        (this.attribs.type ?? `Expression`) + ` threw an exception \`${this.exception}\``,
+        this.original ?? '',
       );
     } else {
-      this.builder.addExpressionMsg(
+      await this.builder.addExpressionMsg(
         this.attribs.filename,
         this.attribs.line,
         this.original!,
@@ -770,7 +824,7 @@ class BenchmarkResultsProcessor implements XmlTagProcessor {
 
   end(): void {
     if (this.failed) {
-      this.builder.addOutputLine(1, 'Failed: `' + this.failed.message + '`');
+      this.builder.addReindentedOutput(1, 'Failed: `' + this.failed.message + '`');
       this.builder.failed();
     } else {
       {
@@ -781,7 +835,7 @@ class BenchmarkResultsProcessor implements XmlTagProcessor {
           .filter(n => n !== 'name')
           .map(key => `- ${key}: ${attribs[key]}`);
 
-        this.builder.addOutputLine(1, ...params);
+        this.builder.addReindentedOutput(1, ...params);
       }
       if (this.mean) {
         const mean = this.mean;
@@ -789,8 +843,8 @@ class BenchmarkResultsProcessor implements XmlTagProcessor {
           .filter(n => n !== 'value')
           .map(key => `- ${key}: ${mean[key]} ns`);
 
-        this.builder.addOutputLine(1, `Mean: ${mean.value} ns:`);
-        this.builder.addOutputLine(1, ...params);
+        this.builder.addReindentedOutput(1, `Mean: ${mean.value} ns:`);
+        this.builder.addReindentedOutput(1, ...params);
       }
       if (this.standardDeviation) {
         const standardDeviation = this.standardDeviation;
@@ -798,15 +852,15 @@ class BenchmarkResultsProcessor implements XmlTagProcessor {
           .filter(n => n !== 'value')
           .map(key => `- ${key}: ${standardDeviation[key]} ns`);
 
-        this.builder.addOutputLine(1, `Standard Deviation: ${standardDeviation.value} ns:`);
-        this.builder.addOutputLine(1, ...params);
+        this.builder.addReindentedOutput(1, `Standard Deviation: ${standardDeviation.value} ns:`);
+        this.builder.addReindentedOutput(1, ...params);
       }
       if (this.outliers) {
         const outliers = this.outliers;
         const params = Object.keys(outliers).map(key => `- ${key}: ${outliers[key]} ns`);
 
-        this.builder.addOutputLine(1, `Outliers:`);
-        this.builder.addOutputLine(1, ...params);
+        this.builder.addReindentedOutput(1, `Outliers:`);
+        this.builder.addReindentedOutput(1, ...params);
       }
 
       this.builder.setDurationMilisec(Date.now() - this.started);

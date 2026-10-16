@@ -15,20 +15,22 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false # to drop github token and used GITHUBM_API_KEY
 
       - name: Use Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '16.x'
+          node-version: '22.x'
 
       - name: Install
         run: npm install
 
       - name: Audit
-        run: npm audit --production
+        env:
+          NODE_ENV: production
+        run: npm audit
 
       - name: Compile
         run: npm run compile

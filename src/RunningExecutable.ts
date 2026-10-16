@@ -3,24 +3,28 @@ import * as ansi from 'ansi-colors';
 
 import { ChildProcessWithoutNullStreams } from './util/FSWrapper';
 import { AbstractTest } from './framework/AbstractTest';
-import { LoggerWrapper } from './LoggerWrapper';
+import { Logger } from './Logger';
 import { promisify } from 'util';
 import { CancellationToken, generateId } from './Util';
 import { SpawnBuilder } from './Spawner';
 import { assert } from './util/DevelopmentHelper';
+import { SharedVarOfExec } from './framework/SharedVarOfExec';
 ///
 
 export enum ExecutableRunResultValue {
-  OK,
-  CancelledByUser,
-  TimeoutByUser,
-  Errored,
+  OK = 'OK',
+  CancelledByUser = 'CancelledByUser',
+  TimeoutByUser = 'TimeoutByUser',
+  Errored = 'Errored',
 }
 
 ///
 
 export class ExecutableRunResult {
-  private constructor(readonly value: ExecutableRunResultValue, private readonly _error: string | undefined) {}
+  private constructor(
+    readonly value: ExecutableRunResultValue,
+    private readonly _error: string | undefined,
+  ) {}
 
   get Ok(): boolean {
     return this.value === ExecutableRunResultValue.OK;
@@ -79,19 +83,27 @@ export class ExecutableRunResult {
 export class RunningExecutable {
   static async create(
     spawnBuilder: SpawnBuilder,
-    childrenToRun: readonly AbstractTest[],
+    childrenToRun: readonly AbstractTest[] | null,
     cancellationToken: CancellationToken,
+    shared: SharedVarOfExec,
   ): Promise<RunningExecutable> {
     const process = await spawnBuilder.spawn();
-    return new RunningExecutable(spawnBuilder, process, childrenToRun, cancellationToken);
+    return new RunningExecutable(spawnBuilder, process, childrenToRun, cancellationToken, shared);
   }
 
   private constructor(
     readonly spawnBuilder: SpawnBuilder,
     readonly process: ChildProcessWithoutNullStreams,
-    readonly childrenToRun: readonly AbstractTest[],
+    readonly childrenToRun: readonly AbstractTest[] | null,
     readonly cancellationToken: CancellationToken,
+    readonly shared: SharedVarOfExec,
   ) {
+    this.runPrefix = this.process.pid ? ansi.dim(`#${this.process.pid}│ `) : ansi.dim(`$${generateId()}│ `);
+    const wp = this.shared.workspacePath + '/';
+    if (this.process.spawnfile.startsWith(wp)) {
+      this.spawnfile = this.process.spawnfile.substring(wp.length);
+    } else this.spawnfile = this.process.spawnfile;
+
     const disp = cancellationToken.onCancellationRequested(() => this.killProcess());
 
     this.result = new Promise(resolve => {
@@ -102,8 +114,6 @@ export class RunningExecutable {
       });
     });
   }
-
-  readonly runPrefix = ansi.dim(`$${generateId()}│ `);
 
   killProcess(timeout: number | null = null): void {
     try {
@@ -119,10 +129,32 @@ export class RunningExecutable {
           }
         }, 5000);
       }
-    } catch {}
+    } catch {} // eslint-disable-line
   }
 
-  setPriorityAsync(log: LoggerWrapper): void {
+  readonly runPrefix: string;
+  readonly spawnfile: string;
+  readonly startTime: number = Date.now();
+
+  get terminated(): boolean {
+    return this._closed;
+  }
+
+  get timeout(): number | null {
+    return this._timeout;
+  }
+
+  get timedout(): boolean {
+    return typeof this._timeout == 'number';
+  }
+
+  private _timeout: number | null = null;
+  private _closed = false;
+  private _killed = false;
+
+  readonly result: Promise<ExecutableRunResult>;
+
+  setPriorityAsync(log: Logger): void {
     const priority = 16;
     let retryOnFailure = 5;
 
@@ -130,7 +162,7 @@ export class RunningExecutable {
       try {
         if (this.terminated) {
           return Promise.resolve();
-        } else if (this.process.pid) {
+        } else if (this.process.pid && this.process.exitCode === null) {
           os.setPriority(this.process.pid, os.constants.priority.PRIORITY_LOW);
           log.debug('setPriority is done', `priority(${priority})`, `pid(${this.process.pid})`);
 
@@ -149,42 +181,16 @@ export class RunningExecutable {
     promisify(setTimeout)(2000).then(setPriorityInner);
   }
 
-  readonly startTime: number = Date.now();
-
-  get terminated(): boolean {
-    return this._closed;
-  }
-
-  get timeout(): number | null {
-    return this._timeout;
-  }
-
-  get timedout(): boolean {
-    return typeof this._timeout == 'number';
-  }
-
-  get pid(): string {
-    return this.process.pid ? this.process.pid.toString() : 'unknown';
-  }
-
-  private _timeout: number | null = null;
-  private _closed = false;
-  private _killed = false;
-
-  readonly result: Promise<ExecutableRunResult>;
-
   getProcStartLine(): string {
     return (
-      this.runPrefix + ansi.dim(`Started PID#${this.pid} - '${this.process.spawnfile}'\r\n`) + this.runPrefix + '\r\n'
+      this.runPrefix + ansi.dim(`Started PID#${this.process.pid} - '${this.spawnfile}'\r\n`) + this.runPrefix + '\r\n'
     );
   }
 
-  //TODO:future includeArgs
-  getProcStopLine(result: ExecutableRunResult, includeArgs = false): string {
-    const args = includeArgs
-      ? ' ' + this.process.spawnargs.map(a => "'" + a + "'").join(' ')
-      : "'" + this.process.spawnfile + "'";
-    return this.runPrefix + ansi.dim(`Stopped PID#${this.pid} - ${result.toString()} - ${args}\r\n`);
+  getProcStopLine(result: ExecutableRunResult): string {
+    return (
+      this.runPrefix + ansi.dim(`Stopped PID#${this.process.pid} - ${result.toString()} - '${this.spawnfile}'\r\n`)
+    );
   }
 }
 

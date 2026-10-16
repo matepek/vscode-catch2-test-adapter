@@ -10,7 +10,7 @@ import { AbstractTest } from '../AbstractTest';
 import { CancellationFlag } from '../../Util';
 import { TestGroupingConfig } from '../../TestGroupingInterface';
 import { TestResultBuilder } from '../../TestResultBuilder';
-import { LoggerWrapper } from '../../LoggerWrapper';
+import { Logger } from '../../Logger';
 import { TestItemParent } from '../../TestItemManager';
 
 export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmarkTest> {
@@ -40,21 +40,22 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
     }
   }
 
-  private readonly _createAndAddTest = (testName: string): Promise<GoogleBenchmarkTest> => {
+  private readonly _createAndAddTest = (testId: string): Promise<GoogleBenchmarkTest> => {
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
-      testName,
+      testId,
       undefined,
       undefined,
       [],
       undefined,
-      (parent: TestItemParent) => new GoogleBenchmarkTest(this, parent, testName, this.shared.failIfExceedsLimitNs),
+      (parent: TestItemParent, testName: string | undefined) =>
+        new GoogleBenchmarkTest(this, parent, testId, testName ?? testId, this.shared.failIfExceedsLimitNs),
       (test: GoogleBenchmarkTest) => test.update2(this.shared.failIfExceedsLimitNs),
     );
   };
 
   protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<void> {
-    const cacheFile = this.shared.path + '.TestMate.testListCache.xml';
+    const cacheFile = this.shared.path + `.TestMate.testListCache.${this.shared.optionsHash}.xml`;
 
     if (this.shared.enabledTestListCaching) {
       try {
@@ -72,10 +73,17 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
       }
     }
 
-    const args = this.shared.prependTestListingArgs.concat([`--benchmark_list_tests=true`]);
+    const prependTestListingArgs = await Promise.all(this.shared.prependTestListingArgs.map(x => this.resolveText(x)));
+    const args = prependTestListingArgs.concat([`--benchmark_list_tests=true`]);
 
-    this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
-    const listOutput = await this.shared.spawner.spawnAsync(this.shared.path, args, this.shared.options, 30000);
+    const pathForExecution = await this._getPathForExecution();
+    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
+    const listOutput = await this.shared.spawnerForListing.spawnAsync(
+      pathForExecution,
+      args,
+      this.shared.options,
+      30000,
+    );
 
     if (listOutput.stderr && !this.shared.ignoreTestEnumerationStdErr) {
       this.shared.log.warn('reloadChildren -> googleBenchmarkTestListOutput.stderr: ', listOutput);
@@ -98,17 +106,19 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
     }
   }
 
-  private _getRunParamsCommon(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  private _getRunParamsCommon(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     const execParams: string[] = [];
 
-    const testNames = childrenToRun.map(c => c.id);
-
-    execParams.push(`--benchmark_filter=` + testNames.join('|'));
-
+    if (childrenToRun === null) {
+      // nothing to add, run all
+    } else {
+      const testNames = childrenToRun.map(c => c.id);
+      execParams.push(`--benchmark_filter=` + testNames.join('|'));
+    }
     return execParams;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     return [`--benchmark_color=false`, '--benchmark_format=json', ...this._getRunParamsCommon(childrenToRun)];
   }
 
@@ -121,8 +131,10 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
   }
 
   protected async _handleProcess(testRun: vscode.TestRun, runInfo: RunningExecutable): Promise<HandleProcessResult> {
-    // at first it's good enough
-    runInfo.childrenToRun.forEach(test => testRun.started(test.item));
+    if (runInfo.childrenToRun) {
+      // at first it's good enough
+      runInfo.childrenToRun.forEach(test => testRun.started(test.item));
+    }
 
     const unexpectedTests: GoogleBenchmarkTest[] = [];
     const expectedToRunAndFoundTests: GoogleBenchmarkTest[] = [];
@@ -207,7 +219,7 @@ export class GoogleBenchmarkExecutable extends AbstractExecutable<GoogleBenchmar
 }
 
 function parseAndProcessTestCase(
-  log: LoggerWrapper,
+  log: Logger,
   builder: TestResultBuilder<GoogleBenchmarkTest>,
   metric: Record<string, unknown>,
 ): void {
@@ -216,7 +228,7 @@ function parseAndProcessTestCase(
 
   try {
     if (metric['error_occurred']) {
-      builder.addOutputLine(1, '❌ Error occurred:', (metric['error_occurred'] as string).toString());
+      builder.addReindentedOutput(1, '❌ Error occurred:', (metric['error_occurred'] as string).toString());
       builder.errored();
     }
 
@@ -231,8 +243,8 @@ function parseAndProcessTestCase(
         typeof builder.test.failIfExceedsLimitNs === 'number' &&
         builder.test.failIfExceedsLimitNs < value * timeUnitMultiplier
       ) {
-        builder.addOutputLine(1, `❌ Failed: "${key}" exceeded limit: ${builder.test.failIfExceedsLimitNs} ns.`);
-        builder.addOutputLine(1, ' ');
+        builder.addReindentedOutput(1, `❌ Failed: "${key}" exceeded limit: ${builder.test.failIfExceedsLimitNs} ns.`);
+        builder.addReindentedOutput(1, ' ');
         builder.failed();
       }
     }
@@ -240,12 +252,12 @@ function parseAndProcessTestCase(
     Object.keys(metric).forEach(key => {
       const value = metric[key];
       const value2 = typeof value === 'string' ? '"' + value + '"' : value;
-      builder.addOutputLine(1, key + ': ' + value2);
+      builder.addReindentedOutput(1, key + ': ' + value2);
     });
   } catch (e) {
     log.exceptionS(e, metric);
 
-    builder.addOutputLine(
+    builder.addReindentedOutput(
       1,
       '❌ Unexpected ERROR while parsing',
       `Exception: "${e}"`,

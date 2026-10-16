@@ -1,13 +1,19 @@
 import * as vscode from 'vscode';
 import { AbstractTest } from './framework/AbstractTest';
 import { parseLine } from './Util';
+import { AbstractExecutable } from './framework/AbstractExecutable';
 
 ///
 
 export type TestItemParent = vscode.TestItem | undefined;
 
 export interface FilePathResolver {
-  findSourceFilePath(file: string | undefined): string | undefined;
+  /**
+   *
+   * @param file don't have to be normalized
+   * @returns normalized file path
+   */
+  findSourceFilePath(file: string | undefined): Promise<string | undefined>;
 }
 
 export class TestItemManager {
@@ -19,19 +25,23 @@ export class TestItemManager {
 
   createOrReplace(
     parent: vscode.TestItem | undefined,
-    id: string,
+    testId: string,
     label: string,
     file: string | undefined,
     line: string | number | undefined,
     testData: AbstractTest | undefined,
   ): vscode.TestItem {
+    const id = testId;
     const uri: vscode.Uri | undefined = file ? vscode.Uri.file(file) : undefined;
     const item = this.controller.createTestItem(id, label, uri);
     if (uri) {
       parseLine(line, l => (item.range = new vscode.Range(l - 1, 0, l, 0)));
     }
     if (testData) this.testItem2test.set(item, testData);
-    else this.testItem2test.delete(item);
+    else {
+      this.testItem2test.delete(item);
+      if (!this.parents.has(item)) this.parents.set(item, undefined);
+    }
 
     if (parent) {
       parent.children.delete(item.id);
@@ -45,9 +55,45 @@ export class TestItemManager {
   }
 
   private readonly testItem2test = new WeakMap<vscode.TestItem, AbstractTest>();
+  private readonly parents = new WeakMap<vscode.TestItem, AbstractExecutable | undefined>();
 
-  map(item: vscode.TestItem): AbstractTest | undefined {
+  has(item: vscode.TestItem): boolean {
+    return this.testItem2test.has(item) || this.parents.has(item);
+  }
+
+  isParent(item: vscode.TestItem): boolean {
+    return this.parents.has(item);
+  }
+
+  setParent(item: vscode.TestItem, exec: AbstractExecutable | undefined): void {
+    this.parents.set(item, exec);
+  }
+
+  mapToTest(item: vscode.TestItem): AbstractTest | undefined {
     return this.testItem2test.get(item);
+  }
+
+  mapToTestOrExec(item: vscode.TestItem): [AbstractTest | undefined, undefined | AbstractExecutable] {
+    const t = this.testItem2test.get(item);
+    if (t) return [t, undefined];
+    const p = this.parents.get(item);
+    if (p) return [undefined, p];
+    return [undefined, undefined];
+  }
+
+  removeFromParent(item: vscode.TestItem): void {
+    if (!this.testItem2test.delete(item)) this.parents.delete(item);
+    this.getChildCollection(item.parent).delete(item.id);
+  }
+
+  findPath(path: string[]): vscode.TestItem | undefined {
+    let curr = undefined;
+    for (const p of path) {
+      const currNext = this.getChildCollection(curr).get(p);
+      if (currNext === undefined) return undefined;
+      curr = currNext;
+    }
+    return curr;
   }
 
   async update(
@@ -59,16 +105,17 @@ export class TestItemManager {
     description: string | undefined | null,
     tags: vscode.TestTag[] | null,
   ): Promise<vscode.TestItem> {
-    const resolvedFile = fileResolver.findSourceFilePath(file);
+    const resolvedFile = await fileResolver.findSourceFilePath(file);
+    const resolvedFileUri = resolvedFile ? vscode.Uri.file(resolvedFile) : undefined;
 
-    if (item.uri?.path !== resolvedFile) {
+    if (item.uri?.fsPath !== resolvedFileUri?.fsPath) {
       const newItem = this.createOrReplace(
         item.parent,
         item.id,
         label !== null ? label : item.label,
         file,
         line,
-        this.map(item),
+        this.mapToTest(item),
       );
 
       item.children.forEach(c => newItem.children.add(c));
@@ -92,6 +139,15 @@ export class TestItemManager {
       if (tags !== null) item.tags = tags;
 
       return item;
+    }
+  }
+
+  *enumerateDescendants(item: vscode.TestItem): IterableIterator<vscode.TestItem> {
+    for (const [_, c] of item.children) {
+      yield c;
+      for (const cc of this.enumerateDescendants(c)) {
+        yield cc;
+      }
     }
   }
 }

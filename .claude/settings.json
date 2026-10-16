@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm run compile)",
+      "Bash(npm run eslint)",
+      "Bash(npm run webpack)",
+      "Bash(npm test)",
+      "Bash(npm run test)",
+      "Bash(npx prettier --check:*)",
+      "Bash(npx prettier --write:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(npm run deploy:*)",
+      "Bash(npm run package:*)",
+      "Bash(npm audit fix:*)",
+      "Edit(.github/workflows/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/protect-workflows.js\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/prettier.js\""
+          }
+        ]
+      }
+    ]
+  }
+}

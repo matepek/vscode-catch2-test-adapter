@@ -2,9 +2,9 @@ import * as assert from 'assert';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as bent from 'bent';
+import bent from 'bent';
 import { promisify } from 'util';
-import * as vsce from 'vsce';
+import * as vsce from '@vscode/vsce';
 
 ///
 
@@ -30,7 +30,7 @@ interface Info {
 
 async function spawn(command: string, ...args: (string | { arg: string; mask?: string })[]): Promise<string> {
   console.log(
-    '$ ' + command + ' ' + args.map(a => (typeof a === 'string' ? `"${a}"` : a.mask ?? '<masked>')).join(' '),
+    '$ ' + command + ' ' + args.map(a => (typeof a === 'string' ? `"${a}"` : (a.mask ?? '<masked>'))).join(' '),
   );
   const result = await new Promise<string>((resolve, reject) => {
     const c = cp.spawn(
@@ -43,7 +43,8 @@ async function spawn(command: string, ...args: (string | { arg: string; mask?: s
       output += chunk.toString();
     });
     c.on('exit', (code: number) => {
-      code == 0 ? resolve(output) : reject(new Error('Process exited with: ' + code));
+      if (code == 0) resolve(output);
+      else reject(new Error('Process exited with: ' + code));
     });
   });
 
@@ -85,8 +86,8 @@ async function updateChangelog(): Promise<Info | undefined> {
     const nextM = releaseContent.match(re);
     if (nextM) releaseContent = releaseContent.substring(0, nextM.index!).trimRight();
 
-    const issueRe = new RegExp(`https://github\\.com/${githubRepoFullId}/issues/(\\d+)`, 'g');
-    mentionedIssues.push(...[...releaseContent.matchAll(issueRe)].map(x => x[1]));
+    const issueRe = new RegExp(`https://github\\.com/${githubRepoFullId}/issues/(\\d+)(#nc)?`, 'g');
+    mentionedIssues.push(...[...releaseContent.matchAll(issueRe)].filter(x => x[2] === undefined).map(x => x[1]));
   }
 
   const now = new Date();
@@ -255,7 +256,7 @@ async function closeMentionedIssues(info: Info): Promise<void> {
       {
         body: [
           '<details>',
-          `<summary>Fixed in **${info.vver}**.</summary>`,
+          `<summary>Fixed in <b>${info.vver}</b>.</summary>`,
           '',
           'This issue was mentioned in [CHANGELOG.md](./CHANGELOG.md) under a released entry so it is assumed to be fixed.',
           'User verifications are always welcome.',
@@ -301,7 +302,7 @@ async function createGithubRelease(info: Info, packagePath: string): Promise<voi
   )(
     `/repos/${githubRepoFullId}/releases`,
     {
-      tag_name: info.vver, // eslint-disable-line
+      tag_name: info.vver,
       name: info.full,
       body: 'See [CHANGELOG.md](CHANGELOG.md) for details.',
     },

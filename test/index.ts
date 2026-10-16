@@ -1,5 +1,5 @@
 import * as path from 'path';
-import * as Mocha from 'mocha';
+import Mocha from 'mocha';
 import * as glob from 'glob';
 
 export function run(testsRoot: string, cb: (error: unknown, failures?: number) => void): void {
@@ -9,21 +9,20 @@ export function run(testsRoot: string, cb: (error: unknown, failures?: number) =
     color: true,
   });
 
-  glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
-    if (err) {
-      return cb(err);
-    }
+  glob.glob('**/**.test.js', { cwd: testsRoot }).then(
+    files => {
+      // Add files to the test suite
+      files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
 
-    // Add files to the test suite
-    files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
-
-    try {
-      // Run the mocha test
-      mocha.run(failures => {
-        cb(null, failures);
-      });
-    } catch (err) {
-      cb(err);
-    }
-  });
+      try {
+        // Run the mocha test
+        mocha.run(failures => {
+          cb(null, failures);
+        });
+      } catch (err) {
+        cb(err);
+      }
+    },
+    err => cb(err),
+  );
 }

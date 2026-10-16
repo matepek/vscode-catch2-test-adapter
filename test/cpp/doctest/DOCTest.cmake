@@ -1,13 +1,9 @@
 include(FetchContent)
 
 FetchContent_Declare(doctest
-                     GIT_REPOSITORY https://github.com/onqtam/doctest.git
-                     GIT_TAG 2.4.7)
-
-FetchContent_GetProperties(doctest)
-if(NOT doctest_POPULATED)
-  FetchContent_Populate(doctest)
-endif()
+                     GIT_REPOSITORY https://github.com/doctest/doctest.git
+                     GIT_TAG v2.4.12)
+FetchContent_MakeAvailable(doctest)
 
 #
 

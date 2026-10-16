@@ -44,7 +44,20 @@ export interface CancellationToken {
   /**
    * An [event](#Event) which fires upon cancellation.
    */
-  readonly onCancellationRequested: Event<void>; // eslint-disable-line
+  readonly onCancellationRequested: Event<void>;
+}
+
+///
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export function Lazy<T extends {} | null>(fn: () => T): { _: T } {
+  let v: T | undefined = undefined;
+  return {
+    get _(): T {
+      if (v == undefined) v = fn();
+      return v;
+    },
+  };
 }
 
 ///
@@ -60,7 +73,19 @@ export function concat(left: string, right: string, sep = ''): string {
 }
 
 export class Version {
-  constructor(readonly major: number, private readonly _minor?: number, private readonly _patch?: number) {}
+  static from(value: string): Version | undefined {
+    const match = value.match(/^(\d+)(?:\.(\d+)(?:\.(\d+))?)?$/);
+    if (!match) return undefined;
+
+    const [, major, minor, patch] = match;
+    return new Version(Number(major), minor ? Number(minor) : undefined, patch ? Number(patch) : undefined);
+  }
+
+  constructor(
+    readonly major: number,
+    private readonly _minor?: number,
+    private readonly _patch?: number,
+  ) {}
 
   get minor(): number {
     return this._minor ? this._minor : 0;
@@ -100,7 +125,7 @@ export function parseLine(
   adjust?: number,
 ): number | undefined {
   if (typeof line == 'number') {
-    func && func(line);
+    if (func) func(line);
     return line;
   } else if (typeof line == 'string') {
     let p = parseInt(line);
@@ -108,7 +133,7 @@ export function parseLine(
       return undefined;
     } else {
       if (adjust) p += adjust;
-      func && func(p);
+      if (func) func(p);
       return p;
     }
   } else return undefined;
@@ -159,7 +184,7 @@ export function milisecToStr(durationInMilisec: number): string {
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { promisify } from 'util';
-import { LoggerWrapper } from './LoggerWrapper';
+import { Logger } from './Logger';
 
 type VersionT = [number, number, number];
 export class GoogleTestVersionFinder {
@@ -181,7 +206,7 @@ export class GoogleTestVersionFinder {
 
   private static _version: Promise<VersionT | undefined> | undefined = undefined;
 
-  static Get(log: LoggerWrapper): Promise<VersionT | undefined> {
+  static Get(log: Logger): Promise<VersionT | undefined> {
     if (this._version === undefined) {
       const cancellation = new vscode.CancellationTokenSource();
 
@@ -257,7 +282,7 @@ export function unique<T>(array: readonly T[]): readonly T[] {
   return array.filter((v, i, a) => a.indexOf(v) === i);
 }
 
-export function getAbsolutePath(filePath: string, directories: Iterable<string>): string {
+export async function getAbsolutePath(filePath: string, directories: Iterable<string>): Promise<string> {
   if (pathlib.isAbsolute(filePath)) return filePath;
 
   for (const dir of directories) {
@@ -267,12 +292,12 @@ export function getAbsolutePath(filePath: string, directories: Iterable<string>)
       do {
         const f = pathlib.join(current, filePath);
 
-        if (c2fs.existsSync(f)) return f;
+        if (await c2fs.exists(f)) return f;
 
         current = parent;
         parent = pathlib.dirname(current);
       } while (current != parent);
-    } catch {}
+    } catch {} // eslint-disable-line
   }
 
   return filePath;
@@ -283,4 +308,21 @@ export function getModiTime(path: string): Promise<number | undefined> {
     stat => stat.mtimeMs,
     () => undefined,
   );
+}
+
+export function waitWithTimout<T>(f: Promise<T>, timeoutMs: number, errMsg?: string): Promise<T> {
+  return Promise.race([
+    f,
+    new Promise<T>((_r, rej) => setTimeout(() => rej(Error(errMsg ?? `Timeout ${timeoutMs} has expired`)), timeoutMs)),
+  ]);
+}
+
+export function applyRegexpWithSubstitution(regex: RegExp, input: string, replaceWith: string): string | null {
+  const match = regex.exec(input);
+  if (match === null) return null;
+  let result = input.substring(0, match.index) + replaceWith + input.substring(match.index + match[0].length);
+  for (let i = 0; i < match.length; ++i) {
+    result = result.replaceAll(`$${i}`, match[i]);
+  }
+  return result;
 }

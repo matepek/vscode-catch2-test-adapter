@@ -8,7 +8,17 @@
 
 #include "gmock/gmock.h"
 
-//GTEST_TEST(TestCas1, test1ss) {}
+GTEST_TEST(TestCas1, test0) {
+  volatile bool b1 = true;
+  volatile bool b2 = true;
+  if(b1) {
+    if (b2) {
+      std::cout << "b2";
+    } else {
+      std::cout << "!b2";
+    }
+  } 
+}
 
 GTEST_TEST(TestCas1, test1) {
   //
@@ -146,6 +156,64 @@ int main(int argc, char **argv) {
 
 TEST(Std, NoOutput)
 {
+    if(const char* env_p = std::getenv("ENV_TEST"))
+      std::cout << "ENV_TEST: " << env_p << "\n";
     std::cout << "cout\n";
     std::cerr << "cerr\n";
+}
+
+TEST(CppMateTest, LeadingWhitespace)
+{
+    std::cout << "First line\n"
+              << "    Second line\n"
+              << "- Third line\n"
+              << "  Fourth line\n";
+    FAIL() << "bad whitespace";
+}
+
+TEST(ThisTest, FailsWithContext) {
+  FAIL() << "This test fails with context";
+}
+
+TEST(ThisTest, FailsWithContext2) {
+  FAIL() << "This test fails with context"<< std::endl << "second line";
+  std::cout << "not related";
+}
+
+TEST(ThisTest, FailsWithEmpty) {
+  FAIL();
+  std::cout << "not related";
+}
+
+TEST(ThisTest, AlsoFailsWithContext) {
+  ASSERT_EQ(1, 2) << "Value of [" << 1 << "] is not equal to [" << 2 << "]";
+}
+
+TEST(audetto, Test_Output)
+{
+  // ADD_FAILURE() << "some diagnostic info here";
+  std::cout << "some output" << std::endl;
+  EXPECT_EQ(1, 2) << "1 is not 2";
+  EXPECT_EQ(2, 3) << "2 is not 3";
+}
+
+TEST(audetto, Test_Output2)
+{
+  ADD_FAILURE() << "some diagnostic info here";
+  std::cout << "some output" << std::endl;
+  EXPECT_EQ(1, 2) << "1 is not 2";
+  EXPECT_EQ(2, 3);
+  std::cout<< "new stuff"<<std::endl;
+}
+
+TEST(audetto, Test_Output3)
+{
+  EXPECT_EQ(1, 2) << "  1 is not 2";
+}
+
+TEST(Tomeamis, fails) {
+	FAIL();
+}
+
+TEST(Tomeamis, empty) {
 }

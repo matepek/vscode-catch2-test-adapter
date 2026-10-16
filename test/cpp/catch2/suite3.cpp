@@ -1,7 +1,7 @@
 #include <chrono>
 #include <thread>
 
-#include "catch2/catch.hpp"
+#include "catch2/catch_all.hpp"
 
 // clang-format off
 // c++ -x c++ -std=c++17 -I ../Catch2/single_include -O0 -g -o suite3 ../vscode-catch2-test-adapter/src/test/suite3.cpp

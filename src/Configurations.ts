@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LoggerWrapper } from './LoggerWrapper';
+import { Logger } from './Logger';
 import { ConfigOfExecGroup } from './ConfigOfExecGroup';
 import { WorkspaceShared } from './WorkspaceShared';
 import { hashString } from './Util';
@@ -13,8 +13,8 @@ import {
   ExecutionWrapperConfig,
 } from './AdvancedExecutableInterface';
 import { platformUtil } from './util/Platform';
-
-type SentryValue = 'question' | 'enable' | 'enabled' | 'disable' | 'disable_1' | 'disable_2' | 'disable_3';
+import { cloneRecursively } from './util/ResolveRule';
+import { DebugConfigData } from './DebugConfigType';
 
 const ConfigSectionBase = 'testMate.cpp';
 
@@ -34,6 +34,9 @@ export type Config =
   | 'test.randomGeneratorSeed'
   | 'test.runtimeLimit'
   | 'test.parallelExecutionLimit'
+  | 'test.testNameLengthLimit'
+  | 'test.stderrDecorator'
+  | 'discovery.loadOnStartup'
   | 'discovery.gracePeriodForMissing'
   | 'discovery.runtimeLimit'
   | 'discovery.testListCaching'
@@ -43,24 +46,41 @@ export type Config =
   | 'debug.noThrow'
   | 'log.logpanel'
   | 'log.logfile'
-  | 'log.logSentry'
   | 'log.userId'
   | 'gtest.treatGmockWarningAs'
   | 'gtest.gmockVerbose';
 
+///
+
 class ConfigurationChangeEvent {
-  constructor(private readonly event: vscode.ConfigurationChangeEvent) {}
-  affectsConfiguration(config: Config, resource?: vscode.Uri): boolean {
-    return this.event.affectsConfiguration(`${ConfigSectionBase}.${config}`, resource);
+  constructor(
+    private readonly event: vscode.ConfigurationChangeEvent,
+    public readonly config: Configurations,
+  ) {}
+  affects(config: Config): boolean {
+    return this.event.affectsConfiguration(`${ConfigSectionBase}.${config}`, this.config._workspaceFolderUri);
+  }
+  affectsAny(...config: Config[]): boolean {
+    return config.some(c => this.affects(c));
+  }
+  affectsNotTestMate(...config: string[]): boolean {
+    return config.some(c => this.event.affectsConfiguration(c, this.config._workspaceFolderUri));
   }
 }
+
+///
+
+export const setEnvKey = 'testMate.cpp.debug.setEnv';
 
 ///
 
 export class Configurations {
   private _cfg: vscode.WorkspaceConfiguration;
 
-  constructor(readonly _log: LoggerWrapper, private _workspaceFolderUri: vscode.Uri) {
+  constructor(
+    readonly _log: Logger,
+    readonly _workspaceFolderUri: vscode.Uri,
+  ) {
     this._cfg = vscode.workspace.getConfiguration(ConfigSectionBase, _workspaceFolderUri);
   }
 
@@ -83,33 +103,35 @@ export class Configurations {
     };
   }
 
-  static onDidChange(callbacks: (changeEvent: ConfigurationChangeEvent) => void): vscode.Disposable {
-    return vscode.workspace.onDidChangeConfiguration(changeEvent =>
-      callbacks(new ConfigurationChangeEvent(changeEvent)),
-    );
+  static onDidChange(
+    log: Logger,
+    workspaceFolder: vscode.WorkspaceFolder,
+    callbacks: (changeEvent: ConfigurationChangeEvent) => void,
+  ): vscode.Disposable {
+    return vscode.workspace.onDidChangeConfiguration(changeEvent => {
+      const config = new Configurations(log, workspaceFolder.uri);
+      callbacks(new ConfigurationChangeEvent(changeEvent, config));
+    });
   }
 
   private _hasExtension(id: string): boolean {
     return vscode.extensions.all.find(e => e.id === id) !== undefined;
   }
 
-  getDebugConfigurationTemplate(): DebugConfigData {
+  private _getDebugConfigData(
+    templateFromConfig: vscode.DebugConfiguration | null | 'extensionOnly' | string,
+  ): DebugConfigData {
     const debugConfigData = ((): DebugConfigData => {
-      const templateFromConfig = this._getD<vscode.DebugConfiguration | null | 'extensionOnly' | string>(
-        'debug.configTemplate',
-        null,
-      );
-
       const template: vscode.DebugConfiguration = {
-        name: '${label} (${suiteLabel})',
+        name: '${label} (${parentLabel})',
         request: 'launch',
         type: 'cppdbg',
       };
 
       if (typeof templateFromConfig === 'object' && templateFromConfig !== null) {
-        Object.assign(template, templateFromConfig);
+        // we need this trick to get rid of the proxy, because asigns works on proxy but not on it's children
+        Object.assign(template, cloneRecursively(templateFromConfig));
         this._log.debug('template', template);
-
         return { template, source: 'userDefined', launchSourceFileMap: {} };
       } else if (templateFromConfig === null) {
         const wpLaunchConfigs = vscode.workspace
@@ -234,7 +256,6 @@ export class Configurations {
 
         return { template, source: 'webfreak.debug', launchSourceFileMap: {} };
       } else if (this._hasExtension('ms-vscode.cpptools')) {
-        // documentation says debug"environment" = [{...}] but that doesn't work
         Object.assign(template, {
           type: 'cppvsdbg',
           linux: { type: 'cppdbg', MIMode: 'gdb' },
@@ -243,7 +264,6 @@ export class Configurations {
           program: '${exec}',
           args: '${argsArray}',
           cwd: '${cwd}',
-          env: '${envObj}',
           environment: '${envObjArray}',
           sourceFileMap: '${sourceFileMapObj}',
         });
@@ -261,6 +281,12 @@ export class Configurations {
     if (typeof platfromProp === 'object') Object.assign(debugConfigData.template, platfromProp);
 
     return debugConfigData;
+  }
+
+  getDebugConfigurationTemplate(): DebugConfigData {
+    return this._getDebugConfigData(
+      this._getD<vscode.DebugConfiguration | null | 'extensionOnly' | string>('debug.configTemplate', null),
+    );
   }
 
   getOrCreateUserId(): string {
@@ -285,58 +311,8 @@ export class Configurations {
   //   return decrypted.toString('utf8');
   // }
 
-  isSentryEnabled(): boolean {
-    const val = this._get('log.logSentry');
-    return val === 'enable' || val === 'enabled';
-  }
-
-  askSentryConsent(): void {
-    const envAskSentry = process.env['TESTMATE_CPP_ASKSENTRYCONSENT'];
-    if (envAskSentry === 'disabled_3') {
-      return;
-      //const decrypted = Configurations.decrypt(process.env['TESTMATE_CPP_LOGSENTRY']);
-      //if (decrypted === 'disable_3') return;
-    }
-
-    const logSentryConfig: Config = 'log.logSentry';
-
-    const logSentry = this._getD<SentryValue>(logSentryConfig, 'question');
-
-    if (logSentry === 'question' || logSentry === 'disable' || logSentry === 'disable_1' || logSentry === 'disable_2') {
-      const options = [
-        'Sure! I love this extension and happy to help.',
-        'Yes, but exclude current workspace',
-        'Over my dead body (No)',
-      ];
-      vscode.window
-        .showInformationMessage(
-          'Hey there! C++ TestMate has [sentry.io](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/log.logSentry.md) integration to ' +
-            'improve the stability and the development. 🤩 For this I want to send logs and errors ' +
-            'but I would NEVER do it without your consent. ' +
-            'Please be understandable and allow it. 🙏',
-          ...options,
-        )
-        .then((value: string | undefined) => {
-          this._log.info('Sentry consent', value);
-
-          if (value === options[0]) {
-            this._cfg
-              .update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global)
-              .then(undefined, e => this._log.exceptionS(e));
-          } else if (value === options[1]) {
-            this._cfg
-              .update(logSentryConfig, 'enable', vscode.ConfigurationTarget.Global)
-              .then(undefined, e => this._log.exceptionS(e));
-            this._cfg
-              .update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.WorkspaceFolder)
-              .then(undefined, e => this._log.exceptionS(e));
-          } else if (value === options[2]) {
-            this._cfg
-              .update(logSentryConfig, 'disable_3', vscode.ConfigurationTarget.Global)
-              .then(undefined, e => this._log.exceptionS(e));
-          }
-        });
-    }
+  getLoadAtStartup(): boolean {
+    return this._getD<boolean>('discovery.loadOnStartup', false);
   }
 
   getDebugBreakOnFailure(): boolean {
@@ -400,6 +376,10 @@ export class Configurations {
     return r * 1000;
   }
 
+  getTestNameLengthLimit(): number {
+    return this._getD<number>('test.testNameLengthLimit', 30000);
+  }
+
   getEnableTestListCaching(): boolean {
     return this._getD<boolean>('discovery.testListCaching', false);
   }
@@ -416,9 +396,14 @@ export class Configurations {
     return this._getD<'default' | 'info' | 'warning' | 'error'>('gtest.gmockVerbose', 'default');
   }
 
+  getStderrDecorator(): boolean {
+    return this._getD<boolean>('test.stderrDecorator', true);
+  }
+
   getExecutableConfigs(shared: WorkspaceShared): ConfigOfExecGroup[] {
     const defaultCwd = this.getDefaultCwd() || '${absDirpath}';
     const defaultParallelExecutionOfExecLimit = this.getParallelExecutionOfExecutableLimit() || 1;
+    const defaultMaxTestsPerExecutable = null;
 
     const createExecutableConfigFromPattern = (pattern: string): ConfigOfExecGroup => {
       return new ConfigOfExecGroup(
@@ -426,14 +411,21 @@ export class Configurations {
         pattern,
         undefined,
         undefined,
+        undefined,
+        [],
         defaultCwd,
         this.getTerminalIntegratedEnv(),
         undefined,
         [],
         { before: [], beforeEach: [], after: [], afterEach: [] },
         defaultParallelExecutionOfExecLimit,
-        false,
+        defaultMaxTestsPerExecutable,
         undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        false,
         undefined,
         undefined,
         {},
@@ -500,6 +492,7 @@ export class Configurations {
 
         const description: string | undefined = typeof obj.description === 'string' ? obj.description : undefined;
 
+        // eslint-disable-next-line no-useless-assignment
         let pattern = '';
         {
           if (typeof obj.pattern == 'string') pattern = obj.pattern;
@@ -508,6 +501,10 @@ export class Configurations {
             throw Error('"pattern" property is required in advancedExecutables.');
           }
         }
+
+        const exclude: string | null | undefined = obj.exclude;
+
+        const testTags: string[] = Array.isArray(obj.testTags) ? obj.testTags.filter(v => typeof v === 'string') : [];
 
         const cwd: string = typeof obj.cwd === 'string' ? obj.cwd : defaultCwd;
 
@@ -535,21 +532,31 @@ export class Configurations {
             ? Math.max(1, obj.parallelizationLimit)
             : defaultParallelExecutionOfExecLimit;
 
+        const maxTestsPerExecutable: number | null =
+          typeof obj.maxTestsPerExecutable === 'number' && !Number.isNaN(obj.maxTestsPerExecutable)
+            ? Math.max(1, obj.maxTestsPerExecutable)
+            : defaultMaxTestsPerExecutable;
+
         const strictPattern: boolean | undefined = obj.strictPattern;
 
         const markAsSkipped: boolean | undefined = obj.markAsSkipped;
 
-        const waitForBuildProcess: boolean | string | undefined = obj.waitForBuildProcess;
+        const executableRunAsImplicitAll: boolean | undefined = obj.executableRunAsImplicitAll;
+
+        const executableCloning: boolean | undefined = obj.executableCloning;
+
+        const executableSuffixToInclude: string[] | undefined = obj.executableSuffixToInclude;
+
+        const waitForBuildProcess: boolean | string = obj.waitForBuildProcess ?? false;
+
+        const debugConfigData: DebugConfigData | undefined = obj['debug.configTemplate']
+          ? this._getDebugConfigData(obj['debug.configTemplate'])
+          : undefined;
 
         const defaultTestGrouping = obj.testGrouping;
 
         const spawnerConfig: ExecutionWrapperConfig | undefined =
-          typeof obj.executionWrapper === 'object' &&
-          typeof obj.executionWrapper.path === 'string' &&
-          (obj.executionWrapper.args === undefined ||
-            (Array.isArray(obj.executionWrapper.args) && obj.executionWrapper.args.every(x => typeof x === 'string')))
-            ? obj.executionWrapper
-            : undefined;
+          typeof obj.executionWrapper === 'object' ? obj.executionWrapper : undefined;
 
         const sourceFileMap: Record<string, string> =
           typeof obj.sourceFileMap === 'object' &&
@@ -560,17 +567,24 @@ export class Configurations {
         return new ConfigOfExecGroup(
           shared,
           pattern,
+          exclude,
           name,
           description,
+          testTags,
           cwd,
           env,
           envFile,
           dependsOn,
           runTask,
           parallelizationLimit,
+          maxTestsPerExecutable,
           strictPattern,
           markAsSkipped,
+          executableRunAsImplicitAll,
+          executableCloning,
+          executableSuffixToInclude,
           waitForBuildProcess,
+          debugConfigData,
           spawnerConfig,
           sourceFileMap,
           {
@@ -603,14 +617,17 @@ export class Configurations {
     obj?: FrameworkSpecificConfig,
   ): FrameworkSpecificConfig {
     const r: FrameworkSpecificConfig = {};
+    r.testGrouping = defaultTestGrouping;
     if (typeof obj === 'object') {
       if (obj.testGrouping) r.testGrouping = obj.testGrouping;
-      else r.testGrouping = defaultTestGrouping;
 
       if (typeof obj.helpRegex === 'string') r.helpRegex = obj['helpRegex'];
 
       if (Array.isArray(obj.prependTestRunningArgs) && obj.prependTestRunningArgs.every(x => typeof x === 'string'))
         r.prependTestRunningArgs = obj.prependTestRunningArgs;
+
+      if (Array.isArray(obj.prependTestDebuggingArgs) && obj.prependTestDebuggingArgs.every(x => typeof x === 'string'))
+        r.prependTestDebuggingArgs = obj.prependTestDebuggingArgs;
 
       if (Array.isArray(obj.prependTestListingArgs) && obj.prependTestListingArgs.every(x => typeof x === 'string'))
         r.prependTestListingArgs = obj.prependTestListingArgs;
@@ -623,7 +640,6 @@ export class Configurations {
 
       if (typeof obj.failIfExceedsLimitNs === 'number') r.failIfExceedsLimitNs = obj.failIfExceedsLimitNs;
     }
-
     return r;
   }
 
@@ -640,17 +656,3 @@ export class Configurations {
     return {};
   }
 }
-
-export type DebugConfigTemplateSource =
-  | 'fromLaunchJson'
-  | 'fromLaunchJsonByName'
-  | 'userDefined'
-  | 'vadimcn.vscode-lldb'
-  | 'ms-vscode.cpptools'
-  | 'webfreak.debug';
-
-export type DebugConfigData = {
-  template: vscode.DebugConfiguration;
-  source: DebugConfigTemplateSource;
-  launchSourceFileMap?: Record<string, string>;
-};

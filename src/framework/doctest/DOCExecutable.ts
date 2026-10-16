@@ -11,7 +11,7 @@ import { CancellationFlag, Version } from '../../Util';
 import { TestGroupingConfig } from '../../TestGroupingInterface';
 import { XmlParser, XmlTag, XmlTagProcessor } from '../../util/XmlParser';
 import { assert, debugBreak } from '../../util/DevelopmentHelper';
-import { TestResultBuilder } from '../../TestResultBuilder';
+import { addOutputForTestRun, TestResultBuilder } from '../../TestResultBuilder';
 import { TestItemParent } from '../../TestItemManager';
 import { AbstractTest, SubTest, SubTestTree } from '../AbstractTest';
 import { pipeProcess2Parser } from '../../util/ParserInterface';
@@ -26,6 +26,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
       return this.shared.testGrouping;
     } else {
       const grouping = { groupByExecutable: this._getGroupByExecutable() };
+      grouping.groupByExecutable.groupByTags = { tags: [], tagFormat: '${tag}' };
       return grouping;
     }
   }
@@ -70,30 +71,32 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
   }
 
   private readonly _createAndAddTest = async (
-    testName: string,
-    suiteName: string | undefined,
+    testId: string,
+    suiteId: string | undefined,
     file: string | undefined,
     line: string | undefined,
     description: string | undefined,
     skipped: string | undefined,
   ): Promise<DOCTest> => {
-    const tags: string[] = suiteName ? [suiteName] : [];
+    const id = getTestId(file, line, testId);
+    const tags: string[] = suiteId ? [suiteId] : [];
     const skippedB = skipped === 'true';
-    const resolvedFile = this.findSourceFilePath(file);
+    const resolvedFile = await this.findSourceFilePath(file);
     return this._createTreeAndAddTest(
       this.getTestGrouping(),
-      testName,
+      testId,
       resolvedFile,
       line,
       tags,
       description,
-      (parent: TestItemParent) => new DOCTest(this, parent, testName, tags, resolvedFile, line, description, skippedB),
+      (parent: TestItemParent, testName: string | undefined) =>
+        new DOCTest(this, parent, id, testName ?? testId, suiteId, tags, resolvedFile, line, description, skippedB),
       (test: DOCTest) => test.update2(resolvedFile, line, tags, skippedB, description),
     );
   };
 
   protected async _reloadChildren(cancellationFlag: CancellationFlag): Promise<void> {
-    const cacheFile = this.shared.path + '.TestMate.testListCache.txt';
+    const cacheFile = this.shared.path + `.TestMate.testListCache.${this.shared.optionsHash}.txt`;
 
     if (this.shared.enabledTestListCaching) {
       try {
@@ -111,15 +114,22 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
       }
     }
 
-    const args = this.shared.prependTestListingArgs.concat([
+    const prependTestListingArgs = await Promise.all(this.shared.prependTestListingArgs.map(x => this.resolveText(x)));
+    const args = prependTestListingArgs.concat([
       '--list-test-cases',
       '--reporters=xml',
       '--no-skip=true',
       '--no-color=true',
     ]);
 
-    this.shared.log.info('discovering tests', this.shared.path, args, this.shared.options.cwd);
-    const docTestListOutput = await this.shared.spawner.spawnAsync(this.shared.path, args, this.shared.options, 30000);
+    const pathForExecution = await this._getPathForExecution();
+    this.shared.log.info('discovering tests', this.shared.path, pathForExecution, args, this.shared.options);
+    const docTestListOutput = await this.shared.spawnerForListing.spawnAsync(
+      pathForExecution,
+      args,
+      this.shared.options,
+      30000,
+    );
 
     if (docTestListOutput.stderr && !this.shared.ignoreTestEnumerationStdErr) {
       this.shared.log.warn(
@@ -143,26 +153,35 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     return result;
   }
 
-  private _getDocTestRunParams(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  private _getDocTestRunParams(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     const params: string[] = [];
 
-    if (childrenToRun.length == 1 && childrenToRun[0] instanceof SubTest) {
+    if (childrenToRun === null) {
+      // nothing to add, run all
+    } else if (childrenToRun.length == 1 && childrenToRun[0] instanceof SubTest) {
       const subTests: SubTest[] = [childrenToRun[0]];
       let p = childrenToRun[0].parentTest;
       while (p instanceof SubTest) {
         subTests.unshift(p);
         p = p.parentTest;
       }
-      assert(p instanceof DOCTest);
-      params.push('--test-case=' + (p as DOCTest).getEscapedTestName());
+      if (!(p instanceof DOCTest)) throw Error('unexpected doctest issue');
+      if (p.suiteName !== undefined) {
+        params.push('--test-suite=' + p.suiteName);
+      }
+      params.push('--test-case=' + p.getEscapedTestName());
       params.push('--subcase=' + subTests.map(s => s.id.replaceAll(',', '?')).join(','));
       params.push('--subcase-filter-levels=' + subTests.length);
     } else if (childrenToRun.every(v => v instanceof DOCTest)) {
-      const testNames = childrenToRun.map(c => (c as DOCTest).getEscapedTestName());
+      const dc = childrenToRun as readonly DOCTest[];
+      if (dc.length && dc[0].suiteName && dc.every(v => v.suiteName === dc[0].suiteName)) {
+        params.push('--test-suite=' + dc[0].suiteName);
+      }
+      const testNames = dc.map(c => c.getEscapedTestName());
       params.push('--test-case=' + testNames.join(','));
     } else {
       this.log.warnS('wrong run/debug combo', childrenToRun);
-      throw Error('Cannot run/debug this combination. Only 1 section or multiple tests can be selected only.');
+      throw Error('Cannot run/debug this combination. Only 1 section or multiple tests can be selected.');
     }
 
     params.push('--no-skip=true');
@@ -177,18 +196,42 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     return params;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[]): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     const execParams: string[] = this._getDocTestRunParams(childrenToRun);
     execParams.push('--reporters=xml');
     return execParams;
   }
 
-  // eslint-disable-next-line
   protected _getDebugParamsInner(childrenToRun: readonly Readonly<AbstractTest>[], breakOnFailure: boolean): string[] {
     const execParams: string[] = this._getDocTestRunParams(childrenToRun);
     execParams.push('--reporters=console');
     execParams.push('--no-breaks=' + (breakOnFailure ? 'false' : 'true'));
     return execParams;
+  }
+
+  protected override _splitTests(tests: readonly AbstractTest[]): (readonly AbstractTest[])[] {
+    const withoutSuite: AbstractTest[] = [];
+    const suites = new Map<string, AbstractTest[]>();
+    for (const test of tests) {
+      if (test instanceof DOCTest) {
+        if (test.suiteName) {
+          const f = suites.get(test.suiteName);
+          if (f) f.push(test);
+          else {
+            const s = [test];
+            suites.set(test.suiteName, s);
+          }
+        } else {
+          withoutSuite.push(test);
+        }
+      } else {
+        this.shared.log.error('expected DOCTest but got something else');
+      }
+    }
+    const result: AbstractTest[][] = [];
+    if (withoutSuite.length) result.push(withoutSuite);
+    result.push(...suites.values());
+    return result;
   }
 
   protected async _handleProcess(testRun: vscode.TestRun, runInfo: RunningExecutable): Promise<HandleProcessResult> {
@@ -223,6 +266,9 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
               );
           }
         },
+        ontext: (text: string) => {
+          addOutputForTestRun(testRun, runInfo.runPrefix, 0, 0, false, text);
+        },
       },
       (error: Error) => {
         this.shared.log.exceptionS('onerror', error);
@@ -244,6 +290,9 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     };
   }
 }
+
+const getTestId = (file: string | undefined, line: string | undefined, testName: string) =>
+  `${file ?? ''}:${line ?? ''}:${testName}`;
 
 ///
 
@@ -284,7 +333,8 @@ class TestSuiteTagProcessor implements XmlTagProcessor {
 
         assert(typeof name === 'string' && name.length > 0);
 
-        let test = this.findTest(name);
+        const testId = getTestId(tag.attribs.filename, tag.attribs.line, name);
+        let test = this.findTest(testId);
         if (!test) {
           this.shared.log.info('TestCase not found in children', tag, name);
           test = await this.create(
@@ -335,30 +385,30 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         // known tag, do nothing
       } else {
         this.shared.log.errorS('unhandled tag:' + tag.name);
-        this.builder.addOutputLine(1, `Unknown XML tag: ${tag.name} with ${JSON.stringify(tag.attribs)}`);
+        this.builder.addReindentedOutput(1, `Unknown XML tag: ${tag.name} with ${JSON.stringify(tag.attribs)}`);
       }
     }
   }
 
-  ontext(dataTrimmed: string, parentTag: XmlTag): void {
+  async ontext(dataTrimmed: string, parentTag: XmlTag): Promise<void> {
     const processor = TagProcessorBase.textProcessorMap.get(parentTag.name);
     if (processor) {
       try {
-        return processor(dataTrimmed, parentTag, this.builder, this.caseData, this.shared);
+        return await processor(dataTrimmed, parentTag, this.builder, this.caseData, this.shared);
       } catch (e) {
         this.shared.log.exceptionS(e);
-        this.builder.addOutputLine(1, 'Unknown fatal error: ' + inspect(e));
+        this.builder.addReindentedOutput(1, 'Unknown fatal error: ' + inspect(e));
         this.builder.errored(); //TODO: check this is really working
       }
     } else if (processor === null) {
       // known tag, do nothing
     } else {
-      this.builder.addOutputLine(1, dataTrimmed);
+      this.builder.addReindentedOutput(1, dataTrimmed);
     }
   }
 
-  onstderr(data: string, _parentTag: XmlTag | undefined): void {
-    this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
+  async onstderr(data: string, _parentTag: XmlTag | undefined): Promise<void> {
+    await this.builder.addQuoteWithLocation(undefined, undefined, 'std::cerr', data);
   }
 
   private static readonly openTagProcessorMap: Map<
@@ -406,18 +456,18 @@ abstract class TagProcessorBase implements XmlTagProcessor {
         builder: TestResultBuilder,
         caseData: CaseData,
         shared: SharedVarOfExec,
-      ) => void)
+      ) => void | Promise<void>)
   > = new Map([
     [
       'Exception',
-      (
+      async (
         dataTrimmed: string,
         parentTag: XmlTag,
         builder: TestResultBuilder,
         caseData: CaseData,
         _shared: SharedVarOfExec,
       ) => {
-        builder.addMessageWithOutput(
+        await builder.addMessageWithOutput(
           parentTag.attribs.filename,
           parentTag.attribs.line,
           'Exception (crash=' + parentTag.attribs.crash + '): `' + dataTrimmed + '`',
@@ -445,7 +495,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
 
   async begin(): Promise<void> {
     this.builder.started();
-    const file = this.test.exec.findSourceFilePath(this.attribs.filename);
+    const file = await this.test.exec.findSourceFilePath(this.attribs.filename);
     await this.test.updateFL(file, this.attribs.line);
   }
 
@@ -455,10 +505,12 @@ class TestCaseTagProcessor extends TagProcessorBase {
       if (durationSec === undefined) this.shared.log.errorS('doctest: duration is NaN: ' + tag.attribs.duration);
       else this.builder.setDurationMilisec(durationSec * 1000);
 
+      // eslint-disable-next-line no-useless-assignment
       let result: undefined | 'passed' | 'failed' = undefined;
 
       if (tag.attribs.test_case_success !== undefined) {
-        result = tag.attribs.test_case_success === 'true' ? 'passed' : 'failed';
+        if (tag.attribs.test_case_success === 'true') this.builder.passed(true);
+        else this.builder.failed();
       } else {
         const mayFail = this.attribs.may_fail === 'true';
         const shouldFail = this.attribs.should_fail === 'true';
@@ -478,6 +530,7 @@ class TestCaseTagProcessor extends TagProcessorBase {
           if (expectedFailures !== failures || hasException || hasTimedOut) result = 'failed';
           else result = 'passed';
         }
+        this.builder[result]();
       }
 
       // if has no modifier
@@ -496,11 +549,11 @@ class TestCaseTagProcessor extends TagProcessorBase {
         });
       }
 
-      this.builder[result]();
-
-      // if a subtest is run then we don't expect all the sections to arrive so we assume the missing ones weren't run.
-      if (this.runInfo.childrenToRun.length !== 1 || !(this.runInfo.childrenToRun[0] instanceof SubTest)) {
-        this.builder.test.removeMissingSubTests(this.subCases);
+      if (this.runInfo.childrenToRun) {
+        // if a subtest is run then we don't expect all the sections to arrive so we assume the missing ones weren't run.
+        if (this.runInfo.childrenToRun.length !== 1 || !(this.runInfo.childrenToRun[0] instanceof SubTest)) {
+          this.builder.test.removeMissingSubTests(this.subCases);
+        }
       }
 
       this.builder.build();
@@ -579,9 +632,11 @@ class ExpressionProcessor implements XmlTagProcessor {
 
   private original?: string;
   private expanded?: string;
-  private other = new Map<string, string>();
+  private messages: string[] = [];
+  private unknowns = new Map<string, string>();
 
   ontext(dataTrimmed: string, parentTag: XmlTag): void {
+    // https://github.com/doctest/doctest/blob/1da23a3e8119ec5cce4f9388e91b065e20bf06f5/doctest/doctest.h#L5628-L5646
     switch (parentTag.name) {
       case 'Original':
         this.original = dataTrimmed;
@@ -589,27 +644,37 @@ class ExpressionProcessor implements XmlTagProcessor {
       case 'Expanded':
         this.expanded = dataTrimmed;
         break;
+      case 'Exception':
+      case 'ExpectedException':
+      case 'ExpectedExceptionString':
+        this.messages.push(parentTag.name + ': ' + dataTrimmed);
+        break;
+      case 'Info':
+        this.messages.push(dataTrimmed);
+        break;
       default:
-        this.other.set(parentTag.name, dataTrimmed);
+        this.unknowns.set(parentTag.name, dataTrimmed);
         break;
     }
   }
 
-  end(): void {
+  async end(): Promise<void> {
     assert(this.original);
 
-    if (this.other.size) {
-      if (this.expanded) this._shared.log.errorS('unknown doctest expression with expanded', this.expanded, this.other);
-      const exps = [...this.other.entries()].map(e => `${e[0]}: ${e[1]}`);
+    if (this.unknowns.size) {
+      if (this.expanded)
+        this._shared.log.warnS('unknown doctest expression with expanded', this.expanded, this.unknowns);
+      const exps = [...this.unknowns.entries()].map(e => `${e[0]}: ${e[1]}`);
       const first = exps.shift()!;
-      this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, first, ...exps);
+      await this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, first, ...exps);
     } else if (this.expanded) {
-      this.builder.addExpressionMsg(
+      await this.builder.addExpressionMsg(
         this.attribs.filename,
         this.attribs.line,
         this.original!,
         this.expanded!,
         this.attribs.type,
+        ...this.messages,
       );
     } else {
       this._shared.log.errorS('unhandled doctest Expression', this);
@@ -641,17 +706,23 @@ class MessageProcessor implements XmlTagProcessor {
     }
   }
 
-  end(): void {
+  async end(): Promise<void> {
     assert(this.text !== undefined);
 
-    if (this.attribs.type === 'FATAL ERROR') {
-      this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, this.attribs.type, this.text!);
+    if (this.attribs.type === 'FATAL ERROR' || this.attribs.type === 'ERROR') {
+      await this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, 'failed', this.text);
       this.caseData.hasFailedExpression = true;
       this.builder.failed();
     } else if (this.attribs.type === 'WARNING') {
-      this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, this.attribs.type, this.text!);
+      await this.builder.addMessageWithOutput(this.attribs.filename, this.attribs.line, 'warning', this.text);
     } else {
       debugBreak();
+      await this.builder.addMessageWithOutput(
+        this.attribs.filename,
+        this.attribs.line,
+        this.attribs.type,
+        '!! Unhandled case, contact: https://github.com/matepek/vscode-catch2-test-adapter/issues; ' + this.text,
+      );
       this._shared.log.errorS('doctest: unexpected message type', this.attribs);
     }
   }

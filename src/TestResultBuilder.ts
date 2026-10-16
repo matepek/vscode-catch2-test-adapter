@@ -4,8 +4,24 @@ import * as ansi from 'ansi-colors';
 import { parseLine } from './Util';
 import { AbstractTest, SubTest } from './framework/AbstractTest';
 import { debugBreak } from './util/DevelopmentHelper';
+import { Logger } from './Logger';
 
 type TestResult = 'skipped' | 'failed' | 'errored' | 'passed';
+
+export const addOutputForTestRun = (
+  testRun: vscode.TestRun,
+  runPrefix: string,
+  level: number,
+  indent: number,
+  reindent: boolean,
+  ...msgs: string[]
+): void => {
+  const lines = formatStr(level + indent, reindent, ...msgs);
+
+  //this._outputLines.push(...lines);
+
+  testRun.appendOutput(lines.map(x => runPrefix + x + '\r\n').join(''));
+};
 
 // TODO:shared variable to control and colorization  vscode.window.activeColorTheme.kind;
 // also gtest could be colorized if we change the processor
@@ -17,9 +33,11 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     private readonly runPrefix: string,
     private readonly addBeginEndMsg: boolean,
     readonly level = 0,
-  ) {}
+  ) {
+    this.log = this.test.log;
+  }
 
-  readonly log = this.test.log;
+  readonly log: Logger;
 
   private readonly _messages: vscode.TestMessage[] = [];
   private _result: TestResult | undefined = undefined;
@@ -32,15 +50,15 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     if (this.addBeginEndMsg) {
       const locStr = this.getLocationAtStr(this.test.file, this.test.line, true);
       if (this.level === 0) {
-        this.addOutputLine(0, ansi.bold(`[ RUN      ] \`${ansi.italic(this.test.label)}\``) + `${locStr}`);
+        this.addReindentedOutput(0, ansi.bold(`[ RUN      ] \`${ansi.italic(this.test.id)}\``) + `${locStr}`);
       } else {
-        this.addOutputLine(-1, ansi.dim('├') + '`' + ansi.italic(this.test.label) + '`' + locStr);
+        this.addReindentedOutput(-1, ansi.dim('├') + '`' + ansi.italic(this.test.id) + '`' + locStr);
       }
     }
   }
 
-  passed(): void {
-    if (this._result === undefined) this._result = 'passed';
+  passed(force: boolean = false): void {
+    if (this._result === undefined || force) this._result = 'passed';
   }
 
   failed(): void {
@@ -63,16 +81,19 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
   }
 
   failedByTimeout(timeoutMilisec: number): void {
-    this.addOutputLine(1, '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + timeoutMilisec / 1000 + ' second(s).');
+    this.addReindentedOutput(
+      1,
+      '⌛️ Timed out: "testMate.cpp.test.runtimeLimit": ' + timeoutMilisec / 1000 + ' second(s).',
+    );
     this.failed();
   }
 
-  addOutputLine(indent: number, ...msgs: string[]): void {
-    const lines = indentStr(this.level + indent, ...msgs);
+  addReindentedOutput(indent: number, ...msgs: string[]): void {
+    return addOutputForTestRun(this.testRun, this.runPrefix, this.level, indent, true, ...msgs);
+  }
 
-    //this._outputLines.push(...lines);
-
-    this.testRun.appendOutput(lines.map(x => this.runPrefix + x + '\r\n').join(''));
+  addOutput(indent: number, ...msgs: string[]): void {
+    return addOutputForTestRun(this.testRun, this.runPrefix, this.level, indent, false, ...msgs);
   }
 
   ///
@@ -90,87 +111,105 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
     return undefined;
   }
 
-  static readonly relativeLocPrefix = ' @ ./';
-
   getLocationAtStr(file: string | undefined, line: number | string | undefined, lineIsZeroBased: boolean): string {
     if (file) {
       let lineSuffix = '';
       parseLine(line, l => (lineSuffix = `:${l + (lineIsZeroBased ? 1 : 0)}`));
-      // const wp = this.test.exec.shared.workspacePath + '/';
-      // if (file.startsWith(wp)) {
-      //   return ansi.dim(TestResultBuilder.relativeLocPrefix) + ansi.dim(file.substring(wp.length) + lineSuffix);
-      // }
+      const wp = this.test.exec.shared.workspacePath + '/';
+      if (file.startsWith(wp)) {
+        file = file.substring(wp.length);
+      }
       return ansi.dim(` @ ${file}${lineSuffix}`);
     }
     return '';
   }
 
-  addDiffMessage(
+  async addDiffMessage(
     file: string | undefined,
     line: number | string | undefined,
     message: string,
     expected: string,
     actual: string,
-  ): void {
-    file = this.test.exec.findSourceFilePath(file);
+  ): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
     const msg = vscode.TestMessage.diff(message, expected, actual);
     msg.location = TestResultBuilder._getLocation(file, line);
     this._messages.push(msg);
   }
 
-  addExpressionMsg(
+  async addExpressionMsg(
     file: string | undefined,
     line: string | undefined,
     original: string,
     expanded: string,
-    _type: string | undefined,
-  ): void {
-    file = this.test.exec.findSourceFilePath(file);
-    this.addMessage(file, line, 'Expanded: `' + expanded + '`');
+    type: string | undefined,
+    ...message: string[]
+  ): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
+    if (original !== expanded) {
+      await this.addMessage(file, line, '`' + expanded + '`', ...message);
+    } else {
+      await this.addMessage(file, line, 'failed', ...message);
+    }
 
     const loc = this.getLocationAtStr(file, line, false);
-    this.addOutputLine(1, 'Expression ' + ansi.red('failed') + loc + ':');
-    this.addOutputLine(2, '❕Original:  ' + original);
-    this.addOutputLine(2, '❗️Expanded:  ' + expanded);
+    if (type === undefined) {
+      this.addReindentedOutput(1, `Expression ${ansi.red('failed')}${loc}:`);
+    } else {
+      this.addReindentedOutput(1, `Expression ${type}(...) ${ansi.red('failed')}${loc}:`);
+    }
+    if (original !== expanded) {
+      this.addReindentedOutput(2, '❕Original:  ' + original);
+      this.addReindentedOutput(2, '❗️Expanded:  ' + expanded);
+    } else {
+      this.addReindentedOutput(2, '❗️Evaluated: ' + expanded);
+    }
+    for (const m of message) {
+      this.addReindentedOutput(2, m);
+    }
   }
 
-  addMessageWithOutput(
+  async addMessageWithOutput(
     file: string | undefined,
     line: number | string | undefined,
     title: string,
     ...message: string[]
-  ): void {
-    file = this.test.exec.findSourceFilePath(file);
-    this.addMessage(file, line, [`${title}`, ...message].join('\r\n'));
+  ): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
+    await this.addMessage(file, line, [`${title}`, ...message].join('\r\n'));
     const loc = this.getLocationAtStr(file, line, false);
-    this.addOutputLine(1, `${title}${loc}`);
-    this.addOutputLine(2, ...message);
+    this.addReindentedOutput(1, `${title}${loc}`);
+    this.addReindentedOutput(2, ...message);
   }
 
-  addMessage(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
-    file = this.test.exec.findSourceFilePath(file);
+  async addMessage(file: string | undefined, line: number | string | undefined, ...message: string[]): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
     const msg = new vscode.TestMessage(message.join('\r\n'));
     msg.location = TestResultBuilder._getLocation(file, line);
     this._messages.push(msg);
   }
 
-  addMarkdownMsg(file: string | undefined, line: number | string | undefined, ...message: string[]): void {
-    file = this.test.exec.findSourceFilePath(file);
+  async addMarkdownMsg(
+    file: string | undefined,
+    line: number | string | undefined,
+    ...message: string[]
+  ): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
     const msg = new vscode.TestMessage(new vscode.MarkdownString(message.join('\r\n\n')));
     msg.location = TestResultBuilder._getLocation(file, line);
     this._messages.push(msg);
   }
 
-  addQuoteWithLocation(
+  async addQuoteWithLocation(
     file: string | undefined,
     line: number | string | undefined,
     title: string,
     ...message: string[]
-  ): void {
-    file = this.test.exec.findSourceFilePath(file);
+  ): Promise<void> {
+    file = await this.test.exec.findSourceFilePath(file);
     const loc = this.getLocationAtStr(file, line, false);
-    this.addOutputLine(1, `${title}${loc}${message.length ? ':' : ''}`);
-    this.addOutputLine(2, ...message);
+    this.addReindentedOutput(1, `${title}${loc}${message.length ? ':' : ''}`);
+    this.addReindentedOutput(2, ...message);
   }
 
   ///
@@ -195,7 +234,7 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
       const d = this._duration ? ansi.dim(` in ${Math.round(this._duration * 1000) / 1000000} second(s)`) : '';
 
       if (this.level === 0) {
-        this.addOutputLine(0, `${this.coloredResult()} \`${ansi.italic(this.test.label)}\`` + `${d}`, '');
+        this.addReindentedOutput(0, `${this.coloredResult()} \`${ansi.italic(this.test.id)}\`` + `${d}`, '');
       }
     }
   }
@@ -271,8 +310,12 @@ export class TestResultBuilder<T extends AbstractTest = AbstractTest> {
 
 const indentPrefix = (level: number) => ansi.dim('│ '.repeat(level));
 
-const indentStr = (indent: number, ...strs: string[]) => {
-  return reindentStr(...strs).map(l => indentPrefix(indent) + l);
+const formatStr = (indent_lvl: number, reindent: boolean, ...strs: string[]) => {
+  strs = strs.flatMap(x => x.split(/\r?\n/));
+  if (reindent) {
+    strs = reindentLines(strs);
+  }
+  return strs.map(l => indentPrefix(indent_lvl) + l);
 };
 
 const reindentLines = (lines: string[]): string[] => {
@@ -284,9 +327,4 @@ const reindentLines = (lines: string[]): string[] => {
   });
   const reindented = lines.map(l => l.substring(indent).trimEnd());
   return reindented;
-};
-
-const reindentStr = (...strs: string[]): string[] => {
-  const lines = strs.flatMap(x => x.split(/\r?\n/));
-  return reindentLines(lines);
 };

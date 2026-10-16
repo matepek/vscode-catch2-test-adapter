@@ -2077,7 +2077,7 @@ For more detailed usage please see the project docs
 
   assertWithoutChildren(root: TestSuiteInfo, uniqeIdContainer?: Set<string>): void {
     assert.strictEqual(root.type, 'suite');
-    assert.strictEqual(root.label, 'C++ TestMate');
+    assert.strictEqual(root.label, 'TestMate C++');
     assert.strictEqual(root.file, undefined);
     assert.strictEqual(root.line, undefined);
     if (uniqeIdContainer != undefined) {

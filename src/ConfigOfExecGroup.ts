@@ -1,27 +1,31 @@
 import * as pathlib from 'path';
 import { promisify } from 'util';
 import * as vscode from 'vscode';
+import * as dotenv from 'dotenv';
 
 import { AbstractExecutable } from './framework/AbstractExecutable';
 import * as c2fs from './util/FSWrapper';
 import {
-  resolveOSEnvironmentVariables,
   createPythonIndexerForPathVariable,
   createPythonIndexerForStringVariable,
-  resolveVariablesAsync,
   ResolveRuleAsync,
+  resolveAllAsync,
+  createRegexReplaceForStringVariable,
 } from './util/ResolveRule';
 import { ExecutableFactory } from './framework/ExecutableFactory';
 import { WorkspaceShared } from './WorkspaceShared';
-import { GazeWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
+import { ChokidarWrapper, VSCFSWatcherWrapper, FSWatcher } from './util/FSWatcher';
 import { readJSONSync } from 'fs-extra';
-import { Spawner, DefaultSpawner, SpawnWithExecutor } from './Spawner';
+import { Spawner, SpawnWithExecutor, defaultSpawner } from './Spawner';
 import { RunTaskConfig, ExecutionWrapperConfig, FrameworkSpecificConfig } from './AdvancedExecutableInterface';
-import { LoggerWrapper } from './LoggerWrapper';
+import { Logger } from './Logger';
 import { debugBreak } from './util/DevelopmentHelper';
 import { FrameworkType } from './framework/Framework';
 import { readFileSync } from 'fs';
 import { getModiTime } from './Util';
+import { SubProgressReporter } from './util/ProgressReporter';
+import { ExecCloner } from './framework/AbstractExecutable';
+import { DebugConfigData } from './DebugConfigType';
 
 ///
 
@@ -29,58 +33,141 @@ export class ConfigOfExecGroup implements vscode.Disposable {
   constructor(
     private readonly _shared: WorkspaceShared,
     private readonly _pattern: string,
+    private readonly _exclude: string | undefined,
     private readonly _name: string | undefined,
     private readonly _description: string | undefined,
+    private readonly _testTags: string[],
     private readonly _cwd: string,
     private readonly _env: { [prop: string]: string },
     private readonly _envFile: string | undefined,
     private readonly _dependsOn: string[],
     private readonly _runTask: RunTaskConfig,
     private readonly _parallelizationLimit: number,
+    private readonly _maxTestsPerExecutable: number | null,
     private readonly _strictPattern: boolean | undefined,
     private readonly _markAsSkipped: boolean | undefined,
-    private readonly _waitForBuildProcess: boolean | string | undefined,
+    private readonly _executableRunAsImplicitAll: boolean | undefined,
+    private readonly _executableCloning: boolean | undefined,
+    executableSuffixToInclude: string[] | undefined,
+    private readonly _waitForBuildProcess: boolean | string,
+    private readonly _debugConfigData: DebugConfigData | undefined,
     private readonly _executionWrapper: ExecutionWrapperConfig | undefined,
     private readonly _sourceFileMap: Record<string, string>,
     private readonly _frameworkSpecific: Record<FrameworkType, FrameworkSpecificConfig>,
-  ) {}
+  ) {
+    this._executableSuffixToInclude =
+      process.platform === 'win32' ? new Set(executableSuffixToInclude ?? ['.exe', '.cmd', '.bat']) : undefined;
+    // https://askubuntu.com/questions/156392/what-is-the-equivalent-of-an-exe-file
+    this._executableSuffixToExclude =
+      process.platform !== 'win32'
+        ? new Set([
+            '.a',
+            '.bat',
+            '.c',
+            '.cc',
+            '.cmake',
+            '.cpp',
+            '.cxx',
+            '.deb',
+            '.dir',
+            '.gz',
+            '.h',
+            '.hpp',
+            '.hxx',
+            '.in',
+            '.input',
+            '.ko',
+            '.log',
+            '.md',
+            '.mm',
+            '.ninja',
+            '.o',
+            '.obj',
+            '.pc',
+            '.php',
+            '.pyc',
+            '.rpm',
+            '.so',
+            '.stamp',
+            '.tar',
+            '.txt',
+            '.vcxproj.user',
+            '.xml',
+          ])
+        : undefined;
+  }
 
+  private readonly _executableSuffixToInclude: Set<string> | undefined;
+  private readonly _executableSuffixToExclude: Set<string> | undefined;
   private _disposables: vscode.Disposable[] = [];
 
   dispose(): void {
     this._disposables.forEach(d => d.dispose());
-
+    this._disposables = [];
     for (const exec of this._executables.values()) {
       exec.dispose();
     }
+    this._executables.clear();
   }
 
   private readonly _executables: Map<string /*fsPath*/, AbstractExecutable> = new Map();
 
-  async load(): Promise<unknown[]> {
+  async load(progressReporter: SubProgressReporter): Promise<unknown[]> {
     const pattern = await this._pathProcessor(this._pattern);
 
     this._shared.log.info('pattern', this._pattern, this._shared.workspaceFolder.uri.fsPath, pattern);
 
-    if (pattern.isAbsolute && pattern.isPartOfWs)
+    if (pattern.isAbsolute && pattern.absPath.isPartOfWs)
       this._shared.log.info('Absolute path is used for workspace directory. This is unnecessary, but it should work.');
 
     if (this._pattern.indexOf('\\') != -1)
       this._shared.log.info('Pattern contains backslash character. Try to avoid that.');
 
+    let enabledExcludes: string[] = [];
+    try {
+      if (this._exclude === null || this._exclude === undefined) {
+        // skip
+      } else if (typeof this._exclude === 'string') {
+        const excludeObj = vscode.workspace.getConfiguration().get<Record<string, boolean>>(this._exclude);
+        if (typeof excludeObj === 'object' && excludeObj !== null) {
+          enabledExcludes = Object.entries(excludeObj)
+            .filter(i => i[1])
+            .map(i => i[0]);
+        } else if (excludeObj !== undefined && excludeObj !== null) {
+          this._shared.log.error('Unknown exclude format, should be {}');
+        }
+      } else {
+        this._shared.log.error('Unknown exclude type');
+      }
+    } catch (err) {
+      this._shared.log.error('Something wrong with exclusion', err);
+    }
+
+    if (enabledExcludes.length > 0) {
+      this._shared.log.info(
+        'Test executables might be ignored! Excluding some patterns because they are set in vscode',
+        enabledExcludes,
+        this._exclude,
+      );
+    }
+
     let filePaths: string[] = [];
 
     let execWatcher: FSWatcher | undefined = undefined;
     try {
-      if (pattern.isPartOfWs) {
-        execWatcher = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.relativeToWsPosix);
+      if (pattern.resolved.isPartOfWs) {
+        execWatcher = new VSCFSWatcherWrapper(
+          this._shared.workspaceFolder,
+          pattern.resolved.relativeToWsPosix,
+          enabledExcludes,
+        );
       } else {
-        execWatcher = new GazeWrapper([pattern.absPath]);
+        execWatcher = new ChokidarWrapper([pattern.resolved.absPath]);
       }
 
       filePaths = await execWatcher.watched();
 
-      execWatcher.onError((err: Error) => {
+      execWatcher.onError((err: unknown) => {
         // eslint-disable-next-line
         if ((err as any).code == 'ENOENT') this._shared.log.info('watcher error', err);
         else this._shared.log.error('watcher error', err);
@@ -88,31 +175,30 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
       execWatcher.onAll(fsPath => {
         this._shared.log.info('watcher event:', fsPath);
-        this._handleEverything(fsPath);
+        this._handleEverything(fsPath); // do not await for this
       });
 
       this._disposables.push(execWatcher);
     } catch (e) {
-      execWatcher && execWatcher.dispose();
+      if (execWatcher) execWatcher.dispose();
       filePaths.push(this._pattern);
 
       this._shared.log.exceptionS(e, "Couldn't watch pattern");
     }
 
+    const uniqueFilePaths = new Set(filePaths);
+    progressReporter.setMax(uniqueFilePaths.size);
     const suiteCreationAndLoadingTasks: Promise<void>[] = [];
 
-    for (let i = 0; i < filePaths.length; i++) {
-      const file = filePaths[i];
+    for (const file of filePaths) {
       this._shared.log.debug('Checking file for tests:', file);
 
       if (this._shouldIgnorePath(file)) continue;
 
-      if (this._isDuplicate(file)) continue;
-
       suiteCreationAndLoadingTasks.push(
-        (async (): Promise<void> => {
+        (async () => {
           try {
-            await c2fs.isNativeExecutableAsync(file);
+            await c2fs.checkIsNativeExecutable(file, this._executableSuffixToInclude, this._executableSuffixToExclude);
             try {
               const factory = await this._createSuiteByUri(file);
               const suite = await factory.create(false);
@@ -128,23 +214,30 @@ export class ConfigOfExecGroup implements vscode.Disposable {
                     (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
                   )
                     throw Error(
-                      `Coudn\'t load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
+                      `Couldn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}`,
+                      { cause: reason },
                     );
                 }
               }
             } catch (reason) {
+              if (reason instanceof Error && reason.message.includes('strictPattern')) {
+                throw reason; // Prevent double wrapping of the exact same error
+              }
+
               this._shared.log.debug('Not a test executable:', file, 'reason:', reason);
               if (
                 this._strictPattern === true ||
                 (this._strictPattern === undefined && this._shared.enabledStrictPattern === true)
               )
                 throw Error(
-                  `Coudn\'t load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}\n  ${reason}`,
+                  `Couldn't load executable while using "discovery.strictPattern" or "test.advancedExecutables:strictPattern": ${file}`,
+                  { cause: reason },
                 );
             }
           } catch (reason) {
             this._shared.log.debug('Not an executable:', file, reason);
           }
+          progressReporter.incrementBy1();
         })(),
       );
     }
@@ -155,49 +248,89 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     if (errors.length > 0) return errors;
 
-    if (this._dependsOn.length > 0) {
+    if (pattern.symlink) {
       try {
-        // gaze can handle more patterns at once
-        const absPatterns: string[] = [];
-
-        for (const pattern of this._dependsOn) {
-          const p = await this._pathProcessor(pattern);
-          if (p.isPartOfWs) {
-            const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.relativeToWsPosix);
-            this._disposables.push(w);
-
-            w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, p));
-
-            w.onAll((fsPath: string): void => {
-              this._shared.log.info('dependsOn watcher event:', fsPath);
-              getModiTime(fsPath).then(modiTime => {
-                for (const exec of this._executables.values())
-                  exec.reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime);
-              });
-              //TODO:future this._shared.sendRetireEvent(this._executables.values());
-            });
-          } else {
-            absPatterns.push(p.absPath);
-          }
-        }
-
-        if (absPatterns.length > 0) {
-          const w = new GazeWrapper(absPatterns);
-          this._disposables.push(w);
-
-          w.onError((e: Error): void => this._shared.log.error('dependsOn watcher:', e, absPatterns));
-
-          w.onAll((fsPath: string): void => {
-            this._shared.log.info('dependsOn watcher event:', fsPath);
-            //TODO:future this._shared.sendRetireEvent(this._executables.values());
+        const cb = (fsPath: string): void => {
+          this._shared.log.info('symlink watcher event:', fsPath);
+          getModiTime(fsPath).then(modiTime => {
+            if (modiTime === undefined) {
+              for (const exec of this._executables.values()) {
+                if (exec) exec.dispose();
+              }
+              this._executables.clear();
+              this._shared.log.infoS('Symlink was removed', pattern);
+            } else {
+              this._shared.log.infoS('Symlink was created/changed, reloading tests', pattern);
+              vscode.commands.executeCommand('testMate.cmd.reload-tests');
+            }
           });
+        };
+        const cb_err = (e: unknown): void => this._shared.log.error('symlink watcher:', e, pattern.symlink);
+
+        if (pattern.symlink.isPartOfWs) {
+          const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, pattern.symlink.relativeToWsPosix, []);
+          this._disposables.push(w);
+          w.onError(cb_err);
+          w.onAll(cb);
+        } else {
+          const w = new ChokidarWrapper([pattern.symlink.absPath]);
+          this._disposables.push(w);
+          w.onError(cb_err);
+          w.onAll(cb);
         }
       } catch (e) {
-        this._shared.log.error('dependsOn error:', e);
+        this._shared.log.error('symlink error:', e, pattern.symlink);
       }
     }
 
+    try {
+      // gaze can handle more patterns at once
+      const absPatterns: string[] = [];
+      const cb = (fsPath: string): void => {
+        this._shared.log.info('dependsOn watcher event:', fsPath);
+        getModiTime(fsPath).then(modiTime => {
+          for (const exec of this._executables.values()) {
+            exec
+              .reloadTests(this._shared.taskPool, this._shared.cancellationToken, modiTime)
+              .catch(err => this._shared.log.error('Failed to reload tests on dependsOn change', err));
+          }
+        });
+        this.sendRetireAllExecutables();
+      };
+      const cb_err = (e: unknown): void => this._shared.log.error('dependsOn watcher:', e);
+
+      for (const pattern of this._dependsOn) {
+        const p = await this._pathProcessor(pattern);
+        if (p.resolved.isPartOfWs) {
+          const w = new VSCFSWatcherWrapper(this._shared.workspaceFolder, p.resolved.relativeToWsPosix, []);
+          this._disposables.push(w);
+          w.onError(cb_err);
+          w.onAll(cb);
+        } else {
+          absPatterns.push(p.resolved.absPath);
+        }
+      }
+
+      if (absPatterns.length > 0) {
+        const w = new ChokidarWrapper(absPatterns);
+        this._disposables.push(w);
+        w.onError(cb_err);
+        w.onAll(cb);
+      }
+    } catch (e) {
+      this._shared.log.error('dependsOn error:', e);
+    }
+
     return [];
+  }
+
+  private _pathInfo(absPath: string) {
+    const relativeToWs = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, absPath);
+    return {
+      absPath,
+      isPartOfWs: !relativeToWs.startsWith('..') && relativeToWs !== absPath, // pathlib.relative('B:\wp', 'C:\a\b') == 'C:\a\b'
+      relativeToWsPosix: relativeToWs.replace(/\\/g, '/'),
+    };
   }
 
   private async _pathProcessor(
@@ -205,9 +338,9 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     moreVarsToResolve?: readonly ResolveRuleAsync[],
   ): Promise<{
     isAbsolute: boolean;
-    absPath: string;
-    isPartOfWs: boolean;
-    relativeToWsPosix: string;
+    absPath: { absPath: string; isPartOfWs: boolean; relativeToWsPosix: string };
+    resolved: { absPath: string; isPartOfWs: boolean; relativeToWsPosix: string };
+    symlink: { absPath: string; isPartOfWs: boolean; relativeToWsPosix: string } | null;
   }> {
     path = await this._resolveVariables(path, false, moreVarsToResolve);
 
@@ -216,13 +349,14 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     const absPath = isAbsolute
       ? vscode.Uri.file(pathlib.normalize(path)).fsPath
       : vscode.Uri.file(pathlib.join(this._shared.workspaceFolder.uri.fsPath, normPattern)).fsPath;
-    const relativeToWs = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, absPath);
+
+    const { resolvedAbsPath, symlinkAbsPath } = await c2fs.resolveFirstSymlink(absPath);
 
     return {
       isAbsolute,
-      absPath: absPath,
-      isPartOfWs: !relativeToWs.startsWith('..') && relativeToWs !== absPath, // pathlib.relative('B:\wp', 'C:\a\b') == 'C:\a\b'
-      relativeToWsPosix: relativeToWs.replace(/\\/g, '/'),
+      absPath: this._pathInfo(absPath),
+      resolved: this._pathInfo(resolvedAbsPath),
+      symlink: symlinkAbsPath ? this._pathInfo(symlinkAbsPath) : null,
     };
   }
 
@@ -230,11 +364,6 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     const relPath = pathlib.relative(this._shared.workspaceFolder.uri.fsPath, filePath);
 
     const varToValue: ResolveRuleAsync[] = [];
-
-    const subPath = createPythonIndexerForPathVariable;
-
-    const subFilename = (valName: string, filename: string): ResolveRuleAsync =>
-      createPythonIndexerForStringVariable(valName, filename, '.', '.');
 
     try {
       const filename = pathlib.basename(filePath);
@@ -245,11 +374,13 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       varToValue.push(
         { resolve: '${filename}', rule: filename }, // redundant but might faster
         { resolve: '${relDirpath}', rule: relDirpath }, // redundant but might faster
-        subFilename('filename', filename),
-        subPath('relPath', relPath),
-        subPath('absPath', filePath),
-        subPath('relDirpath', relDirpath),
-        subPath('absDirpath', pathlib.dirname(filePath)),
+        createPythonIndexerForStringVariable('filename', filename, '.', '.'),
+        createRegexReplaceForStringVariable(this._shared.log, 'filename', filename),
+        createPythonIndexerForPathVariable('relPath', relPath),
+        createRegexReplaceForStringVariable(this._shared.log, 'relPath', relPath),
+        createPythonIndexerForPathVariable('absPath', filePath),
+        createPythonIndexerForPathVariable('relDirpath', relDirpath),
+        createPythonIndexerForPathVariable('absDirpath', pathlib.dirname(filePath)),
         { resolve: '${extFilename}', rule: extFilename },
         { resolve: '${baseFilename}', rule: baseFilename },
         ...this._shared.varToValue,
@@ -258,7 +389,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       this._shared.log.exceptionS(e);
     }
 
-    const variableRe = /\$\{[^ ]*\}/;
+    const variableRe = /\$\{[^}]+\}/;
 
     let resolvedCwd = '.';
     try {
@@ -268,7 +399,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
       resolvedCwd = pathlib.resolve(this._shared.workspaceFolder.uri.fsPath, resolvedCwd);
 
-      varToValue.push(subPath('cwd', resolvedCwd));
+      varToValue.push(createPythonIndexerForPathVariable('cwd', resolvedCwd));
     } catch (e) {
       this._shared.log.error('resolvedCwd', e);
     }
@@ -284,22 +415,11 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       const resolvedEnvFile = await this._pathProcessor(this._envFile, varToValue);
       try {
         let envFromFile: Record<string, string> | undefined = undefined;
-        if (resolvedEnvFile.absPath.endsWith('.json')) {
-          envFromFile = readJSONSync(resolvedEnvFile.absPath);
-        } else if (resolvedEnvFile.absPath.endsWith('.env')) {
-          const content = readFileSync(resolvedEnvFile.absPath).toString();
-          envFromFile = {};
-          content
-            .split(/\r?\n/)
-            .filter(x => x.length > 0)
-            .map(line => line.split('='))
-            .forEach(entry => {
-              if (entry.length === 2) {
-                envFromFile![entry[0]] = entry[1];
-              } else {
-                throw Error('Unknown line in: "' + resolvedEnvFile.absPath + '"' + entry);
-              }
-            });
+        if (resolvedEnvFile.resolved.absPath.endsWith('.json')) {
+          envFromFile = readJSONSync(resolvedEnvFile.resolved.absPath);
+        } else if (resolvedEnvFile.resolved.absPath.indexOf('.env') !== -1) {
+          const content = readFileSync(resolvedEnvFile.resolved.absPath).toString();
+          envFromFile = dotenv.parse(content);
         } else {
           throw Error('Unsupported file format: "' + resolvedEnvFile.absPath + '". Use only .json or .env');
         }
@@ -323,34 +443,81 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     checkEnvForPath(resolvedEnv, this._shared.log);
 
-    let spawner: Spawner = new DefaultSpawner();
+    let spawnerForDiscovery: Spawner = defaultSpawner;
+    let spawnerForListing: Spawner = defaultSpawner;
+    let spawnerForExecution: Spawner = defaultSpawner;
     if (this._executionWrapper) {
       try {
-        const resolvedPath = await this._pathProcessor(this._executionWrapper.path, varToValue);
-        const resolvedArgs = await this._resolveVariables(this._executionWrapper.args, false, varToValue);
-        spawner = new SpawnWithExecutor(resolvedPath.absPath, resolvedArgs);
-        this._shared.log.info('executionWrapper was specified', resolvedPath, resolvedArgs);
+        if (this._executionWrapper.path) {
+          const resolvedPath = await this._pathProcessor(this._executionWrapper.path, varToValue);
+          const resolvedArgs = await this._resolveVariables(this._executionWrapper.args, false, varToValue);
+          const spawner = new SpawnWithExecutor(resolvedPath.resolved.absPath, resolvedArgs);
+          spawnerForDiscovery = spawner;
+          spawnerForListing = spawner;
+          spawnerForExecution = spawner;
+          this._shared.log.info('executionWrapper was specified', 'root/for all', resolvedPath, resolvedArgs);
+        }
+        if (typeof this._executionWrapper['test-discovery'] === 'object') {
+          const ew = this._executionWrapper['test-discovery'];
+          const resolvedPath = await this._pathProcessor(ew.path, varToValue);
+          const resolvedArgs = await this._resolveVariables(ew.args, false, varToValue);
+          spawnerForDiscovery = new SpawnWithExecutor(resolvedPath.resolved.absPath, resolvedArgs);
+          this._shared.log.info('executionWrapper was specified', 'discovery', resolvedPath, resolvedArgs);
+        } else if (this._executionWrapper['test-discovery'] === false) {
+          spawnerForDiscovery = defaultSpawner;
+        }
+        if (typeof this._executionWrapper['test-listing'] === 'object') {
+          const ew = this._executionWrapper['test-listing'];
+          const resolvedPath = await this._pathProcessor(ew.path, varToValue);
+          const resolvedArgs = await this._resolveVariables(ew.args, false, varToValue);
+          spawnerForListing = new SpawnWithExecutor(resolvedPath.resolved.absPath, resolvedArgs);
+          this._shared.log.info('executionWrapper was specified', 'listing', resolvedPath, resolvedArgs);
+        } else if (this._executionWrapper['test-listing'] === false) {
+          spawnerForListing = defaultSpawner;
+        }
+        if (typeof this._executionWrapper['test-execution'] === 'object') {
+          const ew = this._executionWrapper['test-execution'];
+          const resolvedPath = await this._pathProcessor(ew.path, varToValue);
+          const resolvedArgs = await this._resolveVariables(ew.args, false, varToValue);
+          spawnerForExecution = new SpawnWithExecutor(resolvedPath.resolved.absPath, resolvedArgs);
+          this._shared.log.info('executionWrapper was specified', 'excecution', resolvedPath, resolvedArgs);
+        } else if (this._executionWrapper['test-execution'] === false) {
+          spawnerForExecution = defaultSpawner;
+        }
       } catch (e) {
-        this._shared.log.warn('Unable to apply executionWrapper', e);
+        this._shared.log.warn('Unable to apply executionWrapper', e, this._executionWrapper);
       }
     }
 
-    const resolvedSourceFileMap = await resolveVariablesAsync(this._sourceFileMap, varToValue);
+    const resolvedSourceFileMap = await resolveAllAsync(this._sourceFileMap, varToValue, false);
+    for (const key in resolvedSourceFileMap) {
+      resolvedSourceFileMap[key] = pathlib.normalize(resolvedSourceFileMap[key]);
+    }
 
     return new ExecutableFactory(
       this._shared,
       this._name,
       this._description,
+      this._testTags.map(t => new vscode.TestTag(t)),
       filePath,
       {
         cwd: resolvedCwd,
-        env: Object.assign({}, process.env, resolvedEnv),
+        env: { ...process.env, ...resolvedEnv },
+        customEnv: resolvedEnv,
       },
       varToValue,
       this._parallelizationLimit,
+      this._maxTestsPerExecutable,
       this._markAsSkipped === true,
+      this._executableRunAsImplicitAll === true,
+      this._executableCloning === true,
+      this._debugConfigData,
+      this._executableSuffixToInclude,
+      this._executableSuffixToExclude,
       this._runTask,
-      spawner,
+      spawnerForDiscovery,
+      spawnerForListing,
+      spawnerForExecution,
       resolvedSourceFileMap,
       this._frameworkSpecific,
     );
@@ -371,26 +538,22 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     const runnable = this._executables.get(filePath);
 
-    if (runnable !== undefined) {
-      this._recursiveHandleRunnable(runnable)
-        .catch(reject => {
+    try {
+      if (runnable !== undefined) {
+        await this._recursiveHandleRunnable(runnable).catch(reject => {
           this._shared.log.errorS(`_recursiveHandleRunnable errors should be handled inside`, reject);
-        })
-        .finally(() => {
-          this._lastEventArrivedAt.delete(filePath);
         });
-    } else {
-      if (this._shouldIgnorePath(filePath)) return;
+      } else {
+        if (this._shouldIgnorePath(filePath)) return;
 
-      this._shared.log.info('possibly new suite: ' + filePath);
+        this._shared.log.info('possibly new suite: ' + filePath);
 
-      this._recursiveHandleFile(filePath)
-        .catch(reject => {
+        await this._recursiveHandleFile(filePath).catch(reject => {
           this._shared.log.errorS(`_recursiveHandleFile errors should be handled inside`, reject);
-        })
-        .finally(() => {
-          this._lastEventArrivedAt.delete(filePath);
         });
+      }
+    } finally {
+      this._lastEventArrivedAt.delete(filePath);
     }
   }
 
@@ -401,7 +564,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     if (lastEventArrivedAt === undefined) {
       this._shared.log.errorS('_recursiveHandleFile: lastEventArrivedAt');
-      debugger;
+      debugger; // eslint-disable-line
       return;
     }
 
@@ -410,10 +573,12 @@ export class ConfigOfExecGroup implements vscode.Disposable {
       return;
     }
 
-    const isExec = await c2fs.isNativeExecutableAsync(filePath).then(
-      () => true,
-      () => false,
-    );
+    const isExec = await c2fs
+      .checkIsNativeExecutable(filePath, this._executableSuffixToInclude, this._executableSuffixToExclude)
+      .then(
+        () => true,
+        () => false,
+      );
 
     if (isExec) {
       try {
@@ -421,7 +586,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
         const runnable = await factory.create(true);
 
         if (runnable) {
-          return this._recursiveHandleRunnable(runnable).catch(reject => {
+          return await this._recursiveHandleRunnable(runnable).catch(reject => {
             this._shared.log.errorS(
               `_recursiveHandleFile._recursiveHandleFile errors should be handled inside`,
               reject,
@@ -444,7 +609,7 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
         await promisify(setTimeout)(delay);
 
-        return this._recursiveHandleFile(filePath, nextDelay, tryCount + 1);
+        return await this._recursiveHandleFile(filePath, nextDelay, tryCount + 1);
       }
     }
   }
@@ -461,17 +626,17 @@ export class ConfigOfExecGroup implements vscode.Disposable {
 
     if (lastEventArrivedAt === undefined) {
       this._shared.log.errorS('_recursiveHandleRunnable: lastEventArrivedAt');
-      debugger;
+      debugger; // eslint-disable-line
       return;
     }
 
     if (isFileExistsAndExecutable) {
-      await this._shared.buildProcessChecker.resolveAtFinish(this._waitForBuildProcess);
+      await this._shared.buildProcessChecker.resolveAtFinish(this._waitForBuildProcess, this._shared.cancellationToken);
 
       try {
         await executable.reloadTests(this._shared.taskPool, this._shared.cancellationToken);
         this._executables.set(filePath, executable); // it might be set already but we don't care
-        //TODO:release this._shared.sendRetireEvent([runnable]);
+        this._shared.sendRetireEvent([executable]);
       } catch (reason: any /*eslint-disable-line*/) {
         if (reason?.code === undefined)
           this._shared.log.debug('problem under reloading', { reason, filePath, runnable: executable });
@@ -487,31 +652,32 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     } else {
       await promisify(setTimeout)(delay);
 
-      const isExec = await c2fs.isNativeExecutableAsync(filePath).then(
-        () => true,
-        () => false,
-      );
+      const isExec = await c2fs
+        .checkIsNativeExecutable(filePath, this._executableSuffixToInclude, this._executableSuffixToExclude)
+        .then(
+          () => true,
+          () => false,
+        );
 
       return this._recursiveHandleRunnable(executable, isExec, Math.min(delay * 2, 2000));
     }
   }
 
   private _shouldIgnorePath(filePath: string): boolean {
-    if (!this._pattern.match(/(\/|\\)_deps(\/|\\)/) && filePath.indexOf('/_deps/') !== -1) {
+    if (!this._pattern.match(/(\/|\\)_deps(\/|\\)/) && filePath.match(/(\/|\\)_deps(\/|\\)/)) {
       // cmake fetches the dependencies here. we dont care about it 🤞
       this._shared.log.info('skipping because it is under "/_deps/"', filePath);
       return true;
-    } else if (!this._pattern.match(/(\/|\\)CMakeFiles(\/|\\)/) && filePath.indexOf('/CMakeFiles/') !== -1) {
+    } else if (!this._pattern.match(/(\/|\\)CMakeFiles(\/|\\)/) && filePath.match(/(\/|\\)CMakeFiles(\/|\\)/)) {
       // cmake fetches the dependencies here. we dont care about it 🤞
       this._shared.log.info('skipping because it is under "/CMakeFiles/"', filePath);
+      return true;
+    } else if (filePath.endsWith(ExecCloner.suffix)) {
+      this._shared.log.info('skipping because it is part of the cloning feature of this extension', filePath);
       return true;
     } else {
       return false;
     }
-  }
-
-  private _isDuplicate(filePath: string): boolean {
-    return this._executables.has(filePath);
   }
 
   private async _resolveVariables<T>(
@@ -519,15 +685,18 @@ export class ConfigOfExecGroup implements vscode.Disposable {
     strictAllowed: boolean,
     moreVarsToResolve?: readonly ResolveRuleAsync[],
   ): Promise<T> {
-    let resolved = resolveOSEnvironmentVariables(value, strictAllowed);
-    resolved = await resolveVariablesAsync(resolved, this._shared.varToValue);
-    if (moreVarsToResolve) resolved = await resolveVariablesAsync(resolved, moreVarsToResolve);
+    const varToValue = moreVarsToResolve ? [...this._shared.varToValue, ...moreVarsToResolve] : this._shared.varToValue;
+    const resolved = resolveAllAsync(value, varToValue, strictAllowed);
     this._shared.log.debug('ExecutableConfig.resolveVariable: ', { value, resolved, strictAllowed });
     return resolved;
   }
+
+  public sendRetireAllExecutables(): void {
+    this._shared.sendRetireEvent(this._executables.values());
+  }
 }
 
-function checkEnvForPath(env: Record<string, string>, log: LoggerWrapper): void {
+function checkEnvForPath(env: Record<string, string>, log: Logger): void {
   if (process.platform === 'win32') {
     checkPathVariance('PATH', env, log);
     checkPathVariance('Path', env, log);
@@ -535,7 +704,7 @@ function checkEnvForPath(env: Record<string, string>, log: LoggerWrapper): void 
   }
 }
 
-function checkPathVariance(variance: string, env: Record<string, string>, log: LoggerWrapper): void {
+function checkPathVariance(variance: string, env: Record<string, string>, log: Logger): void {
   if (variance in env) {
     if (env[variance].indexOf('/') != -1)
       log.warn(`Env variable ${variance} contains slash on Windows: "${env[variance]}". That won't really work.`);

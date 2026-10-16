@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { LoggerWrapper } from '../src/LoggerWrapper';
+import { Logger } from '../src/Logger';
 
 ///
 
@@ -18,7 +18,7 @@ export function expectedLoggedWarning(warning: string): void {
 
 ///
 
-export const logger = new LoggerWrapper('testMate.cpp.log', `C++ TestMate`);
+export const logger = new Logger();
 // eslint-disable-next-line
 const spyError: sinon.SinonSpy<any[], void> = sinon.spy(logger, 'error');
 // eslint-disable-next-line

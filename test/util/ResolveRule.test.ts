@@ -7,7 +7,6 @@ describe(path.basename(__filename), function () {
   it('resolveVariablesAsync', async function () {
     const func1 = (): Promise<string> => Promise.resolve('resolvedFunc1');
 
-    // eslint-disable-next-line
     const varsToResolve: ResolveRuleAsync<null | undefined | string | number | object>[] = [
       { resolve: 'null1', rule: (): Promise<null> => Promise.resolve(null) },
       { resolve: 'undefined1', rule: (): Promise<undefined> => Promise.resolve(undefined) },
@@ -186,8 +185,6 @@ describe(path.basename(__filename), function () {
   });
 
   context.skip('decorator playground', function () {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    /* eslint-disable @typescript-eslint/no-unused-vars */
     // function CacheableAsync<T, R>(
     //   storeOnlyResolved: boolean,
     //   customCache?: {
@@ -294,6 +291,5 @@ describe(path.basename(__filename), function () {
     //   await x.f();
     //   await x.f();
     // });
-    /* eslint-enable @typescript-eslint/no-explicit-any */
   });
 });

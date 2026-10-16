@@ -8,6 +8,11 @@ export interface SpawnReturns extends fsw.SpawnSyncReturns<string> {
 }
 
 export type SpawnOptionsWithoutStdio = fsw.SpawnOptionsWithoutStdio;
+export interface SpawnOptionsWithoutStdioEx extends fsw.SpawnOptionsWithoutStdio {
+  cwd: string;
+  env: NodeJS.ProcessEnv; // <-- contains customEnv already
+  customEnv: Record<string, string>; // <-- here special reason, like prompt generation, etc...
+}
 
 ///
 
@@ -100,6 +105,8 @@ export class DefaultSpawner implements Spawner {
   }
 }
 
+export const defaultSpawner = new DefaultSpawner();
+
 ///
 
 export class SpawnWithExecutor extends DefaultSpawner {
@@ -108,7 +115,10 @@ export class SpawnWithExecutor extends DefaultSpawner {
   private readonly _argsR2 = '${argsFlat}';
   private readonly _argsStrR = '${argsStr}';
 
-  constructor(private readonly _executor: string, private readonly _args?: ReadonlyArray<string>) {
+  constructor(
+    private readonly _executor: string,
+    private readonly _args?: ReadonlyArray<string>,
+  ) {
     super();
 
     if (_args && !_args.some(x => x.indexOf(this._cmdR) != -1)) {

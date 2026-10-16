@@ -1,5 +1,5 @@
 import * as htmlparser2 from 'htmlparser2';
-import { LoggerWrapper } from '../LoggerWrapper';
+import { Logger } from '../Logger';
 import { debugBreak } from './DevelopmentHelper';
 import { ParserInterface } from './ParserInterface';
 
@@ -11,11 +11,16 @@ export class XmlParser implements ParserInterface {
   private sequentialP = Promise.resolve();
   private readonly endP: Promise<void>;
   private readonly endPResolver: () => void;
-  private readonly tagStack: XmlTagFrame[] = [];
+  private readonly rootTag = { name: '<root>', attribs: {}, _text: '' };
+  private readonly tagStack: XmlTagFrame[] = [this.rootTag];
   private readonly xmlTagProcessorStack: ProcessorFrame[] = [];
   private topTagProcessor: ProcessorFrame;
 
-  constructor(private readonly log: LoggerWrapper, processor: XmlTagProcessor, onerrorCb: (error: Error) => void) {
+  constructor(
+    private readonly log: Logger,
+    processor: XmlTagProcessor,
+    onerrorCb: (error: Error) => void,
+  ) {
     {
       let resolver: () => void;
       this.endP = new Promise<void>(resolve => (resolver = resolve));
@@ -30,7 +35,7 @@ export class XmlParser implements ParserInterface {
               const prevTag = this.tagStack[this.tagStack.length - 1];
               if (this.topTagProcessor.processor.ontext) {
                 const trimmedText = prevTag._text.trim();
-                if (trimmedText) this.topTagProcessor.processor.ontext(trimmedText, prevTag);
+                if (trimmedText) await this.topTagProcessor.processor.ontext(trimmedText, prevTag);
               }
               prevTag._text = '';
             }
@@ -59,21 +64,21 @@ export class XmlParser implements ParserInterface {
             const tag = this.tagStack.pop();
 
             if (tag?.name !== name) {
-              debugger;
+              debugger; // eslint-disable-line
               throw Error('onclosetag: tag mismatch');
             }
 
             // flush ontext
             if (this.topTagProcessor.processor.ontext) {
               const trimmedText = tag._text.trim();
-              if (trimmedText) this.topTagProcessor.processor.ontext(trimmedText, tag);
+              if (trimmedText) await this.topTagProcessor.processor.ontext(trimmedText, tag);
             }
 
             if (this.topTagProcessor.tag.name === name && --this.topTagProcessor.nesting < 0) {
               if (this.topTagProcessor.processor.end) await this.topTagProcessor.processor.end();
 
               if (this.xmlTagProcessorStack.length === 0) {
-                debugger;
+                debugger; // eslint-disable-line
                 const error = Error('onclosetag should have at least the root');
                 this.log.exceptionS(error, this);
                 throw error;
@@ -95,6 +100,10 @@ export class XmlParser implements ParserInterface {
                 this.log.warn('onend should not have more processors unless the parser was abandoned', this);
               }
 
+              if (this.topTagProcessor.processor.ontext) {
+                const trimmedText = this.rootTag._text.trim();
+                if (trimmedText) await this.topTagProcessor.processor.ontext(trimmedText, this.rootTag);
+              }
               if (this.topTagProcessor.processor.end) await this.topTagProcessor.processor.end();
             })
             .catch(reason => this.log.errorS(reason))
@@ -105,8 +114,8 @@ export class XmlParser implements ParserInterface {
             const dataTrimmed = dataStr.trim();
             if (dataTrimmed === '') return;
             this.log.trace('ontext', dataTrimmed);
-
-            this.tagStack[this.tagStack.length - 1]._text += dataStr;
+            const currTag = this.tagStack[this.tagStack.length - 1];
+            currTag._text += dataStr;
           });
         },
         onerror: (error: Error): void => {
@@ -117,19 +126,18 @@ export class XmlParser implements ParserInterface {
       { xmlMode: true },
     );
 
-    this.topTagProcessor = { tag: { name: '<root>', attribs: {} }, processor, nesting: 0 };
-    this.tagStack.push({ name: '<root>', attribs: {}, _text: '' });
+    this.topTagProcessor = { tag: this.rootTag, processor, nesting: 0 };
   }
 
   writeStdErr(data: string): Promise<boolean> {
-    const p = this.sequentialP.then(() => {
+    const p = this.sequentialP.then(async () => {
       let tag = this.topTagProcessor;
       for (let i = this.xmlTagProcessorStack.length - 1; tag.processor.onstderr === undefined && i >= 0; --i) {
         tag = this.xmlTagProcessorStack[i];
       }
 
       if (tag.processor.onstderr) {
-        tag.processor.onstderr(data, this.tagStack[this.tagStack.length - 1]);
+        await tag.processor.onstderr(data, this.tagStack[this.tagStack.length - 1]);
         return true;
       } else {
         return false;
@@ -169,6 +177,6 @@ export interface XmlTagProcessor {
   onopentag?(tag: XmlTag): void | XmlTagProcessor | PromiseLike<void | XmlTagProcessor>;
   onclosetag?(tag: XmlTag): void;
 
-  ontext?(dataTrimmed: string, parentTag: XmlTag): void;
-  onstderr?(data: string, parentTag: XmlTag): void;
+  ontext?(dataTrimmed: string, parentTag: XmlTag): void | Promise<void>;
+  onstderr?(data: string, parentTag: XmlTag): void | Promise<void>;
 }

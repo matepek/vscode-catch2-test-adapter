@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { AbstractExecutable } from './AbstractExecutable';
 import { debugAssert } from '../util/DevelopmentHelper';
 import { SharedTestTags } from './SharedTestTags';
+import { Logger } from '../Logger';
 
 ///
 
@@ -34,9 +35,10 @@ export abstract class AbstractTest {
     }
 
     this._item.tags = this._calcTags();
+    this.log = this.exec.log;
   }
 
-  readonly log = this.exec.log;
+  readonly log: Logger;
 
   get item(): Readonly<vscode.TestItem> {
     return this._item;
@@ -135,14 +137,15 @@ export abstract class AbstractTest {
 
   private _calcTags(): vscode.TestTag[] {
     const tags = [
+      ...this.exec.shared.testTags,
       this._frameworkTag,
       new vscode.TestTag(`level.` + this.subLevel),
       ...this._tags.map(x => new vscode.TestTag(`tag."${x}"`)),
     ];
-    this.skipped && tags.push(SharedTestTags.skipped);
+    if (this.skipped) tags.push(SharedTestTags.skipped);
     if (!this._staticError) {
-      this.runnable && tags.push(SharedTestTags.runnable);
-      this.debuggable && tags.push(SharedTestTags.debuggable);
+      if (this.runnable) tags.push(SharedTestTags.runnable);
+      if (this.debuggable) tags.push(SharedTestTags.debuggable);
     }
     return tags;
   }
@@ -150,6 +153,17 @@ export abstract class AbstractTest {
   ///
 
   private _subTests: Map<string /*id*/, SubTest> | undefined = undefined;
+
+  public hasSubTestItem(item: vscode.TestItem): boolean {
+    if (this._subTests === undefined) return false;
+    const found = this._subTests.get(item.id);
+    if (found?.item.id === item.id) return true;
+    for (const subTest of this._subTests.values()) {
+      const found = subTest.hasSubTestItem(item);
+      if (found) return true;
+    }
+    return false;
+  }
 
   async getOrCreateSubTest(
     id: string,
