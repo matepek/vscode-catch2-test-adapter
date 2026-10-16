@@ -197,7 +197,7 @@
                 ]
               },
               "name": {
-                "markdownDescription": "The name of the test suite (file). Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "markdownDescription": "The name of the test suite (file). Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "anyOf": [
                   {
                     "type": "string",
@@ -214,7 +214,7 @@
                 ]
               },
               "description": {
-                "markdownDescription": "A less prominent text after the `name`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "markdownDescription": "A less prominent text after the `name`. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "anyOf": [
                   {
                     "type": "string",
@@ -236,7 +236,7 @@
                 }
               },
               "cwd": {
-                "markdownDescription": "The current working directory for the test executable. If it isn't provided and `test.workingDirectory` does then that will be used. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "markdownDescription": "The current working directory for the test executable. If it isn't provided and `test.workingDirectory` does then that will be used. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "anyOf": [
                   {
                     "type": "string",
@@ -254,7 +254,7 @@
                 ]
               },
               "env": {
-                "markdownDescription": "Environment variables for the test executable. Can contains variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "markdownDescription": "Environment variables for the test executable. Can contain variables related to `pattern` and variables related to the process's environment variables (Ex.: `${os_env:PATH}`). [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "type": "object",
                 "additionalProperties": {
                   "anyOf": [
@@ -421,7 +421,7 @@
                 }
               },
               "sourceFileMap": {
-                "markdownDescription": "Replaces the key with the value in the souce file path. Can be configured with `$strategy`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#sourceFileMap)",
+                "markdownDescription": "Replaces the key with the value in the source file path. Can be configured with `$strategy`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#sourceFileMap)",
                 "type": "object",
                 "properties": {
                   "$strategy": {
@@ -501,7 +501,7 @@
                 "minimum": 1
               },
               "maxTestsPerExecutable": {
-                "markdownDescription": "The variable maximizes the number of test(s) inluded in one run/execution instance/process. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                "markdownDescription": "The variable maximizes the number of test(s) included in one run/execution instance/process. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                 "default": null,
                 "anyOf": [
                   {
@@ -622,11 +622,11 @@
                     "additionalProperties": false,
                     "properties": {
                       "label": {
-                        "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "The label of the test executable. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "string"
                       },
                       "description": {
-                        "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "A less prominent text after the `label`. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "string"
                       }
                     }
@@ -637,11 +637,11 @@
                     "additionalProperties": false,
                     "properties": {
                       "label": {
-                        "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "The label of the test executable. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "string"
                       },
                       "description": {
-                        "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "A less prominent text after the `label`. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "string"
                       },
                       "mergeByLabel": {
@@ -729,7 +729,7 @@
                     "additionalProperties": false,
                     "properties": {
                       "tags": {
-                        "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                        "markdownDescription": "True to group by every existing combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                         "type": "array",
                         "items": {
                           "type": "array",
@@ -899,28 +899,28 @@
                     "minLength": 1
                   },
                   "prependTestRunningArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "prependTestDebuggingArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "prependTestListingArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "ignoreTestEnumerationStdErr": {
-                    "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "If false (or undefined) and there is something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "boolean"
                   },
                   "debug.enableOutputColouring": {
@@ -941,11 +941,11 @@
                         "additionalProperties": false,
                         "properties": {
                           "label": {
-                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "The label of the test executable. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "description": {
-                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "A less prominent text after the `label`. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           }
                         }
@@ -956,11 +956,11 @@
                         "additionalProperties": false,
                         "properties": {
                           "label": {
-                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "The label of the test executable. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "description": {
-                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "A less prominent text after the `label`. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "mergeByLabel": {
@@ -1048,7 +1048,7 @@
                         "additionalProperties": false,
                         "properties": {
                           "tags": {
-                            "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "True to group by every existing combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "array",
                             "items": {
                               "type": "array",
@@ -1205,28 +1205,28 @@
                     "minLength": 1
                   },
                   "prependTestRunningArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "prependTestDebuggingArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "prependTestListingArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "ignoreTestEnumerationStdErr": {
-                    "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "If false (or undefined) and there is something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "boolean"
                   },
                   "debug.enableOutputColouring": {
@@ -1247,11 +1247,11 @@
                         "additionalProperties": false,
                         "properties": {
                           "label": {
-                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "The label of the test executable. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "description": {
-                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "A less prominent text after the `label`. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           }
                         }
@@ -1262,11 +1262,11 @@
                         "additionalProperties": false,
                         "properties": {
                           "label": {
-                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "The label of the test executable. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "description": {
-                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "A less prominent text after the `label`. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "mergeByLabel": {
@@ -1354,7 +1354,7 @@
                         "additionalProperties": false,
                         "properties": {
                           "tags": {
-                            "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "True to group by every existing combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "array",
                             "items": {
                               "type": "array",
@@ -1511,28 +1511,28 @@
                     "minLength": 1
                   },
                   "prependTestRunningArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "prependTestDebuggingArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "prependTestListingArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "ignoreTestEnumerationStdErr": {
-                    "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "If false (or undefined) and there is something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "boolean"
                   },
                   "debug.enableOutputColouring": {
@@ -1553,11 +1553,11 @@
                         "additionalProperties": false,
                         "properties": {
                           "label": {
-                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "The label of the test executable. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "description": {
-                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "A less prominent text after the `label`. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           }
                         }
@@ -1568,11 +1568,11 @@
                         "additionalProperties": false,
                         "properties": {
                           "label": {
-                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "The label of the test executable. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "description": {
-                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "A less prominent text after the `label`. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "mergeByLabel": {
@@ -1660,7 +1660,7 @@
                         "additionalProperties": false,
                         "properties": {
                           "tags": {
-                            "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "True to group by every existing combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "array",
                             "items": {
                               "type": "array",
@@ -1817,28 +1817,28 @@
                     "minLength": 1
                   },
                   "prependTestRunningArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "prependTestDebuggingArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "prependTestListingArgs": {
-                    "markdownDescription": "Additinal argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
                   "ignoreTestEnumerationStdErr": {
-                    "markdownDescription": "If false (or undefined) and there are something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "If false (or undefined) and there is something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "boolean"
                   },
                   "debug.enableOutputColouring": {
@@ -1859,11 +1859,11 @@
                         "additionalProperties": false,
                         "properties": {
                           "label": {
-                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "The label of the test executable. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "description": {
-                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "A less prominent text after the `label`. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           }
                         }
@@ -1874,11 +1874,11 @@
                         "additionalProperties": false,
                         "properties": {
                           "label": {
-                            "markdownDescription": "The label of the test executable. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "The label of the test executable. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "description": {
-                            "markdownDescription": "A less prominent text after the `label`. Can contains variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "A less prominent text after the `label`. Can contain variables related to `pattern`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "string"
                           },
                           "mergeByLabel": {
@@ -1966,7 +1966,7 @@
                         "additionalProperties": false,
                         "properties": {
                           "tags": {
-                            "markdownDescription": "True to group by every exiting combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
+                            "markdownDescription": "True to group by every existing combination of the tags. Or it can be an array of tags: `[\"[tag1][tag2]\", \"tag2\", \"tag3\"]` [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                             "type": "array",
                             "items": {
                               "type": "array",
@@ -2169,7 +2169,7 @@
           "minimum": 1
         },
         "testMate.cpp.test.testNameLengthLimit": {
-          "markdownDescription": "Maximum character count of combined test names for the extension to split the test run into multiple executions. Helps avoid issues coming from command line length limits imposed by the operating systems (`ENAMETOOLONG`) or development frameworks. Note: The actual executable arguments' lenght depends on the framework and other settings like `prependTestRunningArgs`. Recommended checking the logs to determine the actual lenght of the arguments.",
+          "markdownDescription": "Maximum character count of combined test names for the extension to split the test run into multiple executions. Helps avoid issues coming from command line length limits imposed by the operating systems (`ENAMETOOLONG`) or development frameworks. Note: The actual executable arguments' length depends on the framework and other settings like `prependTestRunningArgs`. Recommended checking the logs to determine the actual length of the arguments.",
           "scope": "resource",
           "type": "integer",
           "default": 30000,

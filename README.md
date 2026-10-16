@@ -1,6 +1,6 @@
 # TestMate C++
 
-Announcment: Looking for contributors to polish:
+Announcement: Looking for contributors to polish:
 
 - llvm coverage tool: `testMate.cpp.experimental.llvm-cov` and
 - g++ coverage tool: `testMate.cpp.experimental.gcov`.
@@ -17,7 +17,7 @@ This extension allows you to run your
 [Google Test](https://github.com/google/googletest)
 and [DOCtest](https://github.com/doctest/doctest)
 tests using the native testing vscode-api.
-It also have basic support for [Google Benchmark](https://github.com/google/benchmark).
+It also has basic support for [Google Benchmark](https://github.com/google/benchmark).
 
 ## Screenshots
 
@@ -26,9 +26,9 @@ It also have basic support for [Google Benchmark](https://github.com/google/benc
 
 ## Features / Show-Off
 
-- New testing API integration has just happened with a tons of improvements.
-  - Streaming the test run: Don't have to wait for the result to see the progress (in case you test uses `std::cout`)
-  - Catch Section and DOCTest SubCase support (limited but still sometings)
+- New testing API integration has just happened with tons of improvements.
+  - Streaming the test run: Don't have to wait for the result to see the progress (in case your test uses `std::cout`)
+  - Catch Section and DOCTest SubCase support (limited but still something)
 - Runs executables parallel (_testMate.cpp.test.parallelExecutionLimit_).
 - Sorts tests and suites (_testExplorer.sort_).
 - Supports popular **debuggers** such as `vadimcn.vscode-lldb`, `webfreak.debug` and `ms-vscode.cpptools` out of the box.
@@ -66,7 +66,7 @@ Not good enough for you?!: Edit your `.vscode/`[settings.json] file according to
 | `test.runtimeLimit`                       | [seconds] Test executable is running in a process. In case of an infinite loop it will run forever unless this parameter is set. It applies instantly. (0 means infinite)                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `test.parallelExecutionLimit`             | Maximum parallel run of tasks. Tasks are _'running a set of tests'_, _'test executable discovery'_ and _'reload of the executable's test list'_. NOTE: If your executables depend on the **same resource** exclusively then this **could cause a problem**.                                                                                                                                                                                                                                                                                                                                                       |
 | `test.parallelExecutionOfExecutableLimit` | Maximum number of execution of the same executable. With this config it can be allowed that one executable is running at the same time as multiple processes and those processes _'running a set of tests'_ parallel. Useful if one executable has a lot of tests which can be run parallel. It won't have effect unless the `test.parallelExecutionLimit` is adjusted too. To enable this just for specific executables use the `testMate.cpp.test.advancedExecutables` -> `parallelizationLimit`. NOTE: if your **test cases** depend on the **same resource** exclusively then this **could cause a problem**. |
-| `test.testNameLengthLimit`                | Maximum character count of combined test names for the extension to split the test run into multiple executions. Helps avoid issues coming from command line length limits imposed by the operating systems (`ENAMETOOLONG`) or development frameworks. Note: The actual executable arguments' lenght depends on the framework and other settings like `prependTestRunningArgs`. Recommended checking the logs to determine the actual lenght of the arguments.                                                                                                                                                   |
+| `test.testNameLengthLimit`                | Maximum character count of combined test names for the extension to split the test run into multiple executions. Helps avoid issues coming from command line length limits imposed by the operating systems (`ENAMETOOLONG`) or development frameworks. Note: The actual executable arguments' length depends on the framework and other settings like `prependTestRunningArgs`. Recommended checking the logs to determine the actual length of the arguments.                                                                                                                                                   |
 | `test.stderrDecorator`                    | Controls whether to show decorators around stderr output (`⬇ std::cerr:` and `⬆ std::cerr`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `discovery.loadOnStartup`                 | If true, the extension will try to load all the tests after the startup. Otherwise the user has to click on the Test icon on the sidebar to trigger the process.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `discovery.gracePeriodForMissing`         | [seconds] Test executables are being watched (only inside the workspace directory). In case of one recompiles it will try to preserve the test states. If compilation reaches timeout it will drop the suite.                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -86,7 +86,7 @@ Plenty of more **fine-tuning options** are available under [test.advancedExecuta
 
 - test grouping
 - parallel running
-- ingoring std error
+- ignoring std error
 - ...
 
 ## Commands
