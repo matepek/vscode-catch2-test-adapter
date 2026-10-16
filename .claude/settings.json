@@ -5,6 +5,7 @@
       "Bash(npm run compile)",
       "Bash(npm run eslint)",
       "Bash(npm run webpack)",
+      "Bash(npm test)",
       "Bash(npm run test)",
       "Bash(npx prettier --check:*)",
       "Bash(npx prettier --write:*)",
@@ -21,6 +22,17 @@
     ]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/protect-workflows.js\""
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
