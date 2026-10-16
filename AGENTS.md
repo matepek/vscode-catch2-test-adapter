@@ -128,5 +128,5 @@ on push to `master`, CI (`test/repo_scripts/deploy.ts`) looks for a version head
   relevant to the task and do not use `--no-verify`.
 - Do not modify `.vscode-test/`, `node_modules/`, `out/` or files under `test/cpp/build*` by hand.
   They are generated.
-- Do not edit `.github/workflows/` unless the task is about CI.
+- Do not edit `.github/workflows/` unless the task is about CI and got explicit approval.
 - Keep changes scoped to the request. No drive-by refactors, renames or reformatting of unrelated code.
