@@ -1,29 +1,25 @@
 include(FetchContent)
 
+# Boost.Test depends on many other Boost libraries, so the official
+# CMake-ready release archive is used instead of the boostorg/test repository.
+set(BOOST_INCLUDE_LIBRARIES test)
+set(BOOST_ENABLE_CMAKE ON)
+
 FetchContent_Declare(boosttest
-                     GIT_REPOSITORY https://github.com/boostorg/test.git
-                     GIT_TAG boost-1.79.0)
-
-FetchContent_GetProperties(boosttest)
-if(NOT boosttest_POPULATED)
-  FetchContent_Populate(boosttest)
-  add_subdirectory(${boosttest_SOURCE_DIR} ${boosttest_BINARY_DIR}
-                   EXCLUDE_FROM_ALL)
-endif()
-
+                     URL https://github.com/boostorg/boost/releases/download/boost-1.92.0/boost-1.92.0-cmake.tar.xz
+                     URL_HASH SHA256=9bed76128d4e46755dbe818487788c6fceb6f72b378f4daa49b7e1e600d9088d
+                     DOWNLOAD_EXTRACT_TIMESTAMP ON
+                     EXCLUDE_FROM_ALL)
+FetchContent_MakeAvailable(boosttest)
 
 #
 
 add_library(ThirdParty.BoostTest INTERFACE)
 
 target_link_libraries(ThirdParty.BoostTest
-                      INTERFACE boost_test)
+                      INTERFACE Boost::included_unit_test_framework)
 
 target_compile_features(ThirdParty.BoostTest INTERFACE cxx_std_11)
-
-target_include_directories(
-  ThirdParty.BoostTest
-  INTERFACE "${boosttest_SOURCE_DIR}/include")
 
 #
 
@@ -31,4 +27,3 @@ function(add_boosttest target cpp_file)
   add_executable(${target} "${cpp_file}")
   target_link_libraries(${target} PUBLIC ThirdParty.BoostTest)
 endfunction()
-
