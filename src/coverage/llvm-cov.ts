@@ -201,7 +201,7 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
   private warnUser(message: string, details: string): void {
     this.log.warn(message, details);
     this.testRun.appendOutput(`\x1b[33mWarning: ${message} Coverage may be partial.\x1b[0m\r\n`);
-    this.testRun.appendOutput(details.replace(/\r?\n/g, '\r\n') + '\r\n');
+    if (details) this.testRun.appendOutput(details.replace(/\r?\n/g, '\r\n') + '\r\n');
   }
 
   async init(): Promise<void> {
@@ -245,18 +245,20 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       // %p resolves to the PID(s) at runtime, discover the actual files
       const template = builder.env[ENV_LLVM_PROFILE_FILE]!;
       const dir = pathlib.dirname(template);
-      const pattern = pathlib.basename(template).replace('%p', '*');
-      let profrawFiles: string[] = [];
+      const [prefix, suffix] = pathlib.basename(template).split('%p');
+      let profrawFiles: string[] | undefined;
       try {
-        const uris = await vscode.workspace.findFiles(new vscode.RelativePattern(dir, pattern));
-        profrawFiles = uris.map(u => u.fsPath);
+        // plain readdir: the tmp dir is outside the workspace, so `findFiles` (and `files.exclude`) must not be involved
+        profrawFiles = (await fs.readdir(dir))
+          .filter(f => f.startsWith(prefix) && f.endsWith(suffix) && f.length > prefix.length + suffix.length)
+          .map(f => pathlib.join(dir, f));
       } catch (e) {
         this.markAllTestsAsErrored('Failed to list profraw files for ' + template, e);
       }
-      if (profrawFiles.length === 0) {
+      if (profrawFiles?.length === 0) {
         this.warnUser(`No profraw file was produced for ${builder.cmd}.`, '');
       }
-      for (const p of profrawFiles) {
+      for (const p of profrawFiles ?? []) {
         await this.data.argsProfrawsFile.writeFile(p + '\n');
       }
 
