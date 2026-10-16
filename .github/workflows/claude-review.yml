@@ -31,6 +31,7 @@ jobs:
       - name: Review
         uses: anthropics/claude-code-action@v1
         with:
+          # show_full_output: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
@@ -43,3 +44,4 @@ jobs:
           claude_args: |
             --max-turns 20
             --allowedTools "Task,Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*),mcp__github_inline_comment__create_inline_comment"
+            --model claude-sonnet-5-5
