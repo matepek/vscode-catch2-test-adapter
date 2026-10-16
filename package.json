@@ -2369,6 +2369,22 @@
             "allowExecutableConcurrentInvocations": {
               "type": "boolean",
               "default": "true"
+            },
+            "objects": {
+              "markdownDescription": "Glob patterns (relative to the workspace folder) for shared libraries to include in coverage. Test binaries' own linked dependencies are auto-detected on macOS/Linux, so this is mainly needed for libraries loaded dynamically (e.g. `dlopen`), on Windows (where auto-detection isn't implemented), or for macOS `@rpath`-linked libraries (not resolved). Matches are checked to be a native binary for this platform before being used. Note: only matches inside the workspace folder, and relies on a file *existing* on disk at match time - a library hidden by `files.exclude` or living in a build directory outside the workspace folder won't be found.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": ["**/*.{dylib,so,dll}"]
+            },
+            "exportArgs": {
+              "markdownDescription": "Extra arguments appended to the `llvm-cov export` invocation. For example, `-skip-functions` drops per-function coverage details (`DeclarationCoverage` markers) - useful on a codebase with a large header closure, where that data can make the export large enough to exceed Node's maximum string length and make coverage fail to appear at all. Line/branch coverage is unaffected either way. See `llvm-cov export -help` for other options.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
             }
           },
           "additionalProperties": false

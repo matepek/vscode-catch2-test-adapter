@@ -19,6 +19,7 @@ export const execute = async (
   proc.stdout.on('data', o => stdout.push(o.toString('utf8')));
   proc.stderr.on('data', o => stderr.push(o.toString('utf8')));
 
+  let cancelSubscription: vscode.Disposable | undefined;
   const closeP = new Promise<void>((res, rej) => {
     proc.on('close', (code: number) => {
       if (code === 0) res();
@@ -26,13 +27,17 @@ export const execute = async (
     });
     proc.on('error', err => rej(err));
 
-    token.onCancellationRequested(() => {
+    cancelSubscription = token.onCancellationRequested(() => {
       proc.kill();
       rej(new Error('Cancelled by user'));
     });
   });
 
-  await closeP;
+  try {
+    await closeP;
+  } finally {
+    cancelSubscription?.dispose();
+  }
   return [stdout.join(''), stderr.join('')];
 };
 

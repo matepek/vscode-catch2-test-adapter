@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.26.2]
+
+### Added
+
+- support forking processes for LLVM coverage
+- gcov and llvm-cov warnings (stderr) are shown in the test run output
+
+### Fixed
+
+- gcov: `.gcda` files hidden by `files.exclude` are now found
+
 ## [4.26.1] - 2026-10-10
 
 npm package updates and covereage API improvements.

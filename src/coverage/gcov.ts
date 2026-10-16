@@ -156,11 +156,15 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     markAsErroredFromError(this.testRun, this.tests, message, this.log, ...args);
   }
 
+  private warnUser(message: string, details: string): void {
+    this.log.warn(message, details);
+    this.testRun.appendOutput(`\x1b[33mWarning: ${message} Coverage may be partial.\x1b[0m\r\n`);
+    if (details) this.testRun.appendOutput(details.replace(/\r?\n/g, '\r\n') + '\r\n');
+  }
+
   async getGcdaPath() {
-    return await vscode.workspace.findFiles(
-      new vscode.RelativePattern(this.workspaceFolder, '**/*.gcda'),
-      '**/{node_modules,_deps}/**',
-    );
+    // `null` bypasses `files.exclude`: build directories are commonly hidden from the Explorer
+    return await vscode.workspace.findFiles(new vscode.RelativePattern(this.workspaceFolder, '**/*.gcda'), null);
   }
 
   async cleanupGcda() {
@@ -222,7 +226,7 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     const gcdaFiles = await this.getGcdaPath();
 
     if (gcdaFiles.length === 0) {
-      this.log.warn('No .gcda files found. Ensure code is compiled with --coverage and executed successfully.');
+      this.warnUser('No .gcda files found. Ensure code is compiled with --coverage and executed successfully.', '');
       return;
     }
 
@@ -234,7 +238,7 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       if (this.testRun.token.isCancellationRequested) return;
 
       try {
-        await execute(
+        const [, gcovStderr] = await execute(
           'gcov',
           [
             '--preserve-paths', //to resolve filename collisions
@@ -244,6 +248,7 @@ class GcovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
           this.data.tmpDir.path,
           this.testRun.token,
         );
+        if (gcovStderr.trim()) this.warnUser(`gcov reported problems for ${file.fsPath}.`, gcovStderr.trim());
       } catch (e) {
         this.markAllTestsAsErrored(`Failed to execute gcov on ${file.fsPath}`, e);
       }

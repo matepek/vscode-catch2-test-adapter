@@ -184,14 +184,24 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     // these configs don't need reload, will be applied for future runs
     const config = vscode.workspace.getConfiguration(configSection);
     this.allowExecutableConcurrentInvocations = config.get<boolean>('allowExecutableConcurrentInvocations', true);
+    this.objectsPattern = config.get<string[]>('objects', ['**/*.{dylib,so,dll}']);
+    this.extraExportArgs = config.get<string[]>('exportArgs', []);
   }
 
   allowExecutableConcurrentInvocations: boolean;
+  private readonly objectsPattern: string[];
+  private readonly extraExportArgs: string[];
   private data: TestRunData | undefined = undefined;
   private readonly tests: ReadonlyArray<vscode.TestItem>[] = [];
 
   private markAllTestsAsErrored(message: string, error: Error): void {
     markAsErroredFromError(this.testRun, this.tests, message, this.log, error);
+  }
+
+  private warnUser(message: string, details: string): void {
+    this.log.warn(message, details);
+    this.testRun.appendOutput(`\x1b[33mWarning: ${message} Coverage may be partial.\x1b[0m\r\n`);
+    if (details) this.testRun.appendOutput(details.replace(/\r?\n/g, '\r\n') + '\r\n');
   }
 
   async init(): Promise<void> {
@@ -232,8 +242,25 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       if (!this.data) throw Error('assert:data');
       this.tests.push(tests);
 
-      // fs.exists
-      this.data.argsProfrawsFile.writeFile(builder.env[ENV_LLVM_PROFILE_FILE]! + '\n');
+      // %p resolves to the PID(s) at runtime, discover the actual files
+      const template = builder.env[ENV_LLVM_PROFILE_FILE]!;
+      const dir = pathlib.dirname(template);
+      const [prefix, suffix] = pathlib.basename(template).split('%p');
+      let profrawFiles: string[] | undefined;
+      try {
+        // plain readdir: the tmp dir is outside the workspace, so `findFiles` (and `files.exclude`) must not be involved
+        profrawFiles = (await fs.readdir(dir))
+          .filter(f => f.startsWith(prefix) && f.endsWith(suffix) && f.length > prefix.length + suffix.length)
+          .map(f => pathlib.join(dir, f));
+      } catch (e) {
+        this.markAllTestsAsErrored('Failed to list profraw files for ' + template, e);
+      }
+      if (profrawFiles?.length === 0) {
+        this.warnUser(`No profraw file was produced for ${builder.cmd}.`, '');
+      }
+      for (const p of profrawFiles ?? []) {
+        await this.data.argsProfrawsFile.writeFile(p + '\n');
+      }
 
       if (this.data.argsObjectsFileFirst) {
         this.data.argsObjectsFileFirst = false;
@@ -262,24 +289,43 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       this.markAllTestsAsErrored('Error while closing file', e);
     });
     // Use LLVM Response files to bypass OS ARG_MAX limits for profdata
-    const mergeArgs = ['merge', '-sparse', `@${this.data.argsProfrawsPath}`, '-o', mergedProfdataPath];
+    const mergeArgs = [
+      'merge',
+      '-sparse',
+      // don't abort the whole merge if one profraw is truncated (e.g. a killed death-test child)
+      '--failure-mode=all',
+      `@${this.data.argsProfrawsPath}`,
+      '-o',
+      mergedProfdataPath,
+    ];
     try {
       this.log.debug('llvm-profdata', mergeArgs);
-      await executeWithPlatformToolchain('llvm-profdata', mergeArgs, this.data.tmpDir.path, this.testRun.token);
+      const [, mergeStderr] = await executeWithPlatformToolchain(
+        'llvm-profdata',
+        mergeArgs,
+        this.data.tmpDir.path,
+        this.testRun.token,
+      );
+      // with '--failure-mode=all', a bad/truncated input is a warning here rather than a thrown
+      // error, so it has to be surfaced to the user or the partial result looks complete.
+      if (mergeStderr.trim())
+        this.warnUser('llvm-profdata reported problems while merging profiles.', mergeStderr.trim());
     } catch (e) {
       this.markAllTestsAsErrored('Failed to merge profdata. Ensure llvm-profdata is in PATH.', e);
       return;
     }
 
     progress.report({ message: 'collecting object files' });
-    const objectsPattern = vscode.workspace
-      .getConfiguration(configSection)
-      .get<string[]>('objects', ['**/*.{dylib,so,dll}']);
     try {
-      for (const pattern of objectsPattern) {
+      for (const pattern of this.objectsPattern) {
+        // `null` here (not a string) is required to bypass VS Code's `files.exclude`: a string
+        // exclude is applied in ADDITION to it, not instead of it, so files hidden from the
+        // Explorer (very commonly build/output dirs in C++ workspaces) would otherwise never be
+        // found at all - which is exactly the kind of silent coverage gap this glob exists to
+        // avoid.
         const sharedLibs = await vscode.workspace.findFiles(
           new vscode.RelativePattern(this.workspaceFolder, pattern),
-          '**/{node_modules,_deps}/**',
+          null,
         );
         for (const l of sharedLibs) {
           if (this.data.argsObjectsFileFirst) throw Error('assert argsObjectsFileFirst');
@@ -299,16 +345,24 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       '-instr-profile',
       mergedProfdataPath,
       '-format=text',
+      // macro-expansion regions aren't read anywhere in this extension - free to always skip.
+      '-skip-expansions',
+      // user-supplied, e.g. `-skip-functions` on a codebase whose export would otherwise be too
+      // large (see `exportArgs` markdownDescription)
+      ...this.extraExportArgs,
     ];
     let dataArr;
     try {
       this.log.debug('llvm-cov', exportArgs);
-      const [outputStr] = await executeWithPlatformToolchain(
+      const [outputStr, exportStderr] = await executeWithPlatformToolchain(
         'llvm-cov',
         exportArgs,
         this.data.tmpDir.path,
         this.testRun.token,
       );
+      // e.g. "profile data may be out of date" for a stale object vs. a rebuilt binary - exactly
+      // the kind of thing a user needs to see when coverage looks wrong or stale.
+      if (exportStderr.trim()) this.warnUser('llvm-cov reported problems while exporting.', exportStderr.trim());
       try {
         const coverageJson = JSON.parse(outputStr);
         const covType = coverageJson['type'] as string;
@@ -363,7 +417,8 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     // Relates:
     // - `testMate.cpp.test.parallelExecutionOfExecutableLimit` > 1
     // - `allowExecutableConcurrentInvocations`
-    const profrawPath = pathlib.join(this.data.tmpDir.path, crypto.randomBytes(16).toString('hex') + '.profraw');
+    // LLVM profiling runtime replaces %p with the PID, avoiding forked children clobbering it
+    const profrawPath = pathlib.join(this.data.tmpDir.path, crypto.randomBytes(16).toString('hex') + '.%p.profraw');
     return {
       ...builder,
       env: { ...builder.env, [ENV_LLVM_PROFILE_FILE]: profrawPath },
