@@ -198,6 +198,12 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
     markAsErroredFromError(this.testRun, this.tests, message, this.log, error);
   }
 
+  private warnUser(message: string, details: string): void {
+    this.log.warn(message, details);
+    this.testRun.appendOutput(`\x1b[33mWarning: ${message} Coverage may be partial.\x1b[0m\r\n`);
+    this.testRun.appendOutput(details.replace(/\r?\n/g, '\r\n') + '\r\n');
+  }
+
   async init(): Promise<void> {
     const tmpDirPath = await fs.mkdtemp(pathlib.join(os.tmpdir(), 'llvm-cov_'));
     const argsProfrawsPath = pathlib.join(tmpDirPath, 'profraws.args.txt');
@@ -245,10 +251,10 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
         const uris = await vscode.workspace.findFiles(new vscode.RelativePattern(dir, pattern));
         profrawFiles = uris.map(u => u.fsPath);
       } catch (e) {
-        this.log.error('Failed to list profraw files for', template, e);
+        this.markAllTestsAsErrored('Failed to list profraw files for ' + template, e);
       }
       if (profrawFiles.length === 0) {
-        this.log.warn('No profraw file was produced for', builder.cmd);
+        this.warnUser(`No profraw file was produced for ${builder.cmd}.`, '');
       }
       for (const p of profrawFiles) {
         await this.data.argsProfrawsFile.writeFile(p + '\n');
@@ -299,8 +305,9 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
         this.testRun.token,
       );
       // with '--failure-mode=all', a bad/truncated input is a warning here rather than a thrown
-      // error, so it has to be surfaced explicitly or it's otherwise invisible.
-      if (mergeStderr.trim()) this.log.warn('llvm-profdata warnings:', mergeStderr.trim());
+      // error, so it has to be surfaced to the user or the partial result looks complete.
+      if (mergeStderr.trim())
+        this.warnUser('llvm-profdata reported problems while merging profiles.', mergeStderr.trim());
     } catch (e) {
       this.markAllTestsAsErrored('Failed to merge profdata. Ensure llvm-profdata is in PATH.', e);
       return;
@@ -353,7 +360,7 @@ class LlvmCovTestMateTestRunHandler implements TMA.TestMateTestRunHandler {
       );
       // e.g. "profile data may be out of date" for a stale object vs. a rebuilt binary - exactly
       // the kind of thing a user needs to see when coverage looks wrong or stale.
-      if (exportStderr.trim()) this.log.warn('llvm-cov warnings:', exportStderr.trim());
+      if (exportStderr.trim()) this.warnUser('llvm-cov reported problems while exporting.', exportStderr.trim());
       try {
         const coverageJson = JSON.parse(outputStr);
         const covType = coverageJson['type'] as string;
