@@ -9,6 +9,7 @@ import { FrameworkSpecificConfig, RunTaskConfig } from '../AdvancedExecutableInt
 import { Version } from '../Util';
 import { Spawner, SpawnOptionsWithoutStdioEx } from '../Spawner';
 import { GoogleBenchmarkExecutable } from './GoogleBenchmark/GoogleBenchmarkExecutable';
+import { CppUTestExecutable } from './CppUTest/CppUTestExecutable';
 import { ResolveRuleAsync } from '../util/ResolveRule';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { Framework, FrameworkId, FrameworkType } from './Framework';
@@ -145,6 +146,12 @@ const frameworkDatas: Record<
     priority: 40,
     regex: /benchmark \[--benchmark_list_tests=\{true\|false\}\]/,
     create: (sharedVarOfExec: SharedVarOfExec) => new GoogleBenchmarkExecutable(sharedVarOfExec),
+  },
+  cpputest: {
+    priority: 45,
+    // The usage line of every CppUTest version advertises this exact filter form.
+    regex: /\["TEST\(groupName, ?testName\)"\]/,
+    create: (sharedVarOfExec: SharedVarOfExec) => new CppUTestExecutable(sharedVarOfExec),
   },
   'google-insider': {
     priority: 50,

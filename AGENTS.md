@@ -6,7 +6,7 @@ When they conflict with a general habit of yours, follow this file.
 ## Project
 
 **TestMate C++** (`matepek.vscode-catch2-test-adapter`): a VS Code extension that discovers and runs
-Catch2, GoogleTest, doctest and Google Benchmark executables through the native VS Code Testing API.
+Catch2, GoogleTest, doctest, CppUTest and Google Benchmark executables through the native VS Code Testing API.
 
 - Language: TypeScript (strict), compiled with `tsc` to `out/`, bundled with webpack to `out/dist/main.js`.
 - Runtime: Node from `.nvmrc` (`node`); CI uses Node 22.x.
@@ -19,7 +19,7 @@ Catch2, GoogleTest, doctest and Google Benchmark executables through the native 
 | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/main.ts`                                                                | Extension entry point (the only `src` file in `tsconfig.json` `include`)                                                                                               |
 | `src/WorkspaceManager.ts`, `src/TestItemManager.ts`, `src/Configurations.ts` | Workspace, test tree and settings handling                                                                                                                             |
-| `src/framework/`                                                             | Per-framework executables and tests: `Catch2/`, `GoogleTest/`, `doctest/`, `GoogleBenchmark/`, plus `ExecutableFactory.ts`, `AbstractExecutable.ts`, `AbstractTest.ts` |
+| `src/framework/`                                                             | Per-framework executables and tests: `Catch2/`, `GoogleTest/`, `doctest/`, `GoogleBenchmark/`, `CppUTest/`, plus `ExecutableFactory.ts`, `AbstractExecutable.ts`, `AbstractTest.ts` |
 | `src/coverage/`                                                              | gcov / llvm-cov / custom coverage (experimental)                                                                                                                       |
 | `src/util/`                                                                  | FS wrappers and watchers, task queue/pool, XML and stream parsers, variable resolution (`ResolveRule.ts`)                                                              |
 | `test/*.test.ts`                                                             | Mocha tests, run inside a VS Code instance                                                                                                                             |

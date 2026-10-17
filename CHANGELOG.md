@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- support for the [CppUTest](https://github.com/cpputest/cpputest) framework
+
 ## [4.26.2] - 2026-10-16
 
 ### Added
