@@ -55,6 +55,26 @@ export const parseTestListOutput = (stdout: string): { tests: CppUTestId[]; malf
   return { tests, malformed };
 };
 
+/**
+ * Maps `testMate.cpp.test.randomGeneratorSeed` onto CppUTest's `-s [<seed>]`.
+ *
+ * `null` (the setting left empty) means "do not shuffle". Everything else shuffles, and both
+ * `'time'` and `0` deliberately produce a bare `-s`, which makes CppUTest pick a time based seed:
+ * - that is what `'time'` asks for, and
+ * - CppUTest's own usage is `-s [randomizerSeed>0]`; it *rejects* `-s 0` with a usage error and
+ *   exit code 1 without running a single test, so a 0 cannot be forwarded verbatim. Treating 0 as
+ *   "seed from the clock" also matches `--gtest_random_seed=0`, which this setting's own
+ *   description points at.
+ *
+ * The seed actually used is never hidden: CppUTest prints
+ * `Test order shuffling enabled with seed: N`, which `isUninterestingLine` keeps.
+ */
+export const cppUTestShuffleArgs = (rngSeed: 'time' | number | null): string[] => {
+  if (rngSeed === null) return [];
+  if (rngSeed === 'time' || rngSeed <= 0) return ['-s'];
+  return ['-s', rngSeed.toString()];
+};
+
 ///
 
 export interface CppUTestDiff {
@@ -115,11 +135,12 @@ const parseButWas = (line: string): { actual: string; note: string | undefined }
   return undefined;
 };
 
+// `Test order shuffling enabled with seed: N` is deliberately NOT uninteresting: it is the only
+// place the seed of a time based shuffle shows up, so it must survive `hideUninterestingOutput`.
 export const isUninterestingLine = (line: string): boolean =>
   line.length === 0 ||
   summaryRe.test(line) ||
-  line.startsWith('Note: test run failed because no tests were run or ignored.') ||
-  line.startsWith('Test order shuffling enabled with seed:');
+  line.startsWith('Note: test run failed because no tests were run or ignored.');
 
 interface CurrentTest {
   isIgnored: boolean;

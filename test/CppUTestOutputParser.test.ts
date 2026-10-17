@@ -6,6 +6,7 @@ import {
   CppUTestFailureInfo,
   CppUTestRunOutputParser,
   cppUTestHelpRegex,
+  cppUTestShuffleArgs,
   parseTestListOutput,
 } from '../src/framework/CppUTest/CppUTestOutputParser';
 
@@ -53,6 +54,32 @@ const f2 = '/w/cpputest2.cpp';
 ///
 
 describe(path.basename(__filename), function () {
+  context('cppUTestShuffleArgs', function () {
+    it('does not shuffle when the setting is empty', function () {
+      assert.deepStrictEqual(cppUTestShuffleArgs(null), []);
+    });
+
+    it('passes a positive seed through', function () {
+      assert.deepStrictEqual(cppUTestShuffleArgs(42), ['-s', '42']);
+      assert.deepStrictEqual(cppUTestShuffleArgs(1), ['-s', '1']);
+    });
+
+    it("asks for a time based seed for 'time'", function () {
+      assert.deepStrictEqual(cppUTestShuffleArgs('time'), ['-s']);
+    });
+
+    it('asks for a time based seed for 0, which CppUTest would reject', function () {
+      // `cpputest1.exe -v -s 0` prints its usage, exits 1 and runs no test at all, so a 0 must not
+      // be forwarded. 0 meaning "seed from the clock" is also what `--gtest_random_seed=0` means.
+      assert.deepStrictEqual(cppUTestShuffleArgs(0), ['-s']);
+    });
+
+    it('does not emit a negative seed', function () {
+      // `^(|time|[0-9]+)$` keeps these out of the setting, but Number() would still produce them.
+      assert.deepStrictEqual(cppUTestShuffleArgs(-1), ['-s']);
+    });
+  });
+
   context('cppUTestHelpRegex', function () {
     // Verbatim `usage()` text of every CppUTest release, taken from
     // `src/CppUTest/CommandLineArguments.cpp` at each tag. `--help` is answered with exactly this,
@@ -511,7 +538,7 @@ describe(path.basename(__filename), function () {
       );
 
       assert.deepStrictEqual(r.events, [
-        'root* "Test order shuffling enabled with seed: 42"',
+        'root "Test order shuffling enabled with seed: 42"',
         'started A.pass',
         'finished passed in 0ms',
         'root* ""',
@@ -519,6 +546,13 @@ describe(path.basename(__filename), function () {
         'root* "Note: test run failed because no tests were run or ignored. Assuming something went wrong."',
         'root "some other line"',
       ]);
+    });
+
+    it('never hides the shuffle seed, it is needed to reproduce the order', async function () {
+      const r = await feed('Test order shuffling enabled with seed: 1253963889');
+
+      // `root`, not `root*`: hideUninterestingOutput must not be able to swallow the seed
+      assert.deepStrictEqual(r.events, ['root "Test order shuffling enabled with seed: 1253963889"']);
     });
 
     it('treats the OK summary as uninteresting too', async function () {

@@ -2739,7 +2739,7 @@
           ]
         },
         "testMate.cpp.test.randomGeneratorSeed": {
-          "markdownDescription": "Shuffles the tests with the given random. Catch2: [--rng-seed (<integer> or 'time')](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed); Google Test: [--gtest_random_seed=<integer>](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#shuffling-the-tests);",
+          "markdownDescription": "Shuffles the tests with the given random. Catch2: [--rng-seed (<integer> or 'time')](https://github.com/catchorg/Catch2/blob/master/docs/command-line.md#rng-seed); Google Test: [--gtest_random_seed=<integer>](https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#shuffling-the-tests); CppUTest: [-s [<seed>]](https://cpputest.github.io/manual.html) (`time` and `0` both shuffle with a time based seed, because CppUTest requires a seed greater than 0);",
           "scope": "resource",
           "type": "string",
           "default": "",

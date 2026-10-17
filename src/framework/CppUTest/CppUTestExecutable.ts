@@ -15,6 +15,7 @@ import {
   CppUTestEventHandler,
   CppUTestFailureInfo,
   CppUTestRunOutputParser,
+  cppUTestShuffleArgs,
   parseTestListOutput,
 } from './CppUTestOutputParser';
 import { TestItemParent } from '../../TestItemManager';
@@ -123,11 +124,7 @@ export class CppUTestExecutable extends AbstractExecutable<CppUTestTest> {
   private _getRunParamsCommon(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     const execParams: string[] = [];
 
-    if (this.shared.rngSeed !== null) {
-      execParams.push('-s');
-      // CppUTest rejects a seed of 0: `-s [randomizerSeed>0]`. Omitting it means a time based seed.
-      if (this.shared.rngSeed !== 'time' && this.shared.rngSeed > 0) execParams.push(this.shared.rngSeed.toString());
-    }
+    execParams.push(...cppUTestShuffleArgs(this.shared.rngSeed));
 
     if (childrenToRun !== null) {
       for (const child of childrenToRun) {
