@@ -11,5 +11,6 @@ export class SharedTestTags {
   static readonly gtest = new vscode.TestTag('framework.gtest');
   static readonly doctest = new vscode.TestTag('framework.doctest');
   static readonly gbenchmark = new vscode.TestTag('framework.gbenchmark');
+  static readonly cpputest = new vscode.TestTag('framework.cpputest');
   static readonly boosttest = new vscode.TestTag('framework.boosttest');
 }

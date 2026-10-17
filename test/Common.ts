@@ -195,7 +195,7 @@ export const settings = new (class {
 })();
 
 export async function waitFor(context: Mocha.Context, condition: () => boolean, timeout?: number): Promise<void> {
-  if (timeout === undefined) timeout = context.timeout() - 1000 /*need some time for error handling*/;
+  if (timeout === undefined) timeout = context.timeout() - 1000; /*need some time for error handling*/
   const start = Date.now();
   let c: boolean;
   while (

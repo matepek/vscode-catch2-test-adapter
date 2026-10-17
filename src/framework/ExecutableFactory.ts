@@ -9,6 +9,8 @@ import { FrameworkSpecificConfig, RunTaskConfig } from '../AdvancedExecutableInt
 import { Version } from '../Util';
 import { Spawner, SpawnOptionsWithoutStdioEx } from '../Spawner';
 import { GoogleBenchmarkExecutable } from './GoogleBenchmark/GoogleBenchmarkExecutable';
+import { CppUTestExecutable } from './CppUTest/CppUTestExecutable';
+import { cppUTestHelpRegex } from './CppUTest/CppUTestOutputParser';
 import { BoostTestExecutable } from './BoostTest/BoostTestExecutable';
 import { ResolveRuleAsync } from '../util/ResolveRule';
 import { WorkspaceShared } from '../WorkspaceShared';
@@ -147,6 +149,11 @@ const frameworkDatas: Record<
     priority: 40,
     regex: /benchmark \[--benchmark_list_tests=\{true\|false\}\]/,
     create: (sharedVarOfExec: SharedVarOfExec) => new GoogleBenchmarkExecutable(sharedVarOfExec),
+  },
+  cpputest: {
+    priority: 45,
+    regex: cppUTestHelpRegex,
+    create: (sharedVarOfExec: SharedVarOfExec) => new CppUTestExecutable(sharedVarOfExec),
   },
   'google-insider': {
     priority: 50,
