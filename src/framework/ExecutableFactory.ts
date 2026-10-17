@@ -10,6 +10,7 @@ import { Version } from '../Util';
 import { Spawner, SpawnOptionsWithoutStdioEx } from '../Spawner';
 import { GoogleBenchmarkExecutable } from './GoogleBenchmark/GoogleBenchmarkExecutable';
 import { CppUTestExecutable } from './CppUTest/CppUTestExecutable';
+import { cppUTestHelpRegex } from './CppUTest/CppUTestOutputParser';
 import { BoostTestExecutable } from './BoostTest/BoostTestExecutable';
 import { ResolveRuleAsync } from '../util/ResolveRule';
 import { WorkspaceShared } from '../WorkspaceShared';
@@ -151,8 +152,7 @@ const frameworkDatas: Record<
   },
   cpputest: {
     priority: 45,
-    // The usage line of every CppUTest version advertises this exact filter form.
-    regex: /\["TEST\(groupName, ?testName\)"\]/,
+    regex: cppUTestHelpRegex,
     create: (sharedVarOfExec: SharedVarOfExec) => new CppUTestExecutable(sharedVarOfExec),
   },
   'google-insider': {

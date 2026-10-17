@@ -3,6 +3,29 @@
 // be unit tested: see `test/CppUTestOutputParser.test.ts`.
 ///
 
+/**
+ * Recognises CppUTest from the output of `--help`.
+ *
+ * `--help` is not a known option, so CppUTest answers it with its usage line on stdout
+ * (`CommandLineTestRunner.cpp`: `output_->print(... arguments_->usage())`, a `ConsoleTestOutput`).
+ * The word "CppUTest" appears only in the extended `-h` text, so the usage line is all there is.
+ *
+ * Its wording moved a lot between releases, so match only on what all of them share:
+ * - v3.3-v3.5: `usage [-v] [-r#] [-g|sg groupName] [-n|sn testName] [-o{normal, junit}]`
+ * - v3.6: gained `[-c]` and `[-k packageName]`
+ * - v3.7-3.7.2: gained `[-p] [-lg] [-ln]` and `["TEST(groupName, testName)"]...`
+ * - v3.8: gained `[-ri]`, `xg|xsg`, `teamcity`
+ * - v4.0: wrapped over several lines, gained `[-h] [-vv] [-t] [-b] [-s]`
+ * - master: `["[IGNORE_]TEST(<groupName>, <testName>)"]`, `<>` around the placeholders,
+ *   `[-o{normal|eclipse|junit|teamcity}]`
+ *
+ * `-g|sg ... groupName` and `-o{normal` are present in every one of them and in none of the other
+ * supported frameworks' help output. Note that the factory applies the `su` flags.
+ */
+export const cppUTestHelpRegex = /usage \[-.*\[-g\|sg[^\]]*groupName[^\]]*\].*\[-o\{normal/;
+
+///
+
 export interface CppUTestId {
   group: string;
   name: string;

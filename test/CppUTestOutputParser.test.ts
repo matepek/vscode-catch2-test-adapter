@@ -5,6 +5,7 @@ import {
   CppUTestEventHandler,
   CppUTestFailureInfo,
   CppUTestRunOutputParser,
+  cppUTestHelpRegex,
   parseTestListOutput,
 } from '../src/framework/CppUTest/CppUTestOutputParser';
 
@@ -52,6 +53,123 @@ const f2 = '/w/cpputest2.cpp';
 ///
 
 describe(path.basename(__filename), function () {
+  context('cppUTestHelpRegex', function () {
+    // Verbatim `usage()` text of every CppUTest release, taken from
+    // `src/CppUTest/CommandLineArguments.cpp` at each tag. `--help` is answered with exactly this,
+    // on stdout; checked against the built v4.0 binary (290 bytes out, 290 chars here).
+    const realUsageOutputs: Record<string, string> = {
+      'v3.3': ['usage [-v] [-r#] [-g|sg groupName] [-n|sn testName] [-o{normal, junit}]', ''].join('\n'),
+      'v3.4': ['usage [-v] [-r#] [-g|sg groupName] [-n|sn testName] [-o{normal, junit}]', ''].join('\n'),
+      'v3.5': ['usage [-v] [-r#] [-g|sg groupName] [-n|sn testName] [-o{normal, junit}]', ''].join('\n'),
+      'v3.6': [
+        'usage [-v] [-c] [-r#] [-g|sg groupName] [-n|sn testName] [-o{normal, junit}] [-k packageName]',
+        '',
+      ].join('\n'),
+      'v3.7': [
+        'usage [-v] [-c] [-p] [-lg] [-ln] [-r#] [-g|sg groupName]... [-n|sn testName]... ["TEST(groupName, testName)"]... [-o{normal, junit}] [-k packageName]',
+        '',
+      ].join('\n'),
+      'v3.7.1': [
+        'usage [-v] [-c] [-p] [-lg] [-ln] [-r#] [-g|sg groupName]... [-n|sn testName]... ["TEST(groupName, testName)"]... [-o{normal, junit}] [-k packageName]',
+        '',
+      ].join('\n'),
+      '3.7.2': [
+        'usage [-v] [-c] [-p] [-lg] [-ln] [-r#] [-g|sg groupName]... [-n|sn testName]... ["TEST(groupName, testName)"]... [-o{normal, junit}] [-k packageName]',
+        '',
+      ].join('\n'),
+      'v3.8': [
+        'usage [-v] [-c] [-p] [-lg] [-ln] [-ri] [-r#] [-g|sg|xg|xsg groupName]... [-n|sn|xn|xsn testName]... ["TEST(groupName, testName)"]... [-o{normal, junit, teamcity}] [-k packageName]',
+        '',
+      ].join('\n'),
+      'v4.0': [
+        'use -h for more extensive help',
+        'usage [-h] [-v] [-vv] [-c] [-p] [-lg] [-ln] [-ri] [-r#]',
+        '      [-g|sg|xg|xsg groupName]... [-n|sn|xn|xsn testName]... [-t groupName.testName]...',
+        '      [-b] [-s [randomizerSeed>0]] ["TEST(groupName, testName)"]... [-o{normal, junit, teamcity}] [-k packageName]',
+        '',
+      ].join('\n'),
+      master: [
+        'use -h for more extensive help',
+        'usage [-h] [-v] [-vv] [-c] [-p] [-lg] [-ln] [-ll] [-ri] [-r[<#>]] [-f] [-e] [-ci]',
+        '      [-g|sg|xg|xsg <groupName>]... [-n|sn|xn|xsn <testName>]... [-t|st|xt|xst <groupName>.<testName>]...',
+        '      [-b] [-s [<seed>]] ["[IGNORE_]TEST(<groupName>, <testName>)"]...',
+        '      [-o{normal|eclipse|junit|teamcity}] [-k <packageName>]',
+        '',
+      ].join('\n'),
+    };
+
+    // The factory matches with these flags, so the tests have to use them too.
+    const regex = (): RegExp => new RegExp(cppUTestHelpRegex.source, 'su');
+
+    it('recognises the usage output of every CppUTest release', function () {
+      for (const [version, usageOutput] of Object.entries(realUsageOutputs)) {
+        assert.ok(regex().test(usageOutput), `should have recognised CppUTest ${version}`);
+      }
+    });
+
+    it('covers the releases which word the test filter differently', function () {
+      // v3.3-v3.6 never printed a `TEST(...)` filter form at all and master prints
+      // `"[IGNORE_]TEST(<groupName>, <testName>)"`, so keying on that form alone would miss both.
+      assert.ok(!realUsageOutputs['v3.3'].includes('TEST(groupName, testName)'));
+      assert.ok(!realUsageOutputs['master'].includes('["TEST(groupName, testName)"]'));
+
+      for (const version of ['v3.3', 'v3.6', 'v4.0', 'master']) {
+        assert.ok(regex().test(realUsageOutputs[version]), version);
+      }
+    });
+
+    it('does not recognise the other supported frameworks', function () {
+      // Real `--help` excerpts of test/cpp/build/clang/{catch2v3_test1,gtest1,doctest1,gbenchmark}.
+      const otherFrameworks: Record<string, string> = {
+        catch2: [
+          '',
+          'Catch2 v3.10.0',
+          'usage:',
+          '  catch2v3_test1.exe [<test name|pattern|tags> ... ] options',
+          '',
+          'where options are:',
+          '  -?, -h, --help                            display usage information',
+          '  --list-tests                              list all/matching test cases',
+        ].join('\n'),
+        gtest: [
+          'This program contains tests written using Google Test. You can use the',
+          'following command line flags to control its behavior:',
+          '',
+          'Test Selection:',
+          '  --gtest_list_tests',
+          '      List the names of all tests instead of running them. The name of',
+          '      TEST(Foo, Bar) is "Foo.Bar".',
+        ].join('\n'),
+        doctest: [
+          '[doctest] doctest version is "2.4.12"',
+          '[doctest]',
+          '[doctest] boolean values: "1/on/yes/true" or "0/off/no/false"',
+          '[doctest] filter  values: "str1,str2,str3" (comma separated strings)',
+          '[doctest] filters use wildcards for matching strings',
+          ' -ltc, --list-test-cases               lists all matching tests by name',
+        ].join('\n'),
+        gbenchmark: [
+          'benchmark [--benchmark_list_tests={true|false}]',
+          '          [--benchmark_filter=<regex>]',
+          '          [--benchmark_min_warmup_time=<min_warmup_time>]',
+          '          [--benchmark_out=<filename>]',
+          '          [--benchmark_out_format=<json|console|csv>]',
+        ].join('\n'),
+      };
+
+      for (const [framework, helpOutput] of Object.entries(otherFrameworks)) {
+        assert.ok(!regex().test(helpOutput), `should not have claimed ${framework}`);
+      }
+    });
+
+    it('is not fooled by an unrelated usage line', function () {
+      assert.ok(!regex().test('usage [-v] [-h] [-o file]'));
+      assert.ok(!regex().test('usage [-g|sg groupName] but no output type switch'));
+      assert.ok(!regex().test('[-o{normal, junit}] without the group filter'));
+      assert.ok(!regex().test(''));
+    });
+  });
+
   context('parseTestListOutput', function () {
     it('parses the space separated single line', function () {
       const { tests, malformed } = parseTestListOutput(

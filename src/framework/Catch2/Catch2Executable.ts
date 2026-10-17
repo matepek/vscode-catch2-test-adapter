@@ -261,7 +261,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     return result;
   }
 
-  private _getCatch2RunParams(childrenToRun: readonly AbstractTest[] | null): string[] {
+  private _getCatch2RunParams(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     const params: string[] = [];
 
     if (childrenToRun === null) {
@@ -287,7 +287,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     return params;
   }
 
-  protected _getRunParamsInner(childrenToRun: readonly AbstractTest[] | null): string[] {
+  protected _getRunParamsInner(childrenToRun: readonly Readonly<AbstractTest>[] | null): string[] {
     const execParams = this._getCatch2RunParams(childrenToRun);
 
     execParams.push('--reporter');

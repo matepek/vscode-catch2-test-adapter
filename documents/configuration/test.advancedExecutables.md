@@ -272,7 +272,7 @@ One can fine-tune framework related behaviour.
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [testGrouping]                | Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                           |
 | `helpRegex`                   | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)            |
-| `prependTestRunningArgs`      | Additional argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                         |
+| `prependTestRunningArgs`      | Additional argument array passed to the executable when it is called for testing. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                                                                                              |
 | `prependTestDebuggingArgs`    | Additional argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                     |
 | `prependTestListingArgs`      | Additional argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                         |
 | `ignoreTestEnumerationStdErr` | If false (or undefined) and there is something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) |
@@ -334,9 +334,7 @@ It is undocumented. Contact me by opening an issue or read the code a bit.
       "pattern": "{build,Build,BUILD,out,Out,OUT}/**/*{test,Test,TEST}*",
       "catch2": {
         "testGrouping": {
-          "groupByExecutable": {
-            /*...*/
-          }
+          "groupByExecutable": {/*...*/}
         }
       }
     }

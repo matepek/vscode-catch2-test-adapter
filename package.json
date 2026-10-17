@@ -902,7 +902,7 @@
                     "minLength": 1
                   },
                   "prependTestRunningArgs": {
-                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -1208,7 +1208,7 @@
                     "minLength": 1
                   },
                   "prependTestRunningArgs": {
-                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -1235,10 +1235,6 @@
                   "debug.enableOutputColouring": {
                     "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
-                  },
-                  "failIfExceedsLimitNs": {
-                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
-                    "type": "number"
                   },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
@@ -1514,7 +1510,7 @@
                     "minLength": 1
                   },
                   "prependTestRunningArgs": {
-                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -1541,10 +1537,6 @@
                   "debug.enableOutputColouring": {
                     "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
-                  },
-                  "failIfExceedsLimitNs": {
-                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
-                    "type": "number"
                   },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
@@ -1820,7 +1812,7 @@
                     "minLength": 1
                   },
                   "prependTestRunningArgs": {
-                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -2126,7 +2118,7 @@
                     "minLength": 1
                   },
                   "prependTestRunningArgs": {
-                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -2153,10 +2145,6 @@
                   "debug.enableOutputColouring": {
                     "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
-                  },
-                  "failIfExceedsLimitNs": {
-                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
-                    "type": "number"
                   },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
@@ -2432,7 +2420,7 @@
                     "minLength": 1
                   },
                   "prependTestRunningArgs": {
-                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. Good for experimental features like `[\"--benchmark-samples\", \"10\"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
+                    "markdownDescription": "Additional argument array passed to the executable when it is called for testing. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)",
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -2459,10 +2447,6 @@
                   "debug.enableOutputColouring": {
                     "markdownDescription": "Sets the colouring of the output for debug session.",
                     "type": "boolean"
-                  },
-                  "failIfExceedsLimitNs": {
-                    "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
-                    "type": "number"
                   },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
@@ -2727,7 +2711,6 @@
                   }
                 }
               }
-
             },
             "required": [
               "pattern"
@@ -2992,7 +2975,9 @@
               "items": {
                 "type": "string"
               },
-              "default": ["**/*.{dylib,so,dll}"]
+              "default": [
+                "**/*.{dylib,so,dll}"
+              ]
             },
             "exportArgs": {
               "markdownDescription": "Extra arguments appended to the `llvm-cov export` invocation. For example, `-skip-functions` drops per-function coverage details (`DeclarationCoverage` markers) - useful on a codebase with a large header closure, where that data can make the export large enough to exceed Node's maximum string length and make coverage fail to appear at all. Line/branch coverage is unaffected either way. See `llvm-cov export -help` for other options.",
