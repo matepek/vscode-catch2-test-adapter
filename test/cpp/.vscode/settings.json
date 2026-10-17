@@ -24,7 +24,8 @@
             "env": {
                 "A":"a",
                 "B":"''b'"
-            }
+            },
+            "boosttest": {"logPassedAssertions": true}
             // "executionWrapper": {
             //     "test-execution": {
             //         "path": "/usr/bin/leaks",

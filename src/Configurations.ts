@@ -641,8 +641,6 @@ export class Configurations {
         r['debug.enableOutputColouring'] = obj['debug.enableOutputColouring'];
 
       if (typeof obj.failIfExceedsLimitNs === 'number') r.failIfExceedsLimitNs = obj.failIfExceedsLimitNs;
-
-      if (typeof obj.logPassedAssertions === 'boolean') r.logPassedAssertions = obj.logPassedAssertions;
     }
     return r;
   }

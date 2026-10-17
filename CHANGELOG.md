@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- [Boost.Test](https://www.boost.org/doc/libs/release/libs/test/doc/html/index.html) support with the framework specific setting `logPassedAssertions` (`testMate.cpp.test.advancedExecutables` → `boosttest`)
+- [Boost.Test](https://www.boost.org/doc/libs/release/libs/test/doc/html/index.html) support
 
 ## [4.26.2] - 2026-10-16
 

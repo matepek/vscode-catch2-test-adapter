@@ -157,7 +157,7 @@ export class BoostTestExecutable extends AbstractExecutable<BoostTestTest> {
     return [
       ...this._getBoostTestFilterParams(childrenToRun),
       '--log_format=XML',
-      '--log_level=' + (this.shared.logPassedAssertions ? 'success' : 'test_suite'),
+      '--log_level=test_suite',
       // stdout is not flushed by the framework: no streaming and a crash would lose the whole log
       '--log_sink=stderr',
       '--report_level=no',
@@ -171,7 +171,7 @@ export class BoostTestExecutable extends AbstractExecutable<BoostTestTest> {
     return [
       ...this._getBoostTestFilterParams(childrenToRun),
       '--log_format=HRF',
-      '--log_level=' + (this.shared.logPassedAssertions ? 'success' : 'message'),
+      '--log_level=test_suite',
       '--report_level=short',
       '--color_output=' + (this.shared.enableDebugColouring ? 'yes' : 'no'),
       ...this._getBoostTestCommonParams(),

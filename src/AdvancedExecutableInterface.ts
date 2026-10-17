@@ -68,7 +68,6 @@ export interface FrameworkSpecificConfig {
   ignoreTestEnumerationStdErr?: boolean;
   'debug.enableOutputColouring'?: boolean;
   failIfExceedsLimitNs?: number;
-  logPassedAssertions?: boolean;
 }
 
 type ResolvableString = string;

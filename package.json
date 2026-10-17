@@ -2157,10 +2157,6 @@
                     "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
                     "type": "number"
                   },
-                  "logPassedAssertions": {
-                    "markdownDescription": "If true, passed assertions are also shown in the test output for **boosttest**. ([`--log_level=success`](https://www.boost.org/doc/libs/release/libs/test/doc/html/boost_test/utf_reference/rt_param_reference/log_level.html))",
-                    "type": "boolean"
-                  },
                   "testGrouping": {
                     "markdownDescription": "Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)",
                     "additionalProperties": false,

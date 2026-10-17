@@ -277,7 +277,6 @@ One can fine-tune framework related behaviour.
 | `ignoreTestEnumerationStdErr` | If false (or undefined) and there is something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) |
 | `debug.enableOutputColouring` | Sets the colouring of the output for debug session.                                                                                                                                                                                                                                                            |
 | `failIfExceedsLimitNs`        | Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)                                                                                                                                                                                                                                                  |
-| `logPassedAssertions`         | If true, passed assertions are also shown in the test output for **boosttest**. ([`--log_level=success`](https://www.boost.org/doc/libs/release/libs/test/doc/html/boost_test/utf_reference/rt_param_reference/log_level.html))                                                                                |
 
 If the regex is too general it will match all the executables❗️
 One should avoid that❗️

@@ -93,10 +93,6 @@ export class SharedVarOfExec {
     return this._frameworkSpecific.failIfExceedsLimitNs;
   }
 
-  get logPassedAssertions(): boolean {
-    return this._frameworkSpecific.logPassedAssertions === true;
-  }
-
   /// accessors for shared
 
   get log() {
