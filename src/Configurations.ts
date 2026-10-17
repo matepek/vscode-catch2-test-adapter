@@ -642,12 +642,6 @@ export class Configurations {
 
       if (typeof obj.failIfExceedsLimitNs === 'number') r.failIfExceedsLimitNs = obj.failIfExceedsLimitNs;
 
-      if (typeof obj.catchSystemErrors === 'boolean') r.catchSystemErrors = obj.catchSystemErrors;
-
-      if (typeof obj.detectFpExceptions === 'boolean') r.detectFpExceptions = obj.detectFpExceptions;
-
-      if (typeof obj.detectMemoryLeaks === 'number') r.detectMemoryLeaks = obj.detectMemoryLeaks;
-
       if (typeof obj.logPassedAssertions === 'boolean') r.logPassedAssertions = obj.logPassedAssertions;
     }
     return r;

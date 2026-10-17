@@ -93,18 +93,6 @@ export class SharedVarOfExec {
     return this._frameworkSpecific.failIfExceedsLimitNs;
   }
 
-  get catchSystemErrors(): boolean | undefined {
-    return this._frameworkSpecific.catchSystemErrors;
-  }
-
-  get detectFpExceptions(): boolean | undefined {
-    return this._frameworkSpecific.detectFpExceptions;
-  }
-
-  get detectMemoryLeaks(): number | undefined {
-    return this._frameworkSpecific.detectMemoryLeaks;
-  }
-
   get logPassedAssertions(): boolean {
     return this._frameworkSpecific.logPassedAssertions === true;
   }

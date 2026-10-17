@@ -2157,18 +2157,6 @@
                     "markdownDescription": "Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)",
                     "type": "number"
                   },
-                  "catchSystemErrors": {
-                    "markdownDescription": "Sets [`--catch_system_errors`](https://www.boost.org/doc/libs/release/libs/test/doc/html/boost_test/utf_reference/rt_param_reference/catch_system.html) for **boosttest**. If false, a system error (signal) is not caught by the framework and it terminates the test executable.",
-                    "type": "boolean"
-                  },
-                  "detectFpExceptions": {
-                    "markdownDescription": "Sets [`--detect_fp_exceptions`](https://www.boost.org/doc/libs/release/libs/test/doc/html/boost_test/utf_reference/rt_param_reference/detect_fp_exceptions.html) for **boosttest**. Enables or disables floating point exception traps.",
-                    "type": "boolean"
-                  },
-                  "detectMemoryLeaks": {
-                    "markdownDescription": "Sets [`--detect_memory_leaks`](https://www.boost.org/doc/libs/release/libs/test/doc/html/boost_test/utf_reference/rt_param_reference/detect_memory_leaks.html) for **boosttest**. `0` disables it, `1` enables it, a greater value also breaks at the given allocation order number. (MSVC only)",
-                    "type": "number"
-                  },
                   "logPassedAssertions": {
                     "markdownDescription": "If true, passed assertions are also shown in the test output for **boosttest**. ([`--log_level=success`](https://www.boost.org/doc/libs/release/libs/test/doc/html/boost_test/utf_reference/rt_param_reference/log_level.html))",
                     "type": "boolean"

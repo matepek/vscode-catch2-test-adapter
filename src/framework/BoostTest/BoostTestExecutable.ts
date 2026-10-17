@@ -146,16 +146,6 @@ export class BoostTestExecutable extends AbstractExecutable<BoostTestTest> {
 
   private _getBoostTestCommonParams(): string[] {
     const params: string[] = [];
-    const yesNo = (b: boolean): string => (b ? 'yes' : 'no');
-
-    if (this.shared.catchSystemErrors !== undefined)
-      params.push('--catch_system_errors=' + yesNo(this.shared.catchSystemErrors));
-
-    if (this.shared.detectFpExceptions !== undefined)
-      params.push('--detect_fp_exceptions=' + yesNo(this.shared.detectFpExceptions));
-
-    if (this.shared.detectMemoryLeaks !== undefined)
-      params.push('--detect_memory_leaks=' + this.shared.detectMemoryLeaks.toString());
 
     if (this.shared.rngSeed !== null)
       params.push('--random=' + (this.shared.rngSeed === 'time' ? '1' : this.shared.rngSeed.toString()));

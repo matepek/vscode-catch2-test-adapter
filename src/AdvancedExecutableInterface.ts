@@ -68,9 +68,6 @@ export interface FrameworkSpecificConfig {
   ignoreTestEnumerationStdErr?: boolean;
   'debug.enableOutputColouring'?: boolean;
   failIfExceedsLimitNs?: number;
-  catchSystemErrors?: boolean;
-  detectFpExceptions?: boolean;
-  detectMemoryLeaks?: number;
   logPassedAssertions?: boolean;
 }
 

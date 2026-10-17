@@ -207,7 +207,9 @@ Or one can set the `testMate.cpp.log.logfile: "<full path>"`. In this case a log
 - (2026-10-17) The XML log is read from `stderr` because Boost.Test does not flush `stdout` (no streaming and a crash would lose every result).
   Consequences: test result parsing can fail if the test outputs unescaped "xml-like" text to `std::cerr`: `<Pin:10>`,
   and `std::cout` output arrives on a separate stream so it can be shown next to a neighbouring test (the order between the streams is not guaranteed).
-- (2026-10-17) Arguments in `prependTestRunningArgs` must not repeat the ones the extension sets (`--run_test`, `--log_format`, `--log_level`, `--log_sink`, `--report_level`, `--color_output`, `--random`) or the framework specific settings (`--catch_system_errors`, `--detect_fp_exceptions`, `--detect_memory_leaks`): Boost.Test refuses duplicated arguments.
+- (2026-10-17) Other Boost.Test options (for example `--catch_system_errors=no` or `--detect_memory_leaks=0`) can be passed with `prependTestRunningArgs`,
+  but they must not repeat the ones the extension sets (`--run_test`, `--log_format`, `--log_level`, `--log_sink`, `--report_level`, `--color_output`, `--random`): Boost.Test refuses duplicated arguments.
+  Use the `logPassedAssertions` setting instead of `--log_level`.
 - (2026-10-17) `testMate.cpp.test.randomGeneratorSeed` is passed as `--random`: Boost.Test treats `0` as no shuffling and `1` as a time based seed.
 
 ## For self-service
