@@ -6,10 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.27.0]
+
 ### Added
 
-- support for the [CppUTest](https://github.com/cpputest/cpputest) framework
-- [Boost.Test](https://www.boost.org/doc/libs/release/libs/test/doc/html/index.html) support
+- support for [CppUTest](https://github.com/cpputest/cpputest) framework. (not as exensively tested as the other frameworks)
+- support for [Boost.Test](https://www.boost.org/doc/libs/release/libs/test/doc/html/index.html) framework. (not as exensively tested as the other frameworks)
 
 ## [4.26.2] - 2026-10-16
 
