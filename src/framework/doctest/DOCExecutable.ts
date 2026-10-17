@@ -280,8 +280,7 @@ export class DOCExecutable extends AbstractExecutable<DOCTest> {
     );
 
     const leftBehind = parser.parserStack.reverse().find(x => x instanceof TestCaseTagProcessor) as
-      | TestCaseTagProcessor
-      | undefined;
+      TestCaseTagProcessor | undefined;
 
     return {
       unexpectedTests,

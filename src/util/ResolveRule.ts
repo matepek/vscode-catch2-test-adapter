@@ -140,10 +140,7 @@ interface ResolveRegexRuleAsync {
 
 // eslint-disable-next-line
 export type ResolveRuleAsync<R = any> =
-  | ResolveStrRuleStr
-  | ResolveStrRule<R>
-  | ResolveRegexRule
-  | ResolveRegexRuleAsync;
+  ResolveStrRuleStr | ResolveStrRule<R> | ResolveRegexRule | ResolveRegexRuleAsync;
 
 export async function resolveVariablesAsync<T>(value: T, varValue: readonly ResolveRuleAsync<unknown>[]): Promise<T> {
   const mapper = async (s: string, parent: unknown): Promise<unknown> => {

@@ -7,7 +7,7 @@ Announcement: Looking for contributors to polish:
 
 (current implementation is not tested. [more info](https://github.com/matepek/vscode-catch2-test-adapter/issues/519))
 
-## A **Catch2**, **GoogleTest**, **doctest**, **CppUTest** and **GoogleBenchmark** Explorer for VSCode
+## A **Catch2**, **GoogleTest**, **doctest**, **CppUTest**, **Boost.Test** and **GoogleBenchmark** Explorer for VSCode
 
 [![Visual Studio Marketplace](https://img.shields.io/github/v/release/matepek/vscode-catch2-test-adapter)](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
 [![GitHub issues](https://img.shields.io/github/issues/matepek/vscode-catch2-test-adapter?color=green)](https://github.com/matepek/vscode-catch2-test-adapter/issues)
@@ -15,8 +15,9 @@ Announcement: Looking for contributors to polish:
 This extension allows you to run your
 [Catch2](https://github.com/catchorg/Catch2),
 [Google Test](https://github.com/google/googletest),
-[DOCtest](https://github.com/doctest/doctest)
-and [CppUTest](https://github.com/cpputest/cpputest)
+[DOCtest](https://github.com/doctest/doctest),
+[CppUTest](https://github.com/cpputest/cpputest)
+and [Boost.Test](https://www.boost.org/doc/libs/release/libs/test/doc/html/index.html)
 tests using the native testing vscode-api.
 It also has basic support for [Google Benchmark](https://github.com/google/benchmark).
 

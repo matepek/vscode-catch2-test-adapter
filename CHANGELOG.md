@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - support for the [CppUTest](https://github.com/cpputest/cpputest) framework
+- [Boost.Test](https://www.boost.org/doc/libs/release/libs/test/doc/html/index.html) support
 
 ## [4.26.2] - 2026-10-16
 

@@ -19,11 +19,11 @@ import { DebugConfigData } from './DebugConfigType';
 const ConfigSectionBase = 'testMate.cpp';
 
 const enum Section {
-  'test' = 'test',
-  'discovery' = 'discovery',
-  'debug' = 'debug',
-  'log' = 'log',
-  'gtest' = 'gtest',
+  test = 'test',
+  discovery = 'discovery',
+  debug = 'debug',
+  log = 'log',
+  gtest = 'gtest',
 }
 
 export type Config =
@@ -435,6 +435,7 @@ export class Configurations {
           doctest: {},
           gbenchmark: {},
           cpputest: {},
+          boosttest: {},
         },
       );
     };
@@ -594,6 +595,7 @@ export class Configurations {
             doctest: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),
             gbenchmark: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gbenchmark']),
             cpputest: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['cpputest']),
+            boosttest: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['boosttest']),
           },
         );
       };

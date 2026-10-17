@@ -380,8 +380,7 @@ export class Catch2Executable extends AbstractExecutable<Catch2Test> {
     );
 
     const leftBehind = parser.parserStack.reverse().find(x => x instanceof TestCaseTagProcessor) as
-      | TestCaseTagProcessor
-      | undefined;
+      TestCaseTagProcessor | undefined;
 
     return {
       unexpectedTests,

@@ -199,6 +199,18 @@ Or one can set the `testMate.cpp.log.logfile: "<full path>"`. In this case a log
 - (2021-10-22) doctest does not provide the skipped information at test listing phase so this extension does not mark the tests skipped.
 - (2021-11-20) doctest SubCase statuses are not set. No point to do int now because the framework doesn't provide partial result just overall result.
 
+### for Boost.Test
+
+- (2026-10-17) Boost.Test >= 1.60 is required (`--list_content=DOT` is used for listing).
+- (2026-10-17) The description (`utf::description`) of the tests are not shown because the listing format with file and line information does not contain it.
+- (2026-10-17) Boost.Test has no option to break on a failed assertion, so `testMate.cpp.debug.breakOnFailure` has no effect.
+- (2026-10-17) The XML log is read from `stderr` because Boost.Test does not flush `stdout` (no streaming and a crash would lose every result).
+  Consequences: test result parsing can fail if the test outputs unescaped "xml-like" text to `std::cerr`: `<Pin:10>`,
+  and `std::cout` output arrives on a separate stream so it can be shown next to a neighbouring test (the order between the streams is not guaranteed).
+- (2026-10-17) Other Boost.Test options (for example `--catch_system_errors=no` or `--detect_memory_leaks=0`) can be passed with `prependTestRunningArgs`,
+  but they must not repeat the ones the extension sets (`--run_test`, `--log_format`, `--log_level`, `--log_sink`, `--report_level`, `--color_output`, `--random`): Boost.Test refuses duplicated arguments.
+- (2026-10-17) `testMate.cpp.test.randomGeneratorSeed` is passed as `--random`: Boost.Test treats `0` as no shuffling and `1` as a time based seed.
+
 ## For self-service
 
 Check [CONTRIBUTING.md](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/CONTRIBUTING.md).

@@ -60,6 +60,14 @@ describe(path.basename(__filename), function () {
           assert.strictEqual(findDescriptionInReadmeTable(key), catch2Prop[key]['markdownDescription']);
         });
       }
+
+      {
+        const boostTestProp = executableSchemaProp['boosttest']['properties'];
+        const keys = Object.keys(boostTestProp);
+        keys.forEach(key => {
+          assert.strictEqual(findDescriptionInReadmeTable(key), boostTestProp[key]['markdownDescription'], key);
+        });
+      }
     }
     {
       const keys = Object.keys(properties);

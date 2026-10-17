@@ -31,6 +31,7 @@ export type AdvancedExecutableConfig = {
   doctest?: FrameworkSpecificConfig;
   gbenchmark?: FrameworkSpecificConfig;
   cpputest?: FrameworkSpecificConfig;
+  boosttest?: FrameworkSpecificConfig;
   testGrouping?: TestGroupingConfig;
   executionWrapper?: ExecutionWrapperConfig;
   sourceFileMap?: Record<string, ResolvableString>;

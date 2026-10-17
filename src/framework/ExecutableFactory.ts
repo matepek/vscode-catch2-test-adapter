@@ -10,6 +10,7 @@ import { Version } from '../Util';
 import { Spawner, SpawnOptionsWithoutStdioEx } from '../Spawner';
 import { GoogleBenchmarkExecutable } from './GoogleBenchmark/GoogleBenchmarkExecutable';
 import { CppUTestExecutable } from './CppUTest/CppUTestExecutable';
+import { BoostTestExecutable } from './BoostTest/BoostTestExecutable';
 import { ResolveRuleAsync } from '../util/ResolveRule';
 import { WorkspaceShared } from '../WorkspaceShared';
 import { Framework, FrameworkId, FrameworkType } from './Framework';
@@ -75,7 +76,7 @@ export class ExecutableFactory {
       }
 
       let match = runWithHelpRes.stdout.match(regex);
-      if (!match && frameworkSpecific.helpRegex) {
+      if (!match && (frameworkSpecific.helpRegex || frameworkData.matchStdErr)) {
         match = runWithHelpRes.stderr.match(regex);
       }
 
@@ -120,6 +121,7 @@ const frameworkDatas: Record<
   Readonly<{
     priority: number;
     regex: RegExp;
+    matchStdErr?: boolean;
     create: (sharedVarOfExec: SharedVarOfExec, match: RegExpMatchArray) => AbstractExecutable;
   }>
 > = {
@@ -157,6 +159,12 @@ const frameworkDatas: Record<
     priority: 50,
     regex: /Try --helpfull to get a list of all flags./,
     create: (sharedVarOfExec: SharedVarOfExec) => new GoogleTestExecutable(sharedVarOfExec, 'gunit_'),
+  },
+  boosttest: {
+    priority: 60,
+    regex: /is a Boost\.Test module containing unit tests/,
+    matchStdErr: true,
+    create: (sharedVarOfExec: SharedVarOfExec) => new BoostTestExecutable(sharedVarOfExec),
   },
 };
 
