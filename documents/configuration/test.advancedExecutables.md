@@ -71,6 +71,7 @@ If it is an object it can contain the following properties:
 | `gtest`                      | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
 | `doctest`                    | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
 | `gbenchmark`                 | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
+| `boosttest`                  | Object with framework specific settings. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#framework-specific-settings)                                                                                                                                                                                                          |
 
 The `pattern` (or the `executables` used as string or an array of strings)
 can contain [_search-pattern_](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options).
@@ -260,22 +261,22 @@ Example: `${relPath[:-2]}`: 'a/b/c/d' -> 'a/b'
 
 ## Framework specific settings
 
-Under property: `catch2`, `gtest`, `doctest`.
+Under property: `catch2`, `gtest`, `doctest`, `boosttest`.
 
 One can fine-tune framework related behaviour.
 
 [testgrouping]: #testgrouping
 
-| Property                      | Description                                                                                                                                                                                                                                                                                                     |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [testGrouping]                | Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                            |
-| `helpRegex`                   | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)             |
-| `prependTestRunningArgs`      | Additional argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                          |
-| `prependTestDebuggingArgs`    | Additional argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                      |
-| `prependTestListingArgs`      | Additional argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                          |
-| `ignoreTestEnumerationStdErr` | If false (or undefined) and there is something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)  |
-| `debug.enableOutputColouring` | Sets the colouring of the output for debug session.                                                                                                                                                                                                                                                             |
-| `failIfExceedsLimitNs`        | Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)                                                                                                                                                                                                                                                   |
+| Property                      | Description                                                                                                                                                                                                                                                                                                    |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [testGrouping]                | Groups the tests inside the executable. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md#testgrouping)                                                                                                                           |
+| `helpRegex`                   | A javascript [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) which will be used to recognise the framework. Flags: `su`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)            |
+| `prependTestRunningArgs`      | Additional argument array passed to the executable when it is called for testing. Good for experimental features like `["--benchmark-samples", "10"]`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                         |
+| `prependTestDebuggingArgs`    | Additional argument array passed to the executable when it is called for debugging. If not set but `prependTestRunningArgs` is set then that will be used. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                     |
+| `prependTestListingArgs`      | Additional argument array passed to the executable when it is called for test listing. (Discouraged. Try to use environment variables to pass values.) [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md)                         |
+| `ignoreTestEnumerationStdErr` | If false (or undefined) and there is something on `stderr` then test-listing will fail. Otherwise it will ignore the `stderr` and test listing will try to parse the `stdout`. [Detail](https://github.com/matepek/vscode-catch2-test-adapter/blob/master/documents/configuration/test.advancedExecutables.md) |
+| `debug.enableOutputColouring` | Sets the colouring of the output for debug session.                                                                                                                                                                                                                                                            |
+| `failIfExceedsLimitNs`        | Sets `cpu_time` limit for **gbenchmark**. (unit: nanoseconds)                                                                                                                                                                                                                                                  |
 
 If the regex is too general it will match all the executables❗️
 One should avoid that❗️
@@ -293,6 +294,8 @@ In case if `catch2` and `doctest` the first, second and third captures are the v
 For example:
 
 - `Catch v2.11.1` + `/Catch v(\d+)\.(\d+)\.(\d+)\s?/` -> `[2, 11, 1]`
+
+In case of `boosttest` the captures are not used. Note that Boost.Test prints its `--help` to `stderr`.
 
 ### ignoreTestEnumerationStdErr
 

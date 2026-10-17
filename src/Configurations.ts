@@ -434,6 +434,7 @@ export class Configurations {
           gtest: {},
           doctest: {},
           gbenchmark: {},
+          boosttest: {},
         },
       );
     };
@@ -592,6 +593,7 @@ export class Configurations {
             gtest: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gtest']),
             doctest: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['doctest']),
             gbenchmark: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['gbenchmark']),
+            boosttest: this._getFrameworkSpecificSettings(defaultTestGrouping, obj['boosttest']),
           },
         );
       };

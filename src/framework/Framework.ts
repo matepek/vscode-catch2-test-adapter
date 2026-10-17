@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 ///
 
-export type FrameworkType = 'catch2' | 'gtest' | 'doctest' | 'gbenchmark';
+export type FrameworkType = 'catch2' | 'gtest' | 'doctest' | 'gbenchmark' | 'boosttest';
 export type FrameworkId = FrameworkType | 'google-insider';
 
 export class Framework {
@@ -25,6 +25,8 @@ export class Framework {
 
   static readonly gbenchmark = new Framework('gbenchmark', 'gbenchmark');
 
+  static readonly boosttest = new Framework('boosttest', 'boosttest');
+
   static readonly googleInsider = new Framework('google-insider', 'gtest');
 
   ///
@@ -34,6 +36,7 @@ export class Framework {
     gtest: Framework.gtest,
     doctest: Framework.doctest,
     gbenchmark: Framework.gbenchmark,
+    boosttest: Framework.boosttest,
     'google-insider': Framework.googleInsider,
   };
 
