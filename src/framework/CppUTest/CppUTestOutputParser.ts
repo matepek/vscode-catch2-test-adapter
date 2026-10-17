@@ -22,7 +22,7 @@
  * `-g|sg ... groupName` and `-o{normal` are present in every one of them and in none of the other
  * supported frameworks' help output. Note that the factory applies the `su` flags.
  */
-export const cppUTestHelpRegex = /usage \[-.*\[-g\|sg[^\]]*groupName[^\]]*\].*\[-o\{normal/;
+export const cppUTestHelpRegex = /usage \[-.*\[-g\|sg[^\]]*groupName[^\]]*\].*\[-o\{normal/s;
 
 ///
 
