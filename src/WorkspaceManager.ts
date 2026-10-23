@@ -90,8 +90,8 @@ export class WorkspaceManager implements vscode.Disposable {
         let resolvedTask = found;
         if (
           found.execution instanceof vscode.ShellExecution &&
-          (found.execution.command.toString().indexOf('${') !== -1 ||
-            found.execution.args.some(v => v.toString().indexOf('${') !== -1))
+          (found.execution.command?.toString().indexOf('${') !== -1 ||
+            found.execution.args?.some(v => v.toString().indexOf('${') !== -1))
         ) {
           this._shared.log.info(
             'task is overwritten because contains `${`, (this means `dependsOn` tasks are ignored)',

@@ -12,7 +12,7 @@ Check, in this order:
 
 1. **Correctness**: logic errors, unhandled promises, races in the task queue / file watchers, wrong framework-specific parsing (Catch2, GoogleTest, doctest, Google Benchmark).
 2. **Repo rules** (see AGENTS.md):
-   - No VS Code API newer than 1.92.0.
+   - No VS Code API newer than 1.125.0.
    - No `any`, no file- or block-wide eslint disables, `override` on overrides, no floating promises.
    - Settings changed in `package.json` must have an identical row in `README.md` or `documents/configuration/test.advancedExecutables.md`.
    - User-visible change has an entry under `## [Unreleased]` in `CHANGELOG.md`.

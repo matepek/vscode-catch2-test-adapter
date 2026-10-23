@@ -9,24 +9,24 @@ When they conflict with a general habit of yours, follow this file.
 Catch2, GoogleTest, doctest, CppUTest and Google Benchmark executables through the native VS Code Testing API.
 
 - Language: TypeScript (strict), compiled with `tsc` to `out/`, bundled with webpack to `out/dist/main.js`.
-- Runtime: Node from `.nvmrc` (`node`); CI uses Node 22.x.
-- VS Code API floor: `engines.vscode` is `^1.92.0` and `@types/vscode` is pinned to `1.92.0`.
-  **Do not use VS Code APIs newer than 1.92.0** and do not bump either pin without the maintainer's approval.
+- Runtime: Node from `.nvmrc` (`node`); CI uses Node 24.x.
+- VS Code API floor: `engines.vscode` is `^1.125.0` and `@types/vscode` is pinned to `1.125.0`.
+  **Do not use VS Code APIs newer than 1.125.0** and do not bump either pin without the maintainer's approval.
 
 ## Layout
 
-| Path                                                                         | Contents                                                                                                                                                               |
-| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/main.ts`                                                                | Extension entry point (the only `src` file in `tsconfig.json` `include`)                                                                                               |
-| `src/WorkspaceManager.ts`, `src/TestItemManager.ts`, `src/Configurations.ts` | Workspace, test tree and settings handling                                                                                                                             |
+| Path                                                                         | Contents                                                                                                                                                                            |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/main.ts`                                                                | Extension entry point (the only `src` file in `tsconfig.json` `include`)                                                                                                            |
+| `src/WorkspaceManager.ts`, `src/TestItemManager.ts`, `src/Configurations.ts` | Workspace, test tree and settings handling                                                                                                                                          |
 | `src/framework/`                                                             | Per-framework executables and tests: `Catch2/`, `GoogleTest/`, `doctest/`, `GoogleBenchmark/`, `CppUTest/`, plus `ExecutableFactory.ts`, `AbstractExecutable.ts`, `AbstractTest.ts` |
-| `src/coverage/`                                                              | gcov / llvm-cov / custom coverage (experimental)                                                                                                                       |
-| `src/util/`                                                                  | FS wrappers and watchers, task queue/pool, XML and stream parsers, variable resolution (`ResolveRule.ts`)                                                              |
-| `test/*.test.ts`                                                             | Mocha tests, run inside a VS Code instance                                                                                                                             |
-| `test/disabled_TODO/`                                                        | Old tests, excluded from compilation. Do not re-enable or edit unless asked                                                                                            |
-| `test/cpp/`, `test/bazel/`                                                   | Real C++ test projects used for manual testing                                                                                                                         |
-| `test/repo_scripts/deploy.ts`                                                | Release automation run by CI                                                                                                                                           |
-| `documents/configuration/`                                                   | User docs for `test.advancedExecutables` and `debug.configTemplate`                                                                                                    |
+| `src/coverage/`                                                              | gcov / llvm-cov / custom coverage (experimental)                                                                                                                                    |
+| `src/util/`                                                                  | FS wrappers and watchers, task queue/pool, XML and stream parsers, variable resolution (`ResolveRule.ts`)                                                                           |
+| `test/*.test.ts`                                                             | Mocha tests, run inside a VS Code instance                                                                                                                                          |
+| `test/disabled_TODO/`                                                        | Old tests, excluded from compilation. Do not re-enable or edit unless asked                                                                                                         |
+| `test/cpp/`, `test/bazel/`                                                   | Real C++ test projects used for manual testing                                                                                                                                      |
+| `test/repo_scripts/deploy.ts`                                                | Release automation run by CI                                                                                                                                                        |
+| `documents/configuration/`                                                   | User docs for `test.advancedExecutables` and `debug.configTemplate`                                                                                                                 |
 
 ## Required checks
 
