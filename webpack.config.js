@@ -47,6 +47,13 @@ module.exports = {
         use: [
           {
             loader: 'ts-loader',
+            options: {
+              // TS6 resolves bare imports with the 'import' condition unless a mode is given, and ts-loader
+              // passes none; limiting the program to the bundled files keeps the test-only typings out of it.
+              onlyCompileBundledFiles: true,
+              // the bundled-only program has './src' as its common source directory, which TS6 wants spelled out
+              compilerOptions: { rootDir: '.' },
+            },
           },
         ],
       },
