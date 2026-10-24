@@ -84,6 +84,10 @@ jobs:
       - name: Compile
         run: npm run compile
 
+      - name: Webpack # test does not use it, but we are testing the webpack creation
+        run: |
+          npm run webpack
+
       # - name: ESLint
       #   run: npm run eslint
 
@@ -123,6 +127,11 @@ jobs:
 
       - name: Compile
         run: npm run compile
+
+      - name: Webpack # test does not use it, but we are testing the webpack creation
+        run: |
+          npm run webpack
+          ls -all out/dist
 
       # - name: ESLint
       #   run: npm run eslint
