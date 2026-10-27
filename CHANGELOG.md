@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [4.27.1]
+## [4.27.1] - 2026-10-27
 
 Minimum version: node24, vscode: 1.125
 
