@@ -29,7 +29,7 @@ jobs:
           persist-credentials: false
 
       - name: Review
-        uses: anthropics/claude-code-action@374f254f5efaf968abfe15d399fd90972e8138b9 # v1.0.251
+        uses: anthropics/claude-code-action@16f9f71ab9c490faf367f94dd294897edc25be33 # v1.0.261
         with:
           # show_full_output: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
