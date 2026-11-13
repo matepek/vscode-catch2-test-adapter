@@ -26,10 +26,13 @@ function longestCommonPath(paths: string[]): [string, string[]] {
 }
 
 export class ChokidarWrapper implements FSWatcher {
-  constructor(patterns: string[]) {
+  constructor(
+    patterns: string[],
+    options: Pick<chokidar.ChokidarOptions, 'depth' | 'followSymlinks' | 'ignoreInitial'> = {},
+  ) {
     const [cwd, children] = longestCommonPath(patterns);
     this._cwd = cwd;
-    this._impl = new chokidar.FSWatcher({ cwd, awaitWriteFinish: true, followSymlinks: true });
+    this._impl = new chokidar.FSWatcher({ cwd, awaitWriteFinish: true, followSymlinks: true, ...options });
     this._readyP = Promise.resolve().then(async () => {
       const arr = await glob(children, { cwd, follow: true });
       if (arr.length > 0) {

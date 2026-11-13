@@ -96,6 +96,62 @@ describe(path.basename(__filename), function () {
       }
     });
 
+    it('should watch a symlink to a workspace parent without traversing its target', async function () {
+      if (isWin) {
+        this.skip();
+      }
+
+      this.timeout(10000);
+      this.slow(5000);
+
+      const storageHome = path.join(tempDir, 'storage', 'home');
+      const workspace = path.join(storageHome, 'project');
+      const symlinkedHome = path.join(tempDir, 'home-link');
+      const snapshotFile = path.join(storageHome, 'other', '.snapshot', 'snap1', 'sentinel');
+
+      await fse.ensureDir(path.join(workspace, 'build_unit_tests'));
+      await fse.ensureDir(path.dirname(snapshotFile));
+      await fse.writeFile(path.join(workspace, 'build_unit_tests', 'sample_test'), 'test');
+      await fse.writeFile(snapshotFile, 'snapshot');
+      await fse.symlink(storageHome, symlinkedHome);
+
+      const watcher = new ChokidarWrapper([symlinkedHome], {
+        followSymlinks: false,
+        depth: 0,
+        ignoreInitial: true,
+      });
+      const events: string[] = [];
+      watcher.onAll(fsPath => events.push(fsPath));
+
+      try {
+        await watcher.ready();
+
+        const watched = await watcher.watched();
+        assert.deepEqual(watched, [symlinkedHome], 'Only the symlink entry should be watched');
+
+        await fse.rename(symlinkedHome, `${symlinkedHome}.removed`);
+        const start = Date.now();
+        while (Date.now() - start < 5000 && !events.includes(symlinkedHome)) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        assert.ok(events.includes(symlinkedHome), 'Symlink removal should still be detected');
+
+        await fse.rename(`${symlinkedHome}.removed`, symlinkedHome);
+        const recreatedAt = Date.now();
+        while (Date.now() - recreatedAt < 5000 && events.filter(fsPath => fsPath === symlinkedHome).length < 2) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        assert.ok(
+          events.filter(fsPath => fsPath === symlinkedHome).length >= 2,
+          'Symlink recreation should still be detected',
+        );
+      } finally {
+        watcher.dispose();
+      }
+    });
+
     it('should handle nested directories through symlinks', async function () {
       if (isWin) {
         this.skip();
