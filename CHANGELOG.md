@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Avoid recursively scanning a symlink target in the symlink watcher. ([#545](https://github.com/matepek/vscode-catch2-test-adapter/issues/545))
+
 ## [4.27.1] - 2026-10-27
 
 Minimum version: node24, vscode: 1.125

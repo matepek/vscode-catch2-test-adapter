@@ -273,7 +273,11 @@ export class ConfigOfExecGroup implements vscode.Disposable {
           w.onError(cb_err);
           w.onAll(cb);
         } else {
-          const w = new ChokidarWrapper([pattern.symlink.absPath]);
+          const w = new ChokidarWrapper([pattern.symlink.absPath], {
+            followSymlinks: false,
+            depth: 0,
+            ignoreInitial: true,
+          });
           this._disposables.push(w);
           w.onError(cb_err);
           w.onAll(cb);
